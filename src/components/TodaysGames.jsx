@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, TrendingDown, DollarSign, AlertTriangle } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Info } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsParser';
 
@@ -12,6 +12,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
   const [selectedTeamA, setSelectedTeamA] = useState('');
   const [selectedTeamB, setSelectedTeamB] = useState('');
   const [prediction, setPrediction] = useState(null);
+  const [showEVExplanation, setShowEVExplanation] = useState(false);
 
   // Initialize edge calculator
   useEffect(() => {
@@ -147,7 +148,18 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                   <th>Pick</th>
                   <th>Odds</th>
                   <th>Model Prob</th>
-                  <th>EV</th>
+                  <th>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      EV
+                      <button
+                        onClick={() => setShowEVExplanation(true)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                        title="What is EV?"
+                      >
+                        <Info size={14} color="var(--color-accent)" />
+                      </button>
+                    </div>
+                  </th>
                   <th>Kelly Stake</th>
                 </tr>
               </thead>
@@ -383,6 +395,108 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
           )}
         </div>
       </div>
+
+      {/* EV Explanation Modal */}
+      {showEVExplanation && (
+        <div 
+          onClick={() => setShowEVExplanation(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="card" 
+            style={{ 
+              maxWidth: '600px', 
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            }}
+          >
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Info size={24} color="var(--color-accent)" />
+                Understanding Expected Value (EV)
+              </h2>
+              <button
+                onClick={() => setShowEVExplanation(false)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: 'var(--color-text-secondary)', 
+                  fontSize: '1.5rem', 
+                  cursor: 'pointer',
+                  padding: '0.25rem'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="card-body">
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-accent)' }}>What is EV?</h3>
+                <p style={{ color: 'var(--color-text-secondary)' }}>
+                  Expected Value (EV) represents your average profit or loss per $100 wagered over the long run. 
+                  A positive EV (+12%) means you can expect to profit $12 for every $100 bet if your model is accurate.
+                </p>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-accent)' }}>Why Are These Numbers So High?</h3>
+                <ul style={{ color: 'var(--color-text-secondary)', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+                  <li><strong>Advanced Stats Edge:</strong> Our model uses xG (expected goals) and situational data that bookmakers may underweight</li>
+                  <li><strong>Early Season Inefficiencies:</strong> Markets are less efficient early in the season when there's limited data</li>
+                  <li><strong>Model Estimates:</strong> These are theoretical edges based on our predictions - not guaranteed profits</li>
+                </ul>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--color-danger)', borderRadius: '4px' }}>
+                <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <AlertTriangle size={18} />
+                  Reality Check
+                </h3>
+                <ul style={{ color: 'var(--color-text-secondary)', paddingLeft: '1.5rem', lineHeight: '1.8', marginBottom: 0 }}>
+                  <li>Professional bettors typically target <strong>3-5% long-term ROI</strong></li>
+                  <li>Edges of <strong>10%+ are extremely rare</strong> in efficient markets</li>
+                  <li>High EV can indicate model miscalibration or missing information</li>
+                  <li>Always use <strong>fractional Kelly (25%)</strong> to manage risk</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-accent)' }}>Recommendations</h3>
+                <ul style={{ color: 'var(--color-text-secondary)', paddingLeft: '1.5rem', lineHeight: '1.8', marginBottom: 0 }}>
+                  <li><strong>Start Small:</strong> Test the model with minimal stakes to validate accuracy</li>
+                  <li><strong>Track Performance:</strong> Monitor closing line value (CLV) to measure if you're beating the market</li>
+                  <li><strong>Stay Disciplined:</strong> Follow your bankroll management strategy regardless of short-term results</li>
+                  <li><strong>Verify Data:</strong> Use the Data Inspector to spot-check calculations before betting</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', padding: '1rem', borderTop: '1px solid var(--color-border)', textAlign: 'right' }}>
+              <button
+                onClick={() => setShowEVExplanation(false)}
+                className="btn btn-primary"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

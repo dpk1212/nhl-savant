@@ -173,21 +173,22 @@ export class NHLDataProcessor {
     if (!teamA_5v5 || !teamB_5v5) return 0;
     
     // Team A scoring - 5v5 component (77% of game)
-    const teamA_5v5_goals = (teamA_5v5.xGF_per60 / 60) * 0.77;
+    // xGF_per60 already represents goals per 60 minutes, just multiply by percentage of game
+    const teamA_5v5_goals = teamA_5v5.xGF_per60 * 0.77;
     
     // Team B scoring - 5v5 component (77% of game)
-    const teamB_5v5_goals = (teamB_5v5.xGF_per60 / 60) * 0.77;
+    const teamB_5v5_goals = teamB_5v5.xGF_per60 * 0.77;
     
     // Team A PP vs Team B PK (12% of game for PP opportunities)
     let teamA_PP_goals = 0;
     if (teamA_PP && teamB_PK) {
-      teamA_PP_goals = ((teamA_PP.xGF_per60 - teamB_PK.xGA_per60) / 60) * 0.12;
+      teamA_PP_goals = (teamA_PP.xGF_per60 - teamB_PK.xGA_per60) * 0.12;
     }
     
     // Team B PP vs Team A PK (12% of game for PP opportunities)
     let teamB_PP_goals = 0;
     if (teamB_PP && teamA_PK) {
-      teamB_PP_goals = ((teamB_PP.xGF_per60 - teamA_PK.xGA_per60) / 60) * 0.12;
+      teamB_PP_goals = (teamB_PP.xGF_per60 - teamA_PK.xGA_per60) * 0.12;
     }
     
     // Total predicted goals
@@ -208,12 +209,12 @@ export class NHLDataProcessor {
     if (!team_5v5) return 0;
     
     // 5v5 component (77% of game)
-    const goals_5v5 = (team_5v5.xGF_per60 / 60) * 0.77;
+    const goals_5v5 = team_5v5.xGF_per60 * 0.77;
     
     // PP component (12% of game)
     let goals_PP = 0;
     if (team_PP && opponent_PK) {
-      goals_PP = ((team_PP.xGF_per60 - opponent_PK.xGA_per60) / 60) * 0.12;
+      goals_PP = (team_PP.xGF_per60 - opponent_PK.xGA_per60) * 0.12;
     }
     
     return Math.max(0, goals_5v5 + goals_PP);

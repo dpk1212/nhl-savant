@@ -60,8 +60,10 @@ export function parseOddsMarkdown(markdownText) {
     
     // Detect "Today" headers - start parsing
     if (line === 'Today') {
-      inTodaySection = true;
-      console.log('📅 Entering "Today" section for game parsing');
+      if (!inTodaySection && !hasLeftTodaySection) {
+        inTodaySection = true;
+        console.log('📅 Entering "Today" section for game parsing');
+      }
       continue;
     }
     
