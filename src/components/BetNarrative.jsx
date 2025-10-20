@@ -58,6 +58,50 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
       padding: '1rem',
       marginBottom: '1rem'
     }}>
+      {/* BET TYPE BADGE - Makes it crystal clear which bet this is */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '0.75rem',
+        marginBottom: '0.75rem',
+        flexWrap: 'wrap' 
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '0.375rem 0.75rem',
+          backgroundColor: edge.market === 'MONEYLINE' ? 'rgba(59, 130, 246, 0.15)' :
+                           edge.market === 'TOTAL' ? 'rgba(168, 85, 247, 0.15)' :
+                           'rgba(234, 179, 8, 0.15)',
+          border: edge.market === 'MONEYLINE' ? '1px solid rgba(59, 130, 246, 0.4)' :
+                  edge.market === 'TOTAL' ? '1px solid rgba(168, 85, 247, 0.4)' :
+                  '1px solid rgba(234, 179, 8, 0.4)',
+          borderRadius: '6px',
+          fontSize: '0.75rem',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: edge.market === 'MONEYLINE' ? '#60A5FA' :
+                 edge.market === 'TOTAL' ? '#A78BFA' :
+                 '#FCD34D'
+        }}>
+          <span style={{ marginRight: '0.375rem' }}>
+            {edge.market === 'MONEYLINE' ? '🏒' : 
+             edge.market === 'TOTAL' ? '📊' : 
+             '↕️'}
+          </span>
+          {edge.market} BET
+        </div>
+        
+        <div style={{
+          fontSize: '0.938rem',
+          fontWeight: '700',
+          color: 'var(--color-accent)'
+        }}>
+          {edge.pick} {edge.odds > 0 ? '+' : ''}{edge.odds}
+        </div>
+      </div>
+
       {expandable ? (
         <button
           onClick={() => setIsExpanded(!isExpanded)}

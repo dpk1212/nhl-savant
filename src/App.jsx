@@ -77,12 +77,13 @@ function App() {
           <Navigation />
           <main>
             <Routes>
-              <Route path="/" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
-              <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
+              {/* NEW: Today's Games is now the primary landing page */}
+              <Route path="/" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} />} />
+              <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} oddsData={oddsData} />} />
-              <Route path="/games" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} />} />
-              <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
+              <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
               <Route path="/methodology" element={<Methodology />} />
+              <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
             </Routes>
           </main>
         </div>

@@ -1,95 +1,144 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3 } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const Navigation = () => {
   const location = useLocation();
-
-  const isActive = (path) => location.pathname === path;
-
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Updated navigation links with new structure
   const navLinks = [
-    { path: '/', label: 'DASHBOARD' },
-    { path: '/teams', label: 'TEAMS' },
-    { path: '/opportunities', label: 'OPPORTUNITIES' },
-    { path: '/games', label: "TODAY'S GAMES" },
-    { path: '/inspector', label: 'DATA INSPECTOR' },
-    { path: '/methodology', label: 'METHODOLOGY' },
+    { path: '/', label: "Today's Games", icon: '🎯' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/opportunities', label: 'Opportunities', icon: '💎' },
+    { path: '/teams', label: 'Team Analytics', icon: '📈' },
+    { path: '/methodology', label: 'Methodology', icon: '📚' },
+    { path: '/inspector', label: 'Data Inspector', icon: '🔍' }
   ];
 
   return (
     <nav style={{
-      height: '56px',
-      backgroundColor: 'var(--color-background)',
-      borderBottom: '1px solid var(--color-border)',
       position: 'sticky',
       top: 0,
-      zIndex: 50,
+      zIndex: 1000,
+      backgroundColor: 'var(--color-background)',
+      borderBottom: '1px solid var(--color-border)',
+      padding: '0.75rem 1rem'
     }}>
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        height: '100%',
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 2rem',
+        alignItems: 'center'
       }}>
-        {/* Logo */}
-        <Link
-          to="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            textDecoration: 'none',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          <BarChart3 size={20} color="var(--color-accent)" />
-          <span style={{
-            fontSize: '0.875rem',
-            fontWeight: 700,
-            letterSpacing: '-0.01em',
-          }}>
-            NHL SAVANT
-          </span>
+        {/* Logo/Title */}
+        <Link to="/" style={{
+          fontSize: '1.25rem',
+          fontWeight: '700',
+          color: 'var(--color-accent)',
+          textDecoration: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          🏒 NHL Savant
         </Link>
 
         {/* Desktop Navigation */}
-        <div style={{
-          display: 'flex',
-          gap: '2rem',
-          alignItems: 'center',
+        <div className="desktop-nav" style={{
+          display: 'none',
+          gap: '0.5rem'
         }}>
-          {navLinks.map(({ path, label }) => (
+          {navLinks.map(link => (
             <Link
-              key={path}
-              to={path}
+              key={link.path}
+              to={link.path}
               style={{
-                position: 'relative',
-                fontSize: '0.8125rem',
-                fontWeight: 500,
-                letterSpacing: '0.05em',
-                color: isActive(path) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                padding: '0.5rem 0.875rem',
+                borderRadius: '6px',
+                fontSize: '0.875rem',
+                fontWeight: '500',
                 textDecoration: 'none',
-                padding: '0.25rem 0',
-                transition: 'color 0.2s ease',
+                color: location.pathname === link.path ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                backgroundColor: location.pathname === link.path ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
               }}
             >
-              {label}
-              {isActive(path) && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: '-18px',
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  backgroundColor: 'var(--color-accent)',
-                }}></div>
-              )}
+              <span style={{ marginRight: '0.375rem' }}>{link.icon}</span>
+              {link.label}
             </Link>
           ))}
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0.5rem',
+            backgroundColor: 'transparent',
+            border: '1px solid var(--color-border)',
+            borderRadius: '6px',
+            color: 'var(--color-text-primary)',
+            cursor: 'pointer'
+          }}
+        >
+          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="mobile-nav" style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          backgroundColor: 'var(--color-background)',
+          borderBottom: '1px solid var(--color-border)',
+          padding: '0.5rem',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
+        }}>
+          {navLinks.map(link => (
+            <Link
+              key={link.path}
+              to={link.path}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                display: 'block',
+                padding: '0.875rem 1rem',
+                borderRadius: '6px',
+                fontSize: '0.938rem',
+                fontWeight: '500',
+                textDecoration: 'none',
+                color: location.pathname === link.path ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                backgroundColor: location.pathname === link.path ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                marginBottom: '0.25rem'
+              }}
+            >
+              <span style={{ marginRight: '0.5rem', fontSize: '1.125rem' }}>{link.icon}</span>
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* CSS for responsive behavior */}
+      <style>{`
+        @media (min-width: 768px) {
+          .desktop-nav { display: flex !important; }
+          .mobile-menu-btn { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          .desktop-nav { display: none !important; }
+          .mobile-menu-btn { display: flex !important; }
+        }
+      `}</style>
     </nav>
   );
 };

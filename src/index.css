@@ -296,6 +296,15 @@ select:focus {
    MOBILE-FIRST RESPONSIVE DESIGN
    ============================================ */
 
+/* Default visibility for responsive classes */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
 /* Mobile Base (320px - 640px) */
 @media (max-width: 640px) {
   /* Typography adjustments for mobile readability */
@@ -368,6 +377,64 @@ select:focus {
   select {
     min-height: 44px;
     font-size: 1rem;
+  }
+
+  /* Navigation specific */
+  nav {
+    padding: 0.625rem 0.875rem !important;
+  }
+  
+  /* Game cards - more compact */
+  .game-card {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Value bets - card layout on mobile instead of table */
+  .value-bets-mobile-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .value-bets-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .value-bets-mobile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  
+  /* Touch targets - minimum 44x44px */
+  button,
+  a,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Hide desktop-only content on mobile */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Show mobile-only content */
+  .mobile-only {
+    display: block !important;
+  }
+  
+  /* Full-width on mobile */
+  .mobile-full-width {
+    width: 100% !important;
   }
 }
 
