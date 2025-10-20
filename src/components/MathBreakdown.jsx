@@ -2,34 +2,39 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Calculator } from 'lucide-react';
 import { explainGamePrediction } from '../utils/mathExplainer';
 
-const MathBreakdown = ({ game, dataProcessor }) => {
+const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Debug logging
-  console.log('🔍 MathBreakdown received:', { game, hasDataProcessor: !!dataProcessor });
+  console.log('🔍 MathBreakdown received:', { 
+    awayTeam, 
+    homeTeam, 
+    total, 
+    hasDataProcessor: !!dataProcessor 
+  });
   
-  // More flexible validation
-  if (!game || !dataProcessor) {
-    console.log('❌ MathBreakdown: Missing game or dataProcessor');
+  // Validation
+  if (!dataProcessor) {
+    console.log('❌ MathBreakdown: Missing dataProcessor');
     return null;
   }
   
   // Check for total data
-  if (!game.total || !game.total.line || !game.total.over || !game.total.under) {
+  if (!total || !total.line || !total.over || !total.under) {
     console.log('❌ MathBreakdown: Missing total data', { 
-      hasTotal: !!game.total, 
-      hasLine: !!game.total?.line,
-      hasOver: !!game.total?.over,
-      hasUnder: !!game.total?.under
+      hasTotal: !!total, 
+      hasLine: !!total?.line,
+      hasOver: !!total?.over,
+      hasUnder: !!total?.under
     });
     return null;
   }
   
   // Check for team data
-  if (!game.awayTeam || !game.homeTeam) {
+  if (!awayTeam || !homeTeam) {
     console.log('❌ MathBreakdown: Missing team data', { 
-      awayTeam: game.awayTeam, 
-      homeTeam: game.homeTeam 
+      awayTeam, 
+      homeTeam 
     });
     return null;
   }
@@ -37,11 +42,11 @@ const MathBreakdown = ({ game, dataProcessor }) => {
   console.log('✅ MathBreakdown: All validation passed, calling explainGamePrediction');
   
   const breakdown = explainGamePrediction(
-    game.awayTeam,
-    game.homeTeam,
-    game.total.line,
-    game.total.over,
-    game.total.under,
+    awayTeam,
+    homeTeam,
+    total.line,
+    total.over,
+    total.under,
     dataProcessor
   );
   

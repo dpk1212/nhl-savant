@@ -306,7 +306,12 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
               </div>
 
               {/* Mathematical Breakdown Component */}
-              <MathBreakdown game={game.rawOdds} dataProcessor={dataProcessor} />
+              <MathBreakdown 
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+                total={game.rawOdds.total}
+                dataProcessor={dataProcessor} 
+              />
             </div>
           ))}
         </div>
