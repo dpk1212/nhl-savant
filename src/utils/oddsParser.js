@@ -52,9 +52,32 @@ export function parseOddsMarkdown(markdownText) {
   
   let currentGame = null;
   let currentTime = null;
+  let inTodaySection = false;
+  let hasLeftTodaySection = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
+    
+    // Detect "Today" headers - start parsing
+    if (line === 'Today') {
+      inTodaySection = true;
+      console.log('📅 Entering "Today" section for game parsing');
+      continue;
+    }
+    
+    // Detect future date headers - stop parsing
+    if (line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Tomorrow|Oct \d+|Nov \d+|Dec \d+|Jan \d+|Feb \d+|Mar \d+|Apr \d+|May \d+|Jun \d+|Jul \d+|Aug \d+|Sep \d+)/)) {
+      if (inTodaySection) {
+        console.log(`🛑 Encountered future date "${line}" - stopping game parsing`);
+        hasLeftTodaySection = true;
+        inTodaySection = false;
+      }
+    }
+    
+    // Skip parsing if not in today section or already left it
+    if (!inTodaySection || hasLeftTodaySection) {
+      continue;
+    }
     
     // Extract game time (e.g., "7:00 PM EDT")
     if (line.match(/^\d{1,2}:\d{2} (AM|PM) (EDT|EST|PST|CST|MST)/)) {
@@ -164,7 +187,10 @@ export function parseOddsMarkdown(markdownText) {
     games.push(currentGame);
   }
   
-  console.log(`Parsed ${games.length} games from odds file`);
+  console.log(`✅ Parsed ${games.length} TODAY's games from odds file`);
+  if (games.length > 0) {
+    console.log('📋 Today\'s Games:', games.map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', '));
+  }
   return games;
 }
 
