@@ -54,6 +54,7 @@ export function parseOddsMarkdown(markdownText) {
   let currentTime = null;
   let inTodaySection = false;
   let hasLeftTodaySection = false;
+  let oddsSequence = 0; // Track order of odds parsing
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -109,7 +110,7 @@ export function parseOddsMarkdown(markdownText) {
       let homeTeam = null;
       
       // Try to parse from URL slug (e.g., "seattle-kraken-at-philadelphia-flyers")
-      const slugMatch = urlSlug.match(/(.*?)-at-(.*?)(?:\s|$)/);
+      const slugMatch = urlSlug.match(/([\w-]+)-at-([\w-]+)/);
       if (slugMatch) {
         const awaySlug = slugMatch[1].split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         const homeSlug = slugMatch[2].split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -139,49 +140,63 @@ export function parseOddsMarkdown(markdownText) {
           },
           total: { line: null, over: null, under: null }
         };
+        oddsSequence = 0; // Reset sequence for new game
+        console.log(`🎮 Started parsing game: ${awayTeam} @ ${homeTeam} at ${currentTime}`);
       }
     }
     
-    // Parse odds values - look for patterns like "+115", "-135", "O 5.5-120", "U 5.5+105"
+    // Parse odds values in specific order with improved regexes
     if (currentGame) {
-      // Total line (e.g., "O 5.5-120" or "U 5.5+105")
-      const totalOverMatch = line.match(/O\s+(\d+\.?\d*)([-+]\d+)/);
+      // 1. TOTALS (most specific) - "O 5.5-120" or "U 5.5+105"
+      const totalOverMatch = line.match(/^O\s+(\d+\.?\d*)([-+]\d+)$/);
       if (totalOverMatch) {
         currentGame.total.line = parseFloat(totalOverMatch[1]);
         currentGame.total.over = parseInt(totalOverMatch[2]);
+        oddsSequence = 1;
+        console.log(`  ✓ OVER ${totalOverMatch[1]} ${totalOverMatch[2]}`);
       }
       
-      const totalUnderMatch = line.match(/U\s+(\d+\.?\d*)([-+]\d+)/);
+      const totalUnderMatch = line.match(/^U\s+(\d+\.?\d*)([-+]\d+)$/);
       if (totalUnderMatch) {
         if (!currentGame.total.line) {
           currentGame.total.line = parseFloat(totalUnderMatch[1]);
         }
         currentGame.total.under = parseInt(totalUnderMatch[2]);
+        oddsSequence = 2;
+        console.log(`  ✓ UNDER ${totalUnderMatch[1]} ${totalUnderMatch[2]}`);
       }
       
-      // Moneyline odds (standalone odds like "+115" or "-135")
-      const moneylineMatch = line.match(/^([-+]\d+)$/);
-      if (moneylineMatch) {
-        const odds = parseInt(moneylineMatch[1]);
-        if (currentGame.moneyline.away === null) {
-          currentGame.moneyline.away = odds;
-        } else if (currentGame.moneyline.home === null) {
-          currentGame.moneyline.home = odds;
-        }
-      }
-      
-      // Puck line (e.g., "+1-148" or "-1+123")
-      const puckLineMatch = line.match(/^([-+]\d+\.?\d*)([-+]\d+)$/);
-      if (puckLineMatch && !totalOverMatch && !totalUnderMatch) {
+      // 2. PUCK LINE (specific format) - "+1-148" or "-1+123"
+      // Must be +1/-1 (or +1.5/-1.5) followed by 3+ digit odds
+      const puckLineMatch = line.match(/^([-+]1(?:\.5)?)([-+]\d{3,})$/);
+      if (puckLineMatch && oddsSequence >= 4) {
         const spread = parseFloat(puckLineMatch[1]);
         const odds = parseInt(puckLineMatch[2]);
         
         if (spread > 0) {
           currentGame.puckLine.away.spread = spread;
           currentGame.puckLine.away.odds = odds;
+          console.log(`  ✓ AWAY PUCK LINE ${spread} ${odds}`);
         } else {
           currentGame.puckLine.home.spread = spread;
           currentGame.puckLine.home.odds = odds;
+          console.log(`  ✓ HOME PUCK LINE ${spread} ${odds}`);
+        }
+      }
+      
+      // 3. MONEYLINE (last, least specific) - "+115" or "-135"
+      // Standalone 3+ digit odds (not part of puck line)
+      const moneylineMatch = line.match(/^([-+]\d{3,})$/);
+      if (moneylineMatch && oddsSequence >= 2 && !puckLineMatch) {
+        const odds = parseInt(moneylineMatch[1]);
+        if (currentGame.moneyline.away === null) {
+          currentGame.moneyline.away = odds;
+          oddsSequence = 3;
+          console.log(`  ✓ AWAY MONEYLINE ${odds}`);
+        } else if (currentGame.moneyline.home === null) {
+          currentGame.moneyline.home = odds;
+          oddsSequence = 4;
+          console.log(`  ✓ HOME MONEYLINE ${odds}`);
         }
       }
     }
