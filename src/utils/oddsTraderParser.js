@@ -106,11 +106,11 @@ export function parseOddsTrader(markdownText) {
           console.log(`  📊 UNDER ${lineValue} ${odds}`);
         }
       } else {
-        // If not a total, try moneyline
-        const awayOddsMatch = line.match(/([-+]\d{3,})[A-Za-z]/);
+        // If not a total, try moneyline (match odds immediately before sportsbook name)
+        const awayOddsMatch = line.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel)/);
         if (awayOddsMatch) {
           currentGame.moneyline.away = parseInt(awayOddsMatch[1]);
-          console.log(`  💰 Away odds: ${currentGame.moneyline.away}`);
+          console.log(`  💰 Away odds: ${currentGame.moneyline.away} (from ${awayOddsMatch[2]})`);
         }
       }
       
@@ -148,11 +148,11 @@ export function parseOddsTrader(markdownText) {
           console.log(`  📊 UNDER ${lineValue} ${odds}`);
         }
       } else {
-        // If not a total, try moneyline
-        const homeOddsMatch = nextLine.match(/([-+]\d{3,})[A-Za-z]/);
+        // If not a total, try moneyline (match odds immediately before sportsbook name)
+        const homeOddsMatch = nextLine.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel)/);
         if (homeOddsMatch) {
           currentGame.moneyline.home = parseInt(homeOddsMatch[1]);
-          console.log(`  💰 Home odds: ${currentGame.moneyline.home}`);
+          console.log(`  💰 Home odds: ${currentGame.moneyline.home} (from ${homeOddsMatch[2]})`);
         }
       }
       
