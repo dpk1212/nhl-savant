@@ -89,11 +89,23 @@ export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
  * Generate complete game breakdown
  */
 export function explainGamePrediction(awayTeam, homeTeam, marketTotal, marketOverOdds, marketUnderOdds, dataProcessor) {
+  console.log('🧮 explainGamePrediction called with:', { 
+    awayTeam, 
+    homeTeam, 
+    marketTotal, 
+    marketOverOdds, 
+    marketUnderOdds,
+    hasDataProcessor: !!dataProcessor 
+  });
+  
   // Get team score breakdowns
   const awayBreakdown = explainTeamScore(awayTeam, homeTeam, dataProcessor);
   const homeBreakdown = explainTeamScore(homeTeam, awayTeam, dataProcessor);
   
+  console.log('🧮 Team breakdowns:', { awayBreakdown, homeBreakdown });
+  
   if (!awayBreakdown || !homeBreakdown) {
+    console.log('❌ explainGamePrediction: Missing team breakdown');
     return null;
   }
   

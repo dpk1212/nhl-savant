@@ -5,9 +5,36 @@ import { explainGamePrediction } from '../utils/mathExplainer';
 const MathBreakdown = ({ game, dataProcessor }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  if (!game.total || !game.total.line || !dataProcessor) {
+  // Debug logging
+  console.log('🔍 MathBreakdown received:', { game, hasDataProcessor: !!dataProcessor });
+  
+  // More flexible validation
+  if (!game || !dataProcessor) {
+    console.log('❌ MathBreakdown: Missing game or dataProcessor');
     return null;
   }
+  
+  // Check for total data
+  if (!game.total || !game.total.line || !game.total.over || !game.total.under) {
+    console.log('❌ MathBreakdown: Missing total data', { 
+      hasTotal: !!game.total, 
+      hasLine: !!game.total?.line,
+      hasOver: !!game.total?.over,
+      hasUnder: !!game.total?.under
+    });
+    return null;
+  }
+  
+  // Check for team data
+  if (!game.awayTeam || !game.homeTeam) {
+    console.log('❌ MathBreakdown: Missing team data', { 
+      awayTeam: game.awayTeam, 
+      homeTeam: game.homeTeam 
+    });
+    return null;
+  }
+  
+  console.log('✅ MathBreakdown: All validation passed, calling explainGamePrediction');
   
   const breakdown = explainGamePrediction(
     game.awayTeam,
@@ -19,8 +46,11 @@ const MathBreakdown = ({ game, dataProcessor }) => {
   );
   
   if (!breakdown) {
+    console.log('❌ MathBreakdown: explainGamePrediction returned null');
     return null;
   }
+  
+  console.log('✅ MathBreakdown: Rendering component with breakdown:', breakdown);
   
   return (
     <div style={{ marginTop: '1rem', border: '1px solid var(--color-border)', borderRadius: '4px', overflow: 'hidden' }}>
