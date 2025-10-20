@@ -10,8 +10,6 @@ const Navigation = () => {
   const navLinks = [
     { path: '/', label: "Today's Games", icon: '🎯' },
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/opportunities', label: 'Opportunities', icon: '💎' },
-    { path: '/teams', label: 'Team Analytics', icon: '📈' },
     { path: '/methodology', label: 'Methodology', icon: '📚' },
     { path: '/inspector', label: 'Data Inspector', icon: '🔍' }
   ];

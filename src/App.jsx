@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { loadNHLData, loadOddsFiles } from './utils/dataProcessing';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
-import TeamAnalytics from './components/TeamAnalytics';
-import BettingOpportunities from './components/BettingOpportunities';
 import DataInspector from './components/DataInspector';
 import TodaysGames from './components/TodaysGames';
 import Methodology from './components/Methodology';
@@ -77,11 +75,9 @@ function App() {
           <Navigation />
           <main>
             <Routes>
-              {/* NEW: Today's Games is now the primary landing page */}
+              {/* Today's Games is the primary landing page */}
               <Route path="/" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} />} />
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
-              <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} oddsData={oddsData} />} />
-              <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
             </Routes>

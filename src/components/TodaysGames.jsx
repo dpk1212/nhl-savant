@@ -91,14 +91,6 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
         }}>
           In-depth analysis of today's NHL matchups using advanced metrics (xG, PDO, regression analysis) 
           to identify betting edges. Each game includes full mathematical transparency and detailed breakdowns.
-          <span style={{ 
-            display: 'block', 
-            marginTop: '0.5rem',
-            color: 'var(--color-text-muted)',
-            fontSize: '0.813rem'
-          }}>
-            💡 For a quick overview of all value bets, visit the <a href="#/opportunities" style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: '600' }}>Opportunities page</a>
-          </span>
         </p>
       </div>
 
