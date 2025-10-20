@@ -265,7 +265,8 @@ export class NHLDataProcessor {
 // Load and process CSV data
 export async function loadNHLData() {
   try {
-    const response = await fetch('./teams.csv');
+    // Use absolute path from GitHub Pages root
+    const response = await fetch('/nhl-savant/teams.csv');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

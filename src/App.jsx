@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { loadNHLData } from './utils/dataProcessing';
 import Navigation from './components/Navigation';
@@ -7,6 +7,7 @@ import TeamAnalytics from './components/TeamAnalytics';
 import BettingOpportunities from './components/BettingOpportunities';
 import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [dataProcessor, setDataProcessor] = useState(null);
@@ -37,10 +38,16 @@ function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-red-500 mb-4">Error Loading Data</h1>
-          <p className="text-gray-300">{error}</p>
+          <p className="text-gray-300 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-yellow-400 text-gray-900 font-bold rounded hover:bg-yellow-300 transition"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -48,7 +55,7 @@ function App() {
 
   if (!dataProcessor) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-300">No Data Available</h1>
         </div>
@@ -57,19 +64,21 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-900">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Dashboard dataProcessor={dataProcessor} />} />
-            <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
-            <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} />} />
-            <Route path="/methodology" element={<Methodology />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <div className="min-h-screen bg-gray-950">
+          <Navigation />
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/" element={<Dashboard dataProcessor={dataProcessor} />} />
+              <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
+              <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} />} />
+              <Route path="/methodology" element={<Methodology />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
