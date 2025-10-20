@@ -86,6 +86,89 @@ const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor }) => {
       {isExpanded && (
         <div style={{ padding: '1.5rem', backgroundColor: 'var(--color-card)', fontSize: '0.875rem', lineHeight: '1.6' }}>
           
+          {/* Simple Explanation - Mobile-First */}
+          <div style={{ 
+            backgroundColor: 'rgba(212, 175, 55, 0.1)', 
+            padding: '1rem', 
+            borderRadius: '6px',
+            marginBottom: '1.5rem',
+            border: '1px solid rgba(212, 175, 55, 0.2)'
+          }}>
+            <div style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: '700',
+              color: 'var(--color-accent)',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              💡 Simple Explanation
+            </div>
+            <p style={{ fontSize: '1rem', lineHeight: '1.7', color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
+              We predict <strong style={{ color: 'var(--color-accent)' }}>{breakdown.predictedTotal} goals</strong> because{' '}
+              {breakdown.awayTeam.totalScore > 2.8 || breakdown.homeTeam.totalScore > 2.8 ? 
+                'both teams score frequently' : 
+                'both teams play strong defense'
+              }.
+            </p>
+            <p style={{ fontSize: '0.875rem', lineHeight: '1.6', color: 'var(--color-text-secondary)' }}>
+              Market expects <strong>{breakdown.marketTotal} goals</strong>, giving us a{' '}
+              <strong style={{ color: parseFloat(breakdown.edge) > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                {parseFloat(breakdown.edge) > 0 ? '+' : ''}{breakdown.edge} goal edge
+              </strong>.
+            </p>
+          </div>
+
+          {/* Key Numbers That Matter */}
+          <div style={{ 
+            backgroundColor: 'var(--color-background)', 
+            padding: '1rem', 
+            borderRadius: '6px',
+            marginBottom: '1.5rem',
+            border: '1px solid var(--color-border)'
+          }}>
+            <div style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: '700',
+              color: 'var(--color-accent)',
+              marginBottom: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              🎯 Key Numbers
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.813rem' }}>
+              <div>
+                <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Predicted Total</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-accent)' }}>
+                  {breakdown.predictedTotal}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Market Total</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>
+                  {breakdown.marketTotal}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Goal Edge</div>
+                <div style={{ 
+                  fontSize: '1.25rem', 
+                  fontWeight: '700', 
+                  color: parseFloat(breakdown.edge) > 0 ? 'var(--color-success)' : 'var(--color-danger)'
+                }}>
+                  {parseFloat(breakdown.edge) > 0 ? '+' : ''}{breakdown.edge}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Probability Edge</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-success)' }}>
+                  +{((1 - parseFloat(breakdown.modelProbabilities.zScore)) * 100 / 2).toFixed(1)}%
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Away Team Score Breakdown */}
           <div style={{ marginBottom: '1.5rem' }}>
             <h4 style={{ color: 'var(--color-accent)', fontSize: '0.875rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
