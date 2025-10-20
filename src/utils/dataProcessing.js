@@ -162,42 +162,12 @@ export class NHLDataProcessor {
   }
 
   // Predict game total using blueprint formula (Part 2.1)
+  // Uses predictTeamScore for each team to ensure consistency
   predictGameTotal(teamA, teamB) {
-    const teamA_5v5 = this.getTeamData(teamA, '5on5');
-    const teamB_5v5 = this.getTeamData(teamB, '5on5');
-    const teamA_PP = this.getTeamData(teamA, '5on4');
-    const teamB_PP = this.getTeamData(teamB, '5on4');
-    const teamA_PK = this.getTeamData(teamA, '4on5');
-    const teamB_PK = this.getTeamData(teamB, '4on5');
+    const teamAScore = this.predictTeamScore(teamA, teamB);
+    const teamBScore = this.predictTeamScore(teamB, teamA);
     
-    if (!teamA_5v5 || !teamB_5v5) return 0;
-    
-    // Team A scoring - 5v5 component (77% of game)
-    // xGF_per60 already represents goals per 60 minutes, just multiply by percentage of game
-    const teamA_5v5_goals = teamA_5v5.xGF_per60 * 0.77;
-    
-    // Team B scoring - 5v5 component (77% of game)
-    const teamB_5v5_goals = teamB_5v5.xGF_per60 * 0.77;
-    
-    // Team A PP vs Team B PK (12% of game for PP opportunities)
-    let teamA_PP_goals = 0;
-    if (teamA_PP && teamB_PK) {
-      teamA_PP_goals = (teamA_PP.xGF_per60 - teamB_PK.xGA_per60) * 0.12;
-    }
-    
-    // Team B PP vs Team A PK (12% of game for PP opportunities)
-    let teamB_PP_goals = 0;
-    if (teamB_PP && teamA_PK) {
-      teamB_PP_goals = (teamB_PP.xGF_per60 - teamA_PK.xGA_per60) * 0.12;
-    }
-    
-    // Total predicted goals
-    const totalGoals = Math.max(0, 
-      teamA_5v5_goals + teamA_PP_goals + 
-      teamB_5v5_goals + teamB_PP_goals
-    );
-    
-    return totalGoals;
+    return teamAScore + teamBScore;
   }
 
   // Predict individual team score (Part 2.2)
