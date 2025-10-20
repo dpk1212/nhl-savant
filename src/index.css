@@ -2,26 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Professional Color System - Bloomberg/Financial Inspired */
+/* ========================
+   PROFESSIONAL COLOR SYSTEM - INSTITUTIONAL GRADE
+   ======================== */
 :root {
-  --color-background: #0A0E27;
-  --color-card: #141B2E;
-  --color-border: #1F2937;
+  /* Base Colors - Deep, Rich Navy */
+  --color-background: #0B0F1F;
+  --color-card: #151923;
+  --color-card-hover: #1A1F2E;
+  --color-border: #252B3B;
+  --color-border-subtle: #1A2030;
+  
+  /* Accent - Refined Gold */
   --color-accent: #D4AF37;
-  --color-text-primary: #FFFFFF;
+  --color-accent-hover: #E5C158;
+  --color-accent-subtle: rgba(212, 175, 55, 0.1);
+  --color-accent-glow: rgba(212, 175, 55, 0.15);
+  
+  /* Text Hierarchy */
+  --color-text-primary: #F8FAFC;
   --color-text-secondary: #94A3B8;
   --color-text-muted: #64748B;
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-warning: #F59E0B;
+  --color-text-subtle: #475569;
   
-  /* Shadow System */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  /* Semantic Colors */
+  --color-success: #10B981;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-danger: #EF4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  --color-warning: #F59E0B;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-info: #3B82F6;
+  --color-info-bg: rgba(59, 130, 246, 0.1);
+  
+  /* Elevation System */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.6);
+  
+  /* Blur Effects */
+  --blur-sm: blur(4px);
+  --blur-md: blur(8px);
+  --blur-lg: blur(16px);
 }
 
-/* Base Styles */
+/* ========================
+   BASE STYLES
+   ======================== */
 * {
   margin: 0;
   padding: 0;
@@ -29,251 +58,457 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
   font-size: 0.875rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
   background-color: var(--color-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Typography System */
+/* ========================
+   TYPOGRAPHY SYSTEM
+   ======================== */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   color: var(--color-text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   margin: 0;
+  font-feature-settings: 'ss01', 'ss02';
 }
 
 h1 {
-  font-size: 2rem; /* 32px */
-  line-height: 1.25;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 800;
 }
 
 h2 {
-  font-size: 1.5rem; /* 24px */
-  line-height: 1.33;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  font-weight: 700;
 }
 
 h3 {
-  font-size: 1.125rem; /* 18px */
+  font-size: 1.125rem;
   line-height: 1.4;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  line-height: 1.7;
 }
 
 /* Tabular numbers for metrics */
 .metric-number {
-  font-feature-settings: 'tnum';
+  font-feature-settings: 'tnum', 'ss01';
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
-/* Professional Card System */
+/* ========================
+   ELEVATED CARD SYSTEM - PREMIUM
+   ======================== */
 .card {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
   padding: 1.5rem;
-  transition: border-color 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent,
+    var(--color-accent-subtle) 50%,
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .card:hover {
   border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
+  background-color: var(--color-card-hover);
+  transform: translateY(-1px);
 }
 
-.card-header {
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 1.5rem;
+.card:hover::before {
+  opacity: 1;
 }
 
-.card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Stat Cards - Clean, Minimal */
-.stat-card {
-  background-color: var(--color-card);
+.elevated-card {
+  background: linear-gradient(135deg, var(--color-card) 0%, rgba(21, 25, 35, 0.95) 100%);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 1.5rem;
-  transition: border-color 0.2s ease;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  backdrop-filter: blur(10px);
 }
 
-.stat-card:hover {
+.elevated-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right, var(--color-accent-glow) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+.elevated-card:hover {
+  box-shadow: var(--shadow-lg);
   border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.elevated-card:hover::after {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .elevated-card {
+    padding: 1rem;
+    border-radius: 6px;
+  }
+}
+
+/* ========================
+   GAME CARD - SIGNATURE DESIGN
+   ======================== */
+.game-card {
+  background: linear-gradient(135deg, #151923 0%, #1A1F2E 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    var(--color-accent) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+.game-card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-xl), 
+              0 0 0 1px var(--color-accent-subtle);
+  transform: translateY(-2px);
+}
+
+/* ========================
+   STAT CARDS - REFINED
+   ======================== */
+.stat-card {
+  background: linear-gradient(135deg, var(--color-card) 0%, rgba(26, 31, 46, 0.8) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--color-accent) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.stat-card:hover::after {
+  opacity: 1;
 }
 
 .stat-card-value {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   color: var(--color-accent);
-  font-feature-settings: 'tnum';
-  font-variant-numeric: tabular-nums;
   line-height: 1;
   margin-bottom: 0.5rem;
+  font-feature-settings: 'tnum', 'ss01';
+  text-shadow: 0 2px 4px rgba(212, 175, 55, 0.2);
 }
 
 .stat-card-label {
   font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  font-weight: 700;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 500;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
 }
 
 .stat-card-description {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  margin-top: 0.25rem;
+  font-size: 0.813rem;
+  color: var(--color-text-subtle);
+  font-weight: 400;
 }
 
-/* Confidence Bar - Thin, Professional */
-.confidence-bar {
-  height: 2px;
-  background: var(--color-border);
-  overflow: hidden;
-  margin-top: 0.5rem;
-}
-
-.confidence-bar-fill {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.confidence-bar-fill.high {
-  background: var(--color-success);
-}
-
-.confidence-bar-fill.medium {
-  background: var(--color-warning);
-}
-
-.confidence-bar-fill.low {
-  background: var(--color-danger);
-}
-
-/* Badge Styles - Subtle */
+/* ========================
+   BADGE SYSTEM - PREMIUM
+   ======================== */
 .badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 2px;
-  font-size: 0.625rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border: 1px solid;
-}
-
-.badge-accent {
-  background: rgba(212, 175, 55, 0.1);
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.badge-success {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-success);
-  border-color: var(--color-success);
-}
-
-.badge-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-}
-
-/* Button Styles - Professional */
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: 1px solid;
-  cursor: pointer;
   transition: all 0.2s ease;
-  display: inline-block;
+  border: 1px solid;
+}
+
+.badge-moneyline {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60A5FA;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.badge-total {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #A78BFA;
+  box-shadow: 0 2px 4px rgba(168, 85, 247, 0.1);
+}
+
+.badge-puckline {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.05) 100%);
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #FCD34D;
+  box-shadow: 0 2px 4px rgba(234, 179, 8, 0.1);
+}
+
+.badge-high {
+  background: linear-gradient(135deg, var(--color-success-bg) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--color-success);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+}
+
+.badge-medium {
+  background: linear-gradient(135deg, var(--color-warning-bg) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #FBBF24;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.1);
+}
+
+.badge-low {
+  background: linear-gradient(135deg, var(--color-danger-bg) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--color-danger);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+}
+
+/* ========================
+   BUTTON SYSTEM
+   ======================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn-primary {
-  background: var(--color-accent);
+  background: linear-gradient(135deg, var(--color-accent) 0%, #C4A02C 100%);
   color: var(--color-background);
-  border-color: var(--color-accent);
+  box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(212, 175, 55, 0.4);
 }
 
 .btn-secondary {
-  background: transparent;
-  color: var(--color-text-secondary);
+  background-color: transparent;
   border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 .btn-secondary:hover {
   border-color: var(--color-accent);
-  color: var(--color-text-primary);
+  color: var(--color-accent);
+  background-color: var(--color-accent-subtle);
 }
 
-/* Simple Fade Animation Only */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-
-/* Table Styles for Professional Layout */
+/* ========================
+   TABLE SYSTEM - DATA DENSE
+   ======================== */
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
 }
 
-.data-table th {
+.data-table thead {
+  background: linear-gradient(180deg, rgba(37, 43, 59, 0.6) 0%, rgba(37, 43, 59, 0.3) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table thead th {
+  padding: 0.875rem 1rem;
   text-align: left;
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  border-bottom: 1px solid var(--color-border);
   font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--color-border);
 }
 
-.data-table td {
+.data-table tbody tr {
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: all 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(212, 175, 55, 0.03);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.data-table tbody td {
   padding: 1rem;
-  border-bottom: 1px solid var(--color-border);
   color: var(--color-text-secondary);
+  vertical-align: middle;
 }
 
-.data-table tr:hover {
-  background: rgba(255, 255, 255, 0.02);
+/* ========================
+   CONFIDENCE BAR - REFINED
+   ======================== */
+.confidence-bar {
+  height: 3px;
+  background-color: rgba(100, 116, 139, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
 }
 
-/* Focus Styles */
-button:focus,
-input:focus,
-select:focus {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-/* Scrollbar Styling */
+.confidence-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.confidence-bar-fill.high {
+  background: linear-gradient(90deg, var(--color-success) 0%, #059669 100%);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.confidence-bar-fill.medium {
+  background: linear-gradient(90deg, var(--color-warning) 0%, #D97706 100%);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.confidence-bar-fill.low {
+  background: linear-gradient(90deg, var(--color-danger) 0%, #DC2626 100%);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+/* ========================
+   SCROLLBAR STYLING
+   ======================== */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -289,460 +524,234 @@ select:focus {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-}
-
-/* ============================================
-   MOBILE-FIRST RESPONSIVE DESIGN
-   ============================================ */
-
-/* Default visibility for responsive classes */
-.mobile-only {
-  display: none;
-}
-
-.desktop-only {
-  display: block;
+  background: var(--color-accent);
 }
 
 /* ========================
-   ELEVATED CARD SYSTEM
+   FOCUS STATES
    ======================== */
-
-.elevated-card {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: box-shadow 0.2s;
+*:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
-.elevated-card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+*:focus:not(:focus-visible) {
+  outline: none;
 }
 
-@media (max-width: 640px) {
-  .elevated-card {
-    padding: 1rem;
-    border-radius: 6px;
+/* ========================
+   ANIMATION UTILITIES
+   ======================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--color-accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px var(--color-accent-glow);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ========================
+   RESPONSIVE UTILITIES
+   ======================== */
+@media (min-width: 768px) {
+  .desktop-only {
+    display: block !important;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block !important;
   }
 }
 
 /* ========================
-   BADGE SYSTEM
+   MOBILE OPTIMIZATIONS
    ======================== */
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.625rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.badge-moneyline {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  color: #60A5FA;
-}
-
-.badge-total {
-  background: rgba(168, 85, 247, 0.15);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  color: #A78BFA;
-}
-
-.badge-puckline {
-  background: rgba(234, 179, 8, 0.15);
-  border: 1px solid rgba(234, 179, 8, 0.4);
-  color: #FCD34D;
-}
-
-.badge-high {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: var(--color-success);
-}
-
-.badge-medium {
-  background: rgba(234, 179, 8, 0.15);
-  border: 1px solid rgba(234, 179, 8, 0.4);
-  color: #FCD34D;
-}
-
-.badge-low {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: var(--color-danger);
-}
-
-/* Mobile Base (320px - 640px) */
 @media (max-width: 640px) {
-  /* Typography adjustments for mobile readability */
   body {
-    font-size: 1rem; /* 16px for better mobile readability */
+    font-size: 0.938rem;
   }
 
   h1 {
-    font-size: 1.5rem; /* 24px */
-    line-height: 1.3;
+    font-size: 1.75rem;
   }
 
   h2 {
-    font-size: 1.25rem; /* 20px */
-    line-height: 1.4;
+    font-size: 1.375rem;
   }
 
   h3 {
-    font-size: 1.063rem; /* 17px */
-    line-height: 1.5;
+    font-size: 1.125rem;
   }
 
-  /* Card spacing - tighter for mobile */
-  .card {
+  .card, .elevated-card {
     padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .game-card {
+    padding: 1.25rem;
     margin-bottom: 1rem;
   }
 
-  .card-header {
-    padding-bottom: 0.75rem;
-    margin-bottom: 1rem;
-  }
-
-  /* Stat cards - full width on mobile */
   .stat-card {
     padding: 1rem;
   }
 
   .stat-card-value {
-    font-size: 2rem; /* Slightly smaller on mobile */
+    font-size: 2rem;
   }
 
-  /* Tables - reduce font size and padding */
   .data-table {
-    font-size: 0.75rem; /* 12px */
+    font-size: 0.813rem;
   }
 
-  .data-table th,
-  .data-table td {
+  .data-table thead th,
+  .data-table tbody td {
     padding: 0.75rem 0.5rem;
   }
 
-  /* Buttons - larger touch targets */
-  .btn {
-    min-height: 44px; /* iOS minimum touch target */
-    padding: 0.75rem 1.25rem;
-    font-size: 1rem;
-  }
-
-  /* Badge sizing */
-  .badge {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-  }
-
-  /* Input fields - larger for mobile */
-  input[type="text"],
-  input[type="number"],
-  input[type="range"],
-  select {
+  button, .btn {
     min-height: 44px;
-    font-size: 1rem;
+    font-size: 0.938rem;
   }
 
-  /* Navigation specific */
-  nav {
-    padding: 0.625rem 0.875rem !important;
-  }
-  
-  /* Game cards - more compact */
-  .game-card {
-    padding: 1rem !important;
-    margin-bottom: 1rem !important;
-  }
-  
-  /* Value bets - card layout on mobile instead of table */
-  .value-bets-mobile-card {
-    background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-  }
-  
-  .value-bets-mobile-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-  
-  .value-bets-mobile-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-  
-  /* Touch targets - minimum 44x44px */
-  button,
-  a,
-  .clickable {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Hide desktop-only content on mobile */
-  .desktop-only {
-    display: none !important;
-  }
-
-  /* Show mobile-only content */
-  .mobile-only {
-    display: block !important;
-  }
-  
-  /* Full-width on mobile */
-  .mobile-full-width {
-    width: 100% !important;
-  }
-
-  /* Horizontal scroll wrapper for tables */
   .mobile-scroll-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin: 0 -1rem;
-    padding: 0 1rem;
   }
 
-  /* Dashboard mobile styles */
-  .dashboard-stats-grid {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem;
-  }
-  
-  .dashboard-chart-container {
-    height: 250px !important;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Team Analytics mobile */
-  .team-analytics-chart {
-    height: 200px !important;
-  }
-
-  /* Methodology mobile */
-  .methodology-section {
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .methodology-section h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.75rem;
-  }
-  
-  .methodology-section p {
-    font-size: 0.938rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-  }
-  
-  .methodology-example {
-    background: var(--color-background);
-    padding: 1rem;
-    border-radius: 6px;
-    border-left: 3px solid var(--color-accent);
-    margin: 1rem 0;
-  }
-}
-
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
-  h1 {
-    font-size: 1.75rem; /* 28px */
-  }
-
-  h2 {
-    font-size: 1.375rem; /* 22px */
-  }
-
-  .card {
-    padding: 1.25rem;
-  }
-}
-
-/* Mobile-specific utility classes */
-@media (max-width: 640px) {
-  /* Stack elements vertically on mobile */
-  .mobile-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  /* Full width on mobile */
-  .mobile-full-width {
-    width: 100%;
-  }
-
-  /* Hide on mobile */
-  .mobile-hide {
-    display: none;
-  }
-
-  /* Text sizing */
-  .mobile-text-sm {
-    font-size: 0.875rem;
-  }
-
-  .mobile-text-base {
-    font-size: 1rem;
-  }
-
-  .mobile-text-lg {
-    font-size: 1.125rem;
-  }
-
-  /* Spacing */
-  .mobile-p-4 {
-    padding: 1rem;
-  }
-
-  .mobile-mb-4 {
-    margin-bottom: 1rem;
-  }
-
-  /* Touch-friendly spacing */
   .mobile-touch-target {
     min-height: 44px;
     min-width: 44px;
   }
 }
 
-/* Horizontal scroll wrapper for tables on mobile */
-.mobile-scroll-wrapper {
+/* ========================
+   METHODOLOGY PAGE STYLES
+   ======================== */
+.methodology-section {
+  margin-bottom: 2rem;
+}
+
+.methodology-example {
+  background-color: rgba(21, 25, 35, 0.5);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 6px;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.813rem;
+  color: var(--color-accent);
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  white-space: pre;
+  line-height: 1.6;
 }
 
-@media (max-width: 640px) {
-  .mobile-scroll-wrapper {
-    margin: 0 -1rem; /* Extend to edges */
-    padding: 0 1rem;
-  }
+/* ========================
+   CHART CONTAINER
+   ======================== */
+.team-analytics-chart {
+  background: linear-gradient(135deg, rgba(21, 25, 35, 0.3) 0%, rgba(26, 31, 46, 0.2) 100%);
+  border-radius: 8px;
+  padding: 1rem;
 }
 
-/* Game card mobile optimization */
-@media (max-width: 640px) {
-  .game-card {
-    border-radius: 6px;
-    margin-bottom: 1.5rem;
-  }
-
-  .game-card-header {
-    font-size: 1.125rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-  }
-
-  .game-card-time {
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-  }
+/* ========================
+   DASHBOARD SPECIFIC
+   ======================== */
+.dashboard-stats-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
-/* Value bet cards for mobile - replace table */
-@media (max-width: 640px) {
-  .value-bet-card {
-    background-color: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    min-height: 44px; /* Touch target */
-  }
-
-  .value-bet-card:active {
-    background-color: rgba(255, 255, 255, 0.03);
-  }
-
-  .value-bet-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-
-  .value-bet-game {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-
-  .value-bet-time {
-    font-size: 0.813rem;
-    color: var(--color-text-muted);
-  }
-
-  .value-bet-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  .value-bet-detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .value-bet-detail-label {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .value-bet-detail-value {
-    color: var(--color-text-primary);
-    font-weight: 600;
+@media (min-width: 768px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
 }
 
-/* Sticky filter controls on mobile */
-@media (max-width: 640px) {
-  .mobile-sticky-filters {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: var(--color-background);
-    padding: 1rem;
-    margin: 0 -1rem 1rem -1rem;
-    border-bottom: 1px solid var(--color-border);
+/* ========================
+   LOADING STATES
+   ======================== */
+.skeleton {
+  background: linear-gradient(90deg, 
+    var(--color-card) 0%, 
+    rgba(37, 43, 59, 0.5) 50%, 
+    var(--color-card) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 
-/* Improve readability with better line heights on mobile */
-@media (max-width: 640px) {
-  p, li {
-    line-height: 1.7;
-  }
+/* ========================
+   PREMIUM ACCENTS
+   ======================== */
+.glow-accent {
+  box-shadow: 0 0 20px var(--color-accent-glow);
+}
 
-  .narrative-text {
-    font-size: 1rem;
-    line-height: 1.6;
-    color: var(--color-text-primary);
-  }
+.border-gradient {
+  position: relative;
+  border: 1px solid transparent;
+  background: linear-gradient(var(--color-card), var(--color-card)) padding-box,
+              linear-gradient(135deg, var(--color-accent) 0%, transparent 100%) border-box;
+}
 
-  .narrative-bullets {
-    font-size: 0.938rem;
-    line-height: 1.7;
-  }
+/* ========================
+   UTILITY CLASSES
+   ======================== */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    var(--color-border) 50%,
+    transparent 100%
+  );
+  margin: 1.5rem 0;
 }

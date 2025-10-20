@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lucide-react';
 import DataStatus from './DataStatus';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
@@ -45,25 +45,54 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
-      {/* Clean Header */}
+    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }} className="animate-fade-in">
+      {/* Premium Header */}
       <div style={{
-        padding: isMobile ? '2rem 1rem 1rem' : '3rem 2rem 2rem',
+        padding: isMobile ? '2rem 1rem 1.5rem' : '3rem 2rem 2rem',
         borderBottom: '1px solid var(--color-border)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <h1 style={{ 
-            marginBottom: '0.5rem',
-            fontSize: isMobile ? '1.5rem' : '2rem'
-          }}>
-            📊 NHL Analytics Dashboard
-          </h1>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '500px',
+          height: '500px',
+          background: 'radial-gradient(circle, var(--color-accent-glow) 0%, transparent 70%)',
+          opacity: 0.3,
+          pointerEvents: 'none'
+        }} />
+        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px var(--color-accent-glow)'
+            }}>
+              <BarChart3 size={24} color="var(--color-background)" strokeWidth={2.5} />
+            </div>
+            <h1 className="text-gradient" style={{ 
+              fontSize: isMobile ? '1.75rem' : '2.25rem',
+              fontWeight: '800'
+            }}>
+              Analytics Dashboard
+            </h1>
+          </div>
           <p style={{ 
             color: 'var(--color-text-secondary)', 
             fontSize: isMobile ? '0.875rem' : '0.938rem',
-            lineHeight: '1.6'
+            lineHeight: '1.7',
+            maxWidth: '800px',
+            marginLeft: isMobile ? '0' : '60px'
           }}>
-            Statistical overview of today's betting opportunities based on advanced metrics like xG, PDO, and regression analysis.
+            Real-time statistical overview of betting opportunities based on institutional-grade analytics. 
+            Featuring xG differentials, PDO regression, and predictive modeling.
           </p>
         </div>
       </div>
@@ -90,51 +119,119 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
               marginBottom: isMobile ? '1.5rem' : '2rem',
             }}
           >
-            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
-              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+            <div className="stat-card elevated-card" style={{ 
+              padding: isMobile ? '1.25rem' : '1.5rem',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '60px',
+                height: '60px',
+                opacity: 0.1
+              }}>
+                <Target size={60} color="var(--color-accent)" />
+              </div>
+              <div className="stat-card-value metric-number" style={{ 
+                fontSize: isMobile ? '2.25rem' : '2.75rem',
+                marginBottom: '0.5rem'
+              }}>
                 {leagueStats.totalTeams}
               </div>
               <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
                 TEAMS ANALYZED
               </div>
               <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
-                Across all situations
+                Complete league coverage
               </div>
             </div>
 
-            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
-              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+            <div className="stat-card elevated-card" style={{ 
+              padding: isMobile ? '1.25rem' : '1.5rem',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '60px',
+                height: '60px',
+                opacity: 0.1
+              }}>
+                <Activity size={60} color="var(--color-accent)" />
+              </div>
+              <div className="stat-card-value metric-number" style={{ 
+                fontSize: isMobile ? '2.25rem' : '2.75rem',
+                marginBottom: '0.5rem'
+              }}>
                 {leagueStats.avgPDO}
               </div>
               <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
                 AVG PDO
               </div>
               <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
-                100 = neutral luck
+                Luck regression metric
               </div>
             </div>
 
-            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
-              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+            <div className="stat-card elevated-card" style={{ 
+              padding: isMobile ? '1.25rem' : '1.5rem',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '60px',
+                height: '60px',
+                opacity: 0.1
+              }}>
+                <TrendingUp size={60} color="var(--color-accent)" />
+              </div>
+              <div className="stat-card-value metric-number" style={{ 
+                fontSize: isMobile ? '2.25rem' : '2.75rem',
+                marginBottom: '0.5rem'
+              }}>
                 {leagueStats.avgXGD}
               </div>
               <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
                 AVG XG DIFFERENTIAL
               </div>
               <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
-                Per 60 minutes
+                Score-adjusted per 60
               </div>
             </div>
 
-            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
-              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+            <div className="stat-card elevated-card" style={{ 
+              padding: isMobile ? '1.25rem' : '1.5rem',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '60px',
+                height: '60px',
+                opacity: 0.1
+              }}>
+                <Award size={60} color="var(--color-accent)" />
+              </div>
+              <div className="stat-card-value metric-number" style={{ 
+                fontSize: isMobile ? '2.25rem' : '2.75rem',
+                marginBottom: '0.5rem'
+              }}>
                 {leagueStats.overperformingTeams + leagueStats.underperformingTeams}
               </div>
               <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
                 BETTING EDGES
               </div>
               <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
-                Identified opportunities
+                PDO anomaly detection
               </div>
             </div>
           </div>
