@@ -161,6 +161,154 @@ export class NHLDataProcessor {
     return Math.max(0, expectedGoals);
   }
 
+  // Predict game total using blueprint formula (Part 2.1)
+  predictGameTotal(teamA, teamB) {
+    const teamA_5v5 = this.getTeamData(teamA, '5on5');
+    const teamB_5v5 = this.getTeamData(teamB, '5on5');
+    const teamA_PP = this.getTeamData(teamA, '5on4');
+    const teamB_PP = this.getTeamData(teamB, '5on4');
+    const teamA_PK = this.getTeamData(teamA, '4on5');
+    const teamB_PK = this.getTeamData(teamB, '4on5');
+    
+    if (!teamA_5v5 || !teamB_5v5) return 0;
+    
+    // Team A scoring - 5v5 component (77% of game)
+    const teamA_5v5_goals = (teamA_5v5.xGF_per60 / 60) * 0.77;
+    
+    // Team B scoring - 5v5 component (77% of game)
+    const teamB_5v5_goals = (teamB_5v5.xGF_per60 / 60) * 0.77;
+    
+    // Team A PP vs Team B PK (12% of game for PP opportunities)
+    let teamA_PP_goals = 0;
+    if (teamA_PP && teamB_PK) {
+      teamA_PP_goals = ((teamA_PP.xGF_per60 - teamB_PK.xGA_per60) / 60) * 0.12;
+    }
+    
+    // Team B PP vs Team A PK (12% of game for PP opportunities)
+    let teamB_PP_goals = 0;
+    if (teamB_PP && teamA_PK) {
+      teamB_PP_goals = ((teamB_PP.xGF_per60 - teamA_PK.xGA_per60) / 60) * 0.12;
+    }
+    
+    // Total predicted goals
+    const totalGoals = Math.max(0, 
+      teamA_5v5_goals + teamA_PP_goals + 
+      teamB_5v5_goals + teamB_PP_goals
+    );
+    
+    return totalGoals;
+  }
+
+  // Predict individual team score (Part 2.2)
+  predictTeamScore(team, opponent) {
+    const team_5v5 = this.getTeamData(team, '5on5');
+    const team_PP = this.getTeamData(team, '5on4');
+    const opponent_PK = this.getTeamData(opponent, '4on5');
+    
+    if (!team_5v5) return 0;
+    
+    // 5v5 component (77% of game)
+    const goals_5v5 = (team_5v5.xGF_per60 / 60) * 0.77;
+    
+    // PP component (12% of game)
+    let goals_PP = 0;
+    if (team_PP && opponent_PK) {
+      goals_PP = ((team_PP.xGF_per60 - opponent_PK.xGA_per60) / 60) * 0.12;
+    }
+    
+    return Math.max(0, goals_5v5 + goals_PP);
+  }
+
+  // Convert predicted probability to American odds (Part 2.3)
+  probabilityToOdds(probability) {
+    if (probability <= 0 || probability >= 1) return 0;
+    
+    if (probability >= 0.5) {
+      // Favorite (negative odds)
+      return Math.round(-1 * (probability / (1 - probability)) * 100);
+    } else {
+      // Underdog (positive odds)
+      return Math.round(((1 - probability) / probability) * 100);
+    }
+  }
+
+  // Convert American odds to implied probability (Part 2.4)
+  oddsToProbability(americanOdds) {
+    if (americanOdds < 0) {
+      return Math.abs(americanOdds) / (Math.abs(americanOdds) + 100);
+    } else {
+      return 100 / (americanOdds + 100);
+    }
+  }
+
+  // Calculate Expected Value using blueprint formula (Part 2.5)
+  calculateEV(modelProbability, marketOdds, stake = 100) {
+    if (modelProbability <= 0 || modelProbability >= 1) return 0;
+    
+    // Calculate payout based on American odds
+    let payout;
+    if (marketOdds > 0) {
+      payout = stake * (marketOdds / 100);
+    } else {
+      payout = stake * (100 / Math.abs(marketOdds));
+    }
+    
+    // EV = (P_model × Payout) - (1 - P_model) × Stake
+    const ev = (modelProbability * payout) - ((1 - modelProbability) * stake);
+    
+    return ev;
+  }
+
+  // Calculate Kelly Criterion stake sizing (Part 2.6)
+  calculateKellyStake(modelProbability, marketOdds, bankroll = 1000) {
+    if (modelProbability <= 0 || modelProbability >= 1) {
+      return { fullKelly: 0, fractionalKelly: 0, recommendedStake: 0 };
+    }
+    
+    // Convert odds to decimal format for Kelly calculation
+    const b = marketOdds > 0 ? marketOdds / 100 : 100 / Math.abs(marketOdds);
+    const p = modelProbability;
+    const q = 1 - p;
+    
+    // f* = (bp - q) / b
+    const kellyFraction = (b * p - q) / b;
+    
+    // Use fractional Kelly (25% for safety)
+    const fractionalKelly = Math.max(0, kellyFraction * 0.25);
+    
+    return {
+      fullKelly: kellyFraction,
+      fractionalKelly: fractionalKelly,
+      recommendedStake: bankroll * fractionalKelly
+    };
+  }
+
+  // Estimate win probability based on team stats (helper for moneyline)
+  estimateWinProbability(team, opponent) {
+    if (!team || !opponent) return 0.5;
+    
+    // Use xG differential and regression scores to estimate win probability
+    const teamXGD = team.xGD_per60 || 0;
+    const oppXGD = opponent.xGD_per60 || 0;
+    
+    // Adjust for regression (teams with high PDO likely to regress)
+    const teamReg = team.regression_score || 0;
+    const oppReg = opponent.regression_score || 0;
+    
+    // Combine factors (xGD is primary, regression is secondary)
+    const teamStrength = teamXGD - (teamReg * 0.02); // Penalize overperformers
+    const oppStrength = oppXGD - (oppReg * 0.02);
+    
+    const diff = teamStrength - oppStrength;
+    
+    // Convert differential to probability using logistic function
+    // Each 0.5 xGD difference ≈ 10% win probability shift
+    const winProb = 0.5 + (diff * 0.1);
+    
+    // Clamp between 0.1 and 0.9 (never give 100% or 0%)
+    return Math.max(0.1, Math.min(0.9, winProb));
+  }
+
   // Find regression candidates (betting opportunities)
   findRegressionCandidates() {
     const allTeams = this.getTeamsBySituation('all');
@@ -320,5 +468,21 @@ export async function loadNHLData() {
   } catch (error) {
     console.error('Error loading NHL data:', error);
     throw error;
+  }
+}
+
+// Load today's odds file (Part 7)
+export async function loadOddsFile() {
+  try {
+    // Try to load today's odds file from public folder
+    const response = await fetch('/nhl-savant/todays_odds.md');
+    if (!response.ok) {
+      console.warn('No odds file found - games page will show placeholder');
+      return null;
+    }
+    return await response.text();
+  } catch (error) {
+    console.warn('Error loading odds file:', error);
+    return null;
   }
 }

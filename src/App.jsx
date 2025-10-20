@@ -1,17 +1,19 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { loadNHLData } from './utils/dataProcessing';
+import { loadNHLData, loadOddsFile } from './utils/dataProcessing';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import TeamAnalytics from './components/TeamAnalytics';
 import BettingOpportunities from './components/BettingOpportunities';
 import DataInspector from './components/DataInspector';
+import TodaysGames from './components/TodaysGames';
 import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [dataProcessor, setDataProcessor] = useState(null);
+  const [oddsData, setOddsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,6 +24,10 @@ function App() {
         const processor = await loadNHLData();
         setDataProcessor(processor);
         setError(null);
+        
+        // Load odds data (optional - doesn't fail if not available)
+        const odds = await loadOddsFile();
+        setOddsData(odds);
       } catch (err) {
         console.error('Failed to load NHL data:', err);
         setError('Failed to load NHL data. Please check if teams.csv is available.');
@@ -73,7 +79,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
-              <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} />} />
+              <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} oddsData={oddsData} />} />
+              <Route path="/games" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
               <Route path="/methodology" element={<Methodology />} />
             </Routes>

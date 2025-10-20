@@ -210,6 +210,192 @@ const Methodology = () => {
           </div>
         </div>
 
+        {/* Expected Value Calculation */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BookOpen size={20} />
+            Expected Value (EV) Calculation
+          </h2>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>What is EV?</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>
+              Expected Value (EV) measures the average amount you can expect to win or lose per bet over the long term.
+              A positive EV indicates a profitable bet over time, while negative EV indicates a losing bet.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Formula</h3>
+            <div style={{
+              fontFamily: 'Monaco, Consolas, monospace',
+              fontSize: '0.8125rem',
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              padding: '1rem',
+              color: 'var(--color-accent)',
+              marginBottom: '1rem',
+            }}>
+              EV = (P_model × Payout) - (1 - P_model) × Stake
+            </div>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>
+              Where P_model is your model's win probability, Payout is what you win if correct, and Stake is your bet amount.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Example</h3>
+            <div style={{
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              padding: '1rem',
+            }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+                <strong>Scenario:</strong> Our model gives Team A a 55% win probability, but the market odds are +150 (implied 40% probability).
+              </p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+                <strong>Calculation:</strong> On a $100 bet at +150 odds, you win $150 if correct.
+              </p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+                EV = (0.55 × $150) - (0.45 × $100) = $82.50 - $45 = <strong style={{ color: 'var(--color-success)' }}>+$37.50</strong>
+              </p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-success)', lineHeight: '1.6' }}>
+                <strong>Result:</strong> This is a +37.5% EV bet — excellent value!
+              </p>
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid var(--color-success)',
+            borderRadius: '4px',
+            padding: '1rem',
+          }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              <strong style={{ color: 'var(--color-success)' }}>Betting Rule:</strong> Only bet when EV &gt; 0. The higher the EV percentage,
+              the better the opportunity.
+            </p>
+          </div>
+        </div>
+
+        {/* Kelly Criterion */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BookOpen size={20} />
+            Kelly Criterion (Stake Sizing)
+          </h2>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>What is Kelly?</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>
+              The Kelly Criterion is a formula for determining the optimal bet size to maximize long-term growth while minimizing
+              risk of ruin. It calculates what percentage of your bankroll to wager on a positive EV bet.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Formula</h3>
+            <div style={{
+              fontFamily: 'Monaco, Consolas, monospace',
+              fontSize: '0.8125rem',
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              padding: '1rem',
+              color: 'var(--color-accent)',
+              marginBottom: '0.5rem',
+            }}>
+              f* = (bp - q) / b
+            </div>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+              Where:
+            </p>
+            <ul style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', paddingLeft: '1.5rem' }}>
+              <li><code>b</code> = decimal odds - 1 (e.g., +150 → 1.5)</li>
+              <li><code>p</code> = your model's win probability</li>
+              <li><code>q</code> = 1 - p (loss probability)</li>
+            </ul>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Fractional Kelly (Recommended)</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', marginBottom: '0.75rem' }}>
+              Full Kelly can be aggressive and lead to large swings. We recommend <strong>25% Kelly</strong> (Quarter Kelly) for more conservative,
+              sustainable bankroll growth.
+            </p>
+            <div style={{
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              padding: '1rem',
+            }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>
+                <strong>Example:</strong> If Kelly suggests 8% of bankroll, we recommend betting 2% (8% × 0.25).
+                On a $1,000 bankroll, that's $20 instead of $80.
+              </p>
+            </div>
+          </div>
+
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid var(--color-danger)',
+            borderRadius: '4px',
+            padding: '1rem',
+          }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              <strong style={{ color: 'var(--color-danger)' }}>Risk Management:</strong> Never bet more than 5% of your bankroll on a single game,
+              even if Kelly suggests higher. This protects against model errors and variance.
+            </p>
+          </div>
+        </div>
+
+        {/* Game Total Prediction */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BookOpen size={20} />
+            Game Total Prediction Model
+          </h2>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>How We Predict Game Totals</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>
+              Our model combines expected goals data from different game situations, weighted by how much time is typically
+              spent in each situation during an NHL game.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Formula Components</h3>
+            <div style={{
+              fontFamily: 'Monaco, Consolas, monospace',
+              fontSize: '0.8125rem',
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              padding: '1rem',
+              color: 'var(--color-accent)',
+              marginBottom: '1rem',
+            }}>
+              Predicted Total = (Team A 5v5 + Team B 5v5) × 0.77 + (Team A PP + Team B PP) × 0.12
+            </div>
+            <ul style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', paddingLeft: '1.5rem' }}>
+              <li><strong>77%</strong> of game time is 5-on-5 play</li>
+              <li><strong>12%</strong> is power play opportunities</li>
+              <li><strong>11%</strong> is penalty kill situations</li>
+            </ul>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Win Probability Estimation</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: '1.6' }}>
+              We estimate win probability using expected goal differential (xGD) and regression scores. Teams with higher xGD
+              are more likely to win, but we adjust for teams showing unsustainable PDO or shooting percentages.
+            </p>
+          </div>
+        </div>
+
         {/* Code Reference */}
         <div style={{
           marginTop: '2rem',
@@ -228,8 +414,16 @@ const Methodology = () => {
             }}>
               src/utils/dataProcessing.js
             </code>
-            {' '}and can be audited in the Data Inspector page. Every metric displayed uses real CSV data with transparent,
-            verifiable calculations.
+            {' '}and{' '}
+            <code style={{
+              fontFamily: 'Monaco, Consolas, monospace',
+              backgroundColor: 'var(--color-card)',
+              padding: '0.125rem 0.25rem',
+              borderRadius: '2px',
+            }}>
+              src/utils/edgeCalculator.js
+            </code>
+            {'. '}Every metric displayed uses real CSV data with transparent, verifiable calculations. Audit them in the Data Inspector page.
           </p>
         </div>
       </div>

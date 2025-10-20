@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Target, TrendingUp, TrendingDown } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { EdgeCalculator } from '../utils/edgeCalculator';
 
-const BettingOpportunities = ({ dataProcessor }) => {
+const BettingOpportunities = ({ dataProcessor, oddsData }) => {
   const [regressionCandidates, setRegressionCandidates] = useState({ overperforming: [], underperforming: [] });
   const [specialTeamsMismatches, setSpecialTeamsMismatches] = useState([]);
+  const [todaysEdges, setTodaysEdges] = useState([]);
 
   useEffect(() => {
     if (dataProcessor) {
@@ -12,8 +14,15 @@ const BettingOpportunities = ({ dataProcessor }) => {
       
       const mismatches = dataProcessor.findSpecialTeamsMismatches();
       setSpecialTeamsMismatches(mismatches);
+      
+      // Calculate today's edges if odds data available
+      if (oddsData) {
+        const calculator = new EdgeCalculator(dataProcessor, oddsData);
+        const edges = calculator.getTopEdges(0);
+        setTodaysEdges(edges.filter(e => e.evPercent > 0).slice(0, 10));
+      }
     }
-  }, [dataProcessor]);
+  }, [dataProcessor, oddsData]);
 
   if (!dataProcessor) {
     return <div style={{ padding: '2rem' }}>Loading...</div>;
@@ -32,6 +41,76 @@ const BettingOpportunities = ({ dataProcessor }) => {
       </div>
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+        {/* Today's Value Bets (if odds data available) */}
+        {todaysEdges.length > 0 && (
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <DollarSign size={24} color="var(--color-accent)" />
+              <h2>Today's Value Bets</h2>
+            </div>
+
+            <div className="card" style={{ padding: 0 }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Game</th>
+                    <th>Market</th>
+                    <th>Pick</th>
+                    <th>Odds</th>
+                    <th>EV</th>
+                    <th>Kelly Stake</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todaysEdges.map((edge, index) => (
+                    <tr key={index}>
+                      <td style={{ fontWeight: '500' }}>{edge.game}</td>
+                      <td>
+                        <span className={`badge ${
+                          edge.market === 'MONEYLINE' ? 'badge-accent' :
+                          edge.market === 'TOTAL' ? 'badge-success' :
+                          'badge-secondary'
+                        }`}>
+                          {edge.market}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{edge.pick}</td>
+                      <td className="metric-number">
+                        {edge.odds > 0 ? '+' : ''}{edge.odds}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <TrendingUp size={16} color="var(--color-success)" />
+                          <span 
+                            className="metric-number" 
+                            style={{ color: 'var(--color-success)', fontWeight: '600' }}
+                          >
+                            +{edge.evPercent.toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        {edge.kelly ? (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span className="metric-number" style={{ color: 'var(--color-text-primary)' }}>
+                              ${edge.kelly.recommendedStake.toFixed(0)}
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                              ({(edge.kelly.fractionalKelly * 100).toFixed(1)}%)
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--color-text-muted)' }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Regression Candidates */}
         <div className="card" style={{ marginBottom: '2rem' }}>
           <div className="card-header">

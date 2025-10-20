@@ -10,6 +10,7 @@ const Navigation = () => {
     { path: '/', label: 'DASHBOARD' },
     { path: '/teams', label: 'TEAMS' },
     { path: '/opportunities', label: 'OPPORTUNITIES' },
+    { path: '/games', label: "TODAY'S GAMES" },
     { path: '/inspector', label: 'DATA INSPECTOR' },
     { path: '/methodology', label: 'METHODOLOGY' },
   ];
