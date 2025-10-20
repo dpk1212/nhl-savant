@@ -265,8 +265,8 @@ export class NHLDataProcessor {
 // Load and process CSV data
 export async function loadNHLData() {
   try {
-    // Use absolute path to DATA FILE folder
-    const response = await fetch('/nhl-savant/DATA FILE/teams (3).csv');
+    // Use clean path from public folder (no spaces)
+    const response = await fetch('/nhl-savant/nhl_data.csv');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

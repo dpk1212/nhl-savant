@@ -59,7 +59,7 @@ const DataStatus = ({ dataProcessor, loading, error }) => {
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-400">Source:</p>
-          <p className="text-xs text-gray-300 font-mono">teams (3).csv</p>
+          <p className="text-xs text-gray-300 font-mono">nhl_data.csv</p>
         </div>
       </div>
     </div>
