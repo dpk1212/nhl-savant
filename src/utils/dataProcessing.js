@@ -254,7 +254,7 @@ export class NHLDataProcessor {
 // Load and process CSV data
 export async function loadNHLData() {
   try {
-    const response = await fetch('/teams.csv');
+    const response = await fetch('./teams.csv');
     const csvText = await response.text();
     
     return new Promise((resolve, reject) => {
