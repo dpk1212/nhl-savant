@@ -305,6 +305,81 @@ select:focus {
   display: block;
 }
 
+/* ========================
+   ELEVATED CARD SYSTEM
+   ======================== */
+
+.elevated-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s;
+}
+
+.elevated-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 640px) {
+  .elevated-card {
+    padding: 1rem;
+    border-radius: 6px;
+  }
+}
+
+/* ========================
+   BADGE SYSTEM
+   ======================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-moneyline {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #60A5FA;
+}
+
+.badge-total {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #A78BFA;
+}
+
+.badge-puckline {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: #FCD34D;
+}
+
+.badge-high {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--color-success);
+}
+
+.badge-medium {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: #FCD34D;
+}
+
+.badge-low {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: var(--color-danger);
+}
+
 /* Mobile Base (320px - 640px) */
 @media (max-width: 640px) {
   /* Typography adjustments for mobile readability */
@@ -435,6 +510,55 @@ select:focus {
   /* Full-width on mobile */
   .mobile-full-width {
     width: 100% !important;
+  }
+
+  /* Horizontal scroll wrapper for tables */
+  .mobile-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+
+  /* Dashboard mobile styles */
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+  }
+  
+  .dashboard-chart-container {
+    height: 250px !important;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Team Analytics mobile */
+  .team-analytics-chart {
+    height: 200px !important;
+  }
+
+  /* Methodology mobile */
+  .methodology-section {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .methodology-section h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .methodology-section p {
+    font-size: 0.938rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  
+  .methodology-example {
+    background: var(--color-background);
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 3px solid var(--color-accent);
+    margin: 1rem 0;
   }
 }
 

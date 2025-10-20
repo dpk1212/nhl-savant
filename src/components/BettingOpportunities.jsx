@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Target, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 
@@ -6,6 +7,7 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
   const [regressionCandidates, setRegressionCandidates] = useState({ overperforming: [], underperforming: [] });
   const [specialTeamsMismatches, setSpecialTeamsMismatches] = useState([]);
   const [todaysEdges, setTodaysEdges] = useState([]);
+  const [allEdges, setAllEdges] = useState([]);
 
   useEffect(() => {
     if (dataProcessor) {
@@ -19,7 +21,9 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
       if (oddsData) {
         const calculator = new EdgeCalculator(dataProcessor, oddsData);
         const edges = calculator.getTopEdges(0);
-        setTodaysEdges(edges.filter(e => e.evPercent > 0).slice(0, 10));
+        const allGameEdges = calculator.getAllGameEdges();
+        setTodaysEdges(edges.filter(e => e.evPercent > 0));
+        setAllEdges(allGameEdges);
       }
     }
   }, [dataProcessor, oddsData]);
@@ -33,103 +37,290 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
       {/* Header */}
       <div style={{ padding: '3rem 2rem 2rem', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <h1 style={{ marginBottom: '0.5rem' }}>Betting Opportunities</h1>
+          <h1 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            💎 Betting Opportunities
+          </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-            Identified edges based on regression analysis and special teams mismatches
+            Today's best value bets based on advanced analytics, plus regression candidates and special teams analysis
           </p>
         </div>
       </div>
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
-        {/* Today's Value Bets (if odds data available) */}
+        {/* NEW: Today's Value Bets - PRIMARY CONTENT */}
         {todaysEdges.length > 0 && (
-          <div style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <DollarSign size={24} color="var(--color-accent)" />
-              <h2>Today's Value Bets</h2>
-            </div>
-
-            <div className="card" style={{ padding: 0 }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Game</th>
-                    <th>Market</th>
-                    <th>Pick</th>
-                    <th>Odds</th>
-                    <th>EV</th>
-                    <th>Kelly Stake</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {todaysEdges.map((edge, index) => (
-                    <tr key={index}>
-                      <td style={{ fontWeight: '500' }}>{edge.game}</td>
-                      <td>
-                        <span className={`badge ${
-                          edge.market === 'MONEYLINE' ? 'badge-accent' :
-                          edge.market === 'TOTAL' ? 'badge-success' :
-                          'badge-secondary'
-                        }`}>
-                          {edge.market}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{edge.pick}</td>
-                      <td className="metric-number">
-                        {edge.odds > 0 ? '+' : ''}{edge.odds}
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <TrendingUp size={16} color="var(--color-success)" />
-                          <span 
-                            className="metric-number" 
-                            style={{ color: 'var(--color-success)', fontWeight: '600' }}
-                          >
-                            +{edge.evPercent.toFixed(1)}%
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        {edge.kelly ? (
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="metric-number" style={{ color: 'var(--color-text-primary)' }}>
-                              ${edge.kelly.recommendedStake.toFixed(0)}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                              ({(edge.kelly.fractionalKelly * 100).toFixed(1)}%)
-                            </span>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--color-text-muted)' }}>—</span>
-                        )}
-                      </td>
+          <section style={{ marginBottom: '3rem' }}>
+            <h2 style={{ 
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              🎯 Today's Value Bets
+              <span style={{ 
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                fontWeight: '400'
+              }}>
+                {todaysEdges.length} opportunities found
+              </span>
+            </h2>
+            
+            {/* DESKTOP: Table view */}
+            <div className="desktop-only">
+              <div style={{
+                backgroundColor: 'var(--color-card)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Game</th>
+                      <th>Market</th>
+                      <th>Pick</th>
+                      <th>Odds</th>
+                      <th>Model Prob</th>
+                      <th>EV</th>
+                      <th>EV %</th>
+                      <th>Kelly Stake</th>
+                      <th>Analysis</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {todaysEdges.map((edge, index) => (
+                      <tr key={index}>
+                        <td style={{ fontWeight: '500' }}>{edge.game}</td>
+                        <td>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: edge.market === 'MONEYLINE' ? 'rgba(59, 130, 246, 0.15)' :
+                                           edge.market === 'TOTAL' ? 'rgba(168, 85, 247, 0.15)' :
+                                           'rgba(234, 179, 8, 0.15)',
+                            border: edge.market === 'MONEYLINE' ? '1px solid rgba(59, 130, 246, 0.4)' :
+                                    edge.market === 'TOTAL' ? '1px solid rgba(168, 85, 247, 0.4)' :
+                                    '1px solid rgba(234, 179, 8, 0.4)',
+                            borderRadius: '4px',
+                            fontSize: '0.688rem',
+                            fontWeight: '700',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: edge.market === 'MONEYLINE' ? '#60A5FA' :
+                                   edge.market === 'TOTAL' ? '#A78BFA' :
+                                   '#FCD34D'
+                          }}>
+                            {edge.market}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: '600' }}>{edge.pick}</td>
+                        <td className="metric-number">
+                          {edge.odds > 0 ? '+' : ''}{edge.odds}
+                        </td>
+                        <td className="metric-number">
+                          {(edge.modelProb * 100).toFixed(1)}%
+                        </td>
+                        <td className="metric-number" style={{ 
+                          color: edge.ev > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)'
+                        }}>
+                          ${edge.ev.toFixed(2)}
+                        </td>
+                        <td className="metric-number" style={{ 
+                          color: 'var(--color-success)',
+                          fontWeight: '700'
+                        }}>
+                          +{edge.evPercent.toFixed(1)}%
+                        </td>
+                        <td className="metric-number">
+                          {edge.kelly ? `$${(edge.kelly.fractionalKelly * 1000).toFixed(0)}` : 'N/A'}
+                        </td>
+                        <td>
+                          <Link 
+                            to="/"
+                            style={{
+                              color: 'var(--color-accent)',
+                              textDecoration: 'none',
+                              fontSize: '0.813rem',
+                              fontWeight: '600',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            View Details →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+            
+            {/* MOBILE: Card view */}
+            <div className="mobile-only">
+              {todaysEdges.map((edge, index) => {
+                const gameData = allEdges.find(g => g.game === edge.game);
+                
+                return (
+                  <div key={index} className="value-bets-mobile-card">
+                    {/* Header with bet type badge */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '0.75rem',
+                      paddingBottom: '0.75rem',
+                      borderBottom: '1px solid var(--color-border)'
+                    }}>
+                      <div>
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '0.25rem 0.5rem',
+                          backgroundColor: edge.market === 'MONEYLINE' ? 'rgba(59, 130, 246, 0.15)' :
+                                         edge.market === 'TOTAL' ? 'rgba(168, 85, 247, 0.15)' :
+                                         'rgba(234, 179, 8, 0.15)',
+                          border: edge.market === 'MONEYLINE' ? '1px solid rgba(59, 130, 246, 0.4)' :
+                                  edge.market === 'TOTAL' ? '1px solid rgba(168, 85, 247, 0.4)' :
+                                  '1px solid rgba(234, 179, 8, 0.4)',
+                          borderRadius: '4px',
+                          fontSize: '0.688rem',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: edge.market === 'MONEYLINE' ? '#60A5FA' :
+                                 edge.market === 'TOTAL' ? '#A78BFA' :
+                                 '#FCD34D',
+                          marginBottom: '0.5rem'
+                        }}>
+                          {edge.market}
+                        </div>
+                        <div style={{ 
+                          fontSize: '1.125rem', 
+                          fontWeight: '700',
+                          color: 'var(--color-text-primary)',
+                          marginBottom: '0.25rem'
+                        }}>
+                          {edge.game}
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.938rem',
+                          color: 'var(--color-accent)',
+                          fontWeight: '600'
+                        }}>
+                          {edge.pick} {edge.odds > 0 ? '+' : ''}{edge.odds}
+                        </div>
+                      </div>
+                      <div style={{ 
+                        fontSize: '1.75rem',
+                        fontWeight: '700',
+                        color: 'var(--color-success)',
+                        textAlign: 'right',
+                        lineHeight: 1
+                      }}>
+                        +{edge.evPercent.toFixed(1)}%
+                        <div style={{
+                          fontSize: '0.688rem',
+                          color: 'var(--color-text-muted)',
+                          fontWeight: '500',
+                          marginTop: '0.25rem'
+                        }}>
+                          EV
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Stats grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.75rem',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          Model Prob
+                        </div>
+                        <div style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                          {(edge.modelProb * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          Expected Value
+                        </div>
+                        <div style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--color-success)' }}>
+                          +${edge.ev.toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          Kelly Stake ($1K)
+                        </div>
+                        <div style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                          ${edge.kelly ? (edge.kelly.fractionalKelly * 1000).toFixed(0) : 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          Analysis
+                        </div>
+                        <Link 
+                          to="/"
+                          style={{
+                            color: 'var(--color-accent)',
+                            textDecoration: 'none',
+                            fontSize: '1.125rem',
+                            fontWeight: '600'
+                          }}
+                        >
+                          View →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {/* Regression Candidates */}
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <div className="card-header">
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Target size={20} />
-              Regression Candidates
-            </h2>
-          </div>
+        <section className="elevated-card" style={{ marginBottom: '3rem' }}>
+          <h2 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            📉 Regression Candidates
+          </h2>
+          <p style={{
+            fontSize: '0.938rem',
+            color: 'var(--color-text-secondary)',
+            marginBottom: '2rem',
+            lineHeight: '1.6'
+          }}>
+            Teams whose performance is unsustainable based on PDO analysis and expected goals. 
+            These teams are likely to regress toward their underlying metrics.
+          </p>
 
           {/* Overperforming Teams */}
           <div style={{ marginBottom: '2rem' }}>
             <h3 style={{
-              fontSize: '1rem',
+              fontSize: '1.125rem',
+              fontWeight: '600',
               marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
             }}>
-              <TrendingDown size={16} color="var(--color-danger)" />
+              <TrendingDown size={18} color="var(--color-danger)" />
               Overperforming Teams - Bet UNDER/AGAINST
             </h3>
             <p style={{
@@ -141,45 +332,61 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
             </p>
 
             {regressionCandidates.overperforming.length > 0 ? (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>TEAM</th>
-                    <th style={{ textAlign: 'right' }}>PDO</th>
-                    <th style={{ textAlign: 'right' }}>SHOOTING EFF</th>
-                    <th style={{ textAlign: 'right' }}>REGRESSION SCORE</th>
-                    <th>RECOMMENDATION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {regressionCandidates.overperforming.map((team, index) => (
-                    <tr key={index}>
-                      <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{team.name}</span></td>
-                      <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-                        {team.pdo?.toFixed(1) || 'N/A'}
-                      </td>
-                      <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-                        {team.shooting_efficiency?.toFixed(3) || 'N/A'}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span style={{
-                          fontWeight: 700,
-                          color: 'var(--color-danger)',
-                          fontFeatureSettings: "'tnum'",
-                        }}>
-                          +{team.regression_score?.toFixed(1) || '0.0'}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.8125rem' }}>
-                        Bet UNDER team totals or AGAINST on moneyline
-                      </td>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Team</th>
+                      <th>PDO</th>
+                      <th>Regression Score</th>
+                      <th>xG Diff</th>
+                      <th>Betting Strategy</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {regressionCandidates.overperforming.map((team, index) => (
+                      <tr key={index}>
+                        <td style={{ fontWeight: '600' }}>{team.team}</td>
+                        <td>
+                          <span style={{ 
+                            color: team.pdo > 102 ? 'var(--color-danger)' : 'var(--color-text-primary)',
+                            fontWeight: team.pdo > 102 ? '600' : '400'
+                          }}>
+                            {team.pdo.toFixed(1)}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ 
+                            color: team.regressionScore > 5 ? 'var(--color-danger)' : 'var(--color-text-primary)',
+                            fontWeight: '600'
+                          }}>
+                            {team.regressionScore > 0 ? '+' : ''}{team.regressionScore.toFixed(1)}
+                          </span>
+                        </td>
+                        <td className="metric-number">
+                          {team.xGDiff > 0 ? '+' : ''}{team.xGDiff.toFixed(2)}
+                        </td>
+                        <td>
+                          <span style={{
+                            padding: '0.25rem 0.625rem',
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: 'var(--color-danger)'
+                          }}>
+                            Fade
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', padding: '2rem', textAlign: 'center' }}>
-                No overperforming teams identified
+              <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                No significant overperformers identified
               </p>
             )}
           </div>
@@ -187,145 +394,153 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
           {/* Underperforming Teams */}
           <div>
             <h3 style={{
-              fontSize: '1rem',
+              fontSize: '1.125rem',
+              fontWeight: '600',
               marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
             }}>
-              <TrendingUp size={16} color="var(--color-success)" />
-              Underperforming Teams - Bet OVER/WITH
+              <TrendingUp size={18} color="var(--color-success)" />
+              Underperforming Teams - Bet OVER/FOR
             </h3>
             <p style={{
               fontSize: '0.875rem',
               color: 'var(--color-text-secondary)',
               marginBottom: '1rem',
             }}>
-              Teams below their underlying metrics due to bad luck. Expected to regress positively.
+              Teams performing below their underlying metrics. Expected to improve.
             </p>
 
             {regressionCandidates.underperforming.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Team</th>
+                      <th>PDO</th>
+                      <th>Regression Score</th>
+                      <th>xG Diff</th>
+                      <th>Betting Strategy</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {regressionCandidates.underperforming.map((team, index) => (
+                      <tr key={index}>
+                        <td style={{ fontWeight: '600' }}>{team.team}</td>
+                        <td>
+                          <span style={{ 
+                            color: team.pdo < 98 ? 'var(--color-success)' : 'var(--color-text-primary)',
+                            fontWeight: team.pdo < 98 ? '600' : '400'
+                          }}>
+                            {team.pdo.toFixed(1)}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ 
+                            color: team.regressionScore < -5 ? 'var(--color-success)' : 'var(--color-text-primary)',
+                            fontWeight: '600'
+                          }}>
+                            {team.regressionScore > 0 ? '+' : ''}{team.regressionScore.toFixed(1)}
+                          </span>
+                        </td>
+                        <td className="metric-number">
+                          {team.xGDiff > 0 ? '+' : ''}{team.xGDiff.toFixed(2)}
+                        </td>
+                        <td>
+                          <span style={{
+                            padding: '0.25rem 0.625rem',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: 'var(--color-success)'
+                          }}>
+                            Back
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                No significant underperformers identified
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Special Teams Mismatches */}
+        <section className="elevated-card">
+          <h2 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            ⚡ Special Teams Mismatches
+          </h2>
+          <p style={{
+            fontSize: '0.938rem',
+            color: 'var(--color-text-secondary)',
+            marginBottom: '2rem',
+            lineHeight: '1.6'
+          }}>
+            Significant advantages in power play offense vs. penalty kill defense matchups.
+          </p>
+
+          {specialTeamsMismatches.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>TEAM</th>
-                    <th style={{ textAlign: 'right' }}>PDO</th>
-                    <th style={{ textAlign: 'right' }}>SHOOTING EFF</th>
-                    <th style={{ textAlign: 'right' }}>REGRESSION SCORE</th>
-                    <th>RECOMMENDATION</th>
+                    <th>Team</th>
+                    <th>Opponent</th>
+                    <th>PP xGF/60</th>
+                    <th>Opp PK xGA/60</th>
+                    <th>Advantage</th>
+                    <th>Opportunity</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {regressionCandidates.underperforming.map((team, index) => (
+                  {specialTeamsMismatches.map((mismatch, index) => (
                     <tr key={index}>
-                      <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{team.name}</span></td>
-                      <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-                        {team.pdo?.toFixed(1) || 'N/A'}
+                      <td style={{ fontWeight: '600' }}>{mismatch.team}</td>
+                      <td>{mismatch.opponent}</td>
+                      <td className="metric-number" style={{ color: 'var(--color-success)' }}>
+                        {mismatch.ppXGF.toFixed(2)}
                       </td>
-                      <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
-                        {team.shooting_efficiency?.toFixed(3) || 'N/A'}
+                      <td className="metric-number" style={{ color: 'var(--color-danger)' }}>
+                        {mismatch.pkXGA.toFixed(2)}
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td>
                         <span style={{
-                          fontWeight: 700,
-                          color: 'var(--color-success)',
-                          fontFeatureSettings: "'tnum'",
+                          color: 'var(--color-accent)',
+                          fontWeight: '700',
+                          fontSize: '0.938rem'
                         }}>
-                          {team.regression_score?.toFixed(1) || '0.0'}
+                          {mismatch.advantage.toFixed(2)}
                         </span>
                       </td>
-                      <td style={{ fontSize: '0.8125rem' }}>
-                        Bet OVER team totals or WITH them on moneyline
+                      <td style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                        {mismatch.opportunity}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            ) : (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', padding: '2rem', textAlign: 'center' }}>
-                No underperforming teams identified
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Special Teams Mismatches */}
-        <div className="card">
-          <div className="card-header">
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Target size={20} />
-              Special Teams Mismatches
-            </h2>
-          </div>
-
-          <p style={{
-            fontSize: '0.875rem',
-            color: 'var(--color-text-secondary)',
-            marginBottom: '1rem',
-          }}>
-            Elite power plays vs. weak penalty kills create high-value betting opportunities
-          </p>
-
-          {specialTeamsMismatches.length > 0 ? (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>PP TEAM</th>
-                  <th>PK TEAM</th>
-                  <th style={{ textAlign: 'right' }}>PP xG/60</th>
-                  <th style={{ textAlign: 'right' }}>PK xGA/60</th>
-                  <th style={{ textAlign: 'right' }}>MISMATCH</th>
-                  <th>RECOMMENDATION</th>
-                </tr>
-              </thead>
-              <tbody>
-                {specialTeamsMismatches.slice(0, 10).map((mismatch, index) => (
-                  <tr key={index}>
-                    <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{mismatch.ppTeam}</span></td>
-                    <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{mismatch.pkTeam}</span></td>
-                    <td style={{ textAlign: 'right', color: 'var(--color-success)', fontFeatureSettings: "'tnum'" }}>
-                      {mismatch.ppEfficiency?.toFixed(2) || 'N/A'}
-                    </td>
-                    <td style={{ textAlign: 'right', color: 'var(--color-danger)', fontFeatureSettings: "'tnum'" }}>
-                      {mismatch.pkEfficiency?.toFixed(2) || 'N/A'}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span style={{
-                        fontWeight: 700,
-                        color: 'var(--color-warning)',
-                        fontFeatureSettings: "'tnum'",
-                      }}>
-                        +{mismatch.mismatch?.toFixed(2) || '0.00'}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '0.8125rem' }}>
-                      {mismatch.recommendation}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            </div>
           ) : (
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', padding: '2rem', textAlign: 'center' }}>
-              No significant special teams mismatches identified
+            <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+              No significant special teams mismatches today
             </p>
           )}
-        </div>
-
-        {/* Methodology Note */}
-        <div style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          backgroundColor: 'rgba(212, 175, 55, 0.05)',
-          border: '1px solid var(--color-accent)',
-          borderRadius: '4px',
-        }}>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-            <strong style={{ color: 'var(--color-accent)' }}>Note:</strong> Regression scores calculated using PDO deviation and shooting efficiency.
-            Positive scores indicate overperformance (bet against), negative scores indicate underperformance (bet with).
-            Special teams mismatches identify power play vs. penalty kill xG differentials exceeding 2.0 per 60 minutes.
-          </p>
-        </div>
+        </section>
       </div>
     </div>
   );
