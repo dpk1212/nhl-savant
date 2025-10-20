@@ -6,8 +6,11 @@ This guide explains how to update the odds data for today's NHL games.
 
 1. **Get Today's Odds File**
    - Go to **www.oddstrader.com/nhl/**
+   - **IMPORTANT:** Click the **"Money"** tab (NOT "Merged" or "Total")
    - Save the page as Markdown (`.md` file)
    - The file will be named something like: `www.oddstrader.com_nhl_.2025-10-20T18_09_44.451Z.md`
+   
+   **Why "Money" tab?** The "Money" tab shows moneyline odds for both teams. The "Merged" tab only shows totals for away team and moneyline for home team, which causes incorrect parsing.
 
 2. **Rename the File**
    - Rename the downloaded file to exactly: `todays_odds.md`
