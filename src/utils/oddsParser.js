@@ -74,6 +74,15 @@ export function parseOddsMarkdown(markdownText) {
       }
     }
     
+    // Check if we've collected enough data and hit "More Odds" (end of game block)
+    // Process this BEFORE section check to ensure we add the game
+    if (currentGame && line.includes('More Odds') && currentGame.moneyline.away && currentGame.moneyline.home) {
+      games.push(currentGame);
+      console.log(`✅ Added game: ${currentGame.awayTeam} @ ${currentGame.homeTeam} at ${currentGame.gameTime}`);
+      currentGame = null;
+      currentTime = null; // Reset for next game
+    }
+    
     // Skip parsing if not in today section or already left it
     if (!inTodaySection || hasLeftTodaySection) {
       continue;
@@ -172,12 +181,6 @@ export function parseOddsMarkdown(markdownText) {
           currentGame.puckLine.home.spread = spread;
           currentGame.puckLine.home.odds = odds;
         }
-      }
-      
-      // Check if we've collected enough data and hit "More Odds" (end of game block)
-      if (line.includes('More Odds') && currentGame.moneyline.away && currentGame.moneyline.home) {
-        games.push(currentGame);
-        currentGame = null;
       }
     }
   }
