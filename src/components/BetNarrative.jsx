@@ -14,6 +14,20 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
   const narrative = generateBetNarrative(game, edge, dataProcessor);
   const deepAnalytics = generateDeepAnalytics(game, edge, dataProcessor);
 
+  // CRITICAL FIX: Smart percentile display - shows "Top X%" or "Bottom X%" based on actual ranking
+  const getPercentileDisplay = (percentile) => {
+    const pct = parseFloat(percentile);
+    
+    // High percentile (>50%) = Top half = show as "Top X%"
+    // Low percentile (≤50%) = Bottom half = show as "Bottom X%"
+    if (pct >= 50) {
+      return `Top ${pct}%`;
+    } else {
+      // For bottom half, show from bottom (e.g., 3% → "Bottom 97%")
+      return `Bottom ${(100 - pct).toFixed(0)}%`;
+    }
+  };
+
   if (!narrative) return null;
 
   // Compact variant for table rows
@@ -213,7 +227,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                       <div style={{ color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
                         #{deepAnalytics.rankings.away.offense.rank} of {deepAnalytics.rankings.away.offense.total} 
                         <span style={{ color: 'var(--color-accent)', marginLeft: '0.5rem' }}>
-                          (Top {deepAnalytics.rankings.away.offense.percentile}%)
+                          ({getPercentileDisplay(deepAnalytics.rankings.away.offense.percentile)})
                         </span>
                       </div>
                       <div style={{ 
@@ -233,7 +247,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                       <div style={{ color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
                         #{deepAnalytics.rankings.home.defense.rank} of {deepAnalytics.rankings.home.defense.total}
                         <span style={{ color: 'var(--color-accent)', marginLeft: '0.5rem' }}>
-                          (Top {deepAnalytics.rankings.home.defense.percentile}%)
+                          ({getPercentileDisplay(deepAnalytics.rankings.home.defense.percentile)})
                         </span>
                       </div>
                       <div style={{ 
