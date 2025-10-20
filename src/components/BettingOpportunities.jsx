@@ -122,18 +122,18 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
                           {edge.odds > 0 ? '+' : ''}{edge.odds}
                         </td>
                         <td className="metric-number">
-                          {(edge.modelProb * 100).toFixed(1)}%
+                          {edge.modelProb ? (edge.modelProb * 100).toFixed(1) : '0.0'}%
                         </td>
                         <td className="metric-number" style={{ 
-                          color: edge.ev > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)'
+                          color: edge.ev && edge.ev > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)'
                         }}>
-                          ${edge.ev.toFixed(2)}
+                          ${edge.ev ? edge.ev.toFixed(2) : '0.00'}
                         </td>
                         <td className="metric-number" style={{ 
                           color: 'var(--color-success)',
                           fontWeight: '700'
                         }}>
-                          +{edge.evPercent.toFixed(1)}%
+                          +{edge.evPercent ? edge.evPercent.toFixed(1) : '0.0'}%
                         </td>
                         <td className="metric-number">
                           {edge.kelly ? `$${(edge.kelly.fractionalKelly * 1000).toFixed(0)}` : 'N/A'}
@@ -221,7 +221,7 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
                         textAlign: 'right',
                         lineHeight: 1
                       }}>
-                        +{edge.evPercent.toFixed(1)}%
+                        +{edge.evPercent ? edge.evPercent.toFixed(1) : '0.0'}%
                         <div style={{
                           fontSize: '0.688rem',
                           color: 'var(--color-text-muted)',
@@ -245,7 +245,7 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
                           Model Prob
                         </div>
                         <div style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                          {(edge.modelProb * 100).toFixed(1)}%
+                          {edge.modelProb ? (edge.modelProb * 100).toFixed(1) : '0.0'}%
                         </div>
                       </div>
                       <div>
@@ -253,7 +253,7 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
                           Expected Value
                         </div>
                         <div style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--color-success)' }}>
-                          +${edge.ev.toFixed(2)}
+                          +${edge.ev ? edge.ev.toFixed(2) : '0.00'}
                         </div>
                       </div>
                       <div>
