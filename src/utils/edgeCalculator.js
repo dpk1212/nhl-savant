@@ -1,10 +1,10 @@
 // Edge Calculator - Calculate betting edges across all markets
-import { parseOddsMarkdown } from './oddsParser';
+import { parseOddsTrader } from './oddsTraderParser';
 
 export class EdgeCalculator {
   constructor(dataProcessor, oddsMarkdownText) {
     this.dataProcessor = dataProcessor;
-    this.games = parseOddsMarkdown(oddsMarkdownText || '');
+    this.games = parseOddsTrader(oddsMarkdownText || '');
   }
 
   // Calculate all edges for today's games
