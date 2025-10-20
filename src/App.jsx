@@ -5,6 +5,7 @@ import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import TeamAnalytics from './components/TeamAnalytics';
 import BettingOpportunities from './components/BettingOpportunities';
+import DataInspector from './components/DataInspector';
 import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -66,13 +67,14 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="min-h-screen bg-gray-950">
+        <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)' }}>
           <Navigation />
-          <main className="container mx-auto px-4 py-8">
+          <main>
             <Routes>
               <Route path="/" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
               <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} />} />
+              <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
               <Route path="/methodology" element={<Methodology />} />
             </Routes>
           </main>

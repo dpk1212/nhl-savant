@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Target, AlertTriangle, Zap, BarChart3, CheckCircle, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import DataStatus from './DataStatus';
-import MathVerification from './MathVerification';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
   const [opportunities, setOpportunities] = useState([]);
@@ -33,238 +32,243 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
     return 'low';
   };
 
-  const getRecommendationIcon = (recommendation) => {
-    if (recommendation.includes('UNDER') || recommendation.includes('AGAINST')) {
-      return <TrendingDown className="w-6 h-6 text-red-400" />;
-    } else if (recommendation.includes('OVER') || recommendation.includes('WITH')) {
-      return <TrendingUp className="w-6 h-6 text-green-400" />;
-    }
-    return <Target className="w-6 h-6 text-blue-400" />;
-  };
-
-  const getTeamBadgeColor = (team) => {
-    const hash = team.charCodeAt(0);
-    const colors = ['badge-gold', 'badge-blue', 'badge-red', 'badge-green'];
-    return colors[hash % colors.length];
-  };
-
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Premium Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-blue-950/30 via-gray-900 to-gray-950 py-16 px-4 border-b border-white/5">
-        {/* Background gradient accent */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-yellow-500 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex items-center justify-between flex-col md:flex-row gap-8">
-            <div className="animate-fadeIn">
-              <div className="flex items-center mb-3">
-                <Sparkles className="w-10 h-10 text-yellow-400 mr-4 animate-pulse" />
-                <h1 className="text-6xl md:text-7xl font-black tracking-tight">
-                  <span className="text-gradient">NHL Savant</span>
-                </h1>
-              </div>
-              <p className="text-xl text-gray-300 mb-2">Advanced Analytics for Smart Bettors</p>
-              <p className="text-gray-400">Mathematical edge detection through xG analysis and regression modeling</p>
-            </div>
-            <div className="animate-slideInRight text-center">
-              <div className="animate-pulse-glow rounded-full p-6 mb-4 inline-block">
-                <CheckCircle className="w-16 h-16 text-green-400" />
-              </div>
-              <p className="text-sm text-gray-400">Verified</p>
-              <p className="text-base text-green-400 font-bold">Math Checked</p>
-            </div>
-          </div>
+    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
+      {/* Clean Header */}
+      <div style={{
+        padding: '3rem 2rem 2rem',
+        borderBottom: '1px solid var(--color-border)',
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <h1 style={{ marginBottom: '0.5rem' }}>NHL Analytics Dashboard</h1>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+            Advanced metrics and betting opportunities based on xG analysis and regression modeling
+          </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
         {/* Data Status */}
-        <div className="animate-fadeIn mb-8">
+        <div style={{ marginBottom: '2rem' }}>
           <DataStatus dataProcessor={dataProcessor} loading={loading} error={error} />
         </div>
 
-        {/* Math Verification */}
-        <div className="animate-slideInLeft mb-8">
-          <MathVerification dataProcessor={dataProcessor} />
-        </div>
-
-        {/* League Overview Stats - Premium Grid */}
+        {/* League Stats Grid */}
         {leagueStats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 animate-fadeIn">
-            {/* Teams Card */}
-            <div className="stat-card group">
-              <div className="flex items-center justify-between mb-4">
-                <BarChart3 className="w-8 h-8 text-yellow-400 group-hover:text-yellow-300 transition-colors" />
-                <span className="text-xs font-bold text-yellow-400 badge badge-gold">TOTAL</span>
-              </div>
-              <div className="stat-card-value gradient-gold">{leagueStats.totalTeams}</div>
-              <div className="stat-card-label">Teams Analyzed</div>
-              <div className="stat-card-description">across all situations</div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '1rem',
+            marginBottom: '2rem',
+          }}>
+            <div className="stat-card">
+              <div className="stat-card-value metric-number">{leagueStats.totalTeams}</div>
+              <div className="stat-card-label">TEAMS ANALYZED</div>
+              <div className="stat-card-description">Across all situations</div>
             </div>
 
-            {/* PDO Card */}
-            <div className="stat-card group">
-              <div className="flex items-center justify-between mb-4">
-                <Zap className="w-8 h-8 text-blue-400 group-hover:text-blue-300 transition-colors" />
-                <span className="text-xs font-bold text-blue-400 badge badge-blue">AVG</span>
-              </div>
-              <div className="stat-card-value gradient-blue">{leagueStats.avgPDO}</div>
-              <div className="stat-card-label">PDO (Puck Luck)</div>
-              <div className="stat-card-description">100 = perfectly average</div>
+            <div className="stat-card">
+              <div className="stat-card-value metric-number">{leagueStats.avgPDO}</div>
+              <div className="stat-card-label">AVG PDO</div>
+              <div className="stat-card-description">100 = neutral luck</div>
             </div>
 
-            {/* xG Diff Card */}
-            <div className="stat-card group">
-              <div className="flex items-center justify-between mb-4">
-                <TrendingUp className="w-8 h-8 text-green-400 group-hover:text-green-300 transition-colors" />
-                <span className="text-xs font-bold text-green-400 badge badge-green">PER 60</span>
-              </div>
-              <div className="stat-card-value gradient-green">{leagueStats.avgXGD}</div>
-              <div className="stat-card-label">xG Differential</div>
-              <div className="stat-card-description">quality of play indicator</div>
+            <div className="stat-card">
+              <div className="stat-card-value metric-number">{leagueStats.avgXGD}</div>
+              <div className="stat-card-label">AVG XG DIFFERENTIAL</div>
+              <div className="stat-card-description">Per 60 minutes</div>
             </div>
 
-            {/* Regression Card */}
-            <div className="stat-card group">
-              <div className="flex items-center justify-between mb-4">
-                <AlertTriangle className="w-8 h-8 text-orange-400 group-hover:text-orange-300 transition-colors" />
-                <span className="text-xs font-bold text-orange-400 badge badge-gold">EDGES</span>
+            <div className="stat-card">
+              <div className="stat-card-value metric-number">
+                {leagueStats.overperformingTeams + leagueStats.underperformingTeams}
               </div>
-              <div className="stat-card-value gradient-gold">{leagueStats.overperformingTeams + leagueStats.underperformingTeams}</div>
-              <div className="stat-card-label">Betting Opportunities</div>
-              <div className="stat-card-description">identified opportunities</div>
+              <div className="stat-card-label">BETTING EDGES</div>
+              <div className="stat-card-description">Identified opportunities</div>
             </div>
           </div>
         )}
 
-        {/* Top Betting Opportunities - Premium */}
-        <div className="mb-12 animate-slideInLeft">
-          <div className="flex items-center gap-3 mb-8">
-            <Target className="w-8 h-8 text-yellow-400" />
-            <h2 className="text-4xl font-black text-white">Top Betting Opportunities</h2>
-            <span className="ml-auto text-sm text-gray-400">Real-time analysis</span>
+        {/* Betting Opportunities Table */}
+        <div className="card">
+          <div className="card-header">
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <BarChart3 size={20} />
+              Top Betting Opportunities
+            </h2>
           </div>
 
           {opportunities.length === 0 ? (
-            <div className="card text-center py-16">
-              <AlertTriangle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No significant opportunities found in current data</p>
+            <div style={{ padding: '3rem', textAlign: 'center' }}>
+              <p style={{ color: 'var(--color-text-muted)' }}>
+                No significant opportunities found in current data
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {opportunities.slice(0, 6).map((opportunity, index) => (
-                <div
-                  key={index}
-                  className="glass-card p-6 hover-lift group animate-fadeIn"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-yellow-500/20 to-blue-500/20 group-hover:from-yellow-500/30 group-hover:to-blue-500/30 transition-all">
-                        {getRecommendationIcon(opportunity.recommendation)}
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>TEAM</th>
+                  <th>TYPE</th>
+                  <th>RECOMMENDATION</th>
+                  <th>REASON</th>
+                  <th style={{ textAlign: 'right' }}>CONFIDENCE</th>
+                  <th style={{ textAlign: 'right' }}>EDGE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {opportunities.slice(0, 10).map((opportunity, index) => (
+                  <tr key={index}>
+                    <td>
+                      <span style={{ 
+                        fontWeight: 600,
+                        color: 'var(--color-text-primary)',
+                      }}>
+                        {opportunity.team}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={
+                        opportunity.type === 'REGRESSION' ? 'badge-danger' : 'badge-accent'
+                      } style={{
+                        display: 'inline-block',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '2px',
+                        fontSize: '0.625rem',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        border: '1px solid',
+                      }}>
+                        {opportunity.type.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {opportunity.recommendation.includes('UNDER') || opportunity.recommendation.includes('AGAINST') ? (
+                          <TrendingDown size={14} color="var(--color-danger)" />
+                        ) : (
+                          <TrendingUp size={14} color="var(--color-success)" />
+                        )}
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 500 }}>
+                          {opportunity.recommendation}
+                        </span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`badge ${getTeamBadgeColor(opportunity.team)}`}>{opportunity.team}</span>
+                    </td>
+                    <td style={{ fontSize: '0.8125rem', maxWidth: '300px' }}>
+                      {opportunity.reason}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{
+                          fontWeight: 600,
+                          color: 'var(--color-text-primary)',
+                          marginBottom: '0.25rem',
+                          fontSize: '0.875rem',
+                        }}>
+                          {opportunity.confidence.toFixed(0)}%
                         </div>
-                        <p className="text-xs text-gray-400">{opportunity.type.replace('_', ' ')}</p>
+                        <div className="confidence-bar" style={{ width: '60px', marginLeft: 'auto' }}>
+                          <div
+                            className={`confidence-bar-fill ${getConfidenceColor(opportunity.confidence)}`}
+                            style={{ width: `${opportunity.confidence}%` }}
+                          ></div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-black text-yellow-400">{opportunity.confidence.toFixed(0)}%</div>
-                      <div className="text-xs text-gray-500">confidence</div>
-                    </div>
-                  </div>
-
-                  {/* Confidence Bar */}
-                  <div className="mb-4">
-                    <div className="confidence-bar">
-                      <div
-                        className={`confidence-bar-fill ${getConfidenceColor(opportunity.confidence)}`}
-                        style={{ width: `${opportunity.confidence}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="mb-4 pb-4 border-b border-white/10">
-                    <h4 className="font-black text-white mb-2">{opportunity.recommendation}</h4>
-                    <p className="text-sm text-gray-300">{opportunity.reason}</p>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Edge: <span className="text-green-400 font-bold">{(opportunity.edge * 100).toFixed(1)}%</span></span>
-                    <span className="text-xs text-gray-500">{new Date().toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <span style={{
+                        fontWeight: 600,
+                        color: 'var(--color-success)',
+                        fontSize: '0.875rem',
+                      }}>
+                        {(opportunity.edge * 100).toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
-        {/* Analysis Sections - Premium */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slideInRight">
-          {/* Regression Analysis */}
-          <div className="card hover-lift">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-lg bg-red-500/20">
-                <TrendingDown className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className="text-2xl font-black text-white">Regression Analysis</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="glass-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 font-semibold">Overperforming</span>
-                  <span className="text-2xl font-black text-red-400">{leagueStats?.overperformingTeams || 0}</span>
+        {/* Analysis Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '1rem',
+          marginTop: '2rem',
+        }}>
+          <div className="card">
+            <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Regression Analysis</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>Overperforming Teams</span>
+                  <span style={{ 
+                    fontWeight: 700,
+                    color: 'var(--color-danger)',
+                    fontSize: '1.125rem',
+                  }}>
+                    {leagueStats?.overperformingTeams || 0}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">Teams due for negative regression</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  Due for negative regression
+                </p>
               </div>
-              <div className="glass-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 font-semibold">Underperforming</span>
-                  <span className="text-2xl font-black text-green-400">{leagueStats?.underperformingTeams || 0}</span>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>Underperforming Teams</span>
+                  <span style={{ 
+                    fontWeight: 700,
+                    color: 'var(--color-success)',
+                    fontSize: '1.125rem',
+                  }}>
+                    {leagueStats?.underperformingTeams || 0}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">Teams due for positive regression</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  Due for positive regression
+                </p>
               </div>
-              <p className="text-sm text-gray-400 p-3 rounded-lg bg-white/5">
-                Teams with significant PDO or shooting efficiency deviations indicate strong regression opportunities.
-              </p>
             </div>
           </div>
 
-          {/* Model Performance */}
-          <div className="card hover-lift">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-lg bg-blue-500/20">
-                <BarChart3 className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className="text-2xl font-black text-white">Model Performance</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="glass-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 font-semibold">Data Points</span>
-                  <span className="text-2xl font-black text-blue-400">{dataProcessor?.processedData?.length || 0}</span>
+          <div className="card">
+            <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Model Performance</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>Data Points</span>
+                  <span style={{ 
+                    fontWeight: 700,
+                    color: 'var(--color-accent)',
+                    fontSize: '1.125rem',
+                  }}>
+                    {dataProcessor?.processedData?.length || 0}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">Total rows processed</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  Total rows processed
+                </p>
               </div>
-              <div className="glass-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300 font-semibold">Game Situations</span>
-                  <span className="text-2xl font-black text-blue-400">5</span>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem' }}>Game Situations</span>
+                  <span style={{ 
+                    fontWeight: 700,
+                    color: 'var(--color-accent)',
+                    fontSize: '1.125rem',
+                  }}>
+                    5
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">5v5, PP, PK, All, Other</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  5v5, PP, PK, All, Other
+                </p>
               </div>
-              <p className="text-sm text-gray-400 p-3 rounded-lg bg-white/5">
-                All calculations verified and validated. Ready for advanced analysis.
-              </p>
             </div>
           </div>
         </div>
