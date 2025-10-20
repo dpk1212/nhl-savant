@@ -75,7 +75,13 @@ export function parseOddsTrader(markdownText) {
           away: { spread: null, odds: null },
           home: { spread: null, odds: null }
         },
-        total: { line: null, over: null, under: null }
+        total: { 
+          line: null,  // Will use average of over/under lines if different
+          overLine: null,  // Specific line for OVER
+          underLine: null,  // Specific line for UNDER
+          over: null, 
+          under: null 
+        }
       };
       
       // Parse AWAY team from current line (i)
@@ -95,13 +101,11 @@ export function parseOddsTrader(markdownText) {
         const odds = parseInt(totalMatch[3]);
         
         if (overOrUnder === 'o') {
-          currentGame.total.line = parseFloat(lineValue);
+          currentGame.total.overLine = parseFloat(lineValue);
           currentGame.total.over = odds;
           console.log(`  📊 OVER ${lineValue} ${odds}`);
         } else {
-          if (!currentGame.total.line) {
-            currentGame.total.line = parseFloat(lineValue);
-          }
+          currentGame.total.underLine = parseFloat(lineValue);
           currentGame.total.under = odds;
           console.log(`  📊 UNDER ${lineValue} ${odds}`);
         }
@@ -137,13 +141,11 @@ export function parseOddsTrader(markdownText) {
         const odds = parseInt(homeTotalMatch[3]);
         
         if (overOrUnder === 'o') {
-          currentGame.total.line = parseFloat(lineValue);
+          currentGame.total.overLine = parseFloat(lineValue);
           currentGame.total.over = odds;
           console.log(`  📊 OVER ${lineValue} ${odds}`);
         } else {
-          if (!currentGame.total.line) {
-            currentGame.total.line = parseFloat(lineValue);
-          }
+          currentGame.total.underLine = parseFloat(lineValue);
           currentGame.total.under = odds;
           console.log(`  📊 UNDER ${lineValue} ${odds}`);
         }
@@ -158,6 +160,20 @@ export function parseOddsTrader(markdownText) {
       
       // Add game if we have team data
       if (currentGame.awayTeam && currentGame.homeTeam) {
+        // Set the main 'line' value: use overLine if same, otherwise use average
+        if (currentGame.total.overLine && currentGame.total.underLine) {
+          if (currentGame.total.overLine === currentGame.total.underLine) {
+            currentGame.total.line = currentGame.total.overLine;
+          } else {
+            // Different lines - use the OVER line as the primary line
+            currentGame.total.line = currentGame.total.overLine;
+          }
+        } else if (currentGame.total.overLine) {
+          currentGame.total.line = currentGame.total.overLine;
+        } else if (currentGame.total.underLine) {
+          currentGame.total.line = currentGame.total.underLine;
+        }
+        
         games.push(currentGame);
         console.log(`  ✅ Added game: ${currentGame.awayTeam} @ ${currentGame.homeTeam}`);
         console.log(`     Moneyline: ${currentGame.moneyline.away}/${currentGame.moneyline.home}`);
