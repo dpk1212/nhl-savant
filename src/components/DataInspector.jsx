@@ -27,16 +27,21 @@ const DataInspector = ({ dataProcessor }) => {
       
       if (teamData) {
         // Calculate metrics manually to verify
+        // Pre-calculate PDO components to avoid circular reference
+        const shootingPct = (teamData.goalsFor / teamData.shotsOnGoalFor) * 100;
+        const savePct = (1 - (teamData.goalsAgainst / teamData.shotsOnGoalAgainst)) * 100;
+        const expectedPDO = shootingPct + savePct;
+        
         const calc = {
           // PDO Calculation
           pdo: {
             formula: '(Goals For / Shots On Goal For) × 100 + (1 - Goals Against / Shots On Goal Against) × 100',
-            shootingPct: ((teamData.goalsFor / teamData.shotsOnGoalFor) * 100).toFixed(2),
-            savePct: ((1 - (teamData.goalsAgainst / teamData.shotsOnGoalAgainst)) * 100).toFixed(2),
+            shootingPct: shootingPct.toFixed(2),
+            savePct: savePct.toFixed(2),
             calculation: `(${teamData.goalsFor} / ${teamData.shotsOnGoalFor}) × 100 + (1 - ${teamData.goalsAgainst} / ${teamData.shotsOnGoalAgainst}) × 100`,
-            step1: `${((teamData.goalsFor / teamData.shotsOnGoalFor) * 100).toFixed(2)} + ${((1 - (teamData.goalsAgainst / teamData.shotsOnGoalAgainst)) * 100).toFixed(2)}`,
+            step1: `${shootingPct.toFixed(2)} + ${savePct.toFixed(2)}`,
             result: teamData.pdo.toFixed(2),
-            match: Math.abs(teamData.pdo - (parseFloat(calc.shootingPct) + parseFloat(calc.savePct))) < 0.1
+            match: Math.abs(teamData.pdo - expectedPDO) < 0.1
           },
           
           // xG per 60

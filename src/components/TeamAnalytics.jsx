@@ -1,278 +1,292 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const TeamAnalytics = ({ dataProcessor }) => {
   const [selectedTeam, setSelectedTeam] = useState('');
-  const [teamData, setTeamData] = useState(null);
-  const [allTeams, setAllTeams] = useState([]);
+  const [allSituations, setAllSituations] = useState(null);
+  const [teams, setTeams] = useState([]);
 
   useEffect(() => {
     if (dataProcessor) {
-      const teams = dataProcessor.getTeamsBySituation('all');
-      setAllTeams(teams);
-      if (teams.length > 0 && !selectedTeam) {
-        setSelectedTeam(teams[0].team);
+      const uniqueTeams = [...new Set(dataProcessor.processedData.map(d => d.name))].sort();
+      setTeams(uniqueTeams);
+      if (uniqueTeams.length > 0) {
+        setSelectedTeam(uniqueTeams[0]);
       }
     }
-  }, [dataProcessor, selectedTeam]);
+  }, [dataProcessor]);
 
   useEffect(() => {
     if (dataProcessor && selectedTeam) {
-      const team = dataProcessor.getTeamData(selectedTeam, 'all');
-      setTeamData(team);
+      const situations = {
+        all: dataProcessor.processedData.find(d => d.name === selectedTeam && d.situation === 'all'),
+        fiveOnFive: dataProcessor.processedData.find(d => d.name === selectedTeam && d.situation === '5on5'),
+        powerPlay: dataProcessor.processedData.find(d => d.name === selectedTeam && d.situation === '5on4'),
+        penaltyKill: dataProcessor.processedData.find(d => d.name === selectedTeam && d.situation === '4on5'),
+      };
+      setAllSituations(situations);
     }
   }, [dataProcessor, selectedTeam]);
 
-  const getTeamAbbreviation = (teamName) => {
-    const abbreviations = {
-      'NYI': 'Islanders', 'NYR': 'Rangers', 'TOR': 'Maple Leafs',
-      'VAN': 'Canucks', 'UTA': 'Utah', 'FLA': 'Panthers',
-      'SEA': 'Kraken', 'NSH': 'Predators', 'BOS': 'Bruins',
-      'SJS': 'Sharks', 'WSH': 'Capitals', 'STL': 'Blues',
-      'MIN': 'Wild', 'PIT': 'Penguins', 'PHI': 'Flyers',
-      'OTT': 'Senators', 'VGK': 'Golden Knights', 'TBL': 'Lightning',
-      'MTL': 'Canadiens', 'LAK': 'Kings', 'CBJ': 'Blue Jackets',
-      'ANA': 'Ducks', 'BUF': 'Sabres', 'CGY': 'Flames',
-      'EDM': 'Oilers', 'DAL': 'Stars', 'NJD': 'Devils',
-      'CAR': 'Hurricanes', 'DET': 'Red Wings', 'WPG': 'Jets',
-      'CHI': 'Blackhawks', 'COL': 'Avalanche'
-    };
-    return abbreviations[teamName] || teamName;
-  };
-
-  const getPerformanceColor = (value, threshold = 0) => {
-    if (value > threshold) return 'text-green-400';
-    if (value < threshold) return 'text-red-400';
-    return 'text-gray-400';
-  };
-
-  const getPerformanceIcon = (value, threshold = 0) => {
-    if (value > threshold) return <TrendingUp className="w-4 h-4 text-green-400" />;
-    if (value < threshold) return <TrendingDown className="w-4 h-4 text-red-400" />;
-    return null;
-  };
-
-  if (!teamData) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-400">Select a team to view analytics</p>
-      </div>
-    );
+  if (!dataProcessor || !allSituations) {
+    return <div style={{ padding: '2rem' }}>Loading...</div>;
   }
 
+  const chartData = [
+    { name: '5v5', xGF: allSituations.fiveOnFive?.xGF_per60 || 0, xGA: allSituations.fiveOnFive?.xGA_per60 || 0 },
+    { name: 'PP', xGF: allSituations.powerPlay?.xGF_per60 || 0, xGA: allSituations.powerPlay?.xGA_per60 || 0 },
+    { name: 'PK', xGF: allSituations.penaltyKill?.xGF_per60 || 0, xGA: allSituations.penaltyKill?.xGA_per60 || 0 },
+  ];
+
   return (
-    <div className="space-y-8">
+    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Team Analytics</h1>
-        <p className="text-gray-400">Deep dive into team performance metrics and regression analysis</p>
-      </div>
-
-      {/* Team Selector */}
-      <div className="card">
-        <div className="card-body">
-          <div className="flex items-center space-x-4">
-            <label className="text-white font-semibold">Select Team:</label>
-            <select
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              className="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:border-nhl-blue focus:outline-none"
-            >
-              {allTeams.map((team) => (
-                <option key={team.team} value={team.team}>
-                  {getTeamAbbreviation(team.team)}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div style={{ padding: '3rem 2rem 2rem', borderBottom: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <h1 style={{ marginBottom: '0.5rem' }}>Team Analytics</h1>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+            Detailed performance metrics and situational breakdowns
+          </p>
         </div>
       </div>
 
-      {/* Key Metrics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="metric-card">
-          <div className="metric-value">{teamData.pdo.toFixed(1)}</div>
-          <div className="metric-label">PDO (Puck Luck)</div>
-          <div className="text-xs mt-2">
-            {teamData.pdo > 102 ? 'Lucky' : teamData.pdo < 98 ? 'Unlucky' : 'Neutral'}
-          </div>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+        {/* Team Selector */}
+        <div style={{ marginBottom: '2rem' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--color-text-secondary)',
+            marginBottom: '0.5rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
+            Select Team
+          </label>
+          <select
+            value={selectedTeam}
+            onChange={(e) => setSelectedTeam(e.target.value)}
+            style={{
+              padding: '0.5rem',
+              backgroundColor: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              color: 'var(--color-text-primary)',
+              fontSize: '0.875rem',
+              minWidth: '200px',
+            }}
+          >
+            {teams.map(team => (
+              <option key={team} value={team}>{team}</option>
+            ))}
+          </select>
         </div>
-        
-        <div className="metric-card">
-          <div className="metric-value">{teamData.xGD_per60.toFixed(2)}</div>
-          <div className="metric-label">xG Differential/60</div>
-          <div className="text-xs mt-2">
-            {teamData.xGD_per60 > 0 ? 'Positive' : 'Negative'}
-          </div>
-        </div>
-        
-        <div className="metric-card">
-          <div className="metric-value">{teamData.shooting_efficiency.toFixed(2)}</div>
-          <div className="metric-label">Shooting Efficiency</div>
-          <div className="text-xs mt-2">
-            {teamData.shooting_efficiency > 1.1 ? 'Overperforming' : 
-             teamData.shooting_efficiency < 0.9 ? 'Underperforming' : 'Normal'}
-          </div>
-        </div>
-        
-        <div className="metric-card">
-          <div className="metric-value">{teamData.regression_score.toFixed(1)}</div>
-          <div className="metric-label">Regression Score</div>
-          <div className="text-xs mt-2">
-            {Math.abs(teamData.regression_score) > 10 ? 'High Regression Expected' : 'Stable'}
-          </div>
-        </div>
-      </div>
 
-      {/* Detailed Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Offensive Metrics */}
+        {/* Overall Metrics */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BarChart3 size={20} />
+            Overall Performance - All Situations
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '1rem',
+          }}>
+            <div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>xG FOR/60</div>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: 'var(--color-accent)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {allSituations.all?.xGF_per60?.toFixed(2) || 'N/A'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>xG AGAINST/60</div>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: 'var(--color-danger)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {allSituations.all?.xGA_per60?.toFixed(2) || 'N/A'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>PDO</div>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: 'var(--color-accent)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {allSituations.all?.pdo?.toFixed(1) || 'N/A'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>SHOOTING EFF</div>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: 'var(--color-accent)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {allSituations.all?.shooting_efficiency?.toFixed(3) || 'N/A'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* xG Chart */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.125rem' }}>
+            Expected Goals by Situation
+          </h2>
+          <div style={{ height: '300px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="var(--color-text-secondary)"
+                  style={{ fontSize: '0.75rem' }}
+                />
+                <YAxis 
+                  stroke="var(--color-text-secondary)"
+                  style={{ fontSize: '0.75rem' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'var(--color-card)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                  }}
+                />
+                <Bar dataKey="xGF" fill="var(--color-accent)" name="xG For/60" />
+                <Bar dataKey="xGA" fill="var(--color-danger)" name="xG Against/60" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Situational Breakdown Table */}
         <div className="card">
-          <div className="card-header">
-            <h3 className="text-xl font-bold text-white">Offensive Metrics</h3>
-          </div>
-          <div className="card-body">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">xGF per 60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.xGF_per60.toFixed(2)}</span>
-                  {getPerformanceIcon(teamData.xGF_per60, 2.5)}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">High Danger xGF/60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.highDanger_xGF_per60.toFixed(2)}</span>
-                  {getPerformanceIcon(teamData.highDanger_xGF_per60, 0.8)}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Score Adj xGF/60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.scoreAdj_xGF_per60.toFixed(2)}</span>
-                  {getPerformanceIcon(teamData.scoreAdj_xGF_per60, 2.5)}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Corsi per 60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.corsi_per60.toFixed(1)}</span>
-                  {getPerformanceIcon(teamData.corsi_per60, 50)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.125rem' }}>
+            Situational Breakdown
+          </h2>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>SITUATION</th>
+                <th style={{ textAlign: 'right' }}>xGF/60</th>
+                <th style={{ textAlign: 'right' }}>xGA/60</th>
+                <th style={{ textAlign: 'right' }}>GOALS FOR</th>
+                <th style={{ textAlign: 'right' }}>GOALS AGAINST</th>
+                <th style={{ textAlign: 'right' }}>PDO</th>
+                <th style={{ textAlign: 'right' }}>SH EFF</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>5-on-5</span></td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.fiveOnFive?.xGF_per60?.toFixed(2) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.fiveOnFive?.xGA_per60?.toFixed(2) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.fiveOnFive?.goalsFor || 0}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.fiveOnFive?.goalsAgainst || 0}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.fiveOnFive?.pdo?.toFixed(1) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.fiveOnFive?.shooting_efficiency?.toFixed(3) || 'N/A'}
+                </td>
+              </tr>
 
-        {/* Defensive Metrics */}
-        <div className="card">
-          <div className="card-header">
-            <h3 className="text-xl font-bold text-white">Defensive Metrics</h3>
-          </div>
-          <div className="card-body">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">xGA per 60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.xGA_per60.toFixed(2)}</span>
-                  {getPerformanceIcon(teamData.xGA_per60, 2.5, true)}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">High Danger xGA/60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.highDanger_xGA_per60.toFixed(2)}</span>
-                  {getPerformanceIcon(teamData.highDanger_xGA_per60, 0.8, true)}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Save Performance</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.save_performance.toFixed(3)}</span>
-                  {getPerformanceIcon(teamData.save_performance, 0)}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Fenwick per 60</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-nhl-gold font-bold">{teamData.fenwick_per60.toFixed(1)}</span>
-                  {getPerformanceIcon(teamData.fenwick_per60, 50)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              <tr>
+                <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Power Play (5v4)</span></td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.powerPlay?.xGF_per60?.toFixed(2) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.powerPlay?.xGA_per60?.toFixed(2) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.powerPlay?.goalsFor || 0}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.powerPlay?.goalsAgainst || 0}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.powerPlay?.pdo?.toFixed(1) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.powerPlay?.shooting_efficiency?.toFixed(3) || 'N/A'}
+                </td>
+              </tr>
 
-      {/* Regression Analysis */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="text-xl font-bold text-white">Regression Analysis</h3>
-        </div>
-        <div className="card-body">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-nhl-gold mb-2">
-                {teamData.pdo.toFixed(1)}
-              </div>
-              <div className="text-sm text-gray-400 mb-2">PDO</div>
-              <div className={`text-xs px-2 py-1 rounded ${
-                teamData.pdo > 102 ? 'bg-red-500/20 text-red-300' :
-                teamData.pdo < 98 ? 'bg-green-500/20 text-green-300' :
-                'bg-gray-500/20 text-gray-300'
-              }`}>
-                {teamData.pdo > 102 ? 'Overperforming' :
-                 teamData.pdo < 98 ? 'Underperforming' : 'Neutral'}
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-nhl-gold mb-2">
-                {teamData.shooting_efficiency.toFixed(2)}
-              </div>
-              <div className="text-sm text-gray-400 mb-2">Shooting Efficiency</div>
-              <div className={`text-xs px-2 py-1 rounded ${
-                teamData.shooting_efficiency > 1.1 ? 'bg-red-500/20 text-red-300' :
-                teamData.shooting_efficiency < 0.9 ? 'bg-green-500/20 text-green-300' :
-                'bg-gray-500/20 text-gray-300'
-              }`}>
-                {teamData.shooting_efficiency > 1.1 ? 'Overperforming' :
-                 teamData.shooting_efficiency < 0.9 ? 'Underperforming' : 'Normal'}
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-nhl-gold mb-2">
-                {Math.abs(teamData.regression_score).toFixed(1)}
-              </div>
-              <div className="text-sm text-gray-400 mb-2">Regression Score</div>
-              <div className={`text-xs px-2 py-1 rounded ${
-                Math.abs(teamData.regression_score) > 10 ? 'bg-yellow-500/20 text-yellow-300' :
-                'bg-gray-500/20 text-gray-300'
-              }`}>
-                {Math.abs(teamData.regression_score) > 10 ? 'High Regression Expected' : 'Stable'}
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 p-4 bg-gray-700 rounded-lg">
-            <h4 className="font-semibold text-white mb-2">Betting Recommendation:</h4>
-            <p className="text-gray-300 text-sm">
-              {teamData.regression_score > 10 ? 
-                `BET UNDER/AGAINST ${getTeamAbbreviation(teamData.team)} - Team is overperforming and due for regression` :
-               teamData.regression_score < -10 ?
-                `BET OVER/WITH ${getTeamAbbreviation(teamData.team)} - Team is underperforming and due for positive regression` :
-                `No significant edge detected for ${getTeamAbbreviation(teamData.team)}`
-              }
-            </p>
-          </div>
+              <tr>
+                <td><span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Penalty Kill (4v5)</span></td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.penaltyKill?.xGF_per60?.toFixed(2) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.penaltyKill?.xGA_per60?.toFixed(2) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.penaltyKill?.goalsFor || 0}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.penaltyKill?.goalsAgainst || 0}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.penaltyKill?.pdo?.toFixed(1) || 'N/A'}
+                </td>
+                <td style={{ textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                  {allSituations.penaltyKill?.shooting_efficiency?.toFixed(3) || 'N/A'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
