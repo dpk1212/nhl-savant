@@ -1,6 +1,6 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { loadNHLData, loadOddsFile } from './utils/dataProcessing';
+import { loadNHLData, loadOddsFiles } from './utils/dataProcessing';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import TeamAnalytics from './components/TeamAnalytics';
@@ -25,9 +25,9 @@ function App() {
         setDataProcessor(processor);
         setError(null);
         
-        // Load odds data (optional - doesn't fail if not available)
-        const odds = await loadOddsFile();
-        setOddsData(odds);
+        // Load both odds files (Money + Total)
+        const oddsFiles = await loadOddsFiles();
+        setOddsData(oddsFiles);
       } catch (err) {
         console.error('Failed to load NHL data:', err);
         setError('Failed to load NHL data. Please check if teams.csv is available.');

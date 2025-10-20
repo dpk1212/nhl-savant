@@ -472,18 +472,33 @@ export async function loadNHLData() {
   }
 }
 
-// Load today's odds file (Part 7)
-export async function loadOddsFile() {
+// Load both odds files (Money + Total)
+export async function loadOddsFiles() {
   try {
-    // Try to load today's odds file from public folder
-    const response = await fetch('/nhl-savant/todays_odds.md');
-    if (!response.ok) {
-      console.warn('No odds file found - games page will show placeholder');
+    console.log('🏒 Loading Money file...');
+    console.log('🏒 Loading Total file...');
+    
+    const [moneyResponse, totalResponse] = await Promise.all([
+      fetch('/nhl-savant/odds_money.md'),
+      fetch('/nhl-savant/odds_total.md')
+    ]);
+    
+    if (!moneyResponse.ok || !totalResponse.ok) {
+      console.warn('One or both odds files not found');
       return null;
     }
-    return await response.text();
+    
+    const moneyText = await moneyResponse.text();
+    const totalText = await totalResponse.text();
+    
+    console.log('✅ Both odds files loaded successfully');
+    
+    return {
+      moneyText,
+      totalText
+    };
   } catch (error) {
-    console.warn('Error loading odds file:', error);
+    console.warn('Error loading odds files:', error);
     return null;
   }
 }

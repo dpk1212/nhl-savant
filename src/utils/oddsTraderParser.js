@@ -77,10 +77,31 @@ export function parseOddsTrader(markdownText) {
         }
       }
       
-      const awayOddsMatch = line.match(/([-+]\d{3,})[A-Za-z]/);
-      if (awayOddsMatch) {
-        awayOdds = parseInt(awayOddsMatch[1]);
-        console.log(`  💰 Away odds: ${awayOdds}`);
+      // Check for totals first (o5½ -110 or u5½ +100)
+      const totalMatch = line.match(/(o|u)(\d+(?:½)?)\s*([-+]\d{3,})[A-Za-z]/);
+      if (totalMatch) {
+        const overOrUnder = totalMatch[1]; // 'o' or 'u'
+        const lineValue = totalMatch[2].replace('½', '.5'); // "5½" -> "5.5"
+        const odds = parseInt(totalMatch[3]);
+        
+        if (overOrUnder === 'o') {
+          currentGame.total.line = parseFloat(lineValue);
+          currentGame.total.over = odds;
+          console.log(`  📊 OVER ${lineValue} ${odds}`);
+        } else {
+          if (!currentGame.total.line) {
+            currentGame.total.line = parseFloat(lineValue);
+          }
+          currentGame.total.under = odds;
+          console.log(`  📊 UNDER ${lineValue} ${odds}`);
+        }
+      } else {
+        // If not a total, try moneyline
+        const awayOddsMatch = line.match(/([-+]\d{3,})[A-Za-z]/);
+        if (awayOddsMatch) {
+          awayOdds = parseInt(awayOddsMatch[1]);
+          console.log(`  💰 Away odds: ${awayOdds}`);
+        }
       }
       
       // Parse HOME team from NEXT line (i+1)
@@ -101,10 +122,31 @@ export function parseOddsTrader(markdownText) {
         }
       }
       
-      const homeOddsMatch = nextLine.match(/([-+]\d{3,})[A-Za-z]/);
-      if (homeOddsMatch) {
-        homeOdds = parseInt(homeOddsMatch[1]);
-        console.log(`  💰 Home odds: ${homeOdds}`);
+      // Check for totals first (under line for home team row)
+      const homeTotalMatch = nextLine.match(/(o|u)(\d+(?:½)?)\s*([-+]\d{3,})[A-Za-z]/);
+      if (homeTotalMatch) {
+        const overOrUnder = homeTotalMatch[1];
+        const lineValue = homeTotalMatch[2].replace('½', '.5');
+        const odds = parseInt(homeTotalMatch[3]);
+        
+        if (overOrUnder === 'o') {
+          currentGame.total.line = parseFloat(lineValue);
+          currentGame.total.over = odds;
+          console.log(`  📊 OVER ${lineValue} ${odds}`);
+        } else {
+          if (!currentGame.total.line) {
+            currentGame.total.line = parseFloat(lineValue);
+          }
+          currentGame.total.under = odds;
+          console.log(`  📊 UNDER ${lineValue} ${odds}`);
+        }
+      } else {
+        // If not a total, try moneyline
+        const homeOddsMatch = nextLine.match(/([-+]\d{3,})[A-Za-z]/);
+        if (homeOddsMatch) {
+          homeOdds = parseInt(homeOddsMatch[1]);
+          console.log(`  💰 Home odds: ${homeOdds}`);
+        }
       }
       
       // Create game if we have all data
@@ -167,5 +209,41 @@ export function getTeamName(code) {
     if (teamCode === code) return name;
   }
   return null;
+}
+
+/**
+ * Parse BOTH Money and Total files and merge the data
+ * @param {string} moneyText - Markdown from Money tab (has moneylines)
+ * @param {string} totalText - Markdown from Total tab (has totals)
+ * @returns {Array} Merged game objects with both moneylines and totals
+ */
+export function parseBothFiles(moneyText, totalText) {
+  console.log('🔄 Merging moneylines + totals...');
+  
+  // Parse money file for moneylines
+  const moneyGames = parseOddsTrader(moneyText);
+  console.log(`✅ Parsed ${moneyGames.length} games from Money file`);
+  
+  // Parse total file for totals
+  const totalGames = parseOddsTrader(totalText);
+  console.log(`✅ Parsed ${totalGames.length} games from Total file`);
+  
+  // Merge: moneylines from money file + totals from total file
+  const mergedGames = moneyGames.map((moneyGame, index) => {
+    const totalGame = totalGames[index];
+    
+    if (totalGame && totalGame.total && totalGame.total.line) {
+      return {
+        ...moneyGame,
+        total: totalGame.total
+      };
+    }
+    
+    return moneyGame;
+  });
+  
+  console.log(`📋 Final merged games: ${mergedGames.map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', ')}`);
+  
+  return mergedGames;
 }
 

@@ -1,60 +1,78 @@
-# How to Update Daily Odds Data
+# Daily Update Process for NHL Savant Odds
 
-This guide explains how to update the odds data for today's NHL games.
+## Overview
+The NHL Savant application uses **TWO** OddsTrader files to get complete odds data:
+- **Money file:** Contains moneyline odds (away ML and home ML)
+- **Total file:** Contains over/under totals and odds
 
-## Quick Steps
+## Step-by-Step Daily Update Process
 
-1. **Get Today's Odds File**
-   - Go to **www.oddstrader.com/nhl/**
-   - **IMPORTANT:** Click the **"Money"** tab (NOT "Merged" or "Total")
-   - Save the page as Markdown (`.md` file)
-   - The file will be named something like: `www.oddstrader.com_nhl_.2025-10-20T18_09_44.451Z.md`
-   
-   **Why "Money" tab?** The "Money" tab shows moneyline odds for both teams. The "Merged" tab only shows totals for away team and moneyline for home team, which causes incorrect parsing.
+### 1. Download Both Odds Files from OddsTrader
 
-2. **Rename the File**
-   - Rename the downloaded file to exactly: `todays_odds.md`
+1. Go to **www.oddstrader.com/nhl/**
+2. Make sure you're viewing **"Today"** games
+3. Click the **"Money"** tab at the top
+4. Save the page as markdown (Command+S or File → Save Page As)
+5. Click the **"Total"** tab at the top
+6. Save the page as markdown (Command+S or File → Save Page As)
 
-3. **Replace the Existing File**
-   - Navigate to the `public/` folder in this project
-   - Replace the old `todays_odds.md` with your new file
+### 2. Rename Files
 
-4. **Deploy the Changes**
-   ```bash
-   # From the project root directory
-   cd "/Users/dalekolnitys/NHL Savant/nhl-savant"
-   git add public/todays_odds.md
-   git commit -m "Update today's odds"
-   git push origin main
-   npm run deploy
-   ```
+Rename the downloaded files to:
+- Money file → `odds_money.md`
+- Total file → `odds_total.md`
 
-5. **Done!**
-   - Visit: https://dpk1212.github.io/nhl-savant/#/games
-   - You'll see today's games with betting edges
+### 3. Replace Files in Project
 
-## What Gets Parsed
+Copy both files to the `nhl-savant/public/` folder, replacing the existing files.
 
-The parser extracts:
-- Game time
-- Away team
-- Home team  
-- Moneyline odds for both teams
-
-## Format Details
-
-OddsTrader uses a simple table format:
-```
-MON 10/207:00 PM
-Minnesota
-+125Bet365
-N.Y. Rangers
--145Caesars
+```bash
+# From your NHL Savant folder
+cp ~/Downloads/odds_money.md "nhl-savant/public/odds_money.md"
+cp ~/Downloads/odds_total.md "nhl-savant/public/odds_total.md"
 ```
 
-The parser automatically:
-- Identifies today's games (MON date vs TUE date)
-- Extracts team names
-- Extracts moneyline odds (ignoring sportsbook names)
-- Stops when tomorrow's games start
+### 4. Deploy Updated Odds
 
+```bash
+cd "/Users/dalekolnitys/NHL Savant/nhl-savant"
+git add public/odds_money.md public/odds_total.md
+git commit -m "Update today's odds - $(date +%Y-%m-%d)"
+git push origin main
+npm run deploy
+```
+
+### 5. Verify
+
+After deployment (takes 1-2 minutes):
+1. Go to your GitHub Pages site
+2. Navigate to "Today's Games"
+3. Verify all games show:
+   - Correct moneyline odds
+   - Correct over/under totals
+   - Calculated edges and recommendations
+
+## File Format
+
+The application expects:
+- **odds_money.md:** OddsTrader Money tab (moneylines)
+- **odds_total.md:** OddsTrader Total tab (totals)
+
+Both files are parsed and merged automatically to provide complete odds data.
+
+## Troubleshooting
+
+**No games showing?**
+- Check that both files are saved in `public/` folder
+- Check file names are exactly `odds_money.md` and `odds_total.md`
+- Check browser console for parsing errors
+
+**Wrong odds displaying?**
+- Make sure you downloaded the correct tab (Money vs Total)
+- Check that you're viewing "Today" not "Yesterday" on OddsTrader
+- Clear browser cache and refresh
+
+**Parser errors?**
+- Make sure files are saved as markdown (.md)
+- Don't manually edit the downloaded files
+- Re-download if format looks incorrect
