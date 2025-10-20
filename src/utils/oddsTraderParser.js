@@ -65,13 +65,23 @@ export function parseOddsTrader(markdownText) {
       const gameTime = timeMatch[1];
       console.log(`  ⏰ Time: ${gameTime}`);
       
-      // Parse AWAY team from current line (i)
-      let awayTeam = null;
-      let awayOdds = null;
+      // CREATE currentGame object IMMEDIATELY
+      const currentGame = {
+        gameTime: gameTime,
+        awayTeam: null,
+        homeTeam: null,
+        moneyline: { away: null, home: null },
+        puckLine: {
+          away: { spread: null, odds: null },
+          home: { spread: null, odds: null }
+        },
+        total: { line: null, over: null, under: null }
+      };
       
+      // Parse AWAY team from current line (i)
       for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
         if (line.includes(fullName)) {
-          awayTeam = code;
+          currentGame.awayTeam = code;
           console.log(`  🏒 Away team: ${fullName} (${code})`);
           break;
         }
@@ -99,8 +109,8 @@ export function parseOddsTrader(markdownText) {
         // If not a total, try moneyline
         const awayOddsMatch = line.match(/([-+]\d{3,})[A-Za-z]/);
         if (awayOddsMatch) {
-          awayOdds = parseInt(awayOddsMatch[1]);
-          console.log(`  💰 Away odds: ${awayOdds}`);
+          currentGame.moneyline.away = parseInt(awayOddsMatch[1]);
+          console.log(`  💰 Away odds: ${currentGame.moneyline.away}`);
         }
       }
       
@@ -111,12 +121,9 @@ export function parseOddsTrader(markdownText) {
         continue;
       }
       
-      let homeTeam = null;
-      let homeOdds = null;
-      
       for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
         if (nextLine.includes(fullName)) {
-          homeTeam = code;
+          currentGame.homeTeam = code;
           console.log(`  🏒 Home team: ${fullName} (${code})`);
           break;
         }
@@ -144,38 +151,19 @@ export function parseOddsTrader(markdownText) {
         // If not a total, try moneyline
         const homeOddsMatch = nextLine.match(/([-+]\d{3,})[A-Za-z]/);
         if (homeOddsMatch) {
-          homeOdds = parseInt(homeOddsMatch[1]);
-          console.log(`  💰 Home odds: ${homeOdds}`);
+          currentGame.moneyline.home = parseInt(homeOddsMatch[1]);
+          console.log(`  💰 Home odds: ${currentGame.moneyline.home}`);
         }
       }
       
-      // Create game if we have all data
-      if (awayTeam && homeTeam && awayOdds !== null && homeOdds !== null) {
-        const game = {
-          gameTime: gameTime,
-          awayTeam: awayTeam,
-          homeTeam: homeTeam,
-          moneyline: {
-            away: awayOdds,
-            home: homeOdds
-          },
-          // OddsTrader only shows moneyline in this format
-          // We don't have puck line or totals
-          puckLine: {
-            away: { spread: null, odds: null },
-            home: { spread: null, odds: null }
-          },
-          total: {
-            line: null,
-            over: null,
-            under: null
-          }
-        };
-        
-        games.push(game);
-        console.log(`  ✅ Added game: ${awayTeam} @ ${homeTeam}`);
+      // Add game if we have team data
+      if (currentGame.awayTeam && currentGame.homeTeam) {
+        games.push(currentGame);
+        console.log(`  ✅ Added game: ${currentGame.awayTeam} @ ${currentGame.homeTeam}`);
+        console.log(`     Moneyline: ${currentGame.moneyline.away}/${currentGame.moneyline.home}`);
+        console.log(`     Total: ${currentGame.total.line ? `O/U ${currentGame.total.line} (${currentGame.total.over}/${currentGame.total.under})` : 'N/A'}`);
       } else {
-        console.log(`  ❌ Missing data - awayTeam: ${awayTeam}, homeTeam: ${homeTeam}, awayOdds: ${awayOdds}, homeOdds: ${homeOdds}`);
+        console.log(`  ❌ Missing team data - away: ${currentGame.awayTeam}, home: ${currentGame.homeTeam}`);
       }
     }
     
