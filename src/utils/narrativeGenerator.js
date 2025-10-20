@@ -48,7 +48,7 @@ export function generateBetNarrative(game, edge, dataProcessor) {
   let icon = '';
 
   if (market === 'TOTAL') {
-    const isOver = pick.includes('Over');
+    const isOver = pick.toUpperCase().includes('OVER');
     const predictedTotal = game.edges.total.predictedTotal;
     const marketTotal = game.edges.total.marketTotal;
     const difference = Math.abs(predictedTotal - marketTotal);

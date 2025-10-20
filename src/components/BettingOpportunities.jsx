@@ -21,7 +21,7 @@ const BettingOpportunities = ({ dataProcessor, oddsData }) => {
       if (oddsData) {
         const calculator = new EdgeCalculator(dataProcessor, oddsData);
         const edges = calculator.getTopEdges(0);
-        const allGameEdges = calculator.getAllGameEdges();
+        const allGameEdges = calculator.calculateAllEdges();
         setTodaysEdges(edges.filter(e => e.evPercent > 0));
         setAllEdges(allGameEdges);
       }
