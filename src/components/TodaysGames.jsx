@@ -144,7 +144,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                     {game.gameTime}
                   </p>
                 </div>
-                {game.edges.total && (
+                {game.edges.total && game.edges.total.predictedTotal != null && (
                   <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                     <p style={{ 
                       fontSize: '0.75rem', 
@@ -248,7 +248,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                 )}
 
                 {/* Total */}
-                {game.edges.total && (
+                {game.edges.total && game.edges.total.over && game.edges.total.under && game.rawOdds.total.line && (
                   <div style={{ 
                     backgroundColor: 'var(--color-background)', 
                     padding: isMobile ? '0.875rem' : '1rem', 
@@ -275,7 +275,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                           fontSize: isMobile ? '0.938rem' : '0.875rem'
                         }}
                       >
-                        {game.edges.total.over.odds > 0 ? '+' : ''}{game.edges.total.over.odds} ({(game.edges.total.over.modelProb * 100).toFixed(1)}%)
+                        {game.edges.total.over.odds > 0 ? '+' : ''}{game.edges.total.over.odds} ({game.edges.total.over.modelProb ? (game.edges.total.over.modelProb * 100).toFixed(1) : '0.0'}%)
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -288,7 +288,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                           fontSize: isMobile ? '0.938rem' : '0.875rem'
                         }}
                       >
-                        {game.edges.total.under.odds > 0 ? '+' : ''}{game.edges.total.under.odds} ({(game.edges.total.under.modelProb * 100).toFixed(1)}%)
+                        {game.edges.total.under.odds > 0 ? '+' : ''}{game.edges.total.under.odds} ({game.edges.total.under.modelProb ? (game.edges.total.under.modelProb * 100).toFixed(1) : '0.0'}%)
                       </span>
                     </div>
                   </div>
@@ -296,7 +296,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
               </div>
 
               {/* Mathematical Breakdown */}
-              {game.edges.total && (
+              {game.edges.total && game.rawOdds.total && game.rawOdds.total.line && (
                 <div style={{ marginTop: isMobile ? '1.5rem' : '1.5rem' }}>
                   <MathBreakdown 
                     awayTeam={game.awayTeam}
