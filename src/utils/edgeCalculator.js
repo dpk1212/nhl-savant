@@ -142,9 +142,11 @@ export class EdgeCalculator {
     // Calculate edge (how much our model differs from market)
     const edge = predictedTotal - marketTotal;
     
-    // Use NORMAL DISTRIBUTION for over/under probability (statistically sound)
-    // NHL game totals have standard deviation of ~1.5 goals
-    const stdDev = 1.5;
+    // AUDIT IMPROVEMENT 1C: Dynamic standard deviation based on expected total
+    // Low-scoring games (4 goals): stdDev ~1.3
+    // High-scoring games (7 goals): stdDev ~1.8
+    // Formula: 0.9 + (predictedTotal * 0.12)
+    const stdDev = 0.9 + (predictedTotal * 0.12);
     
     // Calculate Z-score: how many standard deviations is market line from prediction?
     const zScore = (marketTotal - predictedTotal) / stdDev;

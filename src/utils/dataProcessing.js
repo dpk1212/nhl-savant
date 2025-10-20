@@ -85,7 +85,7 @@ export class NHLDataProcessor {
     processed.highDanger_xGF_per60 = this.calculatePer60Rate(safeGet(team.highDangerxGoalsFor), safeGet(team.iceTime));
     processed.highDanger_xGA_per60 = this.calculatePer60Rate(safeGet(team.highDangerxGoalsAgainst), safeGet(team.iceTime));
     
-    // Score adjusted per-60
+    // Score adjusted per-60 (AUDIT IMPROVEMENT: Better than raw xG)
     processed.scoreAdj_xGF_per60 = this.calculatePer60Rate(safeGet(team.scoreVenueAdjustedxGoalsFor), safeGet(team.iceTime));
     processed.scoreAdj_xGA_per60 = this.calculatePer60Rate(safeGet(team.scoreVenueAdjustedxGoalsAgainst), safeGet(team.iceTime));
     
@@ -171,6 +171,7 @@ export class NHLDataProcessor {
   }
 
   // Predict individual team score (Part 2.2)
+  // AUDIT IMPROVEMENTS: Score-adjusted xG, PDO regression, dynamic weighting
   predictTeamScore(team, opponent) {
     const team_5v5 = this.getTeamData(team, '5on5');
     const opponent_5v5 = this.getTeamData(opponent, '5on5');
@@ -179,19 +180,50 @@ export class NHLDataProcessor {
     
     if (!team_5v5 || !opponent_5v5) return 0;
     
-    // 5v5 component: Average team's offense and opponent's defensive weakness
-    // This creates a bilateral expectation: how much THIS team scores vs THIS opponent
-    const expected_5v5_rate = (team_5v5.xGF_per60 + opponent_5v5.xGA_per60) / 2;
+    // IMPROVEMENT 1A: Use score-adjusted xG (removes score effect bias)
+    const team_xGF = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
+    const opp_xGA = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
+    
+    // IMPROVEMENT 1B: PDO regression adjustment
+    const team_PDO = this.calculatePDO(team_5v5);
+    const opp_PDO = this.calculatePDO(opponent_5v5);
+    const team_xGF_adjusted = this.applyPDORegression(team_xGF, team_PDO);
+    const opp_xGA_adjusted = this.applyPDORegression(opp_xGA, opp_PDO);
+    
+    // 5v5 component: Weighted average (offense 55%, defense 45% - research-backed)
+    const expected_5v5_rate = (team_xGF_adjusted * 0.55) + (opp_xGA_adjusted * 0.45);
     const goals_5v5 = (expected_5v5_rate / 60) * 46.2; // 77% of 60 min = 46.2 min
     
     // PP component: Average team's PP offense and opponent's PK defensive weakness
     let goals_PP = 0;
     if (team_PP && opponent_PK) {
-      const expected_PP_rate = (team_PP.xGF_per60 + opponent_PK.xGA_per60) / 2;
+      const team_PP_xGF = team_PP.scoreAdj_xGF_per60 || team_PP.xGF_per60;
+      const opp_PK_xGA = opponent_PK.scoreAdj_xGA_per60 || opponent_PK.xGA_per60;
+      const expected_PP_rate = (team_PP_xGF * 0.55) + (opp_PK_xGA * 0.45);
       goals_PP = (expected_PP_rate / 60) * 7.2; // 12% of 60 min = 7.2 min
     }
     
     return Math.max(0, goals_5v5 + goals_PP);
+  }
+
+  // IMPROVEMENT 1B: Apply PDO regression to xG predictions
+  // Teams with extreme PDO (luck) will regress toward mean
+  applyPDORegression(xG_per60, PDO) {
+    if (!PDO || PDO === 100) return xG_per60;
+    
+    // PDO > 102: Team is lucky (high sh% or sv%), expect regression DOWN
+    // PDO < 98: Team is unlucky, expect regression UP
+    if (PDO > 102) {
+      // Regress down by 2-5% depending on how extreme
+      const regressionFactor = Math.min(0.05, (PDO - 102) * 0.01);
+      return xG_per60 * (1 - regressionFactor);
+    } else if (PDO < 98) {
+      // Regress up by 2-5%
+      const regressionFactor = Math.min(0.05, (98 - PDO) * 0.01);
+      return xG_per60 * (1 + regressionFactor);
+    }
+    
+    return xG_per60; // PDO in normal range, no regression needed
   }
 
   // Convert predicted probability to American odds (Part 2.3)

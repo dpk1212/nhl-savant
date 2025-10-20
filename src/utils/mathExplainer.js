@@ -118,7 +118,8 @@ export function explainGamePrediction(awayTeam, homeTeam, marketTotal, marketOve
   const { prob1: overTrue, prob2: underTrue, vig } = removeVig(overImplied, underImplied);
   
   // Model probabilities using normal distribution
-  const stdDev = 1.5;
+  // AUDIT IMPROVEMENT: Dynamic stdDev based on predicted total
+  const stdDev = 0.9 + (predictedTotal * 0.12);
   const zScore = (marketTotal - predictedTotal) / stdDev;
   const overProb = 1 - dataProcessor.normalCDF(zScore);
   const underProb = 1 - overProb;
