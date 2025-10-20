@@ -38,19 +38,19 @@ export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
     return null;
   }
   
-  // 5v5 calculation
-  const team_xGF_per60 = team_5v5.xGF_per60;
-  const opp_xGA_per60 = opponent_5v5.xGA_per60;
-  const expected_5v5_rate = (team_xGF_per60 + opp_xGA_per60) / 2;
+  // 5v5 calculation - AUDIT FIX: Now using score-adjusted xG and 55/45 weighting
+  const team_xGF_per60 = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
+  const opp_xGA_per60 = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
+  const expected_5v5_rate = (team_xGF_per60 * 0.55) + (opp_xGA_per60 * 0.45); // 55/45 weighting (research-backed)
   const goals_5v5 = (expected_5v5_rate / 60) * 46.2;
   
-  // PP calculation
+  // PP calculation - AUDIT FIX: Now using score-adjusted xG and 55/45 weighting
   let goals_PP = 0;
   let pp_breakdown = null;
   if (team_PP && opponent_PK) {
-    const team_PP_xGF_per60 = team_PP.xGF_per60;
-    const opp_PK_xGA_per60 = opponent_PK.xGA_per60;
-    const expected_PP_rate = (team_PP_xGF_per60 + opp_PK_xGA_per60) / 2;
+    const team_PP_xGF_per60 = team_PP.scoreAdj_xGF_per60 || team_PP.xGF_per60;
+    const opp_PK_xGA_per60 = opponent_PK.scoreAdj_xGA_per60 || opponent_PK.xGA_per60;
+    const expected_PP_rate = (team_PP_xGF_per60 * 0.55) + (opp_PK_xGA_per60 * 0.45); // 55/45 weighting
     goals_PP = (expected_PP_rate / 60) * 7.2;
     
     pp_breakdown = {

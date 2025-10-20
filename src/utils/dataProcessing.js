@@ -185,8 +185,18 @@ export class NHLDataProcessor {
     const opp_xGA = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
     
     // IMPROVEMENT 1B: PDO regression adjustment
-    const team_PDO = this.calculatePDO(team_5v5);
-    const opp_PDO = this.calculatePDO(opponent_5v5);
+    const team_PDO = this.calculatePDO(
+      team_5v5.goalsFor, 
+      team_5v5.shotsOnGoalFor, 
+      team_5v5.goalsAgainst, 
+      team_5v5.shotsOnGoalAgainst
+    );
+    const opp_PDO = this.calculatePDO(
+      opponent_5v5.goalsFor, 
+      opponent_5v5.shotsOnGoalFor, 
+      opponent_5v5.goalsAgainst, 
+      opponent_5v5.shotsOnGoalAgainst
+    );
     const team_xGF_adjusted = this.applyPDORegression(team_xGF, team_PDO);
     const opp_xGA_adjusted = this.applyPDORegression(opp_xGA, opp_PDO);
     
