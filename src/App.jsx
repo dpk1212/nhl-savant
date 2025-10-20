@@ -70,7 +70,7 @@ function App() {
           <Navigation />
           <main className="container mx-auto px-4 py-8">
             <Routes>
-              <Route path="/" element={<Dashboard dataProcessor={dataProcessor} />} />
+              <Route path="/" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/teams" element={<TeamAnalytics dataProcessor={dataProcessor} />} />
               <Route path="/opportunities" element={<BettingOpportunities dataProcessor={dataProcessor} />} />
               <Route path="/methodology" element={<Methodology />} />
