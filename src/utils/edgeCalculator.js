@@ -50,27 +50,25 @@ export class EdgeCalculator {
       return { away: null, home: null };
     }
     
-    // Estimate win probability (home team gets ~5% boost for home ice)
-    const awayWinProb = this.dataProcessor.estimateWinProbability(awayTeam, homeTeam);
-    const homeWinProb = 1 - awayWinProb;
+    // Estimate win probability using improved logistic model with home ice built-in
+    // Home team perspective (isHome = true) 
+    const homeWinProb = this.dataProcessor.estimateWinProbability(homeTeam, awayTeam, true);
+    // Away team win prob is complement
+    const awayWinProb = 1 - homeWinProb;
     
-    // Adjust for home ice advantage
-    const adjustedAwayProb = Math.max(0.1, Math.min(0.9, awayWinProb - 0.025));
-    const adjustedHomeProb = Math.max(0.1, Math.min(0.9, homeWinProb + 0.025));
+    // Calculate EV for each side using the model probabilities
+    const awayEV = this.dataProcessor.calculateEV(awayWinProb, game.moneyline.away);
+    const homeEV = this.dataProcessor.calculateEV(homeWinProb, game.moneyline.home);
     
-    // Calculate EV for each side
-    const awayEV = this.dataProcessor.calculateEV(adjustedAwayProb, game.moneyline.away);
-    const homeEV = this.dataProcessor.calculateEV(adjustedHomeProb, game.moneyline.home);
-    
-    // Calculate Kelly stakes
-    const awayKelly = this.dataProcessor.calculateKellyStake(adjustedAwayProb, game.moneyline.away);
-    const homeKelly = this.dataProcessor.calculateKellyStake(adjustedHomeProb, game.moneyline.home);
+    // Calculate Kelly stakes using model probabilities
+    const awayKelly = this.dataProcessor.calculateKellyStake(awayWinProb, game.moneyline.away);
+    const homeKelly = this.dataProcessor.calculateKellyStake(homeWinProb, game.moneyline.home);
     
     return {
       away: {
         ev: awayEV,
         evPercent: (awayEV / 100) * 100,
-        modelProb: adjustedAwayProb,
+        modelProb: awayWinProb,
         marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
         kelly: awayKelly,
         odds: game.moneyline.away
@@ -78,7 +76,7 @@ export class EdgeCalculator {
       home: {
         ev: homeEV,
         evPercent: (homeEV / 100) * 100,
-        modelProb: adjustedHomeProb,
+        modelProb: homeWinProb,
         marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
         kelly: homeKelly,
         odds: game.moneyline.home
@@ -141,16 +139,16 @@ export class EdgeCalculator {
     const predictedTotal = this.dataProcessor.predictGameTotal(game.awayTeam, game.homeTeam);
     const marketTotal = game.total.line;
     
-    const edge = predictedTotal - marketTotal;
+    // Use NORMAL DISTRIBUTION for over/under probability (statistically sound)
+    // NHL game totals have standard deviation of ~1.5 goals
+    const stdDev = 1.5;
     
-    // Estimate probability of going over/under
-    // If model predicts significantly higher, over is more likely
-    let overProb = 0.5;
-    if (edge > 0.5) overProb = 0.6;
-    else if (edge > 1.0) overProb = 0.7;
-    else if (edge < -0.5) overProb = 0.4;
-    else if (edge < -1.0) overProb = 0.3;
+    // Calculate Z-score: how many standard deviations is market line from prediction?
+    const zScore = (marketTotal - predictedTotal) / stdDev;
     
+    // Probability of going OVER using cumulative distribution function
+    // P(actual > market) = P(Z > z-score) = 1 - CDF(z-score)
+    const overProb = 1 - this.dataProcessor.normalCDF(zScore);
     const underProb = 1 - overProb;
     
     // Calculate EV

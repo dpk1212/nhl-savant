@@ -203,18 +203,22 @@ export class NHLDataProcessor {
   // Predict individual team score (Part 2.2)
   predictTeamScore(team, opponent) {
     const team_5v5 = this.getTeamData(team, '5on5');
+    const opponent_5v5 = this.getTeamData(opponent, '5on5');
     const team_PP = this.getTeamData(team, '5on4');
     const opponent_PK = this.getTeamData(opponent, '4on5');
     
-    if (!team_5v5) return 0;
+    if (!team_5v5 || !opponent_5v5) return 0;
     
-    // 5v5 component (77% of game)
-    const goals_5v5 = team_5v5.xGF_per60 * 0.77;
+    // 5v5 component: Average team's offense and opponent's defensive weakness
+    // This creates a bilateral expectation: how much THIS team scores vs THIS opponent
+    const expected_5v5_rate = (team_5v5.xGF_per60 + opponent_5v5.xGA_per60) / 2;
+    const goals_5v5 = (expected_5v5_rate / 60) * 46.2; // 77% of 60 min = 46.2 min
     
-    // PP component (12% of game)
+    // PP component: Average team's PP offense and opponent's PK defensive weakness
     let goals_PP = 0;
     if (team_PP && opponent_PK) {
-      goals_PP = (team_PP.xGF_per60 - opponent_PK.xGA_per60) * 0.12;
+      const expected_PP_rate = (team_PP.xGF_per60 + opponent_PK.xGA_per60) / 2;
+      goals_PP = (expected_PP_rate / 60) * 7.2; // 12% of 60 min = 7.2 min
     }
     
     return Math.max(0, goals_5v5 + goals_PP);
@@ -246,16 +250,22 @@ export class NHLDataProcessor {
   calculateEV(modelProbability, marketOdds, stake = 100) {
     if (modelProbability <= 0 || modelProbability >= 1) return 0;
     
-    // Calculate payout based on American odds
-    let payout;
+    // Convert American odds to decimal odds (includes stake in return)
+    let decimalOdds;
     if (marketOdds > 0) {
-      payout = stake * (marketOdds / 100);
+      // Positive odds: +125 means win $125 on $100 bet → total return $225 → 2.25x
+      decimalOdds = 1 + (marketOdds / 100);
     } else {
-      payout = stake * (100 / Math.abs(marketOdds));
+      // Negative odds: -150 means bet $150 to win $100 → total return $250 → 1.667x
+      decimalOdds = 1 + (100 / Math.abs(marketOdds));
     }
     
-    // EV = (P_model × Payout) - (1 - P_model) × Stake
-    const ev = (modelProbability * payout) - ((1 - modelProbability) * stake);
+    // Total return if bet wins (includes original stake)
+    const totalReturn = stake * decimalOdds;
+    
+    // EV = (P_win × total_return) - stake
+    // This accounts for: win scenario returns totalReturn, lose scenario loses stake
+    const ev = (modelProbability * totalReturn) - stake;
     
     return ev;
   }
@@ -284,30 +294,50 @@ export class NHLDataProcessor {
     };
   }
 
+  // Normal distribution cumulative distribution function (CDF)
+  // Used for calculating over/under probabilities
+  normalCDF(z) {
+    // Approximation of CDF using error function (Abramowitz and Stegun)
+    // Accurate to ~7 decimal places
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = 0.3989423 * Math.exp(-z * z / 2);
+    const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    return z > 0 ? 1 - p : p;
+  }
+
   // Estimate win probability based on team stats (helper for moneyline)
-  estimateWinProbability(team, opponent) {
+  estimateWinProbability(team, opponent, isHome = true) {
     if (!team || !opponent) return 0.5;
     
     // Use xG differential and regression scores to estimate win probability
     const teamXGD = team.xGD_per60 || 0;
     const oppXGD = opponent.xGD_per60 || 0;
     
+    // Home ice advantage: ~54-55% historical win rate for equal teams
+    // This translates to ~0.15 xGD boost
+    const homeBonus = isHome ? 0.15 : 0;
+    
     // Adjust for regression (teams with high PDO likely to regress)
     const teamReg = team.regression_score || 0;
     const oppReg = opponent.regression_score || 0;
     
-    // Combine factors (xGD is primary, regression is secondary)
-    const teamStrength = teamXGD - (teamReg * 0.02); // Penalize overperformers
-    const oppStrength = oppXGD - (oppReg * 0.02);
+    // Combine factors (xGD is primary, regression is secondary, home ice is tertiary)
+    const teamStrength = teamXGD + homeBonus - (teamReg * 0.01); // Reduced regression penalty
+    const oppStrength = oppXGD - (oppReg * 0.01);
     
     const diff = teamStrength - oppStrength;
     
-    // Convert differential to probability using logistic function
-    // Each 0.5 xGD difference ≈ 10% win probability shift
-    const winProb = 0.5 + (diff * 0.1);
+    // Use LOGISTIC FUNCTION for more realistic probability curve
+    // P(win) = 1 / (1 + e^(-k*diff)) where k controls sensitivity
+    // k = 0.8 calibrated so that:
+    // - diff = 0 → 50% (equal teams)
+    // - diff = 0.5 → ~62% (moderate advantage)
+    // - diff = 1.0 → ~69% (strong advantage)
+    const k = 0.8;
+    const winProb = 1 / (1 + Math.exp(-k * diff));
     
-    // Clamp between 0.1 and 0.9 (never give 100% or 0%)
-    return Math.max(0.1, Math.min(0.9, winProb));
+    // Clamp between 0.05 and 0.95 (never give 100% or 0%)
+    return Math.max(0.05, Math.min(0.95, winProb));
   }
 
   // Find regression candidates (betting opportunities)
