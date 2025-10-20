@@ -55,7 +55,7 @@ export function parseOddsTrader(markdownText) {
     if (line.includes('MON 10/20')) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
       
-      // Extract time from the line
+      // Extract time from the current line
       const timeMatch = line.match(/(\d{1,2}:\d{2} [AP]M)/);
       if (!timeMatch) {
         console.log('  ⚠️ No time found, skipping');
@@ -65,48 +65,49 @@ export function parseOddsTrader(markdownText) {
       const gameTime = timeMatch[1];
       console.log(`  ⏰ Time: ${gameTime}`);
       
-      // The line contains the entire table row with <br> tags
-      // Split by <br> to get individual parts
-      const parts = line.split('<br>');
-      
-      // Find team names and odds in the parts
+      // Parse AWAY team from current line (i)
       let awayTeam = null;
-      let homeTeam = null;
       let awayOdds = null;
-      let homeOdds = null;
       
-      for (let j = 0; j < parts.length; j++) {
-        const part = parts[j].trim();
-        
-        // Check if this part contains a team name
-        for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
-          if (part.includes(fullName)) {
-            if (!awayTeam) {
-              awayTeam = code;
-              console.log(`  🏒 Away team: ${fullName} (${code})`);
-            } else if (!homeTeam) {
-              homeTeam = code;
-              console.log(`  🏒 Home team: ${fullName} (${code})`);
-            }
-            break;
-          }
-        }
-        
-        // Check if this part contains moneyline odds (e.g., "+125Bet365" or "-145Caesars")
-        const oddsMatch = part.match(/([-+]\d{3,})[A-Za-z]/);
-        if (oddsMatch) {
-          const odds = parseInt(oddsMatch[1]);
-          if (!awayOdds) {
-            awayOdds = odds;
-            console.log(`  💰 Away odds: ${odds}`);
-          } else if (!homeOdds) {
-            homeOdds = odds;
-            console.log(`  💰 Home odds: ${odds}`);
-          }
+      for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
+        if (line.includes(fullName)) {
+          awayTeam = code;
+          console.log(`  🏒 Away team: ${fullName} (${code})`);
+          break;
         }
       }
       
-      // If we found both teams and both odds, create a game
+      const awayOddsMatch = line.match(/([-+]\d{3,})[A-Za-z]/);
+      if (awayOddsMatch) {
+        awayOdds = parseInt(awayOddsMatch[1]);
+        console.log(`  💰 Away odds: ${awayOdds}`);
+      }
+      
+      // Parse HOME team from NEXT line (i+1)
+      const nextLine = lines[i + 1];
+      if (!nextLine) {
+        console.log('  ⚠️ No next line found for home team, skipping');
+        continue;
+      }
+      
+      let homeTeam = null;
+      let homeOdds = null;
+      
+      for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
+        if (nextLine.includes(fullName)) {
+          homeTeam = code;
+          console.log(`  🏒 Home team: ${fullName} (${code})`);
+          break;
+        }
+      }
+      
+      const homeOddsMatch = nextLine.match(/([-+]\d{3,})[A-Za-z]/);
+      if (homeOddsMatch) {
+        homeOdds = parseInt(homeOddsMatch[1]);
+        console.log(`  💰 Home odds: ${homeOdds}`);
+      }
+      
+      // Create game if we have all data
       if (awayTeam && homeTeam && awayOdds !== null && homeOdds !== null) {
         const game = {
           gameTime: gameTime,
