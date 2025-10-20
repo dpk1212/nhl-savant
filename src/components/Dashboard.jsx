@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import DataStatus from './DataStatus';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
   const [opportunities, setOpportunities] = useState([]);
   const [leagueStats, setLeagueStats] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (dataProcessor) {
@@ -36,241 +48,341 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
     <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }}>
       {/* Clean Header */}
       <div style={{
-        padding: '3rem 2rem 2rem',
+        padding: isMobile ? '2rem 1rem 1rem' : '3rem 2rem 2rem',
         borderBottom: '1px solid var(--color-border)',
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <h1 style={{ marginBottom: '0.5rem' }}>NHL Analytics Dashboard</h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-            Advanced metrics and betting opportunities based on xG analysis and regression modeling
+          <h1 style={{ 
+            marginBottom: '0.5rem',
+            fontSize: isMobile ? '1.5rem' : '2rem'
+          }}>
+            📊 NHL Analytics Dashboard
+          </h1>
+          <p style={{ 
+            color: 'var(--color-text-secondary)', 
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            lineHeight: '1.6'
+          }}>
+            Statistical overview of today's betting opportunities based on advanced metrics like xG, PDO, and regression analysis.
           </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto', 
+        padding: isMobile ? '1rem' : '2rem'
+      }}>
         {/* Data Status */}
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
           <DataStatus dataProcessor={dataProcessor} loading={loading} error={error} />
         </div>
 
         {/* League Stats Grid */}
         {leagueStats && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1rem',
-            marginBottom: '2rem',
-          }}>
-            <div className="stat-card">
-              <div className="stat-card-value metric-number">{leagueStats.totalTeams}</div>
-              <div className="stat-card-label">TEAMS ANALYZED</div>
-              <div className="stat-card-description">Across all situations</div>
+          <div 
+            className="dashboard-stats-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: isMobile ? '1.5rem' : '2rem',
+            }}
+          >
+            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
+              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+                {leagueStats.totalTeams}
+              </div>
+              <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
+                TEAMS ANALYZED
+              </div>
+              <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
+                Across all situations
+              </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-card-value metric-number">{leagueStats.avgPDO}</div>
-              <div className="stat-card-label">AVG PDO</div>
-              <div className="stat-card-description">100 = neutral luck</div>
+            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
+              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+                {leagueStats.avgPDO}
+              </div>
+              <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
+                AVG PDO
+              </div>
+              <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
+                100 = neutral luck
+              </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-card-value metric-number">{leagueStats.avgXGD}</div>
-              <div className="stat-card-label">AVG XG DIFFERENTIAL</div>
-              <div className="stat-card-description">Per 60 minutes</div>
+            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
+              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
+                {leagueStats.avgXGD}
+              </div>
+              <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
+                AVG XG DIFFERENTIAL
+              </div>
+              <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
+                Per 60 minutes
+              </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-card-value metric-number">
+            <div className="stat-card elevated-card" style={{ padding: isMobile ? '1rem' : '1.25rem' }}>
+              <div className="stat-card-value metric-number" style={{ fontSize: isMobile ? '2rem' : '2.5rem' }}>
                 {leagueStats.overperformingTeams + leagueStats.underperformingTeams}
               </div>
-              <div className="stat-card-label">BETTING EDGES</div>
-              <div className="stat-card-description">Identified opportunities</div>
+              <div className="stat-card-label" style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
+                BETTING EDGES
+              </div>
+              <div className="stat-card-description" style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>
+                Identified opportunities
+              </div>
             </div>
           </div>
         )}
 
-        {/* Betting Opportunities Table */}
-        <div className="card">
-          <div className="card-header">
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BarChart3 size={20} />
+        {/* Betting Opportunities */}
+        <div className="elevated-card">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: isMobile ? '1rem' : '1.5rem'
+          }}>
+            <h2 style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem',
+              fontSize: isMobile ? '1.25rem' : '1.5rem'
+            }}>
+              <BarChart3 size={isMobile ? 18 : 20} />
               Top Betting Opportunities
             </h2>
+            <Link 
+              to="/opportunities"
+              style={{
+                color: 'var(--color-accent)',
+                textDecoration: 'none',
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                fontWeight: '600'
+              }}
+            >
+              View All →
+            </Link>
           </div>
 
           {opportunities.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center' }}>
-              <p style={{ color: 'var(--color-text-muted)' }}>
+            <div style={{ padding: isMobile ? '2rem 1rem' : '3rem', textAlign: 'center' }}>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: isMobile ? '0.875rem' : '1rem' }}>
                 No significant opportunities found in current data
               </p>
             </div>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>TEAM</th>
-                  <th>TYPE</th>
-                  <th>RECOMMENDATION</th>
-                  <th>REASON</th>
-                  <th style={{ textAlign: 'right' }}>CONFIDENCE</th>
-                  <th style={{ textAlign: 'right' }}>EDGE</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Desktop: Table */}
+              <div className="desktop-only" style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>TEAM</th>
+                      <th>TYPE</th>
+                      <th>RECOMMENDATION</th>
+                      <th>REASON</th>
+                      <th style={{ textAlign: 'right' }}>CONFIDENCE</th>
+                      <th style={{ textAlign: 'right' }}>EDGE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {opportunities.slice(0, 10).map((opportunity, index) => (
+                      <tr key={index}>
+                        <td>
+                          <span style={{ 
+                            fontWeight: 600,
+                            color: 'var(--color-text-primary)',
+                          }}>
+                            {opportunity.team}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={
+                            opportunity.type === 'REGRESSION' ? 'badge-danger' : 'badge-accent'
+                          } style={{
+                            display: 'inline-block',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '2px',
+                            fontSize: '0.625rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            border: '1px solid',
+                          }}>
+                            {opportunity.type.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {opportunity.recommendation.includes('UNDER') || opportunity.recommendation.includes('AGAINST') ? (
+                              <TrendingDown size={14} color="var(--color-danger)" />
+                            ) : (
+                              <TrendingUp size={14} color="var(--color-success)" />
+                            )}
+                            <span style={{ fontSize: '0.8125rem', fontWeight: 500 }}>
+                              {opportunity.recommendation}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '0.8125rem', maxWidth: '300px' }}>
+                          {opportunity.reason}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{
+                              fontWeight: 600,
+                              color: 'var(--color-text-primary)',
+                              marginBottom: '0.25rem',
+                              fontSize: '0.875rem',
+                            }}>
+                              {opportunity.confidence.toFixed(0)}%
+                            </div>
+                            <div className="confidence-bar" style={{ width: '60px', marginLeft: 'auto' }}>
+                              <div
+                                className={`confidence-bar-fill ${getConfidenceColor(opportunity.confidence)}`}
+                                style={{ width: `${opportunity.confidence}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span style={{
+                            fontWeight: 600,
+                            color: 'var(--color-success)',
+                            fontSize: '0.875rem',
+                          }}>
+                            {(opportunity.edge * 100).toFixed(1)}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile: Cards */}
+              <div className="mobile-only">
                 {opportunities.slice(0, 10).map((opportunity, index) => (
-                  <tr key={index}>
-                    <td>
-                      <span style={{ 
-                        fontWeight: 600,
-                        color: 'var(--color-text-primary)',
-                      }}>
-                        {opportunity.team}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={
-                        opportunity.type === 'REGRESSION' ? 'badge-danger' : 'badge-accent'
-                      } style={{
-                        display: 'inline-block',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '2px',
-                        fontSize: '0.625rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        border: '1px solid',
-                      }}>
-                        {opportunity.type.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {opportunity.recommendation.includes('UNDER') || opportunity.recommendation.includes('AGAINST') ? (
-                          <TrendingDown size={14} color="var(--color-danger)" />
-                        ) : (
-                          <TrendingUp size={14} color="var(--color-success)" />
-                        )}
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 500 }}>
-                          {opportunity.recommendation}
+                  <div 
+                    key={index}
+                    style={{
+                      backgroundColor: 'var(--color-background)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '6px',
+                      padding: '1rem',
+                      marginBottom: '0.75rem'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <div>
+                        <div style={{
+                          fontSize: '1.125rem',
+                          fontWeight: '700',
+                          color: 'var(--color-text-primary)',
+                          marginBottom: '0.25rem'
+                        }}>
+                          {opportunity.team}
+                        </div>
+                        <span className={
+                          opportunity.type === 'REGRESSION' ? 'badge-danger' : 'badge-accent'
+                        } style={{
+                          display: 'inline-block',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '2px',
+                          fontSize: '0.625rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          border: '1px solid',
+                        }}>
+                          {opportunity.type.replace('_', ' ')}
                         </span>
                       </div>
-                    </td>
-                    <td style={{ fontSize: '0.8125rem', maxWidth: '300px' }}>
-                      {opportunity.reason}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{
-                          fontWeight: 600,
-                          color: 'var(--color-text-primary)',
-                          marginBottom: '0.25rem',
-                          fontSize: '0.875rem',
+                          fontSize: '1.5rem',
+                          fontWeight: '700',
+                          color: 'var(--color-success)',
+                          lineHeight: 1
                         }}>
-                          {opportunity.confidence.toFixed(0)}%
+                          {(opportunity.edge * 100).toFixed(1)}%
                         </div>
-                        <div className="confidence-bar" style={{ width: '60px', marginLeft: 'auto' }}>
-                          <div
-                            className={`confidence-bar-fill ${getConfidenceColor(opportunity.confidence)}`}
-                            style={{ width: `${opportunity.confidence}%` }}
-                          ></div>
+                        <div style={{
+                          fontSize: '0.688rem',
+                          color: 'var(--color-text-muted)',
+                          marginTop: '0.25rem'
+                        }}>
+                          Edge
                         </div>
                       </div>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {opportunity.recommendation.includes('UNDER') || opportunity.recommendation.includes('AGAINST') ? (
+                        <TrendingDown size={16} color="var(--color-danger)" />
+                      ) : (
+                        <TrendingUp size={16} color="var(--color-success)" />
+                      )}
                       <span style={{
-                        fontWeight: 600,
-                        color: 'var(--color-success)',
-                        fontSize: '0.875rem',
+                        fontSize: '0.938rem',
+                        fontWeight: '600',
+                        color: 'var(--color-text-primary)'
                       }}>
-                        {(opportunity.edge * 100).toFixed(1)}%
+                        {opportunity.recommendation}
                       </span>
-                    </td>
-                  </tr>
+                    </div>
+
+                    <p style={{
+                      fontSize: '0.875rem',
+                      color: 'var(--color-text-secondary)',
+                      lineHeight: '1.5',
+                      marginBottom: '0.75rem'
+                    }}>
+                      {opportunity.reason}
+                    </p>
+
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      paddingTop: '0.75rem',
+                      borderTop: '1px solid var(--color-border)'
+                    }}>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--color-text-muted)'
+                      }}>
+                        Confidence
+                      </div>
+                      <div style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: 'var(--color-text-primary)'
+                      }}>
+                        {opportunity.confidence.toFixed(0)}%
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
-        </div>
-
-        {/* Analysis Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '1rem',
-          marginTop: '2rem',
-        }}>
-          <div className="card">
-            <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Regression Analysis</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>Overperforming Teams</span>
-                  <span style={{ 
-                    fontWeight: 700,
-                    color: 'var(--color-danger)',
-                    fontSize: '1.125rem',
-                  }}>
-                    {leagueStats?.overperformingTeams || 0}
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                  Due for negative regression
-                </p>
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>Underperforming Teams</span>
-                  <span style={{ 
-                    fontWeight: 700,
-                    color: 'var(--color-success)',
-                    fontSize: '1.125rem',
-                  }}>
-                    {leagueStats?.underperformingTeams || 0}
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                  Due for positive regression
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Model Performance</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>Data Points</span>
-                  <span style={{ 
-                    fontWeight: 700,
-                    color: 'var(--color-accent)',
-                    fontSize: '1.125rem',
-                  }}>
-                    {dataProcessor?.processedData?.length || 0}
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                  Total rows processed
-                </p>
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem' }}>Game Situations</span>
-                  <span style={{ 
-                    fontWeight: 700,
-                    color: 'var(--color-accent)',
-                    fontSize: '1.125rem',
-                  }}>
-                    5
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                  5v5, PP, PK, All, Other
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
