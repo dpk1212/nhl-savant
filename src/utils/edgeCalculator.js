@@ -139,6 +139,9 @@ export class EdgeCalculator {
     const predictedTotal = this.dataProcessor.predictGameTotal(game.awayTeam, game.homeTeam);
     const marketTotal = game.total.line;
     
+    // Calculate edge (how much our model differs from market)
+    const edge = predictedTotal - marketTotal;
+    
     // Use NORMAL DISTRIBUTION for over/under probability (statistically sound)
     // NHL game totals have standard deviation of ~1.5 goals
     const stdDev = 1.5;
