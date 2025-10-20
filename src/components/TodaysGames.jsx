@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Info } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
+import MathBreakdown from './MathBreakdown';
 
 const TodaysGames = ({ dataProcessor, oddsData }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
@@ -303,6 +304,9 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                   </div>
                 )}
               </div>
+
+              {/* Mathematical Breakdown Component */}
+              <MathBreakdown game={game.rawOdds} dataProcessor={dataProcessor} />
             </div>
           ))}
         </div>
