@@ -192,7 +192,8 @@ export function getTeamStatusIcon(team_5v5, PDO) {
  */
 export function calculateLeagueRank(value, allValues, lowerIsBetter = false) {
   const sorted = [...allValues].sort((a, b) => lowerIsBetter ? a - b : b - a);
-  const rank = sorted.indexOf(value) + 1;
+  // FIX: Use filter instead of indexOf to handle duplicates and floating point issues
+  const rank = sorted.filter(v => lowerIsBetter ? v < value : v > value).length + 1;
   const percentile = ((sorted.length - rank + 1) / sorted.length) * 100;
   const barFill = Math.round((percentile / 100) * 10);
   const bar = '█'.repeat(barFill) + '░'.repeat(10 - barFill);
@@ -333,15 +334,17 @@ export function generateDeepAnalytics(game, edge, dataProcessor) {
     home_5v5.shotsOnGoalAgainst
   );
   
-  // Calculate probabilities
-  const marketProb = edge.modelProb || 0.5;
-  const impliedProb = 1 / (Math.abs(edge.odds) / 100 + 1);
-  const probEdge = ((marketProb - impliedProb) * 100).toFixed(1);
+  // Calculate probabilities - FIX: Correct variable names and odds conversion
+  const modelProb = edge.modelProb || 0.5; // Our model's probability
+  const marketImpliedProb = edge.odds < 0 
+    ? Math.abs(edge.odds) / (Math.abs(edge.odds) + 100)  // Negative odds: -110 → 110/210 = 52.4%
+    : 100 / (edge.odds + 100);                           // Positive odds: +150 → 100/250 = 40%
+  const probEdge = ((modelProb - marketImpliedProb) * 100).toFixed(1);
   
-  // Calculate dollar value
+  // Calculate dollar value - FIX: Use correct variable names
   const decimalOdds = edge.odds > 0 ? (edge.odds / 100) + 1 : (100 / Math.abs(edge.odds)) + 1;
-  const expectedReturn = marketProb * decimalOdds * 100;
-  const marketReturn = impliedProb * decimalOdds * 100;
+  const expectedReturn = modelProb * decimalOdds * 100; // What we expect based on MODEL
+  const marketFairReturn = marketImpliedProb * decimalOdds * 100; // What market implies (~$100 if fair)
   const dollarEV = (expectedReturn - 100).toFixed(2);
   
   // Confidence level (based on sample size and PDO stability)
@@ -375,13 +378,13 @@ export function generateDeepAnalytics(game, edge, dataProcessor) {
       }
     },
     probabilities: {
-      model: (marketProb * 100).toFixed(1),
-      market: (impliedProb * 100).toFixed(1),
+      model: (modelProb * 100).toFixed(1),
+      market: (marketImpliedProb * 100).toFixed(1),
       edge: probEdge
     },
     dollarValue: {
       expectedReturn: expectedReturn.toFixed(2),
-      marketReturn: marketReturn.toFixed(2),
+      marketReturn: marketFairReturn.toFixed(2),
       ev: dollarEV
     },
     confidence: {

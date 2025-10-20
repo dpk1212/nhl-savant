@@ -163,7 +163,13 @@ const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor }) => {
               <div>
                 <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Probability Edge</div>
                 <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-success)' }}>
-                  +{((1 - parseFloat(breakdown.modelProbabilities.zScore)) * 100 / 2).toFixed(1)}%
+                  {(() => {
+                    // FIX: Calculate probability edge correctly from actual probabilities
+                    const modelOverProb = parseFloat(breakdown.modelProbabilities.overProb) || 0;
+                    const marketOverProb = parseFloat(breakdown.marketAnalysis.overTrue) || 0;
+                    const probEdge = (modelOverProb - marketOverProb).toFixed(1);
+                    return `${probEdge > 0 ? '+' : ''}${probEdge}%`;
+                  })()}
                 </div>
               </div>
             </div>

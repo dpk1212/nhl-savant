@@ -75,6 +75,9 @@ export class NHLDataProcessor {
       return parseFloat(value);
     };
     
+    // FIX: Map CSV field name to camelCase for consistency
+    processed.gamesPlayed = safeGet(team.games_played, 20);
+    
     // Per-60 rates
     processed.xGF_per60 = this.calculatePer60Rate(safeGet(team.xGoalsFor), safeGet(team.iceTime));
     processed.xGA_per60 = this.calculatePer60Rate(safeGet(team.xGoalsAgainst), safeGet(team.iceTime));
