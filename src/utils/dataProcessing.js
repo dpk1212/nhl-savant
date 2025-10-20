@@ -42,9 +42,14 @@ export class NHLDataProcessor {
 
   // Calculate regression score (key betting metric)
   calculateRegressionScore(team) {
-    const shootingEff = this.calculateShootingEfficiency(team.goalsFor, team.xGoalsFor);
-    const savePerf = this.calculateSavePerformance(team.goalsAgainst, team.xGoalsAgainst);
-    const pdo = this.calculatePDO(team.goalsFor, team.shotsOnGoalFor, team.goalsAgainst, team.shotsOnGoalAgainst);
+    const safeGet = (value, defaultValue = 0) => {
+      if (value === null || value === undefined || isNaN(value)) return defaultValue;
+      return parseFloat(value);
+    };
+    
+    const shootingEff = this.calculateShootingEfficiency(safeGet(team.goalsFor), safeGet(team.xGoalsFor));
+    const savePerf = this.calculateSavePerformance(safeGet(team.goalsAgainst), safeGet(team.xGoalsAgainst));
+    const pdo = this.calculatePDO(safeGet(team.goalsFor), safeGet(team.shotsOnGoalFor), safeGet(team.goalsAgainst), safeGet(team.shotsOnGoalAgainst));
     
     // Higher score = more regression expected
     let score = 0;
@@ -64,33 +69,39 @@ export class NHLDataProcessor {
   processTeamData(team) {
     const processed = { ...team };
     
+    // Ensure we have valid numeric values
+    const safeGet = (value, defaultValue = 0) => {
+      if (value === null || value === undefined || isNaN(value)) return defaultValue;
+      return parseFloat(value);
+    };
+    
     // Per-60 rates
-    processed.xGF_per60 = this.calculatePer60Rate(team.xGoalsFor, team.iceTime);
-    processed.xGA_per60 = this.calculatePer60Rate(team.xGoalsAgainst, team.iceTime);
-    processed.corsi_per60 = this.calculatePer60Rate(team.shotAttemptsFor, team.iceTime);
-    processed.fenwick_per60 = this.calculatePer60Rate(team.unblockedShotAttemptsFor, team.iceTime);
+    processed.xGF_per60 = this.calculatePer60Rate(safeGet(team.xGoalsFor), safeGet(team.iceTime));
+    processed.xGA_per60 = this.calculatePer60Rate(safeGet(team.xGoalsAgainst), safeGet(team.iceTime));
+    processed.corsi_per60 = this.calculatePer60Rate(safeGet(team.shotAttemptsFor), safeGet(team.iceTime));
+    processed.fenwick_per60 = this.calculatePer60Rate(safeGet(team.unblockedShotAttemptsFor), safeGet(team.iceTime));
     
     // High danger per-60
-    processed.highDanger_xGF_per60 = this.calculatePer60Rate(team.highDangerxGoalsFor, team.iceTime);
-    processed.highDanger_xGA_per60 = this.calculatePer60Rate(team.highDangerxGoalsAgainst, team.iceTime);
+    processed.highDanger_xGF_per60 = this.calculatePer60Rate(safeGet(team.highDangerxGoalsFor), safeGet(team.iceTime));
+    processed.highDanger_xGA_per60 = this.calculatePer60Rate(safeGet(team.highDangerxGoalsAgainst), safeGet(team.iceTime));
     
     // Score adjusted per-60
-    processed.scoreAdj_xGF_per60 = this.calculatePer60Rate(team.scoreVenueAdjustedxGoalsFor, team.iceTime);
-    processed.scoreAdj_xGA_per60 = this.calculatePer60Rate(team.scoreVenueAdjustedxGoalsAgainst, team.iceTime);
+    processed.scoreAdj_xGF_per60 = this.calculatePer60Rate(safeGet(team.scoreVenueAdjustedxGoalsFor), safeGet(team.iceTime));
+    processed.scoreAdj_xGA_per60 = this.calculatePer60Rate(safeGet(team.scoreVenueAdjustedxGoalsAgainst), safeGet(team.iceTime));
     
     // Special teams per-60 (situational)
     if (team.situation === '5on4') {
-      processed.pp_efficiency = this.calculatePer60Rate(team.xGoalsFor, team.iceTime);
+      processed.pp_efficiency = this.calculatePer60Rate(safeGet(team.xGoalsFor), safeGet(team.iceTime));
     }
     if (team.situation === '4on5') {
-      processed.pk_efficiency = this.calculatePer60Rate(team.xGoalsAgainst, team.iceTime);
+      processed.pk_efficiency = this.calculatePer60Rate(safeGet(team.xGoalsAgainst), safeGet(team.iceTime));
     }
     
     // Key metrics
-    processed.pdo = this.calculatePDO(team.goalsFor, team.shotsOnGoalFor, team.goalsAgainst, team.shotsOnGoalAgainst);
-    processed.shooting_efficiency = this.calculateShootingEfficiency(team.goalsFor, team.xGoalsFor);
-    processed.save_performance = this.calculateSavePerformance(team.goalsAgainst, team.xGoalsAgainst);
-    processed.xGD_per60 = this.calculateXGDiffPer60(team.xGoalsFor, team.xGoalsAgainst, team.iceTime);
+    processed.pdo = this.calculatePDO(safeGet(team.goalsFor), safeGet(team.shotsOnGoalFor), safeGet(team.goalsAgainst), safeGet(team.shotsOnGoalAgainst));
+    processed.shooting_efficiency = this.calculateShootingEfficiency(safeGet(team.goalsFor), safeGet(team.xGoalsFor));
+    processed.save_performance = this.calculateSavePerformance(safeGet(team.goalsAgainst), safeGet(team.xGoalsAgainst));
+    processed.xGD_per60 = this.calculateXGDiffPer60(safeGet(team.xGoalsFor), safeGet(team.xGoalsAgainst), safeGet(team.iceTime));
     
     // Regression score
     processed.regression_score = this.calculateRegressionScore(team);
@@ -255,20 +266,52 @@ export class NHLDataProcessor {
 export async function loadNHLData() {
   try {
     const response = await fetch('./teams.csv');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const csvText = await response.text();
     
     return new Promise((resolve, reject) => {
       Papa.parse(csvText, {
         header: true,
-        complete: (results) => {
-          if (results.errors.length > 0) {
-            reject(new Error('CSV parsing errors: ' + results.errors.join(', ')));
-          } else {
-            const processor = new NHLDataProcessor(results.data);
-            resolve(processor);
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        transform: (value) => {
+          // Clean and convert numeric values
+          if (value === '' || value === null || value === undefined) return null;
+          const trimmed = value.toString().trim();
+          if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return null;
+          
+          // Try to convert to number if it looks like a number
+          if (!isNaN(trimmed) && !isNaN(parseFloat(trimmed))) {
+            return parseFloat(trimmed);
           }
+          return trimmed;
+        },
+        complete: (results) => {
+          console.log('CSV parsing completed. Rows:', results.data.length);
+          console.log('Parsing errors:', results.errors);
+          
+          if (results.errors.length > 0) {
+            console.warn('CSV parsing warnings:', results.errors);
+          }
+          
+          // Filter out any completely empty rows
+          const cleanData = results.data.filter(row => 
+            row && Object.keys(row).some(key => row[key] !== null && row[key] !== '')
+          );
+          
+          if (cleanData.length === 0) {
+            reject(new Error('No valid data found in CSV file'));
+            return;
+          }
+          
+          console.log('Clean data rows:', cleanData.length);
+          const processor = new NHLDataProcessor(cleanData);
+          resolve(processor);
         },
         error: (error) => {
+          console.error('CSV parsing error:', error);
           reject(error);
         }
       });
