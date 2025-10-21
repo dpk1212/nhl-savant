@@ -334,39 +334,25 @@ export function generateDeepAnalytics(game, edge, dataProcessor) {
     home_5v5.shotsOnGoalAgainst
   );
   
-  // Calculate probabilities - CRITICAL FIX: Always use OVER probabilities for consistency with MathBreakdown
-  // The edge object could be for OVER or UNDER bet (whichever has better EV)
-  // But we ALWAYS display probability edge for the OVER bet to match MathBreakdown display
+  // CRITICAL FIX: Display probabilities for the RECOMMENDED BET, not always OVER
+  // If recommending UNDER, show UNDER probabilities
+  // If recommending OVER, show OVER probabilities
   
-  // Check if this edge is for the OVER or UNDER bet based on pick/market
-  const isOverBet = edge.pick && edge.pick.includes('OVER');
-  const isUnderBet = edge.pick && edge.pick.includes('UNDER');
+  // The edge.modelProb is ALREADY the probability for the recommended bet
+  const modelProb = edge.modelProb || 0.5;
   
-  // Get the actual model probabilities for OVER (to match MathBreakdown)
-  let modelOverProb = edge.modelProb || 0.5;
+  // Get market probability for the SAME bet (OVER or UNDER)
+  // edge.odds is the odds for the recommended bet
+  const marketProb = edge.odds < 0 
+    ? Math.abs(edge.odds) / (Math.abs(edge.odds) + 100)  // Negative odds: -110 → 110/210 = 52.4%
+    : 100 / (edge.odds + 100);                            // Positive odds: +150 → 100/250 = 40%
   
-  // If this edge is for UNDER bet, flip to get OVER probability
-  if (isUnderBet) {
-    modelOverProb = 1 - modelOverProb;
-  }
+  const probEdge = ((modelProb - marketProb) * 100).toFixed(1);
   
-  // Market implied probability should also be for OVER
-  // We need to get OVER odds from game data, not from the edge (which could be UNDER)
-  const marketOverOdds = game.rawOdds?.total?.over || edge.odds;
-  const marketOverProb = marketOverOdds < 0 
-    ? Math.abs(marketOverOdds) / (Math.abs(marketOverOdds) + 100)  // Negative odds: -110 → 110/210 = 52.4%
-    : 100 / (marketOverOdds + 100);                                  // Positive odds: +150 → 100/250 = 40%
-  
-  const probEdge = ((modelOverProb - marketOverProb) * 100).toFixed(1);
-  
-  // Calculate dollar value - Using the actual edge's modelProb (could be OVER or UNDER)
+  // Calculate dollar value - Using the recommended bet's probability
   const decimalOdds = edge.odds > 0 ? (edge.odds / 100) + 1 : (100 / Math.abs(edge.odds)) + 1;
-  const modelProb = edge.modelProb || 0.5; // This is for the specific bet (OVER or UNDER)
-  const marketImpliedProb = edge.odds < 0 
-    ? Math.abs(edge.odds) / (Math.abs(edge.odds) + 100)
-    : 100 / (edge.odds + 100);
   const expectedReturn = modelProb * decimalOdds * 100; // What we expect based on MODEL
-  const marketFairReturn = marketImpliedProb * decimalOdds * 100; // What market implies (~$100 if fair)
+  const marketFairReturn = marketProb * decimalOdds * 100; // What market implies (~$100 if fair)
   const dollarEV = (expectedReturn - 100).toFixed(2);
   
   // Confidence level (based on sample size and PDO stability)
@@ -400,9 +386,9 @@ export function generateDeepAnalytics(game, edge, dataProcessor) {
       }
     },
     probabilities: {
-      model: (modelOverProb * 100).toFixed(1), // Always OVER probability for consistency
-      market: (marketOverProb * 100).toFixed(1), // Always OVER probability for consistency
-      edge: probEdge // This is now OVER edge (model OVER - market OVER)
+      model: (modelProb * 100).toFixed(1), // Probability for the RECOMMENDED bet
+      market: (marketProb * 100).toFixed(1), // Market probability for the RECOMMENDED bet
+      edge: probEdge // Probability edge for the RECOMMENDED bet
     },
     dollarValue: {
       expectedReturn: expectedReturn.toFixed(2),
