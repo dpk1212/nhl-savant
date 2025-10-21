@@ -88,13 +88,14 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
     <div style={{
       position: isMobile ? 'relative' : 'sticky',
       top: isMobile ? '0' : '60px',
-      zIndex: 10,
+      zIndex: 100,
       background: 'var(--color-surface)',
       border: '1px solid var(--color-border)',
       borderRadius: '8px',
       marginBottom: '1.5rem',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      backdropFilter: 'blur(8px)'
     }}>
       {/* Header */}
       <div style={{
