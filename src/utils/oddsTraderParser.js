@@ -266,3 +266,19 @@ export function parseBothFiles(moneyText, totalText) {
   return mergedGames;
 }
 
+/**
+ * Extract simple games list for admin goalie selection
+ * Returns array of {away, home, time} objects
+ */
+export function extractGamesListFromOdds(mergedGames) {
+  if (!mergedGames || mergedGames.length === 0) {
+    return [];
+  }
+  
+  return mergedGames.map(game => ({
+    away: game.awayTeam,
+    home: game.homeTeam,
+    time: game.time || 'TBD'
+  }));
+}
+

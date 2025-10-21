@@ -7,12 +7,14 @@ import Dashboard from './components/Dashboard';
 import DataInspector from './components/DataInspector';
 import TodaysGames from './components/TodaysGames';
 import Methodology from './components/Methodology';
+import AdminGoalies from './components/AdminGoalies';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [dataProcessor, setDataProcessor] = useState(null);
   const [oddsData, setOddsData] = useState(null);
+  const [goalieData, setGoalieData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -24,10 +26,12 @@ function App() {
         // NEW: Load goalie data first
         console.log('🥅 Loading goalie data...');
         let goalieProcessor = null;
+        let rawGoalieData = null;
         try {
-          const goalieData = await loadGoalieData();
-          goalieProcessor = new GoalieProcessor(goalieData);
-          console.log('✅ Goalie processor initialized with', goalieData.length, 'goalie entries');
+          rawGoalieData = await loadGoalieData();
+          goalieProcessor = new GoalieProcessor(rawGoalieData);
+          setGoalieData(rawGoalieData); // Store for admin component
+          console.log('✅ Goalie processor initialized with', rawGoalieData.length, 'goalie entries');
         } catch (goalieErr) {
           console.warn('⚠️ Failed to load goalie data, predictions will not include goalie adjustments:', goalieErr);
           // Continue without goalie data - model will work but without goalie adjustments
@@ -42,6 +46,14 @@ function App() {
         // Load both odds files (Money + Total)
         console.log('💰 Loading odds data...');
         const oddsFiles = await loadOddsFiles();
+        
+        // Extract games list for admin component
+        if (oddsFiles && oddsFiles.mergedGames) {
+          const { extractGamesListFromOdds } = await import('./utils/oddsTraderParser');
+          oddsFiles.todaysGames = extractGamesListFromOdds(oddsFiles.mergedGames);
+          console.log(`📋 Extracted ${oddsFiles.todaysGames.length} games for admin`);
+        }
+        
         setOddsData(oddsFiles);
         
         console.log('✅ All data loaded successfully');
@@ -99,6 +111,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
+              <Route path="/admin/goalies" element={<AdminGoalies games={oddsData?.todaysGames || []} goalieData={goalieData} />} />
             </Routes>
           </main>
         </div>

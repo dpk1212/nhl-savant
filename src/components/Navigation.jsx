@@ -11,7 +11,8 @@ const Navigation = () => {
     { path: '/', label: "Today's Games", icon: '🎯' },
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/methodology', label: 'Methodology', icon: '📚' },
-    { path: '/inspector', label: 'Data Inspector', icon: '🔍' }
+    { path: '/inspector', label: 'Data Inspector', icon: '🔍' },
+    { path: '/admin/goalies', label: 'Admin: Goalies', icon: '🥅' }
   ];
 
   return (

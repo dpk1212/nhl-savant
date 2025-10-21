@@ -182,6 +182,63 @@ export class NHLDataProcessor {
     );
   }
 
+  // NEW: Calculate league-average xGF from loaded data
+  // Used for strength ratio calculations
+  calculateLeagueAverage() {
+    const all_teams = this.getTeamsBySituation('5on5');
+    if (!all_teams || all_teams.length === 0) return 2.45; // Default fallback
+    
+    const xGF_values = all_teams.map(t => t.xGF_per60).filter(v => v && v > 0);
+    if (xGF_values.length === 0) return 2.45;
+    
+    return xGF_values.reduce((sum, val) => sum + val, 0) / xGF_values.length;
+  }
+
+  // NEW: Calculate regression weight based on sample size
+  // Industry standard: regress heavily early season, less as data stabilizes
+  calculateRegressionWeight(gamesPlayed) {
+    if (!gamesPlayed || gamesPlayed < 0) return 0.75; // Default to heavy regression
+    
+    // Early season (0-15 games): 75% regression to league average
+    if (gamesPlayed < 15) return 0.75;
+    
+    // Mid season (15-40 games): 50% regression
+    if (gamesPlayed < 40) return 0.50;
+    
+    // Late season (40-60 games): 25% regression
+    if (gamesPlayed < 60) return 0.25;
+    
+    // Full season (60+ games): 10% regression
+    return 0.10;
+  }
+
+  // NEW: Apply regression to mean based on sample size
+  // This is CRITICAL for accurate early-season predictions
+  applyRegressionToMean(teamStat, leagueAvg, gamesPlayed) {
+    if (!teamStat || teamStat === 0) return leagueAvg;
+    
+    const regressionWeight = this.calculateRegressionWeight(gamesPlayed);
+    
+    // Weighted average: (team_stat × (1 - weight)) + (league_avg × weight)
+    // Early season: mostly league average
+    // Late season: mostly team's actual performance
+    return (teamStat * (1 - regressionWeight)) + (leagueAvg * regressionWeight);
+  }
+
+  // NEW: Get team shooting talent (actual goals vs xG)
+  // Elite finishers score more than xG suggests, weak finishers less
+  getShootingTalent(team) {
+    const team_5v5 = this.getTeamData(team, '5on5');
+    if (!team_5v5 || !team_5v5.goalsFor || !team_5v5.xGoalsFor) return 1.00;
+    
+    const shooting_pct = team_5v5.goalsFor / team_5v5.xGoalsFor;
+    
+    // Only adjust extreme outliers
+    if (shooting_pct > 1.08) return 1.03;  // Elite finishers (+3%)
+    if (shooting_pct < 0.92) return 0.97;  // Weak finishers (-3%)
+    return 1.00;  // Average finishers
+  }
+
   // Calculate expected goals for a team (prediction model)
   calculateExpectedGoals(teamName, opponentName) {
     const team5v5 = this.getTeamData(teamName, '5on5');
@@ -212,8 +269,8 @@ export class NHLDataProcessor {
   }
 
   // Predict individual team score (Part 2.2)
-  // PHASE 1 OPTIMIZATIONS: Shooting talent multiplier, reduced PDO regression, goalie disabled
-  predictTeamScore(team, opponent) {
+  // PHASE 5: Industry-standard approach with sample-size regression
+  predictTeamScore(team, opponent, isHome = false, startingGoalie = null) {
     const team_5v5 = this.getTeamData(team, '5on5');
     const opponent_5v5 = this.getTeamData(opponent, '5on5');
     const team_PP = this.getTeamData(team, '5on4');
@@ -221,12 +278,22 @@ export class NHLDataProcessor {
     
     if (!team_5v5 || !opponent_5v5) return 0;
     
-    // PHASE 3 TEST: Use RAW xG to preserve team variance
-    // Hypothesis: Score-adjusted xG removes real team strength differences
-    const team_xGF = team_5v5.xGF_per60;  // RAW xG for more variance
-    const opp_xGA = opponent_5v5.xGA_per60;  // RAW xG for more variance
+    // Get league average and games played
+    const league_avg = this.calculateLeagueAverage();
+    const gamesPlayed = team_5v5.gamesPlayed || 82;
+    const opp_gamesPlayed = opponent_5v5.gamesPlayed || 82;
     
-    // IMPROVEMENT 1B: PDO regression adjustment (PHASE 1: REDUCED to only extreme outliers)
+    // STEP 1: Get score-adjusted xG (best predictor)
+    const team_xGF_raw = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
+    const opp_xGA_raw = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
+    
+    // STEP 2: Apply sample-size based regression (CRITICAL!)
+    // Early season: regress heavily to league average
+    // Late season: trust team's actual performance
+    const team_xGF_regressed = this.applyRegressionToMean(team_xGF_raw, league_avg, gamesPlayed);
+    const opp_xGA_regressed = this.applyRegressionToMean(opp_xGA_raw, league_avg, opp_gamesPlayed);
+    
+    // STEP 3: Apply PDO regression (secondary adjustment for extreme outliers)
     const team_PDO = this.calculatePDO(
       team_5v5.goalsFor, 
       team_5v5.shotsOnGoalFor, 
@@ -239,83 +306,117 @@ export class NHLDataProcessor {
       opponent_5v5.goalsAgainst, 
       opponent_5v5.shotsOnGoalAgainst
     );
-    const team_xGF_adjusted = this.applyPDORegression(team_xGF, team_PDO);
-    const opp_xGA_adjusted = this.applyPDORegression(opp_xGA, opp_PDO);
+    const team_xGF_adjusted = this.applyPDORegression(team_xGF_regressed, team_PDO);
+    const opp_xGA_adjusted = this.applyPDORegression(opp_xGA_regressed, opp_PDO);
     
-    // NEW: Get dynamic situational weights based on penalty minutes
+    // STEP 4: 40/60 weighting (INDUSTRY STANDARD)
+    // Defense is MORE predictive than offense
+    const expected_5v5_rate = (team_xGF_adjusted * 0.40) + (opp_xGA_adjusted * 0.60);
+    
+    // STEP 5: Apply shooting talent (small adjustment for elite/weak finishers)
+    const shooting_skill = this.getShootingTalent(team);
+    const expected_5v5_adjusted = expected_5v5_rate * shooting_skill;
+    
+    // STEP 6: Calculate time-weighted goals
     const weights = this.calculateDynamicSituationalWeights(team, opponent);
-    
-    // PHASE 1 FIX: Add shooting talent multiplier (calibrated to 2024 data)
-    // Actual avg: 6.07 goals/game, was predicting ~5.25, now targeting 6.0-6.1
-    const SHOOTING_TALENT_MULTIPLIER = 1.10;
-    
-    // PHASE 2: Test 60/40 weighting (more offense-focused for better team differentiation)
-    // 5v5 component: Weighted average
-    const expected_5v5_rate = ((team_xGF_adjusted * 0.60) + (opp_xGA_adjusted * 0.40)) * SHOOTING_TALENT_MULTIPLIER;
     const minutes_5v5 = weights['5on5'] * 60;
-    const goals_5v5 = (expected_5v5_rate / 60) * minutes_5v5;
+    let goals_5v5 = (expected_5v5_adjusted / 60) * minutes_5v5;
     
-    // PP component: Average team's PP offense and opponent's PK defensive weakness
-    let goals_PP = 0;
-    if (team_PP && opponent_PK) {
-      const team_PP_xGF = team_PP.xGF_per60;  // RAW xG for PP too
-      const opp_PK_xGA = opponent_PK.xGA_per60;  // RAW xG for PK too
-      const expected_PP_rate = ((team_PP_xGF * 0.60) + (opp_PK_xGA * 0.40)) * SHOOTING_TALENT_MULTIPLIER;
-      const minutes_PP = weights['5on4'] * 60;
-      goals_PP = (expected_PP_rate / 60) * minutes_PP;
+    // STEP 7: Home ice advantage (5% boost)
+    if (isHome) {
+      goals_5v5 *= 1.05;
     }
     
-    // PHASE 1 FIX: Goalie adjustment DISABLED (was making model worse)
-    // Will re-enable after debugging in Phase 3
-    let goalieAdjustment = 0;
-    // if (this.goalieProcessor) {
-    //   // Use team-average goalie stats (for now - starting goalies in future)
-    //   const oppGoalieStats = this.goalieProcessor.getTeamAverageGoalieStats(opponent, '5on5');
-    //   
-    //   if (oppGoalieStats && oppGoalieStats.gamesPlayed > 0) {
-    //     // GSAE per game impact
-    //     const gsaePerGame = oppGoalieStats.gsaePerGame || 0;
-    //     
-    //     // High danger save % adjustment
-    //     const leagueAvgHDSv = 0.850;
-    //     const hdSavePct = oppGoalieStats.hdSavePct || leagueAvgHDSv;
-    //     
-    //     // Estimate opponent's high-danger shots from their xG data
-    //     const oppHDShots = parseFloat(opponent_5v5.highDangerShotsAgainst) || 0;
-    //     const oppIceTime = parseFloat(opponent_5v5.iceTime) || 1;
-    //     const oppHDShotsPerGame = (oppHDShots / oppIceTime) * 3600 * (60 / 60); // Approximate per game
-    //     
-    //     const hdAdjustment = (hdSavePct - leagueAvgHDSv) * (oppHDShotsPerGame * 0.1); // Scale factor
-    //     
-    //     // Negative because OPPONENT's good goalie reduces THIS team's goals
-    //     goalieAdjustment = -(gsaePerGame + hdAdjustment);
-    //     
-    //     // Cap the adjustment to reasonable range (±0.5 goals)
-    //     goalieAdjustment = Math.max(-0.5, Math.min(0.5, goalieAdjustment));
-    //   }
-    // }
+    // STEP 8: PP component (with same regression + 40/60 weighting)
+    let goals_PP = 0;
+    if (team_PP && opponent_PK) {
+      const team_PP_xGF_raw = team_PP.xGF_per60;
+      const opp_PK_xGA_raw = opponent_PK.xGA_per60;
+      
+      // Apply same regression to PP stats
+      const team_PP_regressed = this.applyRegressionToMean(team_PP_xGF_raw, league_avg, gamesPlayed);
+      const opp_PK_regressed = this.applyRegressionToMean(opp_PK_xGA_raw, league_avg, opp_gamesPlayed);
+      
+      // 40/60 weighting for PP
+      const expected_PP_rate = (team_PP_regressed * 0.40) + (opp_PK_regressed * 0.60);
+      const expected_PP_adjusted = expected_PP_rate * shooting_skill;
+      
+      const minutes_PP = weights['5on4'] * 60;
+      goals_PP = (expected_PP_adjusted / 60) * minutes_PP;
+    }
     
-    return Math.max(0, goals_5v5 + goals_PP + goalieAdjustment);
+    // STEP 9: Goalie adjustment (RE-ENABLED with 15% threshold)
+    const totalGoals = goals_5v5 + goals_PP;
+    const goalieAdjusted = this.adjustForGoalie(totalGoals, opponent, startingGoalie);
+    
+    return Math.max(0, goalieAdjusted);
   }
 
   // IMPROVEMENT 1B: Apply PDO regression to xG predictions
-  // PHASE 1 FIX: Only regress EXTREME outliers (was too aggressive before)
+  // PHASE 4 FIX: Only regress EXTREME outliers (less aggressive)
   applyPDORegression(xG_per60, PDO) {
     if (!PDO || PDO === 100) return xG_per60;
     
-    // PHASE 1: Only regress extreme outliers (PDO > 104 or < 96)
-    // Normal variance (96-104) is NOT regression - it's real team performance
-    if (PDO > 104) {
-      // Regress down by max 3% (reduced from 5%)
-      const regressionFactor = Math.min(0.03, (PDO - 104) * 0.01);
+    // PHASE 4: Only regress extreme outliers (PDO > 106 or < 94)
+    // Normal variance (94-106) is real team performance, not luck
+    // Reduced from 104/96 to allow more variance to show through
+    if (PDO > 106) {
+      // Regress down by max 2% (reduced from 3%)
+      const regressionFactor = Math.min(0.02, (PDO - 106) * 0.01);
       return xG_per60 * (1 - regressionFactor);
-    } else if (PDO < 96) {
-      // Regress up by max 3%
-      const regressionFactor = Math.min(0.03, (96 - PDO) * 0.01);
+    } else if (PDO < 94) {
+      // Regress up by max 2%
+      const regressionFactor = Math.min(0.02, (94 - PDO) * 0.01);
       return xG_per60 * (1 + regressionFactor);
     }
     
-    return xG_per60; // PDO in normal range (96-104), no regression needed
+    return xG_per60; // PDO in normal range (94-106), no regression needed
+  }
+
+  // NEW: Adjust predicted goals for goalie quality (INDUSTRY STANDARD: ±15%)
+  // This is THE most important single factor in NHL betting
+  adjustForGoalie(predictedGoals, opponentTeam, startingGoalieName = null) {
+    if (!this.goalieProcessor) return predictedGoals;
+    
+    let goalieGSAE = 0;
+    
+    // If specific starting goalie provided, use their stats
+    if (startingGoalieName) {
+      goalieGSAE = this.goalieProcessor.calculateGSAE(startingGoalieName, '5on5');
+    } else {
+      // Otherwise use team's average goalie performance
+      const teamGoalies = this.goalieProcessor.getTeamGoalies(opponentTeam, '5on5');
+      if (teamGoalies && teamGoalies.length > 0) {
+        // Weight by games played
+        let totalGSAE = 0;
+        let totalGames = 0;
+        
+        teamGoalies.forEach(goalie => {
+          const games = parseFloat(goalie.games_played) || 0;
+          const gsae = this.goalieProcessor.calculateGSAE(goalie.name, '5on5');
+          totalGSAE += gsae * games;
+          totalGames += games;
+        });
+        
+        goalieGSAE = totalGames > 0 ? totalGSAE / totalGames : 0;
+      }
+    }
+    
+    // Elite goalie (GSAE > 10): Hellebuyck, Shesterkin, Sorokin, etc.
+    // Reduce opponent's expected goals by 15%
+    if (goalieGSAE > 10) {
+      return predictedGoals * 0.85;
+    }
+    
+    // Bad goalie (GSAE < -10)
+    // Increase opponent's expected goals by 15%
+    if (goalieGSAE < -10) {
+      return predictedGoals * 1.15;
+    }
+    
+    // Average goalie (GSAE between -10 and +10)
+    // No adjustment needed
+    return predictedGoals;
   }
 
   // Convert predicted probability to American odds (Part 2.3)
@@ -400,11 +501,11 @@ export class NHLDataProcessor {
   }
 
   // Estimate win probability based on team stats (helper for moneyline)
-  // PHASE 2 FIX: Use actual predicted scores instead of xGD (provides better variance)
+  // PHASE 4 FIX: Pass isHome to predictTeamScore for home ice boost
   estimateWinProbability(team, opponent, isHome = true) {
     if (!team || !opponent) return 0.5;
     
-    // PHASE 2: Use actual predicted scores for each team
+    // Use actual predicted scores for each team
     const teamCode = team.team || team.name;
     const oppCode = opponent.team || opponent.name;
     
@@ -413,23 +514,24 @@ export class NHLDataProcessor {
       return 0.5;
     }
     
-    // Predict scores (this captures all team differences, PDO, etc.)
+    // Predict scores (home ice advantage applied inside predictTeamScore)
     let teamScore, oppScore;
     if (isHome) {
-      teamScore = this.predictTeamScore(teamCode, oppCode);  // Home team
-      oppScore = this.predictTeamScore(oppCode, teamCode);   // Away team
+      teamScore = this.predictTeamScore(teamCode, oppCode, true);   // Home team gets boost
+      oppScore = this.predictTeamScore(oppCode, teamCode, false);   // Away team
     } else {
-      teamScore = this.predictTeamScore(teamCode, oppCode);  // Away team  
-      oppScore = this.predictTeamScore(oppCode, teamCode);   // Home team
+      teamScore = this.predictTeamScore(teamCode, oppCode, false);  // Away team  
+      oppScore = this.predictTeamScore(oppCode, teamCode, true);    // Home team gets boost
     }
     
-    // Home ice advantage: ~0.30 goals (derived from 54% home win rate)
-    const homeAdj = isHome ? 0.30 : -0.30;
+    // PHASE 4: Reduced home ice advantage in win prob calculation
+    // Changed from 0.30 to 0.12 (more realistic based on actual NHL data)
+    const homeAdj = isHome ? 0.12 : -0.12;
     
     // Calculate goal differential
     const goalDiff = teamScore - oppScore + homeAdj;
     
-    // PHASE 2: Use goals-based logistic function
+    // Use goals-based logistic function
     // k = 0.28 calibrated for goal differential:
     // - diff = 0 goals → 50%
     // - diff = 0.5 goals → 54%
@@ -612,6 +714,30 @@ export async function loadNHLData(goalieProcessor = null) {
     console.error('Error loading NHL data:', error);
     throw error;
   }
+}
+
+// Load starting goalies selections from GitHub
+export async function loadStartingGoalies() {
+  const sources = [
+    'https://raw.githubusercontent.com/dpk1212/nhl-savant/main/public/starting_goalies.json',
+    '/starting_goalies.json'
+  ];
+
+  for (const source of sources) {
+    try {
+      const response = await fetch(source);
+      if (!response.ok) continue;
+      
+      const data = await response.json();
+      console.log('✅ Loaded starting goalies:', data.games?.length || 0, 'games');
+      return data;
+    } catch (err) {
+      console.log(`⚠️ Could not load from ${source}`);
+    }
+  }
+  
+  console.log('ℹ️ No starting goalies file found, using team averages');
+  return null;
 }
 
 // Load both odds files (Money + Total)

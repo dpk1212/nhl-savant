@@ -1,7 +1,7 @@
 # NHL Prediction Model - 2024 Season Backtest Report
 (WITH Goalie Integration)
 
-**Generated:** 10/21/2025, 11:09:07 AM
+**Generated:** 10/21/2025, 11:43:29 AM
 
 ---
 
@@ -25,9 +25,9 @@
 
 ### Total Goals Prediction
 
-- **RMSE:** 2.325 goals (Target: < 1.8)
+- **RMSE:** 2.381 goals (Target: < 1.8)
 - **MAE:** 1.889 goals
-- **Avg Error:** +0.024 goals (over-predicting)
+- **Avg Error:** -0.567 goals (under-predicting)
 - **Verdict:** ❌ FAIL
 
 ## Calibration Curve
@@ -42,10 +42,10 @@
 
 | Goals Range | Games | Avg Actual | Avg Predicted | RMSE |
 |-------------|-------|------------|---------------|------|
-| 0-5 goals | 320 | 3.24 | 6.09 | 2.97 |
-| 5-6 goals | 287 | 5.00 | 6.11 | 1.13 |
-| 6-7 goals | 150 | 6.00 | 6.13 | 0.25 |
-| 7+ goals | 555 | 8.30 | 6.11 | 2.65 |
+| 0-5 goals | 320 | 3.24 | 5.49 | 2.39 |
+| 5-6 goals | 287 | 5.00 | 5.51 | 0.54 |
+| 6-7 goals | 150 | 6.00 | 5.52 | 0.50 |
+| 7+ goals | 555 | 8.30 | 5.52 | 3.14 |
 
 ## Accuracy by Team
 
@@ -53,43 +53,43 @@
 
 | Team | Games | Avg Error | RMSE | Brier Score |
 |------|-------|-----------|------|-------------|
-| CGY | 82 | 0.144 | 1.446 | 0.2500 |
-| MTL | 82 | -0.084 | 1.454 | 0.2500 |
-| ANA | 82 | 0.160 | 1.489 | 0.2500 |
-| CHI | 82 | 0.014 | 1.501 | 0.2500 |
-| VAN | 82 | -0.033 | 1.535 | 0.2500 |
-| DAL | 82 | -0.186 | 1.557 | 0.2500 |
-| EDM | 82 | 0.083 | 1.616 | 0.2500 |
-| SJS | 82 | 0.219 | 1.625 | 0.2500 |
-| DET | 82 | 0.277 | 1.626 | 0.2500 |
-| NJD | 82 | 0.364 | 1.645 | 0.2500 |
+| CGY | 82 | -0.179 | 1.449 | 0.2500 |
+| ANA | 82 | -0.088 | 1.480 | 0.2500 |
+| MTL | 82 | -0.340 | 1.491 | 0.2500 |
+| CHI | 82 | -0.206 | 1.515 | 0.2500 |
+| VAN | 82 | -0.266 | 1.555 | 0.2500 |
+| DET | 82 | -0.108 | 1.605 | 0.2500 |
+| SJS | 82 | -0.016 | 1.609 | 0.2500 |
+| NJD | 82 | -0.075 | 1.610 | 0.2500 |
+| DAL | 82 | -0.487 | 1.620 | 0.2500 |
+| NYI | 82 | 0.001 | 1.630 | 0.2500 |
 
 ### Worst Predictions (Highest RMSE)
 
 | Team | Games | Avg Error | RMSE | Brier Score |
 |------|-------|-----------|------|-------------|
-| CBJ | 82 | -0.369 | 2.097 | 0.2500 |
-| TBL | 82 | -0.426 | 1.985 | 0.2500 |
-| LAK | 82 | -0.028 | 1.958 | 0.2500 |
-| WSH | 82 | -0.385 | 1.944 | 0.2500 |
-| SEA | 82 | -0.081 | 1.915 | 0.2500 |
-| PIT | 82 | 0.299 | 1.893 | 0.2500 |
-| FLA | 82 | 0.192 | 1.836 | 0.2500 |
-| BUF | 82 | -0.304 | 1.829 | 0.2500 |
-| COL | 82 | -0.302 | 1.820 | 0.2500 |
-| CAR | 82 | 0.082 | 1.802 | 0.2500 |
+| CBJ | 82 | -0.547 | 2.135 | 0.2500 |
+| TBL | 82 | -0.716 | 2.066 | 0.2500 |
+| WSH | 82 | -0.680 | 2.023 | 0.2500 |
+| LAK | 82 | -0.291 | 1.978 | 0.2500 |
+| SEA | 82 | -0.251 | 1.927 | 0.2500 |
+| COL | 82 | -0.573 | 1.882 | 0.2500 |
+| PIT | 82 | -0.115 | 1.874 | 0.2500 |
+| BUF | 82 | -0.487 | 1.866 | 0.2500 |
+| FLA | 82 | -0.237 | 1.839 | 0.2500 |
+| CAR | 82 | -0.350 | 1.831 | 0.2500 |
 
 ## Accuracy by Month
 
 | Month | Games | RMSE | Brier Score |
 |-------|-------|------|-------------|
-| 2024-10 | 166 | 2.535 | 0.2500 |
-| 2024-11 | 220 | 2.259 | 0.2500 |
-| 2024-12 | 214 | 2.158 | 0.2500 |
-| 2025-01 | 224 | 2.257 | 0.2500 |
-| 2025-02 | 122 | 2.272 | 0.2500 |
-| 2025-03 | 234 | 2.361 | 0.2500 |
-| 2025-04 | 132 | 2.505 | 0.2500 |
+| 2024-10 | 166 | 2.687 | 0.2500 |
+| 2024-11 | 220 | 2.300 | 0.2500 |
+| 2024-12 | 214 | 2.196 | 0.2500 |
+| 2025-01 | 224 | 2.213 | 0.2500 |
+| 2025-02 | 122 | 2.381 | 0.2500 |
+| 2025-03 | 234 | 2.413 | 0.2500 |
+| 2025-04 | 132 | 2.601 | 0.2500 |
 
 ## Comparison to Baseline Models
 
@@ -97,7 +97,7 @@
 
 | Metric | Baseline | Our Model | Improvement |
 |--------|----------|-----------|-------------|
-| RMSE | 2.322 | 2.325 | -0.1% |
+| RMSE | 2.322 | 2.381 | -2.6% |
 
 ### vs. "Always Predict 50% Win Probability"
 
@@ -111,13 +111,14 @@
 
 **Reasons:**
 1. ❌ Brier score 0.2500 exceeds 0.23 threshold
-2. ❌ RMSE 2.325 exceeds 1.8 threshold
+2. ❌ RMSE 2.381 exceeds 1.8 threshold
 3. ❌ Does not consistently beat baseline by >10%
 
 ### Next Steps
 
 **Model needs improvement:**
 
+1. Model is under-predicting by 0.57 goals - increase scoring rates
 2. Recalibrate win probability model - adjust k parameter
 3. Analyze worst-performing teams for systematic biases
 4. Consider additional factors (recent form, injuries, schedule)
