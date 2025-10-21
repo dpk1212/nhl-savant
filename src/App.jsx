@@ -2,7 +2,7 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { loadNHLData, loadOddsFiles } from './utils/dataProcessing';
 import { GoalieProcessor, loadGoalieData } from './utils/goalieProcessor';
-import { extractGamesListFromOdds } from './utils/oddsTraderParser';
+import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import DataInspector from './components/DataInspector';
@@ -48,9 +48,10 @@ function App() {
         console.log('💰 Loading odds data...');
         const oddsFiles = await loadOddsFiles();
         
-        // Extract games list for admin component
-        if (oddsFiles && oddsFiles.mergedGames) {
-          oddsFiles.todaysGames = extractGamesListFromOdds(oddsFiles.mergedGames);
+        // Parse and merge odds files to get games
+        if (oddsFiles && oddsFiles.moneyText && oddsFiles.totalText) {
+          const mergedGames = parseBothFiles(oddsFiles.moneyText, oddsFiles.totalText);
+          oddsFiles.todaysGames = extractGamesListFromOdds(mergedGames);
           console.log(`📋 Extracted ${oddsFiles.todaysGames.length} games for admin`);
         }
         
