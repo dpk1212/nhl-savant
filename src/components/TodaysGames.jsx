@@ -4,6 +4,7 @@ import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
+import QuickSummary from './QuickSummary';
 
 const TodaysGames = ({ dataProcessor, oddsData }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
@@ -35,6 +36,15 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData]);
+
+  // Smooth scroll handler for QuickSummary navigation
+  const handleGameClick = (gameName) => {
+    const gameId = `game-${gameName.replace(/\s/g, '-')}`;
+    const element = document.getElementById(gameId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   if (!oddsData) {
     return (
@@ -162,6 +172,13 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
         
         <div className="divider" style={{ margin: '1.5rem 0 0 0' }} />
       </div>
+
+      {/* Quick Summary Table */}
+      <QuickSummary 
+        allEdges={allEdges}
+        dataProcessor={dataProcessor}
+        onGameClick={handleGameClick}
+      />
 
       {/* Deep Analytics Cards for Each Game */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '1.5rem' : '2rem' }}>
@@ -411,24 +428,24 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                         </div>
                       </div>
                       
-                      {/* Edge - MAXIMUM PROMINENCE */}
+                      {/* Edge - MAXIMUM PROMINENCE (Green = ANY positive edge) */}
                       <div style={{
                         textAlign: 'center',
                         padding: '0.75rem',
-                        background: game.edges.total.edge > 0 
+                        background: Math.abs(game.edges.total.edge) > 0.1
                           ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%)' 
                           : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%)',
-                        border: game.edges.total.edge > 0 
+                        border: Math.abs(game.edges.total.edge) > 0.1
                           ? '2px solid rgba(16, 185, 129, 0.4)' 
                           : '2px solid rgba(239, 68, 68, 0.4)',
                         borderRadius: '8px',
-                        boxShadow: game.edges.total.edge > 0.3 
+                        boxShadow: Math.abs(game.edges.total.edge) > 0.3
                           ? '0 4px 16px rgba(16, 185, 129, 0.25)' 
                           : 'none'
                       }}>
                         <div style={{ 
                           fontSize: '0.625rem',
-                          color: game.edges.total.edge > 0 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                          color: Math.abs(game.edges.total.edge) > 0.1 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
                           fontWeight: '700',
                           textTransform: 'uppercase',
                           letterSpacing: '0.12em',
@@ -439,16 +456,16 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                         <div style={{ 
                           fontSize: '1.875rem',
                           fontWeight: '900',
-                          color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                          color: Math.abs(game.edges.total.edge) > 0.1 ? 'var(--color-success)' : 'var(--color-danger)',
                           fontFeatureSettings: "'tnum'",
                           letterSpacing: '-0.04em',
                           lineHeight: '1',
-                          textShadow: game.edges.total.edge > 0 
+                          textShadow: Math.abs(game.edges.total.edge) > 0.1
                             ? '0 2px 12px rgba(16, 185, 129, 0.4)' 
                             : '0 2px 12px rgba(239, 68, 68, 0.4)'
                         }}>
                           {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
-                          {game.edges.total.edge > 0.5 && ' 🟢'}
+                          {Math.abs(game.edges.total.edge) > 0.5 && ' 🟢'}
                         </div>
                       </div>
                     </div>
