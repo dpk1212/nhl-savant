@@ -459,8 +459,16 @@ export class NHLDataProcessor {
 // Load and process CSV data
 export async function loadNHLData() {
   try {
-    // Use clean path from public folder (no spaces)
-    const response = await fetch('/nhl-savant/nhl_data.csv');
+    // Try GitHub raw files first (always fresh), fallback to local
+    let response;
+    try {
+      response = await fetch('https://raw.githubusercontent.com/dpk1212/nhl-savant/main/public/teams.csv');
+      if (!response.ok) throw new Error('GitHub fetch failed');
+    } catch (error) {
+      console.log('GitHub raw file failed, trying local file...');
+      response = await fetch('/teams.csv');
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -523,10 +531,21 @@ export async function loadOddsFiles() {
     console.log('🏒 Loading Money file...');
     console.log('🏒 Loading Total file...');
     
-    const [moneyResponse, totalResponse] = await Promise.all([
-      fetch('/nhl-savant/odds_money.md'),
-      fetch('/nhl-savant/odds_total.md')
-    ]);
+    // Try GitHub raw files first (always fresh), fallback to local
+    let moneyResponse, totalResponse;
+    try {
+      [moneyResponse, totalResponse] = await Promise.all([
+        fetch('https://raw.githubusercontent.com/dpk1212/nhl-savant/main/public/odds_money.md'),
+        fetch('https://raw.githubusercontent.com/dpk1212/nhl-savant/main/public/odds_total.md')
+      ]);
+      if (!moneyResponse.ok || !totalResponse.ok) throw new Error('GitHub fetch failed');
+    } catch (error) {
+      console.log('GitHub raw files failed, trying local files...');
+      [moneyResponse, totalResponse] = await Promise.all([
+        fetch('/odds_money.md'),
+        fetch('/odds_total.md')
+      ]);
+    }
     
     if (!moneyResponse.ok || !totalResponse.ok) {
       console.warn('One or both odds files not found');

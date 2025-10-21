@@ -43,6 +43,8 @@ git push origin main
 
 **That's it!** The app will automatically load the new files within 1-2 minutes.
 
+**How it works:** The app fetches files directly from GitHub's raw file URLs, so when you push updates to GitHub, the app automatically gets the fresh data without needing to rebuild.
+
 ### 5. Verify
 
 After pushing (takes 1-2 minutes):

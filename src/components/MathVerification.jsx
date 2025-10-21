@@ -93,3 +93,4 @@ const MathVerification = ({ dataProcessor }) => {
 };
 
 export default MathVerification;
+
