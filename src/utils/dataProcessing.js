@@ -202,27 +202,27 @@ export class NHLDataProcessor {
   // Industry standard: 30% regression for early season (MoneyPuck, Evolving-Hockey)
   // Previous 75% was too aggressive, causing all predictions to converge to league average
   calculateRegressionWeight(gamesPlayed) {
-    if (!gamesPlayed || gamesPlayed < 0) return 0.55; // Conservative default regression
+    if (!gamesPlayed || gamesPlayed < 0) return 0.70; // Very conservative default
     
-    // VERY early season (0-5 games): 60% regression to mean
-    // Sample too small to trust - mostly use league average
-    if (gamesPlayed < 5) return 0.60;
+    // VERY early season (0-5 games): 70% regression to mean
+    // Trust league average more than tiny sample
+    if (gamesPlayed < 5) return 0.70;
     
-    // Early season (5-10 games): 50% regression
-    // Still noisy, balance actual vs expected
-    if (gamesPlayed < 10) return 0.50;
+    // Early season (5-10 games): 65% regression
+    // Still heavily regress to avoid early season noise
+    if (gamesPlayed < 10) return 0.65;
     
-    // Building sample (10-20 games): 35% regression
-    // Teams' true talent starting to show through
-    if (gamesPlayed < 20) return 0.35;
+    // Building sample (10-20 games): 45% regression
+    // Start trusting actual performance more
+    if (gamesPlayed < 20) return 0.45;
     
-    // Mid season (20-40 games): 20% regression
-    // Strong sample size, mostly trust the data
-    if (gamesPlayed < 40) return 0.20;
+    // Mid season (20-40 games): 25% regression
+    // Good sample size, mostly trust the data
+    if (gamesPlayed < 40) return 0.25;
     
-    // Late season (40+ games): 10% regression
-    // Excellent sample, just keep slight regression to avoid outliers
-    return 0.10;
+    // Late season (40+ games): 15% regression
+    // Strong sample, light regression to avoid outliers
+    return 0.15;
   }
 
   // NEW: Apply regression to mean based on sample size
