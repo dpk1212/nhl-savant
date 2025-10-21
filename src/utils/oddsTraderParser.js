@@ -46,13 +46,21 @@ export function parseOddsTrader(markdownText) {
   const games = [];
   const lines = markdownText.split('\n');
   
-  console.log('🏒 Starting OddsTrader parser...');
+  // Generate today's date pattern dynamically (e.g., "TUE 10/21")
+  const today = new Date();
+  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const dayOfWeek = dayNames[today.getDay()];
+  const month = today.getMonth() + 1; // 0-indexed
+  const day = today.getDate();
+  const todayPattern = `${dayOfWeek} ${month}/${day}`;
+  
+  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern}`);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for today's games (TUE 10/21)
-    if (line.includes('TUE 10/21')) {
+    // Look for today's games dynamically
+    if (line.includes(todayPattern)) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
       
       // Extract time from the current line
@@ -183,9 +191,16 @@ export function parseOddsTrader(markdownText) {
       }
     }
     
-    // Stop when we hit tomorrow's games (WED 10/22)
-    if (line.includes('WED 10/22')) {
-      console.log('\n🛑 Reached tomorrow\'s games, stopping parser');
+    // Stop when we hit tomorrow's games (calculate dynamically)
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDayOfWeek = dayNames[tomorrow.getDay()];
+    const tomorrowMonth = tomorrow.getMonth() + 1;
+    const tomorrowDay = tomorrow.getDate();
+    const tomorrowPattern = `${tomorrowDayOfWeek} ${tomorrowMonth}/${tomorrowDay}`;
+    
+    if (line.includes(tomorrowPattern)) {
+      console.log(`\n🛑 Reached tomorrow's games (${tomorrowPattern}), stopping parser`);
       break;
     }
   }
