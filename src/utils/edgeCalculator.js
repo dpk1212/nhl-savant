@@ -38,16 +38,34 @@ export class EdgeCalculator {
   calculateAllEdges() {
     return this.games.map(game => {
       try {
+        // CRITICAL FIX: Calculate predicted scores ONCE with starting goalies
+        // Then reuse them for all edge calculations
+        const awayGoalie = this.getStartingGoalie(game.awayTeam, game);
+        const homeGoalie = this.getStartingGoalie(game.homeTeam, game);
+        
+        const awayScore = this.dataProcessor.predictTeamScore(
+          game.awayTeam, 
+          game.homeTeam, 
+          false,  // Away
+          awayGoalie
+        );
+        const homeScore = this.dataProcessor.predictTeamScore(
+          game.homeTeam, 
+          game.awayTeam, 
+          true,   // Home
+          homeGoalie
+        );
+        
         return {
           game: `${game.awayTeam} @ ${game.homeTeam}`,
           gameTime: game.gameTime,
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
           edges: {
-            moneyline: this.calculateMoneylineEdge(game),
-            puckLine: this.calculatePuckLineEdge(game),
-            total: this.calculateTotalEdge(game),
-            teamTotals: this.calculateTeamTotalEdges(game)
+            moneyline: this.calculateMoneylineEdge(game, awayScore, homeScore),
+            puckLine: this.calculatePuckLineEdge(game, awayScore, homeScore),
+            total: this.calculateTotalEdge(game, awayScore, homeScore),
+            teamTotals: this.calculateTeamTotalEdges(game, awayScore, homeScore)
           },
           rawOdds: {
             moneyline: game.moneyline,
@@ -63,19 +81,16 @@ export class EdgeCalculator {
   }
 
   // Calculate moneyline edge
-  calculateMoneylineEdge(game) {
-    const awayTeam = this.dataProcessor.getTeamData(game.awayTeam, 'all');
-    const homeTeam = this.dataProcessor.getTeamData(game.homeTeam, 'all');
-    
-    if (!awayTeam || !homeTeam || !game.moneyline.away || !game.moneyline.home) {
+  // CRITICAL FIX: Use pre-calculated scores instead of recalculating
+  calculateMoneylineEdge(game, awayScore, homeScore) {
+    if (!game.moneyline.away || !game.moneyline.home) {
       return { away: null, home: null };
     }
     
-    // Estimate win probability using improved logistic model with home ice built-in
-    // Home team perspective (isHome = true) 
-    const homeWinProb = this.dataProcessor.estimateWinProbability(homeTeam, awayTeam, true);
-    // Away team win prob is complement
-    const awayWinProb = 1 - homeWinProb;
+    // Use Poisson distribution to calculate exact win probabilities
+    // This is the SAME calculation used for total, ensures consistency
+    const homeWinProb = this.dataProcessor.calculatePoissonWinProb(homeScore, awayScore);
+    const awayWinProb = this.dataProcessor.calculatePoissonWinProb(awayScore, homeScore);
     
     // Calculate EV for each side using the model probabilities
     const awayEV = this.dataProcessor.calculateEV(awayWinProb, game.moneyline.away);
@@ -106,18 +121,12 @@ export class EdgeCalculator {
   }
 
   // Calculate puck line edge
-  calculatePuckLineEdge(game) {
-    const awayTeam = this.dataProcessor.getTeamData(game.awayTeam, 'all');
-    const homeTeam = this.dataProcessor.getTeamData(game.homeTeam, 'all');
-    
-    if (!awayTeam || !homeTeam || 
-        !game.puckLine.away.odds || !game.puckLine.home.odds) {
+  calculatePuckLineEdge(game, awayScore, homeScore) {
+    if (!game.puckLine.away.odds || !game.puckLine.home.odds) {
       return { away: null, home: null };
     }
     
-    // Predict goal differential
-    const awayScore = this.dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam);
-    const homeScore = this.dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam);
+    // Use pre-calculated scores
     const predictedDiff = homeScore - awayScore; // Positive if home wins by more
     
     // Estimate probability of covering spread
@@ -152,18 +161,12 @@ export class EdgeCalculator {
   }
 
   // Calculate total (over/under) edge
-  calculateTotalEdge(game) {
+  calculateTotalEdge(game, awayScore, homeScore) {
     if (!game.total.line || !game.total.over || !game.total.under) {
       return null;
     }
     
-    // FIX: Get starting goalies for both teams
-    const awayGoalie = this.getStartingGoalie(game.awayTeam, game);
-    const homeGoalie = this.getStartingGoalie(game.homeTeam, game);
-    
-    // FIX: Predict individual team scores WITH home ice advantage and starting goalies
-    const awayScore = this.dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam, false, awayGoalie);
-    const homeScore = this.dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam, true, homeGoalie);
+    // Use pre-calculated scores (already includes starting goalies and home ice)
     const predictedTotal = awayScore + homeScore;
     
     const marketTotal = game.total.line;
@@ -215,17 +218,8 @@ export class EdgeCalculator {
   }
 
   // Calculate team total edges (individual team over/under)
-  calculateTeamTotalEdges(game) {
-    // FIX: Get starting goalies
-    const awayGoalie = this.getStartingGoalie(game.awayTeam, game);
-    const homeGoalie = this.getStartingGoalie(game.homeTeam, game);
-    
-    // FIX: Add home ice advantage
-    const awayScore = this.dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam, false, awayGoalie);
-    const homeScore = this.dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam, true, homeGoalie);
-    
-    // For now, return predicted team totals
-    // Real implementation would need actual team total lines from sportsbook
+  calculateTeamTotalEdges(game, awayScore, homeScore) {
+    // Use pre-calculated scores (already includes starting goalies and home ice)
     return {
       away: {
         predicted: awayScore,

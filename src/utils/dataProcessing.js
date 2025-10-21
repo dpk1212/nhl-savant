@@ -565,33 +565,13 @@ export class NHLDataProcessor {
     return Math.min(1, sum); // Cap at 1 due to floating point errors
   }
 
-  // Estimate win probability based on team stats (helper for moneyline)
-  // CRITICAL FIX: Use Poisson distribution (industry standard for hockey)
-  estimateWinProbability(team, opponent, isHome = true) {
-    if (!team || !opponent) return 0.5;
-    
-    // Use actual predicted scores for each team
-    const teamCode = team.team || team.name;
-    const oppCode = opponent.team || opponent.name;
-    
-    if (!teamCode || !oppCode) {
-      // Fallback if team codes not available
-      return 0.5;
-    }
-    
-    // Predict scores (home ice advantage applied inside predictTeamScore)
-    let teamScore, oppScore;
-    if (isHome) {
-      teamScore = this.predictTeamScore(teamCode, oppCode, true);   // Home team gets boost
-      oppScore = this.predictTeamScore(oppCode, teamCode, false);   // Away team
-    } else {
-      teamScore = this.predictTeamScore(teamCode, oppCode, false);  // Away team  
-      oppScore = this.predictTeamScore(oppCode, teamCode, true);    // Home team gets boost
-    }
+  // Calculate win probability using Poisson distribution (industry standard)
+  // Takes PRE-CALCULATED scores to ensure consistency across all calculations
+  calculatePoissonWinProb(teamScore, oppScore) {
+    if (!teamScore || !oppScore || teamScore <= 0 || oppScore <= 0) return 0.5;
     
     // INDUSTRY STANDARD: Use Poisson distribution to calculate exact win probability
     // This is mathematically correct for hockey (discrete goal events)
-    // Logistic functions don't work well for small goal differentials
     
     let winProb = 0;
     let tieProb = 0;
@@ -612,13 +592,39 @@ export class NHLDataProcessor {
       }
     }
     
-    // In NHL, ties go to OT/SO - slightly favor the better team
-    // Team with higher expected goals has ~54% chance in OT (historical data)
-    const otAdvantage = teamScore > oppScore ? 0.54 : 0.46;
+    // In NHL, ties go to OT/SO
+    // CRITICAL FIX: Use 52/48 split (closer to empirical data) instead of 54/46
+    const otAdvantage = teamScore > oppScore ? 0.52 : 0.48;
     winProb += tieProb * otAdvantage;
     
     // Clamp between 0.05 and 0.95 (never give 100% or 0%)
     return Math.max(0.05, Math.min(0.95, winProb));
+  }
+  
+  // DEPRECATED: Old estimateWinProbability - kept for backward compatibility
+  // Use calculatePoissonWinProb() with pre-calculated scores instead
+  estimateWinProbability(team, opponent, isHome = true) {
+    if (!team || !opponent) return 0.5;
+    
+    // Use actual predicted scores for each team
+    const teamCode = team.team || team.name;
+    const oppCode = opponent.team || opponent.name;
+    
+    if (!teamCode || !oppCode) {
+      return 0.5;
+    }
+    
+    // Predict scores (without starting goalies - NOT RECOMMENDED)
+    let teamScore, oppScore;
+    if (isHome) {
+      teamScore = this.predictTeamScore(teamCode, oppCode, true);
+      oppScore = this.predictTeamScore(oppCode, teamCode, false);
+    } else {
+      teamScore = this.predictTeamScore(teamCode, oppCode, false);
+      oppScore = this.predictTeamScore(oppCode, teamCode, true);
+    }
+    
+    return this.calculatePoissonWinProb(teamScore, oppScore);
   }
 
   // Find regression candidates (betting opportunities)
