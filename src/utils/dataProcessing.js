@@ -566,7 +566,7 @@ export class NHLDataProcessor {
   }
 
   // Estimate win probability based on team stats (helper for moneyline)
-  // PHASE 4 FIX: Pass isHome to predictTeamScore for home ice boost
+  // CRITICAL FIX: Use Poisson distribution (industry standard for hockey)
   estimateWinProbability(team, opponent, isHome = true) {
     if (!team || !opponent) return 0.5;
     
@@ -589,23 +589,33 @@ export class NHLDataProcessor {
       oppScore = this.predictTeamScore(oppCode, teamCode, true);    // Home team gets boost
     }
     
-    // CRITICAL FIX: Remove double home ice advantage
-    // predictTeamScore() already applies 5% home ice boost
-    // No additional adjustment needed here
+    // INDUSTRY STANDARD: Use Poisson distribution to calculate exact win probability
+    // This is mathematically correct for hockey (discrete goal events)
+    // Logistic functions don't work well for small goal differentials
     
-    // Calculate goal differential (home ice already baked into teamScore/oppScore)
-    const goalDiff = teamScore - oppScore;
+    let winProb = 0;
+    let tieProb = 0;
     
-    // CRITICAL FIX: Increased k parameter from 0.28 to 0.45
-    // Industry standard for goal-based logistic models
-    // New calibration:
-    // - diff = 0 goals → 50%
-    // - diff = 0.5 goals → 61%
-    // - diff = 1.0 goals → 69%
-    // - diff = 1.5 goals → 76%
-    // - diff = 2.0 goals → 82%
-    const k = 0.45;
-    const winProb = 1 / (1 + Math.exp(-k * goalDiff));
+    // Calculate probability for all realistic score combinations (0-10 goals each)
+    for (let teamGoals = 0; teamGoals <= 10; teamGoals++) {
+      const pTeam = this.poissonPMF(teamGoals, teamScore);
+      
+      for (let oppGoals = 0; oppGoals <= 10; oppGoals++) {
+        const pOpp = this.poissonPMF(oppGoals, oppScore);
+        const pCombo = pTeam * pOpp;
+        
+        if (teamGoals > oppGoals) {
+          winProb += pCombo;  // Team wins in regulation
+        } else if (teamGoals === oppGoals) {
+          tieProb += pCombo;  // Goes to OT/SO
+        }
+      }
+    }
+    
+    // In NHL, ties go to OT/SO - slightly favor the better team
+    // Team with higher expected goals has ~54% chance in OT (historical data)
+    const otAdvantage = teamScore > oppScore ? 0.54 : 0.46;
+    winProb += tieProb * otAdvantage;
     
     // Clamp between 0.05 and 0.95 (never give 100% or 0%)
     return Math.max(0.05, Math.min(0.95, winProb));
