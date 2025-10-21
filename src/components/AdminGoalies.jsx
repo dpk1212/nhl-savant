@@ -179,17 +179,17 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-4xl font-bold mb-3" style={{ color: '#111827' }}>
             Admin: Starting Goalies
           </h1>
-          <p className="text-lg text-gray-600">
-            Select starting goalies for today's games. Goalie quality has a <strong className="text-blue-600">±15% impact</strong> on predictions.
+          <p className="text-lg" style={{ color: '#4B5563' }}>
+            Select starting goalies for today's games. Goalie quality has a <strong style={{ color: '#2563EB' }}>±15% impact</strong> on predictions.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="rounded-lg shadow-sm border border-gray-200 p-6 mb-8" style={{ backgroundColor: '#FFFFFF' }}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: '#111827' }}>Actions</h2>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={handleSave}
@@ -251,19 +251,19 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                 style={{ backgroundColor: '#FFFFFF' }}
               >
                 {/* Game Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b-2 border-gray-200">
-                  <h3 className="text-2xl font-bold text-gray-900">
+                <div className="px-6 py-4 border-b-2 border-gray-200" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)' }}>
+                  <h3 className="text-2xl font-bold" style={{ color: '#111827' }}>
                     {game.away} @ {game.home}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1 font-medium">{game.time || 'Time TBD'}</p>
+                  <p className="text-sm mt-1 font-medium" style={{ color: '#4B5563' }}>{game.time || 'Time TBD'}</p>
                 </div>
 
                 {/* Goalie Selectors */}
                 <div className="grid md:grid-cols-2 gap-8 p-6">
                   {/* Away Team */}
-                  <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                    <label className="block text-base font-bold text-gray-800 mb-3">
-                      <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm mr-2">AWAY</span>
+                  <div className="p-5 rounded-lg border border-gray-200" style={{ backgroundColor: '#F9FAFB' }}>
+                    <label className="block text-base font-bold mb-3" style={{ color: '#1F2937' }}>
+                      <span className="inline-block px-3 py-1 rounded-md text-sm mr-2" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF' }}>AWAY</span>
                       {game.away} Starting Goalie
                     </label>
                     <select
@@ -301,9 +301,9 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                   </div>
 
                   {/* Home Team */}
-                  <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                    <label className="block text-base font-bold text-gray-800 mb-3">
-                      <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm mr-2">HOME</span>
+                  <div className="p-5 rounded-lg border border-gray-200" style={{ backgroundColor: '#F9FAFB' }}>
+                    <label className="block text-base font-bold mb-3" style={{ color: '#1F2937' }}>
+                      <span className="inline-block px-3 py-1 rounded-md text-sm mr-2" style={{ backgroundColor: '#D1FAE5', color: '#166534' }}>HOME</span>
                       {game.home} Starting Goalie
                     </label>
                     <select
@@ -357,9 +357,9 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
         </div>
 
         {/* Info Box */}
-        <div className="mt-8 border-2 border-blue-200 rounded-xl p-6 shadow-md" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)' }}>
-          <h4 className="text-xl font-bold text-blue-900 mb-4">How Goalie Adjustment Works</h4>
-          <ul className="text-base text-blue-900 space-y-3">
+        <div className="mt-8 border-2 rounded-xl p-6 shadow-md" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)', borderColor: '#BFDBFE' }}>
+          <h4 className="text-xl font-bold mb-4" style={{ color: '#1E3A8A' }}>How Goalie Adjustment Works</h4>
+          <ul className="text-base space-y-3" style={{ color: '#1E3A8A' }}>
             <li className="flex items-start">
               <span className="font-bold mr-2">•</span>
               <span><strong>Elite (GSAE &gt; 10):</strong> Opponent's expected goals reduced by 15%</span>
