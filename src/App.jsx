@@ -1,6 +1,7 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { loadNHLData, loadOddsFiles } from './utils/dataProcessing';
+import { GoalieProcessor, loadGoalieData } from './utils/goalieProcessor';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import DataInspector from './components/DataInspector';
@@ -19,13 +20,31 @@ function App() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const processor = await loadNHLData();
+        
+        // NEW: Load goalie data first
+        console.log('🥅 Loading goalie data...');
+        let goalieProcessor = null;
+        try {
+          const goalieData = await loadGoalieData();
+          goalieProcessor = new GoalieProcessor(goalieData);
+          console.log('✅ Goalie processor initialized with', goalieData.length, 'goalie entries');
+        } catch (goalieErr) {
+          console.warn('⚠️ Failed to load goalie data, predictions will not include goalie adjustments:', goalieErr);
+          // Continue without goalie data - model will work but without goalie adjustments
+        }
+        
+        // Load team data with goalie processor
+        console.log('🏒 Loading team data...');
+        const processor = await loadNHLData(goalieProcessor);
         setDataProcessor(processor);
         setError(null);
         
         // Load both odds files (Money + Total)
+        console.log('💰 Loading odds data...');
         const oddsFiles = await loadOddsFiles();
         setOddsData(oddsFiles);
+        
+        console.log('✅ All data loaded successfully');
       } catch (err) {
         console.error('Failed to load NHL data:', err);
         setError('Failed to load NHL data. Please check if teams.csv is available.');

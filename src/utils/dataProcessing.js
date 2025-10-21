@@ -2,8 +2,9 @@ import Papa from 'papaparse';
 
 // Core mathematical calculations for NHL betting model
 export class NHLDataProcessor {
-  constructor(rawData) {
+  constructor(rawData, goalieProcessor = null) {
     this.rawData = rawData;
+    this.goalieProcessor = goalieProcessor; // NEW: Goalie data integration
     this.processedData = this.processAllTeams();
   }
 
@@ -127,6 +128,43 @@ export class NHLDataProcessor {
     return weights[situation] || 0.0;
   }
 
+  // NEW: Calculate dynamic situational weights based on team penalty minutes
+  // More accurate than static 77/12/11 split
+  calculateDynamicSituationalWeights(team, opponent) {
+    const teamData = this.getTeamData(team, 'all');
+    const oppData = this.getTeamData(opponent, 'all');
+    
+    if (!teamData || !oppData) {
+      // Fallback to static weights if data unavailable
+      return { '5on5': 0.77, '5on4': 0.12, '4on5': 0.11 };
+    }
+    
+    // Get actual penalty minutes (available in CSV)
+    const teamPenMin = parseFloat(teamData.penalityMinutesFor) || 0;
+    const oppPenMin = parseFloat(oppData.penalityMinutesFor) || 0;
+    const gamesPlayed = parseFloat(teamData.games_played) || 1;
+    
+    // Convert to expected minutes per game
+    const teamPenMinPerGame = teamPenMin / gamesPlayed;
+    const oppPenMinPerGame = oppPenMin / gamesPlayed;
+    
+    // Team's PP time = opponent's penalties
+    const expectedPPMin = oppPenMinPerGame;
+    // Team's PK time = team's penalties  
+    const expectedPKMin = teamPenMinPerGame;
+    
+    // Normalize to percentages (assuming 60 min game)
+    const ppPct = expectedPPMin / 60;
+    const pkPct = expectedPKMin / 60;
+    const evenPct = 1 - ppPct - pkPct;
+    
+    return {
+      '5on5': Math.max(0.6, Math.min(0.85, evenPct)),  // Clamp between 60-85%
+      '5on4': Math.max(0.05, Math.min(0.20, ppPct)),   // Clamp between 5-20%
+      '4on5': Math.max(0.05, Math.min(0.20, pkPct))    // Clamp between 5-20%
+    };
+  }
+
   // Process all teams
   processAllTeams() {
     return this.rawData.map(team => this.processTeamData(team));
@@ -174,7 +212,7 @@ export class NHLDataProcessor {
   }
 
   // Predict individual team score (Part 2.2)
-  // AUDIT IMPROVEMENTS: Score-adjusted xG, PDO regression, dynamic weighting
+  // AUDIT IMPROVEMENTS: Score-adjusted xG, PDO regression, dynamic weighting, GOALIE ADJUSTMENT
   predictTeamScore(team, opponent) {
     const team_5v5 = this.getTeamData(team, '5on5');
     const opponent_5v5 = this.getTeamData(opponent, '5on5');
@@ -203,9 +241,12 @@ export class NHLDataProcessor {
     const team_xGF_adjusted = this.applyPDORegression(team_xGF, team_PDO);
     const opp_xGA_adjusted = this.applyPDORegression(opp_xGA, opp_PDO);
     
+    // NEW: Get dynamic situational weights based on penalty minutes
+    const weights = this.calculateDynamicSituationalWeights(team, opponent);
+    
     // 5v5 component: Weighted average (offense 55%, defense 45% - research-backed)
     const expected_5v5_rate = (team_xGF_adjusted * 0.55) + (opp_xGA_adjusted * 0.45);
-    const goals_5v5 = (expected_5v5_rate / 60) * 46.2; // 77% of 60 min = 46.2 min
+    const goals_5v5 = (expected_5v5_rate / 60) * (weights['5on5'] * 60); // Dynamic timing
     
     // PP component: Average team's PP offense and opponent's PK defensive weakness
     let goals_PP = 0;
@@ -213,10 +254,39 @@ export class NHLDataProcessor {
       const team_PP_xGF = team_PP.scoreAdj_xGF_per60 || team_PP.xGF_per60;
       const opp_PK_xGA = opponent_PK.scoreAdj_xGA_per60 || opponent_PK.xGA_per60;
       const expected_PP_rate = (team_PP_xGF * 0.55) + (opp_PK_xGA * 0.45);
-      goals_PP = (expected_PP_rate / 60) * 7.2; // 12% of 60 min = 7.2 min
+      goals_PP = (expected_PP_rate / 60) * (weights['5on4'] * 60); // Dynamic timing
     }
     
-    return Math.max(0, goals_5v5 + goals_PP);
+    // NEW: Goalie adjustment (can swing goals by ±0.3 to ±0.5 per game)
+    let goalieAdjustment = 0;
+    if (this.goalieProcessor) {
+      // Use team-average goalie stats (for now - starting goalies in future)
+      const oppGoalieStats = this.goalieProcessor.getTeamAverageGoalieStats(opponent, '5on5');
+      
+      if (oppGoalieStats && oppGoalieStats.gamesPlayed > 0) {
+        // GSAE per game impact
+        const gsaePerGame = oppGoalieStats.gsaePerGame || 0;
+        
+        // High danger save % adjustment
+        const leagueAvgHDSv = 0.850;
+        const hdSavePct = oppGoalieStats.hdSavePct || leagueAvgHDSv;
+        
+        // Estimate opponent's high-danger shots from their xG data
+        const oppHDShots = parseFloat(opponent_5v5.highDangerShotsAgainst) || 0;
+        const oppIceTime = parseFloat(opponent_5v5.iceTime) || 1;
+        const oppHDShotsPerGame = (oppHDShots / oppIceTime) * 3600 * (60 / 60); // Approximate per game
+        
+        const hdAdjustment = (hdSavePct - leagueAvgHDSv) * (oppHDShotsPerGame * 0.1); // Scale factor
+        
+        // Negative because OPPONENT's good goalie reduces THIS team's goals
+        goalieAdjustment = -(gsaePerGame + hdAdjustment);
+        
+        // Cap the adjustment to reasonable range (±0.5 goals)
+        goalieAdjustment = Math.max(-0.5, Math.min(0.5, goalieAdjustment));
+      }
+    }
+    
+    return Math.max(0, goals_5v5 + goals_PP + goalieAdjustment);
   }
 
   // IMPROVEMENT 1B: Apply PDO regression to xG predictions
@@ -456,8 +526,8 @@ export class NHLDataProcessor {
   }
 }
 
-// Load and process CSV data
-export async function loadNHLData() {
+// Load and process CSV data (with goalie data integration)
+export async function loadNHLData(goalieProcessor = null) {
   try {
     // Try GitHub raw files first (always fresh), fallback to local
     let response;
@@ -510,7 +580,8 @@ export async function loadNHLData() {
           }
           
           console.log('Clean data rows:', cleanData.length);
-          const processor = new NHLDataProcessor(cleanData);
+          // NEW: Pass goalieProcessor to enable goalie adjustments
+          const processor = new NHLDataProcessor(cleanData, goalieProcessor);
           resolve(processor);
         },
         error: (error) => {
