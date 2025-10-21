@@ -1,7 +1,7 @@
 # NHL Prediction Model - 2024 Season Backtest Report
 (WITHOUT Goalie Integration)
 
-**Generated:** 10/21/2025, 10:50:25 AM
+**Generated:** 10/21/2025, 11:02:21 AM
 
 ---
 
@@ -16,18 +16,18 @@
 
 ### Win Probability Accuracy
 
-- **Brier Score:** 0.2486 (Target: < 0.25)
+- **Brier Score:** 0.2500 (Target: < 0.25)
   - 0.25 = baseline (random guessing)
   - 0.20 = good
   - 0.15 = excellent
-- **Prediction Accuracy:** 56.25% (738/1312)
-- **Verdict:** ⚠️ MARGINAL
+- **Prediction Accuracy:** 43.75% (574/1312)
+- **Verdict:** ❌ FAIL
 
 ### Total Goals Prediction
 
-- **RMSE:** 2.377 goals (Target: < 1.8)
+- **RMSE:** 2.325 goals (Target: < 1.8)
 - **MAE:** 1.891 goals
-- **Avg Error:** -0.514 goals (under-predicting)
+- **Avg Error:** +0.043 goals (over-predicting)
 - **Verdict:** ❌ FAIL
 
 ## Calibration Curve
@@ -36,16 +36,16 @@
 
 | Predicted Win % | Games | Actual Win % | Error | Status |
 |----------------|-------|--------------|-------|--------|
-| 50-55% | 1312 | 56.3% | 5.00% | ❌ |
+| 50-55% | 1312 | 56.3% | 6.25% | ❌ |
 
 ## Prediction Accuracy by Total Goals Range
 
 | Goals Range | Games | Avg Actual | Avg Predicted | RMSE |
 |-------------|-------|------------|---------------|------|
-| 0-5 goals | 320 | 3.24 | 5.55 | 2.45 |
-| 5-6 goals | 287 | 5.00 | 5.57 | 0.60 |
-| 6-7 goals | 150 | 6.00 | 5.58 | 0.46 |
-| 7+ goals | 555 | 8.30 | 5.57 | 3.11 |
+| 0-5 goals | 320 | 3.24 | 6.11 | 2.98 |
+| 5-6 goals | 287 | 5.00 | 6.13 | 1.15 |
+| 6-7 goals | 150 | 6.00 | 6.14 | 0.26 |
+| 7+ goals | 555 | 8.30 | 6.12 | 2.64 |
 
 ## Accuracy by Team
 
@@ -53,43 +53,43 @@
 
 | Team | Games | Avg Error | RMSE | Brier Score |
 |------|-------|-----------|------|-------------|
-| CGY | 82 | -0.102 | 1.441 | 0.2486 |
-| ANA | 82 | -0.094 | 1.482 | 0.2480 |
-| MTL | 82 | -0.342 | 1.492 | 0.2483 |
-| CHI | 82 | -0.214 | 1.515 | 0.2486 |
-| VAN | 82 | -0.270 | 1.556 | 0.2514 |
-| DET | 82 | -0.011 | 1.601 | 0.2486 |
-| NJD | 82 | 0.056 | 1.607 | 0.2514 |
-| SJS | 82 | -0.026 | 1.609 | 0.2489 |
-| DAL | 82 | -0.469 | 1.614 | 0.2483 |
-| EDM | 82 | -0.214 | 1.627 | 0.2495 |
+| CGY | 82 | 0.151 | 1.445 | 0.2500 |
+| MTL | 82 | -0.088 | 1.454 | 0.2500 |
+| ANA | 82 | 0.155 | 1.488 | 0.2500 |
+| CHI | 82 | 0.018 | 1.501 | 0.2500 |
+| VAN | 82 | -0.025 | 1.534 | 0.2500 |
+| DAL | 82 | -0.169 | 1.554 | 0.2500 |
+| EDM | 82 | 0.094 | 1.616 | 0.2500 |
+| SJS | 82 | 0.211 | 1.623 | 0.2500 |
+| DET | 82 | 0.280 | 1.626 | 0.2500 |
+| STL | 82 | -0.192 | 1.646 | 0.2500 |
 
 ### Worst Predictions (Highest RMSE)
 
 | Team | Games | Avg Error | RMSE | Brier Score |
 |------|-------|-----------|------|-------------|
-| CBJ | 82 | -0.625 | 2.156 | 0.2465 |
-| TBL | 82 | -0.705 | 2.063 | 0.2468 |
-| WSH | 82 | -0.663 | 2.017 | 0.2499 |
-| LAK | 82 | -0.281 | 1.977 | 0.2459 |
-| SEA | 82 | -0.337 | 1.941 | 0.2499 |
-| BUF | 82 | -0.566 | 1.889 | 0.2471 |
-| COL | 82 | -0.568 | 1.882 | 0.2492 |
-| PIT | 82 | -0.007 | 1.869 | 0.2477 |
-| FLA | 82 | -0.117 | 1.827 | 0.2480 |
-| WPG | 82 | -0.407 | 1.819 | 0.2489 |
+| CBJ | 82 | -0.362 | 2.096 | 0.2500 |
+| TBL | 82 | -0.402 | 1.980 | 0.2500 |
+| LAK | 82 | -0.007 | 1.957 | 0.2500 |
+| WSH | 82 | -0.368 | 1.941 | 0.2500 |
+| SEA | 82 | -0.083 | 1.913 | 0.2500 |
+| PIT | 82 | 0.302 | 1.893 | 0.2500 |
+| FLA | 82 | 0.200 | 1.836 | 0.2500 |
+| BUF | 82 | -0.297 | 1.828 | 0.2500 |
+| COL | 82 | -0.290 | 1.817 | 0.2500 |
+| CAR | 82 | 0.098 | 1.802 | 0.2500 |
 
 ## Accuracy by Month
 
 | Month | Games | RMSE | Brier Score |
 |-------|-------|------|-------------|
-| 2024-10 | 166 | 2.667 | 0.2494 |
-| 2024-11 | 220 | 2.289 | 0.2492 |
-| 2024-12 | 214 | 2.198 | 0.2486 |
-| 2025-01 | 224 | 2.224 | 0.2487 |
-| 2025-02 | 122 | 2.368 | 0.2489 |
-| 2025-03 | 234 | 2.420 | 0.2477 |
-| 2025-04 | 132 | 2.590 | 0.2475 |
+| 2024-10 | 166 | 2.532 | 0.2500 |
+| 2024-11 | 220 | 2.261 | 0.2500 |
+| 2024-12 | 214 | 2.159 | 0.2500 |
+| 2025-01 | 224 | 2.261 | 0.2500 |
+| 2025-02 | 122 | 2.270 | 0.2500 |
+| 2025-03 | 234 | 2.361 | 0.2500 |
+| 2025-04 | 132 | 2.504 | 0.2500 |
 
 ## Comparison to Baseline Models
 
@@ -97,28 +97,27 @@
 
 | Metric | Baseline | Our Model | Improvement |
 |--------|----------|-----------|-------------|
-| RMSE | 2.322 | 2.377 | -2.4% |
+| RMSE | 2.322 | 2.325 | -0.1% |
 
 ### vs. "Always Predict 50% Win Probability"
 
 | Metric | Baseline | Our Model | Improvement |
 |--------|----------|-----------|-------------|
-| Brier Score | 0.2500 | 0.2486 | 0.6% |
+| Brier Score | 0.2500 | 0.2500 | 0.0% |
 
 ## Final Verdict
 
 ### Is the model ready for real money? **NO ❌**
 
 **Reasons:**
-1. ❌ Brier score 0.2486 exceeds 0.23 threshold
-2. ❌ RMSE 2.377 exceeds 1.8 threshold
+1. ❌ Brier score 0.2500 exceeds 0.23 threshold
+2. ❌ RMSE 2.325 exceeds 1.8 threshold
 3. ❌ Does not consistently beat baseline by >10%
 
 ### Next Steps
 
 **Model needs improvement:**
 
-1. Model is under-predicting by 0.51 goals - increase scoring rates
 2. Recalibrate win probability model - adjust k parameter
 3. Analyze worst-performing teams for systematic biases
 4. Consider additional factors (recent form, injuries, schedule)

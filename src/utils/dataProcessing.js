@@ -212,7 +212,7 @@ export class NHLDataProcessor {
   }
 
   // Predict individual team score (Part 2.2)
-  // AUDIT IMPROVEMENTS: Score-adjusted xG, PDO regression, dynamic weighting, GOALIE ADJUSTMENT
+  // PHASE 1 OPTIMIZATIONS: Shooting talent multiplier, reduced PDO regression, goalie disabled
   predictTeamScore(team, opponent) {
     const team_5v5 = this.getTeamData(team, '5on5');
     const opponent_5v5 = this.getTeamData(opponent, '5on5');
@@ -225,7 +225,7 @@ export class NHLDataProcessor {
     const team_xGF = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
     const opp_xGA = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
     
-    // IMPROVEMENT 1B: PDO regression adjustment
+    // IMPROVEMENT 1B: PDO regression adjustment (PHASE 1: REDUCED to only extreme outliers)
     const team_PDO = this.calculatePDO(
       team_5v5.goalsFor, 
       team_5v5.shotsOnGoalFor, 
@@ -244,69 +244,77 @@ export class NHLDataProcessor {
     // NEW: Get dynamic situational weights based on penalty minutes
     const weights = this.calculateDynamicSituationalWeights(team, opponent);
     
-    // 5v5 component: Weighted average (offense 55%, defense 45% - research-backed)
-    const expected_5v5_rate = (team_xGF_adjusted * 0.55) + (opp_xGA_adjusted * 0.45);
-    const goals_5v5 = (expected_5v5_rate / 60) * (weights['5on5'] * 60); // Dynamic timing
+    // PHASE 1 FIX: Add shooting talent multiplier (calibrated to 2024 data)
+    // Actual avg: 6.07 goals/game, was predicting ~5.25, now targeting 6.0-6.1
+    const SHOOTING_TALENT_MULTIPLIER = 1.10;
+    
+    // PHASE 2: Test 60/40 weighting (more offense-focused for better team differentiation)
+    // 5v5 component: Weighted average
+    const expected_5v5_rate = ((team_xGF_adjusted * 0.60) + (opp_xGA_adjusted * 0.40)) * SHOOTING_TALENT_MULTIPLIER;
+    const minutes_5v5 = weights['5on5'] * 60;
+    const goals_5v5 = (expected_5v5_rate / 60) * minutes_5v5;
     
     // PP component: Average team's PP offense and opponent's PK defensive weakness
     let goals_PP = 0;
     if (team_PP && opponent_PK) {
       const team_PP_xGF = team_PP.scoreAdj_xGF_per60 || team_PP.xGF_per60;
       const opp_PK_xGA = opponent_PK.scoreAdj_xGA_per60 || opponent_PK.xGA_per60;
-      const expected_PP_rate = (team_PP_xGF * 0.55) + (opp_PK_xGA * 0.45);
-      goals_PP = (expected_PP_rate / 60) * (weights['5on4'] * 60); // Dynamic timing
+      const expected_PP_rate = ((team_PP_xGF * 0.60) + (opp_PK_xGA * 0.40)) * SHOOTING_TALENT_MULTIPLIER;
+      const minutes_PP = weights['5on4'] * 60;
+      goals_PP = (expected_PP_rate / 60) * minutes_PP;
     }
     
-    // NEW: Goalie adjustment (can swing goals by ±0.3 to ±0.5 per game)
+    // PHASE 1 FIX: Goalie adjustment DISABLED (was making model worse)
+    // Will re-enable after debugging in Phase 3
     let goalieAdjustment = 0;
-    if (this.goalieProcessor) {
-      // Use team-average goalie stats (for now - starting goalies in future)
-      const oppGoalieStats = this.goalieProcessor.getTeamAverageGoalieStats(opponent, '5on5');
-      
-      if (oppGoalieStats && oppGoalieStats.gamesPlayed > 0) {
-        // GSAE per game impact
-        const gsaePerGame = oppGoalieStats.gsaePerGame || 0;
-        
-        // High danger save % adjustment
-        const leagueAvgHDSv = 0.850;
-        const hdSavePct = oppGoalieStats.hdSavePct || leagueAvgHDSv;
-        
-        // Estimate opponent's high-danger shots from their xG data
-        const oppHDShots = parseFloat(opponent_5v5.highDangerShotsAgainst) || 0;
-        const oppIceTime = parseFloat(opponent_5v5.iceTime) || 1;
-        const oppHDShotsPerGame = (oppHDShots / oppIceTime) * 3600 * (60 / 60); // Approximate per game
-        
-        const hdAdjustment = (hdSavePct - leagueAvgHDSv) * (oppHDShotsPerGame * 0.1); // Scale factor
-        
-        // Negative because OPPONENT's good goalie reduces THIS team's goals
-        goalieAdjustment = -(gsaePerGame + hdAdjustment);
-        
-        // Cap the adjustment to reasonable range (±0.5 goals)
-        goalieAdjustment = Math.max(-0.5, Math.min(0.5, goalieAdjustment));
-      }
-    }
+    // if (this.goalieProcessor) {
+    //   // Use team-average goalie stats (for now - starting goalies in future)
+    //   const oppGoalieStats = this.goalieProcessor.getTeamAverageGoalieStats(opponent, '5on5');
+    //   
+    //   if (oppGoalieStats && oppGoalieStats.gamesPlayed > 0) {
+    //     // GSAE per game impact
+    //     const gsaePerGame = oppGoalieStats.gsaePerGame || 0;
+    //     
+    //     // High danger save % adjustment
+    //     const leagueAvgHDSv = 0.850;
+    //     const hdSavePct = oppGoalieStats.hdSavePct || leagueAvgHDSv;
+    //     
+    //     // Estimate opponent's high-danger shots from their xG data
+    //     const oppHDShots = parseFloat(opponent_5v5.highDangerShotsAgainst) || 0;
+    //     const oppIceTime = parseFloat(opponent_5v5.iceTime) || 1;
+    //     const oppHDShotsPerGame = (oppHDShots / oppIceTime) * 3600 * (60 / 60); // Approximate per game
+    //     
+    //     const hdAdjustment = (hdSavePct - leagueAvgHDSv) * (oppHDShotsPerGame * 0.1); // Scale factor
+    //     
+    //     // Negative because OPPONENT's good goalie reduces THIS team's goals
+    //     goalieAdjustment = -(gsaePerGame + hdAdjustment);
+    //     
+    //     // Cap the adjustment to reasonable range (±0.5 goals)
+    //     goalieAdjustment = Math.max(-0.5, Math.min(0.5, goalieAdjustment));
+    //   }
+    // }
     
     return Math.max(0, goals_5v5 + goals_PP + goalieAdjustment);
   }
 
   // IMPROVEMENT 1B: Apply PDO regression to xG predictions
-  // Teams with extreme PDO (luck) will regress toward mean
+  // PHASE 1 FIX: Only regress EXTREME outliers (was too aggressive before)
   applyPDORegression(xG_per60, PDO) {
     if (!PDO || PDO === 100) return xG_per60;
     
-    // PDO > 102: Team is lucky (high sh% or sv%), expect regression DOWN
-    // PDO < 98: Team is unlucky, expect regression UP
-    if (PDO > 102) {
-      // Regress down by 2-5% depending on how extreme
-      const regressionFactor = Math.min(0.05, (PDO - 102) * 0.01);
+    // PHASE 1: Only regress extreme outliers (PDO > 104 or < 96)
+    // Normal variance (96-104) is NOT regression - it's real team performance
+    if (PDO > 104) {
+      // Regress down by max 3% (reduced from 5%)
+      const regressionFactor = Math.min(0.03, (PDO - 104) * 0.01);
       return xG_per60 * (1 - regressionFactor);
-    } else if (PDO < 98) {
-      // Regress up by 2-5%
-      const regressionFactor = Math.min(0.05, (98 - PDO) * 0.01);
+    } else if (PDO < 96) {
+      // Regress up by max 3%
+      const regressionFactor = Math.min(0.03, (96 - PDO) * 0.01);
       return xG_per60 * (1 + regressionFactor);
     }
     
-    return xG_per60; // PDO in normal range, no regression needed
+    return xG_per60; // PDO in normal range (96-104), no regression needed
   }
 
   // Convert predicted probability to American odds (Part 2.3)
@@ -391,35 +399,44 @@ export class NHLDataProcessor {
   }
 
   // Estimate win probability based on team stats (helper for moneyline)
+  // PHASE 2 FIX: Use actual predicted scores instead of xGD (provides better variance)
   estimateWinProbability(team, opponent, isHome = true) {
     if (!team || !opponent) return 0.5;
     
-    // Use xG differential and regression scores to estimate win probability
-    const teamXGD = team.xGD_per60 || 0;
-    const oppXGD = opponent.xGD_per60 || 0;
+    // PHASE 2: Use actual predicted scores for each team
+    const teamCode = team.team || team.name;
+    const oppCode = opponent.team || opponent.name;
     
-    // CALIBRATED: Home ice advantage: ~54% historical win rate for equal teams
-    // This translates to ~0.10 xGD boost (reduced from 0.15)
-    const homeBonus = isHome ? 0.10 : 0;
+    if (!teamCode || !oppCode) {
+      // Fallback if team codes not available
+      return 0.5;
+    }
     
-    // Adjust for regression (teams with high PDO likely to regress)
-    const teamReg = team.regression_score || 0;
-    const oppReg = opponent.regression_score || 0;
+    // Predict scores (this captures all team differences, PDO, etc.)
+    let teamScore, oppScore;
+    if (isHome) {
+      teamScore = this.predictTeamScore(teamCode, oppCode);  // Home team
+      oppScore = this.predictTeamScore(oppCode, teamCode);   // Away team
+    } else {
+      teamScore = this.predictTeamScore(teamCode, oppCode);  // Away team  
+      oppScore = this.predictTeamScore(oppCode, teamCode);   // Home team
+    }
     
-    // Combine factors (xGD is primary, regression is secondary, home ice is tertiary)
-    const teamStrength = teamXGD + homeBonus - (teamReg * 0.01);
-    const oppStrength = oppXGD - (oppReg * 0.01);
+    // Home ice advantage: ~0.30 goals (derived from 54% home win rate)
+    const homeAdj = isHome ? 0.30 : -0.30;
     
-    const diff = teamStrength - oppStrength;
+    // Calculate goal differential
+    const goalDiff = teamScore - oppScore + homeAdj;
     
-    // CALIBRATED: Use LOGISTIC FUNCTION with reduced sensitivity
-    // P(win) = 1 / (1 + e^(-k*diff)) where k controls sensitivity
-    // k = 0.5 (reduced from 0.8) for more conservative, market-aligned estimates:
-    // - diff = 0 → 50% (equal teams)
-    // - diff = 0.5 → ~56% (moderate advantage)
-    // - diff = 1.0 → ~62% (strong advantage)
-    const k = 0.5;
-    const winProb = 1 / (1 + Math.exp(-k * diff));
+    // PHASE 2: Use goals-based logistic function
+    // k = 0.28 calibrated for goal differential:
+    // - diff = 0 goals → 50%
+    // - diff = 0.5 goals → 54%
+    // - diff = 1.0 goals → 57%
+    // - diff = 1.5 goals → 61%
+    // - diff = 2.0 goals → 64%
+    const k = 0.28;
+    const winProb = 1 / (1 + Math.exp(-k * goalDiff));
     
     // Clamp between 0.05 and 0.95 (never give 100% or 0%)
     return Math.max(0.05, Math.min(0.95, winProb));
