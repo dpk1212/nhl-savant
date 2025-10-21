@@ -328,27 +328,27 @@ export class NHLDataProcessor {
     const teamXGD = team.xGD_per60 || 0;
     const oppXGD = opponent.xGD_per60 || 0;
     
-    // Home ice advantage: ~54-55% historical win rate for equal teams
-    // This translates to ~0.15 xGD boost
-    const homeBonus = isHome ? 0.15 : 0;
+    // CALIBRATED: Home ice advantage: ~54% historical win rate for equal teams
+    // This translates to ~0.10 xGD boost (reduced from 0.15)
+    const homeBonus = isHome ? 0.10 : 0;
     
     // Adjust for regression (teams with high PDO likely to regress)
     const teamReg = team.regression_score || 0;
     const oppReg = opponent.regression_score || 0;
     
     // Combine factors (xGD is primary, regression is secondary, home ice is tertiary)
-    const teamStrength = teamXGD + homeBonus - (teamReg * 0.01); // Reduced regression penalty
+    const teamStrength = teamXGD + homeBonus - (teamReg * 0.01);
     const oppStrength = oppXGD - (oppReg * 0.01);
     
     const diff = teamStrength - oppStrength;
     
-    // Use LOGISTIC FUNCTION for more realistic probability curve
+    // CALIBRATED: Use LOGISTIC FUNCTION with reduced sensitivity
     // P(win) = 1 / (1 + e^(-k*diff)) where k controls sensitivity
-    // k = 0.8 calibrated so that:
+    // k = 0.5 (reduced from 0.8) for more conservative, market-aligned estimates:
     // - diff = 0 → 50% (equal teams)
-    // - diff = 0.5 → ~62% (moderate advantage)
-    // - diff = 1.0 → ~69% (strong advantage)
-    const k = 0.8;
+    // - diff = 0.5 → ~56% (moderate advantage)
+    // - diff = 1.0 → ~62% (strong advantage)
+    const k = 0.5;
     const winProb = 1 / (1 + Math.exp(-k * diff));
     
     // Clamp between 0.05 and 0.95 (never give 100% or 0%)
