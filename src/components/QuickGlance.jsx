@@ -14,7 +14,18 @@ export const QuickGlance = ({ game, bestEdge, isMobile = false }) => {
   if (!bestEdge) return null;
   
   const rating = getRating(bestEdge.evPercent);
-  const isMoneyline = bestEdge.market === 'moneyline';
+  const isMoneyline = bestEdge.market === 'moneyline' || bestEdge.market === 'MONEYLINE';
+  
+  // Calculate implied probability from odds
+  const calculateImpliedProb = (odds) => {
+    if (odds > 0) {
+      return 100 / (odds + 100);
+    } else {
+      return Math.abs(odds) / (Math.abs(odds) + 100);
+    }
+  };
+  
+  const impliedProb = calculateImpliedProb(bestEdge.odds);
   
   return (
     <div className="hover-glow" style={{
@@ -169,7 +180,7 @@ export const QuickGlance = ({ game, bestEdge, isMobile = false }) => {
             fontWeight: '500',
             marginTop: '0.25rem'
           }}>
-            {(bestEdge.impliedProb * 100).toFixed(1)}% implied → {(bestEdge.modelProb * 100).toFixed(1)}% model
+            {(impliedProb * 100).toFixed(1)}% implied → {(bestEdge.modelProb * 100).toFixed(1)}% model
           </div>
         </div>
       </div>
