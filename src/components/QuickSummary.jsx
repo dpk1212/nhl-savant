@@ -18,6 +18,9 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
   }, []);
 
   // Get best bet for each game
+  // STANDARD DEFINITIONS:
+  // - Opportunity = Any game with at least one bet having EV > 0%
+  // - High Value = Any opportunity with best bet EV > 5%
   const opportunities = allEdges.map(game => {
     // Find highest EV bet across all markets
     let bestBet = null;

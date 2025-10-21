@@ -33,10 +33,44 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
       const edges = calculator.calculateAllEdges();
       setAllEdges(edges);
       
-      const topOpportunities = calculator.getTopEdges(0);
+      // Get all opportunities (games with positive EV)
+      const topOpportunities = calculator.getTopEdges(0); // 0 = all with positive EV
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData]);
+  
+  // Calculate opportunities with consistent logic
+  // STANDARD DEFINITIONS:
+  // - Opportunity = Any game with at least one bet having EV > 0%
+  // - High Value = Any opportunity with best bet EV > 5%
+  const getOpportunityCounts = () => {
+    // Filter to only games that have at least one positive EV bet
+    const opportunities = allEdges.filter(game => {
+      let hasPositiveEV = false;
+      
+      // Check moneyline
+      if (game.edges.moneyline?.away?.evPercent > 0 || game.edges.moneyline?.home?.evPercent > 0) {
+        hasPositiveEV = true;
+      }
+      
+      // Check totals
+      if (game.edges.total?.over?.evPercent > 0 || game.edges.total?.under?.evPercent > 0) {
+        hasPositiveEV = true;
+      }
+      
+      return hasPositiveEV;
+    });
+    
+    // High value = games where BEST bet has EV > 5%
+    const highValue = topEdges.filter(e => e.evPercent > 5).length;
+    
+    return {
+      total: opportunities.length,
+      highValue: highValue
+    };
+  };
+  
+  const opportunityCounts = getOpportunityCounts();
 
   // Smooth scroll handler for QuickSummary navigation
   const handleGameClick = (gameName) => {
@@ -155,19 +189,19 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
             flexDirection: isMobile ? 'row' : 'column',
             alignItems: isMobile ? 'flex-start' : 'flex-end'
           }}>
-            <AnimatedStatPill 
-              icon={<BarChart3 size={16} />}
-              value={allEdges.length}
-              label="Games"
-              color="info"
-            />
-            <AnimatedStatPill 
-              icon={<TrendingUp size={16} />}
-              value={topEdges.filter(e => e.evPercent > 3).length}
-              label="High Value"
-              color="success"
-              sparkle
-            />
+          <AnimatedStatPill 
+            icon={<BarChart3 size={16} />}
+            value={opportunityCounts.total}
+            label="Opportunities"
+            color="info"
+          />
+          <AnimatedStatPill 
+            icon={<TrendingUp size={16} />}
+            value={opportunityCounts.highValue}
+            label="High Value"
+            color="success"
+            sparkle
+          />
           </div>
         </div>
         
