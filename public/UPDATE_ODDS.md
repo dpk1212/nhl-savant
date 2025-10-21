@@ -39,12 +39,13 @@ cd "/Users/dalekolnitys/NHL Savant/nhl-savant"
 git add public/odds_money.md public/odds_total.md
 git commit -m "Update today's odds - $(date +%Y-%m-%d)"
 git push origin main
-npm run deploy
 ```
+
+**That's it!** The app will automatically load the new files within 1-2 minutes.
 
 ### 5. Verify
 
-After deployment (takes 1-2 minutes):
+After pushing (takes 1-2 minutes):
 1. Go to your GitHub Pages site
 2. Navigate to "Today's Games"
 3. Verify all games show:
