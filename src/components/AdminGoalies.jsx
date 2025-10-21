@@ -235,7 +235,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
         </div>
 
         {/* Games List */}
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {games.map((game, index) => {
             const gameId = `game_${index}`;
             const awayGoalies = getTeamGoalies(game.away);
@@ -251,7 +251,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                 style={{ backgroundColor: '#FFFFFF', borderWidth: '2px', borderStyle: 'solid', borderColor: '#E5E7EB' }}
               >
                 {/* Game Header */}
-                <div className="px-6 py-4" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)', borderBottom: '2px solid #E5E7EB' }}>
+                <div style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)', borderBottom: '2px solid #E5E7EB', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '1rem', paddingBottom: '1rem' }}>
                   <h3 className="text-2xl font-bold" style={{ color: '#111827' }}>
                     {game.away} @ {game.home}
                   </h3>
@@ -259,18 +259,18 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                 </div>
 
                 {/* Goalie Selectors */}
-                <div className="grid md:grid-cols-2 gap-8 p-6">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', padding: '1.5rem' }}>
                   {/* Away Team */}
-                  <div className="p-5 rounded-lg" style={{ backgroundColor: '#F9FAFB', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB' }}>
-                    <label className="block text-base font-bold mb-3" style={{ color: '#1F2937' }}>
-                      <span className="inline-block px-3 py-1 rounded-md text-sm mr-2" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF' }}>AWAY</span>
+                  <div className="rounded-lg" style={{ backgroundColor: '#F9FAFB', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB', padding: '1.25rem' }}>
+                    <label className="block text-base font-bold" style={{ color: '#1F2937', marginBottom: '0.75rem' }}>
+                      <span className="inline-block rounded-md text-sm" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '0.25rem 0.75rem', marginRight: '0.5rem' }}>AWAY</span>
                       {game.away} Starting Goalie
                     </label>
                     <select
                       value={selectedAway || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.away, e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-medium"
-                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB' }}
+                      className="w-full rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-medium"
+                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB', padding: '0.75rem 1rem' }}
                     >
                       <option value="">Select goalie...</option>
                       {awayGoalies.map(goalie => {
@@ -301,16 +301,16 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                   </div>
 
                   {/* Home Team */}
-                  <div className="p-5 rounded-lg" style={{ backgroundColor: '#F9FAFB', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB' }}>
-                    <label className="block text-base font-bold mb-3" style={{ color: '#1F2937' }}>
-                      <span className="inline-block px-3 py-1 rounded-md text-sm mr-2" style={{ backgroundColor: '#D1FAE5', color: '#166534' }}>HOME</span>
+                  <div className="rounded-lg" style={{ backgroundColor: '#F9FAFB', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB', padding: '1.25rem' }}>
+                    <label className="block text-base font-bold" style={{ color: '#1F2937', marginBottom: '0.75rem' }}>
+                      <span className="inline-block rounded-md text-sm" style={{ backgroundColor: '#D1FAE5', color: '#166534', padding: '0.25rem 0.75rem', marginRight: '0.5rem' }}>HOME</span>
                       {game.home} Starting Goalie
                     </label>
                     <select
                       value={selectedHome || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.home, e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-medium"
-                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB' }}
+                      className="w-full rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-medium"
+                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB', padding: '0.75rem 1rem' }}
                     >
                       <option value="">Select goalie...</option>
                       {homeGoalies.map(goalie => {
