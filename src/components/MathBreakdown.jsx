@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Calculator } from 'lucide-react';
 import { explainGamePrediction } from '../utils/mathExplainer';
 
-const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor }) => {
+const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor, startingGoalies }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Debug logging
@@ -10,7 +10,8 @@ const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor }) => {
     awayTeam, 
     homeTeam, 
     total, 
-    hasDataProcessor: !!dataProcessor 
+    hasDataProcessor: !!dataProcessor,
+    hasStartingGoalies: !!startingGoalies
   });
   
   // Validation
@@ -41,13 +42,15 @@ const MathBreakdown = ({ awayTeam, homeTeam, total, dataProcessor }) => {
   
   console.log('✅ MathBreakdown: All validation passed, calling explainGamePrediction');
   
+  // FIX: Pass starting goalies to explainGamePrediction
   const breakdown = explainGamePrediction(
     awayTeam,
     homeTeam,
     total.line,
     total.over,
     total.under,
-    dataProcessor
+    dataProcessor,
+    startingGoalies
   );
   
   if (!breakdown) {

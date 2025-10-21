@@ -1,6 +1,6 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { loadNHLData, loadOddsFiles } from './utils/dataProcessing';
+import { loadNHLData, loadOddsFiles, loadStartingGoalies } from './utils/dataProcessing';
 import { GoalieProcessor, loadGoalieData } from './utils/goalieProcessor';
 import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
 import Navigation from './components/Navigation';
@@ -16,6 +16,7 @@ function App() {
   const [dataProcessor, setDataProcessor] = useState(null);
   const [oddsData, setOddsData] = useState(null);
   const [goalieData, setGoalieData] = useState(null);
+  const [startingGoalies, setStartingGoalies] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -54,6 +55,11 @@ function App() {
           oddsFiles.todaysGames = extractGamesListFromOdds(mergedGames);
           console.log(`📋 Extracted ${oddsFiles.todaysGames.length} games for admin`);
         }
+        
+        // FIX: Load starting goalies selections
+        console.log('🥅 Loading starting goalie selections...');
+        const goalieSelections = await loadStartingGoalies();
+        setStartingGoalies(goalieSelections);
         
         setOddsData(oddsFiles);
         
@@ -108,7 +114,7 @@ function App() {
           <main>
             <Routes>
               {/* Today's Games is the primary landing page */}
-              <Route path="/" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} />} />
+              <Route path="/" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} startingGoalies={startingGoalies} />} />
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />

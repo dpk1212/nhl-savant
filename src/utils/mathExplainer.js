@@ -27,8 +27,9 @@ export function removeVig(prob1, prob2) {
 
 /**
  * Generate team score breakdown
+ * FIX: Accept isHome and startingGoalie parameters to match actual prediction
  */
-export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
+export function explainTeamScore(teamCode, opponentCode, dataProcessor, isHome = false, startingGoalie = null) {
   const team_5v5 = dataProcessor.getTeamData(teamCode, '5on5');
   const opponent_5v5 = dataProcessor.getTeamData(opponentCode, '5on5');
   const team_PP = dataProcessor.getTeamData(teamCode, '5on4');
@@ -38,19 +39,23 @@ export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
     return null;
   }
   
-  // 5v5 calculation - AUDIT FIX: Now using score-adjusted xG and 55/45 weighting
+  // Use actual prediction model to ensure consistency
+  const totalScore = dataProcessor.predictTeamScore(teamCode, opponentCode, isHome, startingGoalie);
+  
+  // Still show breakdown for educational purposes, but values are approximate
+  // 5v5 calculation - AUDIT FIX: Now using score-adjusted xG and 40/60 weighting
   const team_xGF_per60 = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
   const opp_xGA_per60 = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
-  const expected_5v5_rate = (team_xGF_per60 * 0.55) + (opp_xGA_per60 * 0.45); // 55/45 weighting (research-backed)
+  const expected_5v5_rate = (team_xGF_per60 * 0.40) + (opp_xGA_per60 * 0.60); // 40/60 weighting (industry standard)
   const goals_5v5 = (expected_5v5_rate / 60) * 46.2;
   
-  // PP calculation - AUDIT FIX: Now using score-adjusted xG and 55/45 weighting
+  // PP calculation - AUDIT FIX: Now using score-adjusted xG and 40/60 weighting
   let goals_PP = 0;
   let pp_breakdown = null;
   if (team_PP && opponent_PK) {
     const team_PP_xGF_per60 = team_PP.scoreAdj_xGF_per60 || team_PP.xGF_per60;
     const opp_PK_xGA_per60 = opponent_PK.scoreAdj_xGA_per60 || opponent_PK.xGA_per60;
-    const expected_PP_rate = (team_PP_xGF_per60 * 0.55) + (opp_PK_xGA_per60 * 0.45); // 55/45 weighting
+    const expected_PP_rate = (team_PP_xGF_per60 * 0.40) + (opp_PK_xGA_per60 * 0.60); // 40/60 weighting
     goals_PP = (expected_PP_rate / 60) * 7.2;
     
     pp_breakdown = {
@@ -60,8 +65,6 @@ export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
       goals_PP: goals_PP.toFixed(2)
     };
   }
-  
-  const totalScore = goals_5v5 + goals_PP;
   
   return {
     teamCode,
@@ -73,7 +76,7 @@ export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
       goals_5v5: goals_5v5.toFixed(2)
     },
     powerPlay: pp_breakdown,
-    totalScore: totalScore.toFixed(2),
+    totalScore: totalScore.toFixed(2),  // Use actual prediction
     rawData: {
       team_5v5_iceTime: team_5v5.iceTime,
       team_5v5_xGoalsFor: team_5v5.xGoalsFor,
@@ -88,7 +91,7 @@ export function explainTeamScore(teamCode, opponentCode, dataProcessor) {
 /**
  * Generate complete game breakdown
  */
-export function explainGamePrediction(awayTeam, homeTeam, marketTotal, marketOverOdds, marketUnderOdds, dataProcessor) {
+export function explainGamePrediction(awayTeam, homeTeam, marketTotal, marketOverOdds, marketUnderOdds, dataProcessor, startingGoalies = null) {
   console.log('🧮 explainGamePrediction called with:', { 
     awayTeam, 
     homeTeam, 
@@ -98,9 +101,20 @@ export function explainGamePrediction(awayTeam, homeTeam, marketTotal, marketOve
     hasDataProcessor: !!dataProcessor 
   });
   
-  // Get team score breakdowns
-  const awayBreakdown = explainTeamScore(awayTeam, homeTeam, dataProcessor);
-  const homeBreakdown = explainTeamScore(homeTeam, awayTeam, dataProcessor);
+  // Helper to get starting goalie
+  const getGoalie = (team) => {
+    if (!startingGoalies || !startingGoalies.games) return null;
+    const matchup = `${awayTeam} @ ${homeTeam}`;
+    const game = startingGoalies.games.find(g => g.matchup === matchup);
+    if (!game) return null;
+    if (game.away.team === team) return game.away.goalie;
+    if (game.home.team === team) return game.home.goalie;
+    return null;
+  };
+  
+  // Get team score breakdowns - FIX: Pass isHome and starting goalies
+  const awayBreakdown = explainTeamScore(awayTeam, homeTeam, dataProcessor, false, getGoalie(awayTeam));
+  const homeBreakdown = explainTeamScore(homeTeam, awayTeam, dataProcessor, true, getGoalie(homeTeam));
   
   console.log('🧮 Team breakdowns:', { awayBreakdown, homeBreakdown });
   

@@ -500,6 +500,61 @@ export class NHLDataProcessor {
     return z > 0 ? 1 - p : p;
   }
 
+  // POISSON DISTRIBUTION FUNCTIONS (Industry Standard for Hockey)
+  // Hockey goals are discrete, rare events - Poisson is more accurate than Normal
+  
+  // Factorial helper
+  factorial(n) {
+    if (n <= 1) return 1;
+    let result = 1;
+    for (let i = 2; i <= n; i++) {
+      result *= i;
+    }
+    return result;
+  }
+
+  // Log factorial for numerical stability with large numbers
+  logFactorial(n) {
+    if (n <= 1) return 0;
+    let sum = 0;
+    for (let i = 2; i <= n; i++) {
+      sum += Math.log(i);
+    }
+    return sum;
+  }
+
+  // Poisson PMF: P(X = k) = (λ^k * e^-λ) / k!
+  // Probability of exactly k goals when expected value is lambda
+  poissonPMF(k, lambda) {
+    if (lambda <= 0) return 0;
+    if (k < 0) return 0;
+    
+    // Use log-space for numerical stability with large k
+    if (k > 20) {
+      const logProb = k * Math.log(lambda) - lambda - this.logFactorial(k);
+      return Math.exp(logProb);
+    }
+    
+    return (Math.pow(lambda, k) * Math.exp(-lambda)) / this.factorial(k);
+  }
+
+  // Poisson CDF: P(X <= k) = sum of PMF from 0 to k
+  // Probability of k or fewer goals
+  poissonCDF(k, lambda) {
+    if (lambda <= 0) return 1;
+    if (k < 0) return 0;
+    
+    let sum = 0;
+    const maxK = Math.floor(k);
+    
+    // Sum probabilities from 0 to k
+    for (let i = 0; i <= maxK; i++) {
+      sum += this.poissonPMF(i, lambda);
+    }
+    
+    return Math.min(1, sum); // Cap at 1 due to floating point errors
+  }
+
   // Estimate win probability based on team stats (helper for moneyline)
   // PHASE 4 FIX: Pass isHome to predictTeamScore for home ice boost
   estimateWinProbability(team, opponent, isHome = true) {

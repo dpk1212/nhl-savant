@@ -2,8 +2,9 @@
 import { parseBothFiles } from './oddsTraderParser';
 
 export class EdgeCalculator {
-  constructor(dataProcessor, oddsFiles) {
+  constructor(dataProcessor, oddsFiles, startingGoalies = null) {
     this.dataProcessor = dataProcessor;
+    this.startingGoalies = startingGoalies;
     
     // Use parseBothFiles if we have both money and total files
     if (oddsFiles && oddsFiles.moneyText && oddsFiles.totalText) {
@@ -11,6 +12,26 @@ export class EdgeCalculator {
     } else {
       this.games = [];
     }
+  }
+
+  // Helper: Get starting goalie for a team in a specific game
+  getStartingGoalie(team, game) {
+    if (!this.startingGoalies || !this.startingGoalies.games) return null;
+    
+    // Find the game in starting goalies
+    const matchup = `${game.awayTeam} @ ${game.homeTeam}`;
+    const goalieGame = this.startingGoalies.games.find(g => g.matchup === matchup);
+    
+    if (!goalieGame) return null;
+    
+    // Return the goalie for the specified team
+    if (goalieGame.away.team === team) {
+      return goalieGame.away.goalie;
+    } else if (goalieGame.home.team === team) {
+      return goalieGame.home.goalie;
+    }
+    
+    return null;
   }
 
   // Calculate all edges for today's games
@@ -136,24 +157,24 @@ export class EdgeCalculator {
       return null;
     }
     
-    const predictedTotal = this.dataProcessor.predictGameTotal(game.awayTeam, game.homeTeam);
+    // FIX: Get starting goalies for both teams
+    const awayGoalie = this.getStartingGoalie(game.awayTeam, game);
+    const homeGoalie = this.getStartingGoalie(game.homeTeam, game);
+    
+    // FIX: Predict individual team scores WITH home ice advantage and starting goalies
+    const awayScore = this.dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam, false, awayGoalie);
+    const homeScore = this.dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam, true, homeGoalie);
+    const predictedTotal = awayScore + homeScore;
+    
     const marketTotal = game.total.line;
     
     // Calculate edge (how much our model differs from market)
     const edge = predictedTotal - marketTotal;
     
-    // AUDIT IMPROVEMENT 1C: Dynamic standard deviation based on expected total
-    // Low-scoring games (4 goals): stdDev ~1.3
-    // High-scoring games (7 goals): stdDev ~1.8
-    // Formula: 0.9 + (predictedTotal * 0.12)
-    const stdDev = 0.9 + (predictedTotal * 0.12);
-    
-    // Calculate Z-score: how many standard deviations is market line from prediction?
-    const zScore = (marketTotal - predictedTotal) / stdDev;
-    
-    // Probability of going OVER using cumulative distribution function
-    // P(actual > market) = P(Z > z-score) = 1 - CDF(z-score)
-    const overProb = 1 - this.dataProcessor.normalCDF(zScore);
+    // FIX: Use POISSON distribution (industry standard for hockey)
+    // Hockey goals are discrete, rare events - Poisson is more accurate than Normal
+    // P(Over) = P(Total > marketTotal) = 1 - P(Total <= marketTotal)
+    const overProb = 1 - this.dataProcessor.poissonCDF(Math.floor(marketTotal), predictedTotal);
     const underProb = 1 - overProb;
     
     // Calculate EV
@@ -171,6 +192,8 @@ export class EdgeCalculator {
     
     return {
       predictedTotal: predictedTotal,
+      awayScore: awayScore,  // FIX: Add individual scores for display
+      homeScore: homeScore,  // FIX: Add individual scores for display
       marketTotal: marketTotal,
       edge: edge,
       recommendation: recommendation,
@@ -193,8 +216,13 @@ export class EdgeCalculator {
 
   // Calculate team total edges (individual team over/under)
   calculateTeamTotalEdges(game) {
-    const awayScore = this.dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam);
-    const homeScore = this.dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam);
+    // FIX: Get starting goalies
+    const awayGoalie = this.getStartingGoalie(game.awayTeam, game);
+    const homeGoalie = this.getStartingGoalie(game.homeTeam, game);
+    
+    // FIX: Add home ice advantage
+    const awayScore = this.dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam, false, awayGoalie);
+    const homeScore = this.dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam, true, homeGoalie);
     
     // For now, return predicted team totals
     // Real implementation would need actual team total lines from sportsbook

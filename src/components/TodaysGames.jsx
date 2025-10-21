@@ -11,7 +11,7 @@ import CollapsibleSection from './CollapsibleSection';
 import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 
-const TodaysGames = ({ dataProcessor, oddsData }) => {
+const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
   const [allEdges, setAllEdges] = useState([]);
   const [topEdges, setTopEdges] = useState([]);
@@ -31,7 +31,8 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
   // Initialize edge calculator
   useEffect(() => {
     if (dataProcessor && oddsData) {
-      const calculator = new EdgeCalculator(dataProcessor, oddsData);
+      // FIX: Pass starting goalies to EdgeCalculator
+      const calculator = new EdgeCalculator(dataProcessor, oddsData, startingGoalies);
       setEdgeCalculator(calculator);
       
       const edges = calculator.calculateAllEdges();
@@ -41,7 +42,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
       const topOpportunities = calculator.getTopEdges(0); // 0 = all with positive EV
       setTopEdges(topOpportunities);
     }
-  }, [dataProcessor, oddsData]);
+  }, [dataProcessor, oddsData, startingGoalies]);
   
   // Calculate opportunities with consistent logic
   // STANDARD DEFINITIONS:
@@ -308,9 +309,9 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                   </div>
                 </div>
                 {game.edges.total && game.edges.total.predictedTotal != null && (() => {
-                  // Calculate individual team scores
-                  const awayScore = dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam);
-                  const homeScore = dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam);
+                  // FIX: Use predictions from edge calculator (already calculated with home ice and goalies)
+                  const awayScore = game.edges.total.awayScore;
+                  const homeScore = game.edges.total.homeScore;
                   
                   return (
                     <div style={{ 
@@ -788,7 +789,8 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                     awayTeam={game.awayTeam}
                     homeTeam={game.homeTeam}
                     total={game.rawOdds.total}
-                    dataProcessor={dataProcessor} 
+                    dataProcessor={dataProcessor}
+                    startingGoalies={startingGoalies}
                   />
                 </div>
               )}
