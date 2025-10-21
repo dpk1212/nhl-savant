@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { generateBetNarrative, generateDeepAnalytics, calculateLeagueRank } from '../utils/narrativeGenerator';
 import { getTeamName } from '../utils/oddsTraderParser';
+import StatComparisonBar from './StatComparisonBar';
 
 /**
  * BetNarrative Component - Displays narrative explanations for betting picks
@@ -305,6 +306,109 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                         {deepAnalytics.rankings.home.defense.bar}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Advanced Matchup Analysis - Stat Comparison Bars */}
+                  <div style={{ 
+                    backgroundColor: 'var(--color-background)', 
+                    padding: '0.875rem', 
+                    borderRadius: '6px',
+                    marginBottom: '0.75rem',
+                    border: '1px solid var(--color-border)'
+                  }}>
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: '700',
+                      color: 'var(--color-accent)',
+                      marginBottom: '0.5rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span>🔬</span> Advanced Matchup Analysis
+                    </div>
+
+                    {(() => {
+                      // Get team data for comparison
+                      const away_5v5 = dataProcessor.getTeamData(game.awayTeam, '5on5');
+                      const home_5v5 = dataProcessor.getTeamData(game.homeTeam, '5on5');
+                      const away_PP = dataProcessor.getTeamData(game.awayTeam, '5on4');
+                      const home_PP = dataProcessor.getTeamData(game.homeTeam, '5on4');
+                      const away_PK = dataProcessor.getTeamData(game.awayTeam, '4on5');
+                      const home_PK = dataProcessor.getTeamData(game.homeTeam, '4on5');
+                      const away_all = dataProcessor.getTeamData(game.awayTeam, 'all');
+                      const home_all = dataProcessor.getTeamData(game.homeTeam, 'all');
+
+                      if (!away_5v5 || !home_5v5) return null;
+
+                      return (
+                        <>
+                          <StatComparisonBar
+                            label="Offensive Firepower"
+                            team1Name={game.awayTeam}
+                            team1Value={away_5v5.scoreAdj_xGF_per60 || away_5v5.xGF_per60 || 0}
+                            team2Name={game.homeTeam}
+                            team2Value={home_5v5.scoreAdj_xGF_per60 || home_5v5.xGF_per60 || 0}
+                            metric="xGF/60"
+                            higherIsBetter={true}
+                          />
+
+                          <StatComparisonBar
+                            label="Defensive Strength"
+                            team1Name={game.awayTeam}
+                            team1Value={away_5v5.scoreAdj_xGA_per60 || away_5v5.xGA_per60 || 0}
+                            team2Name={game.homeTeam}
+                            team2Value={home_5v5.scoreAdj_xGA_per60 || home_5v5.xGA_per60 || 0}
+                            metric="xGA/60"
+                            higherIsBetter={false}
+                            note1="Lower is better"
+                            note2="Lower is better"
+                          />
+
+                          {away_PP && home_PP && (
+                            <StatComparisonBar
+                              label="Power Play Efficiency"
+                              team1Name={game.awayTeam}
+                              team1Value={away_PP.scoreAdj_xGF_per60 || away_PP.xGF_per60 || 0}
+                              team2Name={game.homeTeam}
+                              team2Value={home_PP.scoreAdj_xGF_per60 || home_PP.xGF_per60 || 0}
+                              metric="PP xGF/60"
+                              higherIsBetter={true}
+                            />
+                          )}
+
+                          {away_PK && home_PK && (
+                            <StatComparisonBar
+                              label="Penalty Kill Defense"
+                              team1Name={game.awayTeam}
+                              team1Value={away_PK.scoreAdj_xGA_per60 || away_PK.xGA_per60 || 0}
+                              team2Name={game.homeTeam}
+                              team2Value={home_PK.scoreAdj_xGA_per60 || home_PK.xGA_per60 || 0}
+                              metric="PK xGA/60"
+                              higherIsBetter={false}
+                              note1="Lower is better"
+                              note2="Lower is better"
+                            />
+                          )}
+
+                          {away_all && home_all && (
+                            <StatComparisonBar
+                              label="Luck/Regression Indicator"
+                              team1Name={game.awayTeam}
+                              team1Value={away_all.pdo || 100}
+                              team2Name={game.homeTeam}
+                              team2Value={home_all.pdo || 100}
+                              metric="PDO"
+                              higherIsBetter={false}
+                              note1={away_all.pdo > 102 ? "Due to regress" : away_all.pdo < 98 ? "Due to improve" : ""}
+                              note2={home_all.pdo > 102 ? "Due to regress" : home_all.pdo < 98 ? "Due to improve" : ""}
+                            />
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Probability Breakdown */}

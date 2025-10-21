@@ -228,59 +228,113 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                     </p>
                   </div>
                 </div>
-                {game.edges.total && game.edges.total.predictedTotal != null && (
-                  <div style={{ 
-                    textAlign: isMobile ? 'left' : 'right',
-                    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.03) 100%)',
-                    border: '1px solid rgba(212, 175, 55, 0.2)',
-                    borderRadius: '8px',
-                    padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
-                    minWidth: isMobile ? '100%' : '200px'
-                  }}>
-                    <p style={{ 
-                      fontSize: '0.688rem', 
-                      color: 'var(--color-text-muted)', 
-                      marginBottom: '0.375rem', 
-                      textTransform: 'uppercase', 
-                      letterSpacing: '0.1em',
-                      fontWeight: '700'
-                    }}>
-                      Model Prediction
-                    </p>
-                    <p style={{ 
-                      fontSize: isMobile ? '2rem' : '1.875rem', 
-                      fontWeight: '800', 
-                      color: 'var(--color-accent)',
-                      margin: '0 0 0.375rem 0',
-                      fontFeatureSettings: "'tnum', 'ss01'",
-                      textShadow: '0 2px 4px rgba(212, 175, 55, 0.2)'
-                    }}>
-                      {game.edges.total.predictedTotal.toFixed(1)}
-                    </p>
+                {game.edges.total && game.edges.total.predictedTotal != null && (() => {
+                  // Calculate individual team scores
+                  const awayScore = dataProcessor.predictTeamScore(game.awayTeam, game.homeTeam);
+                  const homeScore = dataProcessor.predictTeamScore(game.homeTeam, game.awayTeam);
+                  
+                  return (
                     <div style={{ 
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: isMobile ? 'flex-start' : 'flex-end',
-                      gap: '0.5rem',
-                      fontSize: '0.875rem'
+                      textAlign: isMobile ? 'left' : 'right',
+                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.03) 100%)',
+                      border: '1px solid rgba(212, 175, 55, 0.2)',
+                      borderRadius: '8px',
+                      padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
+                      minWidth: isMobile ? '100%' : '220px'
                     }}>
-                      <span style={{ color: 'var(--color-text-secondary)', fontWeight: '500' }}>
-                        Market: {game.edges.total.marketTotal}
-                      </span>
-                      <span style={{ 
-                        padding: '0.125rem 0.5rem',
-                        borderRadius: '4px',
-                        background: game.edges.total.edge > 0 ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                        color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
-                        fontWeight: '700',
-                        fontSize: '0.813rem',
-                        fontFeatureSettings: "'tnum'"
+                      <p style={{ 
+                        fontSize: '0.688rem', 
+                        color: 'var(--color-text-muted)', 
+                        marginBottom: '0.5rem', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.1em',
+                        fontWeight: '700'
                       }}>
-                        {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
-                      </span>
+                        Model Prediction
+                      </p>
+                      
+                      {/* Individual Team Scores */}
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.375rem',
+                        marginBottom: '0.5rem',
+                        paddingBottom: '0.5rem',
+                        borderBottom: '1px solid rgba(212, 175, 55, 0.15)'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.875rem',
+                          color: 'var(--color-text-primary)',
+                          fontWeight: '500'
+                        }}>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>{game.awayTeam}:</span>
+                          <span style={{ 
+                            fontFeatureSettings: "'tnum'",
+                            fontWeight: '600'
+                          }}>
+                            {awayScore.toFixed(1)} goals
+                          </span>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.875rem',
+                          color: 'var(--color-text-primary)',
+                          fontWeight: '500'
+                        }}>
+                          <span style={{ color: 'var(--color-text-secondary)' }}>{game.homeTeam}:</span>
+                          <span style={{ 
+                            fontFeatureSettings: "'tnum'",
+                            fontWeight: '600'
+                          }}>
+                            {homeScore.toFixed(1)} goals
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Total Prediction */}
+                      <p style={{ 
+                        fontSize: isMobile ? '1.75rem' : '1.625rem', 
+                        fontWeight: '800', 
+                        color: 'var(--color-accent)',
+                        margin: '0 0 0.375rem 0',
+                        fontFeatureSettings: "'tnum', 'ss01'",
+                        textShadow: '0 2px 4px rgba(212, 175, 55, 0.2)',
+                        textAlign: 'center'
+                      }}>
+                        {game.edges.total.predictedTotal.toFixed(1)}
+                      </p>
+                      
+                      {/* Market Comparison */}
+                      <div style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.875rem'
+                      }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontWeight: '500' }}>
+                          Market: {game.edges.total.marketTotal}
+                        </span>
+                        <span style={{ 
+                          padding: '0.125rem 0.5rem',
+                          borderRadius: '4px',
+                          background: game.edges.total.edge > 0 ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+                          color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                          fontWeight: '700',
+                          fontSize: '0.813rem',
+                          fontFeatureSettings: "'tnum'"
+                        }}>
+                          {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Best Bet Narrative with Badge */}
