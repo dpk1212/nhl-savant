@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Target, Clock, Zap } from 'lucide-react';
 import { BetTypeBadge, EVDisplay, EdgeIndicator, TimeDisplay, ViewButton } from './PremiumComponents';
 
 const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
@@ -103,8 +103,9 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Target size={20} color="var(--color-accent)" />
             <span style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
-              🎯 Today's Opportunities
+              Today's Opportunities
             </span>
             <span style={{ 
               fontSize: '0.875rem', 
@@ -196,7 +197,8 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
             fontWeight: '600'
           }}
         >
-          <span>🎯 Opportunities ({opportunities.length})</span>
+          <Target size={18} color="var(--color-accent)" style={{ marginRight: '0.5rem' }} />
+          <span>Opportunities ({opportunities.length})</span>
           <ChevronDown size={20} color="var(--color-accent)" />
         </button>
       </div>
@@ -226,8 +228,9 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
         alignItems: 'center'
       }}>
         <div style={{ textAlign: 'center', flex: 1 }}>
-          <div style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem' }}>
-            🎯 Today's Betting Opportunities
+          <div style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Target size={20} />
+            <span>Today's Betting Opportunities</span>
           </div>
           <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
             {opportunities.length} Games • {highValueCount} High Value
@@ -508,7 +511,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                   color: 'var(--color-text-muted)',
                   fontWeight: '500'
                 }}>
-                  <span>🕐</span>
+                  <Clock size={14} />
                   <span>{opp.time}</span>
                 </div>
               </div>
@@ -533,9 +536,13 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                   fontWeight: '800',
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
-                  color: opp.bestBet.type === 'ML' ? '#60A5FA' : '#A78BFA'
+                  color: opp.bestBet.type === 'ML' ? '#60A5FA' : '#A78BFA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
                 }}>
-                  {opp.bestBet.type === 'ML' ? '⚡ MONEYLINE' : '🎯 TOTAL'}
+                  {opp.bestBet.type === 'ML' ? <Zap size={12} /> : <Target size={12} />}
+                  <span>{opp.bestBet.type === 'ML' ? 'MONEYLINE' : 'TOTAL'}</span>
                 </span>
               </div>
               

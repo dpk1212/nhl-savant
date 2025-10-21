@@ -5,6 +5,10 @@ import { getTeamName } from '../utils/oddsTraderParser';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
 import QuickSummary from './QuickSummary';
+import QuickGlance from './QuickGlance';
+import RatingBadge from './RatingBadge';
+import CollapsibleSection from './CollapsibleSection';
+import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 
 const TodaysGames = ({ dataProcessor, oddsData }) => {
@@ -112,7 +116,7 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
         }}>
           <Calendar size={isMobile ? 24 : 32} color="var(--color-accent)" />
           <div>
-            <h1 style={{ marginBottom: '0.25rem' }}>🎯 Today's Games</h1>
+            <h1 style={{ marginBottom: '0.25rem' }}>Today's Games</h1>
             <p style={{ 
               color: 'var(--color-text-secondary)', 
               fontSize: isMobile ? '0.875rem' : '0.938rem',
@@ -247,12 +251,15 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
             <div 
               key={index}
               id={`game-${game.game.replace(/\s/g, '-')}`}
-              className="elevated-card game-card"
+              className="elevated-card game-card hover-lift"
               style={{
                 animationDelay: `${index * 0.1}s`,
                 position: 'relative'
               }}
             >
+              {/* Quick Glance Summary - Best Opportunity at a Glance */}
+              <QuickGlance game={game} bestEdge={bestEdge} isMobile={isMobile} />
+              
               {/* Premium Game Header */}
               <div style={{ 
                 display: 'flex', 
