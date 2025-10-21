@@ -17,6 +17,21 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  // Opportunity Rating System
+  // PROFESSIONAL CLASSIFICATION:
+  // A+ (Elite):    EV > 10%  - Institutional-grade edge
+  // A  (Excellent): EV 7-10% - Strong analytical advantage  
+  // B+ (Strong):    EV 5-7%  - High-confidence opportunity
+  // B  (Good):      EV 3-5%  - Solid value bet
+  // C  (Value):     EV 0-3%  - Marginal edge
+  const getRating = (evPercent) => {
+    if (evPercent >= 10) return { grade: 'A+', tier: 'ELITE', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981' };
+    if (evPercent >= 7) return { grade: 'A', tier: 'EXCELLENT', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.15)', borderColor: '#059669' };
+    if (evPercent >= 5) return { grade: 'B+', tier: 'STRONG', color: '#0EA5E9', bgColor: 'rgba(14, 165, 233, 0.15)', borderColor: '#0EA5E9' };
+    if (evPercent >= 3) return { grade: 'B', tier: 'GOOD', color: '#8B5CF6', bgColor: 'rgba(139, 92, 246, 0.15)', borderColor: '#8B5CF6' };
+    return { grade: 'C', tier: 'VALUE', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.15)', borderColor: '#64748B' };
+  };
+
   // Get best bet for each game
   // STANDARD DEFINITIONS:
   // - Opportunity = Any game with at least one bet having EV > 0%
@@ -283,12 +298,13 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
             minWidth: '800px'
           }}>
             <colgroup>
-              <col style={{ width: '22%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '20%' }} />
               <col style={{ width: '12%' }} />
-              <col style={{ width: '22%' }} />
-              <col style={{ width: '14%' }} />
-              <col style={{ width: '16%' }} />
-              <col style={{ width: '14%' }} />
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '12%' }} />
             </colgroup>
             <thead>
               <tr style={{ background: 'var(--color-background)' }}>
@@ -297,118 +313,181 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                 <th style={headerStyle}>Best Bet</th>
                 <th style={headerStyle}>Edge</th>
                 <th style={headerStyle}>EV</th>
+                <th style={headerStyle}>Rating</th>
                 <th style={headerStyle}></th>
               </tr>
             </thead>
             <tbody>
-              {opportunities.map((opp, i) => (
-                <tr 
-                  key={i}
-                  className="summary-row"
-                  style={{ 
-                    borderTop: '1px solid var(--color-border)',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    position: 'relative'
-                  }}
-                >
-                  {/* EV Progress bar background */}
-                  <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
-                    background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
-                    zIndex: 0,
-                    pointerEvents: 'none'
-                  }} />
-                  
-                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                    <span style={{ fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{opp.game}</span>
-                  </td>
-                  
-                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                    <TimeDisplay time={opp.time} />
-                  </td>
-                  
-                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <BetTypeBadge type={opp.bestBet.type} />
-                      <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>{opp.bestBet.pick}</span>
-                    </div>
-                  </td>
-                  
-                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                    <EdgeIndicator edge={opp.edge} />
-                  </td>
-                  
-                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                    <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
-                  </td>
-                  
-                  <td style={{...cellStyle, position: 'relative', zIndex: 1, textAlign: 'center'}}>
-                    <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
-                  </td>
-                </tr>
-              ))}
+              {opportunities.map((opp, i) => {
+                const rating = getRating(opp.bestBet.evPercent);
+                return (
+                  <tr 
+                    key={i}
+                    className="summary-row"
+                    style={{ 
+                      borderTop: '1px solid var(--color-border)',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* EV Progress bar background */}
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
+                      background: `linear-gradient(90deg, ${rating.bgColor} 0%, transparent 100%)`,
+                      zIndex: 0,
+                      pointerEvents: 'none'
+                    }} />
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                      <span style={{ fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{opp.game}</span>
+                    </td>
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                      <TimeDisplay time={opp.time} />
+                    </td>
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <BetTypeBadge type={opp.bestBet.type} />
+                        <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>{opp.bestBet.pick}</span>
+                      </div>
+                    </td>
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                      <EdgeIndicator edge={opp.edge} />
+                    </td>
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                      <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
+                    </td>
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                      }}>
+                        <div style={{
+                          padding: '0.375rem 0.75rem',
+                          background: rating.bgColor,
+                          border: `1px solid ${rating.borderColor}`,
+                          borderRadius: '6px',
+                          fontWeight: '800',
+                          fontSize: '0.875rem',
+                          color: rating.color,
+                          letterSpacing: '-0.01em',
+                          minWidth: '42px',
+                          textAlign: 'center'
+                        }}>
+                          {rating.grade}
+                        </div>
+                        <div style={{
+                          fontSize: '0.625rem',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: rating.color,
+                          opacity: 0.8
+                        }}>
+                          {rating.tier}
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <td style={{...cellStyle, position: 'relative', zIndex: 1, textAlign: 'center'}}>
+                      <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       ) : (
         // Mobile: Premium Cards
         <div style={{ padding: '1.25rem 1rem' }}>
-          {opportunities.map((opp, i) => (
-            <div 
-              key={i} 
-              className="mobile-opp-card"
-              style={{
-                background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.95) 0%, rgba(26, 31, 46, 0.9) 100%)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginBottom: '1.25rem',
-                border: '1px solid rgba(212, 175, 55, 0.2)',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 175, 55, 0.1)',
-                position: 'relative',
-                overflow: 'hidden',
-                animation: 'slideInUp 0.4s ease-out',
-                animationDelay: `${i * 0.1}s`,
-                animationFillMode: 'both'
-              }}>
-              
-              {/* Shimmer effect for high value bets */}
-              {opp.bestBet.evPercent > 5 && (
-                <div className="shimmer-overlay" style={{
+          {opportunities.map((opp, i) => {
+            const rating = getRating(opp.bestBet.evPercent);
+            return (
+              <div 
+                key={i} 
+                className="mobile-opp-card"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.95) 0%, rgba(26, 31, 46, 0.9) 100%)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginBottom: '1.25rem',
+                  border: `1px solid ${rating.borderColor}`,
+                  boxShadow: `0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px ${rating.borderColor}`,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animation: 'slideInUp 0.4s ease-out',
+                  animationDelay: `${i * 0.1}s`,
+                  animationFillMode: 'both'
+                }}>
+                
+                {/* Shimmer effect for high value bets */}
+                {rating.tier === 'ELITE' || rating.tier === 'EXCELLENT' && (
+                  <div className="shimmer-overlay" style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '-100%',
+                    width: '100%',
+                    height: '100%',
+                    background: `linear-gradient(90deg, transparent, ${rating.bgColor}, transparent)`,
+                    animation: 'shimmer 3s infinite'
+                  }} />
+                )}
+                
+                {/* Rating Badge - Top Right */}
+                <div style={{
                   position: 'absolute',
-                  top: 0,
-                  left: '-100%',
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent)',
-                  animation: 'shimmer 3s infinite'
-                }} />
-              )}
-              
-              {/* EV Badge - Top Right */}
-              <div style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: opp.bestBet.evPercent > 10 
-                  ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-                  : opp.bestBet.evPercent > 5
-                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                  : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
-                color: 'white',
-                padding: '0.625rem 1rem',
-                borderRadius: '8px',
-                fontSize: '1.125rem',
-                fontWeight: '900',
-                letterSpacing: '-0.02em',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
-              }}>
-                +{opp.bestBet.evPercent.toFixed(1)}%
-              </div>
+                  top: '1rem',
+                  right: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  gap: '0.375rem'
+                }}>
+                  <div style={{
+                    background: `linear-gradient(135deg, ${rating.color} 0%, ${rating.borderColor} 100%)`,
+                    color: 'white',
+                    padding: '0.5rem 0.875rem',
+                    borderRadius: '8px',
+                    fontSize: '1.25rem',
+                    fontWeight: '900',
+                    letterSpacing: '-0.02em',
+                    boxShadow: `0 4px 12px ${rating.bgColor}`,
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+                    minWidth: '52px',
+                    textAlign: 'center'
+                  }}>
+                    {rating.grade}
+                  </div>
+                  <div style={{
+                    fontSize: '0.688rem',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: rating.color,
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
+                  }}>
+                    {rating.tier}
+                  </div>
+                  <div style={{
+                    fontSize: '0.813rem',
+                    fontWeight: '700',
+                    color: 'white',
+                    opacity: 0.9
+                  }}>
+                    +{opp.bestBet.evPercent.toFixed(1)}%
+                  </div>
+                </div>
               
               {/* Game Header */}
               <div style={{ marginBottom: '1.25rem', paddingRight: '5rem' }}>
@@ -532,8 +611,9 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
               >
                 View Full Analysis →
               </button>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
