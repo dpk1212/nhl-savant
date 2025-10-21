@@ -188,7 +188,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
         </div>
 
         {/* Action Buttons */}
-        <div className="rounded-lg shadow-sm border border-gray-200 p-6 mb-8" style={{ backgroundColor: '#FFFFFF' }}>
+        <div className="rounded-lg shadow-sm border p-6 mb-8" style={{ backgroundColor: '#FFFFFF', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB' }}>
           <h2 className="text-lg font-semibold mb-4" style={{ color: '#111827' }}>Actions</h2>
           <div className="flex flex-wrap gap-3">
             <button
@@ -247,11 +247,11 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
             return (
               <div 
                 key={gameId} 
-                className="border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-                style={{ backgroundColor: '#FFFFFF' }}
+                className="rounded-xl shadow-md hover:shadow-lg transition-shadow"
+                style={{ backgroundColor: '#FFFFFF', borderWidth: '2px', borderStyle: 'solid', borderColor: '#E5E7EB' }}
               >
                 {/* Game Header */}
-                <div className="px-6 py-4 border-b-2 border-gray-200" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)' }}>
+                <div className="px-6 py-4" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)', borderBottom: '2px solid #E5E7EB' }}>
                   <h3 className="text-2xl font-bold" style={{ color: '#111827' }}>
                     {game.away} @ {game.home}
                   </h3>
@@ -261,7 +261,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                 {/* Goalie Selectors */}
                 <div className="grid md:grid-cols-2 gap-8 p-6">
                   {/* Away Team */}
-                  <div className="p-5 rounded-lg border border-gray-200" style={{ backgroundColor: '#F9FAFB' }}>
+                  <div className="p-5 rounded-lg" style={{ backgroundColor: '#F9FAFB', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB' }}>
                     <label className="block text-base font-bold mb-3" style={{ color: '#1F2937' }}>
                       <span className="inline-block px-3 py-1 rounded-md text-sm mr-2" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF' }}>AWAY</span>
                       {game.away} Starting Goalie
@@ -269,8 +269,8 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                     <select
                       value={selectedAway || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.away, e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
-                      style={{ backgroundColor: '#FFFFFF', color: '#111827' }}
+                      className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-medium"
+                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB' }}
                     >
                       <option value="">Select goalie...</option>
                       {awayGoalies.map(goalie => {
@@ -301,7 +301,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                   </div>
 
                   {/* Home Team */}
-                  <div className="p-5 rounded-lg border border-gray-200" style={{ backgroundColor: '#F9FAFB' }}>
+                  <div className="p-5 rounded-lg" style={{ backgroundColor: '#F9FAFB', borderWidth: '1px', borderStyle: 'solid', borderColor: '#E5E7EB' }}>
                     <label className="block text-base font-bold mb-3" style={{ color: '#1F2937' }}>
                       <span className="inline-block px-3 py-1 rounded-md text-sm mr-2" style={{ backgroundColor: '#D1FAE5', color: '#166534' }}>HOME</span>
                       {game.home} Starting Goalie
@@ -309,8 +309,8 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                     <select
                       value={selectedHome || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.home, e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
-                      style={{ backgroundColor: '#FFFFFF', color: '#111827' }}
+                      className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 text-base font-medium"
+                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB' }}
                     >
                       <option value="">Select goalie...</option>
                       {homeGoalies.map(goalie => {
