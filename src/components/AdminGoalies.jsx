@@ -167,182 +167,203 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Admin: Starting Goalies
-        </h1>
-        <p className="text-gray-600">
-          Select starting goalies for today's games. Goalie quality has a <strong>±15% impact</strong> on predictions.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            Admin: Starting Goalies
+          </h1>
+          <p className="text-lg text-gray-600">
+            Select starting goalies for today's games. Goalie quality has a <strong className="text-blue-600">±15% impact</strong> on predictions.
+          </p>
+        </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isSaving ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              Save Locally
-            </>
-          )}
-        </button>
-        
-        <button
-          onClick={handleExportToJSON}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Export for GitHub
-        </button>
-        
-        <button
-          onClick={handleCopyToClipboard}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Copy className="w-4 h-4" />
-          Copy JSON
-        </button>
-        
-        <button
-          onClick={handleClear}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Clear All
-        </button>
-      </div>
-
-      {/* Games List */}
-      <div className="space-y-4">
-        {games.map((game, index) => {
-          const gameId = `game_${index}`;
-          const awayGoalies = getTeamGoalies(game.away);
-          const homeGoalies = getTeamGoalies(game.home);
-          
-          const selectedAway = selectedGoalies[`${gameId}_${game.away}`];
-          const selectedHome = selectedGoalies[`${gameId}_${game.home}`];
-
-          return (
-            <div key={gameId} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              {/* Game Header */}
-              <div className="mb-4 pb-3 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {game.away} @ {game.home}
-                </h3>
-                <p className="text-sm text-gray-500">{game.time || 'Time TBD'}</p>
-              </div>
-
-              {/* Goalie Selectors */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Away Team */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {game.away} Starting Goalie
-                  </label>
-                  <select
-                    value={selectedAway || ''}
-                    onChange={(e) => handleGoalieSelect(gameId, game.away, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select goalie...</option>
-                    {awayGoalies.map(goalie => {
-                      const tier = getGSAETier(goalie.gsae);
-                      return (
-                        <option key={goalie.name} value={goalie.name}>
-                          {goalie.name} - {tier.label} (GSAE: {goalie.gsae.toFixed(1)}, GP: {goalie.gamesPlayed})
-                        </option>
-                      );
-                    })}
-                  </select>
-                  
-                  {/* Selected Goalie Info */}
-                  {selectedAway && awayGoalies.find(g => g.name === selectedAway) && (
-                    <div className="mt-2">
-                      {(() => {
-                        const goalie = awayGoalies.find(g => g.name === selectedAway);
-                        const tier = getGSAETier(goalie.gsae);
-                        return (
-                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${tier.bg} ${tier.color}`}>
-                            <span className="font-medium">{tier.label}</span>
-                            <span>GSAE: {goalie.gsae > 0 ? '+' : ''}{goalie.gsae.toFixed(1)}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-
-                {/* Home Team */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {game.home} Starting Goalie
-                  </label>
-                  <select
-                    value={selectedHome || ''}
-                    onChange={(e) => handleGoalieSelect(gameId, game.home, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select goalie...</option>
-                    {homeGoalies.map(goalie => {
-                      const tier = getGSAETier(goalie.gsae);
-                      return (
-                        <option key={goalie.name} value={goalie.name}>
-                          {goalie.name} - {tier.label} (GSAE: {goalie.gsae.toFixed(1)}, GP: {goalie.gamesPlayed})
-                        </option>
-                      );
-                    })}
-                  </select>
-                  
-                  {/* Selected Goalie Info */}
-                  {selectedHome && homeGoalies.find(g => g.name === selectedHome) && (
-                    <div className="mt-2">
-                      {(() => {
-                        const goalie = homeGoalies.find(g => g.name === selectedHome);
-                        const tier = getGSAETier(goalie.gsae);
-                        return (
-                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${tier.bg} ${tier.color}`}>
-                            <span className="font-medium">{tier.label}</span>
-                            <span>GSAE: {goalie.gsae > 0 ? '+' : ''}{goalie.gsae.toFixed(1)}</span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Impact Preview */}
-              {(selectedAway || selectedHome) && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    💡 Elite goalies reduce opponent goals by 15%, poor goalies increase by 15%
-                  </p>
-                </div>
+        {/* Action Buttons */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Locally
+                </>
               )}
-            </div>
-          );
-        })}
-      </div>
+            </button>
+            
+            <button
+              onClick={handleExportToJSON}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+            >
+              <Download className="w-5 h-5" />
+              Export for GitHub
+            </button>
+            
+            <button
+              onClick={handleCopyToClipboard}
+              className="flex items-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              <Copy className="w-5 h-5" />
+              Copy JSON
+            </button>
+            
+            <button
+              onClick={handleClear}
+              className="px-6 py-3 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
 
-      {/* Info Box */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h4 className="font-medium text-blue-900 mb-2">How Goalie Adjustment Works</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• <strong>Elite (GSAE &gt; 10):</strong> Opponent's expected goals reduced by 15%</li>
-          <li>• <strong>Poor (GSAE &lt; -10):</strong> Opponent's expected goals increased by 15%</li>
-          <li>• <strong>Average (GSAE -10 to +10):</strong> No adjustment</li>
-          <li>• GSAE = Goals Saved Above Expected (xGoals - Actual Goals)</li>
-        </ul>
+        {/* Games List */}
+        <div className="space-y-6">
+          {games.map((game, index) => {
+            const gameId = `game_${index}`;
+            const awayGoalies = getTeamGoalies(game.away);
+            const homeGoalies = getTeamGoalies(game.home);
+            
+            const selectedAway = selectedGoalies[`${gameId}_${game.away}`];
+            const selectedHome = selectedGoalies[`${gameId}_${game.home}`];
+
+            return (
+              <div key={gameId} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                {/* Game Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b-2 border-gray-200">
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {game.away} @ {game.home}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1 font-medium">{game.time || 'Time TBD'}</p>
+                </div>
+
+                {/* Goalie Selectors */}
+                <div className="grid md:grid-cols-2 gap-8 p-6">
+                  {/* Away Team */}
+                  <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                    <label className="block text-base font-bold text-gray-800 mb-3">
+                      <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm mr-2">AWAY</span>
+                      {game.away} Starting Goalie
+                    </label>
+                    <select
+                      value={selectedAway || ''}
+                      onChange={(e) => handleGoalieSelect(gameId, game.away, e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-base font-medium"
+                    >
+                      <option value="">Select goalie...</option>
+                      {awayGoalies.map(goalie => {
+                        const tier = getGSAETier(goalie.gsae);
+                        return (
+                          <option key={goalie.name} value={goalie.name}>
+                            {goalie.name} - {tier.label} (GSAE: {goalie.gsae.toFixed(1)}, GP: {goalie.gamesPlayed})
+                          </option>
+                        );
+                      })}
+                    </select>
+                    
+                    {/* Selected Goalie Info */}
+                    {selectedAway && awayGoalies.find(g => g.name === selectedAway) && (
+                      <div className="mt-3">
+                        {(() => {
+                          const goalie = awayGoalies.find(g => g.name === selectedAway);
+                          const tier = getGSAETier(goalie.gsae);
+                          return (
+                            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-base font-semibold ${tier.bg} ${tier.color} border-2`} style={{borderColor: 'currentColor'}}>
+                              <span className="font-bold">{tier.label}</span>
+                              <span>GSAE: {goalie.gsae > 0 ? '+' : ''}{goalie.gsae.toFixed(1)}</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Home Team */}
+                  <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                    <label className="block text-base font-bold text-gray-800 mb-3">
+                      <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm mr-2">HOME</span>
+                      {game.home} Starting Goalie
+                    </label>
+                    <select
+                      value={selectedHome || ''}
+                      onChange={(e) => handleGoalieSelect(gameId, game.home, e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-base font-medium"
+                    >
+                      <option value="">Select goalie...</option>
+                      {homeGoalies.map(goalie => {
+                        const tier = getGSAETier(goalie.gsae);
+                        return (
+                          <option key={goalie.name} value={goalie.name}>
+                            {goalie.name} - {tier.label} (GSAE: {goalie.gsae.toFixed(1)}, GP: {goalie.gamesPlayed})
+                          </option>
+                        );
+                      })}
+                    </select>
+                    
+                    {/* Selected Goalie Info */}
+                    {selectedHome && homeGoalies.find(g => g.name === selectedHome) && (
+                      <div className="mt-3">
+                        {(() => {
+                          const goalie = homeGoalies.find(g => g.name === selectedHome);
+                          const tier = getGSAETier(goalie.gsae);
+                          return (
+                            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-base font-semibold ${tier.bg} ${tier.color} border-2`} style={{borderColor: 'currentColor'}}>
+                              <span className="font-bold">{tier.label}</span>
+                              <span>GSAE: {goalie.gsae > 0 ? '+' : ''}{goalie.gsae.toFixed(1)}</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+              </div>
+
+                {/* Impact Preview */}
+                {(selectedAway || selectedHome) && (
+                  <div className="px-6 pb-4">
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                      <p className="text-sm text-blue-800 font-medium">
+                        💡 Elite goalies reduce opponent goals by 15%, poor goalies increase by 15%
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Info Box */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
+          <h4 className="text-xl font-bold text-blue-900 mb-4">How Goalie Adjustment Works</h4>
+          <ul className="text-base text-blue-900 space-y-3">
+            <li className="flex items-start">
+              <span className="font-bold mr-2">•</span>
+              <span><strong>Elite (GSAE &gt; 10):</strong> Opponent's expected goals reduced by 15%</span>
+            </li>
+            <li className="flex items-start">
+              <span className="font-bold mr-2">•</span>
+              <span><strong>Poor (GSAE &lt; -10):</strong> Opponent's expected goals increased by 15%</span>
+            </li>
+            <li className="flex items-start">
+              <span className="font-bold mr-2">•</span>
+              <span><strong>Average (GSAE -10 to +10):</strong> No adjustment</span>
+            </li>
+            <li className="flex items-start">
+              <span className="font-bold mr-2">•</span>
+              <span><strong>GSAE</strong> = Goals Saved Above Expected (xGoals - Actual Goals)</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
