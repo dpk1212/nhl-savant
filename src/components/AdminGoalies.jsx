@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, Download, Copy } from 'lucide-react';
+import { Save, RefreshCw, Download, Copy, Shield, TrendingUp } from 'lucide-react';
 
 /**
- * AdminGoalies Component
+ * AdminGoalies Component - Premium Edition
  * 
  * Allows admin to select starting goalies for today's games
  * Selections stored in localStorage and used for predictions
@@ -11,6 +11,17 @@ import { Save, RefreshCw, Download, Copy } from 'lucide-react';
 export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
   const [selectedGoalies, setSelectedGoalies] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Load saved goalie selections from localStorage on mount
   useEffect(() => {
@@ -160,46 +171,94 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
 
   if (!games || games.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        <p>No games available for today</p>
+      <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', paddingTop: '4rem' }}>
+        <div className="elevated-card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '3rem' }}>
+          <Shield size={48} color="var(--color-accent)" style={{ margin: '0 auto 1rem' }} />
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.125rem' }}>No games available for today</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div 
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#F9FAFB',
-        color: '#111827',
-        paddingTop: '2rem',
-        paddingBottom: '2rem'
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-3" style={{ color: '#111827' }}>
-            Admin: Starting Goalies
-          </h1>
-          <p className="text-lg" style={{ color: '#4B5563' }}>
-            Select starting goalies for today's games. Goalie quality has a <strong style={{ color: '#2563EB' }}>±15% impact</strong> on predictions.
+    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh' }} className="animate-fade-in">
+      {/* PREMIUM HEADER */}
+      <div style={{
+        padding: isMobile ? '2rem 1rem 1.5rem' : '3rem 2rem 2rem',
+        borderBottom: '1px solid var(--color-border)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Background Glow */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '500px',
+          height: '500px',
+          background: 'radial-gradient(circle, var(--color-accent-glow) 0%, transparent 70%)',
+          opacity: 0.3,
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+            {/* Icon with gradient */}
+            <div style={{
+              width: '44px',
+              height: '44px',
+              background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px var(--color-accent-glow)'
+            }}>
+              <Shield size={24} color="var(--color-background)" strokeWidth={2.5} />
+            </div>
+            <h1 className="text-gradient" style={{ 
+              fontSize: isMobile ? '1.75rem' : '2.25rem',
+              fontWeight: '800'
+            }}>
+              Admin: Starting Goalies
+            </h1>
+          </div>
+          <p style={{ 
+            color: 'var(--color-text-secondary)', 
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            lineHeight: '1.7',
+            maxWidth: '800px',
+            marginLeft: isMobile ? '0' : '60px'
+          }}>
+            Select starting goalies for today's games. Goalie quality has a <strong style={{ color: 'var(--color-accent)' }}>±15% impact</strong> on predictions.
+            Elite goaltending can be the difference between profit and loss.
           </p>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div style={{ 
-          backgroundColor: '#FFFFFF', 
-          borderWidth: '1px', 
-          borderStyle: 'solid', 
-          borderColor: '#E5E7EB',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-          padding: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          <h2 className="text-lg font-semibold mb-4" style={{ color: '#111827' }}>Actions</h2>
-          <div className="flex flex-wrap gap-3">
+      {/* MAIN CONTENT */}
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto', 
+        padding: isMobile ? '1rem' : '2rem'
+      }}>
+
+        {/* ACTION BUTTONS - PREMIUM CARD */}
+        <div className="elevated-card" style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
+          <h2 style={{ 
+            fontSize: '1.125rem', 
+            fontWeight: '700', 
+            color: 'var(--color-text-primary)',
+            marginBottom: '1rem',
+            letterSpacing: '0.025em'
+          }}>
+            Quick Actions
+          </h2>
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: isMobile ? '0.5rem' : '0.75rem'
+          }}>
             <button
               onClick={handleSave}
               disabled={isSaving}
@@ -243,8 +302,8 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
           </div>
         </div>
 
-        {/* Games List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* GAMES LIST - PREMIUM CARDS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem' }}>
           {games.map((game, index) => {
             const gameId = `game_${index}`;
             const awayGoalies = getTeamGoalies(game.away);
@@ -256,54 +315,88 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
             return (
               <div 
                 key={gameId} 
-                className="transition-shadow"
-                style={{ 
-                  backgroundColor: '#FFFFFF', 
-                  borderWidth: '2px', 
-                  borderStyle: 'solid', 
-                  borderColor: '#E5E7EB',
-                  borderRadius: '0.75rem',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                  marginBottom: '1.5rem'
-                }}
+                className="game-card"
+                style={{ marginBottom: 0 }}
               >
-                {/* Game Header */}
+                {/* Game Header - Premium Gradient */}
                 <div style={{ 
-                  background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)', 
-                  borderBottom: '2px solid #E5E7EB', 
-                  paddingLeft: '1.5rem', 
-                  paddingRight: '1.5rem', 
-                  paddingTop: '1rem', 
-                  paddingBottom: '1rem',
-                  borderTopLeftRadius: '0.75rem',
-                  borderTopRightRadius: '0.75rem'
+                  background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(59, 130, 246, 0.10) 100%)',
+                  borderBottom: '1px solid var(--color-border)', 
+                  padding: isMobile ? '1rem 1.25rem' : '1.25rem 1.5rem',
+                  borderTopLeftRadius: '8px',
+                  borderTopRightRadius: '8px',
+                  position: 'relative'
                 }}>
-                  <h3 className="text-2xl font-bold" style={{ color: '#111827' }}>
+                  <h3 style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.5rem',
+                    fontWeight: '700',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: '0.25rem'
+                  }}>
                     {game.away} @ {game.home}
                   </h3>
-                  <p className="text-sm mt-1 font-medium" style={{ color: '#4B5563' }}>{game.time || 'Time TBD'}</p>
+                  <p style={{ 
+                    fontSize: '0.875rem',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: '500'
+                  }}>
+                    {game.time || 'Time TBD'}
+                  </p>
                 </div>
 
                 {/* Goalie Selectors */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', padding: '1.5rem' }}>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+                  gap: isMobile ? '1.5rem' : '2rem', 
+                  padding: isMobile ? '1.25rem' : '1.5rem' 
+                }}>
                   {/* Away Team */}
                   <div style={{ 
-                    backgroundColor: '#F9FAFB', 
-                    borderWidth: '1px', 
-                    borderStyle: 'solid', 
-                    borderColor: '#E5E7EB', 
-                    padding: '1.25rem',
-                    borderRadius: '0.5rem'
+                    background: 'linear-gradient(135deg, var(--color-card) 0%, rgba(26, 31, 46, 0.8) 100%)',
+                    border: '1px solid var(--color-border)',
+                    padding: isMobile ? '1rem' : '1.25rem',
+                    borderRadius: '8px',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}>
-                    <label className="block text-base font-bold" style={{ color: '#1F2937', marginBottom: '0.75rem' }}>
-                      <span className="inline-block text-sm" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '0.25rem 0.75rem', marginRight: '0.5rem', borderRadius: '0.375rem', fontWeight: '600' }}>AWAY</span>
+                    <label className="block" style={{ 
+                      fontSize: '0.938rem',
+                      fontWeight: '600',
+                      color: 'var(--color-text-primary)', 
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span className="badge" style={{ 
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                        color: '#60A5FA',
+                        padding: '0.25rem 0.75rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        AWAY
+                      </span>
                       {game.away} Starting Goalie
                     </label>
                     <select
                       value={selectedAway || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.away, e.target.value)}
-                      className="w-full focus:ring-2 focus:ring-blue-500 text-base font-medium"
-                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB', padding: '0.75rem 1rem', borderRadius: '0.5rem' }}
+                      className="w-full focus:ring-2 focus:ring-blue-500"
+                      style={{ 
+                        background: 'var(--color-background)',
+                        color: 'var(--color-text-primary)',
+                        border: '1px solid var(--color-border)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '6px',
+                        fontSize: '0.938rem',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                      }}
                     >
                       <option value="">Select goalie...</option>
                       {awayGoalies.map(goalie => {
@@ -335,22 +428,50 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
 
                   {/* Home Team */}
                   <div style={{ 
-                    backgroundColor: '#F9FAFB', 
-                    borderWidth: '1px', 
-                    borderStyle: 'solid', 
-                    borderColor: '#E5E7EB', 
-                    padding: '1.25rem',
-                    borderRadius: '0.5rem'
+                    background: 'linear-gradient(135deg, var(--color-card) 0%, rgba(26, 31, 46, 0.8) 100%)',
+                    border: '1px solid var(--color-border)',
+                    padding: isMobile ? '1rem' : '1.25rem',
+                    borderRadius: '8px',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}>
-                    <label className="block text-base font-bold" style={{ color: '#1F2937', marginBottom: '0.75rem' }}>
-                      <span className="inline-block text-sm" style={{ backgroundColor: '#D1FAE5', color: '#166534', padding: '0.25rem 0.75rem', marginRight: '0.5rem', borderRadius: '0.375rem', fontWeight: '600' }}>HOME</span>
+                    <label className="block" style={{ 
+                      fontSize: '0.938rem',
+                      fontWeight: '600',
+                      color: 'var(--color-text-primary)', 
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span className="badge" style={{ 
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)', 
+                        color: '#34D399',
+                        padding: '0.25rem 0.75rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        HOME
+                      </span>
                       {game.home} Starting Goalie
                     </label>
                     <select
                       value={selectedHome || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.home, e.target.value)}
-                      className="w-full focus:ring-2 focus:ring-blue-500 text-base font-medium"
-                      style={{ backgroundColor: '#FFFFFF', color: '#111827', borderWidth: '2px', borderStyle: 'solid', borderColor: '#D1D5DB', padding: '0.75rem 1rem', borderRadius: '0.5rem' }}
+                      className="w-full focus:ring-2 focus:ring-blue-500"
+                      style={{ 
+                        background: 'var(--color-background)',
+                        color: 'var(--color-text-primary)',
+                        border: '1px solid var(--color-border)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '6px',
+                        fontSize: '0.938rem',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                      }}
                     >
                       <option value="">Select goalie...</option>
                       {homeGoalies.map(goalie => {
@@ -396,27 +517,59 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
           })}
         </div>
 
-        {/* Info Box */}
-        <div className="mt-8 border-2 rounded-xl p-6 shadow-md" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)', borderColor: '#BFDBFE' }}>
-          <h4 className="text-xl font-bold mb-4" style={{ color: '#1E3A8A' }}>How Goalie Adjustment Works</h4>
-          <ul className="text-base space-y-3" style={{ color: '#1E3A8A' }}>
-            <li className="flex items-start">
-              <span className="font-bold mr-2">•</span>
-              <span><strong>Elite (GSAE &gt; 10):</strong> Opponent's expected goals reduced by 15%</span>
-            </li>
-            <li className="flex items-start">
-              <span className="font-bold mr-2">•</span>
-              <span><strong>Poor (GSAE &lt; -10):</strong> Opponent's expected goals increased by 15%</span>
-            </li>
-            <li className="flex items-start">
-              <span className="font-bold mr-2">•</span>
-              <span><strong>Average (GSAE -10 to +10):</strong> No adjustment</span>
-            </li>
-            <li className="flex items-start">
-              <span className="font-bold mr-2">•</span>
-              <span><strong>GSAE</strong> = Goals Saved Above Expected (xGoals - Actual Goals)</span>
-            </li>
-          </ul>
+        {/* INFO BOX - PREMIUM CARD */}
+        <div className="elevated-card" style={{ marginTop: isMobile ? '1.5rem' : '2rem', position: 'relative', overflow: 'hidden' }}>
+          {/* Background accent */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '120px',
+            height: '120px',
+            opacity: 0.1
+          }}>
+            <TrendingUp size={120} color="var(--color-accent)" />
+          </div>
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h4 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '700',
+              color: 'var(--color-text-primary)',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <Shield size={24} color="var(--color-accent)" />
+              How Goalie Adjustment Works
+            </h4>
+            <ul style={{ 
+              fontSize: isMobile ? '0.875rem' : '0.938rem',
+              color: 'var(--color-text-secondary)',
+              lineHeight: '1.7',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem'
+            }}>
+              <li style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--color-accent)', fontWeight: '700' }}>•</span>
+                <span><strong style={{ color: 'var(--color-text-primary)' }}>Elite (GSAE &gt; 10):</strong> Opponent's expected goals reduced by 15%</span>
+              </li>
+              <li style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--color-accent)', fontWeight: '700' }}>•</span>
+                <span><strong style={{ color: 'var(--color-text-primary)' }}>Poor (GSAE &lt; -10):</strong> Opponent's expected goals increased by 15%</span>
+              </li>
+              <li style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--color-accent)', fontWeight: '700' }}>•</span>
+                <span><strong style={{ color: 'var(--color-text-primary)' }}>Average (GSAE -10 to +10):</strong> No adjustment</span>
+              </li>
+              <li style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--color-accent)', fontWeight: '700' }}>•</span>
+                <span><strong style={{ color: 'var(--color-text-primary)' }}>GSAE</strong> = Goals Saved Above Expected (xGoals - Actual Goals)</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
