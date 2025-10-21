@@ -22,7 +22,8 @@ const StatComparisonBar = ({
   metric,
   higherIsBetter = true,
   note1 = '',
-  note2 = ''
+  note2 = '',
+  leagueAverage = null  // NEW PROP
 }) => {
   const [animated, setAnimated] = useState(false);
 
@@ -41,27 +42,48 @@ const StatComparisonBar = ({
     ? team2Value > team1Value
     : team2Value < team1Value;
 
-  // Calculate bar widths (scale to max value)
-  const maxValue = Math.max(Math.abs(team1Value), Math.abs(team2Value));
+  // Calculate bar widths (scale to max value, include league avg)
+  const maxValue = Math.max(Math.abs(team1Value), Math.abs(team2Value), leagueAverage || 0);
   const team1Width = maxValue > 0 ? (Math.abs(team1Value) / maxValue) * 100 : 0;
   const team2Width = maxValue > 0 ? (Math.abs(team2Value) / maxValue) * 100 : 0;
+  
+  // Calculate league average position (as percentage)
+  const avgPosition = leagueAverage && maxValue > 0 ? (leagueAverage / maxValue) * 100 : null;
 
-  // Color logic - green for advantage, gray for disadvantage
-  const getBarColor = (isBetter) => {
-    if (isBetter) {
+  // Enhanced color logic - considers league average
+  const getBarColor = (value, isBetter) => {
+    // Check if above/below league average
+    const isAboveAvg = leagueAverage ? (higherIsBetter ? value > leagueAverage : value < leagueAverage) : null;
+    
+    if (isBetter && (isAboveAvg || isAboveAvg === null)) {
+      // Best case: winning AND above average (or no avg data)
       return {
         bg: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
         glow: '0 0 8px rgba(16, 185, 129, 0.3)'
       };
+    } else if (isBetter && !isAboveAvg) {
+      // Good: winning but below average
+      return {
+        bg: 'linear-gradient(90deg, #059669 0%, #047857 100%)',
+        glow: '0 0 6px rgba(5, 150, 105, 0.2)'
+      };
+    } else if (!isBetter && isAboveAvg) {
+      // Mixed: losing but above average
+      return {
+        bg: 'linear-gradient(90deg, #6B7280 0%, #4B5563 100%)',
+        glow: 'none'
+      };
+    } else {
+      // Worst: losing AND below average
+      return {
+        bg: 'linear-gradient(90deg, #64748B 0%, #475569 100%)',
+        glow: 'none'
+      };
     }
-    return {
-      bg: 'linear-gradient(90deg, #64748B 0%, #475569 100%)',
-      glow: 'none'
-    };
   };
 
-  const team1Colors = getBarColor(team1Better);
-  const team2Colors = getBarColor(team2Better);
+  const team1Colors = getBarColor(team1Value, team1Better);
+  const team2Colors = getBarColor(team2Value, team2Better);
 
   return (
     <div style={{
@@ -76,21 +98,40 @@ const StatComparisonBar = ({
         color: 'var(--color-text-muted)',
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
-        marginBottom: '0.75rem',
+        marginBottom: '0.5rem',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.5rem'
+        justifyContent: 'space-between'
       }}>
-        {label}
-        <span style={{
-          fontSize: '0.688rem',
-          fontWeight: '500',
-          color: 'var(--color-text-subtle)',
-          textTransform: 'none',
-          letterSpacing: '0'
-        }}>
-          ({metric})
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {label}
+          <span style={{
+            fontSize: '0.688rem',
+            fontWeight: '500',
+            color: 'var(--color-text-subtle)',
+            textTransform: 'none',
+            letterSpacing: '0'
+          }}>
+            ({metric})
+          </span>
+        </div>
+        
+        {/* League Average Display */}
+        {leagueAverage && (
+          <span style={{
+            fontSize: '0.688rem',
+            fontWeight: '600',
+            color: 'rgba(212, 175, 55, 0.8)',
+            textTransform: 'none',
+            letterSpacing: '0',
+            padding: '0.125rem 0.375rem',
+            background: 'rgba(212, 175, 55, 0.1)',
+            borderRadius: '3px',
+            border: '1px solid rgba(212, 175, 55, 0.2)'
+          }}>
+            League Avg: {leagueAverage.toFixed(2)}
+          </span>
+        )}
       </div>
 
       {/* Team 1 Bar */}
@@ -115,16 +156,33 @@ const StatComparisonBar = ({
           height: '20px',
           background: 'rgba(100, 116, 139, 0.2)',
           borderRadius: '4px',
-          overflow: 'hidden',
+          overflow: 'visible',
           position: 'relative'
         }}>
+          {/* League Average Reference Line */}
+          {avgPosition && (
+            <div style={{
+              position: 'absolute',
+              left: `${avgPosition}%`,
+              top: '-2px',
+              bottom: '-2px',
+              width: '2px',
+              background: 'rgba(212, 175, 55, 0.6)',
+              zIndex: 2,
+              boxShadow: '0 0 4px rgba(212, 175, 55, 0.4)'
+            }} />
+          )}
+          
+          {/* Bar Fill */}
           <div style={{
             height: '100%',
             width: animated ? `${team1Width}%` : '0%',
             background: team1Colors.bg,
             borderRadius: '4px',
             transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: team1Colors.glow
+            boxShadow: team1Colors.glow,
+            position: 'relative',
+            zIndex: 1
           }} />
         </div>
 
@@ -181,16 +239,33 @@ const StatComparisonBar = ({
           height: '20px',
           background: 'rgba(100, 116, 139, 0.2)',
           borderRadius: '4px',
-          overflow: 'hidden',
+          overflow: 'visible',
           position: 'relative'
         }}>
+          {/* League Average Reference Line */}
+          {avgPosition && (
+            <div style={{
+              position: 'absolute',
+              left: `${avgPosition}%`,
+              top: '-2px',
+              bottom: '-2px',
+              width: '2px',
+              background: 'rgba(212, 175, 55, 0.6)',
+              zIndex: 2,
+              boxShadow: '0 0 4px rgba(212, 175, 55, 0.4)'
+            }} />
+          )}
+          
+          {/* Bar Fill */}
           <div style={{
             height: '100%',
             width: animated ? `${team2Width}%` : '0%',
             background: team2Colors.bg,
             borderRadius: '4px',
             transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: team2Colors.glow
+            boxShadow: team2Colors.glow,
+            position: 'relative',
+            zIndex: 1
           }} />
         </div>
 

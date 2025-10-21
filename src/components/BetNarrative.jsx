@@ -343,6 +343,21 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
 
                       if (!away_5v5 || !home_5v5) return null;
 
+                      // Calculate league averages for context
+                      const calculateLeagueAvg = (situation, field) => {
+                        const teams = dataProcessor.getTeamsBySituation(situation);
+                        if (!teams || teams.length === 0) return null;
+                        const validValues = teams.map(t => t[field]).filter(v => v != null && !isNaN(v));
+                        if (validValues.length === 0) return null;
+                        return validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
+                      };
+
+                      const leagueAvg_xGF = calculateLeagueAvg('5on5', 'scoreAdj_xGF_per60') || calculateLeagueAvg('5on5', 'xGF_per60');
+                      const leagueAvg_xGA = calculateLeagueAvg('5on5', 'scoreAdj_xGA_per60') || calculateLeagueAvg('5on5', 'xGA_per60');
+                      const leagueAvg_PP = calculateLeagueAvg('5on4', 'scoreAdj_xGF_per60') || calculateLeagueAvg('5on4', 'xGF_per60');
+                      const leagueAvg_PK = calculateLeagueAvg('4on5', 'scoreAdj_xGA_per60') || calculateLeagueAvg('4on5', 'xGA_per60');
+                      const leagueAvg_PDO = 100.0;  // PDO league average is always 100
+
                       return (
                         <>
                           <StatComparisonBar
@@ -353,6 +368,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                             team2Value={home_5v5.scoreAdj_xGF_per60 || home_5v5.xGF_per60 || 0}
                             metric="xGF/60"
                             higherIsBetter={true}
+                            leagueAverage={leagueAvg_xGF}
                           />
 
                           <StatComparisonBar
@@ -365,6 +381,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                             higherIsBetter={false}
                             note1="Lower is better"
                             note2="Lower is better"
+                            leagueAverage={leagueAvg_xGA}
                           />
 
                           {away_PP && home_PP && (
@@ -376,6 +393,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                               team2Value={home_PP.scoreAdj_xGF_per60 || home_PP.xGF_per60 || 0}
                               metric="PP xGF/60"
                               higherIsBetter={true}
+                              leagueAverage={leagueAvg_PP}
                             />
                           )}
 
@@ -390,6 +408,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                               higherIsBetter={false}
                               note1="Lower is better"
                               note2="Lower is better"
+                              leagueAverage={leagueAvg_PK}
                             />
                           )}
 
@@ -404,6 +423,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                               higherIsBetter={false}
                               note1={away_all.pdo > 102 ? "Due to regress" : away_all.pdo < 98 ? "Due to improve" : ""}
                               note2={home_all.pdo > 102 ? "Due to regress" : home_all.pdo < 98 ? "Due to improve" : ""}
+                              leagueAverage={leagueAvg_PDO}
                             />
                           )}
                         </>
@@ -411,7 +431,100 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                     })()}
                   </div>
 
-                  {/* Probability Breakdown */}
+                  {/* RECOMMENDED BET - New Prominent Section */}
+                  <div style={{ 
+                    backgroundColor: 'rgba(212, 175, 55, 0.12)', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    marginBottom: '0.75rem',
+                    border: '2px solid rgba(212, 175, 55, 0.4)',
+                    boxShadow: '0 4px 12px rgba(212, 175, 55, 0.2)'
+                  }}>
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: '700',
+                      color: 'var(--color-accent)',
+                      marginBottom: '0.75rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span>💰</span> RECOMMENDED BET
+                    </div>
+                    
+                    {/* Large, centered bet display */}
+                    <div style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '700',
+                      color: 'var(--color-text-primary)',
+                      textAlign: 'center',
+                      marginBottom: '0.75rem',
+                      padding: '0.75rem',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(212, 175, 55, 0.3)'
+                    }}>
+                      {edge.pick} at {edge.odds > 0 ? '+' : ''}{edge.odds} odds
+                    </div>
+                    
+                    {/* EV and Model Prob - side by side */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '1rem',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                          Expected Value
+                        </div>
+                        <div style={{ 
+                          fontSize: '1.5rem', 
+                          fontWeight: '700',
+                          color: 'var(--color-success)',
+                          fontFeatureSettings: "'tnum'"
+                        }}>
+                          +{edge.evPercent ? edge.evPercent.toFixed(1) : '0.0'}%
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                          Model Probability
+                        </div>
+                        <div style={{ 
+                          fontSize: '1.5rem', 
+                          fontWeight: '700',
+                          color: 'var(--color-accent)',
+                          fontFeatureSettings: "'tnum'"
+                        }}>
+                          {edge.modelProb ? (edge.modelProb * 100).toFixed(1) : '0.0'}%
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Expected Profit */}
+                    <div style={{
+                      paddingTop: '0.75rem',
+                      borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                        Expected Profit (per $100 bet)
+                      </div>
+                      <div style={{ 
+                        fontSize: '1.375rem', 
+                        fontWeight: '800',
+                        color: 'var(--color-success)',
+                        fontFeatureSettings: "'tnum'"
+                      }}>
+                        +${deepAnalytics.dollarValue.ev}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Probability Analysis - Enhanced */}
                   <div style={{ 
                     backgroundColor: 'var(--color-background)', 
                     padding: '0.875rem', 
@@ -430,18 +543,19 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                       alignItems: 'center',
                       gap: '0.5rem'
                     }}>
-                      <span>🎯</span> Probability Breakdown
+                      <span>🎯</span> Probability Analysis
                     </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                       <div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
                           Our Model
                         </div>
                         <div style={{ 
-                          fontSize: '1.5rem', 
+                          fontSize: '1.375rem', 
                           fontWeight: '700',
-                          color: 'var(--color-success)'
+                          color: 'var(--color-success)',
+                          fontFeatureSettings: "'tnum'"
                         }}>
                           {deepAnalytics.probabilities.model}%
                         </div>
@@ -451,9 +565,10 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                           Market Implied
                         </div>
                         <div style={{ 
-                          fontSize: '1.5rem', 
+                          fontSize: '1.375rem', 
                           fontWeight: '700',
-                          color: 'var(--color-text-secondary)'
+                          color: 'var(--color-text-secondary)',
+                          fontFeatureSettings: "'tnum'"
                         }}>
                           {deepAnalytics.probabilities.market}%
                         </div>
@@ -461,7 +576,6 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                     </div>
                     
                     <div style={{ 
-                      marginTop: '0.75rem', 
                       paddingTop: '0.75rem', 
                       borderTop: '1px solid var(--color-border)',
                       textAlign: 'center'
@@ -472,17 +586,18 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                       <div style={{ 
                         fontSize: '1.25rem', 
                         fontWeight: '700',
-                        color: 'var(--color-success)'
+                        color: 'var(--color-success)',
+                        fontFeatureSettings: "'tnum'"
                       }}>
                         +{deepAnalytics.probabilities.edge}%
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', fontStyle: 'italic' }}>
                         This is where value comes from!
                       </div>
                     </div>
                   </div>
 
-                  {/* Dollar Value */}
+                  {/* Expected Return Details */}
                   <div style={{ 
                     backgroundColor: 'rgba(16, 185, 129, 0.08)', 
                     padding: '0.875rem', 
@@ -501,39 +616,22 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                       alignItems: 'center',
                       gap: '0.5rem'
                     }}>
-                      <span>💰</span> Dollar Value (per $100 bet)
+                      <span>📊</span> Expected Return Details
                     </div>
                     
                     <div style={{ marginBottom: '0.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                        <span style={{ color: 'var(--color-text-secondary)' }}>Expected Return:</span>
-                        <span style={{ color: 'var(--color-text-primary)', fontWeight: '600' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>Expected Return:</span>
+                        <span style={{ color: 'var(--color-text-primary)', fontWeight: '600', fontFeatureSettings: "'tnum'" }}>
                           ${deepAnalytics.dollarValue.expectedReturn}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                        <span style={{ color: 'var(--color-text-secondary)' }}>Market Return:</span>
-                        <span style={{ color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>Market Return:</span>
+                        <span style={{ color: 'var(--color-text-secondary)', fontWeight: '600', fontFeatureSettings: "'tnum'" }}>
                           ${deepAnalytics.dollarValue.marketReturn}
                         </span>
                       </div>
-                    </div>
-                    
-                    <div style={{ 
-                      paddingTop: '0.75rem', 
-                      borderTop: '1px solid rgba(16, 185, 129, 0.2)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <span style={{ fontWeight: '700', color: 'var(--color-success)' }}>Expected Profit:</span>
-                      <span style={{ 
-                        fontSize: '1.25rem', 
-                        fontWeight: '700',
-                        color: 'var(--color-success)'
-                      }}>
-                        +${deepAnalytics.dollarValue.ev}
-                      </span>
                     </div>
                   </div>
 

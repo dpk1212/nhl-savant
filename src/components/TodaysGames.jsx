@@ -245,92 +245,167 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                       <p style={{ 
                         fontSize: '0.688rem', 
                         color: 'var(--color-text-muted)', 
-                        marginBottom: '0.5rem', 
+                        marginBottom: '0.75rem', 
                         textTransform: 'uppercase', 
                         letterSpacing: '0.1em',
-                        fontWeight: '700'
+                        fontWeight: '700',
+                        textAlign: 'center'
                       }}>
                         Model Prediction
                       </p>
                       
-                      {/* Individual Team Scores */}
+                      {/* Individual Team Scores - Enhanced */}
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.375rem',
-                        marginBottom: '0.5rem',
-                        paddingBottom: '0.5rem',
+                        gap: '0.5rem',
+                        marginBottom: '0.75rem',
+                        paddingBottom: '0.75rem',
                         borderBottom: '1px solid rgba(212, 175, 55, 0.15)'
                       }}>
                         <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
+                          display: 'grid',
+                          gridTemplateColumns: '50px 1fr auto',
                           alignItems: 'center',
-                          fontSize: '0.875rem',
-                          color: 'var(--color-text-primary)',
-                          fontWeight: '500'
+                          gap: '0.5rem'
                         }}>
-                          <span style={{ color: 'var(--color-text-secondary)' }}>{game.awayTeam}:</span>
                           <span style={{ 
-                            fontFeatureSettings: "'tnum'",
-                            fontWeight: '600'
+                            fontSize: '0.688rem',
+                            fontWeight: '600',
+                            color: 'var(--color-text-muted)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
                           }}>
-                            {awayScore.toFixed(1)} goals
+                            Away
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.875rem',
+                            fontWeight: '600',
+                            color: 'var(--color-text-primary)'
+                          }}>
+                            {game.awayTeam}
+                          </span>
+                          <span style={{ 
+                            fontSize: '1rem',
+                            fontFeatureSettings: "'tnum'",
+                            fontWeight: '700',
+                            color: 'var(--color-accent)'
+                          }}>
+                            {awayScore.toFixed(1)}
                           </span>
                         </div>
                         <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
+                          display: 'grid',
+                          gridTemplateColumns: '50px 1fr auto',
                           alignItems: 'center',
-                          fontSize: '0.875rem',
-                          color: 'var(--color-text-primary)',
-                          fontWeight: '500'
+                          gap: '0.5rem'
                         }}>
-                          <span style={{ color: 'var(--color-text-secondary)' }}>{game.homeTeam}:</span>
                           <span style={{ 
-                            fontFeatureSettings: "'tnum'",
-                            fontWeight: '600'
+                            fontSize: '0.688rem',
+                            fontWeight: '600',
+                            color: 'var(--color-text-muted)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
                           }}>
-                            {homeScore.toFixed(1)} goals
+                            Home
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.875rem',
+                            fontWeight: '600',
+                            color: 'var(--color-text-primary)'
+                          }}>
+                            {game.homeTeam}
+                          </span>
+                          <span style={{ 
+                            fontSize: '1rem',
+                            fontFeatureSettings: "'tnum'",
+                            fontWeight: '700',
+                            color: 'var(--color-accent)'
+                          }}>
+                            {homeScore.toFixed(1)}
                           </span>
                         </div>
                       </div>
                       
-                      {/* Total Prediction */}
-                      <p style={{ 
-                        fontSize: isMobile ? '1.75rem' : '1.625rem', 
-                        fontWeight: '800', 
-                        color: 'var(--color-accent)',
-                        margin: '0 0 0.375rem 0',
-                        fontFeatureSettings: "'tnum', 'ss01'",
-                        textShadow: '0 2px 4px rgba(212, 175, 55, 0.2)',
-                        textAlign: 'center'
-                      }}>
-                        {game.edges.total.predictedTotal.toFixed(1)}
-                      </p>
-                      
-                      {/* Market Comparison */}
-                      <div style={{ 
+                      {/* Total Prediction - Enhanced */}
+                      <div style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.875rem'
+                        flexDirection: 'column',
+                        gap: '0.5rem'
                       }}>
-                        <span style={{ color: 'var(--color-text-secondary)', fontWeight: '500' }}>
-                          Market: {game.edges.total.marketTotal}
-                        </span>
-                        <span style={{ 
-                          padding: '0.125rem 0.5rem',
-                          borderRadius: '4px',
-                          background: game.edges.total.edge > 0 ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                          color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
-                          fontWeight: '700',
-                          fontSize: '0.813rem',
-                          fontFeatureSettings: "'tnum'"
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.875rem'
                         }}>
-                          {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
-                        </span>
+                          <span style={{ 
+                            color: 'var(--color-text-muted)',
+                            fontWeight: '500'
+                          }}>
+                            Predicted Total
+                          </span>
+                          <span style={{ 
+                            fontSize: '1.25rem',
+                            fontWeight: '800', 
+                            color: 'var(--color-accent)',
+                            fontFeatureSettings: "'tnum'",
+                            textShadow: '0 2px 4px rgba(212, 175, 55, 0.2)'
+                          }}>
+                            {game.edges.total.predictedTotal.toFixed(1)}
+                          </span>
+                        </div>
+                        
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.875rem'
+                        }}>
+                          <span style={{ 
+                            color: 'var(--color-text-muted)',
+                            fontWeight: '500'
+                          }}>
+                            Market Line
+                          </span>
+                          <span style={{ 
+                            fontWeight: '600',
+                            fontFeatureSettings: "'tnum'",
+                            color: 'var(--color-text-secondary)'
+                          }}>
+                            {game.edges.total.marketTotal}
+                          </span>
+                        </div>
+                        
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.875rem',
+                          marginTop: '0.25rem',
+                          paddingTop: '0.5rem',
+                          borderTop: '1px solid rgba(212, 175, 55, 0.15)'
+                        }}>
+                          <span style={{ 
+                            color: 'var(--color-text-muted)',
+                            fontWeight: '600'
+                          }}>
+                            Edge
+                          </span>
+                          <span style={{ 
+                            padding: '0.25rem 0.625rem',
+                            borderRadius: '4px',
+                            background: game.edges.total.edge > 0 ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+                            color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                            fontWeight: '800',
+                            fontSize: '0.938rem',
+                            fontFeatureSettings: "'tnum'",
+                            boxShadow: game.edges.total.edge > 0.3 ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none'
+                          }}>
+                            {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
+                            {game.edges.total.edge > 0.5 && ' 🟢'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
