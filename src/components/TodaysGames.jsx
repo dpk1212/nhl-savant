@@ -242,115 +242,145 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                       padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
                       minWidth: isMobile ? '100%' : '220px'
                     }}>
-                      <p style={{ 
-                        fontSize: '0.688rem', 
-                        color: 'var(--color-text-muted)', 
-                        marginBottom: '0.75rem', 
+                      {/* Header - More Prominent */}
+                      <div style={{ 
+                        fontSize: '0.625rem', 
+                        color: 'rgba(212, 175, 55, 0.8)', 
+                        marginBottom: '1rem', 
                         textTransform: 'uppercase', 
-                        letterSpacing: '0.1em',
-                        fontWeight: '700',
-                        textAlign: 'center'
+                        letterSpacing: '0.15em',
+                        fontWeight: '800',
+                        textAlign: 'center',
+                        borderBottom: '2px solid rgba(212, 175, 55, 0.2)',
+                        paddingBottom: '0.5rem'
                       }}>
                         Model Prediction
-                      </p>
+                      </div>
                       
-                      {/* Individual Team Scores - Enhanced */}
+                      {/* Individual Team Scores - DRAMATICALLY ENHANCED */}
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.5rem',
-                        marginBottom: '0.75rem',
-                        paddingBottom: '0.75rem',
-                        borderBottom: '1px solid rgba(212, 175, 55, 0.15)'
+                        gap: '0.625rem',
+                        marginBottom: '1rem'
                       }}>
+                        {/* Away Team */}
                         <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: '50px 1fr auto',
+                          display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem'
+                          justifyContent: 'space-between',
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(59, 130, 246, 0.08)',
+                          borderLeft: '3px solid rgba(59, 130, 246, 0.5)',
+                          borderRadius: '4px'
                         }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ 
+                              fontSize: '0.625rem',
+                              fontWeight: '700',
+                              color: 'rgba(59, 130, 246, 0.7)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.08em',
+                              minWidth: '35px'
+                            }}>
+                              Away
+                            </span>
+                            <span style={{ 
+                              fontSize: '1rem',
+                              fontWeight: '700',
+                              color: 'var(--color-text-primary)',
+                              letterSpacing: '-0.02em'
+                            }}>
+                              {game.awayTeam}
+                            </span>
+                          </div>
                           <span style={{ 
-                            fontSize: '0.688rem',
-                            fontWeight: '600',
-                            color: 'var(--color-text-muted)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                          }}>
-                            Away
-                          </span>
-                          <span style={{ 
-                            fontSize: '0.875rem',
-                            fontWeight: '600',
-                            color: 'var(--color-text-primary)'
-                          }}>
-                            {game.awayTeam}
-                          </span>
-                          <span style={{ 
-                            fontSize: '1rem',
+                            fontSize: '1.625rem',
                             fontFeatureSettings: "'tnum'",
-                            fontWeight: '700',
-                            color: 'var(--color-accent)'
+                            fontWeight: '900',
+                            color: 'var(--color-accent)',
+                            textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                            letterSpacing: '-0.03em'
                           }}>
                             {awayScore.toFixed(1)}
                           </span>
                         </div>
+
+                        {/* Home Team */}
                         <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: '50px 1fr auto',
+                          display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem'
+                          justifyContent: 'space-between',
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(251, 146, 60, 0.08)',
+                          borderLeft: '3px solid rgba(251, 146, 60, 0.5)',
+                          borderRadius: '4px'
                         }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ 
+                              fontSize: '0.625rem',
+                              fontWeight: '700',
+                              color: 'rgba(251, 146, 60, 0.7)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.08em',
+                              minWidth: '35px'
+                            }}>
+                              Home
+                            </span>
+                            <span style={{ 
+                              fontSize: '1rem',
+                              fontWeight: '700',
+                              color: 'var(--color-text-primary)',
+                              letterSpacing: '-0.02em'
+                            }}>
+                              {game.homeTeam}
+                            </span>
+                          </div>
                           <span style={{ 
-                            fontSize: '0.688rem',
-                            fontWeight: '600',
-                            color: 'var(--color-text-muted)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                          }}>
-                            Home
-                          </span>
-                          <span style={{ 
-                            fontSize: '0.875rem',
-                            fontWeight: '600',
-                            color: 'var(--color-text-primary)'
-                          }}>
-                            {game.homeTeam}
-                          </span>
-                          <span style={{ 
-                            fontSize: '1rem',
+                            fontSize: '1.625rem',
                             fontFeatureSettings: "'tnum'",
-                            fontWeight: '700',
-                            color: 'var(--color-accent)'
+                            fontWeight: '900',
+                            color: 'var(--color-accent)',
+                            textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                            letterSpacing: '-0.03em'
                           }}>
                             {homeScore.toFixed(1)}
                           </span>
                         </div>
                       </div>
                       
-                      {/* Total Prediction - Enhanced */}
+                      {/* Total & Market - Compact & Clear */}
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.5rem'
+                        gap: '0.375rem',
+                        marginBottom: '0.75rem',
+                        padding: '0.75rem',
+                        background: 'rgba(0, 0, 0, 0.25)',
+                        borderRadius: '6px'
                       }}>
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: '0.875rem'
+                          alignItems: 'baseline'
                         }}>
                           <span style={{ 
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
+                            fontSize: '0.75rem',
+                            color: 'rgba(212, 175, 55, 0.7)',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
                           }}>
-                            Predicted Total
+                            Total
                           </span>
                           <span style={{ 
-                            fontSize: '1.25rem',
-                            fontWeight: '800', 
+                            fontSize: '2rem',
+                            fontWeight: '900', 
                             color: 'var(--color-accent)',
                             fontFeatureSettings: "'tnum'",
-                            textShadow: '0 2px 4px rgba(212, 175, 55, 0.2)'
+                            textShadow: '0 2px 12px rgba(212, 175, 55, 0.4)',
+                            lineHeight: '1',
+                            letterSpacing: '-0.04em'
                           }}>
                             {game.edges.total.predictedTotal.toFixed(1)}
                           </span>
@@ -360,51 +390,65 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          fontSize: '0.875rem'
-                        }}>
-                          <span style={{ 
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
-                          }}>
-                            Market Line
-                          </span>
-                          <span style={{ 
-                            fontWeight: '600',
-                            fontFeatureSettings: "'tnum'",
-                            color: 'var(--color-text-secondary)'
-                          }}>
-                            {game.edges.total.marketTotal}
-                          </span>
-                        </div>
-                        
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: '0.875rem',
-                          marginTop: '0.25rem',
-                          paddingTop: '0.5rem',
+                          paddingTop: '0.375rem',
                           borderTop: '1px solid rgba(212, 175, 55, 0.15)'
                         }}>
                           <span style={{ 
+                            fontSize: '0.688rem',
                             color: 'var(--color-text-muted)',
-                            fontWeight: '600'
+                            fontWeight: '500'
                           }}>
-                            Edge
+                            vs Market {game.edges.total.marketTotal}
                           </span>
                           <span style={{ 
-                            padding: '0.25rem 0.625rem',
-                            borderRadius: '4px',
-                            background: game.edges.total.edge > 0 ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                            color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
-                            fontWeight: '800',
-                            fontSize: '0.938rem',
+                            fontSize: '0.813rem',
+                            fontWeight: '700',
                             fontFeatureSettings: "'tnum'",
-                            boxShadow: game.edges.total.edge > 0.3 ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none'
+                            color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)'
                           }}>
-                            {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
-                            {game.edges.total.edge > 0.5 && ' 🟢'}
+                            ({game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)})
                           </span>
+                        </div>
+                      </div>
+                      
+                      {/* Edge - MAXIMUM PROMINENCE */}
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '0.75rem',
+                        background: game.edges.total.edge > 0 
+                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%)' 
+                          : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%)',
+                        border: game.edges.total.edge > 0 
+                          ? '2px solid rgba(16, 185, 129, 0.4)' 
+                          : '2px solid rgba(239, 68, 68, 0.4)',
+                        borderRadius: '8px',
+                        boxShadow: game.edges.total.edge > 0.3 
+                          ? '0 4px 16px rgba(16, 185, 129, 0.25)' 
+                          : 'none'
+                      }}>
+                        <div style={{ 
+                          fontSize: '0.625rem',
+                          color: game.edges.total.edge > 0 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.12em',
+                          marginBottom: '0.25rem'
+                        }}>
+                          Edge
+                        </div>
+                        <div style={{ 
+                          fontSize: '1.875rem',
+                          fontWeight: '900',
+                          color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                          fontFeatureSettings: "'tnum'",
+                          letterSpacing: '-0.04em',
+                          lineHeight: '1',
+                          textShadow: game.edges.total.edge > 0 
+                            ? '0 2px 12px rgba(16, 185, 129, 0.4)' 
+                            : '0 2px 12px rgba(239, 68, 68, 0.4)'
+                        }}>
+                          {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
+                          {game.edges.total.edge > 0.5 && ' 🟢'}
                         </div>
                       </div>
                     </div>
