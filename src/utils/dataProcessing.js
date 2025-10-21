@@ -221,9 +221,10 @@ export class NHLDataProcessor {
     
     if (!team_5v5 || !opponent_5v5) return 0;
     
-    // IMPROVEMENT 1A: Use score-adjusted xG (removes score effect bias)
-    const team_xGF = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
-    const opp_xGA = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
+    // PHASE 3 TEST: Use RAW xG to preserve team variance
+    // Hypothesis: Score-adjusted xG removes real team strength differences
+    const team_xGF = team_5v5.xGF_per60;  // RAW xG for more variance
+    const opp_xGA = opponent_5v5.xGA_per60;  // RAW xG for more variance
     
     // IMPROVEMENT 1B: PDO regression adjustment (PHASE 1: REDUCED to only extreme outliers)
     const team_PDO = this.calculatePDO(
@@ -257,8 +258,8 @@ export class NHLDataProcessor {
     // PP component: Average team's PP offense and opponent's PK defensive weakness
     let goals_PP = 0;
     if (team_PP && opponent_PK) {
-      const team_PP_xGF = team_PP.scoreAdj_xGF_per60 || team_PP.xGF_per60;
-      const opp_PK_xGA = opponent_PK.scoreAdj_xGA_per60 || opponent_PK.xGA_per60;
+      const team_PP_xGF = team_PP.xGF_per60;  // RAW xG for PP too
+      const opp_PK_xGA = opponent_PK.xGA_per60;  // RAW xG for PK too
       const expected_PP_rate = ((team_PP_xGF * 0.60) + (opp_PK_xGA * 0.40)) * SHOOTING_TALENT_MULTIPLIER;
       const minutes_PP = weights['5on4'] * 60;
       goals_PP = (expected_PP_rate / 60) * minutes_PP;
