@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { BetTypeBadge, EVDisplay, EdgeIndicator, TimeDisplay, ViewButton } from './PremiumComponents';
 
 const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -148,54 +149,52 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
           </thead>
           <tbody>
             {opportunities.map((opp, i) => (
-              <tr key={i} style={{ borderTop: '1px solid var(--color-border)' }}>
-                <td style={cellStyle}>{opp.game}</td>
-                <td style={cellStyle}>{opp.time}</td>
-                <td style={cellStyle}>
-                  <span style={{ fontWeight: '600' }}>{opp.bestBet.pick}</span>
+              <tr 
+                key={i}
+                className="summary-row"
+                style={{ 
+                  borderTop: '1px solid var(--color-border)',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative'
+                }}
+              >
+                {/* EV Progress bar background */}
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
+                  background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+                  zIndex: 0,
+                  pointerEvents: 'none'
+                }} />
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <span style={{ fontWeight: '600' }}>{opp.game}</span>
                 </td>
-                <td style={cellStyle}>
-                  <span style={{ 
-                    color: Math.abs(opp.edge) > 0.1 ? 'var(--color-success)' : 'var(--color-text-secondary)',
-                    fontWeight: '600'
-                  }}>
-                    {opp.edge > 0 ? '+' : ''}{opp.edge.toFixed(1)}
-                  </span>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <TimeDisplay time={opp.time} />
                 </td>
-                <td style={cellStyle}>
-                  <span style={{ 
-                    color: getEVColor(opp.bestBet.evPercent),
-                    fontWeight: '700',
-                    fontSize: '0.938rem'
-                  }}>
-                    +{opp.bestBet.evPercent.toFixed(1)}%
-                  </span>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <BetTypeBadge type={opp.bestBet.type} />
+                    <span style={{ fontWeight: '600' }}>{opp.bestBet.pick}</span>
+                  </div>
                 </td>
-                <td style={cellStyle}>
-                  <button
-                    onClick={() => onGameClick(opp.game)}
-                    style={{
-                      padding: '0.375rem 0.75rem',
-                      background: 'var(--color-accent)',
-                      color: 'var(--color-background)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.813rem',
-                      fontWeight: '600',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--color-accent-hover)';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--color-accent)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    View →
-                  </button>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <EdgeIndicator edge={opp.edge} />
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
                 </td>
               </tr>
             ))}

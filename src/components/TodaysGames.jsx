@@ -5,6 +5,7 @@ import { getTeamName } from '../utils/oddsTraderParser';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
 import QuickSummary from './QuickSummary';
+import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 
 const TodaysGames = ({ dataProcessor, oddsData }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
@@ -84,93 +85,96 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '1rem' : '2rem 1rem' }} className="animate-fade-in">
-      {/* Premium Header with Stats */}
-      <div style={{ 
-        paddingBottom: isMobile ? '1.5rem' : '2rem', 
-        marginBottom: isMobile ? '1.5rem' : '2rem' 
+      {/* PREMIUM HERO SECTION */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(212, 175, 55, 0.2)',
+        borderRadius: '16px',
+        padding: isMobile ? '1.5rem' : '2rem',
+        marginBottom: '2rem',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
+        {/* Animated background shine */}
+        <div className="shine-overlay" />
+        
+        {/* Header content with live time */}
         <div style={{ 
           display: 'flex', 
           flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          gap: isMobile ? '1rem' : '2rem',
-          marginBottom: '1rem'
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'flex-start' : 'flex-start',
+          gap: isMobile ? '1.5rem' : '2rem',
+          position: 'relative',
+          zIndex: 1
         }}>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px var(--color-accent-glow)'
-              }}>
-                <TrendingUp size={22} color="var(--color-background)" strokeWidth={2.5} />
+              <Calendar size={32} color="var(--color-accent)" />
+              <div>
+                <h1 className="text-gradient" style={{ 
+                  fontSize: isMobile ? '1.75rem' : '2.5rem',
+                  fontWeight: '800',
+                  marginBottom: '0.25rem',
+                  letterSpacing: '-0.02em',
+                  lineHeight: '1.1'
+                }}>
+                  Today's Games
+                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <span style={{ 
+                    fontSize: '0.875rem', 
+                    color: 'var(--color-text-muted)',
+                    fontWeight: '500'
+                  }}>
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </span>
+                  <LiveClock />
+                </div>
               </div>
-              <h1 className="text-gradient" style={{ fontSize: isMobile ? '1.75rem' : '2rem' }}>Today's Games</h1>
             </div>
-            <p style={{ 
-              color: 'var(--color-text-secondary)', 
-              fontSize: isMobile ? '0.875rem' : '0.938rem',
-              lineHeight: '1.7',
-              maxWidth: '60rem',
-              marginLeft: isMobile ? '0' : '56px'
-            }}>
-              Institutional-grade analysis using advanced metrics to identify betting edges. 
-              Full mathematical transparency with score-adjusted xG, PDO regression, and probabilistic modeling.
-            </p>
+            {!isMobile && (
+              <p style={{ 
+                color: 'var(--color-text-secondary)', 
+                fontSize: '0.875rem',
+                lineHeight: '1.6',
+                maxWidth: '45rem',
+                marginTop: '0.75rem'
+              }}>
+                Institutional-grade analysis using advanced metrics to identify betting edges. 
+                Full mathematical transparency with score-adjusted xG, PDO regression, and probabilistic modeling.
+              </p>
+            )}
           </div>
           
-          {/* Quick Stats Pills */}
+          {/* Animated stats pills */}
           <div style={{ 
             display: 'flex', 
             gap: '0.75rem',
-            flexWrap: 'wrap'
+            flexDirection: isMobile ? 'row' : 'column',
+            alignItems: isMobile ? 'flex-start' : 'flex-end'
           }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '8px',
-              padding: '0.5rem 0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <BarChart3 size={16} color="#60A5FA" />
-              <span style={{ 
-                fontSize: '0.813rem', 
-                fontWeight: '600',
-                color: '#60A5FA'
-              }}>
-                {allEdges.length} Games
-              </span>
-            </div>
-            <div style={{
-              background: 'linear-gradient(135deg, var(--color-success-bg) 0%, rgba(16, 185, 129, 0.05) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              borderRadius: '8px',
-              padding: '0.5rem 0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <Activity size={16} color="var(--color-success)" />
-              <span style={{ 
-                fontSize: '0.813rem', 
-                fontWeight: '600',
-                color: 'var(--color-success)'
-              }}>
-                {topEdges.filter(e => e.evPercent > 3).length} High Value
-              </span>
-            </div>
+            <AnimatedStatPill 
+              icon={<BarChart3 size={16} />}
+              value={allEdges.length}
+              label="Games"
+              color="info"
+            />
+            <AnimatedStatPill 
+              icon={<TrendingUp size={16} />}
+              value={topEdges.filter(e => e.evPercent > 3).length}
+              label="High Value"
+              color="success"
+              sparkle
+            />
           </div>
         </div>
         
-        <div className="divider" style={{ margin: '1.5rem 0 0 0' }} />
+        {/* Countdown to first game */}
+        {allEdges.length > 0 && allEdges[0].gameTime && (
+          <GameCountdown firstGameTime={allEdges[0].gameTime} />
+        )}
       </div>
 
       {/* Quick Summary Table */}
@@ -257,8 +261,15 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
                       border: '1px solid rgba(212, 175, 55, 0.2)',
                       borderRadius: '8px',
                       padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
-                      minWidth: isMobile ? '100%' : '220px'
+                      minWidth: isMobile ? '100%' : '220px',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}>
+                      {/* Animated shimmer for high value */}
+                      {Math.abs(game.edges.total.edge) > 0.8 && (
+                        <div className="shimmer-overlay" />
+                      )}
+                      
                       {/* Header - More Prominent */}
                       <div style={{ 
                         fontSize: '0.625rem', 
