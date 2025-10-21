@@ -51,8 +51,8 @@ export function parseOddsTrader(markdownText) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for today's games (MON 10/20)
-    if (line.includes('MON 10/20')) {
+    // Look for today's games (TUE 10/21)
+    if (line.includes('TUE 10/21')) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
       
       // Extract time from the current line
@@ -183,8 +183,8 @@ export function parseOddsTrader(markdownText) {
       }
     }
     
-    // Stop when we hit tomorrow's games (TUE 10/21)
-    if (line.includes('TUE 10/21')) {
+    // Stop when we hit tomorrow's games (WED 10/22)
+    if (line.includes('WED 10/22')) {
       console.log('\n🛑 Reached tomorrow\'s games, stopping parser');
       break;
     }
