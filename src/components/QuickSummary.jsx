@@ -134,120 +134,265 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
         </button>
       )}
 
-      {/* Desktop: Table */}
+      {/* Desktop: Table - Fixed width constraints */}
       {!isMobile ? (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: 'var(--color-background)' }}>
-              <th style={headerStyle}>Game</th>
-              <th style={headerStyle}>Time</th>
-              <th style={headerStyle}>Best Bet</th>
-              <th style={headerStyle}>Edge</th>
-              <th style={headerStyle}>EV</th>
-              <th style={headerStyle}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {opportunities.map((opp, i) => (
-              <tr 
-                key={i}
-                className="summary-row"
-                style={{ 
-                  borderTop: '1px solid var(--color-border)',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  position: 'relative'
-                }}
-              >
-                {/* EV Progress bar background */}
-                <div style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
-                  background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
-                  zIndex: 0,
-                  pointerEvents: 'none'
-                }} />
-                
-                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                  <span style={{ fontWeight: '600' }}>{opp.game}</span>
-                </td>
-                
-                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                  <TimeDisplay time={opp.time} />
-                </td>
-                
-                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <BetTypeBadge type={opp.bestBet.type} />
-                    <span style={{ fontWeight: '600' }}>{opp.bestBet.pick}</span>
-                  </div>
-                </td>
-                
-                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                  <EdgeIndicator edge={opp.edge} />
-                </td>
-                
-                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                  <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
-                </td>
-                
-                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                  <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
-                </td>
+        <div className="table-container" style={{ overflowX: 'auto', overflowY: 'hidden' }}>
+          <table style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse',
+            tableLayout: 'fixed',
+            minWidth: '800px'
+          }}>
+            <colgroup>
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '14%' }} />
+            </colgroup>
+            <thead>
+              <tr style={{ background: 'var(--color-background)' }}>
+                <th style={headerStyle}>Game</th>
+                <th style={headerStyle}>Time</th>
+                <th style={headerStyle}>Best Bet</th>
+                <th style={headerStyle}>Edge</th>
+                <th style={headerStyle}>EV</th>
+                <th style={headerStyle}></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        // Mobile: Cards
-        <div style={{ padding: '0.5rem' }}>
-          {opportunities.map((opp, i) => (
-            <div key={i} style={{
-              background: 'var(--color-background)',
-              borderRadius: '6px',
-              padding: '0.75rem',
-              marginBottom: '0.5rem',
-              border: '1px solid var(--color-border)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: '700' }}>{opp.game}</span>
-                <span style={{ fontSize: '0.813rem', color: 'var(--color-text-muted)' }}>{opp.time}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: '600', fontSize: '0.938rem' }}>{opp.bestBet.pick}</span>
-                <span style={{ 
-                  padding: '0.125rem 0.5rem',
-                  background: 'var(--color-success-bg)',
-                  color: 'var(--color-success)',
-                  borderRadius: '4px',
-                  fontSize: '0.813rem',
-                  fontWeight: '700'
-                }}>
-                  +{opp.bestBet.evPercent.toFixed(1)}% EV
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.813rem', color: 'var(--color-text-secondary)' }}>
-                  Edge: {opp.edge > 0 ? '+' : ''}{opp.edge.toFixed(1)}
-                </span>
-                <button
-                  onClick={() => onGameClick(opp.game)}
-                  style={{
-                    padding: '0.375rem 0.75rem',
-                    background: 'var(--color-accent)',
-                    color: 'var(--color-background)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.813rem',
-                    fontWeight: '600'
+            </thead>
+            <tbody>
+              {opportunities.map((opp, i) => (
+                <tr 
+                  key={i}
+                  className="summary-row"
+                  style={{ 
+                    borderTop: '1px solid var(--color-border)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative'
                   }}
                 >
-                  View →
-                </button>
+                  {/* EV Progress bar background */}
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
+                    background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+                    zIndex: 0,
+                    pointerEvents: 'none'
+                  }} />
+                  
+                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                    <span style={{ fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{opp.game}</span>
+                  </td>
+                  
+                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                    <TimeDisplay time={opp.time} />
+                  </td>
+                  
+                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <BetTypeBadge type={opp.bestBet.type} />
+                      <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>{opp.bestBet.pick}</span>
+                    </div>
+                  </td>
+                  
+                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                    <EdgeIndicator edge={opp.edge} />
+                  </td>
+                  
+                  <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                    <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
+                  </td>
+                  
+                  <td style={{...cellStyle, position: 'relative', zIndex: 1, textAlign: 'center'}}>
+                    <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        // Mobile: Premium Cards
+        <div style={{ padding: '1.25rem 1rem' }}>
+          {opportunities.map((opp, i) => (
+            <div 
+              key={i} 
+              className="mobile-opp-card"
+              style={{
+                background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.95) 0%, rgba(26, 31, 46, 0.9) 100%)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                marginBottom: '1.25rem',
+                border: '1px solid rgba(212, 175, 55, 0.2)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 175, 55, 0.1)',
+                position: 'relative',
+                overflow: 'hidden',
+                animation: 'slideInUp 0.4s ease-out',
+                animationDelay: `${i * 0.1}s`,
+                animationFillMode: 'both'
+              }}>
+              
+              {/* Shimmer effect for high value bets */}
+              {opp.bestBet.evPercent > 5 && (
+                <div className="shimmer-overlay" style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent)',
+                  animation: 'shimmer 3s infinite'
+                }} />
+              )}
+              
+              {/* EV Badge - Top Right */}
+              <div style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: opp.bestBet.evPercent > 10 
+                  ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                  : opp.bestBet.evPercent > 5
+                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                  : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                color: 'white',
+                padding: '0.625rem 1rem',
+                borderRadius: '8px',
+                fontSize: '1.125rem',
+                fontWeight: '900',
+                letterSpacing: '-0.02em',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+              }}>
+                +{opp.bestBet.evPercent.toFixed(1)}%
               </div>
+              
+              {/* Game Header */}
+              <div style={{ marginBottom: '1.25rem', paddingRight: '5rem' }}>
+                <div style={{ 
+                  fontSize: '1.25rem', 
+                  fontWeight: '800',
+                  color: 'var(--color-text-primary)',
+                  marginBottom: '0.5rem',
+                  letterSpacing: '-0.02em'
+                }}>
+                  {opp.game}
+                </div>
+                <div style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.938rem',
+                  color: 'var(--color-text-muted)',
+                  fontWeight: '500'
+                }}>
+                  <span>🕐</span>
+                  <span>{opp.time}</span>
+                </div>
+              </div>
+              
+              {/* Bet Type Badge */}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.625rem 1.125rem',
+                background: opp.bestBet.type === 'ML' 
+                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(126, 34, 206, 0.15) 100%)',
+                border: opp.bestBet.type === 'ML'
+                  ? '1px solid rgba(59, 130, 246, 0.4)'
+                  : '1px solid rgba(168, 85, 247, 0.4)',
+                borderRadius: '8px',
+                marginBottom: '1rem'
+              }}>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: opp.bestBet.type === 'ML' ? '#60A5FA' : '#A78BFA'
+                }}>
+                  {opp.bestBet.type === 'ML' ? '⚡ MONEYLINE' : '🎯 TOTAL'}
+                </span>
+              </div>
+              
+              {/* Pick */}
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: '900',
+                color: 'var(--color-accent)',
+                marginBottom: '1.25rem',
+                letterSpacing: '-0.03em',
+                textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+              }}>
+                {opp.bestBet.pick}
+              </div>
+              
+              {/* Edge Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1rem',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '8px',
+                marginBottom: '1.25rem',
+                border: '1px solid rgba(255, 255, 255, 0.05)'
+              }}>
+                <span style={{ 
+                  fontSize: '0.813rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'var(--color-text-muted)'
+                }}>
+                  Edge
+                </span>
+                <span style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '900',
+                  color: opp.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.02em'
+                }}>
+                  {opp.edge > 0 ? '+' : ''}{opp.edge.toFixed(1)}
+                </span>
+              </div>
+              
+              {/* View Button - Full Width Premium */}
+              <button
+                onClick={() => onGameClick(opp.game)}
+                style={{
+                  width: '100%',
+                  padding: '1.125rem',
+                  background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
+                  color: 'var(--color-background)',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '1.063rem',
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  boxShadow: '0 6px 20px rgba(212, 175, 55, 0.4)',
+                  transition: 'all 0.3s ease',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                View Full Analysis →
+              </button>
             </div>
           ))}
         </div>
