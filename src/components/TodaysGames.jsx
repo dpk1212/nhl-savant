@@ -61,8 +61,25 @@ const TodaysGames = ({ dataProcessor, oddsData }) => {
       return hasPositiveEV;
     });
     
-    // High value = games where BEST bet has EV > 5%
-    const highValue = topEdges.filter(e => e.evPercent > 5).length;
+    // High value = GAMES (not individual bets) where BEST bet has EV > 5%
+    // This matches QuickSummary's logic exactly
+    const highValue = opportunities.filter(game => {
+      let bestEV = 0;
+      
+      // Check moneyline
+      if (game.edges.moneyline) {
+        if (game.edges.moneyline.away?.evPercent > bestEV) bestEV = game.edges.moneyline.away.evPercent;
+        if (game.edges.moneyline.home?.evPercent > bestEV) bestEV = game.edges.moneyline.home.evPercent;
+      }
+      
+      // Check totals
+      if (game.edges.total) {
+        if (game.edges.total.over?.evPercent > bestEV) bestEV = game.edges.total.over.evPercent;
+        if (game.edges.total.under?.evPercent > bestEV) bestEV = game.edges.total.under.evPercent;
+      }
+      
+      return bestEV > 5;
+    }).length;
     
     return {
       total: opportunities.length,
