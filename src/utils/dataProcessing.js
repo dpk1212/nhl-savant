@@ -188,41 +188,63 @@ export class NHLDataProcessor {
     const all_teams = this.getTeamsBySituation('5on5');
     if (!all_teams || all_teams.length === 0) return 2.45; // Default fallback
     
+    // CONSULTANT FIX: Calculate dynamic calibration factor from actual goals vs xG
+    // xG models systematically underestimate actual scoring by ~21.5%
+    let total_actual_goals = 0;
+    let total_xG = 0;
+    
+    all_teams.forEach(t => {
+      total_actual_goals += (t.goalsFor || 0);
+      total_xG += (t.scoreVenueAdjustedxGoalsFor || t.xGoalsFor || 0);
+    });
+    
+    // Calculate calibration factor (actual goals / xG)
+    // This auto-adjusts as season progresses
+    const calibration = total_xG > 0 ? total_actual_goals / total_xG : 1.215;
+    
+    // Calculate base xGF/60 average
     const xGF_values = all_teams.map(t => t.xGF_per60).filter(v => v && v > 0);
     if (xGF_values.length === 0) return 2.45;
     
     const baseAverage = xGF_values.reduce((sum, val) => sum + val, 0) / xGF_values.length;
     
-    // CRITICAL FIX: Add 3% to account for score effects and modern NHL offense
-    // Early season xG data tends to underestimate actual scoring slightly
-    return baseAverage * 1.03;
+    // Apply dynamic calibration (replaces old 1.03 fixed boost)
+    const calibrated = baseAverage * calibration;
+    
+    console.log(`📊 League avg: base=${baseAverage.toFixed(2)} xGF/60, cal=${calibration.toFixed(3)}, result=${calibrated.toFixed(2)} goals/60`);
+    
+    return calibrated;
   }
 
-  // FIXED: Calculate regression weight based on sample size
-  // Industry standard: 30% regression for early season (MoneyPuck, Evolving-Hockey)
-  // Previous 75% was too aggressive, causing all predictions to converge to league average
+  // CONSULTANT FIX: Reduce over-aggressive regression
+  // Markets use 30-40% regression after 5 games, not 70%
+  // Our previous 65-70% erased real team skill differences
   calculateRegressionWeight(gamesPlayed) {
-    if (!gamesPlayed || gamesPlayed < 0) return 0.70; // Very conservative default
+    if (!gamesPlayed || gamesPlayed < 0) return 0.50; // Reduced from 0.70
     
-    // VERY early season (0-5 games): 70% regression to mean
-    // Trust league average more than tiny sample
-    if (gamesPlayed < 5) return 0.70;
+    // VERY early season (0-5 games): 50% regression
+    // Trust half actual data, half league average
+    // Reduced from 70% per consultant recommendation
+    if (gamesPlayed < 5) return 0.50;
     
-    // Early season (5-10 games): 65% regression
-    // Still heavily regress to avoid early season noise
-    if (gamesPlayed < 10) return 0.65;
+    // Early season (5-10 games): 40% regression
+    // Allow team skill differences to show through
+    // Reduced from 65% per consultant recommendation
+    if (gamesPlayed < 10) return 0.40;
     
-    // Building sample (10-20 games): 45% regression
-    // Start trusting actual performance more
-    if (gamesPlayed < 20) return 0.45;
+    // Building sample (10-20 games): 30% regression
+    // Matches betting market regression rates
+    // Reduced from 45% per consultant recommendation
+    if (gamesPlayed < 20) return 0.30;
     
-    // Mid season (20-40 games): 25% regression
+    // Mid season (20-40 games): 20% regression
     // Good sample size, mostly trust the data
-    if (gamesPlayed < 40) return 0.25;
+    if (gamesPlayed < 40) return 0.20;
     
-    // Late season (40+ games): 15% regression
+    // Late season (40+ games): 10% regression
     // Strong sample, light regression to avoid outliers
-    return 0.15;
+    // Reduced from 15% per consultant recommendation
+    return 0.10;
   }
 
   // NEW: Apply regression to mean based on sample size

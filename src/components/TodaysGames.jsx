@@ -10,6 +10,7 @@ import RatingBadge from './RatingBadge';
 import CollapsibleSection from './CollapsibleSection';
 import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
+import { validatePredictions } from '../utils/modelValidator';
 
 const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
@@ -37,6 +38,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
       
       const edges = calculator.calculateAllEdges();
       setAllEdges(edges);
+      
+      // CONSULTANT FIX: Run model validation to detect systematic bias
+      validatePredictions(edges);
       
       // Get all opportunities (games with positive EV)
       const topOpportunities = calculator.getTopEdges(0); // 0 = all with positive EV
