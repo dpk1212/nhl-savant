@@ -167,7 +167,15 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
   }
 
   return (
-    <div className="light-theme-page min-h-screen bg-gray-50 py-8">
+    <div 
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#F9FAFB',
+        color: '#111827',
+        paddingTop: '2rem',
+        paddingBottom: '2rem'
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -180,7 +188,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
         </div>
 
         {/* Action Buttons */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="rounded-lg shadow-sm border border-gray-200 p-6 mb-8" style={{ backgroundColor: '#FFFFFF' }}>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
           <div className="flex flex-wrap gap-3">
             <button
@@ -237,7 +245,11 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
             const selectedHome = selectedGoalies[`${gameId}_${game.home}`];
 
             return (
-              <div key={gameId} className="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+              <div 
+                key={gameId} 
+                className="border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+                style={{ backgroundColor: '#FFFFFF' }}
+              >
                 {/* Game Header */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b-2 border-gray-200">
                   <h3 className="text-2xl font-bold text-gray-900">
@@ -257,7 +269,8 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                     <select
                       value={selectedAway || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.away, e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-base font-medium"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
+                      style={{ backgroundColor: '#FFFFFF', color: '#111827' }}
                     >
                       <option value="">Select goalie...</option>
                       {awayGoalies.map(goalie => {
@@ -296,7 +309,8 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
                     <select
                       value={selectedHome || ''}
                       onChange={(e) => handleGoalieSelect(gameId, game.home, e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-base font-medium"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
+                      style={{ backgroundColor: '#FFFFFF', color: '#111827' }}
                     >
                       <option value="">Select goalie...</option>
                       {homeGoalies.map(goalie => {
@@ -343,7 +357,7 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
         </div>
 
         {/* Info Box */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-md">
+        <div className="mt-8 border-2 border-blue-200 rounded-xl p-6 shadow-md" style={{ background: 'linear-gradient(to right, #EFF6FF, #EEF2FF)' }}>
           <h4 className="text-xl font-bold text-blue-900 mb-4">How Goalie Adjustment Works</h4>
           <ul className="text-base text-blue-900 space-y-3">
             <li className="flex items-start">
