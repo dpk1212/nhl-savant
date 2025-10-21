@@ -67,7 +67,7 @@ export class EdgeCalculator {
     return {
       away: {
         ev: awayEV,
-        evPercent: (awayEV / 100) * 100,
+        evPercent: awayEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: awayWinProb,
         marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
         kelly: awayKelly,
@@ -75,7 +75,7 @@ export class EdgeCalculator {
       },
       home: {
         ev: homeEV,
-        evPercent: (homeEV / 100) * 100,
+        evPercent: homeEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: homeWinProb,
         marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
         kelly: homeKelly,
@@ -115,14 +115,14 @@ export class EdgeCalculator {
     return {
       away: {
         ev: awayEV,
-        evPercent: (awayEV / 100) * 100,
+        evPercent: awayEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: awayCoverProb,
         spread: awaySpread,
         odds: game.puckLine.away.odds
       },
       home: {
         ev: homeEV,
-        evPercent: (homeEV / 100) * 100,
+        evPercent: homeEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: homeCoverProb,
         spread: homeSpread,
         odds: game.puckLine.home.odds
@@ -176,14 +176,14 @@ export class EdgeCalculator {
       recommendation: recommendation,
       over: {
         ev: overEV,
-        evPercent: (overEV / 100) * 100,
+        evPercent: overEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: overProb,
         odds: game.total.over,
         kelly: overKelly
       },
       under: {
         ev: underEV,
-        evPercent: (underEV / 100) * 100,
+        evPercent: underEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: underProb,
         odds: game.total.under,
         kelly: underKelly
