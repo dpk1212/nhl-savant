@@ -77,3 +77,4 @@ The app automatically:
 
 ### Questions?
 All math is transparent. Click any metric to see the formula and calculation.
+
