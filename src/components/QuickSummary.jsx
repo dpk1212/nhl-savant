@@ -5,12 +5,16 @@ import { BetTypeBadge, EVDisplay, EdgeIndicator, TimeDisplay, ViewButton } from 
 const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 640);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth <= 640);
+      setIsDesktop(window.innerWidth > 1024);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   // Get best bet for each game
@@ -48,6 +52,103 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
   }).filter(opp => opp.bestBet && opp.bestBet.evPercent > 0);
 
   const highValueCount = opportunities.filter(o => o.bestBet.evPercent > 5).length;
+  
+  // Sort opportunities by EV to get top ones
+  const topOpportunities = [...opportunities].sort((a, b) => b.bestBet.evPercent - a.bestBet.evPercent).slice(0, 3);
+
+  // Desktop collapsed view - Compact bar
+  if (isDesktop && !isExpanded) {
+    return (
+      <div style={{
+        position: 'sticky',
+        top: '60px',
+        zIndex: 100,
+        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(212, 175, 55, 0.3)',
+        borderRadius: '12px',
+        padding: '1rem 1.5rem',
+        marginBottom: '1.5rem',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease'
+      }}
+      onClick={() => setIsExpanded(true)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+      }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
+              🎯 Today's Opportunities
+            </span>
+            <span style={{ 
+              fontSize: '0.875rem', 
+              color: 'var(--color-text-muted)',
+              fontWeight: '500'
+            }}>
+              {opportunities.length} Games • {highValueCount} High Value
+            </span>
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            background: 'rgba(212, 175, 55, 0.2)',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            color: 'var(--color-accent)'
+          }}>
+            <span>Click to expand</span>
+            <ChevronDown size={18} />
+          </div>
+        </div>
+        
+        {/* Top 3 opportunities as chips */}
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {topOpportunities.map((opp, i) => (
+            <div key={i} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              padding: '0.5rem 1rem',
+              background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.8) 0%, rgba(26, 31, 46, 0.7) 100%)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}>
+              <span style={{ fontWeight: '700', fontSize: '0.938rem', color: 'var(--color-text-primary)' }}>
+                {opp.game}
+              </span>
+              <span style={{
+                padding: '0.25rem 0.625rem',
+                background: opp.bestBet.evPercent > 10 
+                  ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                  : opp.bestBet.evPercent > 5
+                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                  : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                color: 'white',
+                borderRadius: '6px',
+                fontSize: '0.813rem',
+                fontWeight: '800',
+                letterSpacing: '-0.01em'
+              }}>
+                +{opp.bestBet.evPercent.toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Mobile collapsed view
   if (isMobile && !isExpanded) {
@@ -102,14 +203,48 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
         background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
         padding: '1rem',
         color: 'var(--color-background)',
-        textAlign: 'center'
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
-        <div style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem' }}>
-          🎯 Today's Betting Opportunities
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem' }}>
+            🎯 Today's Betting Opportunities
+          </div>
+          <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+            {opportunities.length} Games • {highValueCount} High Value
+          </div>
         </div>
-        <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-          {opportunities.length} Games • {highValueCount} High Value
-        </div>
+        
+        {/* Collapse button for desktop */}
+        {isDesktop && (
+          <button
+            onClick={() => setIsExpanded(false)}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'rgba(0, 0, 0, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              color: 'white',
+              fontSize: '0.813rem',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.2)';
+            }}
+          >
+            <ChevronUp size={16} />
+            Collapse
+          </button>
+        )}
       </div>
 
       {/* Mobile: Collapse button */}
