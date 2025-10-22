@@ -228,3 +228,5 @@ Still significant! This suggests:
 **Responsible bankroll management.** Even with calibration, never bet more than recommended Kelly sizing, and consider using fractional Kelly (25-50% of full Kelly) for additional safety.
 
 
+
+

@@ -1,7 +1,9 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import Papa from 'papaparse';
 import { loadNHLData, loadOddsFiles, loadStartingGoalies, loadGoaliesCSV } from './utils/dataProcessing';
 import { GoalieProcessor } from './utils/goalieProcessor';
+import { ScheduleHelper } from './utils/scheduleHelper';
 import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
 import { AdvancedStatsAnalyzer } from './utils/advancedStatsAnalyzer';
 import { EdgeFactorCalculator } from './utils/edgeFactorCalculator';
@@ -21,6 +23,7 @@ function App() {
   const [startingGoalies, setStartingGoalies] = useState(null);
   const [statsAnalyzer, setStatsAnalyzer] = useState(null);
   const [edgeFactorCalc, setEdgeFactorCalc] = useState(null);
+  const [scheduleHelper, setScheduleHelper] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -29,9 +32,32 @@ function App() {
       try {
         setLoading(true);
         
+        // Load schedule data for B2B/rest adjustments
+        console.log('📅 Loading schedule data for B2B adjustments...');
+        let loadedScheduleHelper = null;
+        try {
+          const scheduleText = await fetch('/nhl-202526-asplayed.csv').then(r => r.text());
+          Papa.parse(scheduleText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              if (results.data && results.data.length > 0) {
+                loadedScheduleHelper = new ScheduleHelper(results.data);
+                console.log(`✅ Loaded ${Object.keys(loadedScheduleHelper.gamesByTeam).length} teams into schedule helper`);
+                setScheduleHelper(loadedScheduleHelper);
+              }
+            },
+            error: (err) => {
+              console.warn('⚠️ Schedule file not found, B2B adjustments disabled:', err.message);
+            }
+          });
+        } catch (scheduleErr) {
+          console.warn('⚠️ Could not load schedule data:', scheduleErr.message);
+        }
+        
         // Load team data (no longer needs goalie processor in constructor)
         console.log('🏒 Loading team data...');
-        const processor = await loadNHLData();
+        const processor = await loadNHLData(loadedScheduleHelper);
         setDataProcessor(processor);
         
         // Load goalies.csv for advanced goalie statistics
