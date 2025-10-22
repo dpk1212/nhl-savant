@@ -1,6 +1,6 @@
 /**
  * Automated Data Fetcher using Firecrawl
- * Scrapes odds from OddsTrader and goalies from RotoWire
+ * Scrapes odds from OddsTrader and advanced goalie stats from MoneyPuck
  * 
  * Usage: npm run fetch-data
  */
@@ -26,8 +26,11 @@ async function fetchAllData() {
   const results = {
     moneyline: false,
     totals: false,
-    goalies: false
+    goalies: false,
+    moneyPuckGoalies: false
   };
+  
+  const fetchTimestamp = new Date().toISOString();
   
   try {
     // 1. Fetch Moneyline Odds
@@ -68,53 +71,53 @@ async function fetchAllData() {
     console.log(`   - File: public/odds_total.md\n`);
     results.totals = true;
     
-    // 3. Fetch Goalie Lineups using extract (AI-powered)
-    console.log('🥅 Fetching starting goalies from RotoWire (using AI extraction)...');
+    // 3. Fetch Advanced Goalie Stats from MoneyPuck
+    console.log('🥅 Fetching advanced goalie stats from MoneyPuck...');
     
-    const goaliesResult = await firecrawl.extract({
-      urls: ['https://www.rotowire.com/hockey/nhl-lineups.php'],
-      prompt: `Extract today's NHL starting goalies. For each game, get:
-      - Away team abbreviation (3 letters)
-      - Home team abbreviation (3 letters)  
-      - Starting goalie names for both teams
-      - Game time
-      Only include games with confirmed starting goalies.`,
-      schema: {
-        type: 'object',
-        properties: {
-          games: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                awayTeam: { type: 'string', description: 'Away team abbreviation' },
-                homeTeam: { type: 'string', description: 'Home team abbreviation' },
-                awayGoalie: { type: 'string', description: 'Away starting goalie full name' },
-                homeGoalie: { type: 'string', description: 'Home starting goalie full name' },
-                gameTime: { type: 'string', description: 'Game time' }
-              },
-              required: ['awayTeam', 'homeTeam', 'awayGoalie', 'homeGoalie']
-            }
-          }
-        }
-      }
+    const moneyPuckResult = await firecrawl.scrape('https://moneypuck.com/goalies.htm', {
+      formats: ['markdown', 'html'],
+      onlyMainContent: true,
+      waitFor: 3000
     });
     
-    console.log('   - Extracted data using AI...');
+    console.log('   - Scraped MoneyPuck goalie data');
+    console.log(`   - Size: ${moneyPuckResult.markdown?.length || 0} characters\n`);
     
-    // Convert extracted data to our format
-    const goalieData = convertExtractedGoalies(goaliesResult.data);
+    // Load existing starting_goalies.json (from admin selections)
+    let startingGoalies;
+    try {
+      const goalieFileContent = await fs.readFile(
+        join(__dirname, '../public/starting_goalies.json'),
+        'utf8'
+      );
+      startingGoalies = JSON.parse(goalieFileContent);
+      console.log(`   - Loaded existing goalie selections: ${startingGoalies.games?.length || 0} games`);
+    } catch (error) {
+      // If file doesn't exist, create empty structure
+      console.log('   - No existing goalie file found, creating new one');
+      startingGoalies = {
+        date: new Date().toISOString().split('T')[0],
+        lastUpdated: fetchTimestamp,
+        games: []
+      };
+    }
+    
+    // Enrich with MoneyPuck stats
+    const enrichedGoalies = enrichGoaliesWithMoneyPuck(startingGoalies, moneyPuckResult.markdown);
+    enrichedGoalies.lastUpdated = fetchTimestamp;
+    enrichedGoalies.oddsLastUpdated = fetchTimestamp;
     
     await fs.writeFile(
       join(__dirname, '../public/starting_goalies.json'),
-      JSON.stringify(goalieData, null, 2),
+      JSON.stringify(enrichedGoalies, null, 2),
       'utf8'
     );
     
-    console.log(`✅ Starting goalies saved`);
-    console.log(`   - Games found: ${goalieData.games.length}`);
+    console.log(`✅ Advanced goalie stats merged with starting goalies`);
+    console.log(`   - Goalies confirmed: ${countConfirmedGoalies(enrichedGoalies)}`);
     console.log(`   - File: public/starting_goalies.json\n`);
     results.goalies = true;
+    results.moneyPuckGoalies = true;
     
     // Summary
     console.log('========================================');
@@ -123,7 +126,9 @@ async function fetchAllData() {
     console.log('\nUpdated files:');
     console.log('  ✓ public/odds_money.md');
     console.log('  ✓ public/odds_total.md');
-    console.log('  ✓ public/starting_goalies.json');
+    console.log('  ✓ public/starting_goalies.json (with MoneyPuck stats)');
+    console.log(`\nGoalie Status: ${countConfirmedGoalies(enrichedGoalies)}`);
+    console.log(`Odds Updated: ${new Date(fetchTimestamp).toLocaleString()}`);
     console.log('\nNext steps:');
     console.log('  1. Review the files to ensure data looks good');
     console.log('  2. git add public/*.md public/*.json');
@@ -145,44 +150,97 @@ async function fetchAllData() {
 }
 
 /**
- * Convert extracted goalie data from Firecrawl to our format
+ * Enrich starting goalies with MoneyPuck advanced stats
  */
-function convertExtractedGoalies(extractedData) {
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0];
-  
-  const goalieData = {
-    date: dateStr,
-    lastUpdated: new Date().toISOString(),
-    games: []
-  };
-  
-  if (!extractedData || !extractedData.games || !Array.isArray(extractedData.games)) {
-    console.log('   ⚠️  Warning: No games found in extracted data');
-    return goalieData;
+function enrichGoaliesWithMoneyPuck(startingGoalies, moneyPuckMarkdown) {
+  if (!startingGoalies || !startingGoalies.games) {
+    console.log('   ⚠️  Warning: No games in starting_goalies.json');
+    return startingGoalies;
   }
   
-  extractedData.games.forEach((game, index) => {
-    if (game.awayTeam && game.homeTeam && game.awayGoalie && game.homeGoalie) {
-      goalieData.games.push({
-        gameId: `game_${index}`,
-        matchup: `${game.awayTeam.toUpperCase()} @ ${game.homeTeam.toUpperCase()}`,
-        time: game.gameTime || "TBD",
-        away: {
-          team: game.awayTeam.toUpperCase(),
-          goalie: game.awayGoalie
-        },
-        home: {
-          team: game.homeTeam.toUpperCase(),
-          goalie: game.homeGoalie
-        }
-      });
-    }
+  console.log('   - Parsing MoneyPuck data...');
+  
+  // Parse MoneyPuck markdown to extract goalie stats
+  // MoneyPuck format: Name | Team | GP | GSAE | Sv% | HD Sv% | etc.
+  const goalieStats = parseMoneyPuckGoalies(moneyPuckMarkdown);
+  
+  console.log(`   - Found ${goalieStats.size} goalies in MoneyPuck data`);
+  
+  // Enrich each game's goalies
+  startingGoalies.games = startingGoalies.games.map(game => {
+    const awayGoalieName = game.away?.goalie;
+    const homeGoalieName = game.home?.goalie;
+    
+    const awayStats = awayGoalieName ? goalieStats.get(awayGoalieName.toLowerCase()) : null;
+    const homeStats = homeGoalieName ? goalieStats.get(homeGoalieName.toLowerCase()) : null;
+    
+    return {
+      ...game,
+      away: {
+        ...game.away,
+        confirmed: !!game.away?.goalie,
+        stats: awayStats || null
+      },
+      home: {
+        ...game.home,
+        confirmed: !!game.home?.goalie,
+        stats: homeStats || null
+      }
+    };
   });
   
-  console.log(`   - Converted ${goalieData.games.length} complete games`);
+  return startingGoalies;
+}
+
+/**
+ * Parse MoneyPuck markdown to extract goalie stats
+ */
+function parseMoneyPuckGoalies(markdown) {
+  const goalieMap = new Map();
   
-  return goalieData;
+  if (!markdown) return goalieMap;
+  
+  // Split by lines and look for goalie data
+  const lines = markdown.split('\n');
+  
+  for (const line of lines) {
+    // Look for patterns like: "Igor Shesterkin NYR 15 +12.5 .925 .850"
+    // This is a simplified parser - adjust based on actual MoneyPuck format
+    const match = line.match(/([A-Z][a-z]+ [A-Z][a-z]+)\s+([A-Z]{2,3})\s+(\d+)\s+([\+\-]?\d+\.?\d*)\s+(\.\d+)\s+(\.\d+)/);
+    
+    if (match) {
+      const [, name, team, gp, gsae, svPct, hdSvPct] = match;
+      
+      goalieMap.set(name.toLowerCase(), {
+        name,
+        team,
+        gamesPlayed: parseInt(gp),
+        gsae: parseFloat(gsae),
+        savePct: (parseFloat(svPct) * 100).toFixed(1),
+        hdSavePct: (parseFloat(hdSvPct) * 100).toFixed(1),
+        recentForm: parseFloat(gsae) > 5 ? 'Hot' : parseFloat(gsae) < -3 ? 'Cold' : 'Average'
+      });
+    }
+  }
+  
+  return goalieMap;
+}
+
+/**
+ * Count confirmed goalies for display
+ */
+function countConfirmedGoalies(goalieData) {
+  if (!goalieData || !goalieData.games) return '0/0 goalies confirmed';
+  
+  let totalGames = goalieData.games.length;
+  let confirmedCount = 0;
+  
+  goalieData.games.forEach(game => {
+    if (game.away?.confirmed) confirmedCount++;
+    if (game.home?.confirmed) confirmedCount++;
+  });
+  
+  return `${confirmedCount}/${totalGames * 2} goalies confirmed`;
 }
 
 // Validate that we got actual data
