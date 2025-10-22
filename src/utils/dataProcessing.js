@@ -848,6 +848,48 @@ export async function loadStartingGoalies() {
   return null;
 }
 
+// Load goalies.csv for advanced goalie statistics
+export async function loadGoaliesCSV() {
+  try {
+    // Try GitHub raw files first, fallback to local
+    let response;
+    try {
+      response = await fetch('https://raw.githubusercontent.com/dpk1212/nhl-savant/main/public/goalies.csv');
+      if (!response.ok) throw new Error('GitHub fetch failed');
+    } catch (error) {
+      console.log('GitHub raw file failed, trying local file...');
+      response = await fetch('/goalies.csv');
+    }
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+    
+    return new Promise((resolve, reject) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        complete: (results) => {
+          const cleanData = results.data.filter(row => 
+            row && row.name && row.team && row.situation
+          );
+          console.log(`✅ Loaded ${cleanData.length} goalie records`);
+          resolve(cleanData);
+        },
+        error: (error) => {
+          console.error('Goalie CSV parsing error:', error);
+          reject(error);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error loading goalies.csv:', error);
+    throw error;
+  }
+}
+
 // Load both odds files (Money + Total)
 export async function loadOddsFiles() {
   try {
