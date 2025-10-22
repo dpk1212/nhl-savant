@@ -10,9 +10,12 @@
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
     "backtest": "node backtesting/runBacktest.js",
-    "update-results": "node updateTuesdayResults.js"
+    "update-results": "node updateTuesdayResults.js",
+    "fetch-data": "node scripts/fetchData.js",
+    "update-all": "npm run fetch-data && git add public/odds_money.md public/odds_total.md public/starting_goalies.json"
   },
   "dependencies": {
+    "@mendable/firecrawl-js": "^4.4.1",
     "@tailwindcss/postcss": "^4.1.15",
     "autoprefixer": "^10.4.21",
     "axios": "^1.12.2",
