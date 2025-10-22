@@ -11,6 +11,7 @@ import CollapsibleSection from './CollapsibleSection';
 import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 import { validatePredictions } from '../utils/modelValidator';
+import { useBetTracking } from '../hooks/useBetTracking';
 
 const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
@@ -18,6 +19,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
   const [topEdges, setTopEdges] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedGame, setExpandedGame] = useState(null);
+  
+  // FIREBASE: Auto-track all recommended bets
+  useBetTracking(allEdges, dataProcessor);
 
   // Detect mobile device
   useEffect(() => {
