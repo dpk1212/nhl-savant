@@ -60,16 +60,16 @@ export class AdvancedStatsAnalyzer {
     const per60Metrics = [];
     
     allTeams.forEach(team => {
-      const iceTime = team.iceTime || 1;
-      const minutes = iceTime / 60;
+      const iceTimeSeconds = team.iceTime || 1; // iceTime is in SECONDS
+      const iceTimeMinutes = iceTimeSeconds / 60; // Convert to minutes
       
       per60Metrics.push({
-        hdXgfPer60: (team.highDangerxGoalsFor || 0) / minutes,
-        hdXgaPer60: (team.highDangerxGoalsAgainst || 0) / minutes,
-        rebXgfPer60: (team.xGoalsFromActualReboundsOfShotsFor || 0) / minutes,
-        rebXgaPer60: (team.xGoalsFromActualReboundsOfShotsAgainst || 0) / minutes,
-        blocksPer60: (team.blockedShotAttemptsFor || 0) / minutes,
-        blocksAgainstPer60: (team.blockedShotAttemptsAgainst || 0) / minutes
+        hdXgfPer60: ((team.highDangerxGoalsFor || 0) / iceTimeMinutes) * 60,
+        hdXgaPer60: ((team.highDangerxGoalsAgainst || 0) / iceTimeMinutes) * 60,
+        rebXgfPer60: ((team.xGoalsFromActualReboundsOfShotsFor || 0) / iceTimeMinutes) * 60,
+        rebXgaPer60: ((team.xGoalsFromActualReboundsOfShotsAgainst || 0) / iceTimeMinutes) * 60,
+        blocksPer60: ((team.blockedShotAttemptsFor || 0) / iceTimeMinutes) * 60,
+        blocksAgainstPer60: ((team.blockedShotAttemptsAgainst || 0) / iceTimeMinutes) * 60
       });
     });
 
