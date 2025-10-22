@@ -98,7 +98,48 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
     );
   }
   
-  // Both goalies confirmed - show full analytics section
+  // Both goalies confirmed - check if we have stats for both
+  const awayHasStats = awayGoalie && awayGoalie.gsae !== undefined;
+  const homeHasStats = homeGoalie && homeGoalie.gsae !== undefined;
+  
+  // If either goalie lacks stats, show limited data message
+  if (!awayHasStats || !homeHasStats) {
+    return (
+      <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '1.5rem',
+          textAlign: 'center',
+          background: GRADIENTS.factors,
+          border: ELEVATION.flat.border,
+          borderRadius: '8px'
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📊</div>
+          <div style={{
+            fontSize: TYPOGRAPHY.subheading.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: 'var(--color-text-primary)',
+            marginBottom: '0.5rem'
+          }}>
+            {awayTeam} {awayGoalie?.name || 'TBD'} vs {homeTeam} {homeGoalie?.name || 'TBD'}
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.body.size,
+            color: 'var(--color-text-muted)',
+            lineHeight: TYPOGRAPHY.body.lineHeight
+          }}>
+            {!awayHasStats && !homeHasStats 
+              ? 'Advanced stats not available for these goalies yet'
+              : !awayHasStats 
+                ? `Advanced stats not available for ${awayGoalie.name}`
+                : `Advanced stats not available for ${homeGoalie.name}`
+            }
+          </div>
+        </div>
+      </Section>
+    );
+  }
+  
+  // Both goalies confirmed with stats - show full analytics section
   // Calculate matchup edge
   const awayGSAE = parseFloat(awayGoalie.gsae) || 0;
   const homeGSAE = parseFloat(homeGoalie.gsae) || 0;
