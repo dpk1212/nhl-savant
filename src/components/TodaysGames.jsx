@@ -1334,14 +1334,16 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
                 if (analyticsData) {
                   return (
                     <AdvancedMatchupDetails
-                    awayTeam={game.awayTeam}
-                    homeTeam={game.homeTeam}
+                      awayTeam={game.awayTeam}
+                      homeTeam={game.homeTeam}
                       dangerZoneData={analyticsData.dangerZoneData}
                       reboundData={analyticsData.reboundData}
                       physicalData={analyticsData.physicalData}
                       possessionData={analyticsData.possessionData}
                       regressionData={analyticsData.regressionData}
                       isMobile={isMobile}
+                      bestEdge={bestEdge}
+                      statsAnalyzer={statsAnalyzer}
                     />
                   );
                 }
