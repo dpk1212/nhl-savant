@@ -720,8 +720,8 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
   );
 };
 
-// Alternative Bet Card - Show secondary opportunities
-const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) => {
+// Alternative Bet Card - Show secondary opportunities with supporting insights
+const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, factors }) => {
   if (!game || !bestEdge) return null;
   
   // Determine alternative market
@@ -731,6 +731,7 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) =>
   // Get alternative bet data
   let altBet = null;
   let altPick = '';
+  let altTeam = null;
   
   if (isValueBetTotal) {
     // Value bet is TOTAL, show best ML alternative
@@ -739,6 +740,7 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) =>
     if (awayML && homeML) {
       altBet = awayML.evPercent > homeML.evPercent ? awayML : homeML;
       altPick = awayML.evPercent > homeML.evPercent ? `${awayTeam} ML` : `${homeTeam} ML`;
+      altTeam = awayML.evPercent > homeML.evPercent ? awayTeam : homeTeam;
     }
   } else {
     // Value bet is ML, show best TOTAL alternative
@@ -754,6 +756,39 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) =>
   // Only show if alternative has positive EV
   if (!altBet || altBet.evPercent <= 0) return null;
   
+  // Generate supporting insights for alternative bet
+  const getSupportingInsights = () => {
+    if (!factors || factors.length === 0) return [];
+    
+    const insights = [];
+    
+    if (isValueBetTotal) {
+      // Alternative is ML - show factors that favor the team
+      factors.forEach(f => {
+        const awayVal = f.awayMetric?.value || 0;
+        const homeVal = f.homeMetric?.value || 0;
+        const hasAdvantage = awayVal > homeVal ? awayTeam : homeTeam;
+        
+        if (hasAdvantage === altTeam && Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10) {
+          const percentDiff = ((Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2)) * 100).toFixed(0);
+          insights.push(`${f.name}: ${altTeam} has ${percentDiff}% edge`);
+        }
+      });
+    } else {
+      // Alternative is TOTAL - show factors that align with OVER/UNDER
+      const isAltOver = altPick.includes('OVER');
+      factors.forEach(f => {
+        const alignsWithAlt = (isAltOver && f.impact > 0.05) || (!isAltOver && f.impact < -0.05);
+        if (alignsWithAlt && Math.abs(f.impact) > 0.05) {
+          insights.push(`${f.name}: ${Math.abs(f.impact).toFixed(2)} goal impact`);
+        }
+      });
+    }
+    
+    return insights.slice(0, 2); // Max 2 insights
+  };
+  
+  const insights = getSupportingInsights();
   const evColor = getEVColorScale(altBet.evPercent);
   
   return (
@@ -771,7 +806,7 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) =>
         alignItems: 'center',
         marginBottom: '0.5rem'
       }}>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{
             fontSize: TYPOGRAPHY.caption.size,
             color: 'var(--color-text-muted)',
@@ -798,6 +833,46 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) =>
           +{altBet.evPercent.toFixed(1)}%
         </div>
       </div>
+      
+      {/* Supporting insights */}
+      {insights.length > 0 && (
+        <div style={{
+          marginTop: '0.75rem',
+          marginBottom: '0.5rem',
+          padding: '0.5rem',
+          background: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: '6px',
+          borderLeft: '3px solid rgba(212, 175, 55, 0.5)'
+        }}>
+          <div style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            color: 'var(--color-accent)',
+            fontWeight: TYPOGRAPHY.label.weight,
+            marginBottom: '0.375rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            Why this bet:
+          </div>
+          {insights.map((insight, idx) => (
+            <div key={idx} style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              marginBottom: idx < insights.length - 1 ? '0.25rem' : 0,
+              paddingLeft: '0.5rem',
+              position: 'relative'
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: 0,
+                color: 'var(--color-accent)'
+              }}>•</span>
+              {insight}
+            </div>
+          ))}
+        </div>
+      )}
+      
       <div style={{
         fontSize: TYPOGRAPHY.caption.size,
         color: 'var(--color-text-muted)'
@@ -1606,13 +1681,19 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               })()}
               
               {/* 3b. Alternative Bet Card - Secondary opportunities */}
-              <AlternativeBetCard 
-                game={game}
-                bestEdge={bestEdge}
-                awayTeam={game.awayTeam}
-                homeTeam={game.homeTeam}
-                isMobile={isMobile}
-              />
+              {(() => {
+                const analyticsData = generateAnalyticsData(game, bestEdge);
+                return (
+                  <AlternativeBetCard 
+                    game={game}
+                    bestEdge={bestEdge}
+                    awayTeam={game.awayTeam}
+                    homeTeam={game.homeTeam}
+                    isMobile={isMobile}
+                    factors={analyticsData?.factors || []}
+                  />
+                );
+              })()}
               
               {/* 4. Markets Grid - Moneyline + Total */}
               <MarketsGrid game={game} isMobile={isMobile} />
