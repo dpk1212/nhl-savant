@@ -337,11 +337,55 @@ const RankBadge = ({ rank, total = 32 }) => {
 };
 
 // ======================
-// DANGER ZONE SECTION
+// DANGER ZONE SECTION WITH EDGE BADGE
 // ======================
 const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile, statsAnalyzer }) => {
+  // Calculate edge
+  const awayHighDanger = data.away.high?.shots || 0;
+  const homeHighDanger = data.home.high?.shots || 0;
+  const hdDiff = Math.abs(awayHighDanger - homeHighDanger);
+  const leader = awayHighDanger > homeHighDanger ? awayTeam : homeTeam;
+  const loser = awayHighDanger > homeHighDanger ? homeTeam : awayTeam;
+  const goalImpact = hdDiff * 0.23; // High danger shots are ~23% more likely to score
+  
   return (
     <Section title="Shot Danger Distribution" icon={<Target size={18} />} isMobile={isMobile} importance="HIGH">
+      {/* Edge Badge */}
+      {hdDiff > 2 && (
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '8px',
+          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.375rem'
+          }}>
+            <Target size={20} color="#EF4444" />
+            <span style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: '#EF4444'
+            }}>
+              {leader} GENERATES MORE HIGH-DANGER SHOTS
+            </span>
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            color: 'var(--color-text-muted)',
+            fontWeight: TYPOGRAPHY.caption.weight
+          }}>
+            {hdDiff.toFixed(1)} more HD shots/game vs {loser} • ~{goalImpact.toFixed(2)} goal impact
+          </div>
+        </div>
+      )}
+      
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
@@ -499,93 +543,167 @@ const DangerCard = ({ title, color, awayShots, homeShots, awayXg, homeXg, awayTe
 };
 
 // ======================
-// REBOUND SECTION
+// REBOUND SECTION WITH EDGE BADGE
 // ======================
 const ReboundSection = ({ data, awayTeam, homeTeam, isMobile }) => {
+  // Calculate matchup edge
+  const awayConversion = parseFloat(data.awayOffense.conversion) || 0;
+  const homeControl = data.homeDefense.control;
+  const reboundEdge = data.matchupEdge.favors;
+  const leagueAvgConversion = 15;
+  
   return (
     <Section title="Second-Chance Opportunities" icon={<Activity size={18} />} isMobile={isMobile} importance="HIGH">
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
-      }}>
-        {/* Away Offense */}
+      {/* Edge Badge - Matchup Based */}
+      {reboundEdge !== 'neutral' && (
         <div style={{
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
-          background: GRADIENTS.factors,
-          border: ELEVATION.flat.border,
-          borderRadius: '8px'
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+          background: reboundEdge === 'away' 
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)'
+            : 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)',
+          border: reboundEdge === 'away' 
+            ? '1px solid rgba(16, 185, 129, 0.3)'
+            : '1px solid rgba(14, 165, 233, 0.3)',
+          borderRadius: '8px',
+          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
         }}>
           <div style={{
-            fontSize: TYPOGRAPHY.caption.size,
-            fontWeight: TYPOGRAPHY.heading.weight,
-            color: 'var(--color-text-muted)',
-            marginBottom: isMobile ? '0.5rem' : '0.75rem',
-            textTransform: TYPOGRAPHY.label.textTransform,
-            letterSpacing: TYPOGRAPHY.label.letterSpacing
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.375rem'
           }}>
-            {awayTeam} Offense
+            <Activity size={20} color={reboundEdge === 'away' ? '#10B981' : '#0EA5E9'} />
+            <span style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: reboundEdge === 'away' ? '#10B981' : '#0EA5E9'
+            }}>
+              {reboundEdge === 'away' 
+                ? `${awayTeam} OFFENSE CREATES MORE SECOND CHANCES`
+                : `${homeTeam} DEFENSE CONTROLS REBOUND POSITIONING`
+              }
+            </span>
           </div>
-
-          <StatRow label="Rebounds" value={data.awayOffense.rebounds} />
-          <StatRow label="Rebound xG" value={data.awayOffense.reboundXg} />
-          <StatRow label="Rebound Goals" value={data.awayOffense.reboundGoals} />
-          <StatRow 
-            label="Conversion %" 
-            value={`${data.awayOffense.conversion}%`}
-            badge={data.awayOffense.status}
-            badgeColor={
-              data.awayOffense.status === 'Hot' ? '#10B981' :
-              data.awayOffense.status === 'Cold' ? '#EF4444' : '#64748B'
-            }
-          />
-        </div>
-
-        {/* Home Defense */}
-        <div style={{
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
-          background: GRADIENTS.factors,
-          border: ELEVATION.flat.border,
-          borderRadius: '8px'
-        }}>
           <div style={{
             fontSize: TYPOGRAPHY.caption.size,
-            fontWeight: TYPOGRAPHY.heading.weight,
-            color: 'var(--color-text-muted)',
-            marginBottom: isMobile ? '0.5rem' : '0.75rem',
-            textTransform: TYPOGRAPHY.label.textTransform,
-            letterSpacing: TYPOGRAPHY.label.letterSpacing
+            color: 'var(--color-text-secondary)',
+            lineHeight: TYPOGRAPHY.body.lineHeight,
+            fontStyle: 'italic',
+            textAlign: 'center'
           }}>
-            {homeTeam} Defense
+            {data.matchupEdge.summary}
           </div>
-
-          <StatRow label="Rebounds" value={data.homeDefense.rebounds} />
-          <StatRow label="Rebound xG" value={data.homeDefense.reboundXg} />
-          <StatRow label="Rebound Goals" value={data.homeDefense.reboundGoals} />
-          <StatRow 
-            label="Control" 
-            value={data.homeDefense.control}
-            badge={data.homeDefense.control}
-            badgeColor={data.homeDefense.control === 'Excellent' ? '#10B981' : '#64748B'}
-          />
-        </div>
-      </div>
-
-      {data.matchupEdge.summary && (
-        <div style={{
-          marginTop: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.75rem',
-          background: 'rgba(59, 130, 246, 0.08)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-          borderRadius: '6px',
-          fontSize: TYPOGRAPHY.label.size,
-          color: 'var(--color-text-secondary)',
-          fontStyle: 'italic',
-          lineHeight: TYPOGRAPHY.body.lineHeight
-        }}>
-          💡 {data.matchupEdge.summary}
         </div>
       )}
+      
+      {/* Head-to-Head Matchup Layout */}
+      <div style={{
+        padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+        background: GRADIENTS.factors,
+        border: ELEVATION.flat.border,
+        borderRadius: '8px',
+        marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+      }}>
+        <div style={{
+          fontSize: TYPOGRAPHY.caption.size,
+          fontWeight: TYPOGRAPHY.heading.weight,
+          color: 'var(--color-text-muted)',
+          marginBottom: '0.75rem',
+          textTransform: TYPOGRAPHY.label.textTransform,
+          letterSpacing: TYPOGRAPHY.label.letterSpacing,
+          textAlign: 'center'
+        }}>
+          {awayTeam} OFFENSE vs {homeTeam} DEFENSE
+        </div>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          gap: '1rem',
+          alignItems: 'center'
+        }}>
+          {/* Away Offense */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: awayConversion > leagueAvgConversion ? '#10B981' : '#EF4444',
+              marginBottom: '0.25rem',
+              fontFeatureSettings: "'tnum'"
+            }}>
+              {data.awayOffense.conversion}%
+            </div>
+            <div style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.375rem'
+            }}>
+              Conversion
+            </div>
+            <div style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              fontWeight: TYPOGRAPHY.body.weight,
+              color: 'var(--color-text-primary)'
+            }}>
+              {data.awayOffense.rebounds} reb • {data.awayOffense.reboundXg} xG
+            </div>
+            {data.awayOffense.status && (
+              <div style={{
+                marginTop: '0.375rem',
+                display: 'inline-block',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '3px',
+                background: data.awayOffense.status === 'Hot' ? '#10B98120' : 
+                           data.awayOffense.status === 'Cold' ? '#EF444420' : '#64748B20',
+                color: data.awayOffense.status === 'Hot' ? '#10B981' :
+                       data.awayOffense.status === 'Cold' ? '#EF4444' : '#64748B',
+                fontSize: TYPOGRAPHY.caption.size,
+                fontWeight: TYPOGRAPHY.label.weight,
+                textTransform: 'uppercase'
+              }}>
+                {data.awayOffense.status}
+              </div>
+            )}
+          </div>
+          
+          {/* VS Arrow */}
+          <div style={{
+            fontSize: TYPOGRAPHY.subheading.size,
+            color: 'var(--color-accent)',
+            fontWeight: TYPOGRAPHY.heading.weight
+          }}>
+            →
+          </div>
+          
+          {/* Home Defense */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: homeControl === 'Excellent' ? '#10B981' : '#64748B',
+              marginBottom: '0.25rem'
+            }}>
+              {homeControl}
+            </div>
+            <div style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.375rem'
+            }}>
+              Control
+            </div>
+            <div style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              fontWeight: TYPOGRAPHY.body.weight,
+              color: 'var(--color-text-primary)'
+            }}>
+              {data.homeDefense.rebounds} reb • {data.homeDefense.reboundXg} xG
+            </div>
+          </div>
+        </div>
+      </div>
     </Section>
   );
 };
