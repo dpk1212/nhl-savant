@@ -61,6 +61,12 @@ export class EdgeCalculator {
           gameTime: game.gameTime,
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
+          date: game.date || new Date().toISOString().split('T')[0], // Add date for Firebase tracking
+          startTimestamp: game.startTimestamp || null,
+          goalies: {
+            away: awayGoalie,
+            home: homeGoalie
+          },
           edges: {
             moneyline: this.calculateMoneylineEdge(game, awayScore, homeScore),
             puckLine: this.calculatePuckLineEdge(game, awayScore, homeScore),
