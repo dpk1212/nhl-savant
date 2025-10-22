@@ -3,16 +3,102 @@ import { Shield } from 'lucide-react';
 import { ELEVATION, TYPOGRAPHY, MOBILE_SPACING, GRADIENTS, TRANSITIONS } from '../utils/designSystem';
 
 const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMobile }) => {
-  if (!awayGoalie || !homeGoalie) {
+  // Check if goalies are confirmed
+  const awayConfirmed = awayGoalie && awayGoalie.name;
+  const homeConfirmed = homeGoalie && homeGoalie.name;
+  
+  // If neither goalie confirmed, show waiting state
+  if (!awayConfirmed && !homeConfirmed) {
     return (
       <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
-        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-          Goalie data not available for this matchup
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '1.5rem',
+          textAlign: 'center',
+          background: GRADIENTS.factors,
+          border: ELEVATION.flat.border,
+          borderRadius: '8px'
+        }}>
+          <div style={{
+            fontSize: '2.5rem',
+            marginBottom: '0.75rem'
+          }}>
+            ⏳
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.subheading.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: 'var(--color-text-primary)',
+            marginBottom: '0.5rem'
+          }}>
+            Waiting for Goalie Confirmation
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.body.size,
+            color: 'var(--color-text-muted)',
+            lineHeight: TYPOGRAPHY.body.lineHeight
+          }}>
+            Starting goalies typically confirmed 1-2 hours before game time.
+            Check back closer to puck drop.
+          </div>
         </div>
       </Section>
     );
   }
   
+  // If only one goalie confirmed, show partial state
+  if (!awayConfirmed || !homeConfirmed) {
+    return (
+      <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '1.5rem',
+          textAlign: 'center',
+          background: GRADIENTS.factors,
+          border: ELEVATION.flat.border,
+          borderRadius: '8px'
+        }}>
+          <div style={{
+            fontSize: '2rem',
+            marginBottom: '0.75rem'
+          }}>
+            ⏳
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.body.size,
+            color: 'var(--color-text-muted)',
+            marginBottom: '1rem'
+          }}>
+            {awayConfirmed ? `✅ ${awayTeam} goalie confirmed` : `⏳ ${awayTeam} goalie TBD`}
+            {' • '}
+            {homeConfirmed ? `✅ ${homeTeam} goalie confirmed` : `⏳ ${homeTeam} goalie TBD`}
+          </div>
+          
+          {/* Show confirmed goalie if available */}
+          {awayConfirmed && (
+            <div style={{
+              fontSize: TYPOGRAPHY.subheading.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: 'var(--color-text-primary)',
+              marginTop: '0.5rem'
+            }}>
+              {awayGoalie.name} ({awayTeam})
+            </div>
+          )}
+          {homeConfirmed && (
+            <div style={{
+              fontSize: TYPOGRAPHY.subheading.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: 'var(--color-text-primary)',
+              marginTop: '0.5rem'
+            }}>
+              {homeGoalie.name} ({homeTeam})
+            </div>
+          )}
+        </div>
+      </Section>
+    );
+  }
+  
+  // Both goalies confirmed - show full analytics section
   // Calculate matchup edge
   const awayGSAE = parseFloat(awayGoalie.gsae) || 0;
   const homeGSAE = parseFloat(homeGoalie.gsae) || 0;

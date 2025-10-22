@@ -1003,7 +1003,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
   
   // Helper function to get goalie stats for a team
   const getGoalieForTeam = (teamCode) => {
-    if (!startingGoalies || !startingGoalies.games || !goalieProcessor) {
+    if (!startingGoalies || !startingGoalies.games) {
       return null;
     }
     
@@ -1017,15 +1017,21 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
     const isAway = game.away?.team === teamCode;
     const goalieData = isAway ? game.away : game.home;
     
-    if (!goalieData || !goalieData.goalie) return null;
-    
-    // If we have enriched stats from MoneyPuck, use those
-    if (goalieData.stats) {
-      return goalieData.stats;
+    // If goalie not confirmed, return null (will show waiting state)
+    if (!goalieData || !goalieData.goalie || !goalieData.confirmed) {
+      return null;
     }
     
-    // Otherwise, try to get from goalies.csv via goalieProcessor
-    return goalieProcessor.getGoalieStats(goalieData.goalie, teamCode);
+    // Try to get advanced stats from goalies.csv
+    const stats = goalieProcessor ? goalieProcessor.getGoalieStats(goalieData.goalie, teamCode) : null;
+    
+    // Return goalie with or without stats
+    return {
+      name: goalieData.goalie,
+      team: teamCode,
+      confirmed: true,
+      ...(stats || {}) // Spread stats if available
+    };
   };
   
   // Calculate opportunities with consistent logic

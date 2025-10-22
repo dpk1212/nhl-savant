@@ -11,7 +11,6 @@ import DataInspector from './components/DataInspector';
 import TodaysGames from './components/TodaysGames';
 import PerformanceDashboard from './components/PerformanceDashboard';
 import Methodology from './components/Methodology';
-import AdminGoalies from './components/AdminGoalies';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -126,7 +125,6 @@ function App() {
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
-              <Route path="/admin/goalies" element={<AdminGoalies games={oddsData?.todaysGames || []} goalieData={goalieData} />} />
               <Route path="/performance" element={<PerformanceDashboard />} />
             </Routes>
           </main>
