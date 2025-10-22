@@ -291,15 +291,16 @@ export class AdvancedStatsAnalyzer {
 
   /**
    * Get possession metrics
+   * FIX: CSV stores percentages as decimals (0.51 = 51%), so multiply by 100
    */
   getPossessionMetrics(teamCode, situation = '5on5') {
     const teamData = this.dataProcessor.getTeamData(teamCode, situation);
     if (!teamData) return null;
 
     return {
-      corsiPct: teamData.corsiPercentage || 50,
-      fenwickPct: teamData.fenwickPercentage || 50,
-      xGoalsPct: teamData.xGoalsPercentage || 50,
+      corsiPct: (teamData.corsiPercentage || 0.5) * 100,
+      fenwickPct: (teamData.fenwickPercentage || 0.5) * 100,
+      xGoalsPct: (teamData.xGoalsPercentage || 0.5) * 100,
       shotAttempts: teamData.shotAttemptsFor || 0,
       shotAttemptsAgainst: teamData.shotAttemptsAgainst || 0,
       faceoffWins: teamData.faceOffsWonFor || 0,

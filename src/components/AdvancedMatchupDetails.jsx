@@ -876,7 +876,7 @@ const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, a
 };
 
 // ======================
-// POSSESSION SECTION - VISUAL FLOW CHART (Phase 3)
+// POSSESSION SECTION - VISUAL FLOW CHART WITH EDGE BADGE (Phase 3 + 4)
 // ======================
 const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   const awayCorsi = data.away?.corsiPct || 50;
@@ -893,18 +893,18 @@ const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   const avgHomePossession = (homeCorsi + homeFenwick + homeXG) / 3;
   const possessionWinner = avgAwayPossession > avgHomePossession ? awayTeam : homeTeam;
   const possessionDiff = Math.abs(avgAwayPossession - avgHomePossession).toFixed(1);
+  const possessionLoser = avgAwayPossession > avgHomePossession ? homeTeam : awayTeam;
   
   return (
     <Section title="Possession & Control" icon={<TrendingUp size={18} />} isMobile={isMobile} importance="MODERATE">
-      {/* Possession Winner Summary */}
+      {/* Edge Badge - Possession Control */}
       {possessionDiff > 3 && (
         <div style={{
           padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
           background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)',
           border: '1px solid rgba(14, 165, 233, 0.3)',
           borderRadius: '8px',
-          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
-          textAlign: 'center'
+          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
         }}>
           <div style={{
             display: 'flex',
@@ -924,10 +924,12 @@ const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           </div>
           <div style={{
             fontSize: TYPOGRAPHY.caption.size,
-            color: 'var(--color-text-muted)',
-            fontWeight: TYPOGRAPHY.caption.weight
+            color: 'var(--color-text-secondary)',
+            lineHeight: TYPOGRAPHY.body.lineHeight,
+            fontStyle: 'italic',
+            textAlign: 'center'
           }}>
-            {possessionDiff}% advantage in shot attempts
+            {possessionDiff}% advantage in shot attempts. More zone time = more scoring chances.
           </div>
         </div>
       )}
