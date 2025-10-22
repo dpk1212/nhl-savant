@@ -573,24 +573,31 @@ const CompactComparisonBar = ({ awayValue, homeValue, leagueAvg, awayTeam, homeT
 const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, bestEdge }) => {
   if (!factors || factors.length === 0) return null;
   
-  // Filter for SIGNIFICANT factors only (meaningful impact + clear difference + ALIGNS WITH BET)
+  // STRICT filtering: Only show factors that SUPPORT the bet
   const significantFactors = factors
     .filter(f => {
-      // Only show factors with meaningful impact
       const hasImpact = Math.abs(f.impact) > 0.05; // >0.05 goals
       const awayVal = f.awayMetric?.value || 0;
       const homeVal = f.homeMetric?.value || 0;
       const hasDifference = awayVal && homeVal && 
         Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10; // >10% difference
       
-      // CRITICAL: Only show factors that ALIGN with the value bet direction
-      const alignsWithBet = !bestEdge || (
-        (bestEdge.market === 'TOTAL' && bestEdge.pick && bestEdge.pick.includes('UNDER') && f.impact < -0.05) ||  // Negative impact for UNDER
-        (bestEdge.market === 'TOTAL' && bestEdge.pick && bestEdge.pick.includes('OVER') && f.impact > 0.05) ||    // Positive impact for OVER
-        (bestEdge.market === 'MONEYLINE')  // Show all factors for ML bets
-      );
+      if (!hasImpact || !hasDifference) return false;
       
-      return hasImpact && hasDifference && alignsWithBet;
+      // STRICT alignment check - only show factors that SUPPORT the bet
+      if (bestEdge?.market === 'MONEYLINE') {
+        const hasAdvantage = awayVal > homeVal ? awayTeam : homeTeam;
+        // ONLY show if bet team has the advantage
+        return hasAdvantage === bestEdge.team;
+      }
+      
+      if (bestEdge?.market === 'TOTAL') {
+        const isOver = bestEdge.pick?.includes('OVER');
+        // ONLY show if factor aligns with OVER/UNDER direction
+        return (isOver && f.impact > 0.05) || (!isOver && f.impact < -0.05);
+      }
+      
+      return true; // fallback for other bet types
     })
     .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
     .slice(0, 3);
@@ -620,13 +627,22 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
   }
   
   // Determine bet context for header
-  const betContext = bestEdge?.market === 'TOTAL' 
-    ? `Why ${bestEdge.pick} is our model's pick:`
-    : bestEdge?.market === 'MONEYLINE'
-    ? `Why ${bestEdge.team} ML is our model's pick:`
+  const isMoneyline = bestEdge?.market === 'MONEYLINE';
+  const isTotal = bestEdge?.market === 'TOTAL';
+  
+  const betContext = isTotal
+    ? `💰 Why ${bestEdge.pick} is the smart bet:`
+    : isMoneyline
+    ? `💰 Why ${bestEdge.team} ML is the smart bet:`
     : bestEdge?.market === 'PUCK_LINE'
-    ? `Why ${bestEdge.pick} is our model's pick:`
+    ? `💰 Why ${bestEdge.pick} is the smart bet:`
     : '📊 KEY ADVANTAGES';
+  
+  const subheader = isTotal
+    ? `${significantFactors.length} factor${significantFactors.length !== 1 ? 's' : ''} combining for ${totalImpact >= 0 ? '+' : ''}${totalImpact.toFixed(2)} goal edge`
+    : isMoneyline
+    ? `${significantFactors.length} decisive advantage${significantFactors.length !== 1 ? 's' : ''} supporting ${bestEdge.team} to WIN`
+    : `${significantFactors.length} key factor${significantFactors.length !== 1 ? 's' : ''} with significant impact`;
   
   const topFactors = significantFactors;
   const criticalCount = significantFactors.length;
@@ -660,7 +676,7 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
           color: 'var(--color-text-muted)',
           fontWeight: TYPOGRAPHY.caption.weight
         }}>
-          {criticalCount} key factor{criticalCount !== 1 ? 's' : ''} with significant impact
+          {subheader}
         </div>
       </div>
       
@@ -676,107 +692,109 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
         const hasAdvantage = awayVal > homeVal ? awayTeam : homeTeam;
         const advantageColor = awayVal > homeVal ? '#0EA5E9' : '#10B981';
         
-        // Determine impact direction for UNDER/OVER
-        const favorsBetting = Math.abs(factor.impact) < 0.03 ? 'NEUTRAL' : 
-                             factor.impact < 0 ? 'UNDER' : 'OVER';
-        const bettingColor = favorsBetting === 'UNDER' ? '#8B5CF6' : 
-                            favorsBetting === 'OVER' ? '#F59E0B' : '#6B7280';
+        // Generate bet-specific explanation
+        const getBetSpecificExplanation = () => {
+          if (isMoneyline) {
+            // ML-specific: Focus on winning
+            if (factor.name === 'Expected Goals') {
+              return `${hasAdvantage} projects to score ${Math.abs(factor.impact).toFixed(2)} more goals, giving them a decisive edge to WIN this game.`;
+            }
+            if (factor.name === 'Offensive Rating') {
+              return `${hasAdvantage} generates ${percentDiff}% more high-danger chances, creating better scoring opportunities to WIN.`;
+            }
+            if (factor.name === 'Defensive Rating') {
+              return `${hasAdvantage} allows ${percentDiff}% fewer dangerous chances, making it harder for opponents to score and WIN.`;
+            }
+            if (factor.name === 'Special Teams') {
+              return `${hasAdvantage} has superior power play execution, creating more scoring chances to WIN.`;
+            }
+            if (factor.name === 'Possession & Control') {
+              return `${hasAdvantage} controls ${percentDiff}% more of the play, dictating the pace to WIN.`;
+            }
+            // Generic ML explanation
+            return `${hasAdvantage} has a ${percentDiff}% advantage in ${factor.name.toLowerCase()}, improving their chances to WIN this game.`;
+          }
+          
+          if (isTotal) {
+            // TOTAL-specific: Focus on goal impact
+            const direction = factor.impact > 0 ? 'OVER' : 'UNDER';
+            return `${factor.explanation} This pushes the total ${direction} by ~${Math.abs(factor.impact).toFixed(2)} goals.`;
+          }
+          
+          return factor.explanation; // fallback
+        };
         
-        // Determine if factor SUPPORTS the value bet
-        const supportsValueBet = bestEdge && (
-          (bestEdge.market === 'TOTAL' && bestEdge.pick.includes('OVER') && factor.impact > 0.05) ||
-          (bestEdge.market === 'TOTAL' && bestEdge.pick.includes('UNDER') && factor.impact < -0.05) ||
-          (bestEdge.market === 'MONEYLINE' && hasAdvantage === bestEdge.team)
-        );
-        
-        const supportIndicator = supportsValueBet ? '✓ SUPPORTS' : '○ CONTEXT';
-        const supportColor = supportsValueBet ? '#10B981' : '#6B7280';
+        const explanation = getBetSpecificExplanation();
         
         return (
           <div key={idx} style={{ 
-            marginBottom: idx < topFactors.length - 1 ? '1rem' : '0', 
-            paddingBottom: idx < topFactors.length - 1 ? '1rem' : '0', 
-            borderBottom: idx < topFactors.length - 1 ? ELEVATION.flat.border : 'none',
-            background: 'rgba(0, 0, 0, 0.1)',
-            padding: '0.75rem',
-            borderRadius: '8px'
+            marginBottom: idx < topFactors.length - 1 ? '0.875rem' : '0',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            borderRadius: '10px',
+            padding: '1rem',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
           }}>
-            {/* Header: Factor name + Support indicator */}
+            {/* Header: Factor name */}
             <div style={{ 
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.5rem'
+              fontSize: TYPOGRAPHY.label.size, 
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontWeight: TYPOGRAPHY.label.weight,
+              marginBottom: '0.625rem'
             }}>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.caption.size, 
-                color: 'var(--color-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontWeight: TYPOGRAPHY.label.weight
-              }}>
-                {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
-              </div>
-              <div style={{
-                fontSize: TYPOGRAPHY.caption.size,
-                fontWeight: TYPOGRAPHY.label.weight,
-                color: supportColor,
-                padding: '0.125rem 0.375rem',
-                background: `${supportColor}15`,
-                borderRadius: '4px'
-              }}>
-                {supportIndicator}
-              </div>
+              {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
             </div>
             
             {/* Main insight */}
             <div style={{ 
-              fontSize: TYPOGRAPHY.body.size,
+              fontSize: TYPOGRAPHY.subheading.size,
               fontWeight: TYPOGRAPHY.heading.weight,
-              color: advantageColor,
-              marginBottom: '0.5rem',
-              lineHeight: 1.4
+              color: '#10B981',
+              marginBottom: '0.625rem',
+              lineHeight: 1.3
             }}>
-              {hasAdvantage} has {percentDiff}% edge
+              {isMoneyline 
+                ? `${hasAdvantage} has ${percentDiff}% edge`
+                : isTotal && factor.impact > 0
+                ? `Combined teams favor OVER`
+                : isTotal && factor.impact < 0
+                ? `Combined teams favor UNDER`
+                : `${hasAdvantage} has ${percentDiff}% edge`
+              }
             </div>
+            
+            {/* Impact for TOTAL bets */}
+            {isTotal && (
+              <div style={{
+                fontSize: TYPOGRAPHY.body.size,
+                fontWeight: TYPOGRAPHY.heading.weight,
+                color: factor.impact > 0 ? '#F59E0B' : '#8B5CF6',
+                marginBottom: '0.625rem'
+              }}>
+                {factor.impact > 0 ? '+' : ''}{factor.impact.toFixed(2)} goal impact → {factor.impact > 0 ? 'OVER' : 'UNDER'}
+              </div>
+            )}
             
             {/* Explanation */}
             <div style={{ 
-              fontSize: TYPOGRAPHY.caption.size,
-              color: 'var(--color-text-muted)',
+              fontSize: TYPOGRAPHY.body.size,
+              color: 'var(--color-text-primary)',
               marginBottom: '0.75rem',
               lineHeight: 1.5
             }}>
-              {factor.explanation}
+              {explanation}
             </div>
             
-            {/* Bottom row: Stats + Betting Impact */}
+            {/* Bottom row: Stats */}
             <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '1rem'
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              paddingTop: '0.75rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.caption.size,
-                color: 'var(--color-text-muted)'
-              }}>
-                {awayTeam}: {awayVal.toFixed(2)} | {homeTeam}: {homeVal.toFixed(2)}
-              </div>
-              
-              {favorsBetting !== 'NEUTRAL' && (
-                <div style={{
-                  padding: '0.25rem 0.5rem',
-                  background: `${bettingColor}22`,
-                  border: `1px solid ${bettingColor}`,
-                  borderRadius: '4px',
-                  fontSize: TYPOGRAPHY.caption.size,
-                  fontWeight: TYPOGRAPHY.label.weight,
-                  color: bettingColor
-                }}>
-                  Favors {favorsBetting}
-                </div>
-              )}
+              {awayTeam}: {awayVal.toFixed(2)} | {homeTeam}: {homeVal.toFixed(2)}
             </div>
           </div>
         );
