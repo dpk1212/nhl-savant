@@ -187,6 +187,9 @@ export function parseOddsTrader(markdownText) {
           currentGame.total.line = currentGame.total.underLine;
         }
         
+        // Add date to game for Firebase tracking (YYYY-MM-DD format)
+        currentGame.date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        
         games.push(currentGame);
         console.log(`  ✅ Added game: ${currentGame.awayTeam} @ ${currentGame.homeTeam}`);
         console.log(`     Moneyline: ${currentGame.moneyline.away}/${currentGame.moneyline.home}`);

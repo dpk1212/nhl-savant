@@ -5,11 +5,13 @@ export class BetTracker {
   
   // Save a recommended bet
   async saveBet(game, bestEdge, prediction) {
-    const betId = `${game.date}_${game.awayTeam}_${game.homeTeam}_${bestEdge.market}_${bestEdge.pick.replace(/\s+/g, '_')}`;
+    // Get date first (game.date might be undefined)
+    const gameDate = game.date || new Date().toISOString().split('T')[0];
+    const betId = `${gameDate}_${game.awayTeam}_${game.homeTeam}_${bestEdge.market}_${bestEdge.pick.replace(/\s+/g, '_')}`;
     
     const betData = {
       id: betId,
-      date: game.date || new Date().toISOString().split('T')[0],
+      date: gameDate,
       timestamp: Date.now(),
       
       // Game Info
