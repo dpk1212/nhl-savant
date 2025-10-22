@@ -950,7 +950,7 @@ const MarketsGrid = ({ game, isMobile }) => {
 // MAIN COMPONENT
 // ========================================
 
-const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, edgeFactorCalc }) => {
+const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
   const [allEdges, setAllEdges] = useState([]);
   const [topEdges, setTopEdges] = useState([]);
@@ -963,14 +963,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
   
   // Initialize GoalieProcessor when goalies.csv data is available
   useEffect(() => {
-    if (dataProcessor && dataProcessor.rawData) {
-      // goalies.csv is loaded into dataProcessor.rawData
-      // We need to create a separate array for goalie data
-      // For now, we'll use the startingGoalies enriched data
-      const processor = new GoalieProcessor(dataProcessor.rawData);
+    if (goalieData && Array.isArray(goalieData) && goalieData.length > 0) {
+      console.log(`🥅 Initializing GoalieProcessor with ${goalieData.length} goalie records`);
+      const processor = new GoalieProcessor(goalieData);
       setGoalieProcessor(processor);
     }
-  }, [dataProcessor]);
+  }, [goalieData]);
 
   // Detect mobile device
   useEffect(() => {

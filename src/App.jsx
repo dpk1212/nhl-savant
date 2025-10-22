@@ -1,6 +1,6 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { loadNHLData, loadOddsFiles, loadStartingGoalies } from './utils/dataProcessing';
+import { loadNHLData, loadOddsFiles, loadStartingGoalies, loadGoaliesCSV } from './utils/dataProcessing';
 import { GoalieProcessor } from './utils/goalieProcessor';
 import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
 import { AdvancedStatsAnalyzer } from './utils/advancedStatsAnalyzer';
@@ -33,6 +33,11 @@ function App() {
         console.log('🏒 Loading team data...');
         const processor = await loadNHLData();
         setDataProcessor(processor);
+        
+        // Load goalies.csv for advanced goalie statistics
+        console.log('🥅 Loading goalie stats from CSV...');
+        const goaliesCSV = await loadGoaliesCSV();
+        setGoalieData(goaliesCSV);
         
         // Initialize advanced stats analyzer
         console.log('📊 Initializing advanced stats analyzer...');
@@ -119,6 +124,7 @@ function App() {
                 dataProcessor={dataProcessor} 
                 oddsData={oddsData} 
                 startingGoalies={startingGoalies}
+                goalieData={goalieData}
                 statsAnalyzer={statsAnalyzer}
                 edgeFactorCalc={edgeFactorCalc}
               />} />
