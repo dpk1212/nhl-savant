@@ -417,7 +417,7 @@ oddsToProbability(americanOdds) {
 
 **Calculate:**
 1. Regressed scores (65% regression)
-2. Predicted total
+2. Predicted totalx
 3. Poisson probabilities for OVER/UNDER
 4. Expected values
 5. Compare to model output
