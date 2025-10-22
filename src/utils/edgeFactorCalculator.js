@@ -435,10 +435,305 @@ export class EdgeFactorCalculator {
     return factors.reduce((sum, factor) => sum + factor.impact, 0);
   }
 
-  // Placeholder methods for other bet types
+  /**
+   * Calculate factors for MONEYLINE bets
+   * Focus on factors that predict WHO will win, not total goals
+   */
   getMoneylineFactors(awayTeam, homeTeam) {
-    // TODO: Implement moneyline-specific factors
-    return [];
+    const factors = [];
+
+    // Factor 1: Expected Goals Differential (CRITICAL)
+    const xgFactor = this.calculateExpectedGoalsDifferential(awayTeam, homeTeam);
+    if (xgFactor) factors.push(xgFactor);
+
+    // Factor 2: Goalie Advantage (CRITICAL)
+    const goalieFactor = this.calculateGoalieAdvantage(awayTeam, homeTeam);
+    if (goalieFactor) factors.push(goalieFactor);
+
+    // Factor 3: Offensive Rating (HIGH)
+    const offenseFactor = this.calculateOffensiveRating(awayTeam, homeTeam);
+    if (offenseFactor) factors.push(offenseFactor);
+
+    // Factor 4: Defensive Rating (HIGH)
+    const defenseFactor = this.calculateDefensiveRating(awayTeam, homeTeam);
+    if (defenseFactor) factors.push(defenseFactor);
+
+    // Factor 5: Special Teams Edge (MODERATE)
+    const stEdge = this.calculateSpecialTeamsEdge(awayTeam, homeTeam);
+    if (stEdge) factors.push(stEdge);
+
+    // Factor 6: Possession & Control (MODERATE)
+    const possessionFactor = this.calculatePossessionAdvantage(awayTeam, homeTeam);
+    if (possessionFactor) factors.push(possessionFactor);
+
+    return factors;
+  }
+
+  /**
+   * Calculate expected goals differential for moneyline
+   */
+  calculateExpectedGoalsDifferential(awayTeam, homeTeam) {
+    const awayStats = this.analyzer.getTeamStats(awayTeam);
+    const homeStats = this.analyzer.getTeamStats(homeTeam);
+    
+    if (!awayStats || !homeStats) return null;
+
+    // Get xGF and xGA per 60 for both teams
+    const awayXgfPer60 = awayStats.xGoalsForPer60 || 0;
+    const awayXgaPer60 = awayStats.xGoalsAgainstPer60 || 0;
+    const homeXgfPer60 = homeStats.xGoalsForPer60 || 0;
+    const homeXgaPer60 = homeStats.xGoalsAgainstPer60 || 0;
+
+    // Calculate expected goals for each team in this matchup
+    const awayExpectedGoals = (awayXgfPer60 + homeXgaPer60) / 2;
+    const homeExpectedGoals = (homeXgfPer60 + awayXgaPer60) / 2;
+    
+    const differential = awayExpectedGoals - homeExpectedGoals;
+    const impact = differential; // Direct goal differential
+
+    return {
+      name: 'Expected Goals',
+      importance: 'CRITICAL',
+      stars: 3,
+      impact: impact,
+      awayMetric: {
+        value: awayExpectedGoals,
+        rank: this.analyzer.getLeagueRank(awayTeam, 'xGoalsForPer60', '5on5', true),
+        label: `${awayTeam} Expected Goals`,
+        detail: `${awayXgfPer60.toFixed(2)} xGF/60`
+      },
+      homeMetric: {
+        value: homeExpectedGoals,
+        rank: this.analyzer.getLeagueRank(homeTeam, 'xGoalsForPer60', '5on5', true),
+        label: `${homeTeam} Expected Goals`,
+        detail: `${homeXgfPer60.toFixed(2)} xGF/60`
+      },
+      leagueAvg: 2.8,
+      explanation: differential > 0 
+        ? `${awayTeam} projects to score ${Math.abs(differential).toFixed(2)} more goals based on shot quality.`
+        : `${homeTeam} projects to score ${Math.abs(differential).toFixed(2)} more goals based on shot quality.`,
+      dataPoints: {
+        awayXgf: awayXgfPer60,
+        awayXga: awayXgaPer60,
+        homeXgf: homeXgfPer60,
+        homeXga: homeXgaPer60
+      }
+    };
+  }
+
+  /**
+   * Calculate goalie advantage for moneyline
+   */
+  calculateGoalieAdvantage(awayTeam, homeTeam) {
+    // Try to get goalie stats from the analyzer
+    const awayGoalie = this.analyzer.getGoalieStats?.(awayTeam);
+    const homeGoalie = this.analyzer.getGoalieStats?.(homeTeam);
+    
+    if (!awayGoalie || !homeGoalie) return null;
+
+    const awayGSAE = awayGoalie.gsae || 0;
+    const homeGSAE = homeGoalie.gsae || 0;
+    
+    const differential = awayGSAE - homeGSAE;
+    const impact = differential * 0.1; // Each GSAE point worth ~0.1 goals
+
+    return {
+      name: 'Goalie Advantage',
+      importance: 'CRITICAL',
+      stars: 3,
+      impact: impact,
+      awayMetric: {
+        value: awayGSAE,
+        label: `${awayTeam} Goalie GSAE`,
+        detail: `${awayGoalie.name || 'Unknown'}`
+      },
+      homeMetric: {
+        value: homeGSAE,
+        label: `${homeTeam} Goalie GSAE`,
+        detail: `${homeGoalie.name || 'Unknown'}`
+      },
+      leagueAvg: 0,
+      explanation: differential > 0
+        ? `${awayTeam}'s goalie has a ${Math.abs(differential).toFixed(1)} GSAE advantage.`
+        : `${homeTeam}'s goalie has a ${Math.abs(differential).toFixed(1)} GSAE advantage.`,
+      dataPoints: {
+        awayGSAE,
+        homeGSAE,
+        awayGoalie: awayGoalie.name,
+        homeGoalie: homeGoalie.name
+      }
+    };
+  }
+
+  /**
+   * Calculate offensive rating
+   */
+  calculateOffensiveRating(awayTeam, homeTeam) {
+    const awayHD = this.analyzer.getHighDangerMetrics(awayTeam);
+    const homeHD = this.analyzer.getHighDangerMetrics(homeTeam);
+    
+    if (!awayHD || !homeHD) return null;
+
+    const awayOffense = awayHD.hdXgfPer60 || 0;
+    const homeOffense = homeHD.hdXgfPer60 || 0;
+    
+    const differential = awayOffense - homeOffense;
+    const impact = differential * 0.2; // Scale to goal impact
+
+    return {
+      name: 'Offensive Rating',
+      importance: 'HIGH',
+      stars: 2,
+      impact: impact,
+      awayMetric: {
+        value: awayOffense,
+        rank: this.analyzer.getLeagueRank(awayTeam, 'highDangerxGoalsFor', '5on5', true),
+        label: `${awayTeam} HD-xGF/60`,
+        detail: `${awayHD.hdGoalsFor} HD goals`
+      },
+      homeMetric: {
+        value: homeOffense,
+        rank: this.analyzer.getLeagueRank(homeTeam, 'highDangerxGoalsFor', '5on5', true),
+        label: `${homeTeam} HD-xGF/60`,
+        detail: `${homeHD.hdGoalsFor} HD goals`
+      },
+      leagueAvg: 0.85,
+      explanation: differential > 0
+        ? `${awayTeam} generates ${((differential / homeOffense) * 100).toFixed(0)}% more high-danger chances.`
+        : `${homeTeam} generates ${((Math.abs(differential) / awayOffense) * 100).toFixed(0)}% more high-danger chances.`,
+      dataPoints: {
+        awayHDGoals: awayHD.hdGoalsFor,
+        homeHDGoals: homeHD.hdGoalsFor
+      }
+    };
+  }
+
+  /**
+   * Calculate defensive rating
+   */
+  calculateDefensiveRating(awayTeam, homeTeam) {
+    const awayHD = this.analyzer.getHighDangerMetrics(awayTeam);
+    const homeHD = this.analyzer.getHighDangerMetrics(homeTeam);
+    
+    if (!awayHD || !homeHD) return null;
+
+    const awayDefense = awayHD.hdXgaPer60 || 0;
+    const homeDefense = homeHD.hdXgaPer60 || 0;
+    
+    // Lower is better for defense, so flip the sign
+    const differential = homeDefense - awayDefense;
+    const impact = differential * 0.2; // Scale to goal impact
+
+    return {
+      name: 'Defensive Rating',
+      importance: 'HIGH',
+      stars: 2,
+      impact: impact,
+      awayMetric: {
+        value: awayDefense,
+        rank: this.analyzer.getLeagueRank(awayTeam, 'highDangerxGoalsAgainst', '5on5', false),
+        label: `${awayTeam} HD-xGA/60`,
+        detail: `${awayHD.hdGoalsAgainst} HD goals allowed`
+      },
+      homeMetric: {
+        value: homeDefense,
+        rank: this.analyzer.getLeagueRank(homeTeam, 'highDangerxGoalsAgainst', '5on5', false),
+        label: `${homeTeam} HD-xGA/60`,
+        detail: `${homeHD.hdGoalsAgainst} HD goals allowed`
+      },
+      leagueAvg: 0.85,
+      explanation: differential > 0
+        ? `${awayTeam} allows ${((differential / homeDefense) * 100).toFixed(0)}% fewer high-danger chances.`
+        : `${homeTeam} allows ${((Math.abs(differential) / awayDefense) * 100).toFixed(0)}% fewer high-danger chances.`,
+      dataPoints: {
+        awayHDAllowed: awayHD.hdGoalsAgainst,
+        homeHDAllowed: homeHD.hdGoalsAgainst
+      }
+    };
+  }
+
+  /**
+   * Calculate special teams edge for moneyline
+   */
+  calculateSpecialTeamsEdge(awayTeam, homeTeam) {
+    const awayPP = this.analyzer.getHighDangerMetrics(awayTeam, '5on4');
+    const homePP = this.analyzer.getHighDangerMetrics(homeTeam, '5on4');
+    
+    if (!awayPP || !homePP) return null;
+
+    const awayPPQuality = awayPP.hdXgfPer60 || 0;
+    const homePPQuality = homePP.hdXgfPer60 || 0;
+    
+    const differential = awayPPQuality - homePPQuality;
+    const impact = differential * 0.05; // PP accounts for ~7% of game, dampened
+
+    return {
+      name: 'Special Teams',
+      importance: 'MODERATE',
+      stars: 1,
+      impact: impact,
+      awayMetric: {
+        value: awayPPQuality,
+        label: `${awayTeam} PP Quality`,
+        detail: `${awayPPQuality.toFixed(2)} HD-xGF/60`
+      },
+      homeMetric: {
+        value: homePPQuality,
+        label: `${homeTeam} PP Quality`,
+        detail: `${homePPQuality.toFixed(2)} HD-xGF/60`
+      },
+      leagueAvg: 8.5,
+      explanation: differential > 0
+        ? `${awayTeam} has superior power play execution.`
+        : `${homeTeam} has superior power play execution.`,
+      dataPoints: {
+        awayPP: awayPPQuality,
+        homePP: homePPQuality
+      }
+    };
+  }
+
+  /**
+   * Calculate possession advantage for moneyline
+   */
+  calculatePossessionAdvantage(awayTeam, homeTeam) {
+    const awayPoss = this.analyzer.getPossessionMetrics(awayTeam);
+    const homePoss = this.analyzer.getPossessionMetrics(homeTeam);
+    
+    if (!awayPoss || !homePoss) return null;
+
+    const awayCF = awayPoss.corsiForPct || 50;
+    const homeCF = homePoss.corsiForPct || 50;
+    
+    const differential = awayCF - homeCF;
+    const impact = differential * 0.02; // Each 1% CF% worth ~0.02 goals
+
+    return {
+      name: 'Possession & Control',
+      importance: 'MODERATE',
+      stars: 1,
+      impact: impact,
+      awayMetric: {
+        value: awayCF,
+        label: `${awayTeam} Corsi%`,
+        detail: `${awayPoss.shotsForPct?.toFixed(1)}% shots`
+      },
+      homeMetric: {
+        value: homeCF,
+        label: `${homeTeam} Corsi%`,
+        detail: `${homePoss.shotsForPct?.toFixed(1)}% shots`
+      },
+      leagueAvg: 50,
+      explanation: differential > 0
+        ? `${awayTeam} controls ${Math.abs(differential).toFixed(1)}% more of the play.`
+        : `${homeTeam} controls ${Math.abs(differential).toFixed(1)}% more of the play.`,
+      dataPoints: {
+        awayCF,
+        homeCF,
+        awaySF: awayPoss.shotsForPct,
+        homeSF: homePoss.shotsForPct
+      }
+    };
   }
 
   getPucklineFactors(awayTeam, homeTeam) {
