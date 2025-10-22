@@ -9,6 +9,7 @@ import { ChevronDown, ChevronUp, Shield, Zap, Target, TrendingUp, Trophy, Activi
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
 import { ELEVATION, TYPOGRAPHY, GRADIENTS, MOBILE_SPACING, TRANSITIONS, getEVColorScale } from '../utils/designSystem';
 import { getStatDisplayName, getStatTooltip } from '../utils/statDisplayNames';
+import GoalieMatchupSection from './GoalieMatchupSection';
 
 const AdvancedMatchupDetails = ({ 
   awayTeam, 
@@ -18,6 +19,8 @@ const AdvancedMatchupDetails = ({
   physicalData,
   possessionData,
   regressionData,
+  awayGoalie, // Goalie stats for away team
+  homeGoalie, // Goalie stats for home team
   isMobile,
   bestEdge, // For bet-specific prioritization
   statsAnalyzer // For league context
@@ -262,6 +265,17 @@ const AdvancedMatchupDetails = ({
               homeTeam={homeTeam} 
               isMobile={isMobile}
               statsAnalyzer={statsAnalyzer}
+            />
+          )}
+
+          {/* Goaltender Matchup */}
+          {awayGoalie && homeGoalie && (
+            <GoalieMatchupSection
+              awayGoalie={awayGoalie}
+              homeGoalie={homeGoalie}
+              awayTeam={awayTeam}
+              homeTeam={homeTeam}
+              isMobile={isMobile}
             />
           )}
 
