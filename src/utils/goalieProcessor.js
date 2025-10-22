@@ -21,11 +21,26 @@ export class GoalieProcessor {
     
     // Find goalie in goalies.csv by name and team
     // Filter for 'all' situation to get season totals
-    const goalieRows = this.goalieData.filter(g => 
+    let goalieRows = this.goalieData.filter(g => 
       g.name === goalieName && 
       g.team === teamCode && 
       g.situation === 'all'
     );
+    
+    // If no exact match, try matching by last name only (for MoneyPuck data)
+    if (!goalieRows.length) {
+      const lastNameLower = goalieName.toLowerCase().trim();
+      goalieRows = this.goalieData.filter(g => {
+        if (g.team !== teamCode || g.situation !== 'all') return false;
+        
+        const fullName = g.name.toLowerCase();
+        const nameParts = fullName.split(' ');
+        const lastName = nameParts[nameParts.length - 1];
+        
+        // Match if last name matches or full name contains the provided name
+        return lastName === lastNameLower || fullName.includes(lastNameLower);
+      });
+    }
     
     if (!goalieRows.length) {
       console.warn(`Goalie not found: ${goalieName} (${teamCode})`);
