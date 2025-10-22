@@ -333,17 +333,33 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                       position: 'relative'
                     }}
                   >
-                    {/* EV Progress bar background */}
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
-                      background: `linear-gradient(90deg, ${rating.bgColor} 0%, transparent 100%)`,
-                      zIndex: 0,
-                      pointerEvents: 'none'
-                    }} />
+                    {/* EV Progress bar background - positioned absolutely within the tr */}
+                    <td 
+                      colSpan="6" 
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: '100%',
+                        height: '100%',
+                        padding: 0,
+                        border: 'none',
+                        pointerEvents: 'none',
+                        zIndex: 0
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
+                        background: `linear-gradient(90deg, ${rating.bgColor} 0%, transparent 100%)`,
+                        pointerEvents: 'none'
+                      }} />
+                    </td>
                     
                     <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
                       <span style={{ fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{opp.game}</span>
