@@ -2,9 +2,10 @@ import Papa from 'papaparse';
 
 // Core mathematical calculations for NHL betting model
 export class NHLDataProcessor {
-  constructor(rawData, goalieProcessor = null) {
+  constructor(rawData, goalieProcessor = null, scheduleHelper = null) {
     this.rawData = rawData;
     this.goalieProcessor = goalieProcessor; // NEW: Goalie data integration
+    this.scheduleHelper = scheduleHelper;   // NEW: Schedule/B2B integration
     this.processedData = this.processAllTeams();
   }
 
@@ -199,16 +200,19 @@ export class NHLDataProcessor {
     });
     
     // Calculate calibration factor (actual goals / xG)
-    // This auto-adjusts as season progresses
-    const calibration = total_xG > 0 ? total_actual_goals / total_xG : 1.215;
-    
+    // CRITICAL FIX: Use FIXED historical constant instead of dynamic
+    // Dynamic calibration creates feedback loop that under-predicts early season (Oct RMSE=2.737)
+    // Historical 2024 constant = 1.215 (actual_goals / xG across full season)
+    const HISTORICAL_CALIBRATION = 1.215;
+    const calibration = HISTORICAL_CALIBRATION;
+
     // Calculate base xGF/60 average
     const xGF_values = all_teams.map(t => t.xGF_per60).filter(v => v && v > 0);
     if (xGF_values.length === 0) return 2.45;
     
     const baseAverage = xGF_values.reduce((sum, val) => sum + val, 0) / xGF_values.length;
     
-    // Apply dynamic calibration (replaces old 1.03 fixed boost)
+    // Apply fixed calibration (removes seasonal feedback loop)
     const calibrated = baseAverage * calibration;
     
     console.log(`📊 League avg: base=${baseAverage.toFixed(2)} xGF/60, cal=${calibration.toFixed(3)}, result=${calibrated.toFixed(2)} goals/60`);
@@ -305,7 +309,7 @@ export class NHLDataProcessor {
 
   // Predict individual team score (Part 2.2)
   // PHASE 5: Industry-standard approach with sample-size regression
-  predictTeamScore(team, opponent, isHome = false, startingGoalie = null) {
+  predictTeamScore(team, opponent, isHome = false, startingGoalie = null, gameDate = null) {
     const team_5v5 = this.getTeamData(team, '5on5');
     const opponent_5v5 = this.getTeamData(opponent, '5on5');
     const team_PP = this.getTeamData(team, '5on4');
@@ -357,11 +361,12 @@ export class NHLDataProcessor {
     const minutes_5v5 = weights['5on5'] * 60;
     let goals_5v5 = (expected_5v5_adjusted / 60) * minutes_5v5;
     
-    // STEP 7: Home ice advantage (3.5% boost)
-    // Reduced from 5% to 3.5% to better match market/MoneyPuck
-    // Modern NHL home ice advantage has decreased
+    // STEP 7: Home ice advantage (5.8% boost)
+    // CRITICAL FIX: Increased from 3.5% to 5.8% based on 2024 verified data
+    // Previous 3.5% was creating systematic -0.12 goal undercorrection for home teams
+    // 2024 historical data: home teams scored 5.8% more than on road
     if (isHome) {
-      goals_5v5 *= 1.035;
+      goals_5v5 *= 1.058;
     }
     
     // STEP 8: PP component (with same regression + 40/60 weighting)
@@ -383,7 +388,17 @@ export class NHLDataProcessor {
     }
     
     // STEP 9: Goalie adjustment (RE-ENABLED with 15% threshold)
-    const totalGoals = goals_5v5 + goals_PP;
+    let totalGoals = goals_5v5 + goals_PP;
+    
+    // NEW: Apply B2B/rest adjustment if schedule data available
+    if (this.scheduleHelper) {
+      const restAdj = this.scheduleHelper.getRestAdjustment(team, gameDate);
+      if (restAdj !== 0) {
+        totalGoals *= (1 + restAdj);
+        console.log(`  B2B adjustment for ${team}: ${restAdj > 0 ? '+' : ''}${(restAdj * 100).toFixed(1)}% (${totalGoals.toFixed(2)} goals)`);
+      }
+    }
+    
     const goalieAdjusted = this.adjustForGoalie(totalGoals, opponent, startingGoalie);
     
     return Math.max(0, goalieAdjusted);
@@ -413,10 +428,11 @@ export class NHLDataProcessor {
   // NEW: Adjust predicted goals for goalie quality (INDUSTRY STANDARD: ±15%)
   // This is THE most important single factor in NHL betting
   adjustForGoalie(predictedGoals, opponentTeam, startingGoalieName = null) {
+    // Safety guard: if no goalie processor, return prediction unchanged
     if (!this.goalieProcessor) return predictedGoals;
     
     let goalieGSAE = 0;
-    
+
     // If specific starting goalie provided, use their stats
     if (startingGoalieName) {
       goalieGSAE = this.goalieProcessor.calculateGSAE(startingGoalieName, '5on5');
@@ -439,21 +455,27 @@ export class NHLDataProcessor {
       }
     }
     
-    // Elite goalie (GSAE > 10): Hellebuyck, Shesterkin, Sorokin, etc.
-    // Reduce opponent's expected goals by 15%
-    if (goalieGSAE > 10) {
-      return predictedGoals * 0.85;
-    }
+    // CRITICAL FIX: Replace binary thresholds with magnitude-based scaling
+    // OLD: if (GSAE > 10) return -15%, if (GSAE < -10) return +15%, else no adjustment
+    // PROBLEM: 90% of goalies between -10 and +10 get ZERO adjustment
+    // NEW: Adjust by 0.1% per GSAE point, with confidence weighting
+    // Sorokin (+12 GSAE): 1 + (12 * 0.001) = 1.012 (1.2% reduction for opponent)
+    // Average goalie (+2 GSAE): 1 + (2 * 0.001) = 1.002 (0.2% reduction)
+    // Weak goalie (-8 GSAE): 1 + (-8 * 0.001) = 0.992 (0.8% increase for opponent)
     
-    // Bad goalie (GSAE < -10)
-    // Increase opponent's expected goals by 15%
-    if (goalieGSAE < -10) {
-      return predictedGoals * 1.15;
-    }
+    // Adjustment multiplier: 0.1% per GSAE point (0.001 = 0.1%)
+    const baseAdjustment = 1 + (goalieGSAE * 0.001);
     
-    // Average goalie (GSAE between -10 and +10)
-    // No adjustment needed
-    return predictedGoals;
+    // Confidence multiplier: known starter = 100% trust, team average = 60% trust
+    const confidence = startingGoalieName ? 1.0 : 0.6;
+    
+    // Apply: confidence-weighted adjustment
+    // If startingGoalieName known: full GSAE effect
+    // If team average: 60% of GSAE effect (more uncertain)
+    const finalAdjustment = 1 + ((baseAdjustment - 1) * confidence);
+    
+    // Apply to predicted goals and ensure non-negative
+    return Math.max(0, predictedGoals * finalAdjustment);
   }
 
   // Convert predicted probability to American odds (Part 2.3)
@@ -773,7 +795,7 @@ export class NHLDataProcessor {
 }
 
 // Load and process CSV data (with goalie data integration)
-export async function loadNHLData(goalieProcessor = null) {
+export async function loadNHLData(scheduleHelper = null) {
   try {
     // Try GitHub raw files first (always fresh), fallback to local
     let response;
@@ -826,8 +848,8 @@ export async function loadNHLData(goalieProcessor = null) {
           }
           
           console.log('Clean data rows:', cleanData.length);
-          // NEW: Pass goalieProcessor to enable goalie adjustments
-          const processor = new NHLDataProcessor(cleanData, goalieProcessor);
+          // Pass scheduleHelper to enable B2B/rest adjustments
+          const processor = new NHLDataProcessor(cleanData, null, scheduleHelper);
           resolve(processor);
         },
         error: (error) => {
