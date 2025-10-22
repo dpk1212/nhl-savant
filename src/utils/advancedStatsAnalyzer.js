@@ -131,14 +131,14 @@ export class AdvancedStatsAnalyzer {
     const teamData = this.dataProcessor.getTeamData(teamCode, situation);
     if (!teamData) return null;
 
-    const iceTime = teamData.iceTime || 1;
-    const minutes = iceTime / 60;
+    const iceTime = teamData.iceTime || 1; // Already in minutes!
+    const hours = iceTime / 60; // Convert to hours for per-60 calculation
 
     return {
       hdXgFor: teamData.highDangerxGoalsFor || 0,
       hdXgAgainst: teamData.highDangerxGoalsAgainst || 0,
-      hdXgfPer60: (teamData.highDangerxGoalsFor || 0) / minutes,
-      hdXgaPer60: (teamData.highDangerxGoalsAgainst || 0) / minutes,
+      hdXgfPer60: (teamData.highDangerxGoalsFor || 0) / hours,
+      hdXgaPer60: (teamData.highDangerxGoalsAgainst || 0) / hours,
       hdShotsFor: teamData.highDangerShotsFor || 0,
       hdShotsAgainst: teamData.highDangerShotsAgainst || 0,
       hdGoalsFor: teamData.highDangerGoalsFor || 0,
@@ -159,16 +159,16 @@ export class AdvancedStatsAnalyzer {
     const teamData = this.dataProcessor.getTeamData(teamCode, situation);
     if (!teamData) return null;
 
-    const iceTime = teamData.iceTime || 1;
-    const minutes = iceTime / 60;
+    const iceTime = teamData.iceTime || 1; // Already in minutes!
+    const hours = iceTime / 60; // Convert to hours for per-60 calculation
 
     return {
       xRebFor: teamData.xReboundsFor || 0,
       xRebAgainst: teamData.xReboundsAgainst || 0,
       rebXgFor: teamData.xGoalsFromActualReboundsOfShotsFor || 0,
       rebXgAgainst: teamData.xGoalsFromActualReboundsOfShotsAgainst || 0,
-      rebXgfPer60: (teamData.xGoalsFromActualReboundsOfShotsFor || 0) / minutes,
-      rebXgaPer60: (teamData.xGoalsFromActualReboundsOfShotsAgainst || 0) / minutes,
+      rebXgfPer60: (teamData.xGoalsFromActualReboundsOfShotsFor || 0) / hours,
+      rebXgaPer60: (teamData.xGoalsFromActualReboundsOfShotsAgainst || 0) / hours,
       rebGoalsFor: teamData.reboundGoalsFor || 0,
       rebGoalsAgainst: teamData.reboundGoalsAgainst || 0,
       rebConversion: teamData.xReboundsFor > 0 
