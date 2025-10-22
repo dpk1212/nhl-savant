@@ -67,7 +67,9 @@ export function parseOddsTrader(markdownText) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
       
       // Extract time from the current line
-      const timeMatch = line.match(/(\d{1,2}:\d{2} [AP]M)/);
+      // Pattern matches time that comes AFTER the date (e.g., "10/227:00 PM" -> "7:00 PM")
+      // Use word boundary or specific pattern to avoid catching date digits
+      const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2} [AP]M)/);
       if (!timeMatch) {
         console.log('  ⚠️ No time found, skipping');
         continue;

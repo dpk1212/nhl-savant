@@ -43,22 +43,44 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
 
     // Check moneyline
     if (game.edges.moneyline) {
-      [game.edges.moneyline.away, game.edges.moneyline.home].forEach(bet => {
-        if (bet && bet.evPercent > bestEV) {
-          bestEV = bet.evPercent;
-          bestBet = { ...bet, type: 'ML' };
-        }
-      });
+      if (game.edges.moneyline.away && game.edges.moneyline.away.evPercent > bestEV) {
+        bestEV = game.edges.moneyline.away.evPercent;
+        bestBet = { 
+          ...game.edges.moneyline.away, 
+          type: 'ML',
+          displayPick: `${game.awayTeam} ML`
+        };
+      }
+      if (game.edges.moneyline.home && game.edges.moneyline.home.evPercent > bestEV) {
+        bestEV = game.edges.moneyline.home.evPercent;
+        bestBet = { 
+          ...game.edges.moneyline.home, 
+          type: 'ML',
+          displayPick: `${game.homeTeam} ML`
+        };
+      }
     }
 
     // Check total
     if (game.edges.total) {
-      [game.edges.total.over, game.edges.total.under].forEach(bet => {
-        if (bet && bet.evPercent > bestEV) {
-          bestEV = bet.evPercent;
-          bestBet = { ...bet, type: 'TOTAL' };
-        }
-      });
+      const totalLine = game.edges.total.over?.line || game.edges.total.under?.line || 'N/A';
+      
+      if (game.edges.total.over && game.edges.total.over.evPercent > bestEV) {
+        bestEV = game.edges.total.over.evPercent;
+        bestBet = { 
+          ...game.edges.total.over, 
+          type: 'TOTAL',
+          displayPick: `OVER ${totalLine}`
+        };
+      }
+      if (game.edges.total.under && game.edges.total.under.evPercent > bestEV) {
+        bestEV = game.edges.total.under.evPercent;
+        bestBet = { 
+          ...game.edges.total.under, 
+          type: 'TOTAL',
+          displayPick: `UNDER ${totalLine}`
+        };
+      }
     }
 
     return {
@@ -372,7 +394,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                     <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <BetTypeBadge type={opp.bestBet.type} />
-                        <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>{opp.bestBet.pick}</span>
+                        <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>{opp.bestBet.displayPick || opp.bestBet.pick}</span>
                       </div>
                     </td>
                     
