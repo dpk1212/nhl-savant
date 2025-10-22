@@ -536,71 +536,91 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
       {/* Factors list */}
       <div style={{ padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem' }}>
       {topFactors.map((factor, idx) => {
-        const evColor = getEVColorScale(factor.impact * 10); // Scale impact to ~EV range for colors
-        const displayName = getStatDisplayName(factor.statKey || factor.name) || factor.name;
-        const tooltip = getStatTooltip(factor.statKey || factor.name);
+        // Determine who has the advantage
+        const awayVal = factor.awayMetric?.value || 0;
+        const homeVal = factor.homeMetric?.value || 0;
+        const diff = Math.abs(awayVal - homeVal);
+        const percentDiff = ((diff / ((awayVal + homeVal) / 2)) * 100).toFixed(0);
+        
+        const hasAdvantage = awayVal > homeVal ? awayTeam : homeTeam;
+        const advantageColor = awayVal > homeVal ? '#0EA5E9' : '#10B981';
+        
+        // Determine impact direction for UNDER/OVER
+        const favorsBetting = Math.abs(factor.impact) < 0.03 ? 'NEUTRAL' : 
+                             factor.impact < 0 ? 'UNDER' : 'OVER';
+        const bettingColor = favorsBetting === 'UNDER' ? '#8B5CF6' : 
+                            favorsBetting === 'OVER' ? '#F59E0B' : '#6B7280';
         
         return (
           <div key={idx} style={{ 
             marginBottom: idx < topFactors.length - 1 ? '1rem' : '0', 
             paddingBottom: idx < topFactors.length - 1 ? '1rem' : '0', 
-            borderBottom: idx < topFactors.length - 1 ? ELEVATION.flat.border : 'none' 
+            borderBottom: idx < topFactors.length - 1 ? ELEVATION.flat.border : 'none',
+            background: 'rgba(0, 0, 0, 0.1)',
+            padding: '0.75rem',
+            borderRadius: '8px'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'baseline' }}>
-              <div style={{ flex: 1 }}>
-                <span style={{ 
-                  fontSize: TYPOGRAPHY.body.size, 
-                  fontWeight: TYPOGRAPHY.body.weight, 
-                  color: 'var(--color-text-primary)' 
-                }}>
-                  {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {displayName}
-                </span>
-                {tooltip && (
-                  <div style={{ 
-                    fontSize: TYPOGRAPHY.caption.size, 
-                    color: 'var(--color-text-muted)',
-                    marginTop: '0.25rem',
-                    fontStyle: 'italic'
-                  }}>
-                    {tooltip}
-                  </div>
-                )}
-              </div>
-              <span style={{ 
-                fontSize: TYPOGRAPHY.body.size, 
-                fontWeight: TYPOGRAPHY.heading.weight, 
-                color: evColor.color,
-                fontFeatureSettings: "'tnum'",
-                marginLeft: '0.5rem'
-              }}>
-                {VisualMetricsGenerator.formatGoalImpact(factor.impact)} goals
-              </span>
+            {/* Header: Factor name */}
+            <div style={{ 
+              fontSize: TYPOGRAPHY.caption.size, 
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontWeight: TYPOGRAPHY.label.weight
+            }}>
+              {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
             </div>
             
-            {factor.awayMetric && factor.homeMetric && (
-              <>
-                <div style={{ 
-                  fontSize: TYPOGRAPHY.caption.size, 
-                  color: 'var(--color-text-muted)', 
-                  marginBottom: '0.5rem',
-                  fontWeight: TYPOGRAPHY.caption.weight
+            {/* Main insight */}
+            <div style={{ 
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: advantageColor,
+              marginBottom: '0.5rem',
+              lineHeight: 1.4
+            }}>
+              {hasAdvantage} has {percentDiff}% edge
+            </div>
+            
+            {/* Explanation */}
+            <div style={{ 
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.75rem',
+              lineHeight: 1.5
+            }}>
+              {factor.explanation}
+            </div>
+            
+            {/* Bottom row: Stats + Betting Impact */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
+              <div style={{ 
+                fontSize: TYPOGRAPHY.caption.size,
+                color: 'var(--color-text-muted)'
+              }}>
+                {awayTeam}: {awayVal.toFixed(2)} | {homeTeam}: {homeVal.toFixed(2)}
+              </div>
+              
+              {favorsBetting !== 'NEUTRAL' && (
+                <div style={{
+                  padding: '0.25rem 0.5rem',
+                  background: `${bettingColor}22`,
+                  border: `1px solid ${bettingColor}`,
+                  borderRadius: '4px',
+                  fontSize: TYPOGRAPHY.caption.size,
+                  fontWeight: TYPOGRAPHY.label.weight,
+                  color: bettingColor
                 }}>
-                  {factor.awayMetric.rank && factor.homeMetric.rank ? (
-                    <span>Ranked #{factor.awayMetric.rank} vs #{factor.homeMetric.rank}</span>
-                  ) : (
-                    <span>{factor.explanation?.split('.')[0]}</span>
-                  )}
+                  Favors {favorsBetting}
                 </div>
-                
-                <CompactComparisonBar 
-                  awayValue={factor.awayMetric.value}
-                  homeValue={factor.homeMetric.value}
-                  leagueAvg={factor.leagueAvg}
-                  awayTeam={awayTeam}
-                  homeTeam={homeTeam}
-                />
-              </>
-            )}
+              )}
+            </div>
           </div>
         );
       })}
