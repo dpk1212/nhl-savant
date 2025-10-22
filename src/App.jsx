@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { loadNHLData, loadOddsFiles, loadStartingGoalies } from './utils/dataProcessing';
 import { GoalieProcessor, loadGoalieData } from './utils/goalieProcessor';
 import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
+import { AdvancedStatsAnalyzer } from './utils/advancedStatsAnalyzer';
+import { EdgeFactorCalculator } from './utils/edgeFactorCalculator';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import DataInspector from './components/DataInspector';
@@ -18,6 +20,8 @@ function App() {
   const [oddsData, setOddsData] = useState(null);
   const [goalieData, setGoalieData] = useState(null);
   const [startingGoalies, setStartingGoalies] = useState(null);
+  const [statsAnalyzer, setStatsAnalyzer] = useState(null);
+  const [edgeFactorCalc, setEdgeFactorCalc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -44,6 +48,17 @@ function App() {
         console.log('🏒 Loading team data...');
         const processor = await loadNHLData(goalieProcessor);
         setDataProcessor(processor);
+        
+        // Initialize advanced stats analyzer
+        console.log('📊 Initializing advanced stats analyzer...');
+        const analyzer = new AdvancedStatsAnalyzer(processor);
+        setStatsAnalyzer(analyzer);
+        
+        // Initialize edge factor calculator
+        console.log('🎯 Initializing edge factor calculator...');
+        const factorCalc = new EdgeFactorCalculator(analyzer);
+        setEdgeFactorCalc(factorCalc);
+        
         setError(null);
         
         // Load both odds files (Money + Total)
@@ -115,7 +130,13 @@ function App() {
           <main>
             <Routes>
               {/* Today's Games is the primary landing page */}
-              <Route path="/" element={<TodaysGames dataProcessor={dataProcessor} oddsData={oddsData} startingGoalies={startingGoalies} />} />
+              <Route path="/" element={<TodaysGames 
+                dataProcessor={dataProcessor} 
+                oddsData={oddsData} 
+                startingGoalies={startingGoalies}
+                statsAnalyzer={statsAnalyzer}
+                edgeFactorCalc={edgeFactorCalc}
+              />} />
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
