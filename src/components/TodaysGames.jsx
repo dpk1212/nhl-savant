@@ -26,6 +26,8 @@ import {
   getStaggerDelay,
   TRANSITIONS
 } from '../utils/designSystem';
+import { getStatDisplayName, getStatTooltip, getStatColorCode } from '../utils/statDisplayNames';
+import QuickStory from './QuickStory';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -87,6 +89,15 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
 
 // Calculate implied probability from odds
 const calculateImpliedProb = (odds) => {
+  if (odds > 0) {
+    return 100 / (odds + 100);
+  } else {
+    return Math.abs(odds) / (Math.abs(odds) + 100);
+  }
+};
+
+// Calculate implied probability from American odds (returns decimal 0-1)
+const getImpliedProbability = (odds) => {
   if (odds > 0) {
     return 100 / (odds + 100);
   } else {
@@ -314,7 +325,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile }) => {
   );
 };
 
-// Compact Comparison Bar
+// Compact Comparison Bar with value labels and color coding
 const CompactComparisonBar = ({ awayValue, homeValue, leagueAvg, awayTeam, homeTeam }) => {
   const maxValue = Math.max(awayValue, homeValue, leagueAvg) * 1.2;
   const awayPct = (awayValue / maxValue) * 100;
@@ -325,66 +336,147 @@ const CompactComparisonBar = ({ awayValue, homeValue, leagueAvg, awayTeam, homeT
   const awayColor = getBarColor(awayValue, homeValue, leagueAvg);
   const homeColor = getBarColor(homeValue, awayValue, leagueAvg);
   
+  // Get color coding
+  const awayColorCode = getStatColorCode(awayValue, leagueAvg, true);
+  const homeColorCode = getStatColorCode(homeValue, leagueAvg, true);
+  
   return (
     <div style={{ fontSize: TYPOGRAPHY.caption.size }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+      {/* Legend - show once */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        gap: '1rem',
+        marginBottom: '0.5rem',
+        fontSize: '0.625rem',
+        color: 'var(--color-text-muted)',
+        fontWeight: TYPOGRAPHY.caption.weight
+      }}>
+        <span>Green = Advantage</span>
+        <span>│ = League Avg</span>
+      </div>
+      
+      {/* Away Team Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
         <span style={{ 
+          minWidth: '35px',
           fontWeight: awayAdvantage ? TYPOGRAPHY.body.weight : TYPOGRAPHY.caption.weight, 
-          color: awayAdvantage ? awayColor : 'var(--color-text-secondary)'
+          color: 'var(--color-text-primary)'
         }}>
-          {awayTeam}: {awayValue.toFixed(2)}
+          {awayTeam}
         </span>
-        <span style={{ color: 'rgba(212, 175, 55, 0.7)', fontSize: TYPOGRAPHY.caption.size }}>
-          Avg: {leagueAvg.toFixed(2)}
-        </span>
-      </div>
-      <div style={{ position: 'relative', height: '8px', background: 'rgba(100, 116, 139, 0.15)', borderRadius: '4px', marginBottom: '0.375rem' }}>
-        <div style={{ 
-          position: 'absolute',
-          left: `${leaguePct}%`,
-          top: '-2px',
-          bottom: '-2px',
-          width: '2px',
-          background: 'rgba(212, 175, 55, 0.6)',
-          zIndex: 2,
-          boxShadow: '0 0 4px rgba(212, 175, 55, 0.4)'
-        }} />
-        <div style={{ 
-          width: `${awayPct}%`, 
-          height: '100%', 
-          background: awayColor,
-          borderRadius: '4px',
-          transition: TRANSITIONS.normal,
-          boxShadow: awayAdvantage ? `0 0 8px ${awayColor}40` : 'none'
-        }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ flex: 1, position: 'relative', height: '20px', background: 'rgba(100, 116, 139, 0.15)', borderRadius: '4px' }}>
+          {/* League average marker */}
+          <div style={{ 
+            position: 'absolute',
+            left: `${leaguePct}%`,
+            top: '-2px',
+            bottom: '-2px',
+            width: '2px',
+            background: 'rgba(212, 175, 55, 0.6)',
+            zIndex: 2,
+            boxShadow: '0 0 4px rgba(212, 175, 55, 0.4)'
+          }} />
+          {/* Bar */}
+          <div style={{ 
+            width: `${awayPct}%`, 
+            height: '100%', 
+            background: awayColor,
+            borderRadius: '4px',
+            transition: TRANSITIONS.normal,
+            boxShadow: awayAdvantage ? `0 0 8px ${awayColor}40` : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            paddingLeft: '0.5rem',
+            position: 'relative',
+            zIndex: 1
+          }}>
+            <span style={{ 
+              fontSize: '0.688rem', 
+              fontWeight: '700', 
+              color: '#fff',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            }}>
+              {awayValue.toFixed(2)}
+            </span>
+          </div>
+        </div>
         <span style={{ 
-          fontWeight: !awayAdvantage ? TYPOGRAPHY.body.weight : TYPOGRAPHY.caption.weight, 
-          color: !awayAdvantage ? homeColor : 'var(--color-text-secondary)'
+          fontSize: '0.625rem', 
+          fontWeight: TYPOGRAPHY.body.weight,
+          color: awayColorCode.color,
+          minWidth: '45px',
+          textAlign: 'right'
         }}>
-          {homeTeam}: {homeValue.toFixed(2)}
+          {awayColorCode.icon} {awayColorCode.label}
         </span>
       </div>
-      <div style={{ position: 'relative', height: '8px', background: 'rgba(100, 116, 139, 0.15)', borderRadius: '4px' }}>
-        <div style={{ 
-          position: 'absolute',
-          left: `${leaguePct}%`,
-          top: '-2px',
-          bottom: '-2px',
-          width: '2px',
-          background: 'rgba(212, 175, 55, 0.6)',
-          zIndex: 2,
-          boxShadow: '0 0 4px rgba(212, 175, 55, 0.4)'
-        }} />
-        <div style={{ 
-          width: `${homePct}%`, 
-          height: '100%', 
-          background: homeColor,
-          borderRadius: '4px',
-          transition: TRANSITIONS.normal,
-          boxShadow: !awayAdvantage ? `0 0 8px ${homeColor}40` : 'none'
-        }} />
+      
+      {/* Home Team Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span style={{ 
+          minWidth: '35px',
+          fontWeight: !awayAdvantage ? TYPOGRAPHY.body.weight : TYPOGRAPHY.caption.weight, 
+          color: 'var(--color-text-primary)'
+        }}>
+          {homeTeam}
+        </span>
+        <div style={{ flex: 1, position: 'relative', height: '20px', background: 'rgba(100, 116, 139, 0.15)', borderRadius: '4px' }}>
+          {/* League average marker */}
+          <div style={{ 
+            position: 'absolute',
+            left: `${leaguePct}%`,
+            top: '-2px',
+            bottom: '-2px',
+            width: '2px',
+            background: 'rgba(212, 175, 55, 0.6)',
+            zIndex: 2,
+            boxShadow: '0 0 4px rgba(212, 175, 55, 0.4)'
+          }} />
+          {/* Bar */}
+          <div style={{ 
+            width: `${homePct}%`, 
+            height: '100%', 
+            background: homeColor,
+            borderRadius: '4px',
+            transition: TRANSITIONS.normal,
+            boxShadow: !awayAdvantage ? `0 0 8px ${homeColor}40` : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            paddingLeft: '0.5rem',
+            position: 'relative',
+            zIndex: 1
+          }}>
+            <span style={{ 
+              fontSize: '0.688rem', 
+              fontWeight: '700', 
+              color: '#fff',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            }}>
+              {homeValue.toFixed(2)}
+            </span>
+          </div>
+        </div>
+        <span style={{ 
+          fontSize: '0.625rem', 
+          fontWeight: TYPOGRAPHY.body.weight,
+          color: homeColorCode.color,
+          minWidth: '45px',
+          textAlign: 'right'
+        }}>
+          {homeColorCode.icon} {homeColorCode.label}
+        </span>
+      </div>
+      
+      {/* League Average Reference */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginTop: '0.375rem',
+        fontSize: '0.625rem',
+        color: 'rgba(212, 175, 55, 0.8)',
+        fontWeight: TYPOGRAPHY.caption.weight
+      }}>
+        League Avg: {leagueAvg.toFixed(2)}
       </div>
     </div>
   );
@@ -444,6 +536,8 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
       <div style={{ padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem' }}>
       {topFactors.map((factor, idx) => {
         const evColor = getEVColorScale(factor.impact * 10); // Scale impact to ~EV range for colors
+        const displayName = getStatDisplayName(factor.statKey || factor.name) || factor.name;
+        const tooltip = getStatTooltip(factor.statKey || factor.name);
         
         return (
           <div key={idx} style={{ 
@@ -452,18 +546,31 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
             borderBottom: idx < topFactors.length - 1 ? ELEVATION.flat.border : 'none' 
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'baseline' }}>
-              <span style={{ 
-                fontSize: TYPOGRAPHY.body.size, 
-                fontWeight: TYPOGRAPHY.body.weight, 
-                color: 'var(--color-text-primary)' 
-              }}>
-                {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
-              </span>
+              <div style={{ flex: 1 }}>
+                <span style={{ 
+                  fontSize: TYPOGRAPHY.body.size, 
+                  fontWeight: TYPOGRAPHY.body.weight, 
+                  color: 'var(--color-text-primary)' 
+                }}>
+                  {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {displayName}
+                </span>
+                {tooltip && (
+                  <div style={{ 
+                    fontSize: TYPOGRAPHY.caption.size, 
+                    color: 'var(--color-text-muted)',
+                    marginTop: '0.25rem',
+                    fontStyle: 'italic'
+                  }}>
+                    {tooltip}
+                  </div>
+                )}
+              </div>
               <span style={{ 
                 fontSize: TYPOGRAPHY.body.size, 
                 fontWeight: TYPOGRAPHY.heading.weight, 
                 color: evColor.color,
-                fontFeatureSettings: "'tnum'"
+                fontFeatureSettings: "'tnum'",
+                marginLeft: '0.5rem'
               }}>
                 {VisualMetricsGenerator.formatGoalImpact(factor.impact)} goals
               </span>
@@ -521,19 +628,19 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
   );
 };
 
-// Market Row Component
-const MarketRow = ({ team, odds, ev, isPositive, isBestBet }) => {
+// Market Row Component with implied odds and edge in points
+const MarketRow = ({ team, odds, ev, isPositive, isBestBet, modelProb, impliedProb }) => {
   const [isHovered, setIsHovered] = useState(false);
   const evColor = getEVColorScale(ev);
+  
+  // Calculate edge in probability points
+  const edgePts = modelProb && impliedProb ? (modelProb - impliedProb) * 100 : null;
   
   return (
     <div 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between',
-        alignItems: 'center',
         padding: '0.75rem',
         marginBottom: '0.5rem',
         background: isBestBet 
@@ -553,48 +660,71 @@ const MarketRow = ({ team, odds, ev, isPositive, isBestBet }) => {
       aria-label={`${team} ${odds > 0 ? '+' : ''}${odds}, EV ${ev.toFixed(1)}%`}
       onKeyPress={(e) => e.key === 'Enter' && console.log('Market selected:', team)}
     >
-      <span style={{ 
-        fontSize: TYPOGRAPHY.body.size, 
-        fontWeight: TYPOGRAPHY.body.weight, 
-        color: 'var(--color-text-primary)' 
-      }}>
-        {team}
-      </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+      {/* Team name and odds */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
         <span style={{ 
           fontSize: TYPOGRAPHY.body.size, 
           fontWeight: TYPOGRAPHY.body.weight, 
-          color: 'var(--color-text-primary)', 
-          fontFeatureSettings: "'tnum'" 
+          color: 'var(--color-text-primary)' 
         }}>
-          {odds > 0 ? '+' : ''}{odds}
+          {team}
         </span>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          minWidth: '60px'
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ 
-            fontSize: TYPOGRAPHY.label.size, 
-            fontWeight: TYPOGRAPHY.heading.weight,
-            color: evColor.color,
-            fontFeatureSettings: "'tnum'"
+            fontSize: TYPOGRAPHY.body.size, 
+            fontWeight: TYPOGRAPHY.body.weight, 
+            color: 'var(--color-text-primary)', 
+            fontFeatureSettings: "'tnum'" 
           }}>
-            {isPositive ? '+' : ''}{ev.toFixed(1)}%
+            {odds > 0 ? '+' : ''}{odds}
           </span>
-          {isBestBet && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            minWidth: '70px'
+          }}>
             <span style={{ 
-              fontSize: TYPOGRAPHY.caption.size, 
+              fontSize: TYPOGRAPHY.label.size, 
+              fontWeight: TYPOGRAPHY.heading.weight,
               color: evColor.color,
-              fontWeight: TYPOGRAPHY.body.weight
+              fontFeatureSettings: "'tnum'"
             }}>
-              {evColor.label}
+              {isPositive ? '+' : ''}{ev.toFixed(1)}%
+            </span>
+            {isBestBet && (
+              <span style={{ 
+                fontSize: TYPOGRAPHY.caption.size, 
+                color: evColor.color,
+                fontWeight: TYPOGRAPHY.body.weight
+              }}>
+                {evColor.label}
+              </span>
+            )}
+          </div>
+          {isBestBet && <span style={{ fontSize: '1.125rem', color: evColor.color }}>✓</span>}
+        </div>
+      </div>
+      
+      {/* Probability comparison (shown on hover or for best bet) */}
+      {(isHovered || isBestBet) && modelProb && impliedProb && (
+        <div style={{ 
+          fontSize: TYPOGRAPHY.caption.size, 
+          color: 'var(--color-text-muted)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingTop: '0.375rem',
+          borderTop: '1px solid rgba(100, 116, 139, 0.15)'
+        }}>
+          <span>Book: {(impliedProb * 100).toFixed(0)}%</span>
+          <span>Model: {(modelProb * 100).toFixed(0)}%</span>
+          {edgePts !== null && (
+            <span style={{ color: edgePts > 0 ? evColor.color : 'var(--color-text-muted)' }}>
+              ({edgePts > 0 ? '+' : ''}{edgePts.toFixed(1)}pts)
             </span>
           )}
         </div>
-        {isBestBet && <span style={{ fontSize: '1.125rem', color: evColor.color }}>✓</span>}
-      </div>
+      )}
     </div>
   );
 };
@@ -655,6 +785,8 @@ const MarketsGrid = ({ game, isMobile }) => {
               ev={game.edges.moneyline.away.evPercent}
               isPositive={game.edges.moneyline.away.evPercent > 0}
               isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
+              modelProb={game.edges.moneyline.away.modelProb}
+              impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
             />
             
             <MarketRow 
@@ -663,6 +795,8 @@ const MarketsGrid = ({ game, isMobile }) => {
               ev={game.edges.moneyline.home.evPercent}
               isPositive={game.edges.moneyline.home.evPercent > 0}
               isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
+              modelProb={game.edges.moneyline.home.modelProb}
+              impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
             />
           </div>
         )}
@@ -696,6 +830,8 @@ const MarketsGrid = ({ game, isMobile }) => {
               ev={game.edges.total.over.evPercent}
               isPositive={game.edges.total.over.evPercent > 0}
               isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
+              modelProb={game.edges.total.over.modelProb}
+              impliedProb={getImpliedProbability(game.edges.total.over.odds)}
             />
             
             <MarketRow 
@@ -704,6 +840,8 @@ const MarketsGrid = ({ game, isMobile }) => {
               ev={game.edges.total.under.evPercent}
               isPositive={game.edges.total.under.evPercent > 0}
               isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
+              modelProb={game.edges.total.under.modelProb}
+              impliedProb={getImpliedProbability(game.edges.total.under.odds)}
             />
           </div>
         )}
@@ -746,6 +884,8 @@ const MarketsGrid = ({ game, isMobile }) => {
             ev={game.edges.moneyline.away.evPercent}
             isPositive={game.edges.moneyline.away.evPercent > 0}
             isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
+            modelProb={game.edges.moneyline.away.modelProb}
+            impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
           />
           
           <MarketRow 
@@ -754,6 +894,8 @@ const MarketsGrid = ({ game, isMobile }) => {
             ev={game.edges.moneyline.home.evPercent}
             isPositive={game.edges.moneyline.home.evPercent > 0}
             isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
+            modelProb={game.edges.moneyline.home.modelProb}
+            impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
           />
         </div>
       )}
@@ -784,6 +926,8 @@ const MarketsGrid = ({ game, isMobile }) => {
             ev={game.edges.total.over.evPercent}
             isPositive={game.edges.total.over.evPercent > 0}
             isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
+            modelProb={game.edges.total.over.modelProb}
+            impliedProb={getImpliedProbability(game.edges.total.over.odds)}
           />
           
           <MarketRow 
@@ -792,6 +936,8 @@ const MarketsGrid = ({ game, isMobile }) => {
             ev={game.edges.total.under.evPercent}
             isPositive={game.edges.total.under.evPercent > 0}
             isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
+            modelProb={game.edges.total.under.modelProb}
+            impliedProb={getImpliedProbability(game.edges.total.under.odds)}
           />
         </div>
       )}
@@ -1077,19 +1223,19 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
             flexDirection: isMobile ? 'row' : 'column',
             alignItems: isMobile ? 'flex-start' : 'flex-end'
           }}>
-          <AnimatedStatPill 
-            icon={<BarChart3 size={16} />}
+            <AnimatedStatPill 
+              icon={<BarChart3 size={16} />}
             value={opportunityCounts.total}
             label="Opportunities"
-            color="info"
-          />
-          <AnimatedStatPill 
-            icon={<TrendingUp size={16} />}
+              color="info"
+            />
+            <AnimatedStatPill 
+              icon={<TrendingUp size={16} />}
             value={opportunityCounts.highValue}
-            label="High Value"
-            color="success"
-            sparkle
-          />
+              label="High Value"
+              color="success"
+              sparkle
+            />
           </div>
         </div>
         
@@ -1146,6 +1292,22 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
                 isMobile={isMobile}
               />
               
+              {/* 2.5. Quick Story - Plain language explanation */}
+              {(() => {
+                const analyticsData = generateAnalyticsData(game, bestEdge);
+                if (bestEdge && analyticsData && analyticsData.factors) {
+                  return (
+                    <QuickStory
+                      game={game}
+                      bestEdge={bestEdge}
+                      factors={analyticsData.factors}
+                      isMobile={isMobile}
+                    />
+                  );
+                }
+                return null;
+              })()}
+              
               {/* 3. Compact Factors - Top 3 critical factors */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
@@ -1172,8 +1334,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
                 if (analyticsData) {
                   return (
                     <AdvancedMatchupDetails
-                      awayTeam={game.awayTeam}
-                      homeTeam={game.homeTeam}
+                    awayTeam={game.awayTeam}
+                    homeTeam={game.homeTeam}
                       dangerZoneData={analyticsData.dangerZoneData}
                       reboundData={analyticsData.reboundData}
                       physicalData={analyticsData.physicalData}
