@@ -309,5 +309,104 @@ export class AdvancedStatsAnalyzer {
         : 50
     };
   }
+
+  /**
+   * Get tier based on league rank (PHASE 2)
+   * @param {number} rank - League rank (1-32)
+   * @returns {string} - 'ELITE', 'STRONG', 'AVERAGE', or 'WEAK'
+   */
+  getTier(rank) {
+    if (!rank || rank < 1) return 'AVERAGE';
+    if (rank <= 3) return 'ELITE';
+    if (rank <= 10) return 'STRONG';
+    if (rank <= 22) return 'AVERAGE';
+    return 'WEAK';
+  }
+
+  /**
+   * Get stat with full league context (PHASE 2)
+   * Provides value, rank, percentile, league average, and tier
+   * @param {string} teamCode - Team abbreviation
+   * @param {string} statKey - The stat key to look up
+   * @param {string} situation - Game situation (default '5on5')
+   * @param {boolean} higherIsBetter - Whether higher values are better (default true)
+   * @returns {object} - Complete stat context
+   */
+  getStatWithContext(teamCode, statKey, situation = '5on5', higherIsBetter = true) {
+    const teamData = this.dataProcessor.getTeamData(teamCode, situation);
+    if (!teamData) return null;
+
+    const value = teamData[statKey];
+    if (value === null || value === undefined) return null;
+
+    const rank = this.getLeagueRank(teamCode, statKey, situation, higherIsBetter);
+    const percentile = this.getPercentileRank(teamCode, statKey, situation);
+    const leagueAvg = this.leagueAverages[statKey] || 0;
+    
+    return {
+      value,
+      rank,
+      percentile,
+      leagueAvg,
+      vsLeague: value - leagueAvg,
+      vsLeaguePct: leagueAvg > 0 ? ((value - leagueAvg) / leagueAvg) * 100 : 0,
+      tier: this.getTier(rank)
+    };
+  }
+
+  /**
+   * Get special teams metrics with league context (PHASE 4 prep)
+   * @param {string} teamCode - Team abbreviation
+   * @returns {object} - PP and PK metrics with ranks
+   */
+  getSpecialTeamsMetrics(teamCode) {
+    const ppData = this.dataProcessor.getTeamData(teamCode, '5on4');
+    const pkData = this.dataProcessor.getTeamData(teamCode, '4on5');
+    
+    if (!ppData && !pkData) return null;
+
+    return {
+      powerPlay: ppData ? {
+        xGF_per60: ppData.xGF_per60 || 0,
+        hdXgF_per60: ppData.highDangerxGoalsFor ? (ppData.highDangerxGoalsFor / (ppData.iceTime / 3600)) : 0,
+        rank: this.getLeagueRank(teamCode, 'xGF_per60', '5on4', true)
+      } : null,
+      penaltyKill: pkData ? {
+        xGA_per60: pkData.xGA_per60 || 0,
+        hdXgA_per60: pkData.highDangerxGoalsAgainst ? (pkData.highDangerxGoalsAgainst / (pkData.iceTime / 3600)) : 0,
+        rank: this.getLeagueRank(teamCode, 'xGA_per60', '4on5', false)
+      } : null
+    };
+  }
+
+  /**
+   * Get goalie metrics (PHASE 4 prep)
+   * @param {string} teamCode - Team abbreviation
+   * @param {object} goalieProcessor - Goalie data processor
+   * @returns {object} - Team goalie averages
+   */
+  getGoalieMetrics(teamCode, goalieProcessor) {
+    if (!goalieProcessor) return null;
+    
+    // Get team average goalie stats
+    const teamGoalies = goalieProcessor.getGoaliesByTeam(teamCode);
+    if (!teamGoalies || teamGoalies.length === 0) return null;
+
+    let totalGSAE = 0;
+    let totalHDSv = 0;
+    let count = 0;
+
+    teamGoalies.forEach(goalie => {
+      totalGSAE += goalie.goalsagainstextexpected || 0;
+      totalHDSv += goalie.highDangerSavePercentage || 0;
+      count++;
+    });
+
+    return {
+      avgGSAE: count > 0 ? totalGSAE / count : 0,
+      avgHDSavePercentage: count > 0 ? totalHDSv / count : 0,
+      goalieCount: count
+    };
+  }
 }
 
