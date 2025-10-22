@@ -487,7 +487,7 @@ const CompactComparisonBar = ({ awayValue, homeValue, leagueAvg, awayTeam, homeT
 const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, bestEdge }) => {
   if (!factors || factors.length === 0) return null;
   
-  // Filter for SIGNIFICANT factors only (meaningful impact + clear difference)
+  // Filter for SIGNIFICANT factors only (meaningful impact + clear difference + ALIGNS WITH BET)
   const significantFactors = factors
     .filter(f => {
       // Only show factors with meaningful impact
@@ -496,7 +496,15 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
       const homeVal = f.homeMetric?.value || 0;
       const hasDifference = awayVal && homeVal && 
         Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10; // >10% difference
-      return hasImpact && hasDifference;
+      
+      // CRITICAL: Only show factors that ALIGN with the value bet direction
+      const alignsWithBet = !bestEdge || (
+        (bestEdge.market === 'TOTAL' && bestEdge.pick && bestEdge.pick.includes('UNDER') && f.impact < -0.05) ||  // Negative impact for UNDER
+        (bestEdge.market === 'TOTAL' && bestEdge.pick && bestEdge.pick.includes('OVER') && f.impact > 0.05) ||    // Positive impact for OVER
+        (bestEdge.market === 'MONEYLINE')  // Show all factors for ML bets
+      );
+      
+      return hasImpact && hasDifference && alignsWithBet;
     })
     .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
     .slice(0, 3);
