@@ -43,7 +43,7 @@ export class GoalieProcessor {
     }
     
     if (!goalieRows.length) {
-      console.warn(`Goalie not found: ${goalieName} (${teamCode})`);
+      console.log(`ℹ️ Goalie stats not in database: ${goalieName} (${teamCode})`);
       return null;
     }
     
