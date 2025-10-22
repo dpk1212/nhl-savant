@@ -46,14 +46,19 @@ export function parseOddsTrader(markdownText) {
   const games = [];
   const lines = markdownText.split('\n');
   
-  // Generate today's date pattern dynamically (e.g., "TUE 10/21")
-  const today = new Date();
+  // TEMPORARY FIX: Use YESTERDAY's date to capture Tuesday 10/21 predictions
+  // This allows us to track Tuesday's games and results before updating to Wednesday
+  const actualToday = new Date();
+  const today = new Date(actualToday);
+  today.setDate(today.getDate() - 1); // Go back one day to Tuesday
+  
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const dayOfWeek = dayNames[today.getDay()];
   const month = today.getMonth() + 1; // 0-indexed
   const day = today.getDate();
   const todayPattern = `${dayOfWeek} ${month}/${day}`;
   
+  console.log(`🏒 TEMPORARY: Using YESTERDAY's date to capture Tuesday predictions`);
   console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern}`);
   
   for (let i = 0; i < lines.length; i++) {
