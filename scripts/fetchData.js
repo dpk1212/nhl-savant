@@ -137,6 +137,9 @@ async function fetchAllData() {
 
 /**
  * Parse MoneyPuck homepage to extract starting goalies
+ * 
+ * Format from MoneyPuck:
+ * | ## 42.6%<br>### **[Starter: Gustavsson** | ![MINNESOTA WILD](logo) | ### 7:00 PM ET | ![NEW JERSEY DEVILS](logo) | ## 57.4%<br>### **[Starter: Daws** |
  */
 function parseMoneyPuckStartingGoalies(markdown) {
   const games = [];
@@ -148,51 +151,48 @@ function parseMoneyPuckStartingGoalies(markdown) {
   
   const lines = markdown.split('\n');
   
-  // Look for today's games section
+  // Look for lines with game data (contain PM ET and team logos)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Match game format: "MTL @ CGY" or "MTL vs CGY"
-    const gameMatch = line.match(/([A-Z]{3})\s*[@vs]\s*([A-Z]{3})/i);
-    
-    if (gameMatch) {
-      const awayTeam = gameMatch[1].toUpperCase();
-      const homeTeam = gameMatch[2].toUpperCase();
+    // Check if line contains game time and team logos
+    if (line.includes('PM ET') && line.includes('](http://peter-tanner.com/moneypuck/logos/')) {
+      // Extract team codes from logo URLs
+      const teamMatches = [...line.matchAll(/logos\/([A-Z]{2,3})\.png/g)];
       
-      // Look for goalie names in the next few lines
-      let awayGoalie = null;
-      let homeGoalie = null;
-      
-      // Check next 10 lines for goalie names (format varies)
-      for (let j = i + 1; j < Math.min(i + 11, lines.length); j++) {
-        const nextLine = lines[j];
+      if (teamMatches.length >= 2) {
+        const awayTeam = teamMatches[0][1];
+        const homeTeam = teamMatches[1][1];
         
-        // Pattern: Full name (First Last)
-        const nameMatch = nextLine.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
-        if (nameMatch && !nextLine.match(/\d{1,2}:\d{2}\s*(AM|PM)/i)) { // Avoid time patterns
-          if (!awayGoalie) {
-            awayGoalie = nameMatch[1].trim();
-          } else if (!homeGoalie) {
-            homeGoalie = nameMatch[1].trim();
-            break; // Found both
+        // Extract goalie names from "Starter: NAME**"
+        const goalieMatches = [...line.matchAll(/Starter:\s*([A-Za-z\-\']+)/g)];
+        
+        let awayGoalie = null;
+        let homeGoalie = null;
+        
+        if (goalieMatches.length > 0) {
+          awayGoalie = goalieMatches[0][1];
+        }
+        if (goalieMatches.length > 1) {
+          homeGoalie = goalieMatches[1][1];
+        }
+        
+        games.push({
+          matchup: `${awayTeam} @ ${homeTeam}`,
+          away: {
+            team: awayTeam,
+            goalie: awayGoalie,
+            confirmed: !!awayGoalie
+          },
+          home: {
+            team: homeTeam,
+            goalie: homeGoalie,
+            confirmed: !!homeGoalie
           }
-        }
+        });
+        
+        console.log(`   - Found game: ${awayTeam} @ ${homeTeam} (${awayGoalie || 'TBD'} vs ${homeGoalie || 'TBD'})`);
       }
-      
-      // Always add the game, even if goalies not confirmed yet
-      games.push({
-        matchup: `${awayTeam} @ ${homeTeam}`,
-        away: {
-          team: awayTeam,
-          goalie: awayGoalie,
-          confirmed: !!awayGoalie
-        },
-        home: {
-          team: homeTeam,
-          goalie: homeGoalie,
-          confirmed: !!homeGoalie
-        }
-      });
     }
   }
   
