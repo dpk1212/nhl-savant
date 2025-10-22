@@ -758,42 +758,112 @@ const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, a
 };
 
 // ======================
-// POSSESSION SECTION
+// POSSESSION SECTION - VISUAL FLOW CHART (Phase 3)
 // ======================
 const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
+  const awayCorsi = data.away?.corsiPct || 50;
+  const homeCorsi = data.home?.corsiPct || 50;
+  const awayFenwick = data.away?.fenwickPct || 50;
+  const homeFenwick = data.home?.fenwickPct || 50;
+  const awayXG = data.away?.xGoalsPct || 50;
+  const homeXG = data.home?.xGoalsPct || 50;
+  const awayFO = data.away?.faceoffPct || 50;
+  const homeFO = data.home?.faceoffPct || 50;
+  
+  // Determine winner
+  const avgAwayPossession = (awayCorsi + awayFenwick + awayXG) / 3;
+  const avgHomePossession = (homeCorsi + homeFenwick + homeXG) / 3;
+  const possessionWinner = avgAwayPossession > avgHomePossession ? awayTeam : homeTeam;
+  const possessionDiff = Math.abs(avgAwayPossession - avgHomePossession).toFixed(1);
+  
   return (
     <Section title="Possession & Control" icon={<TrendingUp size={18} />} isMobile={isMobile} importance="MODERATE">
+      {/* Possession Winner Summary */}
+      {possessionDiff > 3 && (
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)',
+          border: '1px solid rgba(14, 165, 233, 0.3)',
+          borderRadius: '8px',
+          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.375rem'
+          }}>
+            <TrendingUp size={20} color="#0EA5E9" />
+            <span style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: '#0EA5E9'
+            }}>
+              {possessionWinner} CONTROLS POSSESSION
+            </span>
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            color: 'var(--color-text-muted)',
+            fontWeight: TYPOGRAPHY.caption.weight
+          }}>
+            {possessionDiff}% advantage in shot attempts
+          </div>
+        </div>
+      )}
+      
+      {/* Visual Flow Bars */}
+      <PossessionFlowMetric
+        label="Shot Attempts (Corsi)"
+        awayValue={awayCorsi}
+        homeValue={homeCorsi}
+        awayTeam={awayTeam}
+        homeTeam={homeTeam}
+        isMobile={isMobile}
+      />
+      <PossessionFlowMetric
+        label="Unblocked Shots (Fenwick)"
+        awayValue={awayFenwick}
+        homeValue={homeFenwick}
+        awayTeam={awayTeam}
+        homeTeam={homeTeam}
+        isMobile={isMobile}
+      />
+      <PossessionFlowMetric
+        label="Expected Goals Share"
+        awayValue={awayXG}
+        homeValue={homeXG}
+        awayTeam={awayTeam}
+        homeTeam={homeTeam}
+        isMobile={isMobile}
+      />
+      
+      {/* Faceoff % as Circular Indicator */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+        gridTemplateColumns: '1fr 1fr',
+        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+        marginTop: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
       }}>
-        <PossessionCard
-          team={awayTeam}
-          corsi={data.away?.corsiPct || 50}
-          fenwick={data.away?.fenwickPct || 50}
-          xGoalsPct={data.away?.xGoalsPct || 50}
-          faceoffPct={data.away?.faceoffPct || 50}
-          isMobile={isMobile}
-        />
-        <PossessionCard
-          team={homeTeam}
-          corsi={data.home?.corsiPct || 50}
-          fenwick={data.home?.fenwickPct || 50}
-          xGoalsPct={data.home?.xGoalsPct || 50}
-          faceoffPct={data.home?.faceoffPct || 50}
-          isMobile={isMobile}
-        />
+        <FaceoffCircle team={awayTeam} percentage={awayFO} isMobile={isMobile} />
+        <FaceoffCircle team={homeTeam} percentage={homeFO} isMobile={isMobile} />
       </div>
     </Section>
   );
 };
 
-// Possession Card
-const PossessionCard = ({ team, corsi, fenwick, xGoalsPct, faceoffPct, isMobile }) => {
+// Possession Flow Metric - Visual horizontal bar
+const PossessionFlowMetric = ({ label, awayValue, homeValue, awayTeam, homeTeam, isMobile }) => {
+  const leagueAvg = 50;
+  const awayColor = awayValue > homeValue ? '#10B981' : '#64748B';
+  const homeColor = homeValue > awayValue ? '#10B981' : '#64748B';
+  
   return (
     <div style={{
-      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
       background: GRADIENTS.factors,
       border: ELEVATION.flat.border,
       borderRadius: '8px'
@@ -802,23 +872,205 @@ const PossessionCard = ({ team, corsi, fenwick, xGoalsPct, faceoffPct, isMobile 
         fontSize: TYPOGRAPHY.caption.size,
         fontWeight: TYPOGRAPHY.heading.weight,
         color: 'var(--color-text-muted)',
-        marginBottom: isMobile ? '0.5rem' : '0.75rem',
+        marginBottom: '0.75rem',
+        textTransform: TYPOGRAPHY.label.textTransform,
+        letterSpacing: TYPOGRAPHY.label.letterSpacing,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <span>{label}</span>
+        <span style={{ fontSize: TYPOGRAPHY.caption.size, color: 'rgba(212, 175, 55, 0.8)' }}>
+          League Avg: {leagueAvg}%
+        </span>
+      </div>
+      
+      {/* Away Team Bar */}
+      <div style={{ marginBottom: '0.625rem' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '0.25rem',
+          fontSize: TYPOGRAPHY.caption.size
+        }}>
+          <span style={{ fontWeight: TYPOGRAPHY.body.weight, color: 'var(--color-text-primary)' }}>
+            {awayTeam}
+          </span>
+          <span style={{ 
+            fontWeight: TYPOGRAPHY.heading.weight, 
+            color: awayColor,
+            fontFeatureSettings: "'tnum'"
+          }}>
+            {awayValue.toFixed(1)}%
+            {awayValue > leagueAvg && (
+              <span style={{ color: '#10B981', marginLeft: '0.25rem' }}>↑</span>
+            )}
+            {awayValue < leagueAvg && (
+              <span style={{ color: '#EF4444', marginLeft: '0.25rem' }}>↓</span>
+            )}
+          </span>
+        </div>
+        <div style={{
+          width: '100%',
+          height: '10px',
+          background: 'rgba(100, 116, 139, 0.2)',
+          borderRadius: '5px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* League average marker */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: 0,
+            bottom: 0,
+            width: '2px',
+            background: 'rgba(212, 175, 55, 0.6)',
+            zIndex: 2
+          }} />
+          {/* Progress bar */}
+          <div style={{
+            width: `${awayValue}%`,
+            height: '100%',
+            background: `linear-gradient(90deg, ${awayColor} 0%, ${awayColor}CC 100%)`,
+            borderRadius: '5px',
+            transition: TRANSITIONS.normal,
+            position: 'relative',
+            zIndex: 1
+          }} />
+        </div>
+      </div>
+      
+      {/* Home Team Bar */}
+      <div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '0.25rem',
+          fontSize: TYPOGRAPHY.caption.size
+        }}>
+          <span style={{ fontWeight: TYPOGRAPHY.body.weight, color: 'var(--color-text-primary)' }}>
+            {homeTeam}
+          </span>
+          <span style={{ 
+            fontWeight: TYPOGRAPHY.heading.weight, 
+            color: homeColor,
+            fontFeatureSettings: "'tnum'"
+          }}>
+            {homeValue.toFixed(1)}%
+            {homeValue > leagueAvg && (
+              <span style={{ color: '#10B981', marginLeft: '0.25rem' }}>↑</span>
+            )}
+            {homeValue < leagueAvg && (
+              <span style={{ color: '#EF4444', marginLeft: '0.25rem' }}>↓</span>
+            )}
+          </span>
+        </div>
+        <div style={{
+          width: '100%',
+          height: '10px',
+          background: 'rgba(100, 116, 139, 0.2)',
+          borderRadius: '5px',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* League average marker */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: 0,
+            bottom: 0,
+            width: '2px',
+            background: 'rgba(212, 175, 55, 0.6)',
+            zIndex: 2
+          }} />
+          {/* Progress bar */}
+          <div style={{
+            width: `${homeValue}%`,
+            height: '100%',
+            background: `linear-gradient(90deg, ${homeColor} 0%, ${homeColor}CC 100%)`,
+            borderRadius: '5px',
+            transition: TRANSITIONS.normal,
+            position: 'relative',
+            zIndex: 1
+          }} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Faceoff Circle - Circular progress indicator
+const FaceoffCircle = ({ team, percentage, isMobile }) => {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (percentage / 100) * circumference;
+  const color = percentage > 50 ? '#10B981' : percentage < 50 ? '#EF4444' : '#8B5CF6';
+  
+  return (
+    <div style={{
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      background: GRADIENTS.factors,
+      border: ELEVATION.flat.border,
+      borderRadius: '8px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{
+        fontSize: TYPOGRAPHY.caption.size,
+        fontWeight: TYPOGRAPHY.heading.weight,
+        color: 'var(--color-text-muted)',
+        marginBottom: '0.5rem',
         textTransform: TYPOGRAPHY.label.textTransform,
         letterSpacing: TYPOGRAPHY.label.letterSpacing
       }}>
-        {team}
+        {team} Faceoffs
       </div>
-
-      <StatRow label="Corsi %" value={`${corsi.toFixed(1)}%`} />
-      <StatRow label="Fenwick %" value={`${fenwick.toFixed(1)}%`} />
-      <StatRow label="xGoals %" value={`${xGoalsPct.toFixed(1)}%`} />
-      <StatRow label="Faceoff %" value={`${faceoffPct.toFixed(1)}%`} />
+      <svg width="100" height="100">
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          fill="none"
+          stroke="rgba(100, 116, 139, 0.2)"
+          strokeWidth="8"
+        />
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+          strokeLinecap="round"
+          transform="rotate(-90 50 50)"
+          style={{ transition: TRANSITIONS.slow }}
+        />
+        <text
+          x="50"
+          y="50"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          style={{
+            fontSize: TYPOGRAPHY.subheading.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            fill: color,
+            fontFeatureSettings: "'tnum'"
+          }}
+        >
+          {percentage.toFixed(1)}%
+        </text>
+      </svg>
     </div>
   );
 };
 
 // ======================
-// REGRESSION SECTION
+// REGRESSION SECTION - WITH EXPLANATIONS (Phase 3)
 // ======================
 const RegressionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   return (
@@ -849,10 +1101,54 @@ const RegressionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   );
 };
 
-// Regression Card - Enhanced with trend arrows (Phase 3)
+// Regression Card - WITH CLEAR BETTER/WORSE INDICATORS
 const RegressionCard = ({ team, pdo, shootingPct, savePct, goalsVsXg, isMobile }) => {
-  const pdoColor = pdo > 102 ? '#EF4444' : pdo < 98 ? '#10B981' : '#64748B';
-  const pdoArrow = pdo > 102 ? '↗️' : pdo < 98 ? '↘️' : '→';
+  // Determine regression direction and explanation
+  const getRegressionOutlook = () => {
+    if (pdo > 104) {
+      return {
+        status: 'LIKELY TO DECLINE',
+        color: '#EF4444',
+        icon: '📉',
+        explanation: 'PDO >104 indicates unsustainable luck. Expect fewer goals.',
+        arrow: '↘️'
+      };
+    } else if (pdo > 102) {
+      return {
+        status: 'MILD DECLINE LIKELY',
+        color: '#F59E0B',
+        icon: '⚠️',
+        explanation: 'PDO >102 suggests slight overperformance. Some regression expected.',
+        arrow: '↘️'
+      };
+    } else if (pdo < 96) {
+      return {
+        status: 'LIKELY TO IMPROVE',
+        color: '#10B981',
+        icon: '📈',
+        explanation: 'PDO <96 indicates bad luck. Expect more goals.',
+        arrow: '↗️'
+      };
+    } else if (pdo < 98) {
+      return {
+        status: 'MILD IMPROVEMENT LIKELY',
+        color: '#0EA5E9',
+        icon: '⬆️',
+        explanation: 'PDO <98 suggests slight underperformance. Some improvement expected.',
+        arrow: '↗️'
+      };
+    } else {
+      return {
+        status: 'SUSTAINABLE',
+        color: '#8B5CF6',
+        icon: '✓',
+        explanation: 'PDO 98-102 indicates sustainable performance.',
+        arrow: '→'
+      };
+    }
+  };
+  
+  const outlook = getRegressionOutlook();
   
   return (
     <div style={{
@@ -865,18 +1161,53 @@ const RegressionCard = ({ team, pdo, shootingPct, savePct, goalsVsXg, isMobile }
         fontSize: TYPOGRAPHY.caption.size,
         fontWeight: TYPOGRAPHY.heading.weight,
         color: 'var(--color-text-muted)',
-        marginBottom: isMobile ? '0.5rem' : '0.75rem',
+        marginBottom: '0.5rem',
         textTransform: TYPOGRAPHY.label.textTransform,
         letterSpacing: TYPOGRAPHY.label.letterSpacing
       }}>
         {team}
       </div>
 
+      {/* Regression Outlook Banner */}
+      <div style={{
+        padding: isMobile ? MOBILE_SPACING.innerPadding : '0.75rem',
+        background: `${outlook.color}15`,
+        border: `1px solid ${outlook.color}40`,
+        borderRadius: '6px',
+        marginBottom: isMobile ? '0.5rem' : '0.75rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.375rem'
+        }}>
+          <span style={{ fontSize: TYPOGRAPHY.body.size }}>{outlook.icon}</span>
+          <span style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: outlook.color,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            {outlook.status}
+          </span>
+        </div>
+        <div style={{
+          fontSize: TYPOGRAPHY.caption.size,
+          color: 'var(--color-text-secondary)',
+          lineHeight: TYPOGRAPHY.body.lineHeight,
+          fontStyle: 'italic'
+        }}>
+          {outlook.explanation}
+        </div>
+      </div>
+
       <StatRow 
-        label={`PDO ${pdoArrow}`} // Trend arrow (Phase 3)
+        label={`PDO ${outlook.arrow}`}
         value={pdo.toFixed(1)}
         badge={pdo > 102 ? 'Hot' : pdo < 98 ? 'Cold' : 'Average'}
-        badgeColor={pdoColor}
+        badgeColor={outlook.color}
       />
       <StatRow label="Shooting %" value={`${shootingPct.toFixed(1)}%`} />
       <StatRow label="Save %" value={`${savePct.toFixed(1)}%`} />
