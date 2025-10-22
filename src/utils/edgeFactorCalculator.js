@@ -77,6 +77,10 @@ export class EdgeFactorCalculator {
     const awayOffRank = this.analyzer.getLeagueRank(awayTeam, 'highDangerxGoalsFor', '5on5', true);
     const homeDefRank = this.analyzer.getLeagueRank(homeTeam, 'highDangerxGoalsAgainst', '5on5', false);
 
+    // Determine which side has the advantage
+    const advantage = awayOffVsHomeDef > homeOffVsAwayDef ? awayTeam : 
+                     homeOffVsAwayDef > awayOffVsHomeDef ? homeTeam : 'even';
+
     return {
       name: 'High-Danger Shot Quality',
       importance: 'CRITICAL',
@@ -85,23 +89,28 @@ export class EdgeFactorCalculator {
       awayMetric: {
         value: awayHD.hdXgfPer60,
         rank: awayOffRank,
-        label: `${awayTeam} HD-xGF/60`
+        label: `${awayTeam} Offense (HD-xGF/60)`,
+        detail: `${awayHD.hdGoalsFor} HD goals scored`
       },
       homeMetric: {
         value: homeHD.hdXgaPer60,
         rank: homeDefRank,
-        label: `${homeTeam} HD-xGA/60`
+        label: `${homeTeam} Defense (HD-xGA/60)`,
+        detail: `${homeHD.hdGoalsAgainst} HD goals allowed`
       },
-      leagueAvg: this.analyzer.leagueAverages.hdXgfPer60 || 7.5,
-      explanation: `High-danger shots are 5x more likely to score than low-danger attempts. ${
-        goalImpact < 0 
-          ? `Defense has the advantage, limiting HD chances by ${Math.abs(goalImpact * 4).toFixed(1)}/game.`
-          : `Offense has the advantage, creating ${(goalImpact * 4).toFixed(1)} more HD chances/game.`
-      }`,
+      leagueAvg: this.analyzer.leagueAverages.hdXgfPer60 || 0.85,
+      explanation: advantage === 'even'
+        ? 'Evenly matched high-danger shot creation and prevention. Both teams effective in key scoring areas.'
+        : `${advantage} has the edge in high-danger situations. ${
+            Math.abs(goalImpact) > 0.05
+              ? `Quality scoring chances favor this matchup by ~${Math.abs(goalImpact * 3).toFixed(1)} HD shots/game.`
+              : 'Marginal difference in quality chances.'
+          }`,
       dataPoints: {
         awayHDShots: awayHD.hdShotsFor,
         homeHDAllowed: homeHD.hdShotsAgainst,
-        matchupEdge: awayOffVsHomeDef
+        awayAdvantage: awayOffVsHomeDef,
+        homeAdvantage: homeOffVsAwayDef
       }
     };
   }
@@ -115,12 +124,18 @@ export class EdgeFactorCalculator {
     
     if (!awayReb || !homeReb) return null;
 
-    // Away's ability to generate rebounds vs Home's ability to limit them
-    const awayRebAdvantage = awayReb.rebXgfPer60 - homeReb.rebXgaPer60;
-    const homeRebAdvantage = homeReb.rebXgfPer60 - awayReb.rebXgaPer60;
+    // Compare OFFENSE vs DEFENSE (apples to apples)
+    // Away offense (creating rebounds) vs Home defense (limiting rebounds)
+    const awayOffVsHomeDef = awayReb.rebXgfPer60 - homeReb.rebXgaPer60;
+    // Home offense (creating rebounds) vs Away defense (limiting rebounds)
+    const homeOffVsAwayDef = homeReb.rebXgfPer60 - awayReb.rebXgaPer60;
     
-    const netImpact = (awayRebAdvantage + homeRebAdvantage) / 2;
+    const netImpact = (awayOffVsHomeDef + homeOffVsAwayDef) / 2;
     const goalImpact = netImpact * 0.15; // Rebounds account for ~15% of goals
+
+    // Determine which side has the advantage
+    const advantage = awayOffVsHomeDef > homeOffVsAwayDef ? awayTeam : 
+                     homeOffVsAwayDef > awayOffVsHomeDef ? homeTeam : 'even';
 
     return {
       name: 'Rebound Control & Second Chances',
@@ -128,25 +143,30 @@ export class EdgeFactorCalculator {
       stars: 3,
       impact: goalImpact,
       awayMetric: {
-        value: awayReb.rebConversion,
-        label: `${awayTeam} Rebound Conversion`,
-        detail: `${awayReb.rebGoalsFor}/${Math.round(awayReb.xRebFor)} attempts`
+        value: awayReb.rebXgfPer60,
+        rank: this.analyzer.getLeagueRank(awayTeam, 'xReboundsFor', '5on5', true),
+        label: `${awayTeam} Offense (Reb xGF/60)`,
+        detail: `${awayReb.rebGoalsFor} rebound goals scored`
       },
       homeMetric: {
         value: homeReb.rebXgaPer60,
-        label: `${homeTeam} Rebound xGA/60`,
-        detail: `Allows ${homeReb.rebGoalsAgainst} rebound goals`
+        rank: this.analyzer.getLeagueRank(homeTeam, 'xReboundsAgainst', '5on5', false),
+        label: `${homeTeam} Defense (Reb xGA/60)`,
+        detail: `${homeReb.rebGoalsAgainst} rebound goals allowed`
       },
-      leagueAvg: 15, // League average rebound conversion ~15%
-      explanation: `Second-chance opportunities typically add 0.3-0.4 goals per game. ${
-        goalImpact < 0
-          ? `Strong rebound control limits scoring chances.`
-          : `Poor rebound control creates extra opportunities.`
-      }`,
+      leagueAvg: this.analyzer.leagueAverages.rebXgfPer60 || 10.0,
+      explanation: advantage === 'even' 
+        ? 'Evenly matched rebound creation and control. Expect typical second-chance opportunities.'
+        : `${advantage} creates more second-chance opportunities in this matchup. ${
+            Math.abs(goalImpact) > 0.05 
+              ? `Could add ~${Math.abs(goalImpact * 2).toFixed(1)} extra scoring chances.`
+              : 'Minor impact on total scoring.'
+          }`,
       dataPoints: {
         awayRebGoals: awayReb.rebGoalsFor,
         homeRebAllowed: homeReb.rebGoalsAgainst,
-        conversionDiff: awayReb.rebConversion - 15
+        awayAdvantage: awayOffVsHomeDef,
+        homeAdvantage: homeOffVsAwayDef
       }
     };
   }
