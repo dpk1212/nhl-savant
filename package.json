@@ -9,11 +9,14 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
-    "backtest": "node backtesting/runBacktest.js"
+    "backtest": "node backtesting/runBacktest.js",
+    "update-results": "node updateTuesdayResults.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.15",
     "autoprefixer": "^10.4.21",
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.3",
     "firebase": "^12.4.0",
     "lucide-react": "^0.546.0",
     "papaparse": "^5.5.3",
