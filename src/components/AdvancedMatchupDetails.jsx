@@ -268,16 +268,14 @@ const AdvancedMatchupDetails = ({
             />
           )}
 
-          {/* Goaltender Matchup */}
-          {awayGoalie && homeGoalie && (
-            <GoalieMatchupSection
-              awayGoalie={awayGoalie}
-              homeGoalie={homeGoalie}
-              awayTeam={awayTeam}
-              homeTeam={homeTeam}
-              isMobile={isMobile}
-            />
-          )}
+          {/* Goaltender Matchup - Always show, component handles waiting states */}
+          <GoalieMatchupSection
+            awayGoalie={awayGoalie}
+            homeGoalie={homeGoalie}
+            awayTeam={awayTeam}
+            homeTeam={homeTeam}
+            isMobile={isMobile}
+          />
 
           {/* Rebound Analysis */}
           {reboundData && (
