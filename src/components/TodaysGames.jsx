@@ -860,22 +860,43 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
   // Only show if alternative has positive EV
   if (!altBet || altBet.evPercent <= 0) return null;
   
-  // Generate supporting insights for alternative bet
+  // Generate bet-specific explanations for insights
   const getSupportingInsights = () => {
     if (!factors || factors.length === 0) return [];
     
     const insights = [];
     
     if (isValueBetTotal) {
-      // Alternative is ML - show factors that favor the team
+      // Alternative is ML - show factors that favor the team with detailed explanations
       factors.forEach(f => {
         const awayVal = f.awayMetric?.value || 0;
         const homeVal = f.homeMetric?.value || 0;
         const hasAdvantage = awayVal > homeVal ? awayTeam : homeTeam;
+        const percentDiff = ((Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2)) * 100).toFixed(0);
         
         if (hasAdvantage === altTeam && Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10) {
-          const percentDiff = ((Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2)) * 100).toFixed(0);
-          insights.push(`${f.name}: ${altTeam} has ${percentDiff}% edge`);
+          // Generate ML-specific explanation
+          let explanation = '';
+          if (f.name === 'Expected Goals') {
+            explanation = `${altTeam} projects to score ${Math.abs(f.impact).toFixed(2)} more goals, making them a strong WIN candidate.`;
+          } else if (f.name === 'Offensive Rating') {
+            explanation = `${altTeam} generates ${percentDiff}% more high-danger chances, giving them a scoring edge to WIN.`;
+          } else if (f.name === 'Defensive Rating') {
+            explanation = `${altTeam} allows ${percentDiff}% fewer dangerous chances, making it harder for opponents to WIN.`;
+          } else if (f.name === 'Special Teams') {
+            explanation = `${altTeam} has superior power play execution, creating more scoring chances to WIN.`;
+          } else if (f.name === 'Possession & Control') {
+            explanation = `${altTeam} controls ${percentDiff}% more of the play, dictating the pace to WIN.`;
+          } else {
+            explanation = `${altTeam} has a ${percentDiff}% advantage in ${f.name.toLowerCase()}, improving their chances to WIN.`;
+          }
+          
+          insights.push({
+            icon: f.stars === 3 ? '🔥' : f.stars === 2 ? '🎯' : '⚡',
+            name: f.name,
+            edge: `${altTeam} has ${percentDiff}% edge`,
+            explanation
+          });
         }
       });
     } else {
@@ -884,104 +905,208 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
       factors.forEach(f => {
         const alignsWithAlt = (isAltOver && f.impact > 0.05) || (!isAltOver && f.impact < -0.05);
         if (alignsWithAlt && Math.abs(f.impact) > 0.05) {
-          insights.push(`${f.name}: ${Math.abs(f.impact).toFixed(2)} goal impact`);
+          const direction = isAltOver ? 'OVER' : 'UNDER';
+          const explanation = `${f.name} pushes the total ${direction} by ~${Math.abs(f.impact).toFixed(2)} goals, creating value.`;
+          
+          insights.push({
+            icon: f.stars === 3 ? '🔥' : f.stars === 2 ? '🎯' : '⚡',
+            name: f.name,
+            edge: `${Math.abs(f.impact).toFixed(2)} goal impact`,
+            explanation
+          });
         }
       });
     }
     
-    return insights.slice(0, 2); // Max 2 insights
+    return insights.slice(0, 3); // Max 3 insights
   };
   
   const insights = getSupportingInsights();
   const evColor = getEVColorScale(altBet.evPercent);
   
+  // Generate context message
+  const getAlternativeContext = () => {
+    if (isValueBetTotal) {
+      return `While ${bestEdge.pick} is our top pick, ${altTeam} ML offers strong value if you prefer betting on the winner.`;
+    } else {
+      return `While ${bestEdge.team} ML is our top pick, ${altPick} offers strong value if you prefer betting on the total.`;
+    }
+  };
+  
+  const contextMessage = getAlternativeContext();
+  const impliedProb = calculateImpliedProb(altBet.odds);
+  const edgePts = ((altBet.modelProb - impliedProb) * 100).toFixed(1);
+  
   return (
     <div style={{
-      background: 'rgba(0, 0, 0, 0.2)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: MOBILE_SPACING.borderRadius,
-      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.05) 100%)',
+      border: '1px solid rgba(212, 175, 55, 0.3)',
+      borderRadius: '12px',
+      padding: isMobile ? MOBILE_SPACING.cardPadding : '1.25rem',
       margin: isMobile ? `${MOBILE_SPACING.sectionGap} ${MOBILE_SPACING.cardPadding}` : '1.25rem',
-      opacity: 0.9
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(212, 175, 55, 0.1)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* Gold accent bar at top */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '0.5rem'
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '3px',
+        background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.8) 0%, rgba(212, 175, 55, 0.3) 100%)'
+      }} />
+      
+      {/* Header */}
+      <div style={{
+        marginBottom: '1rem',
+        paddingTop: '0.5rem'
       }}>
-        <div style={{ flex: 1 }}>
+        <div style={{
+          fontSize: TYPOGRAPHY.label.size,
+          color: 'var(--color-accent)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          fontWeight: TYPOGRAPHY.heading.weight,
+          marginBottom: '0.75rem'
+        }}>
+          ⭐ ALSO CONSIDER THIS VALUE BET
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '0.625rem'
+        }}>
           <div style={{
-            fontSize: TYPOGRAPHY.caption.size,
-            color: 'var(--color-text-muted)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            fontWeight: TYPOGRAPHY.label.weight,
-            marginBottom: '0.25rem'
-          }}>
-            💡 Alternative Opportunity
-          </div>
-          <div style={{
-            fontSize: TYPOGRAPHY.body.size,
+            fontSize: TYPOGRAPHY.subheading.size,
             fontWeight: TYPOGRAPHY.heading.weight,
             color: 'var(--color-text-primary)'
           }}>
-            {alternativeMarket}: {altPick}
+            {isValueBetTotal ? `${altPick} to WIN` : altPick}
+          </div>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '0.25rem'
+          }}>
+            <div style={{
+              fontSize: TYPOGRAPHY.subheading.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: evColor.color
+            }}>
+              +{altBet.evPercent.toFixed(1)}% EV
+            </div>
+            <div style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              fontWeight: TYPOGRAPHY.label.weight,
+              color: evColor.color,
+              padding: '0.125rem 0.5rem',
+              background: `${evColor.color}22`,
+              borderRadius: '4px',
+              border: `1px solid ${evColor.color}`
+            }}>
+              {evColor.label}
+            </div>
           </div>
         </div>
+        
+        {/* Context message */}
         <div style={{
-          fontSize: TYPOGRAPHY.subheading.size,
-          fontWeight: TYPOGRAPHY.heading.weight,
-          color: evColor.color
+          fontSize: TYPOGRAPHY.body.size,
+          color: 'var(--color-text-muted)',
+          lineHeight: 1.5
         }}>
-          +{altBet.evPercent.toFixed(1)}%
+          {contextMessage}
         </div>
       </div>
       
-      {/* Supporting insights */}
+      {/* Premium insights section */}
       {insights.length > 0 && (
         <div style={{
-          marginTop: '0.75rem',
-          marginBottom: '0.5rem',
-          padding: '0.5rem',
-          background: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: '6px',
-          borderLeft: '3px solid rgba(212, 175, 55, 0.5)'
+          padding: '1rem',
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.03) 100%)',
+          border: '1px solid rgba(212, 175, 55, 0.2)',
+          borderRadius: '8px',
+          marginBottom: '1rem',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
         }}>
           <div style={{
-            fontSize: TYPOGRAPHY.caption.size,
+            fontSize: TYPOGRAPHY.label.size,
             color: 'var(--color-accent)',
-            fontWeight: TYPOGRAPHY.label.weight,
-            marginBottom: '0.375rem',
+            fontWeight: TYPOGRAPHY.heading.weight,
+            marginBottom: '0.75rem',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.08em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            Why this bet:
+            <span style={{ fontSize: '1rem' }}>✓</span>
+            WHY THIS BET HAS VALUE:
           </div>
+          
           {insights.map((insight, idx) => (
             <div key={idx} style={{
-              fontSize: TYPOGRAPHY.caption.size,
-              color: 'var(--color-text-muted)',
-              marginBottom: idx < insights.length - 1 ? '0.25rem' : 0,
-              paddingLeft: '0.5rem',
-              position: 'relative'
+              marginBottom: idx < insights.length - 1 ? '0.875rem' : 0,
+              paddingBottom: idx < insights.length - 1 ? '0.875rem' : 0,
+              borderBottom: idx < insights.length - 1 ? '1px solid rgba(212, 175, 55, 0.2)' : 'none'
             }}>
-              <span style={{
-                position: 'absolute',
-                left: 0,
-                color: 'var(--color-accent)'
-              }}>•</span>
-              {insight}
+              {/* Factor name */}
+              <div style={{
+                fontSize: TYPOGRAPHY.caption.size,
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontWeight: TYPOGRAPHY.label.weight,
+                marginBottom: '0.375rem'
+              }}>
+                {insight.icon} {insight.name}
+              </div>
+              
+              {/* Edge */}
+              <div style={{
+                fontSize: TYPOGRAPHY.body.size,
+                fontWeight: TYPOGRAPHY.heading.weight,
+                color: '#D4AF37',
+                marginBottom: '0.375rem'
+              }}>
+                {insight.edge}
+              </div>
+              
+              {/* Explanation */}
+              <div style={{
+                fontSize: TYPOGRAPHY.body.size,
+                color: 'var(--color-text-primary)',
+                lineHeight: 1.5
+              }}>
+                {insight.explanation}
+              </div>
             </div>
           ))}
         </div>
       )}
       
+      {/* Footer with odds and probabilities */}
       <div style={{
         fontSize: TYPOGRAPHY.caption.size,
-        color: 'var(--color-text-muted)'
+        color: 'var(--color-text-muted)',
+        paddingTop: '0.75rem',
+        borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.5rem'
       }}>
-        Odds: {altBet.odds > 0 ? '+' : ''}{altBet.odds} • Model Prob: {(altBet.modelProb * 100).toFixed(1)}%
+        <span>Odds: {altBet.odds > 0 ? '+' : ''}{altBet.odds}</span>
+        <span>Model: {(altBet.modelProb * 100).toFixed(1)}% vs {(impliedProb * 100).toFixed(1)}%</span>
+        <span style={{ color: '#D4AF37', fontWeight: TYPOGRAPHY.label.weight }}>
+          Edge: +{edgePts}pts
+        </span>
       </div>
     </div>
   );
