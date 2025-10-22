@@ -1,11 +1,14 @@
 /**
  * Advanced Matchup Details
- * Expandable deep dive into all 100+ advanced statistics
+ * Elite-level deep dive into 100+ advanced statistics
+ * Bloomberg Terminal-inspired data storytelling platform
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Shield, Zap, Target, TrendingUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, Zap, Target, TrendingUp, Trophy, Activity } from 'lucide-react';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
+import { ELEVATION, TYPOGRAPHY, GRADIENTS, MOBILE_SPACING, TRANSITIONS, getEVColorScale } from '../utils/designSystem';
+import { getStatDisplayName, getStatTooltip } from '../utils/statDisplayNames';
 
 const AdvancedMatchupDetails = ({ 
   awayTeam, 
@@ -15,58 +18,59 @@ const AdvancedMatchupDetails = ({
   physicalData,
   possessionData,
   regressionData,
-  isMobile 
+  isMobile,
+  bestEdge, // For bet-specific prioritization
+  statsAnalyzer // For league context
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Generate Quick Hits insights
+  // Generate bet-specific Quick Hits
   const generateQuickHits = () => {
     const hits = [];
+    const betType = bestEdge?.type || 'TOTAL';
     
-    // Danger Zone insight
-    if (dangerZoneData && dangerZoneData.away && dangerZoneData.home) {
-      const awayHighDanger = dangerZoneData.away.highDanger || 0;
-      const homeHighDanger = dangerZoneData.home.highDanger || 0;
-      if (Math.abs(awayHighDanger - homeHighDanger) > 2) {
-        const leader = awayHighDanger > homeHighDanger ? awayTeam : homeTeam;
-        const diff = Math.abs(awayHighDanger - homeHighDanger).toFixed(1);
-        hits.push(`${leader} generates ${diff} more high-danger chances per game`);
+    // Prioritize based on bet type
+    if (betType === 'TOTAL' || betType === 'OVER' || betType === 'UNDER') {
+      // Danger Zone insight (HIGH IMPACT for totals)
+      if (dangerZoneData && dangerZoneData.away && dangerZoneData.home) {
+        const awayHighDanger = dangerZoneData.away.high?.shots || 0;
+        const homeHighDanger = dangerZoneData.home.high?.shots || 0;
+        if (Math.abs(awayHighDanger - homeHighDanger) > 2) {
+          const leader = awayHighDanger > homeHighDanger ? awayTeam : homeTeam;
+          const diff = Math.abs(awayHighDanger - homeHighDanger).toFixed(1);
+          hits.push(`${leader} generates ${diff} more high-danger chances per game`);
+        }
+      }
+      
+      // Physical play insight (HIGH IMPACT for totals)
+      if (physicalData && physicalData.length > 0) {
+        const blockMetric = physicalData.find(m => m.stat === 'Shot Blocks');
+        if (blockMetric) {
+          const leader = blockMetric.advantage === 'away' ? awayTeam : homeTeam;
+          hits.push(`${leader} blocks ${blockMetric.diff} more shots per game`);
+        }
       }
     }
     
-    // Physical play insight
-    if (physicalData && physicalData.away && physicalData.home) {
-      const awayBlocks = physicalData.away.blocks || 0;
-      const homeBlocks = physicalData.home.blocks || 0;
-      if (Math.abs(awayBlocks - homeBlocks) > 2) {
-        const leader = awayBlocks > homeBlocks ? awayTeam : homeTeam;
-        const pct = ((Math.max(awayBlocks, homeBlocks) / Math.min(awayBlocks, homeBlocks) - 1) * 100).toFixed(0);
-        hits.push(`${leader} blocks ${pct}% more shots than opponent`);
-      }
-    }
-    
-    // Regression insight
+    // Regression insight (MODERATE IMPACT for all bet types)
     if (regressionData && regressionData.away && regressionData.home) {
       const awayPDO = regressionData.away.pdo || 100;
       const homePDO = regressionData.home.pdo || 100;
       if (awayPDO > 102) {
-        hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) suggests positive regression due`);
-      }
-      if (homePDO > 102) {
-        hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) suggests positive regression due`);
-      }
-      if (awayPDO < 98) {
+        hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) suggests regression due`);
+      } else if (homePDO > 102) {
+        hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) suggests regression due`);
+      } else if (awayPDO < 98) {
         hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) indicates potential bounce-back`);
-      }
-      if (homePDO < 98) {
+      } else if (homePDO < 98) {
         hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) indicates potential bounce-back`);
       }
     }
     
-    // Possession insight
-    if (possessionData && possessionData.away && possessionData.home) {
-      const awayCorsi = possessionData.away.corsiPercentage || 50;
-      const homeCorsi = possessionData.home.corsiPercentage || 50;
+    // Possession insight (HIGH IMPACT for ML bets, MODERATE for totals)
+    if (possessionData && possessionData.away && possessionData.home && hits.length < 3) {
+      const awayCorsi = possessionData.away.corsiPct || 50;
+      const homeCorsi = possessionData.home.corsiPct || 50;
       if (Math.abs(awayCorsi - homeCorsi) > 5) {
         const leader = awayCorsi > homeCorsi ? awayTeam : homeTeam;
         const value = Math.max(awayCorsi, homeCorsi).toFixed(1);
@@ -81,50 +85,57 @@ const AdvancedMatchupDetails = ({
 
   return (
     <div style={{
-      background: 'rgba(26, 31, 46, 0.4)',
-      border: '1px solid rgba(100, 116, 139, 0.25)',
-      borderRadius: '12px',
+      background: GRADIENTS.factors,
+      border: ELEVATION.raised.border,
+      boxShadow: ELEVATION.raised.shadow,
+      borderRadius: MOBILE_SPACING.borderRadius,
       overflow: 'hidden',
-      marginBottom: '1.5rem'
+      marginBottom: isMobile ? MOBILE_SPACING.sectionGap : '1.5rem',
+      transition: TRANSITIONS.normal
     }}>
       {/* Header - Always Visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        aria-controls="advanced-metrics-content"
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} advanced metrics section`}
         style={{
           width: '100%',
-          padding: isMobile ? '1rem' : '1.25rem',
+          padding: isMobile ? MOBILE_SPACING.cardPadding : '1.25rem',
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          transition: 'background 0.2s ease'
+          transition: TRANSITIONS.normal
         }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(100, 116, 139, 0.1)'}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)'}
         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
       >
         <div style={{ textAlign: 'left' }}>
           <div style={{
-            fontSize: isMobile ? '1rem' : '1.125rem',
-            fontWeight: '800',
+            fontSize: isMobile ? TYPOGRAPHY.body.size : TYPOGRAPHY.heading.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
             color: 'var(--color-text-primary)',
             marginBottom: '0.25rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            letterSpacing: TYPOGRAPHY.heading.letterSpacing
           }}>
             <Target size={20} style={{ color: 'var(--color-accent)' }} />
             Deep Dive: Advanced Metrics
           </div>
           <div style={{
-            fontSize: '0.75rem',
+            fontSize: TYPOGRAPHY.caption.size,
             color: 'var(--color-text-muted)',
-            fontWeight: '500'
+            fontWeight: TYPOGRAPHY.caption.weight,
+            lineHeight: TYPOGRAPHY.caption.lineHeight
           }}>
             {isExpanded 
-              ? 'Showing all 12+ statistical categories' 
-              : 'Danger zones, rebounds, physical play, and more'}
+              ? '7 statistical categories expanded' 
+              : 'Danger zones, goalies, special teams, and more'}
           </div>
         </div>
         
@@ -135,10 +146,10 @@ const AdvancedMatchupDetails = ({
           color: 'var(--color-accent)'
         }}>
           <span style={{
-            fontSize: '0.688rem',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontSize: TYPOGRAPHY.label.size,
+            fontWeight: TYPOGRAPHY.label.weight,
+            textTransform: TYPOGRAPHY.label.textTransform,
+            letterSpacing: TYPOGRAPHY.label.letterSpacing
           }}>
             {isExpanded ? 'Collapse' : 'Expand'}
           </span>
@@ -149,17 +160,17 @@ const AdvancedMatchupDetails = ({
       {/* Quick Hits - Show when collapsed */}
       {!isExpanded && quickHits.length > 0 && (
         <div style={{
-          padding: isMobile ? '1rem' : '1.25rem',
+          padding: isMobile ? MOBILE_SPACING.cardPadding : '1.25rem',
           paddingTop: 0,
-          borderTop: '1px solid rgba(100, 116, 139, 0.15)'
+          borderTop: ELEVATION.flat.border
         }}>
           <div style={{
-            fontSize: '0.813rem',
-            fontWeight: '700',
+            fontSize: TYPOGRAPHY.label.size,
+            fontWeight: TYPOGRAPHY.label.weight,
             color: 'var(--color-accent)',
             marginBottom: '0.75rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            textTransform: TYPOGRAPHY.label.textTransform,
+            letterSpacing: TYPOGRAPHY.label.letterSpacing,
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
@@ -174,18 +185,19 @@ const AdvancedMatchupDetails = ({
           }}>
             {quickHits.map((hit, idx) => (
               <li key={idx} style={{
-                fontSize: '0.875rem',
+                fontSize: TYPOGRAPHY.body.size,
                 color: 'var(--color-text-primary)',
                 marginBottom: idx < quickHits.length - 1 ? '0.5rem' : 0,
                 paddingLeft: '1.25rem',
                 position: 'relative',
-                lineHeight: '1.5'
+                lineHeight: TYPOGRAPHY.body.lineHeight,
+                fontWeight: TYPOGRAPHY.body.weight
               }}>
                 <span style={{
                   position: 'absolute',
                   left: 0,
                   color: 'var(--color-accent)',
-                  fontWeight: '700'
+                  fontWeight: TYPOGRAPHY.heading.weight
                 }}>
                   •
                 </span>
@@ -196,7 +208,7 @@ const AdvancedMatchupDetails = ({
           <div style={{
             marginTop: '0.75rem',
             paddingTop: '0.75rem',
-            borderTop: '1px solid rgba(100, 116, 139, 0.15)',
+            borderTop: ELEVATION.flat.border,
             textAlign: 'center'
           }}>
             <button
@@ -206,11 +218,11 @@ const AdvancedMatchupDetails = ({
                 border: '1px solid rgba(212, 175, 55, 0.3)',
                 borderRadius: '6px',
                 padding: '0.5rem 1rem',
-                fontSize: '0.813rem',
-                fontWeight: '600',
+                fontSize: TYPOGRAPHY.label.size,
+                fontWeight: TYPOGRAPHY.body.weight,
                 color: 'var(--color-accent)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: TRANSITIONS.normal
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
@@ -229,18 +241,27 @@ const AdvancedMatchupDetails = ({
 
       {/* Expandable Content */}
       {isExpanded && (
-        <div style={{
-          padding: isMobile ? '1rem' : '1.5rem',
-          paddingTop: 0,
-          borderTop: '1px solid rgba(100, 116, 139, 0.2)'
-        }}>
+        <div 
+          id="advanced-metrics-content"
+          role="region"
+          aria-label="Advanced metrics detailed breakdown"
+          style={{
+            padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem',
+            paddingTop: 0,
+            borderTop: ELEVATION.flat.border,
+            maxHeight: isExpanded ? '10000px' : '0',
+            overflow: isExpanded ? 'visible' : 'hidden',
+            transition: 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
           {/* Danger Zone Breakdown */}
           {dangerZoneData && (
             <DangerZoneSection 
               data={dangerZoneData} 
               awayTeam={awayTeam} 
               homeTeam={homeTeam} 
-              isMobile={isMobile} 
+              isMobile={isMobile}
+              statsAnalyzer={statsAnalyzer}
             />
           )}
 
@@ -289,14 +310,42 @@ const AdvancedMatchupDetails = ({
   );
 };
 
-// Danger Zone Section
-const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile }) => {
+// ======================
+// RANK BADGE COMPONENT (Phase 2)
+// ======================
+const RankBadge = ({ rank, total = 32 }) => {
+  if (!rank) return null;
+  
+  const tier = rank <= 3 ? 'ELITE' : rank <= 10 ? 'STRONG' : rank <= 22 ? 'AVERAGE' : 'WEAK';
+  const color = tier === 'ELITE' ? '#10B981' : tier === 'STRONG' ? '#0EA5E9' : 
+                tier === 'AVERAGE' ? '#8B5CF6' : '#EF4444';
+  
   return (
-    <Section title="🎯 Shot Danger Distribution" icon={<Target size={18} />} isMobile={isMobile}>
+    <span style={{
+      fontSize: TYPOGRAPHY.caption.size,
+      fontWeight: TYPOGRAPHY.label.weight,
+      color,
+      background: `${color}20`,
+      padding: '0.125rem 0.375rem',
+      borderRadius: '4px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.03em'
+    }}>
+      #{rank} {tier}
+    </span>
+  );
+};
+
+// ======================
+// DANGER ZONE SECTION
+// ======================
+const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile, statsAnalyzer }) => {
+  return (
+    <Section title="Shot Danger Distribution" icon={<Target size={18} />} isMobile={isMobile} importance="HIGH">
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-        gap: '1rem',
+        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
         marginBottom: '1rem'
       }}>
         {/* Low Danger */}
@@ -309,6 +358,7 @@ const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           homeXg={data.home.low.xGoals}
           awayTeam={awayTeam}
           homeTeam={homeTeam}
+          isMobile={isMobile}
         />
 
         {/* Medium Danger */}
@@ -321,6 +371,7 @@ const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           homeXg={data.home.medium.xGoals}
           awayTeam={awayTeam}
           homeTeam={homeTeam}
+          isMobile={isMobile}
         />
 
         {/* High Danger */}
@@ -333,18 +384,20 @@ const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           homeXg={data.home.high.xGoals}
           awayTeam={awayTeam}
           homeTeam={homeTeam}
+          isMobile={isMobile}
         />
       </div>
 
       {data.analysis && (
         <div style={{
-          padding: '0.75rem',
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.75rem',
           background: 'rgba(59, 130, 246, 0.08)',
           border: '1px solid rgba(59, 130, 246, 0.2)',
           borderRadius: '6px',
-          fontSize: '0.813rem',
+          fontSize: TYPOGRAPHY.label.size,
           color: 'var(--color-text-secondary)',
-          fontStyle: 'italic'
+          fontStyle: 'italic',
+          lineHeight: TYPOGRAPHY.body.lineHeight
         }}>
           💡 {data.analysis}
         </div>
@@ -353,26 +406,27 @@ const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   );
 };
 
-// Danger Card
-const DangerCard = ({ title, color, awayShots, homeShots, awayXg, homeXg, awayTeam, homeTeam }) => {
+// Danger Card - Enhanced with thicker bars (Phase 3)
+const DangerCard = ({ title, color, awayShots, homeShots, awayXg, homeXg, awayTeam, homeTeam, isMobile }) => {
   const maxShots = Math.max(awayShots, homeShots);
   const awayPct = maxShots > 0 ? (awayShots / maxShots) * 100 : 0;
   const homePct = maxShots > 0 ? (homeShots / maxShots) * 100 : 0;
 
   return (
     <div style={{
-      padding: '1rem',
-      background: 'rgba(26, 31, 46, 0.6)',
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      background: GRADIENTS.factors,
       border: `1px solid ${color}40`,
-      borderRadius: '8px'
+      borderRadius: '8px',
+      transition: TRANSITIONS.normal
     }}>
       <div style={{
-        fontSize: '0.688rem',
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
+        fontSize: TYPOGRAPHY.label.size,
+        fontWeight: TYPOGRAPHY.heading.weight,
+        textTransform: TYPOGRAPHY.label.textTransform,
+        letterSpacing: TYPOGRAPHY.label.letterSpacing,
         color: color,
-        marginBottom: '0.75rem'
+        marginBottom: isMobile ? '0.5rem' : '0.75rem'
       }}>
         {title}
       </div>
@@ -380,29 +434,31 @@ const DangerCard = ({ title, color, awayShots, homeShots, awayXg, homeXg, awayTe
       {/* Away Team */}
       <div style={{ marginBottom: '0.5rem' }}>
         <div style={{
-          fontSize: '0.75rem',
+          fontSize: TYPOGRAPHY.caption.size,
           color: 'var(--color-text-secondary)',
           marginBottom: '0.25rem',
           display: 'flex',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          fontWeight: TYPOGRAPHY.body.weight
         }}>
           <span>{awayTeam} OFF</span>
-          <span style={{ fontWeight: '700', fontFeatureSettings: "'tnum'" }}>
+          <span style={{ fontWeight: TYPOGRAPHY.heading.weight, fontFeatureSettings: "'tnum'" }}>
             {awayShots} shots ({awayXg.toFixed(2)} xG)
           </span>
         </div>
         <div style={{
           width: '100%',
-          height: '6px',
+          height: '12px', // Increased from 6px to 12px (Phase 3)
           background: 'rgba(100, 116, 139, 0.2)',
-          borderRadius: '3px',
+          borderRadius: '6px',
           overflow: 'hidden'
         }}>
           <div style={{
             width: `${awayPct}%`,
             height: '100%',
-            background: color,
-            borderRadius: '3px'
+            background: `linear-gradient(90deg, ${color} 0%, ${color}CC 100%)`, // Gradient fill (Phase 3)
+            borderRadius: '6px',
+            transition: TRANSITIONS.normal
           }} />
         </div>
       </div>
@@ -410,29 +466,31 @@ const DangerCard = ({ title, color, awayShots, homeShots, awayXg, homeXg, awayTe
       {/* Home Team */}
       <div>
         <div style={{
-          fontSize: '0.75rem',
+          fontSize: TYPOGRAPHY.caption.size,
           color: 'var(--color-text-secondary)',
           marginBottom: '0.25rem',
           display: 'flex',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          fontWeight: TYPOGRAPHY.body.weight
         }}>
           <span>{homeTeam} DEF</span>
-          <span style={{ fontWeight: '700', fontFeatureSettings: "'tnum'" }}>
+          <span style={{ fontWeight: TYPOGRAPHY.heading.weight, fontFeatureSettings: "'tnum'" }}>
             {homeShots} shots ({homeXg.toFixed(2)} xG)
           </span>
         </div>
         <div style={{
           width: '100%',
-          height: '6px',
+          height: '12px', // Increased from 6px to 12px (Phase 3)
           background: 'rgba(100, 116, 139, 0.2)',
-          borderRadius: '3px',
+          borderRadius: '6px',
           overflow: 'hidden'
         }}>
           <div style={{
             width: `${homePct}%`,
             height: '100%',
-            background: color,
-            borderRadius: '3px'
+            background: `linear-gradient(90deg, ${color} 0%, ${color}CC 100%)`, // Gradient fill (Phase 3)
+            borderRadius: '6px',
+            transition: TRANSITIONS.normal
           }} />
         </div>
       </div>
@@ -440,29 +498,31 @@ const DangerCard = ({ title, color, awayShots, homeShots, awayXg, homeXg, awayTe
   );
 };
 
-// Rebound Section
+// ======================
+// REBOUND SECTION
+// ======================
 const ReboundSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   return (
-    <Section title="🔄 Second-Chance Opportunities" icon={<Zap size={18} />} isMobile={isMobile}>
+    <Section title="Second-Chance Opportunities" icon={<Activity size={18} />} isMobile={isMobile} importance="HIGH">
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gap: '1rem'
+        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
       }}>
         {/* Away Offense */}
         <div style={{
-          padding: '1rem',
-          background: 'rgba(26, 31, 46, 0.6)',
-          border: '1px solid rgba(100, 116, 139, 0.3)',
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          background: GRADIENTS.factors,
+          border: ELEVATION.flat.border,
           borderRadius: '8px'
         }}>
           <div style={{
-            fontSize: '0.75rem',
-            fontWeight: '700',
+            fontSize: TYPOGRAPHY.caption.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
             color: 'var(--color-text-muted)',
-            marginBottom: '0.75rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            marginBottom: isMobile ? '0.5rem' : '0.75rem',
+            textTransform: TYPOGRAPHY.label.textTransform,
+            letterSpacing: TYPOGRAPHY.label.letterSpacing
           }}>
             {awayTeam} Offense
           </div>
@@ -483,18 +543,18 @@ const ReboundSection = ({ data, awayTeam, homeTeam, isMobile }) => {
 
         {/* Home Defense */}
         <div style={{
-          padding: '1rem',
-          background: 'rgba(26, 31, 46, 0.6)',
-          border: '1px solid rgba(100, 116, 139, 0.3)',
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          background: GRADIENTS.factors,
+          border: ELEVATION.flat.border,
           borderRadius: '8px'
         }}>
           <div style={{
-            fontSize: '0.75rem',
-            fontWeight: '700',
+            fontSize: TYPOGRAPHY.caption.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
             color: 'var(--color-text-muted)',
-            marginBottom: '0.75rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            marginBottom: isMobile ? '0.5rem' : '0.75rem',
+            textTransform: TYPOGRAPHY.label.textTransform,
+            letterSpacing: TYPOGRAPHY.label.letterSpacing
           }}>
             {homeTeam} Defense
           </div>
@@ -513,14 +573,15 @@ const ReboundSection = ({ data, awayTeam, homeTeam, isMobile }) => {
 
       {data.matchupEdge.summary && (
         <div style={{
-          marginTop: '1rem',
-          padding: '0.75rem',
+          marginTop: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.75rem',
           background: 'rgba(59, 130, 246, 0.08)',
           border: '1px solid rgba(59, 130, 246, 0.2)',
           borderRadius: '6px',
-          fontSize: '0.813rem',
+          fontSize: TYPOGRAPHY.label.size,
           color: 'var(--color-text-secondary)',
-          fontStyle: 'italic'
+          fontStyle: 'italic',
+          lineHeight: TYPOGRAPHY.body.lineHeight
         }}>
           💡 {data.matchupEdge.summary}
         </div>
@@ -529,13 +590,67 @@ const ReboundSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   );
 };
 
-// Physical Play Section
+// ======================
+// PHYSICAL PLAY SECTION
+// ======================
 const PhysicalPlaySection = ({ data, awayTeam, homeTeam, isMobile }) => {
+  // Calculate winner for summary (Phase 3)
+  let winningTeam = awayTeam;
+  let awayAdvantages = 0;
+  let homeAdvantages = 0;
+  
+  data.forEach(metric => {
+    if (metric.advantage === 'away') awayAdvantages++;
+    if (metric.advantage === 'home') homeAdvantages++;
+  });
+  
+  winningTeam = awayAdvantages > homeAdvantages ? awayTeam : homeTeam;
+  const blockMetric = data.find(m => m.stat === 'Shot Blocks');
+  const hitMetric = data.find(m => m.stat === 'Hits');
+  
   return (
-    <Section title="💪 Physical Play & Defense" icon={<Shield size={18} />} isMobile={isMobile}>
+    <Section title="Physical Play & Defense" icon={<Shield size={18} />} isMobile={isMobile} importance="MODERATE">
+      {/* Physical Matchup Summary (Phase 3) */}
+      {(awayAdvantages !== homeAdvantages) && (
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          borderRadius: '8px',
+          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.375rem'
+          }}>
+            <Trophy size={20} color="var(--color-accent)" />
+            <span style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: 'var(--color-accent)'
+            }}>
+              {winningTeam} has the PHYSICAL EDGE
+            </span>
+          </div>
+          {blockMetric && hitMetric && (
+            <div style={{
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              fontWeight: TYPOGRAPHY.caption.weight
+            }}>
+              {Math.abs(parseFloat(blockMetric.diff))} more blocks, {Math.abs(parseFloat(hitMetric.diff))} more hits
+            </div>
+          )}
+        </div>
+      )}
+      
       <div style={{
         display: 'grid',
-        gap: '0.75rem'
+        gap: isMobile ? MOBILE_SPACING.innerPadding : '0.75rem'
       }}>
         {data.map((metric, idx) => (
           <PhysicalMetricRow
@@ -549,6 +664,7 @@ const PhysicalPlaySection = ({ data, awayTeam, homeTeam, isMobile }) => {
             diff={metric.diff}
             awayTeam={awayTeam}
             homeTeam={homeTeam}
+            isMobile={isMobile}
           />
         ))}
       </div>
@@ -557,21 +673,22 @@ const PhysicalPlaySection = ({ data, awayTeam, homeTeam, isMobile }) => {
 };
 
 // Physical Metric Row
-const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, advantage, diff, awayTeam, homeTeam }) => {
+const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, advantage, diff, awayTeam, homeTeam, isMobile }) => {
   return (
     <div style={{
-      padding: '0.875rem',
-      background: 'rgba(26, 31, 46, 0.6)',
-      border: '1px solid rgba(100, 116, 139, 0.3)',
-      borderRadius: '6px'
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+      background: GRADIENTS.factors,
+      border: ELEVATION.flat.border,
+      borderRadius: '6px',
+      transition: TRANSITIONS.normal
     }}>
       <div style={{
-        fontSize: '0.75rem',
-        fontWeight: '700',
+        fontSize: TYPOGRAPHY.caption.size,
+        fontWeight: TYPOGRAPHY.heading.weight,
         color: 'var(--color-text-muted)',
         marginBottom: '0.625rem',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
+        textTransform: TYPOGRAPHY.label.textTransform,
+        letterSpacing: TYPOGRAPHY.label.letterSpacing
       }}>
         {stat}
       </div>
@@ -579,27 +696,35 @@ const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, a
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr auto 1fr',
-        gap: '1rem',
+        gap: isMobile ? '0.5rem' : '1rem',
         alignItems: 'center'
       }}>
         {/* Away */}
         <div style={{
           textAlign: 'left',
           color: advantage === 'away' ? '#10B981' : 'var(--color-text-secondary)',
-          fontWeight: advantage === 'away' ? '700' : '600'
+          fontWeight: advantage === 'away' ? TYPOGRAPHY.heading.weight : TYPOGRAPHY.body.weight
         }}>
-          <div style={{ fontSize: '0.875rem', fontFeatureSettings: "'tnum'" }}>
+          <div style={{ 
+            fontSize: TYPOGRAPHY.body.size, 
+            fontFeatureSettings: "'tnum'",
+            lineHeight: TYPOGRAPHY.body.lineHeight
+          }}>
             {awayValue}
           </div>
-          <div style={{ fontSize: '0.688rem', opacity: 0.7 }}>
+          <div style={{ 
+            fontSize: TYPOGRAPHY.caption.size, 
+            opacity: 0.7,
+            fontWeight: TYPOGRAPHY.caption.weight
+          }}>
             {awayLabel}
           </div>
         </div>
 
         {/* Diff */}
         <div style={{
-          fontSize: '0.688rem',
-          fontWeight: '700',
+          fontSize: TYPOGRAPHY.caption.size,
+          fontWeight: TYPOGRAPHY.heading.weight,
           color: 'var(--color-text-muted)',
           textAlign: 'center'
         }}>
@@ -610,12 +735,20 @@ const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, a
         <div style={{
           textAlign: 'right',
           color: advantage === 'home' ? '#10B981' : 'var(--color-text-secondary)',
-          fontWeight: advantage === 'home' ? '700' : '600'
+          fontWeight: advantage === 'home' ? TYPOGRAPHY.heading.weight : TYPOGRAPHY.body.weight
         }}>
-          <div style={{ fontSize: '0.875rem', fontFeatureSettings: "'tnum'" }}>
+          <div style={{ 
+            fontSize: TYPOGRAPHY.body.size, 
+            fontFeatureSettings: "'tnum'",
+            lineHeight: TYPOGRAPHY.body.lineHeight
+          }}>
             {homeValue}
           </div>
-          <div style={{ fontSize: '0.688rem', opacity: 0.7 }}>
+          <div style={{ 
+            fontSize: TYPOGRAPHY.caption.size, 
+            opacity: 0.7,
+            fontWeight: TYPOGRAPHY.caption.weight
+          }}>
             {homeLabel}
           </div>
         </div>
@@ -624,14 +757,16 @@ const PhysicalMetricRow = ({ stat, awayValue, awayLabel, homeValue, homeLabel, a
   );
 };
 
-// Possession Section
+// ======================
+// POSSESSION SECTION
+// ======================
 const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   return (
-    <Section title="📊 Possession & Control" icon={<TrendingUp size={18} />} isMobile={isMobile}>
+    <Section title="Possession & Control" icon={<TrendingUp size={18} />} isMobile={isMobile} importance="MODERATE">
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-        gap: '1rem'
+        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
       }}>
         <PossessionCard
           team={awayTeam}
@@ -639,6 +774,7 @@ const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           fenwick={data.away?.fenwickPct || 50}
           xGoalsPct={data.away?.xGoalsPct || 50}
           faceoffPct={data.away?.faceoffPct || 50}
+          isMobile={isMobile}
         />
         <PossessionCard
           team={homeTeam}
@@ -646,6 +782,7 @@ const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           fenwick={data.home?.fenwickPct || 50}
           xGoalsPct={data.home?.xGoalsPct || 50}
           faceoffPct={data.home?.faceoffPct || 50}
+          isMobile={isMobile}
         />
       </div>
     </Section>
@@ -653,21 +790,21 @@ const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
 };
 
 // Possession Card
-const PossessionCard = ({ team, corsi, fenwick, xGoalsPct, faceoffPct }) => {
+const PossessionCard = ({ team, corsi, fenwick, xGoalsPct, faceoffPct, isMobile }) => {
   return (
     <div style={{
-      padding: '1rem',
-      background: 'rgba(26, 31, 46, 0.6)',
-      border: '1px solid rgba(100, 116, 139, 0.3)',
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      background: GRADIENTS.factors,
+      border: ELEVATION.flat.border,
       borderRadius: '8px'
     }}>
       <div style={{
-        fontSize: '0.75rem',
-        fontWeight: '700',
+        fontSize: TYPOGRAPHY.caption.size,
+        fontWeight: TYPOGRAPHY.heading.weight,
         color: 'var(--color-text-muted)',
-        marginBottom: '0.75rem',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
+        marginBottom: isMobile ? '0.5rem' : '0.75rem',
+        textTransform: TYPOGRAPHY.label.textTransform,
+        letterSpacing: TYPOGRAPHY.label.letterSpacing
       }}>
         {team}
       </div>
@@ -680,14 +817,16 @@ const PossessionCard = ({ team, corsi, fenwick, xGoalsPct, faceoffPct }) => {
   );
 };
 
-// Regression Section
+// ======================
+// REGRESSION SECTION
+// ======================
 const RegressionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   return (
-    <Section title="🎲 Luck & Regression Indicators" icon={<TrendingUp size={18} />} isMobile={isMobile}>
+    <Section title="Luck & Regression Indicators" icon={<TrendingUp size={18} />} isMobile={isMobile} importance="MODERATE">
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-        gap: '1rem'
+        gap: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
       }}>
         <RegressionCard
           team={awayTeam}
@@ -695,6 +834,7 @@ const RegressionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           shootingPct={data.away?.shootingPct || 10}
           savePct={data.away?.savePct || 90}
           goalsVsXg={data.away?.goalsVsExpected || 0}
+          isMobile={isMobile}
         />
         <RegressionCard
           team={homeTeam}
@@ -702,36 +842,38 @@ const RegressionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
           shootingPct={data.home?.shootingPct || 10}
           savePct={data.home?.savePct || 90}
           goalsVsXg={data.home?.goalsVsExpected || 0}
+          isMobile={isMobile}
         />
       </div>
     </Section>
   );
 };
 
-// Regression Card
-const RegressionCard = ({ team, pdo, shootingPct, savePct, goalsVsXg }) => {
+// Regression Card - Enhanced with trend arrows (Phase 3)
+const RegressionCard = ({ team, pdo, shootingPct, savePct, goalsVsXg, isMobile }) => {
   const pdoColor = pdo > 102 ? '#EF4444' : pdo < 98 ? '#10B981' : '#64748B';
+  const pdoArrow = pdo > 102 ? '↗️' : pdo < 98 ? '↘️' : '→';
   
   return (
     <div style={{
-      padding: '1rem',
-      background: 'rgba(26, 31, 46, 0.6)',
-      border: '1px solid rgba(100, 116, 139, 0.3)',
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      background: GRADIENTS.factors,
+      border: ELEVATION.flat.border,
       borderRadius: '8px'
     }}>
       <div style={{
-        fontSize: '0.75rem',
-        fontWeight: '700',
+        fontSize: TYPOGRAPHY.caption.size,
+        fontWeight: TYPOGRAPHY.heading.weight,
         color: 'var(--color-text-muted)',
-        marginBottom: '0.75rem',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
+        marginBottom: isMobile ? '0.5rem' : '0.75rem',
+        textTransform: TYPOGRAPHY.label.textTransform,
+        letterSpacing: TYPOGRAPHY.label.letterSpacing
       }}>
         {team}
       </div>
 
       <StatRow 
-        label="PDO" 
+        label={`PDO ${pdoArrow}`} // Trend arrow (Phase 3)
         value={pdo.toFixed(1)}
         badge={pdo > 102 ? 'Hot' : pdo < 98 ? 'Cold' : 'Average'}
         badgeColor={pdoColor}
@@ -747,27 +889,50 @@ const RegressionCard = ({ team, pdo, shootingPct, savePct, goalsVsXg }) => {
   );
 };
 
-// Reusable Components
-const Section = ({ title, icon, children, isMobile }) => {
+// ======================
+// REUSABLE COMPONENTS
+// ======================
+const Section = ({ title, icon, children, isMobile, importance }) => {
+  const importanceColors = {
+    'HIGH': 'var(--color-accent)',
+    'MODERATE': '#0EA5E9',
+    'LOW': '#8B5CF6'
+  };
+  
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
+    <div style={{ marginBottom: isMobile ? MOBILE_SPACING.sectionGap : '1.5rem' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: '0.5rem',
-        marginBottom: '1rem',
+        marginBottom: isMobile ? '0.5rem' : '1rem',
         paddingBottom: '0.5rem',
-        borderBottom: '1px solid rgba(100, 116, 139, 0.2)'
+        borderBottom: ELEVATION.flat.border
       }}>
-        <div style={{ color: 'var(--color-accent)' }}>{icon}</div>
-        <h4 style={{
-          fontSize: isMobile ? '0.938rem' : '1rem',
-          fontWeight: '800',
-          color: 'var(--color-text-primary)',
-          margin: 0
-        }}>
-          {title}
-        </h4>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ color: 'var(--color-accent)' }}>{icon}</div>
+          <h4 style={{
+            fontSize: isMobile ? TYPOGRAPHY.body.size : TYPOGRAPHY.subheading.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: 'var(--color-text-primary)',
+            margin: 0,
+            lineHeight: TYPOGRAPHY.heading.lineHeight
+          }}>
+            {title}
+          </h4>
+        </div>
+        {importance && (
+          <span style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            fontWeight: TYPOGRAPHY.label.weight,
+            color: importanceColors[importance],
+            textTransform: TYPOGRAPHY.label.textTransform,
+            letterSpacing: TYPOGRAPHY.label.letterSpacing
+          }}>
+            {importance}
+          </span>
+        )}
       </div>
       {children}
     </div>
@@ -783,26 +948,28 @@ const StatRow = ({ label, value, badge, badgeColor }) => {
       marginBottom: '0.5rem'
     }}>
       <span style={{
-        fontSize: '0.75rem',
+        fontSize: TYPOGRAPHY.caption.size,
         color: 'var(--color-text-muted)',
-        fontWeight: '500'
+        fontWeight: TYPOGRAPHY.caption.weight,
+        lineHeight: TYPOGRAPHY.caption.lineHeight
       }}>
         {label}
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{
-          fontSize: '0.875rem',
-          fontWeight: '700',
+          fontSize: TYPOGRAPHY.body.size,
+          fontWeight: TYPOGRAPHY.heading.weight,
           color: 'var(--color-text-primary)',
-          fontFeatureSettings: "'tnum'"
+          fontFeatureSettings: "'tnum'",
+          lineHeight: TYPOGRAPHY.body.lineHeight
         }}>
           {value}
         </span>
         {badge && (
           <span style={{
-            fontSize: '0.625rem',
-            fontWeight: '700',
-            textTransform: 'uppercase',
+            fontSize: TYPOGRAPHY.caption.size,
+            fontWeight: TYPOGRAPHY.label.weight,
+            textTransform: TYPOGRAPHY.label.textTransform,
             letterSpacing: '0.03em',
             padding: '0.125rem 0.375rem',
             borderRadius: '3px',
@@ -818,4 +985,3 @@ const StatRow = ({ label, value, badge, badgeColor }) => {
 };
 
 export default AdvancedMatchupDetails;
-
