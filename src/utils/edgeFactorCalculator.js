@@ -473,38 +473,40 @@ export class EdgeFactorCalculator {
    * Calculate expected goals differential for moneyline
    */
   calculateExpectedGoalsDifferential(awayTeam, homeTeam) {
-    const awayStats = this.analyzer.getTeamStats(awayTeam);
-    const homeStats = this.analyzer.getTeamStats(homeTeam);
+    const awayStats = this.analyzer.dataProcessor.getTeamData(awayTeam, '5on5');
+    const homeStats = this.analyzer.dataProcessor.getTeamData(homeTeam, '5on5');
     
     if (!awayStats || !homeStats) return null;
 
-    // Get xGF and xGA per 60 for both teams
-    const awayXgfPer60 = awayStats.xGoalsForPer60 || 0;
-    const awayXgaPer60 = awayStats.xGoalsAgainstPer60 || 0;
-    const homeXgfPer60 = homeStats.xGoalsForPer60 || 0;
-    const homeXgaPer60 = homeStats.xGoalsAgainstPer60 || 0;
+    // Calculate per-60 rates from raw data
+    const awayIceTime = awayStats.iceTime / 60; // Convert seconds to minutes
+    const homeIceTime = homeStats.iceTime / 60;
+    
+    const awayXgfPer60 = ((awayStats.xGoalsFor || 0) / awayIceTime) * 60;
+    const awayXgaPer60 = ((awayStats.xGoalsAgainst || 0) / awayIceTime) * 60;
+    const homeXgfPer60 = ((homeStats.xGoalsFor || 0) / homeIceTime) * 60;
+    const homeXgaPer60 = ((homeStats.xGoalsAgainst || 0) / homeIceTime) * 60;
 
     // Calculate expected goals for each team in this matchup
     const awayExpectedGoals = (awayXgfPer60 + homeXgaPer60) / 2;
     const homeExpectedGoals = (homeXgfPer60 + awayXgaPer60) / 2;
     
     const differential = awayExpectedGoals - homeExpectedGoals;
-    const impact = differential; // Direct goal differential
 
     return {
       name: 'Expected Goals',
       importance: 'CRITICAL',
       stars: 3,
-      impact: impact,
+      impact: differential,
       awayMetric: {
         value: awayExpectedGoals,
-        rank: this.analyzer.getLeagueRank(awayTeam, 'xGoalsForPer60', '5on5', true),
+        rank: this.analyzer.getLeagueRank(awayTeam, 'xGoalsFor', '5on5', true),
         label: `${awayTeam} Expected Goals`,
         detail: `${awayXgfPer60.toFixed(2)} xGF/60`
       },
       homeMetric: {
         value: homeExpectedGoals,
-        rank: this.analyzer.getLeagueRank(homeTeam, 'xGoalsForPer60', '5on5', true),
+        rank: this.analyzer.getLeagueRank(homeTeam, 'xGoalsFor', '5on5', true),
         label: `${homeTeam} Expected Goals`,
         detail: `${homeXgfPer60.toFixed(2)} xGF/60`
       },
@@ -523,46 +525,13 @@ export class EdgeFactorCalculator {
 
   /**
    * Calculate goalie advantage for moneyline
+   * NOTE: Goalie advantage is already factored into predictions via adjustForGoalie()
+   * Skipping this factor to avoid redundancy and method availability issues
    */
   calculateGoalieAdvantage(awayTeam, homeTeam) {
-    // Try to get goalie stats from the analyzer
-    const awayGoalie = this.analyzer.getGoalieStats?.(awayTeam);
-    const homeGoalie = this.analyzer.getGoalieStats?.(homeTeam);
-    
-    if (!awayGoalie || !homeGoalie) return null;
-
-    const awayGSAE = awayGoalie.gsae || 0;
-    const homeGSAE = homeGoalie.gsae || 0;
-    
-    const differential = awayGSAE - homeGSAE;
-    const impact = differential * 0.1; // Each GSAE point worth ~0.1 goals
-
-    return {
-      name: 'Goalie Advantage',
-      importance: 'CRITICAL',
-      stars: 3,
-      impact: impact,
-      awayMetric: {
-        value: awayGSAE,
-        label: `${awayTeam} Goalie GSAE`,
-        detail: `${awayGoalie.name || 'Unknown'}`
-      },
-      homeMetric: {
-        value: homeGSAE,
-        label: `${homeTeam} Goalie GSAE`,
-        detail: `${homeGoalie.name || 'Unknown'}`
-      },
-      leagueAvg: 0,
-      explanation: differential > 0
-        ? `${awayTeam}'s goalie has a ${Math.abs(differential).toFixed(1)} GSAE advantage.`
-        : `${homeTeam}'s goalie has a ${Math.abs(differential).toFixed(1)} GSAE advantage.`,
-      dataPoints: {
-        awayGSAE,
-        homeGSAE,
-        awayGoalie: awayGoalie.name,
-        homeGoalie: homeGoalie.name
-      }
-    };
+    // Goalie impact is already included in the prediction model
+    // No need to duplicate it as a separate factor
+    return null;
   }
 
   /**
