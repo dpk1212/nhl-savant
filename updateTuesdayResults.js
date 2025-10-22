@@ -29,7 +29,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-console.log('🏒 NHL Result Fetcher - Tuesday 10/21/2024');
+console.log('🏒 NHL Result Fetcher - Tuesday 10/21/2025');
 console.log('==========================================\n');
 
 // Fetch game results from NHL API
@@ -133,7 +133,7 @@ function calculateProfit(outcome, odds) {
 async function updateResults() {
   try {
     // Fetch Tuesday's results
-    const results = await fetchNHLResults('2024-10-21');
+    const results = await fetchNHLResults('2025-10-21');
     
     if (results.length === 0) {
       console.log('❌ No results found. Exiting.');
@@ -147,7 +147,7 @@ async function updateResults() {
     
     betsSnapshot.forEach(docSnap => {
       const bet = docSnap.data();
-      if (bet.date === '2024-10-21' && bet.status === 'PENDING') {
+      if (bet.date === '2025-10-21' && bet.status === 'PENDING') {
         tuesdayBets.push({ id: docSnap.id, ...bet });
       }
     });
@@ -185,6 +185,9 @@ async function updateResults() {
       
       try {
         const betRef = doc(db, 'bets', bet.id);
+        
+        console.log(`🔄 Updating ${bet.id}...`);
+        
         await updateDoc(betRef, {
           'result.awayScore': gameResult.awayScore,
           'result.homeScore': gameResult.homeScore,
@@ -202,7 +205,9 @@ async function updateResults() {
         console.log(`   Bet: ${bet.bet.pick} → ${outcome} (${profit > 0 ? '+' : ''}${profit.toFixed(2)}u)\n`);
         updated++;
       } catch (error) {
-        console.error(`❌ Error updating bet ${bet.id}:`, error.message);
+        console.error(`❌ Error updating bet ${bet.id}:`, error);
+        console.error(`   Error code: ${error.code}`);
+        console.error(`   Error message: ${error.message}`);
         errors++;
       }
     }
@@ -213,6 +218,11 @@ async function updateResults() {
       console.log(`❌ Errors: ${errors}`);
     }
     console.log('==========================================\n');
+    
+    // Wait a moment for Firestore writes to complete
+    console.log('⏳ Waiting for Firebase writes to complete...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
     console.log('🎯 Check the Performance Dashboard to see your results!');
     console.log('   http://localhost:5176/nhl-savant/#/performance\n');
     
