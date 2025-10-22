@@ -1,0 +1,36 @@
+name: Fetch NHL Data
+
+on:
+  schedule:
+    # Morning scrape: 10:00 AM ET (2:00 PM UTC)
+    - cron: '0 14 * * *'
+    # Afternoon scrape: 4:00 PM ET (8:00 PM UTC)
+    - cron: '0 20 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  fetch-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Fetch data
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: npm run fetch-data
+      
+      - name: Commit and push if changed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/*.md public/*.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Odds and goalies [$(date +'%Y-%m-%d %H:%M')]" && git push)
+
