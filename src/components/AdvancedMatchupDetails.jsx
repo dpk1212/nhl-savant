@@ -350,41 +350,51 @@ const DangerZoneSection = ({ data, awayTeam, homeTeam, isMobile, statsAnalyzer }
   
   return (
     <Section title="Shot Danger Distribution" icon={<Target size={18} />} isMobile={isMobile} importance="HIGH">
-      {/* Edge Badge */}
-      {hdDiff > 2 && (
+      {/* Edge Badge - Always Show */}
+      <div style={{
+        padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+        background: hdDiff > 2
+          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)'
+          : 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+        border: hdDiff > 2
+          ? '1px solid rgba(239, 68, 68, 0.3)'
+          : '1px solid rgba(139, 92, 246, 0.3)',
+        borderRadius: '8px',
+        marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+        textAlign: 'center'
+      }}>
         <div style={{
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '8px',
-          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.375rem'
+        }}>
+          <Target size={20} color={hdDiff > 2 ? '#EF4444' : '#8B5CF6'} />
+          <span style={{
+            fontSize: TYPOGRAPHY.body.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: hdDiff > 2 ? '#EF4444' : '#8B5CF6'
+          }}>
+            {hdDiff > 2
+              ? `${leader} GENERATES MORE HIGH-DANGER SHOTS`
+              : 'PRETTY EVEN MATCHUP - HIGH-DANGER CHANCES'
+            }
+          </span>
+        </div>
+        <div style={{
+          fontSize: TYPOGRAPHY.caption.size,
+          color: 'var(--color-text-secondary)',
+          lineHeight: TYPOGRAPHY.body.lineHeight,
+          fontStyle: 'italic',
           textAlign: 'center'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.375rem'
-          }}>
-            <Target size={20} color="#EF4444" />
-            <span style={{
-              fontSize: TYPOGRAPHY.body.size,
-              fontWeight: TYPOGRAPHY.heading.weight,
-              color: '#EF4444'
-            }}>
-              {leader} GENERATES MORE HIGH-DANGER SHOTS
-            </span>
-          </div>
-          <div style={{
-            fontSize: TYPOGRAPHY.caption.size,
-            color: 'var(--color-text-muted)',
-            fontWeight: TYPOGRAPHY.caption.weight
-          }}>
-            {hdDiff.toFixed(1)} more HD shots/game vs {loser} • ~{goalImpact.toFixed(2)} goal impact
-          </div>
+          {hdDiff > 2
+            ? `${hdDiff.toFixed(1)} more HD shots/game vs ${loser} • ~${goalImpact.toFixed(2)} goal impact`
+            : 'Both teams generate similar high-danger opportunities. Expect tight scoring chances.'
+          }
         </div>
-      )}
+      </div>
       
       <div style={{
         display: 'grid',
@@ -554,49 +564,56 @@ const ReboundSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   
   return (
     <Section title="Second-Chance Opportunities" icon={<Activity size={18} />} isMobile={isMobile} importance="HIGH">
-      {/* Edge Badge - Matchup Based */}
-      {reboundEdge !== 'neutral' && (
+      {/* Edge Badge - Always Show */}
+      <div style={{
+        padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+        background: reboundEdge === 'away'
+          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)'
+          : reboundEdge === 'home'
+          ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)'
+          : 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+        border: reboundEdge === 'away'
+          ? '1px solid rgba(16, 185, 129, 0.3)'
+          : reboundEdge === 'home'
+          ? '1px solid rgba(14, 165, 233, 0.3)'
+          : '1px solid rgba(139, 92, 246, 0.3)',
+        borderRadius: '8px',
+        marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+      }}>
         <div style={{
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
-          background: reboundEdge === 'away' 
-            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)'
-            : 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)',
-          border: reboundEdge === 'away' 
-            ? '1px solid rgba(16, 185, 129, 0.3)'
-            : '1px solid rgba(14, 165, 233, 0.3)',
-          borderRadius: '8px',
-          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.375rem'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.375rem'
+          <Activity size={20} color={reboundEdge === 'away' ? '#10B981' : reboundEdge === 'home' ? '#0EA5E9' : '#8B5CF6'} />
+          <span style={{
+            fontSize: TYPOGRAPHY.body.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: reboundEdge === 'away' ? '#10B981' : reboundEdge === 'home' ? '#0EA5E9' : '#8B5CF6'
           }}>
-            <Activity size={20} color={reboundEdge === 'away' ? '#10B981' : '#0EA5E9'} />
-            <span style={{
-              fontSize: TYPOGRAPHY.body.size,
-              fontWeight: TYPOGRAPHY.heading.weight,
-              color: reboundEdge === 'away' ? '#10B981' : '#0EA5E9'
-            }}>
-              {reboundEdge === 'away' 
-                ? `${awayTeam} OFFENSE CREATES MORE SECOND CHANCES`
-                : `${homeTeam} DEFENSE CONTROLS REBOUND POSITIONING`
-              }
-            </span>
-          </div>
-          <div style={{
-            fontSize: TYPOGRAPHY.caption.size,
-            color: 'var(--color-text-secondary)',
-            lineHeight: TYPOGRAPHY.body.lineHeight,
-            fontStyle: 'italic',
-            textAlign: 'center'
-          }}>
-            {data.matchupEdge.summary}
-          </div>
+            {reboundEdge === 'away'
+              ? `${awayTeam} OFFENSE CREATES MORE SECOND CHANCES`
+              : reboundEdge === 'home'
+              ? `${homeTeam} DEFENSE CONTROLS REBOUND POSITIONING`
+              : 'PRETTY EVEN MATCHUP - REBOUND CONTROL'
+            }
+          </span>
         </div>
-      )}
+        <div style={{
+          fontSize: TYPOGRAPHY.caption.size,
+          color: 'var(--color-text-secondary)',
+          lineHeight: TYPOGRAPHY.body.lineHeight,
+          fontStyle: 'italic',
+          textAlign: 'center'
+        }}>
+          {reboundEdge !== 'neutral'
+            ? data.matchupEdge.summary
+            : 'Both teams balanced in creating and controlling rebounds. No significant advantage.'
+          }
+        </div>
+      </div>
       
       {/* Head-to-Head Matchup Layout */}
       <div style={{
@@ -897,42 +914,50 @@ const PossessionSection = ({ data, awayTeam, homeTeam, isMobile }) => {
   
   return (
     <Section title="Possession & Control" icon={<TrendingUp size={18} />} isMobile={isMobile} importance="MODERATE">
-      {/* Edge Badge - Possession Control */}
-      {possessionDiff > 3 && (
+      {/* Edge Badge - Always Show */}
+      <div style={{
+        padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+        background: possessionDiff > 3
+          ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)'
+          : 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+        border: possessionDiff > 3
+          ? '1px solid rgba(14, 165, 233, 0.3)'
+          : '1px solid rgba(139, 92, 246, 0.3)',
+        borderRadius: '8px',
+        marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+      }}>
         <div style={{
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
-          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)',
-          border: '1px solid rgba(14, 165, 233, 0.3)',
-          borderRadius: '8px',
-          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.375rem'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.375rem'
+          <TrendingUp size={20} color={possessionDiff > 3 ? '#0EA5E9' : '#8B5CF6'} />
+          <span style={{
+            fontSize: TYPOGRAPHY.body.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: possessionDiff > 3 ? '#0EA5E9' : '#8B5CF6'
           }}>
-            <TrendingUp size={20} color="#0EA5E9" />
-            <span style={{
-              fontSize: TYPOGRAPHY.body.size,
-              fontWeight: TYPOGRAPHY.heading.weight,
-              color: '#0EA5E9'
-            }}>
-              {possessionWinner} CONTROLS POSSESSION
-            </span>
-          </div>
-          <div style={{
-            fontSize: TYPOGRAPHY.caption.size,
-            color: 'var(--color-text-secondary)',
-            lineHeight: TYPOGRAPHY.body.lineHeight,
-            fontStyle: 'italic',
-            textAlign: 'center'
-          }}>
-            {possessionDiff}% advantage in shot attempts. More zone time = more scoring chances.
-          </div>
+            {possessionDiff > 3
+              ? `${possessionWinner} CONTROLS POSSESSION`
+              : 'PRETTY EVEN MATCHUP - POSSESSION'
+            }
+          </span>
         </div>
-      )}
+        <div style={{
+          fontSize: TYPOGRAPHY.caption.size,
+          color: 'var(--color-text-secondary)',
+          lineHeight: TYPOGRAPHY.body.lineHeight,
+          fontStyle: 'italic',
+          textAlign: 'center'
+        }}>
+          {possessionDiff > 3
+            ? `${possessionDiff}% advantage in shot attempts. More zone time = more scoring chances.`
+            : 'Both teams control the puck equally. Possession unlikely to be a deciding factor.'
+          }
+        </div>
+      </div>
       
       {/* Visual Flow Bars */}
       <PossessionFlowMetric

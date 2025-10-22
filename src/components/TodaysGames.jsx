@@ -1199,6 +1199,61 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                   </span>
                   <LiveClock />
+                  
+                  {/* Goalie Confirmation Status */}
+                  {startingGoalies && startingGoalies.games && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      color: '#10B981',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}>
+                      🥅 {(() => {
+                        let confirmed = 0;
+                        let total = 0;
+                        startingGoalies.games.forEach(game => {
+                          if (game.away?.confirmed) confirmed++;
+                          if (game.home?.confirmed) confirmed++;
+                          total += 2;
+                        });
+                        return `${confirmed}/${total} Goalies`;
+                      })()}
+                    </span>
+                  )}
+                  
+                  {/* Odds Last Updated */}
+                  {startingGoalies?.oddsLastUpdated && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      color: '#3B82F6',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}>
+                      📊 {(() => {
+                        const lastUpdated = new Date(startingGoalies.oddsLastUpdated);
+                        const now = new Date();
+                        const diffMinutes = Math.floor((now - lastUpdated) / (1000 * 60));
+                        
+                        if (diffMinutes < 1) return 'Just now';
+                        if (diffMinutes < 60) return `${diffMinutes}m ago`;
+                        const diffHours = Math.floor(diffMinutes / 60);
+                        if (diffHours < 24) return `${diffHours}h ago`;
+                        return lastUpdated.toLocaleDateString();
+                      })()}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
