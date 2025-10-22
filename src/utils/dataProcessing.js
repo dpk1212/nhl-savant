@@ -357,9 +357,11 @@ export class NHLDataProcessor {
     const minutes_5v5 = weights['5on5'] * 60;
     let goals_5v5 = (expected_5v5_adjusted / 60) * minutes_5v5;
     
-    // STEP 7: Home ice advantage (5% boost)
+    // STEP 7: Home ice advantage (3.5% boost)
+    // Reduced from 5% to 3.5% to better match market/MoneyPuck
+    // Modern NHL home ice advantage has decreased
     if (isHome) {
-      goals_5v5 *= 1.05;
+      goals_5v5 *= 1.035;
     }
     
     // STEP 8: PP component (with same regression + 40/60 weighting)
@@ -618,9 +620,25 @@ export class NHLDataProcessor {
     }
     
     // In NHL, ties go to OT/SO
-    // CRITICAL FIX: Better team wins ~58% of OT/SO (empirical NHL data 2015-2024)
-    // Weaker team only wins ~42% (not 48%!)
-    const otAdvantage = teamScore > oppScore ? 0.58 : 0.42;
+    // NEW: Scale OT advantage by strength differential (more realistic)
+    // Close games: ~50/50 in OT
+    // Big mismatches: stronger team wins 55-60% in OT
+    const scoreDiff = Math.abs(teamScore - oppScore);
+    const avgScore = (teamScore + oppScore) / 2;
+    const strengthRatio = scoreDiff / avgScore;
+    
+    let otAdvantage;
+    if (strengthRatio < 0.10) {
+      // Very even matchup: 50/50 in OT
+      otAdvantage = 0.50;
+    } else if (teamScore > oppScore) {
+      // Better team: 52-58% based on strength gap
+      otAdvantage = Math.min(0.58, 0.52 + (strengthRatio * 0.15));
+    } else {
+      // Weaker team: 42-48% based on strength gap
+      otAdvantage = Math.max(0.42, 0.48 - (strengthRatio * 0.15));
+    }
+    
     winProb += tieProb * otAdvantage;
     
     // Clamp between 0.05 and 0.95 (never give 100% or 0%)
