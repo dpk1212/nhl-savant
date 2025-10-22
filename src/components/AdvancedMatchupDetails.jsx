@@ -18,6 +18,66 @@ const AdvancedMatchupDetails = ({
   isMobile 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Generate Quick Hits insights
+  const generateQuickHits = () => {
+    const hits = [];
+    
+    // Danger Zone insight
+    if (dangerZoneData && dangerZoneData.away && dangerZoneData.home) {
+      const awayHighDanger = dangerZoneData.away.highDanger || 0;
+      const homeHighDanger = dangerZoneData.home.highDanger || 0;
+      if (Math.abs(awayHighDanger - homeHighDanger) > 2) {
+        const leader = awayHighDanger > homeHighDanger ? awayTeam : homeTeam;
+        const diff = Math.abs(awayHighDanger - homeHighDanger).toFixed(1);
+        hits.push(`${leader} generates ${diff} more high-danger chances per game`);
+      }
+    }
+    
+    // Physical play insight
+    if (physicalData && physicalData.away && physicalData.home) {
+      const awayBlocks = physicalData.away.blocks || 0;
+      const homeBlocks = physicalData.home.blocks || 0;
+      if (Math.abs(awayBlocks - homeBlocks) > 2) {
+        const leader = awayBlocks > homeBlocks ? awayTeam : homeTeam;
+        const pct = ((Math.max(awayBlocks, homeBlocks) / Math.min(awayBlocks, homeBlocks) - 1) * 100).toFixed(0);
+        hits.push(`${leader} blocks ${pct}% more shots than opponent`);
+      }
+    }
+    
+    // Regression insight
+    if (regressionData && regressionData.away && regressionData.home) {
+      const awayPDO = regressionData.away.pdo || 100;
+      const homePDO = regressionData.home.pdo || 100;
+      if (awayPDO > 102) {
+        hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) suggests positive regression due`);
+      }
+      if (homePDO > 102) {
+        hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) suggests positive regression due`);
+      }
+      if (awayPDO < 98) {
+        hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) indicates potential bounce-back`);
+      }
+      if (homePDO < 98) {
+        hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) indicates potential bounce-back`);
+      }
+    }
+    
+    // Possession insight
+    if (possessionData && possessionData.away && possessionData.home) {
+      const awayCorsi = possessionData.away.corsiPercentage || 50;
+      const homeCorsi = possessionData.home.corsiPercentage || 50;
+      if (Math.abs(awayCorsi - homeCorsi) > 5) {
+        const leader = awayCorsi > homeCorsi ? awayTeam : homeTeam;
+        const value = Math.max(awayCorsi, homeCorsi).toFixed(1);
+        hits.push(`${leader} controls ${value}% of shot attempts (elite possession)`);
+      }
+    }
+    
+    return hits.slice(0, 3); // Max 3 quick hits
+  };
+  
+  const quickHits = !isExpanded ? generateQuickHits() : [];
 
   return (
     <div style={{
@@ -85,6 +145,87 @@ const AdvancedMatchupDetails = ({
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </button>
+      
+      {/* Quick Hits - Show when collapsed */}
+      {!isExpanded && quickHits.length > 0 && (
+        <div style={{
+          padding: isMobile ? '1rem' : '1.25rem',
+          paddingTop: 0,
+          borderTop: '1px solid rgba(100, 116, 139, 0.15)'
+        }}>
+          <div style={{
+            fontSize: '0.813rem',
+            fontWeight: '700',
+            color: 'var(--color-accent)',
+            marginBottom: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <Zap size={16} />
+            Quick Hits
+          </div>
+          <ul style={{
+            margin: 0,
+            padding: 0,
+            listStyle: 'none'
+          }}>
+            {quickHits.map((hit, idx) => (
+              <li key={idx} style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-primary)',
+                marginBottom: idx < quickHits.length - 1 ? '0.5rem' : 0,
+                paddingLeft: '1.25rem',
+                position: 'relative',
+                lineHeight: '1.5'
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  left: 0,
+                  color: 'var(--color-accent)',
+                  fontWeight: '700'
+                }}>
+                  •
+                </span>
+                {hit}
+              </li>
+            ))}
+          </ul>
+          <div style={{
+            marginTop: '0.75rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid rgba(100, 116, 139, 0.15)',
+            textAlign: 'center'
+          }}>
+            <button
+              onClick={() => setIsExpanded(true)}
+              style={{
+                background: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '6px',
+                padding: '0.5rem 1rem',
+                fontSize: '0.813rem',
+                fontWeight: '600',
+                color: 'var(--color-accent)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              View Full Breakdown →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Expandable Content */}
       {isExpanded && (
