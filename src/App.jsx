@@ -1,7 +1,7 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { loadNHLData, loadOddsFiles, loadStartingGoalies } from './utils/dataProcessing';
-import { GoalieProcessor, loadGoalieData } from './utils/goalieProcessor';
+import { GoalieProcessor } from './utils/goalieProcessor';
 import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
 import { AdvancedStatsAnalyzer } from './utils/advancedStatsAnalyzer';
 import { EdgeFactorCalculator } from './utils/edgeFactorCalculator';
@@ -30,23 +30,9 @@ function App() {
       try {
         setLoading(true);
         
-        // NEW: Load goalie data first
-        console.log('🥅 Loading goalie data...');
-        let goalieProcessor = null;
-        let rawGoalieData = null;
-        try {
-          rawGoalieData = await loadGoalieData();
-          goalieProcessor = new GoalieProcessor(rawGoalieData);
-          setGoalieData(rawGoalieData); // Store for admin component
-          console.log('✅ Goalie processor initialized with', rawGoalieData.length, 'goalie entries');
-        } catch (goalieErr) {
-          console.warn('⚠️ Failed to load goalie data, predictions will not include goalie adjustments:', goalieErr);
-          // Continue without goalie data - model will work but without goalie adjustments
-        }
-        
-        // Load team data with goalie processor
+        // Load team data (no longer needs goalie processor in constructor)
         console.log('🏒 Loading team data...');
-        const processor = await loadNHLData(goalieProcessor);
+        const processor = await loadNHLData();
         setDataProcessor(processor);
         
         // Initialize advanced stats analyzer
