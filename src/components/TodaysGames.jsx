@@ -171,16 +171,26 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   
   // Generate supporting insights for primary bet
   const getSupportingInsights = () => {
-    if (!factors || factors.length === 0) return [];
+    console.log('🔍 HeroBetCard getSupportingInsights called');
+    console.log('  factors:', factors);
+    console.log('  bestEdge:', bestEdge);
+    
+    if (!factors || factors.length === 0) {
+      console.log('  ❌ No factors available');
+      return [];
+    }
     
     const insights = [];
     const isTotal = bestEdge.market === 'TOTAL';
+    console.log('  Bet type:', isTotal ? 'TOTAL' : 'MONEYLINE');
     
     if (isTotal) {
       // For TOTAL bets - show factors that align with OVER/UNDER
       const isOver = bestEdge.pick.includes('OVER');
+      console.log('  Direction:', isOver ? 'OVER' : 'UNDER');
       factors.forEach(f => {
         const alignsWithBet = (isOver && f.impact > 0.05) || (!isOver && f.impact < -0.05);
+        console.log(`  Factor ${f.name}: impact=${f.impact}, aligns=${alignsWithBet}`);
         if (alignsWithBet && Math.abs(f.impact) > 0.05) {
           insights.push(`${f.name}: ${Math.abs(f.impact).toFixed(2)} goal impact`);
         }
@@ -188,18 +198,22 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
     } else {
       // For MONEYLINE bets - show factors that favor the team
       const betTeam = bestEdge.team;
+      console.log('  Bet team:', betTeam);
       factors.forEach(f => {
         const awayVal = f.awayMetric?.value || 0;
         const homeVal = f.homeMetric?.value || 0;
         const hasAdvantage = awayVal > homeVal ? game.awayTeam : game.homeTeam;
+        const percentDiff = Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2);
+        console.log(`  Factor ${f.name}: away=${awayVal}, home=${homeVal}, advantage=${hasAdvantage}, diff=${percentDiff}`);
         
-        if (hasAdvantage === betTeam && Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10) {
-          const percentDiff = ((Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2)) * 100).toFixed(0);
-          insights.push(`${f.name}: ${betTeam} has ${percentDiff}% edge`);
+        if (hasAdvantage === betTeam && percentDiff > 0.10) {
+          const percentDiffFormatted = (percentDiff * 100).toFixed(0);
+          insights.push(`${f.name}: ${betTeam} has ${percentDiffFormatted}% edge`);
         }
       });
     }
     
+    console.log('  ✅ Generated insights:', insights);
     return insights.slice(0, 3); // Max 3 insights for primary bet
   };
   
@@ -1432,14 +1446,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
   // Generate analytics data for a game
   const generateAnalyticsData = (game, bestEdge) => {
-    if (!statsAnalyzer || !edgeFactorCalc) return null;
+    console.log('📊 generateAnalyticsData called for', game.awayTeam, '@', game.homeTeam);
+    console.log('  statsAnalyzer:', !!statsAnalyzer);
+    console.log('  edgeFactorCalc:', !!edgeFactorCalc);
+    
+    if (!statsAnalyzer || !edgeFactorCalc) {
+      console.log('  ❌ Missing statsAnalyzer or edgeFactorCalc');
+      return null;
+    }
 
     try {
       // Determine bet type from bestEdge
       const betType = bestEdge?.market || 'TOTAL';
+      console.log('  Bet type:', betType);
       
       // Get key factors for this bet type
       const factors = edgeFactorCalc.getKeyFactors(game.awayTeam, game.homeTeam, betType);
+      console.log('  Factors returned:', factors?.length || 0, 'factors');
       
       // Generate "The Story" narrative
       const story = edgeFactorCalc.generateStory(factors, game.awayTeam, game.homeTeam);
