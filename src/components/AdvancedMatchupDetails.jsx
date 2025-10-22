@@ -257,65 +257,106 @@ const AdvancedMatchupDetails = ({
             transition: 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          {/* Danger Zone Breakdown */}
-          {dangerZoneData && (
-            <DangerZoneSection 
-              data={dangerZoneData} 
-              awayTeam={awayTeam} 
-              homeTeam={homeTeam} 
-              isMobile={isMobile}
-              statsAnalyzer={statsAnalyzer}
-            />
-          )}
-
-          {/* Goaltender Matchup - Always show, component handles waiting states */}
-          <GoalieMatchupSection
-            awayGoalie={awayGoalie}
-            homeGoalie={homeGoalie}
-            awayTeam={awayTeam}
-            homeTeam={homeTeam}
-            isMobile={isMobile}
-          />
-
-          {/* Rebound Analysis */}
-          {reboundData && (
-            <ReboundSection 
-              data={reboundData} 
-              awayTeam={awayTeam} 
-              homeTeam={homeTeam} 
-              isMobile={isMobile} 
-            />
-          )}
-
-          {/* Physical Play */}
-          {physicalData && (
-            <PhysicalPlaySection 
-              data={physicalData} 
-              awayTeam={awayTeam} 
-              homeTeam={homeTeam} 
-              isMobile={isMobile} 
-            />
-          )}
-
-          {/* Possession Metrics */}
-          {possessionData && (
-            <PossessionSection 
-              data={possessionData} 
-              awayTeam={awayTeam} 
-              homeTeam={homeTeam} 
-              isMobile={isMobile} 
-            />
-          )}
-
-          {/* Regression Indicators */}
-          {regressionData && (
-            <RegressionSection 
-              data={regressionData} 
-              awayTeam={awayTeam} 
-              homeTeam={homeTeam} 
-              isMobile={isMobile} 
-            />
-          )}
+          {/* Reorder sections based on bet type */}
+          {(() => {
+            const isTotalBet = bestEdge?.market === 'TOTAL';
+            
+            // Define sections with priority based on bet type
+            const sections = [
+              {
+                id: 'danger-zone',
+                priority: isTotalBet ? 1 : 4,
+                component: dangerZoneData && (
+                  <DangerZoneSection 
+                    key="danger-zone"
+                    data={dangerZoneData} 
+                    awayTeam={awayTeam} 
+                    homeTeam={homeTeam} 
+                    isMobile={isMobile}
+                    statsAnalyzer={statsAnalyzer}
+                    bestEdge={bestEdge}
+                  />
+                )
+              },
+              {
+                id: 'goalie',
+                priority: 3,
+                component: (
+                  <GoalieMatchupSection
+                    key="goalie"
+                    awayGoalie={awayGoalie}
+                    homeGoalie={homeGoalie}
+                    awayTeam={awayTeam}
+                    homeTeam={homeTeam}
+                    isMobile={isMobile}
+                    bestEdge={bestEdge}
+                  />
+                )
+              },
+              {
+                id: 'rebound',
+                priority: isTotalBet ? 1 : 4,
+                component: reboundData && (
+                  <ReboundSection 
+                    key="rebound"
+                    data={reboundData} 
+                    awayTeam={awayTeam} 
+                    homeTeam={homeTeam} 
+                    isMobile={isMobile}
+                    bestEdge={bestEdge}
+                  />
+                )
+              },
+              {
+                id: 'physical',
+                priority: isTotalBet ? 2 : 5,
+                component: physicalData && (
+                  <PhysicalPlaySection 
+                    key="physical"
+                    data={physicalData} 
+                    awayTeam={awayTeam} 
+                    homeTeam={homeTeam} 
+                    isMobile={isMobile}
+                    bestEdge={bestEdge}
+                  />
+                )
+              },
+              {
+                id: 'possession',
+                priority: isTotalBet ? 5 : 1,
+                component: possessionData && (
+                  <PossessionSection 
+                    key="possession"
+                    data={possessionData} 
+                    awayTeam={awayTeam} 
+                    homeTeam={homeTeam} 
+                    isMobile={isMobile}
+                    bestEdge={bestEdge}
+                  />
+                )
+              },
+              {
+                id: 'regression',
+                priority: 4,
+                component: regressionData && (
+                  <RegressionSection 
+                    key="regression"
+                    data={regressionData} 
+                    awayTeam={awayTeam} 
+                    homeTeam={homeTeam} 
+                    isMobile={isMobile}
+                    bestEdge={bestEdge}
+                  />
+                )
+              }
+            ];
+            
+            // Sort by priority and render components
+            return sections
+              .sort((a, b) => a.priority - b.priority)
+              .map(section => section.component)
+              .filter(Boolean);
+          })()}
         </div>
       )}
     </div>

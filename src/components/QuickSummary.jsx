@@ -253,10 +253,10 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
           <div style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
             <Target size={20} />
             <span>Today's Betting Opportunities</span>
-          </div>
-          <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-            {opportunities.length} Games • {highValueCount} High Value
-          </div>
+        </div>
+        <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+          {opportunities.length} Games • {highValueCount} High Value
+        </div>
         </div>
         
         {/* Collapse button for desktop */}
@@ -331,30 +331,30 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
               <col style={{ width: '13%' }} />
               <col style={{ width: '12%' }} />
             </colgroup>
-            <thead>
-              <tr style={{ background: 'var(--color-background)' }}>
-                <th style={headerStyle}>Game</th>
-                <th style={headerStyle}>Time</th>
-                <th style={headerStyle}>Best Bet</th>
-                <th style={headerStyle}>Edge</th>
-                <th style={headerStyle}>EV</th>
+          <thead>
+            <tr style={{ background: 'var(--color-background)' }}>
+              <th style={headerStyle}>Game</th>
+              <th style={headerStyle}>Time</th>
+              <th style={headerStyle}>Best Bet</th>
+              <th style={headerStyle}>Edge</th>
+              <th style={headerStyle}>EV</th>
                 <th style={headerStyle}>Rating</th>
-                <th style={headerStyle}></th>
-              </tr>
-            </thead>
-            <tbody>
+              <th style={headerStyle}></th>
+            </tr>
+          </thead>
+          <tbody>
               {opportunities.map((opp, i) => {
                 const rating = getRating(opp.bestBet.evPercent);
                 return (
-                  <tr 
-                    key={i}
-                    className="summary-row"
-                    style={{ 
-                      borderTop: '1px solid var(--color-border)',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      position: 'relative'
-                    }}
-                  >
+              <tr 
+                key={i}
+                className="summary-row"
+                style={{ 
+                  borderTop: '1px solid var(--color-border)',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative'
+                }}
+              >
                     {/* EV Progress bar background - positioned absolutely within the tr */}
                     <td 
                       colSpan="6" 
@@ -372,41 +372,41 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                         zIndex: 0
                       }}
                     >
-                      <div style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${Math.min(opp.bestBet.evPercent * 3, 100)}%`,
                         background: `linear-gradient(90deg, ${rating.bgColor} 0%, transparent 100%)`,
-                        pointerEvents: 'none'
-                      }} />
+                  pointerEvents: 'none'
+                }} />
                     </td>
-                    
-                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
                       <span style={{ fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{opp.game}</span>
-                    </td>
-                    
-                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                      <TimeDisplay time={opp.time} />
-                    </td>
-                    
-                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <BetTypeBadge type={opp.bestBet.type} />
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <TimeDisplay time={opp.time} />
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <BetTypeBadge type={opp.bestBet.type} />
                         <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>{opp.bestBet.displayPick || opp.bestBet.pick}</span>
-                      </div>
-                    </td>
-                    
-                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                      <EdgeIndicator edge={opp.edge} />
-                    </td>
-                    
-                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
-                      <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
-                    </td>
-                    
-                    <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  </div>
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <EdgeIndicator edge={opp.edge} />
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
+                  <EVDisplay evPercent={opp.bestBet.evPercent} showConfidence />
+                </td>
+                
+                <td style={{...cellStyle, position: 'relative', zIndex: 1}}>
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -441,13 +441,13 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                     </td>
                     
                     <td style={{...cellStyle, position: 'relative', zIndex: 1, textAlign: 'center'}}>
-                      <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
-                    </td>
-                  </tr>
+                  <ViewButton onClick={() => onGameClick(opp.game)} game={opp.game} />
+                </td>
+              </tr>
                 );
               })}
-            </tbody>
-          </table>
+          </tbody>
+        </table>
         </div>
       ) : (
         // Mobile: Premium Cards
@@ -536,7 +536,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                   fontSize: '1.25rem', 
                   fontWeight: '800',
                   color: 'var(--color-text-primary)',
-                  marginBottom: '0.5rem',
+              marginBottom: '0.5rem',
                   letterSpacing: '-0.02em'
                 }}>
                   {opp.game}
@@ -628,16 +628,16 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
               </div>
               
               {/* View Button - Full Width Premium */}
-              <button
-                onClick={() => onGameClick(opp.game)}
-                style={{
+                <button
+                  onClick={() => onGameClick(opp.game)}
+                  style={{
                   width: '100%',
                   padding: '1.125rem',
                   background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
-                  color: 'var(--color-background)',
-                  border: 'none',
+                    color: 'var(--color-background)',
+                    border: 'none',
                   borderRadius: '10px',
-                  cursor: 'pointer',
+                    cursor: 'pointer',
                   fontSize: '1.063rem',
                   fontWeight: '800',
                   textTransform: 'uppercase',
@@ -655,7 +655,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
                 }}
               >
                 View Full Analysis →
-              </button>
+                </button>
               </div>
             );
           })}

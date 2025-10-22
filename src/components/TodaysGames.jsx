@@ -484,16 +484,58 @@ const CompactComparisonBar = ({ awayValue, homeValue, leagueAvg, awayTeam, homeT
 };
 
 // Compact Factors - Top 3 critical factors
-const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) => {
+const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, bestEdge }) => {
   if (!factors || factors.length === 0) return null;
   
-  const topFactors = factors
-    .filter(f => f.importance === 'CRITICAL')
+  // Filter for SIGNIFICANT factors only (meaningful impact + clear difference)
+  const significantFactors = factors
+    .filter(f => {
+      // Only show factors with meaningful impact
+      const hasImpact = Math.abs(f.impact) > 0.05; // >0.05 goals
+      const awayVal = f.awayMetric?.value || 0;
+      const homeVal = f.homeMetric?.value || 0;
+      const hasDifference = awayVal && homeVal && 
+        Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10; // >10% difference
+      return hasImpact && hasDifference;
+    })
+    .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
     .slice(0, 3);
   
-  if (topFactors.length === 0) return null;
+  // If no significant factors, show even matchup message
+  if (significantFactors.length === 0) {
+    return (
+      <div style={{ 
+        background: GRADIENTS.factors, 
+        border: ELEVATION.raised.border,
+        boxShadow: ELEVATION.raised.shadow,
+        borderRadius: MOBILE_SPACING.borderRadius,
+        padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontSize: TYPOGRAPHY.body.size, color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+          📊 KEY ADVANTAGES
+        </div>
+        <div style={{ fontSize: TYPOGRAPHY.subheading.size, color: 'var(--color-text-primary)', fontWeight: TYPOGRAPHY.heading.weight }}>
+          Even Matchup
+        </div>
+        <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+          No dominant statistical advantages detected. Both teams are closely matched in key metrics.
+        </div>
+      </div>
+    );
+  }
   
-  const criticalCount = factors.filter(f => f.importance === 'CRITICAL').length;
+  // Determine bet context for header
+  const betContext = bestEdge?.market === 'TOTAL' 
+    ? `Why ${bestEdge.pick} is our model's pick:`
+    : bestEdge?.market === 'MONEYLINE'
+    ? `Why ${bestEdge.team} ML is our model's pick:`
+    : bestEdge?.market === 'PUCK_LINE'
+    ? `Why ${bestEdge.pick} is our model's pick:`
+    : '📊 KEY ADVANTAGES';
+  
+  const topFactors = significantFactors;
+  const criticalCount = significantFactors.length;
   
   return (
     <div style={{ 
@@ -503,11 +545,8 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
       borderRadius: MOBILE_SPACING.borderRadius,
       overflow: 'hidden'
     }}>
-      {/* Header with factor count */}
+      {/* Header with bet context */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
         background: 'rgba(0, 0, 0, 0.15)',
         borderBottom: ELEVATION.flat.border
@@ -516,20 +555,18 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
           fontSize: TYPOGRAPHY.subheading.size, 
           fontWeight: TYPOGRAPHY.heading.weight, 
           margin: 0, 
+          marginBottom: '0.25rem',
           color: 'var(--color-accent)', 
           letterSpacing: TYPOGRAPHY.heading.letterSpacing 
         }}>
-          📊 KEY ADVANTAGES
+          {betContext}
         </h3>
         <div style={{ 
           fontSize: TYPOGRAPHY.caption.size, 
           color: 'var(--color-text-muted)',
           fontWeight: TYPOGRAPHY.caption.weight
         }}>
-          <span>Showing top 3 of {factors.length}</span>
-          <span style={{ marginLeft: '0.5rem', color: 'var(--color-accent)' }}>
-            • {criticalCount} critical
-          </span>
+          {criticalCount} key factor{criticalCount !== 1 ? 's' : ''} with significant impact
         </div>
       </div>
       
@@ -551,6 +588,16 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
         const bettingColor = favorsBetting === 'UNDER' ? '#8B5CF6' : 
                             favorsBetting === 'OVER' ? '#F59E0B' : '#6B7280';
         
+        // Determine if factor SUPPORTS the value bet
+        const supportsValueBet = bestEdge && (
+          (bestEdge.market === 'TOTAL' && bestEdge.pick.includes('OVER') && factor.impact > 0.05) ||
+          (bestEdge.market === 'TOTAL' && bestEdge.pick.includes('UNDER') && factor.impact < -0.05) ||
+          (bestEdge.market === 'MONEYLINE' && hasAdvantage === bestEdge.team)
+        );
+        
+        const supportIndicator = supportsValueBet ? '✓ SUPPORTS' : '○ CONTEXT';
+        const supportColor = supportsValueBet ? '#10B981' : '#6B7280';
+        
         return (
           <div key={idx} style={{ 
             marginBottom: idx < topFactors.length - 1 ? '1rem' : '0', 
@@ -560,16 +607,32 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
             padding: '0.75rem',
             borderRadius: '8px'
           }}>
-            {/* Header: Factor name */}
+            {/* Header: Factor name + Support indicator */}
             <div style={{ 
-              fontSize: TYPOGRAPHY.caption.size, 
-              color: 'var(--color-text-muted)',
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              fontWeight: TYPOGRAPHY.label.weight
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem'
             }}>
-              {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
+              <div style={{ 
+                fontSize: TYPOGRAPHY.caption.size, 
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontWeight: TYPOGRAPHY.label.weight
+              }}>
+                {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
+              </div>
+              <div style={{
+                fontSize: TYPOGRAPHY.caption.size,
+                fontWeight: TYPOGRAPHY.label.weight,
+                color: supportColor,
+                padding: '0.125rem 0.375rem',
+                background: `${supportColor}15`,
+                borderRadius: '4px'
+              }}>
+                {supportIndicator}
+              </div>
             </div>
             
             {/* Main insight */}
@@ -644,6 +707,94 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) 
           TOTAL EDGE
         </div>
         {VisualMetricsGenerator.formatGoalImpact(totalImpact)} goals vs market
+      </div>
+    </div>
+  );
+};
+
+// Alternative Bet Card - Show secondary opportunities
+const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile }) => {
+  if (!game || !bestEdge) return null;
+  
+  // Determine alternative market
+  const isValueBetTotal = bestEdge.market === 'TOTAL';
+  const alternativeMarket = isValueBetTotal ? 'MONEYLINE' : 'TOTAL';
+  
+  // Get alternative bet data
+  let altBet = null;
+  let altPick = '';
+  
+  if (isValueBetTotal) {
+    // Value bet is TOTAL, show best ML alternative
+    const awayML = game.edges?.moneyline?.away;
+    const homeML = game.edges?.moneyline?.home;
+    if (awayML && homeML) {
+      altBet = awayML.evPercent > homeML.evPercent ? awayML : homeML;
+      altPick = awayML.evPercent > homeML.evPercent ? `${awayTeam} ML` : `${homeTeam} ML`;
+    }
+  } else {
+    // Value bet is ML, show best TOTAL alternative
+    const over = game.edges?.total?.over;
+    const under = game.edges?.total?.under;
+    if (over && under) {
+      altBet = over.evPercent > under.evPercent ? over : under;
+      const line = game.rawOdds?.total?.line || over.line || under.line;
+      altPick = over.evPercent > under.evPercent ? `OVER ${line}` : `UNDER ${line}`;
+    }
+  }
+  
+  // Only show if alternative has positive EV
+  if (!altBet || altBet.evPercent <= 0) return null;
+  
+  const evColor = getEVColorScale(altBet.evPercent);
+  
+  return (
+    <div style={{
+      background: 'rgba(0, 0, 0, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: MOBILE_SPACING.borderRadius,
+      padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+      margin: isMobile ? `${MOBILE_SPACING.sectionGap} ${MOBILE_SPACING.cardPadding}` : '1.25rem',
+      opacity: 0.9
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '0.5rem'
+      }}>
+        <div>
+          <div style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            color: 'var(--color-text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontWeight: TYPOGRAPHY.label.weight,
+            marginBottom: '0.25rem'
+          }}>
+            💡 Alternative Opportunity
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.body.size,
+            fontWeight: TYPOGRAPHY.heading.weight,
+            color: 'var(--color-text-primary)'
+          }}>
+            {alternativeMarket}: {altPick}
+          </div>
+        </div>
+        <div style={{
+          fontSize: TYPOGRAPHY.subheading.size,
+          fontWeight: TYPOGRAPHY.heading.weight,
+          color: evColor.color
+        }}>
+          +{altBet.evPercent.toFixed(1)}%
+        </div>
+      </div>
+      <div style={{
+        fontSize: TYPOGRAPHY.caption.size,
+        color: 'var(--color-text-muted)'
+      }}>
+        Odds: {altBet.odds > 0 ? '+' : ''}{altBet.odds} • Model Prob: {(altBet.modelProb * 100).toFixed(1)}%
       </div>
     </div>
   );
@@ -1426,7 +1577,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                   );
                 }
                 return null;
-              })()}
+                })()}
               
               {/* 3. Compact Factors - Top 3 critical factors */}
               {(() => {
@@ -1439,11 +1590,21 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       awayTeam={game.awayTeam}
                       homeTeam={game.homeTeam}
                       isMobile={isMobile}
+                      bestEdge={bestEdge}
                     />
                   );
                 }
                 return null;
               })()}
+              
+              {/* 3b. Alternative Bet Card - Secondary opportunities */}
+              <AlternativeBetCard 
+                game={game}
+                bestEdge={bestEdge}
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+                isMobile={isMobile}
+              />
               
               {/* 4. Markets Grid - Moneyline + Total */}
               <MarketsGrid game={game} isMobile={isMobile} />
@@ -1454,8 +1615,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 if (analyticsData) {
                   return (
                     <AdvancedMatchupDetails
-                      awayTeam={game.awayTeam}
-                      homeTeam={game.homeTeam}
+                    awayTeam={game.awayTeam}
+                    homeTeam={game.homeTeam}
                       dangerZoneData={analyticsData.dangerZoneData}
                       reboundData={analyticsData.reboundData}
                       physicalData={analyticsData.physicalData}
