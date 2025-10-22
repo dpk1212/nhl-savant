@@ -102,8 +102,86 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
   const awayHasStats = awayGoalie && awayGoalie.gsae !== undefined;
   const homeHasStats = homeGoalie && homeGoalie.gsae !== undefined;
   
-  // If either goalie lacks stats, show limited data message
-  if (!awayHasStats || !homeHasStats) {
+  // If ONLY ONE goalie has stats, show single goalie breakdown
+  if ((awayHasStats && !homeHasStats) || (!awayHasStats && homeHasStats)) {
+    const goalie = awayHasStats ? awayGoalie : homeGoalie;
+    const team = awayHasStats ? awayTeam : homeTeam;
+    const opponent = awayHasStats ? homeTeam : awayTeam;
+    const opponentGoalie = awayHasStats ? homeGoalie : awayGoalie;
+    
+    const gsae = parseFloat(goalie.gsae) || 0;
+    const tier = gsae > 10 ? 'ELITE' : gsae > 5 ? 'STRONG' : gsae > -5 ? 'AVERAGE' : 'WEAK';
+    const tierColor = gsae > 10 ? '#10B981' : gsae > 5 ? '#60A5FA' : gsae > -5 ? '#8B5CF6' : '#EF4444';
+    
+    return (
+      <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
+        {/* Edge Badge */}
+        <div style={{
+          padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          background: `linear-gradient(135deg, ${tierColor}15 0%, ${tierColor}08 100%)`,
+          border: `1px solid ${tierColor}40`,
+          borderRadius: '8px',
+          marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.5rem'
+          }}>
+            <Shield size={20} color={tierColor} />
+            <span style={{
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
+              color: tierColor
+            }}>
+              {tier} GOALTENDER - {team}
+            </span>
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            color: 'var(--color-text-secondary)',
+            textAlign: 'center',
+            fontStyle: 'italic'
+          }}>
+            {goalie.name} • {gsae >= 0 ? '+' : ''}{gsae.toFixed(2)} GSAE • {opponent} goalie stats unavailable
+          </div>
+        </div>
+        
+        {/* Single Goalie Card - Enhanced */}
+        <GoalieCard goalie={goalie} team={team} isMobile={isMobile} isAway={false} />
+        
+        {/* Opponent Status */}
+        <div style={{
+          marginTop: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+          padding: isMobile ? '0.75rem' : '1rem',
+          background: 'rgba(139, 92, 246, 0.08)',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
+          borderRadius: '8px',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            fontSize: TYPOGRAPHY.body.size,
+            color: 'var(--color-text-secondary)',
+            marginBottom: '0.25rem'
+          }}>
+            <strong>{opponent}</strong> {opponentGoalie?.name || 'Goalie'}
+          </div>
+          <div style={{
+            fontSize: TYPOGRAPHY.caption.size,
+            color: 'var(--color-text-muted)',
+            fontStyle: 'italic'
+          }}>
+            Advanced stats not yet available
+          </div>
+        </div>
+      </Section>
+    );
+  }
+  
+  // If NEITHER goalie has stats, show waiting message
+  if (!awayHasStats && !homeHasStats) {
     return (
       <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
         <div style={{
@@ -113,7 +191,7 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
           border: ELEVATION.flat.border,
           borderRadius: '8px'
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📊</div>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📊</div>
           <div style={{
             fontSize: TYPOGRAPHY.subheading.size,
             fontWeight: TYPOGRAPHY.heading.weight,
@@ -127,12 +205,7 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
             color: 'var(--color-text-muted)',
             lineHeight: TYPOGRAPHY.body.lineHeight
           }}>
-            {!awayHasStats && !homeHasStats 
-              ? 'Advanced stats not available for these goalies yet'
-              : !awayHasStats 
-                ? `Advanced stats not available for ${awayGoalie.name}`
-                : `Advanced stats not available for ${homeGoalie.name}`
-            }
+            Advanced goalie statistics not yet available for these netminders. Check back later for detailed analytics.
           </div>
         </div>
       </Section>
@@ -147,32 +220,40 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
   const goalieEdgeTeam = awayGSAE > homeGSAE ? awayTeam : homeTeam;
   const expectedGoalImpact = gsaeDiff / 10; // Rough estimate: 10 GSAE = 1 goal per game
   
+  // Determine tier for both goalies
+  const awayTier = awayGSAE > 10 ? 'ELITE' : awayGSAE > 5 ? 'STRONG' : awayGSAE > -5 ? 'AVERAGE' : 'WEAK';
+  const homeTier = homeGSAE > 10 ? 'ELITE' : homeGSAE > 5 ? 'STRONG' : homeGSAE > -5 ? 'AVERAGE' : 'WEAK';
+  
   return (
     <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
-      {/* Edge Badge - Always Show */}
+      {/* Enhanced Edge Badge */}
       <div style={{
-        padding: isMobile ? MOBILE_SPACING.innerPadding : '0.875rem',
+        padding: isMobile ? MOBILE_SPACING.innerPadding : '1.125rem',
         background: gsaeDiff > 5
-          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)'
-          : 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%)'
+          : 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0.06) 100%)',
         border: gsaeDiff > 5
-          ? '1px solid rgba(16, 185, 129, 0.3)'
-          : '1px solid rgba(139, 92, 246, 0.3)',
-        borderRadius: '8px',
-        marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1rem'
+          ? '1px solid rgba(16, 185, 129, 0.35)'
+          : '1px solid rgba(139, 92, 246, 0.35)',
+        borderRadius: '10px',
+        marginBottom: isMobile ? MOBILE_SPACING.innerPadding : '1.25rem',
+        boxShadow: gsaeDiff > 5
+          ? '0 4px 12px rgba(16, 185, 129, 0.1)'
+          : '0 4px 12px rgba(139, 92, 246, 0.1)'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '0.5rem',
-          marginBottom: '0.375rem'
+          gap: '0.625rem',
+          marginBottom: '0.5rem'
         }}>
-          <Shield size={20} color={gsaeDiff > 5 ? '#10B981' : '#8B5CF6'} />
+          <Shield size={22} color={gsaeDiff > 5 ? '#10B981' : '#8B5CF6'} strokeWidth={2.5} />
           <span style={{
-            fontSize: TYPOGRAPHY.body.size,
-            fontWeight: TYPOGRAPHY.heading.weight,
-            color: gsaeDiff > 5 ? '#10B981' : '#8B5CF6'
+            fontSize: isMobile ? '0.95rem' : '1.05rem',
+            fontWeight: '700',
+            color: gsaeDiff > 5 ? '#10B981' : '#8B5CF6',
+            letterSpacing: '0.5px'
           }}>
             {gsaeDiff > 5
               ? `${goalieEdgeTeam} HAS GOALIE ADVANTAGE`
@@ -185,7 +266,11 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
           color: 'var(--color-text-secondary)',
           lineHeight: TYPOGRAPHY.body.lineHeight,
           fontStyle: 'italic',
-          textAlign: 'center'
+          textAlign: 'center',
+          paddingTop: '0.25rem',
+          borderTop: gsaeDiff > 5 
+            ? '1px solid rgba(16, 185, 129, 0.2)' 
+            : '1px solid rgba(139, 92, 246, 0.2)'
         }}>
           {gsaeDiff > 5
             ? `${gsaeDiff.toFixed(1)} GSAE difference • Expected impact: ~${expectedGoalImpact.toFixed(2)} goals`
