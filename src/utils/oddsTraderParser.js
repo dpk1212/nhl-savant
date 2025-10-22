@@ -7,6 +7,7 @@ const TEAM_NAME_MAP = {
   'Seattle': 'SEA',
   'Philadelphia': 'PHI',
   'Buffalo': 'BUF',
+  'Detroit': 'DET',
   'Montreal': 'MTL',
   'Winnipeg': 'WPG',
   'Calgary': 'CGY',
@@ -30,7 +31,9 @@ const TEAM_NAME_MAP = {
   'Anaheim': 'ANA',
   'Nashville': 'NSH',
   'Colorado': 'COL',
-  'Utah': 'UTA'
+  'Utah': 'UTA',
+  'Tampa Bay': 'TBL',
+  'Chicago': 'CHI'
 };
 
 /**
