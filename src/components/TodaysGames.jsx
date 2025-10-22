@@ -3,6 +3,7 @@ import { Calendar, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
+import { GoalieProcessor } from '../utils/goalieProcessor';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
 import QuickSummary from './QuickSummary';
@@ -955,9 +956,21 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
   const [topEdges, setTopEdges] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedGame, setExpandedGame] = useState(null);
+  const [goalieProcessor, setGoalieProcessor] = useState(null);
   
   // FIREBASE: Auto-track all recommended bets
   useBetTracking(allEdges, dataProcessor);
+  
+  // Initialize GoalieProcessor when goalies.csv data is available
+  useEffect(() => {
+    if (dataProcessor && dataProcessor.rawData) {
+      // goalies.csv is loaded into dataProcessor.rawData
+      // We need to create a separate array for goalie data
+      // For now, we'll use the startingGoalies enriched data
+      const processor = new GoalieProcessor(dataProcessor.rawData);
+      setGoalieProcessor(processor);
+    }
+  }, [dataProcessor]);
 
   // Detect mobile device
   useEffect(() => {
@@ -987,6 +1000,33 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData, startingGoalies]);
+  
+  // Helper function to get goalie stats for a team
+  const getGoalieForTeam = (teamCode) => {
+    if (!startingGoalies || !startingGoalies.games || !goalieProcessor) {
+      return null;
+    }
+    
+    // Find the game for this team
+    const game = startingGoalies.games.find(g =>
+      g.away?.team === teamCode || g.home?.team === teamCode
+    );
+    
+    if (!game) return null;
+    
+    const isAway = game.away?.team === teamCode;
+    const goalieData = isAway ? game.away : game.home;
+    
+    if (!goalieData || !goalieData.goalie) return null;
+    
+    // If we have enriched stats from MoneyPuck, use those
+    if (goalieData.stats) {
+      return goalieData.stats;
+    }
+    
+    // Otherwise, try to get from goalies.csv via goalieProcessor
+    return goalieProcessor.getGoalieStats(goalieData.goalie, teamCode);
+  };
   
   // Calculate opportunities with consistent logic
   // STANDARD DEFINITIONS:
@@ -1396,6 +1436,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, 
                       physicalData={analyticsData.physicalData}
                       possessionData={analyticsData.possessionData}
                       regressionData={analyticsData.regressionData}
+                      awayGoalie={getGoalieForTeam(game.awayTeam)}
+                      homeGoalie={getGoalieForTeam(game.homeTeam)}
                       isMobile={isMobile}
                       bestEdge={bestEdge}
                       statsAnalyzer={statsAnalyzer}
