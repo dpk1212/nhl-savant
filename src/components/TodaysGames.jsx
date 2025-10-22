@@ -2,18 +2,481 @@ import { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
+import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
 import QuickSummary from './QuickSummary';
 import QuickGlance from './QuickGlance';
 import RatingBadge from './RatingBadge';
 import CollapsibleSection from './CollapsibleSection';
+import StatisticalEdgeAnalysis from './StatisticalEdgeAnalysis';
+import AdvancedMatchupDetails from './AdvancedMatchupDetails';
 import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 import { validatePredictions } from '../utils/modelValidator';
 import { useBetTracking } from '../hooks/useBetTracking';
 
-const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
+// ========================================
+// INLINE HELPER COMPONENTS
+// ========================================
+
+// Compact Header - Team names, time, rating badge
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, isMobile }) => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: isMobile ? '1rem' : '1.25rem',
+    borderBottom: '2px solid rgba(212, 175, 55, 0.2)'
+  }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: isMobile ? '1.125rem' : '1.25rem', fontWeight: '800', color: 'var(--color-text-primary)' }}>
+        {awayTeam} <span style={{ color: 'var(--color-text-muted)' }}>@</span> {homeTeam}
+      </span>
+      <span style={{ 
+        fontSize: '0.813rem', 
+        color: 'var(--color-text-muted)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.375rem'
+      }}>
+        <Calendar size={14} />
+        {gameTime}
+      </span>
+    </div>
+    {rating > 0 && <RatingBadge evPercent={rating} size="small" />}
+  </div>
+);
+
+// Calculate implied probability from odds
+const calculateImpliedProb = (odds) => {
+  if (odds > 0) {
+    return 100 / (odds + 100);
+  } else {
+    return Math.abs(odds) / (Math.abs(odds) + 100);
+  }
+};
+
+// Probability Bars Component
+const ProbabilityBars = ({ modelProb, marketProb }) => (
+  <div style={{ marginBottom: '1rem' }}>
+    <div style={{ marginBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Model</span>
+        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10B981' }}>
+          {(modelProb * 100).toFixed(1)}%
+        </span>
+      </div>
+      <div style={{ 
+        width: '100%', 
+        height: '8px', 
+        background: 'rgba(100, 116, 139, 0.2)', 
+        borderRadius: '4px',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          width: `${modelProb * 100}%`, 
+          height: '100%', 
+          background: '#10B981',
+          borderRadius: '4px',
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+    </div>
+    
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Market</span>
+        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-secondary)' }}>
+          {(marketProb * 100).toFixed(1)}%
+        </span>
+      </div>
+      <div style={{ 
+        width: '100%', 
+        height: '8px', 
+        background: 'rgba(100, 116, 139, 0.2)', 
+        borderRadius: '4px',
+        overflow: 'hidden'
+      }}>
+        <div style={{ 
+          width: `${marketProb * 100}%`, 
+          height: '100%', 
+          background: '#64748B',
+          borderRadius: '4px',
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+    </div>
+  </div>
+);
+
+// Hero Bet Card - Main value proposition
+const HeroBetCard = ({ bestEdge, game, isMobile }) => {
+  if (!bestEdge) return null;
+  
+  const marketProb = calculateImpliedProb(bestEdge.odds);
+  const modelTotal = game.edges.total?.predictedTotal || 0;
+  const marketTotal = game.edges.total?.marketTotal || 0;
+  const edge = modelTotal - marketTotal;
+  
+  return (
+    <div style={{ 
+      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.04) 100%)',
+      border: '2px solid rgba(16, 185, 129, 0.3)',
+      borderRadius: '12px',
+      padding: isMobile ? '1.25rem' : '1.5rem',
+      margin: isMobile ? '1rem' : '1.25rem',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Shimmer effect for high value bets */}
+      {bestEdge.evPercent > 10 && (
+        <div className="shimmer-overlay" />
+      )}
+      
+      {/* Best bet recommendation */}
+      <div style={{ 
+        fontSize: isMobile ? '1rem' : '1.125rem', 
+        fontWeight: '800', 
+        marginBottom: '1rem',
+        color: 'var(--color-text-primary)',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        💰 BEST VALUE: {bestEdge.pick}
+      </div>
+      
+      {/* Edge display */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)',
+        gap: '1rem', 
+        marginBottom: '1rem',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <div>
+          <div style={{ fontSize: '0.688rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
+            Our Edge
+          </div>
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.375rem', fontWeight: '900', color: '#10B981', fontFeatureSettings: "'tnum'" }}>
+            {edge > 0 ? '+' : ''}{Math.abs(edge).toFixed(1)} goals
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.688rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
+            Expected Value
+          </div>
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.375rem', fontWeight: '900', color: '#10B981', fontFeatureSettings: "'tnum'" }}>
+            +{bestEdge.evPercent.toFixed(1)}%
+          </div>
+        </div>
+        {!isMobile && (
+          <div>
+            <div style={{ fontSize: '0.688rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
+              Odds
+            </div>
+            <div style={{ fontSize: '1.375rem', fontWeight: '900', color: 'var(--color-text-primary)', fontFeatureSettings: "'tnum'" }}>
+              {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Probability bars */}
+      <ProbabilityBars 
+        modelProb={bestEdge.modelProb} 
+        marketProb={marketProb} 
+      />
+      
+      {/* Bottom stats row */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        fontSize: '0.813rem',
+        color: 'var(--color-text-muted)',
+        paddingTop: '0.75rem',
+        borderTop: '1px solid rgba(16, 185, 129, 0.2)',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        {isMobile && <span>Odds: {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}</span>}
+        <span>Model: {modelTotal.toFixed(1)}</span>
+        <span>Market: {marketTotal.toFixed(1)}</span>
+      </div>
+    </div>
+  );
+};
+
+// Compact Comparison Bar
+const CompactComparisonBar = ({ awayValue, homeValue, leagueAvg, awayTeam, homeTeam }) => {
+  const maxValue = Math.max(awayValue, homeValue, leagueAvg) * 1.2;
+  const awayPct = (awayValue / maxValue) * 100;
+  const homePct = (homeValue / maxValue) * 100;
+  const leaguePct = (leagueAvg / maxValue) * 100;
+  
+  const awayAdvantage = awayValue > homeValue;
+  
+  return (
+    <div style={{ fontSize: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+        <span style={{ fontWeight: awayAdvantage ? '700' : '500', color: awayAdvantage ? '#10B981' : 'var(--color-text-secondary)' }}>
+          {awayTeam}: {awayValue.toFixed(2)}
+        </span>
+        <span style={{ color: 'rgba(212, 175, 55, 0.7)', fontSize: '0.688rem' }}>
+          Avg: {leagueAvg.toFixed(2)}
+        </span>
+      </div>
+      <div style={{ position: 'relative', height: '6px', background: 'rgba(100, 116, 139, 0.2)', borderRadius: '3px', marginBottom: '0.375rem' }}>
+        <div style={{ 
+          position: 'absolute',
+          left: `${leaguePct}%`,
+          top: '-2px',
+          bottom: '-2px',
+          width: '2px',
+          background: 'rgba(212, 175, 55, 0.6)',
+          zIndex: 1
+        }} />
+        <div style={{ 
+          width: `${awayPct}%`, 
+          height: '100%', 
+          background: awayAdvantage ? '#10B981' : '#64748B',
+          borderRadius: '3px',
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ fontWeight: !awayAdvantage ? '700' : '500', color: !awayAdvantage ? '#10B981' : 'var(--color-text-secondary)' }}>
+          {homeTeam}: {homeValue.toFixed(2)}
+        </span>
+      </div>
+      <div style={{ position: 'relative', height: '6px', background: 'rgba(100, 116, 139, 0.2)', borderRadius: '3px' }}>
+        <div style={{ 
+          position: 'absolute',
+          left: `${leaguePct}%`,
+          top: '-2px',
+          bottom: '-2px',
+          width: '2px',
+          background: 'rgba(212, 175, 55, 0.6)',
+          zIndex: 1
+        }} />
+        <div style={{ 
+          width: `${homePct}%`, 
+          height: '100%', 
+          background: !awayAdvantage ? '#10B981' : '#64748B',
+          borderRadius: '3px',
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+    </div>
+  );
+};
+
+// Compact Factors - Top 3 critical factors
+const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile }) => {
+  if (!factors || factors.length === 0) return null;
+  
+  const topFactors = factors
+    .filter(f => f.importance === 'CRITICAL')
+    .slice(0, 3);
+  
+  if (topFactors.length === 0) return null;
+  
+  return (
+    <div style={{ padding: isMobile ? '1rem' : '1.25rem', background: 'rgba(212, 175, 55, 0.05)', borderTop: '1px solid rgba(212, 175, 55, 0.15)' }}>
+      <h3 style={{ fontSize: '0.938rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--color-accent)', letterSpacing: '-0.01em' }}>
+        📊 KEY ADVANTAGES
+      </h3>
+      
+      {topFactors.map((factor, idx) => (
+        <div key={idx} style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: idx < topFactors.length - 1 ? '1px solid rgba(212, 175, 55, 0.15)' : 'none' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
+              {factor.stars === 3 ? '🔥' : '🎯'} {factor.name}
+            </span>
+            <span style={{ 
+              fontSize: '0.875rem', 
+              fontWeight: '900', 
+              color: VisualMetricsGenerator.getImpactColor(factor.impact, true),
+              fontFeatureSettings: "'tnum'"
+            }}>
+              {VisualMetricsGenerator.formatGoalImpact(factor.impact)} goals
+            </span>
+          </div>
+          
+          {factor.awayMetric && factor.homeMetric && (
+            <>
+              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.625rem' }}>
+                {factor.awayMetric.rank && factor.homeMetric.rank ? (
+                  <span>#{factor.awayMetric.rank} vs #{factor.homeMetric.rank}</span>
+                ) : (
+                  <span>{factor.explanation?.split('.')[0]}</span>
+                )}
+              </div>
+              
+              <CompactComparisonBar 
+                awayValue={factor.awayMetric.value}
+                homeValue={factor.homeMetric.value}
+                leagueAvg={factor.leagueAvg}
+                awayTeam={awayTeam}
+                homeTeam={homeTeam}
+              />
+            </>
+          )}
+        </div>
+      ))}
+      
+      <div style={{ 
+        textAlign: 'center', 
+        fontSize: '1rem', 
+        fontWeight: '900',
+        padding: '0.875rem',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%)',
+        border: '1px solid rgba(16, 185, 129, 0.3)',
+        borderRadius: '8px',
+        color: '#10B981',
+        fontFeatureSettings: "'tnum'"
+      }}>
+        Total Edge: {VisualMetricsGenerator.formatGoalImpact(totalImpact)} goals vs market
+      </div>
+    </div>
+  );
+};
+
+// Market Row Component
+const MarketRow = ({ team, odds, ev, isPositive, isBestBet }) => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.625rem 0.75rem',
+    marginBottom: '0.5rem',
+    background: isBestBet ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+    border: isBestBet ? '2px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
+    borderRadius: '6px',
+    transition: 'all 0.2s ease'
+  }}>
+    <span style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>{team}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <span style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--color-text-primary)', fontFeatureSettings: "'tnum'" }}>
+        {odds > 0 ? '+' : ''}{odds}
+      </span>
+      <span style={{ 
+        fontSize: '0.75rem', 
+        fontWeight: '800',
+        color: isPositive ? '#10B981' : '#64748B',
+        minWidth: '50px',
+        textAlign: 'right',
+        fontFeatureSettings: "'tnum'"
+      }}>
+        {isPositive ? '+' : ''}{ev.toFixed(1)}%
+      </span>
+      {isBestBet && <span style={{ fontSize: '1rem', color: '#10B981' }}>✓</span>}
+    </div>
+  </div>
+);
+
+// Markets Grid Component
+const MarketsGrid = ({ game, isMobile }) => {
+  if (!game.edges) return null;
+  
+  const bestEvValue = Math.max(
+    game.edges.moneyline?.away?.evPercent || 0,
+    game.edges.moneyline?.home?.evPercent || 0,
+    game.edges.total?.over?.evPercent || 0,
+    game.edges.total?.under?.evPercent || 0
+  );
+  
+  return (
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: isMobile ? '1rem' : '1.25rem',
+      padding: isMobile ? '1rem' : '1.25rem',
+      borderTop: '1px solid var(--color-border)'
+    }}>
+      {/* Moneyline */}
+      {game.edges.moneyline && (
+        <div style={{ 
+          background: 'rgba(26, 31, 46, 0.6)',
+          border: '1px solid rgba(100, 116, 139, 0.3)',
+          borderRadius: '8px',
+          padding: isMobile ? '1rem' : '1.25rem'
+        }}>
+          <div style={{ 
+            fontSize: '0.75rem', 
+            fontWeight: '800', 
+            marginBottom: '0.875rem', 
+            color: 'rgba(59, 130, 246, 0.9)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em'
+          }}>
+            ⚡ MONEYLINE
+          </div>
+          
+          <MarketRow 
+            team={game.awayTeam}
+            odds={game.edges.moneyline.away.odds}
+            ev={game.edges.moneyline.away.evPercent}
+            isPositive={game.edges.moneyline.away.evPercent > 0}
+            isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
+          />
+          
+          <MarketRow 
+            team={game.homeTeam}
+            odds={game.edges.moneyline.home.odds}
+            ev={game.edges.moneyline.home.evPercent}
+            isPositive={game.edges.moneyline.home.evPercent > 0}
+            isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
+          />
+        </div>
+      )}
+      
+      {/* Total */}
+      {game.edges.total && game.rawOdds?.total?.line && (
+        <div style={{ 
+          background: 'rgba(26, 31, 46, 0.6)',
+          border: '1px solid rgba(100, 116, 139, 0.3)',
+          borderRadius: '8px',
+          padding: isMobile ? '1rem' : '1.25rem'
+        }}>
+          <div style={{ 
+            fontSize: '0.75rem', 
+            fontWeight: '800', 
+            marginBottom: '0.875rem', 
+            color: 'rgba(168, 85, 247, 0.9)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em'
+          }}>
+            🎯 TOTAL
+          </div>
+          
+          <MarketRow 
+            team={`O ${game.rawOdds.total.line}`}
+            odds={game.edges.total.over.odds}
+            ev={game.edges.total.over.evPercent}
+            isPositive={game.edges.total.over.evPercent > 0}
+            isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
+          />
+          
+          <MarketRow 
+            team={`U ${game.rawOdds.total.line}`}
+            odds={game.edges.total.under.odds}
+            ev={game.edges.total.under.evPercent}
+            isPositive={game.edges.total.under.evPercent > 0}
+            isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ========================================
+// MAIN COMPONENT
+// ========================================
+
+const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, statsAnalyzer, edgeFactorCalc }) => {
   const [edgeCalculator, setEdgeCalculator] = useState(null);
   const [allEdges, setAllEdges] = useState([]);
   const [topEdges, setTopEdges] = useState([]);
@@ -108,6 +571,74 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
     const element = document.getElementById(gameId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  // Generate analytics data for a game
+  const generateAnalyticsData = (game, bestEdge) => {
+    if (!statsAnalyzer || !edgeFactorCalc) return null;
+
+    try {
+      // Determine bet type from bestEdge
+      const betType = bestEdge?.market || 'TOTAL';
+      
+      // Get key factors for this bet type
+      const factors = edgeFactorCalc.getKeyFactors(game.awayTeam, game.homeTeam, betType);
+      
+      // Generate "The Story" narrative
+      const story = edgeFactorCalc.generateStory(factors, game.awayTeam, game.homeTeam);
+      
+      // Calculate total impact
+      const totalImpact = edgeFactorCalc.calculateTotalImpact(factors);
+      
+      // Get danger zone data
+      const awayDangerZone = statsAnalyzer.getDangerZoneBreakdown(game.awayTeam);
+      const homeDangerZone = statsAnalyzer.getDangerZoneBreakdown(game.homeTeam);
+      const dangerZoneData = awayDangerZone && homeDangerZone 
+        ? VisualMetricsGenerator.generateDangerZoneHeatmap(awayDangerZone, homeDangerZone)
+        : null;
+      
+      // Get rebound data
+      const awayRebound = statsAnalyzer.getReboundMetrics(game.awayTeam);
+      const homeRebound = statsAnalyzer.getReboundMetrics(game.homeTeam);
+      const reboundData = awayRebound && homeRebound
+        ? VisualMetricsGenerator.generateReboundTable(awayRebound, homeRebound)
+        : null;
+      
+      // Get physical data
+      const awayPhysical = statsAnalyzer.getPhysicalMetrics(game.awayTeam);
+      const homePhysical = statsAnalyzer.getPhysicalMetrics(game.homeTeam);
+      const physicalData = awayPhysical && homePhysical
+        ? VisualMetricsGenerator.generatePhysicalMetrics(awayPhysical, homePhysical)
+        : null;
+      
+      // Get possession data
+      const awayPossession = statsAnalyzer.getPossessionMetrics(game.awayTeam);
+      const homePossession = statsAnalyzer.getPossessionMetrics(game.homeTeam);
+      const possessionData = awayPossession && homePossession
+        ? { away: awayPossession, home: homePossession }
+        : null;
+      
+      // Get regression data
+      const awayRegression = statsAnalyzer.getRegressionIndicators(game.awayTeam);
+      const homeRegression = statsAnalyzer.getRegressionIndicators(game.homeTeam);
+      const regressionData = awayRegression && homeRegression
+        ? { away: awayRegression, home: homeRegression }
+        : null;
+      
+      return {
+        factors,
+        story,
+        totalImpact,
+        dangerZoneData,
+        reboundData,
+        physicalData,
+        possessionData,
+        regressionData
+      };
+    } catch (error) {
+      console.error('Error generating analytics data:', error);
+      return null;
     }
   };
 
@@ -266,542 +797,65 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies }) => {
                 position: 'relative'
               }}
             >
-              {/* Quick Glance Summary - Best Opportunity at a Glance */}
-              <QuickGlance game={game} bestEdge={bestEdge} isMobile={isMobile} />
+              {/* ===================================== */}
+              {/* NEW COHESIVE GAME CARD STRUCTURE     */}
+              {/* ===================================== */}
               
-              {/* Premium Game Header */}
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: isMobile ? 'column' : 'row',
-                justifyContent: 'space-between', 
-                alignItems: isMobile ? 'flex-start' : 'center', 
-                gap: isMobile ? '1rem' : '1.5rem',
-                marginBottom: isMobile ? '1.5rem' : '1.75rem',
-                paddingBottom: isMobile ? '1rem' : '1.25rem',
-                borderBottom: '1px solid var(--color-border)',
-                position: 'relative'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                    <div style={{
-                      width: '4px',
-                      height: '28px',
-                      background: 'linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
-                      borderRadius: '2px',
-                      boxShadow: '0 0 8px var(--color-accent-glow)'
-                    }} />
-                    <h2 style={{ 
-                      fontSize: isMobile ? '1.375rem' : '1.5rem',
-                      fontWeight: '700',
-                      color: 'var(--color-text-primary)',
-                      letterSpacing: '-0.02em'
-                    }}>
-                      {game.game}
-                    </h2>
-                  </div>
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.625rem',
-                    marginLeft: '1rem'
-                  }}>
-                    <Calendar size={14} color="var(--color-text-muted)" />
-                    <p style={{ 
-                      fontSize: '0.875rem',
-                      color: 'var(--color-text-muted)',
-                      margin: 0,
-                      fontWeight: '500'
-                    }}>
-                      {game.gameTime}
-                    </p>
-                  </div>
-                </div>
-                {game.edges.total && game.edges.total.predictedTotal != null && (() => {
-                  // FIX: Use predictions from edge calculator (already calculated with home ice and goalies)
-                  const awayScore = game.edges.total.awayScore;
-                  const homeScore = game.edges.total.homeScore;
-                  
+              {/* 1. Compact Header - Game context first */}
+              <CompactHeader
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+                gameTime={game.gameTime}
+                rating={bestEdge?.evPercent || 0}
+                isMobile={isMobile}
+              />
+              
+              {/* 2. Hero Bet Card - Best value proposition */}
+              <HeroBetCard
+                bestEdge={bestEdge}
+                game={game}
+                isMobile={isMobile}
+              />
+              
+              {/* 3. Compact Factors - Top 3 critical factors */}
+              {(() => {
+                const analyticsData = generateAnalyticsData(game, bestEdge);
+                if (analyticsData && analyticsData.factors && analyticsData.factors.length > 0) {
                   return (
-                    <div style={{ 
-                      textAlign: isMobile ? 'left' : 'right',
-                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.03) 100%)',
-                      border: '1px solid rgba(212, 175, 55, 0.2)',
-                      borderRadius: '8px',
-                      padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
-                      minWidth: isMobile ? '100%' : '220px',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}>
-                      {/* Animated shimmer for high value */}
-                      {Math.abs(game.edges.total.edge) > 0.8 && (
-                        <div className="shimmer-overlay" />
-                      )}
-                      
-                      {/* Header - More Prominent */}
-                      <div style={{ 
-                        fontSize: '0.625rem', 
-                        color: 'rgba(212, 175, 55, 0.8)', 
-                        marginBottom: '1rem', 
-                        textTransform: 'uppercase', 
-                        letterSpacing: '0.15em',
-                        fontWeight: '800',
-                        textAlign: 'center',
-                        borderBottom: '2px solid rgba(212, 175, 55, 0.2)',
-                        paddingBottom: '0.5rem'
-                      }}>
-                        Model Prediction
-                      </div>
-                      
-                      {/* Individual Team Scores - DRAMATICALLY ENHANCED */}
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.625rem',
-                        marginBottom: '1rem'
-                      }}>
-                        {/* Away Team */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0.5rem 0.75rem',
-                          background: 'rgba(59, 130, 246, 0.08)',
-                          borderLeft: '3px solid rgba(59, 130, 246, 0.5)',
-                          borderRadius: '4px'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ 
-                              fontSize: '0.625rem',
-                              fontWeight: '700',
-                              color: 'rgba(59, 130, 246, 0.7)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.08em',
-                              minWidth: '35px'
-                            }}>
-                              Away
-                            </span>
-                            <span style={{ 
-                              fontSize: '1rem',
-                              fontWeight: '700',
-                              color: 'var(--color-text-primary)',
-                              letterSpacing: '-0.02em'
-                            }}>
-                              {game.awayTeam}
-                            </span>
-                          </div>
-                          <span style={{ 
-                            fontSize: '1.625rem',
-                            fontFeatureSettings: "'tnum'",
-                            fontWeight: '900',
-                            color: 'var(--color-accent)',
-                            textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                            letterSpacing: '-0.03em'
-                          }}>
-                            {awayScore.toFixed(1)}
-                          </span>
-                        </div>
-
-                        {/* Home Team */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0.5rem 0.75rem',
-                          background: 'rgba(251, 146, 60, 0.08)',
-                          borderLeft: '3px solid rgba(251, 146, 60, 0.5)',
-                          borderRadius: '4px'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ 
-                              fontSize: '0.625rem',
-                              fontWeight: '700',
-                              color: 'rgba(251, 146, 60, 0.7)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.08em',
-                              minWidth: '35px'
-                            }}>
-                              Home
-                            </span>
-                            <span style={{ 
-                              fontSize: '1rem',
-                              fontWeight: '700',
-                              color: 'var(--color-text-primary)',
-                              letterSpacing: '-0.02em'
-                            }}>
-                              {game.homeTeam}
-                            </span>
-                          </div>
-                          <span style={{ 
-                            fontSize: '1.625rem',
-                            fontFeatureSettings: "'tnum'",
-                            fontWeight: '900',
-                            color: 'var(--color-accent)',
-                            textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                            letterSpacing: '-0.03em'
-                          }}>
-                            {homeScore.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Total & Market - Compact & Clear */}
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.375rem',
-                        marginBottom: '0.75rem',
-                        padding: '0.75rem',
-                        background: 'rgba(0, 0, 0, 0.25)',
-                        borderRadius: '6px'
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'baseline'
-                        }}>
-                          <span style={{ 
-                            fontSize: '0.75rem',
-                            color: 'rgba(212, 175, 55, 0.7)',
-                            fontWeight: '600',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                          }}>
-                            Total
-                          </span>
-                          <span style={{ 
-                            fontSize: '2rem',
-                            fontWeight: '900', 
-                            color: 'var(--color-accent)',
-                            fontFeatureSettings: "'tnum'",
-                            textShadow: '0 2px 12px rgba(212, 175, 55, 0.4)',
-                            lineHeight: '1',
-                            letterSpacing: '-0.04em'
-                          }}>
-                            {game.edges.total.predictedTotal.toFixed(1)}
-                          </span>
-                        </div>
-                        
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          paddingTop: '0.375rem',
-                          borderTop: '1px solid rgba(212, 175, 55, 0.15)'
-                        }}>
-                          <span style={{ 
-                            fontSize: '0.688rem',
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
-                          }}>
-                            vs Market {game.edges.total.marketTotal}
-                          </span>
-                          <span style={{ 
-                            fontSize: '0.813rem',
-                            fontWeight: '700',
-                            fontFeatureSettings: "'tnum'",
-                            color: game.edges.total.edge > 0 ? 'var(--color-success)' : 'var(--color-danger)'
-                          }}>
-                            ({game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)})
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Edge - MAXIMUM PROMINENCE (Green = ANY positive edge) */}
-                      <div style={{
-                        textAlign: 'center',
-                        padding: '0.75rem',
-                        background: Math.abs(game.edges.total.edge) > 0.1
-                          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%)' 
-                          : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%)',
-                        border: Math.abs(game.edges.total.edge) > 0.1
-                          ? '2px solid rgba(16, 185, 129, 0.4)' 
-                          : '2px solid rgba(239, 68, 68, 0.4)',
-                        borderRadius: '8px',
-                        boxShadow: Math.abs(game.edges.total.edge) > 0.3
-                          ? '0 4px 16px rgba(16, 185, 129, 0.25)' 
-                          : 'none'
-                      }}>
-                        <div style={{ 
-                          fontSize: '0.625rem',
-                          color: Math.abs(game.edges.total.edge) > 0.1 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
-                          fontWeight: '700',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.12em',
-                          marginBottom: '0.25rem'
-                        }}>
-                          Edge
-                        </div>
-                        <div style={{ 
-                          fontSize: '1.875rem',
-                          fontWeight: '900',
-                          color: Math.abs(game.edges.total.edge) > 0.1 ? 'var(--color-success)' : 'var(--color-danger)',
-                          fontFeatureSettings: "'tnum'",
-                          letterSpacing: '-0.04em',
-                          lineHeight: '1',
-                          textShadow: Math.abs(game.edges.total.edge) > 0.1
-                            ? '0 2px 12px rgba(16, 185, 129, 0.4)' 
-                            : '0 2px 12px rgba(239, 68, 68, 0.4)'
-                        }}>
-                          {game.edges.total.edge > 0 ? '+' : ''}{game.edges.total.edge.toFixed(1)}
-                          {Math.abs(game.edges.total.edge) > 0.5 && ' 🟢'}
-                        </div>
-                      </div>
-                    </div>
+                    <CompactFactors
+                      factors={analyticsData.factors}
+                      totalImpact={analyticsData.totalImpact}
+                      awayTeam={game.awayTeam}
+                      homeTeam={game.homeTeam}
+                      isMobile={isMobile}
+                    />
                   );
-                })()}
-              </div>
-
-              {/* Best Bet Narrative with Badge */}
-              {bestEdge && (
-                <BetNarrative 
-                  game={game} 
-                  edge={bestEdge} 
-                  dataProcessor={dataProcessor} 
-                  variant="full"
-                  expandable={false}
-                />
-              )}
-
-              {/* Premium Markets Display */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: isMobile ? '1rem' : '1.5rem',
-                marginTop: isMobile ? '1.5rem' : '1.75rem'
-              }}>
-                {/* Moneyline - Enhanced */}
-                {game.edges.moneyline?.away && game.edges.moneyline?.home && (
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.6) 0%, rgba(26, 31, 46, 0.4) 100%)',
-                    padding: isMobile ? '1rem' : '1.25rem', 
-                    borderRadius: '8px', 
-                    border: '1px solid var(--color-border)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '3px',
-                      height: '100%',
-                      background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, transparent 100%)'
-                    }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#60A5FA',
-                        boxShadow: '0 0 8px rgba(96, 165, 250, 0.5)'
-                      }} />
-                      <p style={{ 
-                        fontSize: '0.688rem', 
-                        color: '#60A5FA', 
-                        margin: 0,
-                        fontWeight: '700', 
-                        textTransform: 'uppercase', 
-                        letterSpacing: '0.1em' 
-                      }}>
-                        Moneyline
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.5rem 0',
-                        borderBottom: '1px solid rgba(100, 116, 139, 0.1)'
-                      }}>
-                        <span style={{ 
-                          fontSize: isMobile ? '0.938rem' : '0.875rem',
-                          fontWeight: '500',
-                          color: 'var(--color-text-primary)'
-                        }}>
-                          {game.awayTeam}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span 
-                            className="metric-number"
-                            style={{ 
-                              color: game.edges.moneyline.away.evPercent > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)',
-                              fontWeight: '700',
-                              fontSize: isMobile ? '0.938rem' : '0.875rem'
-                            }}
-                          >
-                            {game.edges.moneyline.away.odds > 0 ? '+' : ''}{game.edges.moneyline.away.odds}
-                          </span>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
-                          }}>
-                            ({(game.edges.moneyline.away.modelProb * 100).toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.5rem 0'
-                      }}>
-                        <span style={{ 
-                          fontSize: isMobile ? '0.938rem' : '0.875rem',
-                          fontWeight: '500',
-                          color: 'var(--color-text-primary)'
-                        }}>
-                          {game.homeTeam}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span 
-                            className="metric-number"
-                            style={{ 
-                              color: game.edges.moneyline.home.evPercent > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)',
-                              fontWeight: '700',
-                              fontSize: isMobile ? '0.938rem' : '0.875rem'
-                            }}
-                          >
-                            {game.edges.moneyline.home.odds > 0 ? '+' : ''}{game.edges.moneyline.home.odds}
-                          </span>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
-                          }}>
-                            ({(game.edges.moneyline.home.modelProb * 100).toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Total - Enhanced */}
-                {game.edges.total && game.edges.total.over && game.edges.total.under && game.rawOdds.total.line && (
-                  <div style={{ 
-                    background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.6) 0%, rgba(26, 31, 46, 0.4) 100%)',
-                    padding: isMobile ? '1rem' : '1.25rem', 
-                    borderRadius: '8px', 
-                    border: '1px solid var(--color-border)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '3px',
-                      height: '100%',
-                      background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.6) 0%, transparent 100%)'
-                    }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#A78BFA',
-                        boxShadow: '0 0 8px rgba(167, 139, 250, 0.5)'
-                      }} />
-                      <p style={{ 
-                        fontSize: '0.688rem', 
-                        color: '#A78BFA', 
-                        margin: 0,
-                        fontWeight: '700', 
-                        textTransform: 'uppercase', 
-                        letterSpacing: '0.1em' 
-                      }}>
-                        Total
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.5rem 0',
-                        borderBottom: '1px solid rgba(100, 116, 139, 0.1)'
-                      }}>
-                        <span style={{ 
-                          fontSize: isMobile ? '0.938rem' : '0.875rem',
-                          fontWeight: '500',
-                          color: 'var(--color-text-primary)'
-                        }}>
-                          Over {game.rawOdds.total.line}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span 
-                            className="metric-number"
-                            style={{ 
-                              color: game.edges.total.over.evPercent > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)',
-                              fontWeight: '700',
-                              fontSize: isMobile ? '0.938rem' : '0.875rem'
-                            }}
-                          >
-                            {game.edges.total.over.odds > 0 ? '+' : ''}{game.edges.total.over.odds}
-                          </span>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
-                          }}>
-                            ({game.edges.total.over.modelProb ? (game.edges.total.over.modelProb * 100).toFixed(1) : '0.0'}%)
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.5rem 0'
-                      }}>
-                        <span style={{ 
-                          fontSize: isMobile ? '0.938rem' : '0.875rem',
-                          fontWeight: '500',
-                          color: 'var(--color-text-primary)'
-                        }}>
-                          Under {game.rawOdds.total.line}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span 
-                            className="metric-number"
-                            style={{ 
-                              color: game.edges.total.under.evPercent > 0 ? 'var(--color-success)' : 'var(--color-text-secondary)',
-                              fontWeight: '700',
-                              fontSize: isMobile ? '0.938rem' : '0.875rem'
-                            }}
-                          >
-                            {game.edges.total.under.odds > 0 ? '+' : ''}{game.edges.total.under.odds}
-                          </span>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--color-text-muted)',
-                            fontWeight: '500'
-                          }}>
-                            ({game.edges.total.under.modelProb ? (game.edges.total.under.modelProb * 100).toFixed(1) : '0.0'}%)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Mathematical Breakdown */}
-              {game.edges.total && game.rawOdds.total && game.rawOdds.total.line && (
-                <div style={{ marginTop: isMobile ? '1.5rem' : '1.5rem' }}>
-                  <MathBreakdown 
-                    awayTeam={game.awayTeam}
-                    homeTeam={game.homeTeam}
-                    total={game.rawOdds.total}
-                    dataProcessor={dataProcessor}
-                    startingGoalies={startingGoalies}
-                  />
-                </div>
-              )}
+                }
+                return null;
+              })()}
+              
+              {/* 4. Markets Grid - Moneyline + Total */}
+              <MarketsGrid game={game} isMobile={isMobile} />
+              
+              {/* 5. Expandable Deep Analytics */}
+              {(() => {
+                const analyticsData = generateAnalyticsData(game, bestEdge);
+                if (analyticsData) {
+                  return (
+                    <AdvancedMatchupDetails
+                      awayTeam={game.awayTeam}
+                      homeTeam={game.homeTeam}
+                      dangerZoneData={analyticsData.dangerZoneData}
+                      reboundData={analyticsData.reboundData}
+                      physicalData={analyticsData.physicalData}
+                      possessionData={analyticsData.possessionData}
+                      regressionData={analyticsData.regressionData}
+                      isMobile={isMobile}
+                    />
+                  );
+                }
+                return null;
+              })()}
             </div>
           );
         })}
