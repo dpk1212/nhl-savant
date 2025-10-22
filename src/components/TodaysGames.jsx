@@ -160,7 +160,7 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 );
 
 // Hero Bet Card - Main value proposition
-const HeroBetCard = ({ bestEdge, game, isMobile }) => {
+const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   if (!bestEdge) return null;
   
   const marketProb = calculateImpliedProb(bestEdge.odds);
@@ -168,6 +168,42 @@ const HeroBetCard = ({ bestEdge, game, isMobile }) => {
   const marketTotal = game.edges.total?.marketTotal || 0;
   const edge = modelTotal - marketTotal;
   const confidence = getConfidenceLevel(bestEdge.evPercent, bestEdge.modelProb);
+  
+  // Generate supporting insights for primary bet
+  const getSupportingInsights = () => {
+    if (!factors || factors.length === 0) return [];
+    
+    const insights = [];
+    const isTotal = bestEdge.market === 'TOTAL';
+    
+    if (isTotal) {
+      // For TOTAL bets - show factors that align with OVER/UNDER
+      const isOver = bestEdge.pick.includes('OVER');
+      factors.forEach(f => {
+        const alignsWithBet = (isOver && f.impact > 0.05) || (!isOver && f.impact < -0.05);
+        if (alignsWithBet && Math.abs(f.impact) > 0.05) {
+          insights.push(`${f.name}: ${Math.abs(f.impact).toFixed(2)} goal impact`);
+        }
+      });
+    } else {
+      // For MONEYLINE bets - show factors that favor the team
+      const betTeam = bestEdge.team;
+      factors.forEach(f => {
+        const awayVal = f.awayMetric?.value || 0;
+        const homeVal = f.homeMetric?.value || 0;
+        const hasAdvantage = awayVal > homeVal ? game.awayTeam : game.homeTeam;
+        
+        if (hasAdvantage === betTeam && Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2) > 0.10) {
+          const percentDiff = ((Math.abs(awayVal - homeVal) / ((awayVal + homeVal) / 2)) * 100).toFixed(0);
+          insights.push(`${f.name}: ${betTeam} has ${percentDiff}% edge`);
+        }
+      });
+    }
+    
+    return insights.slice(0, 3); // Max 3 insights for primary bet
+  };
+  
+  const insights = getSupportingInsights();
   
   return (
     <div style={{ 
@@ -305,6 +341,55 @@ const HeroBetCard = ({ bestEdge, game, isMobile }) => {
         modelProb={bestEdge.modelProb} 
         marketProb={marketProb} 
       />
+      
+      {/* Premium Supporting Insights - Why this is the best value */}
+      {insights.length > 0 && (
+        <div style={{
+          marginTop: '1rem',
+          marginBottom: '0.75rem',
+          padding: '1rem',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%)',
+          borderRadius: '8px',
+          border: '1px solid rgba(16, 185, 129, 0.2)',
+          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <div style={{
+            fontSize: TYPOGRAPHY.label.size,
+            color: '#10B981',
+            fontWeight: TYPOGRAPHY.heading.weight,
+            marginBottom: '0.625rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span style={{ fontSize: '1rem' }}>✓</span>
+            Why this is the best value:
+          </div>
+          {insights.map((insight, idx) => (
+            <div key={idx} style={{
+              fontSize: TYPOGRAPHY.body.size,
+              color: 'var(--color-text-primary)',
+              marginBottom: idx < insights.length - 1 ? '0.5rem' : 0,
+              paddingLeft: '1.25rem',
+              position: 'relative',
+              lineHeight: '1.5'
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: 0,
+                color: '#10B981',
+                fontSize: '1.25rem',
+                fontWeight: 'bold'
+              }}>•</span>
+              {insight}
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* Bottom stats row */}
       <div style={{ 
@@ -1640,11 +1725,17 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               />
               
               {/* 2. Hero Bet Card - Best value proposition */}
-              <HeroBetCard
-                bestEdge={bestEdge}
-                game={game}
-                isMobile={isMobile}
-              />
+              {(() => {
+                const analyticsData = generateAnalyticsData(game, bestEdge);
+                return (
+                  <HeroBetCard
+                    bestEdge={bestEdge}
+                    game={game}
+                    isMobile={isMobile}
+                    factors={analyticsData?.factors || []}
+                  />
+                );
+              })()}
               
               {/* 2.5. Quick Story - Plain language explanation */}
               {(() => {
