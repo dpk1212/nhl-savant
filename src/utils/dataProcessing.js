@@ -436,6 +436,7 @@ export class NHLDataProcessor {
     // If specific starting goalie provided, use their stats
     if (startingGoalieName) {
       goalieGSAE = this.goalieProcessor.calculateGSAE(startingGoalieName, '5on5');
+      console.log(`🎯 Goalie adjustment: ${startingGoalieName} → GSAE ${goalieGSAE.toFixed(2)}`);
     } else {
       // Otherwise use team's average goalie performance
       const teamGoalies = this.goalieProcessor.getTeamGoalies(opponentTeam, '5on5');
