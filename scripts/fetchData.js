@@ -172,8 +172,9 @@ function parseMoneyPuckStartingGoalies(markdown) {
         const awayTeam = teamMatches[0][1];
         const homeTeam = teamMatches[1][1];
         
-        // Extract goalie names from "Starter: NAME**"
-        const goalieMatches = [...line.matchAll(/Starter:\s*([A-Za-z\-\']+)/g)];
+        // Extract goalie names from "Starter: NAME\**" or "Starter: NAME**"
+        // Handles full names with spaces and escaped asterisks
+        const goalieMatches = [...line.matchAll(/Starter:\s*([A-Za-z\-\'\s]+?)\\?\*\*/g)];
         
         let awayGoalie = null;
         let homeGoalie = null;
