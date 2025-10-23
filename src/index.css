@@ -46,6 +46,14 @@
   --blur-sm: blur(4px);
   --blur-md: blur(8px);
   --blur-lg: blur(16px);
+  
+  /* Observatory Colors */
+  --color-deep-space: #0A0E1A;
+  --color-midnight-blue: #1A1F2E;
+  --color-elite-gold: #FFD700;
+  --color-hot-red: #EF4444;
+  --color-cold-blue: #3B82F6;
+  --color-success-green: #10B981;
 }
 
 /* ========================
@@ -906,4 +914,120 @@ p {
 @keyframes countUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================
+   OBSERVATORY PREMIUM STYLES
+   ======================== */
+
+/* Starry Background */
+.stars-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, white, transparent),
+    radial-gradient(2px 2px at 60% 70%, white, transparent),
+    radial-gradient(1px 1px at 50% 50%, white, transparent),
+    radial-gradient(1px 1px at 80% 10%, white, transparent),
+    radial-gradient(2px 2px at 90% 60%, white, transparent),
+    radial-gradient(1px 1px at 33% 80%, white, transparent),
+    radial-gradient(1px 1px at 15% 90%, white, transparent);
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  opacity: 0.3;
+  animation: twinkle 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* Observatory Hero */
+.observatory-hero {
+  position: relative;
+  box-shadow: 
+    0 0 40px rgba(255, 215, 0, 0.1),
+    inset 0 0 60px rgba(255, 215, 0, 0.03);
+}
+
+/* Team Orb Hover Effects */
+.team-orb {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.team-orb:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+
+/* Premium Stat Card */
+.premium-stat-card {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-stat-card:hover {
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 20px currentColor;
+}
+
+.premium-stat-card:hover .card-glow {
+  opacity: 1;
+}
+
+/* Glassmorphic Effect */
+.glassmorphic {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+/* Glow Effect */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 40px currentColor;
+  }
+}
+
+/* Shimmer Effect */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Smooth Transitions */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* GPU Accelerated Transforms */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
 }
