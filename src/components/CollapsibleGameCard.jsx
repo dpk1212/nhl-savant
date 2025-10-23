@@ -9,7 +9,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
  *   <YourContent />
  * </CollapsibleGameCard>
  */
-const CollapsibleGameCard = ({ header, children, defaultExpanded = true, index = 0 }) => {
+const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -18,7 +18,15 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = true, index =
       style={{
         animationDelay: `${index * 0.1}s`,
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        // Premium collapsed state styling
+        background: isExpanded 
+          ? 'var(--color-bg-secondary)' 
+          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)',
+        border: isExpanded 
+          ? '1px solid var(--color-border)' 
+          : '1px solid rgba(16, 185, 129, 0.2)',
+        transition: 'all 0.3s ease'
       }}
     >
       {/* Clickable Header */}
@@ -26,35 +34,52 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = true, index =
         onClick={() => setIsExpanded(!isExpanded)}
         style={{
           cursor: 'pointer',
-          position: 'relative'
+          position: 'relative',
+          // Enhanced hover effect when collapsed
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={(e) => {
+          if (!isExpanded) {
+            e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isExpanded) {
+            e.currentTarget.style.background = 'transparent';
+          }
         }}
       >
         {/* Pass isExpanded state to header via cloneElement if needed */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', paddingRight: isMobile ? '48px' : '56px' }}>
           {header}
           
-          {/* Chevron Icon Overlay */}
+          {/* Chevron Icon - Fixed positioning to avoid overlap */}
           <div style={{
             position: 'absolute',
             top: '50%',
-            right: '1rem',
+            right: isMobile ? '0.75rem' : '1rem',
             transform: 'translateY(-50%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '36px',
-            height: '36px',
-            borderRadius: '8px',
-            background: isExpanded ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-            border: `1px solid ${isExpanded ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-            transition: 'all 0.2s ease',
+            width: isMobile ? '32px' : '40px',
+            height: isMobile ? '32px' : '40px',
+            borderRadius: '10px',
+            background: isExpanded 
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%)' 
+              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
+            border: `2px solid ${isExpanded ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.3)'}`,
+            boxShadow: isExpanded 
+              ? '0 2px 8px rgba(16, 185, 129, 0.2)' 
+              : '0 2px 8px rgba(59, 130, 246, 0.2)',
+            transition: 'all 0.3s ease',
             pointerEvents: 'none',
             zIndex: 10
           }}>
             {isExpanded ? (
-              <ChevronUp size={20} color="#10B981" />
+              <ChevronUp size={isMobile ? 18 : 22} color="#10B981" strokeWidth={2.5} />
             ) : (
-              <ChevronDown size={20} color="var(--color-text-muted)" />
+              <ChevronDown size={isMobile ? 18 : 22} color="#3B82F6" strokeWidth={2.5} />
             )}
           </div>
         </div>

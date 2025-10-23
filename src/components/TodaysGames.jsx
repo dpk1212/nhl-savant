@@ -1893,8 +1893,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             <CollapsibleGameCard
               key={index}
               header={headerContent}
-              defaultExpanded={true}
+              defaultExpanded={false}
               index={index}
+              isMobile={isMobile}
             >
               
               {/* 2. Hero Bet Card - Best value proposition */}
