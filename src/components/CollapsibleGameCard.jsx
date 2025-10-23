@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 /**
@@ -51,7 +51,8 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index 
       >
         {/* Pass isExpanded state to header via cloneElement if needed */}
         <div style={{ position: 'relative', paddingRight: isMobile ? '48px' : '56px' }}>
-          {header}
+          {/* Clone header and inject isCollapsed prop */}
+          {React.cloneElement(header, { isCollapsed: !isExpanded })}
           
           {/* Chevron Icon - Fixed positioning to avoid overlap */}
           <div style={{
