@@ -1919,7 +1919,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                Total
+                Games
               </div>
             </div>
             
