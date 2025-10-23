@@ -1,9 +1,9 @@
-import { collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, setDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, setDoc, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 
 export class BetTracker {
   
-  // Save a recommended bet
+  // Save a recommended bet with history tracking
   async saveBet(game, bestEdge, prediction) {
     // Get date first (game.date might be undefined)
     const gameDate = game.date || new Date().toISOString().split('T')[0];
@@ -77,9 +77,59 @@ export class BetTracker {
     };
     
     try {
-      // Use setDoc with custom ID instead of addDoc
-      await setDoc(doc(db, 'bets', betId), betData);
-      console.log(`✅ Saved bet: ${betId}`);
+      const betRef = doc(db, 'bets', betId);
+      const existingBet = await getDoc(betRef);
+      
+      if (existingBet.exists()) {
+        // Bet already exists - add to history and update current values
+        const currentData = existingBet.data();
+        
+        // Only update if odds or EV changed significantly (avoid spam)
+        const oddsChanged = Math.abs(currentData.bet.odds - bestEdge.odds) >= 5;
+        const evChanged = Math.abs(currentData.prediction.evPercent - bestEdge.evPercent) >= 1;
+        
+        if (oddsChanged || evChanged) {
+          await updateDoc(betRef, {
+            // Add current state to history
+            history: arrayUnion({
+              timestamp: Date.now(),
+              odds: bestEdge.odds,
+              evPercent: bestEdge.evPercent,
+              modelProb: bestEdge.modelProb,
+              marketProb: this.calculateMarketProb(bestEdge.odds)
+            }),
+            // Update current values
+            'bet.odds': bestEdge.odds,
+            'prediction.evPercent': bestEdge.evPercent,
+            'prediction.ev': bestEdge.ev,
+            'prediction.modelProb': bestEdge.modelProb,
+            'prediction.marketProb': this.calculateMarketProb(bestEdge.odds),
+            'prediction.kelly': bestEdge.kelly,
+            'prediction.rating': bestEdge.rating || this.getRating(bestEdge.evPercent),
+            timestamp: Date.now()
+          });
+          console.log(`📊 Updated bet with odds change: ${betId} (${currentData.bet.odds} → ${bestEdge.odds})`);
+        } else {
+          console.log(`⏭️ Skipped update (no significant change): ${betId}`);
+        }
+      } else {
+        // New bet - create with initial history entry
+        await setDoc(betRef, {
+          ...betData,
+          history: [{
+            timestamp: Date.now(),
+            odds: bestEdge.odds,
+            evPercent: bestEdge.evPercent,
+            modelProb: bestEdge.modelProb,
+            marketProb: this.calculateMarketProb(bestEdge.odds)
+          }],
+          firstRecommendedAt: Date.now(), // Track when first recommended
+          initialOdds: bestEdge.odds,
+          initialEV: bestEdge.evPercent
+        });
+        console.log(`✅ Saved new bet: ${betId} (${bestEdge.odds}, +${bestEdge.evPercent.toFixed(1)}% EV)`);
+      }
+      
       return betId;
     } catch (error) {
       console.error('❌ Error saving bet:', error);
