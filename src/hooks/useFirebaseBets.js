@@ -13,21 +13,17 @@ export function useFirebaseBets() {
   const [error, setError] = useState(null);
   
   useEffect(() => {
-    // Use THE EXACT SAME date logic as the Firebase live scores function
+    // Get last 2 days of bets (covers all edge cases with timezones)
     const now = new Date();
-    const hour = now.getHours();
-    const dateToFetch = new Date(now);
+    const today = now.toISOString().split('T')[0];
     
-    if (hour < 6) {
-      // Before 6 AM, use yesterday's games (matches live scores logic)
-      dateToFetch.setDate(dateToFetch.getDate() - 1);
-    }
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    const today = dateToFetch.toISOString().split('T')[0];
+    console.log(`📊 Fetching Firebase bets for ${yesterdayStr} AND ${today}`);
     
-    console.log(`📊 Fetching Firebase bets for ${today} (hour: ${hour}, matches live scores date)`);
-    
-    // Simple query - just get all bets and filter in memory to avoid index issues
+    // Simple query - get all recent bets and filter in memory
     const unsubscribe = onSnapshot(
       collection(db, 'bets'),
       (snapshot) => {
@@ -36,11 +32,12 @@ export function useFirebaseBets() {
             id: doc.id,
             ...doc.data()
           }))
-          .filter(bet => bet.date === today) // Filter for today's date (local timezone)
-          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp desc
+          .filter(bet => bet.date === today || bet.date === yesterdayStr) // Last 2 days
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         
-        console.log(`✅ Loaded ${allBets.length} bets from Firebase for ${today}`);
-        console.log('Bets:', allBets.map(b => `${b.game?.awayTeam} @ ${b.game?.homeTeam}`));
+        console.log(`✅ Loaded ${allBets.length} bets from Firebase`);
+        console.log('Dates found:', [...new Set(allBets.map(b => b.date))]);
+        console.log('Bets:', allBets.map(b => `${b.date}: ${b.game?.awayTeam} @ ${b.game?.homeTeam}`));
         setBets(allBets);
         setLoading(false);
       },
