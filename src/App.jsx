@@ -36,7 +36,14 @@ function App() {
         console.log('📅 Loading schedule data for B2B adjustments...');
         let loadedScheduleHelper = null;
         try {
-          const scheduleText = await fetch('/nhl-202526-asplayed.csv').then(r => r.text());
+          // Use import.meta.env.BASE_URL to respect Vite's base path
+          const schedulePath = `${import.meta.env.BASE_URL}nhl-202526-asplayed.csv`;
+          console.log(`📂 Fetching schedule from: ${schedulePath}`);
+          const scheduleResponse = await fetch(schedulePath);
+          if (!scheduleResponse.ok) {
+            throw new Error(`Failed to fetch schedule: ${scheduleResponse.status} ${scheduleResponse.statusText}`);
+          }
+          const scheduleText = await scheduleResponse.text();
           
           // Wrap Papa.parse in a Promise to properly await it
           loadedScheduleHelper = await new Promise((resolve, reject) => {
