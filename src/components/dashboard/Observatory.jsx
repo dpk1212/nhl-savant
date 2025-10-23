@@ -188,6 +188,46 @@ const Observatory = ({ dataProcessor, isMobile }) => {
           borderBottom: '1px dashed rgba(239, 68, 68, 0.2)'
         }} />
 
+        {/* Zone labels - Positioned to avoid corner label overlap */}
+        <div style={{
+          position: 'absolute',
+          bottom: isMobile ? '45px' : '55px',
+          right: isMobile ? '15px' : '20px',
+          padding: isMobile ? '0.5rem 1rem' : '0.625rem 1.25rem',
+          background: 'rgba(16, 185, 129, 0.25)',
+          backdropFilter: 'blur(12px)',
+          border: '2px solid rgba(16, 185, 129, 0.5)',
+          borderRadius: '10px',
+          fontSize: isMobile ? '0.688rem' : '0.813rem',
+          fontWeight: '900',
+          color: '#10B981',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          pointerEvents: 'none',
+          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+        }}>
+          ✓ ELITE ZONE
+        </div>
+        <div style={{
+          position: 'absolute',
+          top: isMobile ? '45px' : '55px',
+          left: isMobile ? '15px' : '20px',
+          padding: isMobile ? '0.5rem 1rem' : '0.625rem 1.25rem',
+          background: 'rgba(239, 68, 68, 0.25)',
+          backdropFilter: 'blur(12px)',
+          border: '2px solid rgba(239, 68, 68, 0.5)',
+          borderRadius: '10px',
+          fontSize: isMobile ? '0.688rem' : '0.813rem',
+          fontWeight: '900',
+          color: '#EF4444',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          pointerEvents: 'none',
+          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+        }}>
+          ✗ DANGER ZONE
+        </div>
+
         {/* Corner Labels - Clear quadrant descriptions */}
         {/* TOP-LEFT: Bad Offense + Bad Defense */}
         <div style={{
