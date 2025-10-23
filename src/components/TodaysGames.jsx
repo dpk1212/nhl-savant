@@ -1963,15 +1963,129 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         })}
       </div>
 
-      {/* No games message */}
+      {/* No games message or show live scores */}
       {allEdges.length === 0 && (
-        <div className="elevated-card" style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
-          <Calendar size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 1rem auto' }} />
-          <h3 style={{ marginBottom: '0.5rem' }}>No Games Today</h3>
-          <p style={{ color: 'var(--color-text-secondary)' }}>
-            Check back later for today's matchups and analysis.
-          </p>
-        </div>
+        <>
+          {/* Show live games from Firestore if available */}
+          {liveScores && liveScores.length > 0 ? (
+            <div>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '2rem 1rem 1rem',
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                borderRadius: '12px',
+                marginBottom: '1.5rem',
+                border: '1px solid rgba(239, 68, 68, 0.3)'
+              }}>
+                <Activity size={32} color="#EF4444" style={{ margin: '0 auto 0.75rem auto', animation: 'pulse 1.5s infinite' }} />
+                <h3 style={{ marginBottom: '0.5rem', color: '#EF4444' }}>Live Games</h3>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+                  Showing {liveScores.length} game{liveScores.length > 1 ? 's' : ''} in progress
+                </p>
+              </div>
+              
+              {liveScores.map((game, idx) => (
+                <div 
+                  key={game.gameId || idx} 
+                  className="elevated-card" 
+                  style={{ 
+                    marginBottom: '1rem',
+                    padding: isMobile ? '1rem' : '1.5rem',
+                    background: game.status === 'LIVE' 
+                      ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(26, 31, 46, 1) 50%)' 
+                      : 'var(--color-bg-secondary)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+                      {game.awayTeam} @ {game.homeTeam}
+                    </div>
+                    {game.status === 'LIVE' && (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem',
+                        color: '#EF4444',
+                        fontWeight: 'bold',
+                        animation: 'pulse 1.5s infinite'
+                      }}>
+                        <Activity size={16} />
+                        LIVE
+                      </div>
+                    )}
+                    {game.status === 'FINAL' && (
+                      <div style={{ 
+                        color: 'var(--color-text-muted)',
+                        fontWeight: 'bold'
+                      }}>
+                        FINAL
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '3rem',
+                    fontSize: '2.5rem',
+                    fontWeight: 'bold',
+                    padding: '2rem 0',
+                    color: game.status === 'LIVE' ? '#EF4444' : 'var(--color-text-primary)'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                        {game.awayTeam}
+                      </div>
+                      <div>{game.awayScore}</div>
+                    </div>
+                    <div style={{ fontSize: '1.5rem', color: 'var(--color-text-muted)' }}>-</div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                        {game.homeTeam}
+                      </div>
+                      <div>{game.homeScore}</div>
+                    </div>
+                  </div>
+                  
+                  {game.clock && (
+                    <div style={{ 
+                      textAlign: 'center',
+                      color: 'var(--color-text-muted)',
+                      fontSize: '0.9rem',
+                      marginTop: '1rem'
+                    }}>
+                      {game.period && `Period ${game.period} • `}{game.clock}
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '1rem',
+                color: 'var(--color-text-muted)',
+                fontSize: '0.875rem',
+                marginTop: '1rem'
+              }}>
+                <p>
+                  ⚠️ Betting analysis not available for live games.
+                </p>
+                <p style={{ marginTop: '0.5rem' }}>
+                  Check back tomorrow for tomorrow's betting opportunities!
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="elevated-card" style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
+              <Calendar size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 1rem auto' }} />
+              <h3 style={{ marginBottom: '0.5rem' }}>No Games Today</h3>
+              <p style={{ color: 'var(--color-text-secondary)' }}>
+                Check back later for today's matchups and analysis.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
