@@ -1683,161 +1683,190 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   }
 
   return (
-    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '1rem' : '2rem 1rem' }} className="animate-fade-in">
-      {/* PREMIUM HERO SECTION */}
+    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '0.75rem' : '1.5rem 1rem' }} className="animate-fade-in">
+      {/* PREMIUM COMPACT HEADER */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(212, 175, 55, 0.2)',
-        borderRadius: '16px',
-        padding: isMobile ? '1.5rem' : '2rem',
-        marginBottom: '2rem',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid rgba(16, 185, 129, 0.15)',
+        borderRadius: isMobile ? '12px' : '14px',
+        padding: isMobile ? '0.875rem 1rem' : '1.25rem 1.5rem',
+        marginBottom: isMobile ? '1rem' : '1.5rem',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Animated background shine */}
-        <div className="shine-overlay" />
+        {/* Subtle animated background */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.03), transparent)',
+          animation: 'shimmer 3s infinite',
+          pointerEvents: 'none'
+        }} />
         
-        {/* Header content with live time */}
+        {/* Compact header content */}
         <div style={{ 
           display: 'flex', 
-          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between', 
-          alignItems: isMobile ? 'flex-start' : 'flex-start',
-          gap: isMobile ? '1.5rem' : '2rem',
+          alignItems: 'center',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          gap: isMobile ? '0.75rem' : '1rem'
         }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-              <Calendar size={32} color="var(--color-accent)" />
-              <div>
-                <h1 className="text-gradient" style={{ 
-                  fontSize: isMobile ? '1.75rem' : '2.5rem',
-                  fontWeight: '800',
-                  marginBottom: '0.25rem',
-                  letterSpacing: '-0.02em',
-                  lineHeight: '1.1'
-                }}>
-                  Today's Games
-                </h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <span style={{ 
-                    fontSize: '0.875rem', 
-                    color: 'var(--color-text-muted)',
-                    fontWeight: '500'
-                  }}>
-                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                  </span>
-                  <LiveClock />
-                  
-                  {/* Goalie Confirmation Status */}
-                  {startingGoalies && startingGoalies.games && (
-                    <span style={{
-                      fontSize: '0.75rem',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      background: 'rgba(16, 185, 129, 0.1)',
-                      border: '1px solid rgba(16, 185, 129, 0.3)',
-                      color: '#10B981',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}>
-                      🥅 {(() => {
-                        let confirmed = 0;
-                        let total = 0;
-                        startingGoalies.games.forEach(game => {
-                          // Handle both old format (goalie exists = confirmed) and new format (confirmed property)
-                          if (game.away?.goalie && (game.away?.confirmed !== false)) confirmed++;
-                          if (game.home?.goalie && (game.home?.confirmed !== false)) confirmed++;
-                          total += 2;
-                        });
-                        return `${confirmed}/${total} Goalies`;
-                      })()}
-                    </span>
-                  )}
-                  
-                  {/* Odds Last Updated */}
-                  {startingGoalies?.oddsLastUpdated && (
-                    <span style={{
-                      fontSize: '0.8rem',
-                      padding: '0.375rem 0.625rem',
-                      borderRadius: '6px',
-                      background: 'rgba(59, 130, 246, 0.15)',
-                      border: '1px solid rgba(59, 130, 246, 0.4)',
-                      color: '#60A5FA',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.375rem'
-                    }}>
-                      📊 Odds: {(() => {
-                        const lastUpdated = new Date(startingGoalies.oddsLastUpdated);
-                        const now = new Date();
-                        const diffMinutes = Math.floor((now - lastUpdated) / (1000 * 60));
-                        
-                        if (diffMinutes < 1) return 'Just updated';
-                        if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
-                        const diffHours = Math.floor(diffMinutes / 60);
-                        if (diffHours < 24) return `Updated ${diffHours}h ago`;
-                        return `Updated ${lastUpdated.toLocaleTimeString()}`;
-                      })()}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            {!isMobile && (
-              <p style={{ 
-                color: 'var(--color-text-secondary)', 
-                fontSize: '0.875rem',
-                lineHeight: '1.6',
-                maxWidth: '45rem',
-                marginTop: '0.75rem'
+          {/* Left: Title & Date */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', marginBottom: '0.25rem' }}>
+              <Calendar size={isMobile ? 20 : 24} color="#10B981" style={{ flexShrink: 0 }} />
+              <h1 style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.5rem',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                margin: 0,
+                letterSpacing: '-0.01em',
+                lineHeight: '1.2',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
               }}>
-                Institutional-grade analysis using advanced metrics to identify betting edges. 
-                Full mathematical transparency with score-adjusted xG, PDO regression, and probabilistic modeling.
-              </p>
-            )}
+                Today's Games
+              </h1>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexWrap: 'wrap' }}>
+              <span style={{ 
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'var(--color-text-muted)',
+                fontWeight: '600',
+                whiteSpace: 'nowrap'
+              }}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+              <LiveClock />
+                  
+              {/* Compact goalie status */}
+              {startingGoalies && startingGoalies.games && (
+                <span style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  padding: isMobile ? '0.125rem 0.375rem' : '0.2rem 0.5rem',
+                  borderRadius: '6px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  color: '#10B981',
+                  fontWeight: '700',
+                  whiteSpace: 'nowrap',
+                  letterSpacing: '0.02em'
+                }}>
+                  🥅 {(() => {
+                    let confirmed = 0;
+                    let total = 0;
+                    startingGoalies.games.forEach(game => {
+                      if (game.away?.goalie && (game.away?.confirmed !== false)) confirmed++;
+                      if (game.home?.goalie && (game.home?.confirmed !== false)) confirmed++;
+                      total += 2;
+                    });
+                    return `${confirmed}/${total}`;
+                  })()}
+                </span>
+              )}
+            </div>
           </div>
           
-          {/* Animated stats pills */}
+          {/* Right: Compact stats */}
           <div style={{ 
             display: 'flex', 
-            gap: '0.75rem',
-            flexDirection: isMobile ? 'row' : 'column',
-            alignItems: isMobile ? 'flex-start' : 'flex-end'
+            gap: isMobile ? '0.5rem' : '0.75rem',
+            alignItems: 'center',
+            flexShrink: 0
           }}>
-            <AnimatedStatPill 
-              icon={<BarChart3 size={16} />}
-            value={opportunityCounts.total}
-            label="Opportunities"
-              color="info"
-            />
-            <AnimatedStatPill 
-              icon={<TrendingUp size={16} />}
-            value={opportunityCounts.highValue}
-              label="High Value"
-              color="success"
-              sparkle
-            />
+            <div style={{
+              textAlign: 'center',
+              padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
+              background: 'rgba(59, 130, 246, 0.12)',
+              borderRadius: '8px',
+              border: '1px solid rgba(59, 130, 246, 0.25)'
+            }}>
+              <div style={{
+                fontSize: isMobile ? '1.125rem' : '1.375rem',
+                fontWeight: '800',
+                color: '#3B82F6',
+                lineHeight: '1',
+                marginBottom: '0.125rem'
+              }}>
+                {opportunityCounts.total}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
+                color: 'var(--color-text-muted)',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Games
+              </div>
+            </div>
+            <div style={{
+              textAlign: 'center',
+              padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
+              background: 'rgba(16, 185, 129, 0.12)',
+              borderRadius: '8px',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              position: 'relative'
+            }}>
+              {opportunityCounts.highValue > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  width: '8px',
+                  height: '8px',
+                  background: '#10B981',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
+                  animation: 'pulse 2s infinite'
+                }} />
+              )}
+              <div style={{
+                fontSize: isMobile ? '1.125rem' : '1.375rem',
+                fontWeight: '800',
+                color: '#10B981',
+                lineHeight: '1',
+                marginBottom: '0.125rem'
+              }}>
+                {opportunityCounts.highValue}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
+                color: 'var(--color-text-muted)',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Elite
+              </div>
+            </div>
           </div>
         </div>
         
-        {/* Countdown to first game */}
+        {/* Countdown to first game - compact version */}
         {allEdges.length > 0 && allEdges[0].gameTime && (
-          <GameCountdown firstGameTime={allEdges[0].gameTime} />
+          <div style={{ 
+            marginTop: isMobile ? '0.625rem' : '0.75rem',
+            paddingTop: isMobile ? '0.625rem' : '0.75rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            position: 'relative',
+            zIndex: 1
+          }}>
+            <GameCountdown firstGameTime={allEdges[0].gameTime} />
+          </div>
         )}
       </div>
 
-      {/* Quick Summary Table */}
-      <QuickSummary 
-        allEdges={allEdges}
-        dataProcessor={dataProcessor}
-        onGameClick={handleGameClick}
-      />
+      {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
       {/* Deep Analytics Cards for Each Game */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '1.5rem' : '2rem' }}>
