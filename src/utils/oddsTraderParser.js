@@ -75,7 +75,8 @@ export function parseOddsTrader(markdownText) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for today's games (and yesterday's if before 6 AM) OR live games
+    // Look for today's games (and yesterday's if before 6 AM)
+    // Note: LIVE games are detected but skipped since betting markets are closed
     const isMatchingDate = line.includes(todayPattern) || (includeYesterday && line.includes(yesterdayPattern)) || line.includes('LIVE');
     
     if (isMatchingDate) {
@@ -86,8 +87,8 @@ export function parseOddsTrader(markdownText) {
       
       // Check if it's a LIVE game
       if (line.includes('LIVE')) {
-        gameTime = 'LIVE';
-        console.log(`  🔴 LIVE GAME`);
+        console.log(`  🔴 LIVE GAME - Skipping (no betting markets available)`);
+        continue; // Skip LIVE games - betting markets are closed
       } else {
         // Pattern matches time that comes AFTER the date (e.g., "10/227:00 PM" -> "7:00 PM")
         const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2} [AP]M)/);
