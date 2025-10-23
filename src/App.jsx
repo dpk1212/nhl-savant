@@ -37,22 +37,30 @@ function App() {
         let loadedScheduleHelper = null;
         try {
           const scheduleText = await fetch('/nhl-202526-asplayed.csv').then(r => r.text());
-          Papa.parse(scheduleText, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-              if (results.data && results.data.length > 0) {
-                loadedScheduleHelper = new ScheduleHelper(results.data);
-                console.log(`✅ Loaded ${Object.keys(loadedScheduleHelper.gamesByTeam).length} teams into schedule helper`);
-                setScheduleHelper(loadedScheduleHelper);
+          
+          // Wrap Papa.parse in a Promise to properly await it
+          loadedScheduleHelper = await new Promise((resolve, reject) => {
+            Papa.parse(scheduleText, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                if (results.data && results.data.length > 0) {
+                  const helper = new ScheduleHelper(results.data);
+                  console.log(`✅ Loaded ${Object.keys(helper.gamesByTeam).length} teams into schedule helper`);
+                  setScheduleHelper(helper);
+                  resolve(helper);
+                } else {
+                  reject(new Error('No schedule data parsed'));
+                }
+              },
+              error: (err) => {
+                reject(err);
               }
-            },
-            error: (err) => {
-              console.warn('⚠️ Schedule file not found, B2B adjustments disabled:', err.message);
-            }
+            });
           });
         } catch (scheduleErr) {
           console.warn('⚠️ Could not load schedule data:', scheduleErr.message);
+          console.warn('   B2B adjustments will be disabled');
         }
         
         // Load team data (no longer needs goalie processor in constructor)
