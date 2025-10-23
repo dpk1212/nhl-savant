@@ -19,20 +19,23 @@ export function useFirebaseBets() {
     console.log(`📊 Subscribing to Firebase bets for ${today}`);
     
     // Query for today's bets
+    // Note: Removed orderBy to avoid needing composite index
+    // Bets will be sorted in the component if needed
     const q = query(
       collection(db, 'bets'),
-      where('date', '==', today),
-      orderBy('timestamp', 'desc')
+      where('date', '==', today)
     );
     
     // Real-time subscription
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const fetchedBets = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const fetchedBets = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp desc
         
         console.log(`✅ Loaded ${fetchedBets.length} bets from Firebase for ${today}`);
         setBets(fetchedBets);
