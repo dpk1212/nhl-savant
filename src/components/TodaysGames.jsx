@@ -17,6 +17,7 @@ import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './Premi
 import { validatePredictions } from '../utils/modelValidator';
 import { useBetTracking } from '../hooks/useBetTracking';
 import { useLiveScores } from '../hooks/useLiveScores';
+import { useFirebaseBets } from '../hooks/useFirebaseBets';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -1441,6 +1442,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [isMobile, setIsMobile] = useState(false);
   const [expandedGame, setExpandedGame] = useState(null);
   const { scores: liveScores } = useLiveScores(); // Real-time live scores from Firestore
+  const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   
   // FIREBASE: Auto-track all recommended bets
@@ -1985,12 +1987,24 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               </div>
               
               {liveScores.map((game, idx) => {
-                // Find bets that were placed on this game
+                // Find bets from Firebase that match this game
                 const gameMatchup = `${game.awayTeam} @ ${game.homeTeam}`;
-                const gameBets = allEdges.filter(edge => 
-                  edge.game === gameMatchup || 
-                  `${edge.awayTeam} @ ${edge.homeTeam}` === gameMatchup
-                );
+                const gameBets = firebaseBets
+                  .filter(bet => {
+                    // Match by team names
+                    const betMatchup = `${bet.game?.awayTeam} @ ${bet.game?.homeTeam}`;
+                    return betMatchup === gameMatchup;
+                  })
+                  .map(bet => ({
+                    // Convert Firebase bet format to edge format for compatibility
+                    market: bet.bet?.market,
+                    pick: bet.bet?.pick,
+                    team: bet.bet?.team,
+                    odds: bet.bet?.odds,
+                    line: bet.bet?.line,
+                    evPercent: bet.prediction?.evPercent || 0,
+                    modelProb: bet.prediction?.modelProb || 0
+                  }));
                 
                 // Calculate bet outcomes
                 const calculateBetOutcome = (edge) => {
