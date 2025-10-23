@@ -99,8 +99,13 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
   }
   
   // Both goalies confirmed - check if we have stats for both
+  console.log('🎯 GoalieMatchupSection checking stats:', {
+    awayGoalie: { name: awayGoalie?.name, gsae: awayGoalie?.gsae, hasGSAE: awayGoalie?.gsae !== undefined },
+    homeGoalie: { name: homeGoalie?.name, gsae: homeGoalie?.gsae, hasGSAE: homeGoalie?.gsae !== undefined }
+  });
   const awayHasStats = awayGoalie && awayGoalie.gsae !== undefined;
   const homeHasStats = homeGoalie && homeGoalie.gsae !== undefined;
+  console.log('🎯 Stats check result:', { awayHasStats, homeHasStats });
   
   // If ONLY ONE goalie has stats, show single goalie breakdown
   if ((awayHasStats && !homeHasStats) || (!awayHasStats && homeHasStats)) {
