@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
@@ -1573,7 +1573,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   }, [dataProcessor, oddsData, startingGoalies]);
   
   // Helper function to get goalie stats for a team
-  const getGoalieForTeam = (teamCode) => {
+  // CRITICAL: Wrapped in useCallback to ensure re-renders when goalieProcessor initializes
+  const getGoalieForTeam = useCallback((teamCode) => {
     if (!startingGoalies || !startingGoalies.games) {
       return null;
     }
@@ -1606,7 +1607,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     };
     console.log(`   📊 Returning goalie object:`, { name: result.name, hasGSAE: result.gsae !== undefined, gsae: result.gsae });
     return result;
-  };
+  }, [goalieProcessor, startingGoalies]); // Re-create when goalieProcessor or startingGoalies change
   
   // Calculate opportunities with consistent logic
   // STANDARD DEFINITIONS:
