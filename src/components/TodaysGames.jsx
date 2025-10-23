@@ -1984,82 +1984,330 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 </p>
               </div>
               
-              {liveScores.map((game, idx) => (
-                <div 
-                  key={game.gameId || idx} 
-                  className="elevated-card" 
-                  style={{ 
-                    marginBottom: '1rem',
-                    padding: isMobile ? '1rem' : '1.5rem',
-                    background: game.status === 'LIVE' 
-                      ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(26, 31, 46, 1) 50%)' 
-                      : 'var(--color-bg-secondary)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-                      {game.awayTeam} @ {game.homeTeam}
-                    </div>
-                    {game.status === 'LIVE' && (
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '0.5rem',
-                        color: '#EF4444',
-                        fontWeight: 'bold',
-                        animation: 'pulse 1.5s infinite'
-                      }}>
-                        <Activity size={16} />
-                        LIVE
-                      </div>
-                    )}
-                    {game.status === 'FINAL' && (
-                      <div style={{ 
-                        color: 'var(--color-text-muted)',
-                        fontWeight: 'bold'
-                      }}>
-                        FINAL
-                      </div>
-                    )}
-                  </div>
+              {liveScores.map((game, idx) => {
+                // Find bets that were placed on this game
+                const gameMatchup = `${game.awayTeam} @ ${game.homeTeam}`;
+                const gameBets = allEdges.filter(edge => 
+                  edge.game === gameMatchup || 
+                  `${edge.awayTeam} @ ${edge.homeTeam}` === gameMatchup
+                );
+                
+                // Calculate bet outcomes
+                const calculateBetOutcome = (edge) => {
+                  if (game.status !== 'FINAL') return { status: 'pending', pnl: 0 };
                   
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '3rem',
-                    fontSize: '2.5rem',
-                    fontWeight: 'bold',
-                    padding: '2rem 0',
-                    color: game.status === 'LIVE' ? '#EF4444' : 'var(--color-text-primary)'
-                  }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-                        {game.awayTeam}
-                      </div>
-                      <div>{game.awayScore}</div>
-                    </div>
-                    <div style={{ fontSize: '1.5rem', color: 'var(--color-text-muted)' }}>-</div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-                        {game.homeTeam}
-                      </div>
-                      <div>{game.homeScore}</div>
-                    </div>
-                  </div>
+                  const totalScore = game.awayScore + game.homeScore;
+                  let won = false;
                   
-                  {game.clock && (
+                  if (edge.market === 'MONEYLINE') {
+                    const betTeam = edge.team;
+                    const awayWon = game.awayScore > game.homeScore;
+                    const homeWon = game.homeScore > game.awayScore;
+                    won = (betTeam === game.awayTeam && awayWon) || (betTeam === game.homeTeam && homeWon);
+                  } else if (edge.market === 'TOTAL') {
+                    const isOver = edge.pick.includes('OVER');
+                    const line = parseFloat(edge.pick.match(/[\d.]+/)[0]);
+                    won = isOver ? (totalScore > line) : (totalScore < line);
+                  }
+                  
+                  // Calculate P&L (assuming $100 bet)
+                  const odds = edge.odds;
+                  const pnl = won ? (odds > 0 ? odds : (100 / Math.abs(odds)) * 100) : -100;
+                  
+                  return { status: won ? 'won' : 'lost', pnl };
+                };
+                
+                return (
+                  <div 
+                    key={game.gameId || idx} 
+                    className="elevated-card" 
+                    style={{ 
+                      marginBottom: '1.5rem',
+                      padding: 0,
+                      background: game.status === 'LIVE' 
+                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(26, 31, 46, 1) 100%)' 
+                        : game.status === 'FINAL'
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(26, 31, 46, 1) 100%)'
+                        : 'var(--color-bg-secondary)',
+                      border: game.status === 'LIVE' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--color-border)',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Header with status */}
                     <div style={{ 
-                      textAlign: 'center',
-                      color: 'var(--color-text-muted)',
-                      fontSize: '0.9rem',
-                      marginTop: '1rem'
+                      padding: isMobile ? '1rem' : '1.5rem',
+                      borderBottom: '1px solid var(--color-border)'
                     }}>
-                      {game.period && `Period ${game.period} • `}{game.clock}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: isMobile ? '1.1rem' : '1.4rem', fontWeight: 'bold', letterSpacing: '0.02em' }}>
+                          {game.awayTeam} <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9em' }}>@</span> {game.homeTeam}
+                        </div>
+                        {game.status === 'LIVE' && (
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.5rem',
+                            background: 'rgba(239, 68, 68, 0.2)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '20px',
+                            color: '#EF4444',
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                            animation: 'pulse 1.5s infinite'
+                          }}>
+                            <Activity size={14} />
+                            LIVE
+                          </div>
+                        )}
+                        {game.status === 'FINAL' && (
+                          <div style={{ 
+                            background: 'rgba(16, 185, 129, 0.2)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '20px',
+                            color: '#10B981',
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em'
+                          }}>
+                            FINAL
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                    
+                    {/* Score Display */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: isMobile ? '2rem' : '4rem',
+                      padding: isMobile ? '2rem 1rem' : '3rem 1.5rem',
+                      background: 'rgba(0, 0, 0, 0.2)'
+                    }}>
+                      <div style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ 
+                          fontSize: isMobile ? '0.75rem' : '0.875rem', 
+                          color: 'var(--color-text-muted)', 
+                          marginBottom: '0.75rem',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em'
+                        }}>
+                          {game.awayTeam}
+                        </div>
+                        <div style={{ 
+                          fontSize: isMobile ? '3rem' : '4rem', 
+                          fontWeight: 'bold',
+                          color: game.status === 'LIVE' ? '#EF4444' : '#10B981',
+                          textShadow: game.status === 'LIVE' ? '0 0 20px rgba(239, 68, 68, 0.5)' : 'none'
+                        }}>
+                          {game.awayScore}
+                        </div>
+                      </div>
+                      <div style={{ 
+                        fontSize: isMobile ? '1.5rem' : '2rem', 
+                        color: 'var(--color-text-muted)',
+                        fontWeight: '300'
+                      }}>—</div>
+                      <div style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ 
+                          fontSize: isMobile ? '0.75rem' : '0.875rem', 
+                          color: 'var(--color-text-muted)', 
+                          marginBottom: '0.75rem',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em'
+                        }}>
+                          {game.homeTeam}
+                        </div>
+                        <div style={{ 
+                          fontSize: isMobile ? '3rem' : '4rem', 
+                          fontWeight: 'bold',
+                          color: game.status === 'LIVE' ? '#EF4444' : '#10B981',
+                          textShadow: game.status === 'LIVE' ? '0 0 20px rgba(239, 68, 68, 0.5)' : 'none'
+                        }}>
+                          {game.homeScore}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Game Status Info */}
+                    {game.clock && (
+                      <div style={{ 
+                        textAlign: 'center',
+                        padding: '1rem',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        borderTop: '1px solid var(--color-border)',
+                        borderBottom: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ 
+                          color: game.status === 'LIVE' ? '#EF4444' : 'var(--color-text-muted)',
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          letterSpacing: '0.05em'
+                        }}>
+                          {game.period && `Period ${game.period} • `}{game.clock}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Bet Tracker Section */}
+                    {gameBets.length > 0 && (
+                      <div style={{ 
+                        padding: isMobile ? '1rem' : '1.5rem',
+                        background: 'rgba(0, 0, 0, 0.2)'
+                      }}>
+                        <div style={{ 
+                          fontSize: '0.875rem',
+                          color: 'var(--color-text-muted)',
+                          marginBottom: '1rem',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <span>📊</span> YOUR BETS ({gameBets.length})
+                        </div>
+                        
+                        {gameBets.slice(0, 3).map((bet, betIdx) => {
+                          const outcome = calculateBetOutcome(bet);
+                          const isWinning = outcome.status === 'won';
+                          const isLosing = outcome.status === 'lost';
+                          
+                          return (
+                            <div 
+                              key={betIdx}
+                              style={{ 
+                                marginBottom: betIdx < Math.min(gameBets.length, 3) - 1 ? '0.75rem' : 0,
+                                padding: '1rem',
+                                background: isWinning 
+                                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+                                  : isLosing
+                                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)'
+                                  : 'rgba(255, 255, 255, 0.03)',
+                                borderRadius: '8px',
+                                border: `1px solid ${isWinning ? 'rgba(16, 185, 129, 0.3)' : isLosing ? 'rgba(239, 68, 68, 0.3)' : 'var(--color-border)'}`,
+                                position: 'relative'
+                              }}
+                            >
+                              {/* Bet outcome badge */}
+                              {outcome.status !== 'pending' && (
+                                <div style={{ 
+                                  position: 'absolute',
+                                  top: '0.5rem',
+                                  right: '0.5rem',
+                                  background: isWinning ? '#10B981' : '#EF4444',
+                                  color: 'white',
+                                  padding: '0.25rem 0.625rem',
+                                  borderRadius: '12px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 'bold',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em'
+                                }}>
+                                  {isWinning ? 'WON' : 'LOST'}
+                                </div>
+                              )}
+                              
+                              <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'flex-start',
+                                marginBottom: '0.5rem'
+                              }}>
+                                <div>
+                                  <div style={{ fontWeight: 'bold', marginBottom: '0.25rem', fontSize: '0.95rem' }}>
+                                    {bet.pick}
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                    {bet.market} • {bet.odds > 0 ? '+' : ''}{bet.odds}
+                                  </div>
+                                </div>
+                                {outcome.status !== 'pending' && (
+                                  <div style={{ 
+                                    fontSize: '1.1rem', 
+                                    fontWeight: 'bold',
+                                    color: isWinning ? '#10B981' : '#EF4444'
+                                  }}>
+                                    {outcome.pnl > 0 ? '+' : ''}{outcome.pnl.toFixed(0)}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {outcome.status === 'pending' && game.status === 'LIVE' && (
+                                <div style={{ 
+                                  fontSize: '0.75rem', 
+                                  color: '#EF4444',
+                                  fontWeight: '600',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.375rem',
+                                  marginTop: '0.5rem'
+                                }}>
+                                  <Activity size={12} />
+                                  Tracking live...
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        
+                        {gameBets.length > 3 && (
+                          <div style={{ 
+                            marginTop: '0.75rem',
+                            fontSize: '0.75rem',
+                            color: 'var(--color-text-muted)',
+                            textAlign: 'center'
+                          }}>
+                            +{gameBets.length - 3} more bet{gameBets.length - 3 > 1 ? 's' : ''}
+                          </div>
+                        )}
+                        
+                        {/* Total P&L Summary */}
+                        {game.status === 'FINAL' && (
+                          <div style={{ 
+                            marginTop: '1rem',
+                            padding: '1rem',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--color-border)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <div style={{ 
+                              fontSize: '0.875rem',
+                              fontWeight: '600',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}>
+                              Total P&L
+                            </div>
+                            <div style={{ 
+                              fontSize: '1.25rem', 
+                              fontWeight: 'bold',
+                              color: (() => {
+                                const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                                return totalPnl > 0 ? '#10B981' : totalPnl < 0 ? '#EF4444' : 'var(--color-text-muted)';
+                              })()
+                            }}>
+                              {(() => {
+                                const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                                return (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(0);
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               
               <div style={{ 
                 textAlign: 'center', 
