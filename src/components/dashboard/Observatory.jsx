@@ -163,27 +163,89 @@ const Observatory = ({ dataProcessor, isMobile }) => {
         height: dimensions.height,
         marginTop: isMobile ? '1rem' : '2rem'
       }}>
+        {/* Quadrant Background Overlays */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '50%',
+          height: '50%',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+          pointerEvents: 'none',
+          borderLeft: '1px dashed rgba(16, 185, 129, 0.2)',
+          borderBottom: '1px dashed rgba(16, 185, 129, 0.2)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '50%',
+          height: '50%',
+          background: 'linear-gradient(315deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
+          pointerEvents: 'none',
+          borderRight: '1px dashed rgba(239, 68, 68, 0.2)',
+          borderTop: '1px dashed rgba(239, 68, 68, 0.2)'
+        }} />
+
+        {/* Quadrant Labels */}
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          padding: '0.5rem 0.75rem',
+          background: 'rgba(16, 185, 129, 0.15)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: '6px',
+          fontSize: isMobile ? '0.688rem' : '0.75rem',
+          fontWeight: '700',
+          color: '#10B981',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          pointerEvents: 'none'
+        }}>
+          ✓ ELITE ZONE
+        </div>
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '20px',
+          padding: '0.5rem 0.75rem',
+          background: 'rgba(239, 68, 68, 0.15)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '6px',
+          fontSize: isMobile ? '0.688rem' : '0.75rem',
+          fontWeight: '700',
+          color: '#EF4444',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          pointerEvents: 'none'
+        }}>
+          ✗ WEAK ZONE
+        </div>
+
         {/* Axis Labels */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
           right: '10px',
-          fontSize: '0.75rem',
-          color: 'rgba(255, 255, 255, 0.4)',
-          textAlign: 'right'
+          fontSize: '0.688rem',
+          color: 'rgba(255, 255, 255, 0.5)',
+          textAlign: 'right',
+          fontWeight: '600'
         }}>
-          <div>→ Offensive xG/60</div>
+          <div>→ Better Offense</div>
         </div>
         <div style={{
           position: 'absolute',
           top: '10px',
           left: '10px',
-          fontSize: '0.75rem',
-          color: 'rgba(255, 255, 255, 0.4)',
+          fontSize: '0.688rem',
+          color: 'rgba(255, 255, 255, 0.5)',
           writingMode: 'vertical-rl',
-          transform: 'rotate(180deg)'
+          transform: 'rotate(180deg)',
+          fontWeight: '600'
         }}>
-          ← Defensive xG/60 (Better →)
+          ← Better Defense
         </div>
 
         {/* Team Orbs */}

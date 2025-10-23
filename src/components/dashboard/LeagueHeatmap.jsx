@@ -37,8 +37,11 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
         tempValue = Math.min((100 - pdo) / 5, 1); // 0-1 scale
       }
 
-      // Determine betting value indicator
+      // Determine betting value indicator and regression direction
       const hasValue = Math.abs(pdo - 100) > 2; // PDO anomaly
+      let regressionDirection = null;
+      if (pdo > 102) regressionDirection = 'FADE'; // Overperforming, bet against
+      if (pdo < 98) regressionDirection = 'BACK'; // Underperforming, bet on
 
       teamStats[team.team] = {
         team: team.team,
@@ -50,7 +53,8 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
         gamesPlayed: team.gamesPlayed || 0,
         temperature,
         tempValue,
-        hasValue
+        hasValue,
+        regressionDirection
       };
     });
 
@@ -329,15 +333,25 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
                       : 'none'
                   }}
                 >
-                  {/* Value indicator */}
-                  {team.hasValue && (
+                  {/* Regression indicator */}
+                  {team.regressionDirection && (
                     <div style={{
                       position: 'absolute',
                       top: '4px',
                       right: '4px',
-                      fontSize: '0.625rem'
+                      fontSize: isMobile ? '0.5rem' : '0.563rem',
+                      fontWeight: '800',
+                      color: team.regressionDirection === 'FADE' ? '#EF4444' : '#10B981',
+                      background: team.regressionDirection === 'FADE' 
+                        ? 'rgba(239, 68, 68, 0.3)' 
+                        : 'rgba(16, 185, 129, 0.3)',
+                      padding: isMobile ? '0.125rem 0.2rem' : '0.125rem 0.25rem',
+                      borderRadius: '3px',
+                      border: `1px solid ${team.regressionDirection === 'FADE' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)'}`,
+                      letterSpacing: '0.02em',
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
                     }}>
-                      💎
+                      {team.regressionDirection}
                     </div>
                   )}
 
@@ -469,15 +483,25 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
                       : 'none'
                   }}
                 >
-                  {/* Value indicator */}
-                  {team.hasValue && (
+                  {/* Regression indicator */}
+                  {team.regressionDirection && (
                     <div style={{
                       position: 'absolute',
                       top: '4px',
                       right: '4px',
-                      fontSize: '0.625rem'
+                      fontSize: isMobile ? '0.5rem' : '0.563rem',
+                      fontWeight: '800',
+                      color: team.regressionDirection === 'FADE' ? '#EF4444' : '#10B981',
+                      background: team.regressionDirection === 'FADE' 
+                        ? 'rgba(239, 68, 68, 0.3)' 
+                        : 'rgba(16, 185, 129, 0.3)',
+                      padding: isMobile ? '0.125rem 0.2rem' : '0.125rem 0.25rem',
+                      borderRadius: '3px',
+                      border: `1px solid ${team.regressionDirection === 'FADE' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)'}`,
+                      letterSpacing: '0.02em',
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
                     }}>
-                      💎
+                      {team.regressionDirection}
                     </div>
                   )}
 
@@ -583,8 +607,12 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
           <div style={{ marginBottom: '0.5rem' }}>
             <strong style={{ color: 'var(--color-text-primary)' }}>PDO = Shooting % + Save %</strong> (League average: 100)
           </div>
+          <div style={{ marginBottom: '0.5rem' }}>
+            🔥 Hot (PDO &gt; 102) • 😐 Neutral (PDO 98-102) • ❄️ Cold (PDO &lt; 98)
+          </div>
           <div>
-            🔥 Hot (PDO &gt; 102) • 😐 Neutral (PDO 98-102) • ❄️ Cold (PDO &lt; 98) • 💎 Betting Value Available
+            <span style={{ color: '#EF4444', fontWeight: '700' }}>FADE</span> = Overperforming (bet against) • 
+            <span style={{ color: '#10B981', fontWeight: '700' }}> BACK</span> = Underperforming (bet on)
           </div>
         </div>
       </motion.div>

@@ -120,6 +120,8 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
         {/* League Heatmap */}
         <LeagueHeatmap dataProcessor={dataProcessor} isMobile={isMobile} />
 
+        {/* REMOVED: Top Betting Opportunities table - redundant with Today's Games page */}
+
         {/* OLD League Stats Grid - Keep for now but will be removed */}
         {false && leagueStats && (
           <div 
@@ -249,7 +251,8 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
           </div>
         )}
 
-        {/* Betting Opportunities */}
+        {/* REMOVED: Betting Opportunities table - now handled by Today's Games page */}
+        {false && (
         <div className="elevated-card">
           <div style={{
             display: 'flex',
@@ -493,6 +496,7 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
             </>
           )}
         </div>
+        )}
       </div>
     </div>
   );
