@@ -37,15 +37,21 @@ import CollapsibleGameCard from './CollapsibleGameCard';
 // INLINE HELPER COMPONENTS
 // ========================================
 
-// Compact Header - Team names, time, rating badge, win probabilities
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile }) => (
+// Compact Header - Team names, time, rating badge, win probabilities, best bet preview
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed }) => (
   <div style={{ 
     display: 'flex', 
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
     padding: isMobile ? MOBILE_SPACING.cardPadding : '1.25rem',
-    borderBottom: ELEVATION.flat.border,
+    borderBottom: isCollapsed ? 'none' : ELEVATION.flat.border,
     background: 'rgba(26, 31, 46, 0.3)'
+  }}>
+    {/* Top row: Teams, time, rating */}
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: isCollapsed && bestEdge ? '0.75rem' : '0'
   }}>
     <div style={{ flex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
@@ -88,6 +94,85 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       )}
     </div>
     {rating > 0 && <RatingBadge evPercent={rating} size="small" />}
+    </div>
+    
+    {/* Best bet preview - only show when collapsed */}
+    {isCollapsed && bestEdge && (
+      <div style={{
+        marginTop: '0.75rem',
+        padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 1rem',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+        borderRadius: '8px',
+        border: '1px solid rgba(16, 185, 129, 0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+          <span style={{ 
+            fontSize: isMobile ? '1rem' : '1.125rem',
+            filter: 'grayscale(0.3)'
+          }}>💰</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              fontWeight: '700',
+              color: 'var(--color-text-primary)',
+              marginBottom: '0.125rem',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {bestEdge.pick}
+            </div>
+            <div style={{
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'var(--color-text-muted)',
+              fontWeight: '600'
+            }}>
+              {bestEdge.market === 'MONEYLINE' ? 'Moneyline' : bestEdge.market === 'TOTAL' ? 'Total' : bestEdge.market}
+              {' • '}
+              {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+            </div>
+          </div>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          flexShrink: 0
+        }}>
+          <div style={{
+            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+            background: getEVColorScale(bestEdge.evPercent).background,
+            border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
+            borderRadius: '6px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              fontSize: isMobile ? '0.938rem' : '1rem',
+              fontWeight: '800',
+              color: getEVColorScale(bestEdge.evPercent).color,
+              lineHeight: '1'
+            }}>
+              +{bestEdge.evPercent.toFixed(1)}%
+            </div>
+            <div style={{
+              fontSize: isMobile ? '0.563rem' : '0.625rem',
+              color: 'var(--color-text-muted)',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginTop: '0.125rem'
+            }}>
+              EV
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 );
 
@@ -741,17 +826,17 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
             {/* Header: Factor name */}
             <div style={{ 
               fontSize: TYPOGRAPHY.label.size, 
-              color: 'var(--color-text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
               fontWeight: TYPOGRAPHY.label.weight,
               marginBottom: '0.625rem'
-            }}>
-              {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
-            </div>
+              }}>
+                {factor.stars === 3 ? '🔥' : factor.stars === 2 ? '🎯' : '⚡'} {factor.name}
+              </div>
             
             {/* Main insight */}
-            <div style={{ 
+              <div style={{
               fontSize: TYPOGRAPHY.subheading.size,
               fontWeight: TYPOGRAPHY.heading.weight,
               color: '#10B981',
@@ -770,14 +855,14 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
             
             {/* Impact for TOTAL bets */}
             {isTotal && (
-              <div style={{
-                fontSize: TYPOGRAPHY.body.size,
-                fontWeight: TYPOGRAPHY.heading.weight,
+            <div style={{ 
+              fontSize: TYPOGRAPHY.body.size,
+              fontWeight: TYPOGRAPHY.heading.weight,
                 color: factor.impact > 0 ? '#F59E0B' : '#8B5CF6',
                 marginBottom: '0.625rem'
-              }}>
+            }}>
                 {factor.impact > 0 ? '+' : ''}{factor.impact.toFixed(2)} goal impact → {factor.impact > 0 ? 'OVER' : 'UNDER'}
-              </div>
+            </div>
             )}
             
             {/* Explanation */}
@@ -791,13 +876,13 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
             </div>
             
             {/* Bottom row: Stats */}
-            <div style={{ 
-              fontSize: TYPOGRAPHY.caption.size,
+              <div style={{ 
+                fontSize: TYPOGRAPHY.caption.size,
               color: 'var(--color-text-muted)',
               paddingTop: '0.75rem',
               borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              {awayTeam}: {awayVal.toFixed(2)} | {homeTeam}: {homeVal.toFixed(2)}
+              }}>
+                {awayTeam}: {awayVal.toFixed(2)} | {homeTeam}: {homeVal.toFixed(2)}
             </div>
           </div>
         );
@@ -966,18 +1051,18 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
         marginBottom: '1rem',
         paddingTop: '0.5rem'
       }}>
-        <div style={{
+          <div style={{
           fontSize: TYPOGRAPHY.label.size,
           color: 'var(--color-accent)',
-          textTransform: 'uppercase',
+            textTransform: 'uppercase',
           letterSpacing: '0.08em',
           fontWeight: TYPOGRAPHY.heading.weight,
           marginBottom: '0.75rem'
         }}>
           ⭐ ALSO CONSIDER THIS VALUE BET
-        </div>
+          </div>
         
-        <div style={{
+          <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -989,18 +1074,18 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
             color: 'var(--color-text-primary)'
           }}>
             {isValueBetTotal ? `${altPick} to WIN` : altPick}
-          </div>
+        </div>
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
             gap: '0.25rem'
           }}>
-            <div style={{
-              fontSize: TYPOGRAPHY.subheading.size,
-              fontWeight: TYPOGRAPHY.heading.weight,
-              color: evColor.color
-            }}>
+        <div style={{
+          fontSize: TYPOGRAPHY.subheading.size,
+          fontWeight: TYPOGRAPHY.heading.weight,
+          color: evColor.color
+        }}>
               +{altBet.evPercent.toFixed(1)}% EV
             </div>
             <div style={{
@@ -1014,9 +1099,9 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
             }}>
               {evColor.label}
             </div>
-          </div>
         </div>
-        
+      </div>
+      
         {/* Context message */}
         <div style={{
           fontSize: TYPOGRAPHY.body.size,
@@ -1060,8 +1145,8 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
             }}>
               {/* Factor name */}
               <div style={{
-                fontSize: TYPOGRAPHY.caption.size,
-                color: 'var(--color-text-muted)',
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 fontWeight: TYPOGRAPHY.label.weight,
@@ -1723,7 +1808,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               <Calendar size={isMobile ? 20 : 24} color="#10B981" style={{ flexShrink: 0 }} />
               <h1 style={{ 
                 fontSize: isMobile ? '1.125rem' : '1.5rem',
-                fontWeight: '800',
+                  fontWeight: '800',
                 background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -1734,54 +1819,54 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis'
-              }}>
-                Today's Games
-              </h1>
+                }}>
+                  Today's Games
+                </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexWrap: 'wrap' }}>
-              <span style={{ 
+                  <span style={{ 
                 fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'var(--color-text-muted)',
+                    color: 'var(--color-text-muted)',
                 fontWeight: '600',
                 whiteSpace: 'nowrap'
-              }}>
+                  }}>
                 {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </span>
-              <LiveClock />
+                  </span>
+                  <LiveClock />
                   
               {/* Compact goalie status */}
-              {startingGoalies && startingGoalies.games && (
-                <span style={{
+                  {startingGoalies && startingGoalies.games && (
+                    <span style={{
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
                   padding: isMobile ? '0.125rem 0.375rem' : '0.2rem 0.5rem',
                   borderRadius: '6px',
                   background: 'rgba(16, 185, 129, 0.12)',
                   border: '1px solid rgba(16, 185, 129, 0.25)',
-                  color: '#10B981',
+                      color: '#10B981',
                   fontWeight: '700',
                   whiteSpace: 'nowrap',
                   letterSpacing: '0.02em'
-                }}>
-                  🥅 {(() => {
-                    let confirmed = 0;
-                    let total = 0;
-                    startingGoalies.games.forEach(game => {
-                      if (game.away?.goalie && (game.away?.confirmed !== false)) confirmed++;
-                      if (game.home?.goalie && (game.home?.confirmed !== false)) confirmed++;
-                      total += 2;
-                    });
+                    }}>
+                      🥅 {(() => {
+                        let confirmed = 0;
+                        let total = 0;
+                        startingGoalies.games.forEach(game => {
+                          if (game.away?.goalie && (game.away?.confirmed !== false)) confirmed++;
+                          if (game.home?.goalie && (game.home?.confirmed !== false)) confirmed++;
+                          total += 2;
+                        });
                     return `${confirmed}/${total}`;
-                  })()}
-                </span>
-              )}
+                      })()}
+                    </span>
+                  )}
             </div>
           </div>
           
           {/* Right: Compact stats */}
           <div style={{ 
-            display: 'flex', 
+                      display: 'flex',
             gap: isMobile ? '0.5rem' : '0.75rem',
-            alignItems: 'center',
+                      alignItems: 'center',
             flexShrink: 0
           }}>
             <div style={{
@@ -1799,7 +1884,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 marginBottom: '0.125rem'
               }}>
                 {opportunityCounts.total}
-              </div>
+                </div>
               <div style={{
                 fontSize: isMobile ? '0.563rem' : '0.625rem',
                 color: 'var(--color-text-muted)',
@@ -1839,8 +1924,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 marginBottom: '0.125rem'
               }}>
                 {opportunityCounts.highValue}
-              </div>
-              <div style={{
+          </div>
+          <div style={{ 
                 fontSize: isMobile ? '0.563rem' : '0.625rem',
                 color: 'var(--color-text-muted)',
                 fontWeight: '700',
@@ -1862,30 +1947,119 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             position: 'relative',
             zIndex: 1
           }}>
-            <GameCountdown firstGameTime={allEdges[0].gameTime} />
+          <GameCountdown firstGameTime={allEdges[0].gameTime} />
           </div>
         )}
       </div>
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* Deep Analytics Cards for Each Game */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '1.5rem' : '2rem' }}>
-        {allEdges.map((game, index) => {
+      {/* Deep Analytics Cards for Each Game - Grouped by Time */}
+      <div>
+        {(() => {
+          // Group games by time slot
+          const gamesByTime = {};
+          allEdges.forEach((game) => {
+            const time = game.gameTime;
+            if (!gamesByTime[time]) {
+              gamesByTime[time] = [];
+            }
+            gamesByTime[time].push(game);
+          });
+          
+          const timeSlotsOrdered = Object.keys(gamesByTime).sort((a, b) => {
+            // Parse time strings (e.g., "6:45 PM") for sorting
+            const parseTime = (timeStr) => {
+              const [time, period] = timeStr.split(' ');
+              const [hours, minutes] = time.split(':').map(Number);
+              let hour24 = hours;
+              if (period === 'PM' && hours !== 12) hour24 += 12;
+              if (period === 'AM' && hours === 12) hour24 = 0;
+              return hour24 * 60 + minutes;
+            };
+            return parseTime(a) - parseTime(b);
+          });
+          
+          return timeSlotsOrdered.map((timeSlot, slotIndex) => {
+            const gamesInSlot = gamesByTime[timeSlot];
+            const now = new Date();
+            const gameTimeDate = new Date();
+            const [time, period] = timeSlot.split(' ');
+            const [hours, minutes] = time.split(':').map(Number);
+            let hour24 = hours;
+            if (period === 'PM' && hours !== 12) hour24 += 12;
+            if (period === 'AM' && hours === 12) hour24 = 0;
+            gameTimeDate.setHours(hour24, minutes, 0, 0);
+            const minutesUntilGame = Math.floor((gameTimeDate - now) / (1000 * 60));
+            const isStartingSoon = minutesUntilGame > 0 && minutesUntilGame < 60;
+            
+            return (
+              <div key={timeSlot} style={{ marginBottom: slotIndex < timeSlotsOrdered.length - 1 ? (isMobile ? '2rem' : '2.5rem') : 0 }}>
+                {/* Time Slot Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  marginBottom: isMobile ? '1rem' : '1.25rem',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '2px solid rgba(16, 185, 129, 0.15)'
+                }}>
+                  <div style={{
+                    fontSize: isMobile ? '1rem' : '1.125rem',
+                    fontWeight: '800',
+                    color: 'var(--color-text-primary)',
+                    letterSpacing: '-0.01em'
+                  }}>
+                    {timeSlot}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '0.75rem' : '0.813rem',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: '600',
+                    padding: '0.25rem 0.625rem',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    {gamesInSlot.length} game{gamesInSlot.length > 1 ? 's' : ''}
+                  </div>
+                  {isStartingSoon && (
+                    <div style={{
+                      fontSize: isMobile ? '0.688rem' : '0.75rem',
+                      color: '#EF4444',
+                      fontWeight: '700',
+                      padding: '0.25rem 0.625rem',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      🔥 Starting Soon
+                    </div>
+                  )}
+                </div>
+                
+                {/* Games in this time slot */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '1rem' : '1.25rem' }}>
+                  {gamesInSlot.map((game, gameIndex) => {
+                    const index = allEdges.indexOf(game);
           // Find the best edge for this game to show in narrative
           const bestEdge = topEdges
             .filter(e => e.game === game.game && e.evPercent > 0)
             .sort((a, b) => b.evPercent - a.evPercent)[0];
 
           const headerContent = (
-            <CompactHeader
-              awayTeam={game.awayTeam}
-              homeTeam={game.homeTeam}
-              gameTime={game.gameTime}
-              rating={bestEdge?.evPercent || 0}
-              awayWinProb={game.edges.moneyline?.away?.modelProb}
-              homeWinProb={game.edges.moneyline?.home?.modelProb}
-              isMobile={isMobile}
+              <CompactHeader
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+                gameTime={game.gameTime}
+                rating={bestEdge?.evPercent || 0}
+                awayWinProb={game.edges.moneyline?.away?.modelProb}
+                homeWinProb={game.edges.moneyline?.home?.modelProb}
+                isMobile={isMobile}
+              bestEdge={bestEdge}
             />
           );
 
@@ -1902,12 +2076,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 return (
-                  <HeroBetCard
-                    bestEdge={bestEdge}
-                    game={game}
-                    isMobile={isMobile}
+              <HeroBetCard
+                bestEdge={bestEdge}
+                game={game}
+                isMobile={isMobile}
                     factors={analyticsData?.factors || []}
-                  />
+              />
                 );
               })()}
               
@@ -1989,6 +2163,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             </CollapsibleGameCard>
           );
         })}
+                </div>
+              </div>
+            );
+          });
+        })()}
       </div>
 
       {/* No games message or show live scores */}
@@ -2528,13 +2707,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               </div>
             </div>
           ) : (
-            <div className="elevated-card" style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
-              <Calendar size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 1rem auto' }} />
-              <h3 style={{ marginBottom: '0.5rem' }}>No Games Today</h3>
-              <p style={{ color: 'var(--color-text-secondary)' }}>
-                Check back later for today's matchups and analysis.
-              </p>
-            </div>
+        <div className="elevated-card" style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
+          <Calendar size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 1rem auto' }} />
+          <h3 style={{ marginBottom: '0.5rem' }}>No Games Today</h3>
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Check back later for today's matchups and analysis.
+          </p>
+        </div>
           )}
         </>
       )}
