@@ -61,21 +61,28 @@ exports.updateLiveScores = onSchedule({
     }
 
     const games = gameWeek[0]?.games || [];
-    const processedGames = games.map((game) => ({
-      gameId: game.id,
-      date: dateStr,
-      awayTeam: game.awayTeam.abbrev,
-      homeTeam: game.homeTeam.abbrev,
-      awayScore: game.awayTeam.score || 0,
-      homeScore: game.homeTeam.score || 0,
-      totalScore: (game.awayTeam.score || 0) + (game.homeTeam.score || 0),
-      gameState: game.gameState || "FUT",
-      status: ["OFF", "FINAL"].includes(game.gameState) ? "FINAL" :
-              game.gameState === "LIVE" ? "LIVE" : "SCHEDULED",
-      period: game.period || 0,
-      clock: game.clock?.timeRemaining || "",
-      gameTime: game.startTimeUTC || "",
-    }));
+          const processedGames = games.map((game) => ({
+            gameId: game.id,
+            date: dateStr,
+            awayTeam: game.awayTeam.abbrev,
+            homeTeam: game.homeTeam.abbrev,
+            awayScore: game.awayTeam.score || 0,
+            homeScore: game.homeTeam.score || 0,
+            totalScore: (game.awayTeam.score || 0) + (game.homeTeam.score || 0),
+            gameState: game.gameState || "FUT",
+            status: ["OFF", "FINAL"].includes(game.gameState) ? "FINAL" :
+                    game.gameState === "LIVE" ? "LIVE" : "SCHEDULED",
+            period: game.period || 0,
+            clock: game.clock?.timeRemaining || "",
+            gameTime: game.startTimeUTC || "",
+            // Premium data points
+            venue: game.venue?.default || "",
+            periodType: game.periodDescriptor?.periodType || "REG",
+            winningGoalie: game.winningGoalie ? 
+              `${game.winningGoalie.firstInitial?.default || ""} ${game.winningGoalie.lastName?.default || ""}`.trim() : null,
+            winningGoalScorer: game.winningGoalScorer ? 
+              `${game.winningGoalScorer.firstInitial?.default || ""} ${game.winningGoalScorer.lastName?.default || ""}`.trim() : null,
+          }));
 
     // Save to Firestore
     await admin.firestore()
