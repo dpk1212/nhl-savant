@@ -322,7 +322,6 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         width: '100%',
         height: dimensions.height,
         marginTop: isMobile ? '1rem' : '2rem',
-        padding: isMobile ? '20px' : '0',
         background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 70%)',
         borderRadius: '16px',
         border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -598,10 +597,10 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                       color: team.regressionDirection === 'up' ? '#10B981' : '#EF4444',
                       filter: `drop-shadow(0 0 8px ${team.regressionDirection === 'up' ? '#10B981' : '#EF4444'})`,
                       // Use separate rotate property to avoid conflict with framer-motion transforms
-                      // TrendingUp naturally points up-right at 45deg
-                      // 'up' (improve) = rotate 135deg total to point bottom-right (↘)
-                      // 'down' (decline) = rotate -135deg to point top-left (↖)
-                      rotate: team.regressionDirection === 'up' ? '135deg' : '-135deg'
+                      // TrendingUp naturally points up-right at 45deg (northeast ↗)
+                      // 'up' (improve) = rotate 90deg to point southeast (↘)
+                      // 'down' (decline) = rotate -135deg to point northwest (↖)
+                      rotate: team.regressionDirection === 'up' ? '90deg' : '-135deg'
                     }}
                   >
                     <TrendingUp size={20} strokeWidth={3} />
