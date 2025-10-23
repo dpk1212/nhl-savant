@@ -102,6 +102,69 @@ export class GoalieProcessor {
   }
   
   /**
+   * Calculate GSAE (Goals Saved Above Expected) for a specific goalie
+   * This is the PRIMARY metric used in prediction adjustments
+   * @param {string} goalieName - Goalie name (can be last name only)
+   * @param {string} situation - Game situation (default: '5on5')
+   * @returns {number} GSAE value (positive = better than expected, negative = worse)
+   */
+  calculateGSAE(goalieName, situation = '5on5') {
+    if (!this.goalieData || !Array.isArray(this.goalieData)) {
+      console.log(`⚠️ calculateGSAE: No goalie data available`);
+      return 0;
+    }
+    
+    // Filter for specific situation
+    const goalieRows = this.goalieData.filter(g => g.situation === situation);
+    
+    // Try exact name match first
+    let goalie = goalieRows.find(g => g.name === goalieName);
+    
+    // If no exact match, try last name match (for MoneyPuck data)
+    if (!goalie) {
+      const lastNameLower = goalieName.toLowerCase().trim();
+      goalie = goalieRows.find(g => {
+        const fullName = g.name.toLowerCase();
+        const nameParts = fullName.split(' ');
+        const lastName = nameParts[nameParts.length - 1];
+        return lastName === lastNameLower || fullName.includes(lastNameLower);
+      });
+    }
+    
+    if (!goalie) {
+      console.log(`⚠️ calculateGSAE: Goalie not found: ${goalieName} (${situation})`);
+      return 0;
+    }
+    
+    // Calculate GSAE: xGoals - actual goals allowed
+    const xGoals = parseFloat(goalie.xGoals) || 0;
+    const goalsAllowed = parseFloat(goalie.goals) || 0;
+    const gsae = xGoals - goalsAllowed;
+    
+    console.log(`✅ calculateGSAE: ${goalie.name} → GSAE ${gsae.toFixed(2)} (xG: ${xGoals.toFixed(2)}, GA: ${goalsAllowed.toFixed(2)})`);
+    
+    return gsae;
+  }
+  
+  /**
+   * Get team's goalies for averaging (used when starter not confirmed)
+   * @param {string} teamCode - Team abbreviation
+   * @param {string} situation - Game situation
+   * @returns {Array} Array of goalie objects for the team
+   */
+  getTeamGoalies(teamCode, situation = '5on5') {
+    if (!this.goalieData || !Array.isArray(this.goalieData)) {
+      return [];
+    }
+    
+    return this.goalieData.filter(g => 
+      g.team === teamCode && 
+      g.situation === situation &&
+      parseInt(g.games_played) > 0
+    );
+  }
+  
+  /**
    * Calculate low danger save percentage
    */
   calculateLowDangerSavePct(goalie) {
