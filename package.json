@@ -12,7 +12,10 @@
     "backtest": "node backtesting/runBacktest.js",
     "update-results": "node updateTuesdayResults.js",
     "fetch-data": "node scripts/fetchData.js",
-    "update-all": "npm run fetch-data && git add public/odds_money.md public/odds_total.md public/starting_goalies.json"
+    "update-all": "npm run fetch-data && git add public/odds_money.md public/odds_total.md public/starting_goalies.json",
+    "update-scores": "node updateLiveScores.js",
+    "update-scores-live": "node updateLiveScores.js --continuous",
+    "update-scores-fast": "node updateLiveScores.js --continuous --interval 3"
   },
   "dependencies": {
     "@mendable/firecrawl-js": "^4.4.1",
