@@ -21,6 +21,13 @@ export class GoalieProcessor {
       return null;
     }
     
+    // Debug: Show how many rows exist for this team
+    const teamRows = this.goalieData.filter(g => g.team === teamCode);
+    console.log(`   📊 Found ${teamRows.length} rows for team ${teamCode}`);
+    if (teamRows.length > 0) {
+      console.log(`   📊 Sample names: ${teamRows.slice(0, 3).map(g => g.name).join(', ')}`);
+    }
+    
     // Find goalie in goalies.csv by name and team
     // Filter for 'all' situation to get season totals
     let goalieRows = this.goalieData.filter(g => 
@@ -31,6 +38,7 @@ export class GoalieProcessor {
     
     // If no exact match, try matching by last name only (for MoneyPuck data)
     if (!goalieRows.length) {
+      console.log(`   ⚠️ No exact match, trying last name match for: ${goalieName}`);
       const lastNameLower = goalieName.toLowerCase().trim();
       goalieRows = this.goalieData.filter(g => {
         if (g.team !== teamCode || g.situation !== 'all') return false;
@@ -40,7 +48,11 @@ export class GoalieProcessor {
         const lastName = nameParts[nameParts.length - 1];
         
         // Match if last name matches or full name contains the provided name
-        return lastName === lastNameLower || fullName.includes(lastNameLower);
+        const matches = lastName === lastNameLower || fullName.includes(lastNameLower);
+        if (matches) {
+          console.log(`   ✓ Last name match found: ${g.name} (${g.team})`);
+        }
+        return matches;
       });
     }
     
