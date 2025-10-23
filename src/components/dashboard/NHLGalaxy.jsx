@@ -406,17 +406,17 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           borderBottom: '2px dashed rgba(239, 68, 68, 0.3)'
         }} />
 
-        {/* Zone labels - CORRECTED */}
+        {/* Zone labels - Positioned to avoid corner label overlap */}
         <div style={{
           position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          padding: '0.625rem 1.25rem',
+          bottom: isMobile ? '45px' : '55px',
+          right: isMobile ? '15px' : '20px',
+          padding: isMobile ? '0.5rem 1rem' : '0.625rem 1.25rem',
           background: 'rgba(16, 185, 129, 0.25)',
           backdropFilter: 'blur(12px)',
           border: '2px solid rgba(16, 185, 129, 0.5)',
           borderRadius: '10px',
-          fontSize: isMobile ? '0.75rem' : '0.875rem',
+          fontSize: isMobile ? '0.688rem' : '0.813rem',
           fontWeight: '900',
           color: '#10B981',
           textTransform: 'uppercase',
@@ -428,14 +428,14 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         </div>
         <div style={{
           position: 'absolute',
-          top: '20px',
-          left: '20px',
-          padding: '0.625rem 1.25rem',
+          top: isMobile ? '45px' : '55px',
+          left: isMobile ? '15px' : '20px',
+          padding: isMobile ? '0.5rem 1rem' : '0.625rem 1.25rem',
           background: 'rgba(239, 68, 68, 0.25)',
           backdropFilter: 'blur(12px)',
           border: '2px solid rgba(239, 68, 68, 0.5)',
           borderRadius: '10px',
-          fontSize: isMobile ? '0.75rem' : '0.875rem',
+          fontSize: isMobile ? '0.688rem' : '0.813rem',
           fontWeight: '900',
           color: '#EF4444',
           textTransform: 'uppercase',
