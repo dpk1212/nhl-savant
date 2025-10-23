@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Live scores - public read, function write only
+    match /live_scores/{document} {
+      allow read: if true;  // Anyone can read live scores
+      allow write: if false;  // Only Cloud Functions can write
+    }
+    
+    // Bet tracking - public read/write (for now)
+    match /bets/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
