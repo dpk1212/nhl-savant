@@ -31,6 +31,7 @@ import {
 } from '../utils/designSystem';
 import { getStatDisplayName, getStatTooltip, getStatColorCode } from '../utils/statDisplayNames';
 import QuickStory from './QuickStory';
+import CollapsibleGameCard from './CollapsibleGameCard';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -1876,30 +1877,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             .filter(e => e.game === game.game && e.evPercent > 0)
             .sort((a, b) => b.evPercent - a.evPercent)[0];
 
+          const headerContent = (
+            <CompactHeader
+              awayTeam={game.awayTeam}
+              homeTeam={game.homeTeam}
+              gameTime={game.gameTime}
+              rating={bestEdge?.evPercent || 0}
+              awayWinProb={game.edges.moneyline?.away?.modelProb}
+              homeWinProb={game.edges.moneyline?.home?.modelProb}
+              isMobile={isMobile}
+            />
+          );
+
           return (
-            <div 
+            <CollapsibleGameCard
               key={index}
-              id={`game-${game.game.replace(/\s/g, '-')}`}
-              className="elevated-card game-card hover-lift"
-              style={{
-                animationDelay: `${index * 0.1}s`,
-                position: 'relative'
-              }}
+              header={headerContent}
+              defaultExpanded={true}
+              index={index}
             >
-              {/* ===================================== */}
-              {/* NEW COHESIVE GAME CARD STRUCTURE     */}
-              {/* ===================================== */}
-              
-              {/* 1. Compact Header - Game context first */}
-              <CompactHeader
-                awayTeam={game.awayTeam}
-                homeTeam={game.homeTeam}
-                gameTime={game.gameTime}
-                rating={bestEdge?.evPercent || 0}
-                awayWinProb={game.edges.moneyline?.away?.modelProb}
-                homeWinProb={game.edges.moneyline?.home?.modelProb}
-                isMobile={isMobile}
-              />
               
               {/* 2. Hero Bet Card - Best value proposition */}
               {(() => {
@@ -1989,7 +1985,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 }
                 return null;
               })()}
-            </div>
+            </CollapsibleGameCard>
           );
         })}
       </div>
