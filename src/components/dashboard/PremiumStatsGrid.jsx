@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, useSpring, useTransform } from 'framer-motion';
-import { Target, Activity, TrendingUp, Award, Zap, Shield, Users, CheckCircle } from 'lucide-react';
+import { Target, Activity, TrendingUp, Award, Users, CheckCircle, Flame, Snowflake } from 'lucide-react';
 
 // Animated counter component
 const AnimatedCounter = ({ value, suffix = '', prefix = '', decimals = 0 }) => {
@@ -38,24 +38,43 @@ const PremiumStatsGrid = ({ dataProcessor, isMobile }) => {
       const totalTeams = allTeams.length;
       const avgPDO = allTeams.reduce((sum, team) => sum + (team.pdo || 100), 0) / totalTeams;
       
-      // Mock data for metrics we don't have yet
-      const gamesThisWeek = 12; // This would come from schedule data
+      // Calculate total games played (cumulative across all teams)
+      const totalGamesPlayed = allTeams.reduce((sum, team) => sum + (team.gamesPlayed || 0), 0);
+      
+      // Calculate average xG differential
+      const avgXGD = allTeams.reduce((sum, team) => {
+        const xgd = (team.xGF_per60 || 0) - (team.xGA_per60 || 0);
+        return sum + xgd;
+      }, 0) / totalTeams;
+      
+      // Count hot/cold teams
+      const hotTeams = allTeams.filter(t => (t.pdo || 100) > 102).length;
+      const coldTeams = allTeams.filter(t => (t.pdo || 100) < 98).length;
+      
+      // PDO regression candidates
+      const pdoRegressionCandidates = regressionCandidates.overperforming.length + regressionCandidates.underperforming.length;
+      
+      // Count elite teams (positive xGD)
+      const eliteTeams = allTeams.filter(t => {
+        const xgd = (t.xGF_per60 || 0) - (t.xGA_per60 || 0);
+        return xgd > 0.5;
+      }).length;
+      
+      // Mock data for metrics we track
       const modelAccuracy = 58.2; // This would come from performance tracking
       const currentROI = 4.2; // This would come from bet tracking
-      const activeEVBets = 10; // This would come from today's opportunities
-      const eliteOpportunities = 9; // This would come from today's opportunities (>5% EV)
-      const confirmedGoalies = 24; // This would come from goalie data
-      const pdoRegressionCandidates = regressionCandidates.overperforming.length + regressionCandidates.underperforming.length;
 
       setStats({
         totalTeams,
-        gamesThisWeek,
+        totalGamesPlayed,
+        avgXGD,
+        avgPDO,
+        hotTeams,
+        coldTeams,
+        eliteTeams,
+        pdoRegressionCandidates,
         modelAccuracy,
-        currentROI,
-        activeEVBets,
-        eliteOpportunities,
-        confirmedGoalies,
-        pdoRegressionCandidates
+        currentROI
       });
     } catch (error) {
       console.error('Error calculating stats:', error);
@@ -78,78 +97,77 @@ const PremiumStatsGrid = ({ dataProcessor, isMobile }) => {
     {
       icon: Target,
       value: stats.totalTeams,
-      label: 'Teams Analyzed',
-      description: 'Complete league coverage',
+      label: 'Teams Tracked',
+      description: 'Complete NHL coverage',
       color: '#3B82F6',
       gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%)',
       status: 'Live'
     },
     {
       icon: Activity,
-      value: stats.gamesThisWeek,
-      label: 'Games This Week',
-      description: '+12% vs last week',
+      value: stats.totalGamesPlayed,
+      label: 'Games Analyzed',
+      description: 'Cumulative season total',
       color: '#10B981',
       gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%)',
-      status: 'Active'
+      status: 'Season'
     },
     {
       icon: TrendingUp,
-      value: stats.modelAccuracy,
-      label: 'Model Accuracy',
-      description: 'Win probability precision',
+      value: stats.avgXGD,
+      label: 'Avg xG Differential',
+      description: 'League-wide per 60',
       color: '#8B5CF6',
       gradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.05) 100%)',
-      suffix: '%',
-      decimals: 1,
-      status: 'Strong'
+      prefix: stats.avgXGD >= 0 ? '+' : '',
+      decimals: 2,
+      status: 'Metric'
     },
     {
       icon: Award,
-      value: stats.currentROI,
-      label: 'Current ROI',
-      description: 'Return on investment',
+      value: stats.avgPDO,
+      label: 'Average PDO',
+      description: 'League luck metric',
       color: '#FFD700',
       gradient: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 100%)',
-      suffix: '%',
       decimals: 1,
-      status: 'Elite'
+      status: 'Baseline'
     },
     {
-      icon: Zap,
-      value: stats.activeEVBets,
-      label: 'Active +EV Bets',
-      description: 'Positive expected value',
-      color: '#F59E0B',
-      gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%)',
-      status: 'Today'
+      icon: Flame,
+      value: stats.hotTeams,
+      label: 'Hot Teams',
+      description: 'PDO > 102 (overperforming)',
+      color: '#EF4444',
+      gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 100%)',
+      status: 'Fade'
     },
     {
-      icon: Award,
-      value: stats.eliteOpportunities,
-      label: 'Elite Opportunities',
-      description: '>5% expected value',
-      color: '#10B981',
-      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%)',
-      status: 'Premium'
-    },
-    {
-      icon: Shield,
-      value: stats.confirmedGoalies,
-      label: 'Confirmed Goalies',
-      description: 'Starting goalie data',
+      icon: Snowflake,
+      value: stats.coldTeams,
+      label: 'Cold Teams',
+      description: 'PDO < 98 (underperforming)',
       color: '#3B82F6',
       gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%)',
-      status: 'Ready'
+      status: 'Back'
+    },
+    {
+      icon: CheckCircle,
+      value: stats.eliteTeams,
+      label: 'Elite Teams',
+      description: 'Positive xGD > 0.5',
+      color: '#10B981',
+      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%)',
+      status: 'Strong'
     },
     {
       icon: Users,
       value: stats.pdoRegressionCandidates,
-      label: 'PDO Candidates',
-      description: 'Regression opportunities',
-      color: '#EF4444',
-      gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 100%)',
-      status: 'Tracked'
+      label: 'Regression Targets',
+      description: 'Betting opportunities',
+      color: '#F59E0B',
+      gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%)',
+      status: 'Value'
     }
   ];
 
