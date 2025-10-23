@@ -16,6 +16,7 @@ import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 import { validatePredictions } from '../utils/modelValidator';
 import { useBetTracking } from '../hooks/useBetTracking';
+import { useLiveScores } from '../hooks/useLiveScores';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -1439,6 +1440,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [topEdges, setTopEdges] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedGame, setExpandedGame] = useState(null);
+  const { scores: liveScores } = useLiveScores(); // Real-time live scores from Firestore
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   
   // FIREBASE: Auto-track all recommended bets
