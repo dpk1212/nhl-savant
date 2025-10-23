@@ -3,12 +3,12 @@ import { BetTracker } from '../firebase/betTracker';
 
 export function useBetTracking(allEdges, dataProcessor) {
   const tracker = useRef(new BetTracker());
-  const savedBets = useRef(new Set());
+  const savedBets = useRef(new Set()); // Tracks which games we've CREATED bets for (not updated)
   
   useEffect(() => {
     if (!allEdges || allEdges.length === 0) return;
     
-    // Only track bets with positive EV
+    // Track all games with at least one positive EV bet
     const opportunities = allEdges.filter(game => {
       const bestBet = getBestBet(game);
       return bestBet && bestBet.evPercent > 0;
@@ -18,11 +18,17 @@ export function useBetTracking(allEdges, dataProcessor) {
     
     opportunities.forEach(async (game) => {
       const bestBet = getBestBet(game);
-      const betId = `${game.date}_${game.awayTeam}_${game.homeTeam}`;
+      const alternateBet = getAlternateBet(game, bestBet);
       
-      // Only save once per session
-      if (savedBets.current.has(betId)) return;
+      // Create a game-level ID to track if we've processed this game
+      const gameId = `${game.date}_${game.awayTeam}_${game.homeTeam}`;
       
+      // Only CREATE new bets if we haven't processed this game yet
+      // But always UPDATE existing bets with new odds
+      const isFirstTime = !savedBets.current.has(gameId);
+      
+      // Save/update best bet
+      const bestBetId = `${game.date}_${game.awayTeam}_${game.homeTeam}_${bestBet.market}_${bestBet.pick.replace(/\s+/g, '_')}`;
       try {
         await tracker.current.saveBet(game, bestBet, {
           awayScore: game.edges.total?.awayScore || 0,
@@ -32,9 +38,36 @@ export function useBetTracking(allEdges, dataProcessor) {
           homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
         });
         
-        savedBets.current.add(betId);
+        if (isFirstTime) {
+          console.log(`✅ Created main bet: ${bestBet.market} ${bestBet.pick} (+${bestBet.evPercent.toFixed(1)}% EV)`);
+        }
       } catch (error) {
-        console.error(`Failed to save bet for ${betId}:`, error);
+        console.error(`Failed to save main bet for ${bestBetId}:`, error);
+      }
+      
+      // Save/update alternate bet if it's also positive EV
+      if (alternateBet && alternateBet.evPercent > 0) {
+        const altBetId = `${game.date}_${game.awayTeam}_${game.homeTeam}_${alternateBet.market}_${alternateBet.pick.replace(/\s+/g, '_')}`;
+        try {
+          await tracker.current.saveBet(game, alternateBet, {
+            awayScore: game.edges.total?.awayScore || 0,
+            homeScore: game.edges.total?.homeScore || 0,
+            totalScore: game.edges.total?.predictedTotal || 0,
+            awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
+            homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
+          });
+          
+          if (isFirstTime) {
+            console.log(`✅ Created alternate bet: ${alternateBet.market} ${alternateBet.pick} (+${alternateBet.evPercent.toFixed(1)}% EV)`);
+          }
+        } catch (error) {
+          console.error(`Failed to save alternate bet for ${altBetId}:`, error);
+        }
+      }
+      
+      // Mark this game as processed (only matters for first time)
+      if (isFirstTime) {
+        savedBets.current.add(gameId);
       }
     });
     
@@ -121,6 +154,51 @@ export function useBetTracking(allEdges, dataProcessor) {
     return bestBet;
   }
   
+  // Get alternate bet (opposite market from best bet)
+  function getAlternateBet(game, bestBet) {
+    if (!bestBet) return null;
+    
+    const isValueBetTotal = bestBet.market === 'TOTAL';
+    
+    if (isValueBetTotal) {
+      // Best bet is TOTAL, find best ML alternative
+      const awayML = game.edges?.moneyline?.away;
+      const homeML = game.edges?.moneyline?.home;
+      
+      if (!awayML && !homeML) return null;
+      
+      const bestML = (awayML?.evPercent || -Infinity) > (homeML?.evPercent || -Infinity) ? awayML : homeML;
+      const bestMLTeam = (awayML?.evPercent || -Infinity) > (homeML?.evPercent || -Infinity) ? game.awayTeam : game.homeTeam;
+      
+      if (!bestML || bestML.evPercent <= 0) return null;
+      
+      return {
+        ...bestML,
+        market: 'MONEYLINE',
+        pick: `${bestMLTeam} ML`,
+        team: bestMLTeam
+      };
+    } else {
+      // Best bet is ML (or other), find best TOTAL alternative
+      const over = game.edges?.total?.over;
+      const under = game.edges?.total?.under;
+      
+      if (!over && !under) return null;
+      
+      const bestTotal = (over?.evPercent || -Infinity) > (under?.evPercent || -Infinity) ? over : under;
+      const line = game.rawOdds?.total?.line || over?.line || under?.line;
+      const isOver = (over?.evPercent || -Infinity) > (under?.evPercent || -Infinity);
+      
+      if (!bestTotal || bestTotal.evPercent <= 0) return null;
+      
+      return {
+        ...bestTotal,
+        market: 'TOTAL',
+        pick: isOver ? `OVER ${line}` : `UNDER ${line}`,
+        line: line
+      };
+    }
+  }
+  
   return tracker.current;
 }
-
