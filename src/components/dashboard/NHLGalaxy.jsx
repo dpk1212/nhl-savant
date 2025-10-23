@@ -53,7 +53,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
 
       // Normalize positions with safe range to prevent cutoff
       // Mobile needs significantly more padding due to smaller screen and team orbs
-      const paddingPercent = isMobile ? 20 : 10;
+      const paddingPercent = isMobile ? 23 : 10;
       const rangePercent = 100 - (paddingPercent * 2);
       
       // X-axis: Higher xGF (better offense) = further right
@@ -79,8 +79,9 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       }
 
       // Determine size based on xGD percentile (bigger = better differential)
-      const sizeMin = isMobile ? 28 : 38;
-      const sizeMax = isMobile ? 50 : 65;
+      // Reduced mobile max size to prevent cutoff with increased padding
+      const sizeMin = isMobile ? 26 : 38;
+      const sizeMax = isMobile ? 44 : 65;
       const normalizedXGD = (xGD - minXGD) / (maxXGD - minXGD); // 0-1 scale
       const size = sizeMin + normalizedXGD * (sizeMax - sizeMin);
 
@@ -596,7 +597,10 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                       color: team.regressionDirection === 'up' ? '#10B981' : '#EF4444',
                       filter: `drop-shadow(0 0 8px ${team.regressionDirection === 'up' ? '#10B981' : '#EF4444'})`,
                       // Rotate arrow to point diagonally
-                      transform: team.regressionDirection === 'up' ? 'rotate(-45deg)' : 'rotate(135deg)'
+                      // TrendingUp naturally points up-right (↗), so:
+                      // 'up' (improve) = rotate 45deg clockwise to point bottom-right (↘)
+                      // 'down' (decline) = rotate -135deg to point top-left (↖)
+                      transform: team.regressionDirection === 'up' ? 'rotate(45deg)' : 'rotate(-135deg)'
                     }}
                   >
                     <TrendingUp size={20} strokeWidth={3} />

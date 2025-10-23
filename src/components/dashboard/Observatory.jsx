@@ -153,7 +153,10 @@ const Observatory = ({ dataProcessor, isMobile }) => {
           maxWidth: '600px',
           margin: '0 auto'
         }}>
-          {displayedTeams.length} teams positioned by offensive vs defensive performance
+          {isMobile 
+            ? `Top ${displayedTeams.length} teams by PDO deviation • Offensive vs defensive performance`
+            : `${displayedTeams.length} teams positioned by offensive vs defensive performance`
+          }
         </p>
       </motion.div>
 
