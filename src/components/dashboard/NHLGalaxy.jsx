@@ -104,6 +104,11 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       };
     });
 
+    console.log(`🌌 NHL GALAXY: Processing ${processedTeams.length} teams`);
+    processedTeams.forEach(t => {
+      console.log(`  ${t.team}: x=${t.x.toFixed(1)}%, y=${t.y.toFixed(1)}%, size=${t.size.toFixed(1)}px, temp=${t.temperature}`);
+    });
+    
     return { teams: processedTeams, stats: { minXGF, maxXGF, minXGA, maxXGA } };
   }, [dataProcessor]);
 
@@ -431,7 +436,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           ✗ DANGER ZONE
         </div>
 
-        {/* Axis labels - CORRECTED */}
+        {/* Axis labels - CORRECT NOW */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
@@ -446,14 +451,14 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         </div>
         <div style={{
           position: 'absolute',
-          top: '10px',
+          bottom: '10px',
           left: '10px',
           fontSize: '0.813rem',
           color: 'rgba(255, 255, 255, 0.6)',
           fontWeight: '700',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
         }}>
-          Better Defense ↓
+          ↑ Better Defense
         </div>
 
         {/* Team orbs */}
@@ -469,20 +474,18 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
             return (
               <motion.div
                 key={team.team}
-                initial={{ opacity: 0, scale: 0, x: dimensions.width / 2, y: dimensions.height / 2 }}
+                initial={{ opacity: 0, scale: 0 }}
                 animate={{ 
                   opacity: shouldDim ? 0.3 : 1, 
-                  scale: 1,
-                  x: xPos,
-                  y: yPos
+                  scale: 1
                 }}
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{
-                  duration: 0.8,
-                  delay: index * 0.03,
+                  duration: 0.6,
+                  delay: index * 0.02,
                   type: 'spring',
-                  stiffness: 80,
-                  damping: 12
+                  stiffness: 100,
+                  damping: 15
                 }}
                 whileHover={{ scale: 1.5, zIndex: 100 }}
                 onHoverStart={() => !lockedTeam && setHoveredTeam(team.team)}
@@ -501,7 +504,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                   top: yPos,
                   transform: 'translate(-50%, -50%)',
                   cursor: 'pointer',
-                  zIndex: isHovered ? 100 : 10
+                  zIndex: isActive ? 100 : 10
                 }}
               >
                 {/* Regression arrow */}
