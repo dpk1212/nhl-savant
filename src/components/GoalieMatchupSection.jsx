@@ -45,58 +45,8 @@ const GoalieMatchupSection = ({ awayGoalie, homeGoalie, awayTeam, homeTeam, isMo
     );
   }
   
-  // If only one goalie confirmed, show partial state
-  if (!awayConfirmed || !homeConfirmed) {
-    return (
-      <Section title="Goaltender Matchup" icon={<Shield size={18} />} isMobile={isMobile} importance="HIGH">
-        <div style={{
-          padding: isMobile ? MOBILE_SPACING.innerPadding : '1.5rem',
-          textAlign: 'center',
-          background: GRADIENTS.factors,
-          border: ELEVATION.flat.border,
-          borderRadius: '8px'
-        }}>
-          <div style={{
-            fontSize: '2rem',
-            marginBottom: '0.75rem'
-          }}>
-            ⏳
-          </div>
-          <div style={{
-            fontSize: TYPOGRAPHY.body.size,
-            color: 'var(--color-text-muted)',
-            marginBottom: '1rem'
-          }}>
-            {awayConfirmed ? `✅ ${awayTeam} goalie confirmed` : `⏳ ${awayTeam} goalie TBD`}
-            {' • '}
-            {homeConfirmed ? `✅ ${homeTeam} goalie confirmed` : `⏳ ${homeTeam} goalie TBD`}
-          </div>
-          
-          {/* Show confirmed goalie if available */}
-          {awayConfirmed && (
-            <div style={{
-              fontSize: TYPOGRAPHY.subheading.size,
-              fontWeight: TYPOGRAPHY.heading.weight,
-              color: 'var(--color-text-primary)',
-              marginTop: '0.5rem'
-            }}>
-              {awayGoalie.name} ({awayTeam})
-            </div>
-          )}
-          {homeConfirmed && (
-            <div style={{
-              fontSize: TYPOGRAPHY.subheading.size,
-              fontWeight: TYPOGRAPHY.heading.weight,
-              color: 'var(--color-text-primary)',
-              marginTop: '0.5rem'
-            }}>
-              {homeGoalie.name} ({homeTeam})
-            </div>
-          )}
-        </div>
-      </Section>
-    );
-  }
+  // REMOVED: Don't show partial state - let it fall through to stats check
+  // This allows single goalie with stats to display advanced analytics
   
   // Both goalies confirmed - check if we have stats for both
   console.log('🎯 GoalieMatchupSection checking stats:', {
