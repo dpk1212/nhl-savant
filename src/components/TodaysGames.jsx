@@ -1835,8 +1835,17 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                   <LiveClock />
                   
               {/* Compact goalie status */}
-                  {startingGoalies && startingGoalies.games && (
-                    <span style={{
+              {(() => {
+                console.log('🥅 startingGoalies check:', { 
+                  exists: !!startingGoalies, 
+                  hasGames: !!startingGoalies?.games,
+                  gamesLength: startingGoalies?.games?.length,
+                  fullData: startingGoalies 
+                });
+                return null;
+              })()}
+              {startingGoalies && startingGoalies.games && (
+                <span style={{
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
                   padding: isMobile ? '0.125rem 0.375rem' : '0.2rem 0.5rem',
                   borderRadius: '6px',
