@@ -34,10 +34,13 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
     // Find min/max for normalization
     const xGF_values = teams.map(t => t.xGF_per60 || 0);
     const xGA_values = teams.map(t => t.xGA_per60 || 0);
+    const xGD_values = teams.map(t => (t.xGF_per60 || 0) - (t.xGA_per60 || 0));
     const minXGF = Math.min(...xGF_values);
     const maxXGF = Math.max(...xGF_values);
     const minXGA = Math.min(...xGA_values);
     const maxXGA = Math.max(...xGA_values);
+    const minXGD = Math.min(...xGD_values);
+    const maxXGD = Math.max(...xGD_values);
 
     // Process each team
     const processedTeams = teams.map(team => {
@@ -46,12 +49,15 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       const pdo = team.pdo || 100;
       const xGD = xGF - xGA;
 
-      // Normalize positions (0-100 scale)
-      // X-axis: Higher xGF (better offense) = further right
-      const x = ((xGF - minXGF) / (maxXGF - minXGF)) * 100;
-      // Y-axis: Higher xGA (worse defense) = higher on graph (NOT inverted)
-      // Lower xGA (better defense) = lower on graph (bottom)
-      const y = ((xGA - minXGA) / (maxXGA - minXGA)) * 100;
+      // Normalize positions with 10-90% safe range to prevent cutoff
+      // X-axis: Higher xGF (better offense) = further right (10% left to 90% right)
+      const x = 10 + ((xGF - minXGF) / (maxXGF - minXGF)) * 80;
+      
+      // Y-axis: INVERTED so lower xGA (better defense) = bottom of graph
+      // In CSS: Y=0 is top, Y=100 is bottom
+      // Low xGA (good defense) should map to high Y value (bottom) = 90%
+      // High xGA (bad defense) should map to low Y value (top) = 10%
+      const y = 90 - ((xGA - minXGA) / (maxXGA - minXGA)) * 80;
 
       // Determine temperature
       let temperature = 'neutral';
@@ -64,10 +70,11 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         tempValue = Math.min((100 - pdo) / 5, 1);
       }
 
-      // Determine size based on xGD (bigger = better differential)
-      const avgXGD = 0;
-      const sizeScale = 1 + (xGD - avgXGD) / 2; // Scale factor
-      const size = Math.max(30, Math.min(70, 45 * sizeScale));
+      // Determine size based on xGD percentile (bigger = better differential)
+      const sizeMin = isMobile ? 28 : 38;
+      const sizeMax = isMobile ? 50 : 65;
+      const normalizedXGD = (xGD - minXGD) / (maxXGD - minXGD); // 0-1 scale
+      const size = sizeMin + normalizedXGD * (sizeMax - sizeMin);
 
       // Regression direction
       let regressionDirection = null;
@@ -104,11 +111,6 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       };
     });
 
-    console.log(`🌌 NHL GALAXY: Processing ${processedTeams.length} teams`);
-    processedTeams.forEach(t => {
-      console.log(`  ${t.team}: x=${t.x.toFixed(1)}%, y=${t.y.toFixed(1)}%, size=${t.size.toFixed(1)}px, temp=${t.temperature}`);
-    });
-    
     return { teams: processedTeams, stats: { minXGF, maxXGF, minXGA, maxXGA } };
   }, [dataProcessor]);
 
@@ -436,7 +438,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           ✗ DANGER ZONE
         </div>
 
-        {/* Axis labels - CORRECT NOW */}
+        {/* Axis labels - CORRECT */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
@@ -458,7 +460,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           fontWeight: '700',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
         }}>
-          ↑ Better Defense
+          Better Defense
         </div>
 
         {/* Team orbs */}
