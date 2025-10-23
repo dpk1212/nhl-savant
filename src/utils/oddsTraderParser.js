@@ -75,23 +75,29 @@ export function parseOddsTrader(markdownText) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for today's games (and yesterday's if before 6 AM)
-    const isMatchingDate = line.includes(todayPattern) || (includeYesterday && line.includes(yesterdayPattern));
+    // Look for today's games (and yesterday's if before 6 AM) OR live games
+    const isMatchingDate = line.includes(todayPattern) || (includeYesterday && line.includes(yesterdayPattern)) || line.includes('LIVE');
     
     if (isMatchingDate) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
       
       // Extract time from the current line
-      // Pattern matches time that comes AFTER the date (e.g., "10/227:00 PM" -> "7:00 PM")
-      // Use word boundary or specific pattern to avoid catching date digits
-      const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2} [AP]M)/);
-      if (!timeMatch) {
-        console.log('  ⚠️ No time found, skipping');
-        continue;
-      }
+      let gameTime;
       
-      const gameTime = timeMatch[1];
-      console.log(`  ⏰ Time: ${gameTime}`);
+      // Check if it's a LIVE game
+      if (line.includes('LIVE')) {
+        gameTime = 'LIVE';
+        console.log(`  🔴 LIVE GAME`);
+      } else {
+        // Pattern matches time that comes AFTER the date (e.g., "10/227:00 PM" -> "7:00 PM")
+        const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2} [AP]M)/);
+        if (!timeMatch) {
+          console.log('  ⚠️ No time found, skipping');
+          continue;
+        }
+        gameTime = timeMatch[1];
+        console.log(`  ⏰ Time: ${gameTime}`);
+      }
       
       // CREATE currentGame object IMMEDIATELY
       const currentGame = {
