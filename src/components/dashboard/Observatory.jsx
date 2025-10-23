@@ -163,34 +163,34 @@ const Observatory = ({ dataProcessor, isMobile }) => {
         height: dimensions.height,
         marginTop: isMobile ? '1rem' : '2rem'
       }}>
-        {/* Quadrant Background Overlays */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '50%',
-          height: '50%',
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
-          pointerEvents: 'none',
-          borderLeft: '1px dashed rgba(16, 185, 129, 0.2)',
-          borderBottom: '1px dashed rgba(16, 185, 129, 0.2)'
-        }} />
+        {/* Quadrant Background Overlays - CORRECTED: Better defense (low xGA) is at TOP */}
         <div style={{
           position: 'absolute',
           bottom: 0,
+          right: 0,
+          width: '50%',
+          height: '50%',
+          background: 'linear-gradient(45deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+          pointerEvents: 'none',
+          borderLeft: '1px dashed rgba(16, 185, 129, 0.2)',
+          borderTop: '1px dashed rgba(16, 185, 129, 0.2)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: 0,
           left: 0,
           width: '50%',
           height: '50%',
-          background: 'linear-gradient(315deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
+          background: 'linear-gradient(225deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
           pointerEvents: 'none',
           borderRight: '1px dashed rgba(239, 68, 68, 0.2)',
-          borderTop: '1px dashed rgba(239, 68, 68, 0.2)'
+          borderBottom: '1px dashed rgba(239, 68, 68, 0.2)'
         }} />
 
-        {/* Quadrant Labels */}
+        {/* Quadrant Labels - CORRECTED */}
         <div style={{
           position: 'absolute',
-          top: '20px',
+          bottom: '20px',
           right: '20px',
           padding: '0.5rem 0.75rem',
           background: 'rgba(16, 185, 129, 0.15)',
@@ -207,7 +207,7 @@ const Observatory = ({ dataProcessor, isMobile }) => {
         </div>
         <div style={{
           position: 'absolute',
-          bottom: '20px',
+          top: '20px',
           left: '20px',
           padding: '0.5rem 0.75rem',
           background: 'rgba(239, 68, 68, 0.15)',
@@ -237,15 +237,14 @@ const Observatory = ({ dataProcessor, isMobile }) => {
         </div>
         <div style={{
           position: 'absolute',
-          top: '10px',
+          bottom: '10px',
           left: '10px',
           fontSize: '0.688rem',
           color: 'rgba(255, 255, 255, 0.5)',
-          writingMode: 'vertical-rl',
-          transform: 'rotate(180deg)',
+          textAlign: 'left',
           fontWeight: '600'
         }}>
-          ← Better Defense
+          <div>Better Defense ↑</div>
         </div>
 
         {/* Team Orbs */}
