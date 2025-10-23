@@ -87,23 +87,31 @@ async function fetchAllData() {
     const startingGoalies = parseMoneyPuckStartingGoalies(moneyPuckResult.markdown);
     console.log(`   - Parsed ${startingGoalies.length} games from MoneyPuck`);
     
-    const goaliesData = {
-      date: new Date().toISOString().split('T')[0],
-      lastUpdated: fetchTimestamp,
-      oddsLastUpdated: fetchTimestamp,
-      games: startingGoalies
-    };
-    
-    await fs.writeFile(
-      join(__dirname, '../public/starting_goalies.json'),
-      JSON.stringify(goaliesData, null, 2),
-      'utf8'
-    );
-    
-    console.log(`✅ Starting goalies saved`);
-    console.log(`   - Goalies confirmed: ${countConfirmedGoalies(startingGoalies)}`);
-    console.log(`   - File: public/starting_goalies.json\n`);
-    results.goalies = true;
+    // CRITICAL: Don't overwrite with empty data!
+    if (startingGoalies.length === 0) {
+      console.log('   ⚠️  WARNING: No games found in MoneyPuck scrape');
+      console.log('   ⚠️  Keeping existing starting_goalies.json file');
+      console.log('   ⚠️  Manual update may be required\n');
+      results.goalies = false;
+    } else {
+      const goaliesData = {
+        date: new Date().toISOString().split('T')[0],
+        lastUpdated: fetchTimestamp,
+        oddsLastUpdated: fetchTimestamp,
+        games: startingGoalies
+      };
+      
+      await fs.writeFile(
+        join(__dirname, '../public/starting_goalies.json'),
+        JSON.stringify(goaliesData, null, 2),
+        'utf8'
+      );
+      
+      console.log(`✅ Starting goalies saved`);
+      console.log(`   - Goalies confirmed: ${countConfirmedGoalies(startingGoalies)}`);
+      console.log(`   - File: public/starting_goalies.json\n`);
+      results.goalies = true;
+    }
     
     // Summary
     console.log('========================================');
