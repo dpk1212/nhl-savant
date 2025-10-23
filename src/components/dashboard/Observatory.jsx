@@ -233,7 +233,7 @@ const Observatory = ({ dataProcessor, isMobile }) => {
           textAlign: 'right',
           fontWeight: '600'
         }}>
-          <div>→ Better Offense</div>
+          <div>Better Offense →</div>
         </div>
         <div style={{
           position: 'absolute',
@@ -244,7 +244,7 @@ const Observatory = ({ dataProcessor, isMobile }) => {
           textAlign: 'left',
           fontWeight: '600'
         }}>
-          <div>Better Defense ↑</div>
+          <div>↑ Better Defense</div>
         </div>
 
         {/* Team Orbs */}

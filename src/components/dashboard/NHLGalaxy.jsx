@@ -49,15 +49,21 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       const pdo = team.pdo || 100;
       const xGD = xGF - xGA;
 
-      // Normalize positions with 10-90% safe range to prevent cutoff
-      // X-axis: Higher xGF (better offense) = further right (10% left to 90% right)
-      const x = 10 + ((xGF - minXGF) / (maxXGF - minXGF)) * 80;
+      // Normalize positions with safe range to prevent cutoff
+      // Mobile needs more padding due to smaller screen
+      const paddingPercent = isMobile ? 15 : 10;
+      const rangePercent = 100 - (paddingPercent * 2);
+      
+      // X-axis: Higher xGF (better offense) = further right
+      const x = paddingPercent + ((xGF - minXGF) / (maxXGF - minXGF)) * rangePercent;
       
       // Y-axis: INVERTED so lower xGA (better defense) = bottom of graph
       // In CSS: Y=0 is top, Y=100 is bottom
-      // Low xGA (good defense) should map to high Y value (bottom) = 90%
-      // High xGA (bad defense) should map to low Y value (top) = 10%
-      const y = 90 - ((xGA - minXGA) / (maxXGA - minXGA)) * 80;
+      // Low xGA (good defense) should map to high Y value (bottom) = 85-90%
+      // High xGA (bad defense) should map to low Y value (top) = 10-15%
+      const maxY = 100 - paddingPercent;
+      const minY = paddingPercent;
+      const y = maxY - ((xGA - minXGA) / (maxXGA - minXGA)) * rangePercent;
 
       // Determine temperature
       let temperature = 'neutral';
@@ -438,7 +444,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           ✗ DANGER ZONE
         </div>
 
-        {/* Axis labels - CORRECT */}
+        {/* Axis labels - ARROWS POINT CORRECTLY */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
@@ -449,7 +455,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           textAlign: 'right',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
         }}>
-          → Better Offense
+          Better Offense →
         </div>
         <div style={{
           position: 'absolute',
@@ -460,7 +466,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           fontWeight: '700',
           textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
         }}>
-          Better Defense
+          ↑ Better Defense
         </div>
 
         {/* Team orbs */}
@@ -490,14 +496,27 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                   damping: 15
                 }}
                 whileHover={{ scale: 1.5, zIndex: 100 }}
-                onHoverStart={() => !lockedTeam && setHoveredTeam(team.team)}
-                onHoverEnd={() => !lockedTeam && setHoveredTeam(null)}
+                onHoverStart={() => !lockedTeam && !isMobile && setHoveredTeam(team.team)}
+                onHoverEnd={() => !lockedTeam && !isMobile && setHoveredTeam(null)}
+                onTap={() => {
+                  // Mobile tap handling
+                  if (isMobile) {
+                    if (lockedTeam === team.team) {
+                      setLockedTeam(null);
+                    } else {
+                      setLockedTeam(team.team);
+                    }
+                  }
+                }}
                 onClick={() => {
-                  if (lockedTeam === team.team) {
-                    setLockedTeam(null);
-                  } else {
-                    setLockedTeam(team.team);
-                    setHoveredTeam(null);
+                  // Desktop click handling
+                  if (!isMobile) {
+                    if (lockedTeam === team.team) {
+                      setLockedTeam(null);
+                    } else {
+                      setLockedTeam(team.team);
+                      setHoveredTeam(null);
+                    }
                   }
                 }}
                 style={{
@@ -618,25 +637,29 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                   </span>
                 </motion.div>
 
-                {/* Tooltip (hover or locked) */}
-                {isActive && !isMobile && (
+                {/* Tooltip (hover or locked) - with smart positioning */}
+                {isActive && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
                       position: 'absolute',
-                      top: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      marginTop: '16px',
-                      minWidth: '240px',
-                      padding: '1rem',
+                      // Smart positioning: if team is in bottom half, show tooltip above; otherwise below
+                      [yPos > dimensions.height / 2 ? 'bottom' : 'top']: '100%',
+                      // Smart positioning: if team is on right half, align right; otherwise center
+                      [xPos > dimensions.width * 0.7 ? 'right' : 'left']: xPos > dimensions.width * 0.7 ? 0 : '50%',
+                      transform: xPos > dimensions.width * 0.7 ? 'none' : 'translateX(-50%)',
+                      marginTop: yPos <= dimensions.height / 2 ? '16px' : '0',
+                      marginBottom: yPos > dimensions.height / 2 ? '16px' : '0',
+                      minWidth: isMobile ? '200px' : '240px',
+                      maxWidth: isMobile ? '280px' : '320px',
+                      padding: isMobile ? '0.875rem' : '1rem',
                       background: 'rgba(10, 14, 26, 0.98)',
                       backdropFilter: 'blur(20px)',
                       border: `2px solid ${getTeamColor(team.temperature, team.tempValue)}`,
                       borderRadius: '12px',
                       boxShadow: `0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px ${getTeamColor(team.temperature, team.tempValue)}`,
-                      pointerEvents: 'none',
+                      pointerEvents: isLocked ? 'auto' : 'none',
                       zIndex: 1000
                     }}
                   >
