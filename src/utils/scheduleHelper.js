@@ -106,7 +106,6 @@ export class ScheduleHelper {
     });
 
     console.log(`✅ Indexed schedule for ${Object.keys(gamesByTeam).length} teams (2025-26 season)`);
-    console.log(`   📈 Valid games: ${validGames}, Skipped rows: ${skippedRows}`);
     return gamesByTeam;
   }
 
