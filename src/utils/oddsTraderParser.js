@@ -57,7 +57,8 @@ export function parseOddsTrader(markdownText) {
   const day = today.getDate();
   const todayPattern = `${dayOfWeek} ${month}/${day}`;
   
-  // Also include yesterday's games if it's before 6 AM
+  // Also include yesterday's games - this handles when today's games are live/finished
+  // and OddsTrader has moved them off the main page
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayDayOfWeek = dayNames[yesterday.getDay()];
@@ -65,14 +66,11 @@ export function parseOddsTrader(markdownText) {
   const yesterdayDay = yesterday.getDate();
   const yesterdayPattern = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`;
   
-  const currentHour = today.getHours();
-  const includeYesterday = currentHour < 6; // Before 6 AM, show yesterday's games
+  // Always include yesterday's games to catch live/finished games
+  // This ensures games stay visible even after they start
+  const includeYesterday = true; // Changed from: currentHour < 6
   
-  if (includeYesterday) {
-    console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} and ${yesterdayPattern} (before 6 AM)`);
-  } else {
-    console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern}`);
-  }
+  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} and ${yesterdayPattern}`);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
