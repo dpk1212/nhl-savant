@@ -12,7 +12,8 @@ const Observatory = ({ dataProcessor, isMobile }) => {
       if (container) {
         setDimensions({
           width: container.clientWidth,
-          height: isMobile ? 400 : 600
+          // Mobile: Taller canvas for better readability and to prevent cutoff
+          height: isMobile ? 500 : 600
         });
       }
     };
@@ -187,64 +188,73 @@ const Observatory = ({ dataProcessor, isMobile }) => {
           borderBottom: '1px dashed rgba(239, 68, 68, 0.2)'
         }} />
 
-        {/* Quadrant Labels - CORRECTED */}
+        {/* Corner Labels - Clear quadrant descriptions */}
+        {/* TOP-LEFT: Bad Offense + Bad Defense */}
         <div style={{
           position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          padding: '0.5rem 0.75rem',
-          background: 'rgba(16, 185, 129, 0.15)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: '6px',
-          fontSize: isMobile ? '0.688rem' : '0.75rem',
+          top: '10px',
+          left: '10px',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(239, 68, 68, 0.8)',
           fontWeight: '700',
-          color: '#10B981',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          textAlign: 'left',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px',
           pointerEvents: 'none'
         }}>
-          ✓ ELITE ZONE
+          BAD OFFENSE<br/>BAD DEFENSE
         </div>
+        
+        {/* TOP-RIGHT: Good Offense + Bad Defense */}
         <div style={{
           position: 'absolute',
-          top: '20px',
-          left: '20px',
-          padding: '0.5rem 0.75rem',
-          background: 'rgba(239, 68, 68, 0.15)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '6px',
-          fontSize: isMobile ? '0.688rem' : '0.75rem',
-          fontWeight: '700',
-          color: '#EF4444',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          pointerEvents: 'none'
-        }}>
-          ✗ WEAK ZONE
-        </div>
-
-        {/* Axis Labels */}
-        <div style={{
-          position: 'absolute',
-          bottom: '10px',
+          top: '10px',
           right: '10px',
-          fontSize: '0.688rem',
-          color: 'rgba(255, 255, 255, 0.5)',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(251, 191, 36, 0.8)',
+          fontWeight: '700',
           textAlign: 'right',
-          fontWeight: '600'
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px',
+          pointerEvents: 'none'
         }}>
-          <div>Better Offense →</div>
+          GOOD OFFENSE<br/>BAD DEFENSE
         </div>
+        
+        {/* BOTTOM-LEFT: Bad Offense + Good Defense */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
           left: '10px',
-          fontSize: '0.688rem',
-          color: 'rgba(255, 255, 255, 0.5)',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(59, 130, 246, 0.8)',
+          fontWeight: '700',
           textAlign: 'left',
-          fontWeight: '600'
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px',
+          pointerEvents: 'none'
         }}>
-          <div>↑ Better Defense</div>
+          BAD OFFENSE<br/>GOOD DEFENSE
+        </div>
+        
+        {/* BOTTOM-RIGHT: Good Offense + Good Defense */}
+        <div style={{
+          position: 'absolute',
+          bottom: '10px',
+          right: '10px',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(16, 185, 129, 0.8)',
+          fontWeight: '700',
+          textAlign: 'right',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px',
+          pointerEvents: 'none'
+        }}>
+          GOOD OFFENSE<br/>GOOD DEFENSE
         </div>
 
         {/* Team Orbs */}
