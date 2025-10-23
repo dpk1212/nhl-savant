@@ -66,13 +66,7 @@ export class ScheduleHelper {
       return gamesByTeam;
     }
 
-    console.log(`📊 Processing ${csvData.length} rows from schedule CSV`);
-    console.log('📋 First row sample:', csvData[0]);
-
-    let validGames = 0;
-    let skippedRows = 0;
-
-    csvData.forEach((row, idx) => {
+    csvData.forEach(row => {
       const date = row.Date; // Format: "10/7/2025"
       const awayName = row.Visitor; // Full name, e.g., "New York Rangers"
       const homeName = row.Home; // Full name, e.g., "Boston Bruins"
@@ -82,14 +76,11 @@ export class ScheduleHelper {
       const home = this.teamNameToCode[homeName];
 
       if (!date || !away || !home) {
-        if (idx < 5) {
-          console.warn(`⚠️ Row ${idx}: Could not map - Date: "${date}", Away: "${awayName}" (${away}), Home: "${homeName}" (${home})`);
+        if (awayName || homeName) {
+          console.warn(`⚠️ Could not map team names: ${awayName} vs ${homeName}`);
         }
-        skippedRows++;
         return; // Skip invalid rows
       }
-      
-      validGames++;
 
       if (!gamesByTeam[away]) gamesByTeam[away] = [];
       if (!gamesByTeam[home]) gamesByTeam[home] = [];
