@@ -15,7 +15,9 @@ export class GoalieProcessor {
    * @returns {object|null} Goalie stats or null if not found
    */
   getGoalieStats(goalieName, teamCode) {
+    console.log(`🥅 getGoalieStats called: ${goalieName} (${teamCode})`);
     if (!this.goalieData || !Array.isArray(this.goalieData)) {
+      console.log(`❌ No goalie data available`);
       return null;
     }
     
@@ -43,9 +45,11 @@ export class GoalieProcessor {
     }
     
     if (!goalieRows.length) {
-      console.log(`ℹ️ Goalie stats not in database: ${goalieName} (${teamCode})`);
+      console.log(`❌ Goalie stats not in database: ${goalieName} (${teamCode})`);
       return null;
     }
+    
+    console.log(`✅ Found goalie: ${goalieRows[0].name} (${goalieRows[0].team})`);
     
     const goalie = goalieRows[0];
     const gamesPlayed = parseInt(goalie.games_played) || 0;

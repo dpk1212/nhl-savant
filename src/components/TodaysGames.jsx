@@ -1595,6 +1595,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     
     // Try to get advanced stats from goalies.csv
     const stats = goalieProcessor ? goalieProcessor.getGoalieStats(goalieData.goalie, teamCode) : null;
+    console.log(`🥅 TodaysGames getGoalieForTeam: ${goalieData.goalie} (${teamCode})`, { found: !!stats, hasProcessor: !!goalieProcessor });
     
     // Return goalie with or without stats
     return {
