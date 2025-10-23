@@ -57,13 +57,30 @@ export function parseOddsTrader(markdownText) {
   const day = today.getDate();
   const todayPattern = `${dayOfWeek} ${month}/${day}`;
   
-  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern}`);
+  // Also include yesterday's games if it's before 6 AM
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayDayOfWeek = dayNames[yesterday.getDay()];
+  const yesterdayMonth = yesterday.getMonth() + 1;
+  const yesterdayDay = yesterday.getDate();
+  const yesterdayPattern = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`;
+  
+  const currentHour = today.getHours();
+  const includeYesterday = currentHour < 6; // Before 6 AM, show yesterday's games
+  
+  if (includeYesterday) {
+    console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} and ${yesterdayPattern} (before 6 AM)`);
+  } else {
+    console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern}`);
+  }
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for today's games dynamically
-    if (line.includes(todayPattern)) {
+    // Look for today's games (and yesterday's if before 6 AM)
+    const isMatchingDate = line.includes(todayPattern) || (includeYesterday && line.includes(yesterdayPattern));
+    
+    if (isMatchingDate) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
       
       // Extract time from the current line
