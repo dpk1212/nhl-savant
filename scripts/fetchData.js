@@ -172,18 +172,33 @@ function parseMoneyPuckStartingGoalies(markdown) {
         const awayTeam = teamMatches[0][1];
         const homeTeam = teamMatches[1][1];
         
-        // Extract goalie names from "Starter: NAME\**" or "Starter: NAME**"
-        // Handles full names with spaces and escaped asterisks
-        const goalieMatches = [...line.matchAll(/Starter:\s*([A-Za-z\-\'\s]+?)\\?\*\*/g)];
+        // CRITICAL FIX: Determine which team each goalie belongs to based on position
+        // MoneyPuck format: | AWAY% | AWAY_LOGO | TIME | HOME_LOGO | HOME% |
+        // Goalies appear in the percentage column (1 or 5), not in order
         
         let awayGoalie = null;
         let homeGoalie = null;
         
-        if (goalieMatches.length > 0) {
-          awayGoalie = goalieMatches[0][1];
-        }
-        if (goalieMatches.length > 1) {
-          homeGoalie = goalieMatches[1][1];
+        // Find all "Starter:" mentions with their positions
+        const starterRegex = /Starter:\s*([A-Za-z\-\'\s]+?)\\?\*\*/g;
+        let match;
+        
+        while ((match = starterRegex.exec(line)) !== null) {
+          const goalieName = match[1].trim();
+          const position = match.index;
+          
+          // Find position of away team logo
+          const awayLogoPos = line.indexOf(`logos/${awayTeam}.png`);
+          // Find position of home team logo  
+          const homeLogoPos = line.indexOf(`logos/${homeTeam}.png`);
+          
+          // If goalie mention comes BEFORE away logo, it's the away goalie
+          // If goalie mention comes AFTER home logo, it's the home goalie
+          if (position < awayLogoPos) {
+            awayGoalie = goalieName;
+          } else if (position > homeLogoPos) {
+            homeGoalie = goalieName;
+          }
         }
         
         games.push({
