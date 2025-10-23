@@ -13,14 +13,19 @@ export function useFirebaseBets() {
   const [error, setError] = useState(null);
   
   useEffect(() => {
-    // Get today's date in local timezone (not UTC)
+    // Use THE EXACT SAME date logic as the Firebase live scores function
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const today = `${year}-${month}-${day}`;
+    const hour = now.getHours();
+    const dateToFetch = new Date(now);
     
-    console.log(`📊 Fetching Firebase bets for ${today} (local date)`);
+    if (hour < 6) {
+      // Before 6 AM, use yesterday's games (matches live scores logic)
+      dateToFetch.setDate(dateToFetch.getDate() - 1);
+    }
+    
+    const today = dateToFetch.toISOString().split('T')[0];
+    
+    console.log(`📊 Fetching Firebase bets for ${today} (hour: ${hour}, matches live scores date)`);
     
     // Simple query - just get all bets and filter in memory to avoid index issues
     const unsubscribe = onSnapshot(
