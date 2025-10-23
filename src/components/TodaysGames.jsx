@@ -2176,24 +2176,38 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       </div>
                     )}
                     
-                    {/* Bet Tracker Section */}
+                    {/* Premium Bet Tracker Section */}
                     {gameBets.length > 0 && (
                       <div style={{ 
                         padding: isMobile ? '1rem' : '1.5rem',
-                        background: 'rgba(0, 0, 0, 0.2)'
+                        background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.15) 100%)',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.05)'
                       }}>
                         <div style={{ 
-                          fontSize: '0.875rem',
-                          color: 'var(--color-text-muted)',
+                          fontSize: '0.75rem',
+                          color: '#10B981',
                           marginBottom: '1rem',
-                          fontWeight: '600',
+                          fontWeight: '700',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
+                          letterSpacing: '0.12em',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem'
+                          justifyContent: 'space-between'
                         }}>
-                          <span>📊</span> YOUR BETS ({gameBets.length})
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '1rem' }}>📊</span>
+                            <span>YOUR BETS</span>
+                          </div>
+                          <div style={{ 
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            color: '#10B981',
+                            padding: '0.25rem 0.625rem',
+                            borderRadius: '12px',
+                            fontSize: '0.688rem',
+                            fontWeight: 'bold'
+                          }}>
+                            {gameBets.length}
+                          </div>
                         </div>
                         
                         {gameBets.slice(0, 3).map((bet, betIdx) => {
@@ -2207,38 +2221,57 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                               key={betIdx}
                               style={{ 
                                 marginBottom: betIdx < Math.min(gameBets.length, 3) - 1 ? '0.5rem' : 0,
-                                padding: isMobile ? '0.75rem' : '0.875rem',
+                                padding: isMobile ? '0.875rem' : '1rem',
                                 background: isWinning 
-                                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.03) 100%)'
+                                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
                                   : isLosing
-                                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.03) 100%)'
+                                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)'
                                   : isPush
-                                  ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.03) 100%)'
-                                  : 'rgba(255, 255, 255, 0.02)',
-                                borderRadius: '6px',
-                                border: `1px solid ${
-                                  isWinning ? 'rgba(16, 185, 129, 0.25)' : 
-                                  isLosing ? 'rgba(239, 68, 68, 0.25)' : 
-                                  isPush ? 'rgba(251, 191, 36, 0.25)' :
-                                  'rgba(255, 255, 255, 0.1)'
+                                  ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)'
+                                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                                borderRadius: '8px',
+                                border: `1.5px solid ${
+                                  isWinning ? 'rgba(16, 185, 129, 0.35)' : 
+                                  isLosing ? 'rgba(239, 68, 68, 0.35)' : 
+                                  isPush ? 'rgba(251, 191, 36, 0.35)' :
+                                  'rgba(255, 255, 255, 0.08)'
                                 }`,
-                                position: 'relative'
+                                position: 'relative',
+                                boxShadow: isWinning 
+                                  ? '0 4px 12px rgba(16, 185, 129, 0.15)'
+                                  : isLosing
+                                  ? '0 4px 12px rgba(239, 68, 68, 0.15)'
+                                  : isPush
+                                  ? '0 4px 12px rgba(251, 191, 36, 0.15)'
+                                  : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                transition: 'all 0.2s ease',
+                                cursor: 'default'
                               }}
                             >
-                              {/* Compact bet outcome badge */}
+                              {/* Premium outcome badge */}
                               {outcome.status !== 'pending' && (
                                 <div style={{ 
                                   position: 'absolute',
-                                  top: '0.5rem',
-                                  right: '0.5rem',
-                                  background: isWinning ? '#10B981' : isPush ? '#F59E0B' : '#EF4444',
+                                  top: '0.625rem',
+                                  right: '0.625rem',
+                                  background: isWinning 
+                                    ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
+                                    : isPush 
+                                    ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' 
+                                    : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
                                   color: 'white',
-                                  padding: '0.2rem 0.5rem',
-                                  borderRadius: '10px',
-                                  fontSize: '0.65rem',
+                                  padding: '0.3rem 0.625rem',
+                                  borderRadius: '12px',
+                                  fontSize: '0.688rem',
                                   fontWeight: 'bold',
                                   textTransform: 'uppercase',
-                                  letterSpacing: '0.03em'
+                                  letterSpacing: '0.05em',
+                                  boxShadow: isWinning 
+                                    ? '0 2px 8px rgba(16, 185, 129, 0.4)' 
+                                    : isPush 
+                                    ? '0 2px 8px rgba(251, 191, 36, 0.4)' 
+                                    : '0 2px 8px rgba(239, 68, 68, 0.4)',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)'
                                 }}>
                                   {isWinning ? 'W' : isPush ? 'P' : 'L'}
                                 </div>
@@ -2248,36 +2281,39 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                                 display: 'flex', 
                                 justifyContent: 'space-between', 
                                 alignItems: 'center',
-                                gap: '0.5rem'
+                                gap: '0.75rem'
                               }}>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ 
-                                    fontWeight: '600', 
-                                    fontSize: isMobile ? '0.813rem' : '0.875rem',
-                                    marginBottom: '0.25rem',
+                                    fontWeight: '700', 
+                                    fontSize: isMobile ? '0.875rem' : '0.938rem',
+                                    marginBottom: '0.375rem',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
+                                    textOverflow: 'ellipsis',
+                                    letterSpacing: '0.01em'
                                   }}>
                                     {bet.pick}
                                   </div>
                                   <div style={{ 
-                                    fontSize: '0.688rem', 
+                                    fontSize: '0.75rem', 
                                     color: 'var(--color-text-muted)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.375rem'
+                                    gap: '0.5rem'
                                   }}>
                                     <span style={{ 
+                                      background: 'rgba(255, 255, 255, 0.08)',
+                                      padding: '0.125rem 0.5rem',
+                                      borderRadius: '8px',
                                       textTransform: 'uppercase',
                                       fontSize: '0.625rem',
-                                      fontWeight: '600',
-                                      letterSpacing: '0.05em'
+                                      fontWeight: '700',
+                                      letterSpacing: '0.08em'
                                     }}>
                                       {bet.market === 'MONEYLINE' ? 'ML' : bet.market === 'TOTAL' ? 'TOT' : bet.market}
                                     </span>
-                                    <span>•</span>
-                                    <span style={{ fontWeight: '600' }}>
+                                    <span style={{ fontWeight: '700', color: bet.odds > 0 ? '#10B981' : 'var(--color-text-primary)' }}>
                                       {bet.odds > 0 ? '+' : ''}{bet.odds}
                                     </span>
                                   </div>
@@ -2285,27 +2321,36 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                                 
                                 {outcome.status !== 'pending' && (
                                   <div style={{ 
-                                    fontSize: isMobile ? '0.938rem' : '1rem', 
-                                    fontWeight: 'bold',
+                                    fontSize: isMobile ? '1rem' : '1.125rem', 
+                                    fontWeight: '800',
                                     color: isWinning ? '#10B981' : isPush ? '#F59E0B' : '#EF4444',
                                     minWidth: 'fit-content',
-                                    textAlign: 'right'
+                                    textAlign: 'right',
+                                    textShadow: isWinning 
+                                      ? '0 0 8px rgba(16, 185, 129, 0.3)' 
+                                      : isPush 
+                                      ? '0 0 8px rgba(251, 191, 36, 0.3)' 
+                                      : '0 0 8px rgba(239, 68, 68, 0.3)',
+                                    letterSpacing: '0.02em'
                                   }}>
-                                    {outcome.pnl > 0 ? '+' : ''}{outcome.pnl.toFixed(0)}
+                                    {outcome.pnl > 0 ? '+$' : outcome.pnl < 0 ? '-$' : '$'}{Math.abs(outcome.pnl).toFixed(0)}
                                   </div>
                                 )}
                                 
                                 {outcome.status === 'pending' && game.status === 'LIVE' && (
                                   <div style={{ 
-                                    fontSize: '0.688rem', 
+                                    fontSize: '0.75rem', 
                                     color: '#EF4444',
-                                    fontWeight: '600',
+                                    fontWeight: '700',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.25rem',
-                                    whiteSpace: 'nowrap'
+                                    gap: '0.375rem',
+                                    whiteSpace: 'nowrap',
+                                    background: 'rgba(239, 68, 68, 0.15)',
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '8px'
                                   }}>
-                                    <Activity size={10} />
+                                    <Activity size={12} />
                                     <span>LIVE</span>
                                   </div>
                                 )}
@@ -2325,38 +2370,64 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           </div>
                         )}
                         
-                        {/* Compact Total P&L Summary */}
+                        {/* Premium Total P&L Summary */}
                         {game.status === 'FINAL' && (
                           <div style={{ 
-                            marginTop: '0.75rem',
-                            padding: isMobile ? '0.75rem' : '0.875rem',
-                            background: 'rgba(0, 0, 0, 0.25)',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            marginTop: '1rem',
+                            padding: isMobile ? '1rem' : '1.125rem',
+                            background: (() => {
+                              const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                              if (totalPnl > 0) return 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.08) 100%)';
+                              if (totalPnl < 0) return 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.08) 100%)';
+                              return 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(251, 191, 36, 0.08) 100%)';
+                            })(),
+                            borderRadius: '10px',
+                            border: (() => {
+                              const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                              if (totalPnl > 0) return '2px solid rgba(16, 185, 129, 0.4)';
+                              if (totalPnl < 0) return '2px solid rgba(239, 68, 68, 0.4)';
+                              return '2px solid rgba(251, 191, 36, 0.4)';
+                            })(),
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            boxShadow: (() => {
+                              const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                              if (totalPnl > 0) return '0 4px 16px rgba(16, 185, 129, 0.25)';
+                              if (totalPnl < 0) return '0 4px 16px rgba(239, 68, 68, 0.25)';
+                              return '0 4px 16px rgba(251, 191, 36, 0.25)';
+                            })()
                           }}>
                             <div style={{ 
-                              fontSize: '0.75rem',
-                              fontWeight: '700',
+                              fontSize: '0.813rem',
+                              fontWeight: '800',
                               textTransform: 'uppercase',
-                              letterSpacing: '0.08em',
-                              color: 'var(--color-text-muted)'
-                            }}>
-                              Total P&L
-                            </div>
-                            <div style={{ 
-                              fontSize: isMobile ? '1.125rem' : '1.25rem', 
-                              fontWeight: 'bold',
+                              letterSpacing: '0.1em',
                               color: (() => {
                                 const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
                                 return totalPnl > 0 ? '#10B981' : totalPnl < 0 ? '#EF4444' : '#F59E0B';
                               })()
                             }}>
+                              Total P&L
+                            </div>
+                            <div style={{ 
+                              fontSize: isMobile ? '1.5rem' : '1.75rem', 
+                              fontWeight: '900',
+                              color: (() => {
+                                const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                                return totalPnl > 0 ? '#10B981' : totalPnl < 0 ? '#EF4444' : '#F59E0B';
+                              })(),
+                              textShadow: (() => {
+                                const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
+                                if (totalPnl > 0) return '0 0 12px rgba(16, 185, 129, 0.4)';
+                                if (totalPnl < 0) return '0 0 12px rgba(239, 68, 68, 0.4)';
+                                return '0 0 12px rgba(251, 191, 36, 0.4)';
+                              })(),
+                              letterSpacing: '0.02em'
+                            }}>
                               {(() => {
                                 const totalPnl = gameBets.reduce((sum, bet) => sum + calculateBetOutcome(bet).pnl, 0);
-                                return (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(0);
+                                return (totalPnl > 0 ? '+$' : totalPnl < 0 ? '-$' : '$') + Math.abs(totalPnl).toFixed(0);
                               })()}
                             </div>
                           </div>
