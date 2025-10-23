@@ -1850,12 +1850,29 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       🥅 {(() => {
                         let confirmed = 0;
                         let total = 0;
-                        startingGoalies.games.forEach(game => {
-                          if (game.away?.goalie && (game.away?.confirmed !== false)) confirmed++;
-                          if (game.home?.goalie && (game.home?.confirmed !== false)) confirmed++;
-                          total += 2;
-                        });
-                    return `${confirmed}/${total}`;
+                        
+                        if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
+                          startingGoalies.games.forEach(game => {
+                            // Count total goalies (2 per game)
+                            total += 2;
+                            
+                            // Count confirmed goalies
+                            // A goalie is confirmed if: goalie exists AND confirmed is not explicitly false
+                            if (game.away?.goalie) {
+                              if (game.away.confirmed === undefined || game.away.confirmed === true) {
+                                confirmed++;
+                              }
+                            }
+                            if (game.home?.goalie) {
+                              if (game.home.confirmed === undefined || game.home.confirmed === true) {
+                                confirmed++;
+                              }
+                            }
+                          });
+                        }
+                        
+                        console.log('🥅 Goalie count:', { confirmed, total, gamesCount: startingGoalies?.games?.length });
+                        return `${confirmed}/${total}`;
                       })()}
                     </span>
                   )}
@@ -1994,7 +2011,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             const isStartingSoon = minutesUntilGame > 0 && minutesUntilGame < 60;
             
             return (
-              <div key={timeSlot} style={{ marginBottom: slotIndex < timeSlotsOrdered.length - 1 ? (isMobile ? '2rem' : '2.5rem') : 0 }}>
+              <div key={timeSlot} style={{ marginBottom: slotIndex < timeSlotsOrdered.length - 1 ? (isMobile ? '1.5rem' : '1.75rem') : 0 }}>
                 {/* Time Slot Header */}
                 <div style={{
                   display: 'flex',
@@ -2042,7 +2059,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 </div>
                 
                 {/* Games in this time slot */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '1rem' : '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '0.625rem' : '0.75rem' }}>
                   {gamesInSlot.map((game, gameIndex) => {
                     const index = allEdges.indexOf(game);
           // Find the best edge for this game to show in narrative
