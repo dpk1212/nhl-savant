@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lucide-react';
 import DataStatus from './DataStatus';
 import Observatory from './dashboard/Observatory';
-import PremiumStatsGrid from './dashboard/PremiumStatsGrid';
+import NHLGalaxy from './dashboard/NHLGalaxy';
 import LeagueHeatmap from './dashboard/LeagueHeatmap';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
@@ -114,8 +114,8 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
         {/* Hero: The Observatory */}
         <Observatory dataProcessor={dataProcessor} isMobile={isMobile} />
 
-        {/* Premium Stats Grid */}
-        <PremiumStatsGrid dataProcessor={dataProcessor} isMobile={isMobile} />
+        {/* THE CENTERPIECE: NHL Galaxy - Van Gogh Masterpiece */}
+        <NHLGalaxy dataProcessor={dataProcessor} isMobile={isMobile} />
 
         {/* League Heatmap */}
         <LeagueHeatmap dataProcessor={dataProcessor} isMobile={isMobile} />
