@@ -14,7 +14,9 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       const container = document.getElementById('galaxy-container');
       if (container) {
         const width = container.offsetWidth;
-        const height = isMobile ? 500 : Math.min(700, window.innerHeight * 0.6);
+        // Mobile: Taller canvas for better readability and to prevent cutoff
+        // Desktop: Responsive height based on viewport
+        const height = isMobile ? 600 : Math.min(700, window.innerHeight * 0.6);
         setDimensions({ width, height });
       }
     };
@@ -444,29 +446,69 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           ✗ DANGER ZONE
         </div>
 
-        {/* Axis labels - ARROWS POINT CORRECTLY */}
+        {/* Corner Labels - Clear quadrant descriptions */}
+        {/* TOP-LEFT: Bad Offense + Bad Defense */}
         <div style={{
           position: 'absolute',
-          bottom: '10px',
+          top: '10px',
+          left: '10px',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(239, 68, 68, 0.8)',
+          fontWeight: '700',
+          textAlign: 'left',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px'
+        }}>
+          BAD OFFENSE<br/>BAD DEFENSE
+        </div>
+        
+        {/* TOP-RIGHT: Good Offense + Bad Defense */}
+        <div style={{
+          position: 'absolute',
+          top: '10px',
           right: '10px',
-          fontSize: '0.813rem',
-          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(251, 191, 36, 0.8)',
           fontWeight: '700',
           textAlign: 'right',
-          textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px'
         }}>
-          Better Offense →
+          GOOD OFFENSE<br/>BAD DEFENSE
         </div>
+        
+        {/* BOTTOM-LEFT: Bad Offense + Good Defense */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
           left: '10px',
-          fontSize: '0.813rem',
-          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(59, 130, 246, 0.8)',
           fontWeight: '700',
-          textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
+          textAlign: 'left',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px'
         }}>
-          ↑ Better Defense
+          BAD OFFENSE<br/>GOOD DEFENSE
+        </div>
+        
+        {/* BOTTOM-RIGHT: Good Offense + Good Defense */}
+        <div style={{
+          position: 'absolute',
+          bottom: '10px',
+          right: '10px',
+          fontSize: isMobile ? '0.625rem' : '0.75rem',
+          color: 'rgba(16, 185, 129, 0.8)',
+          fontWeight: '700',
+          textAlign: 'right',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+          lineHeight: '1.3',
+          maxWidth: isMobile ? '80px' : '100px'
+        }}>
+          GOOD OFFENSE<br/>GOOD DEFENSE
         </div>
 
         {/* Team orbs */}
