@@ -47,13 +47,15 @@ export class EdgeCalculator {
           game.awayTeam, 
           game.homeTeam, 
           false,  // Away
-          awayGoalie
+          awayGoalie,
+          game.date  // Enable B2B/rest adjustments
         );
         const homeScore = this.dataProcessor.predictTeamScore(
           game.homeTeam, 
           game.awayTeam, 
           true,   // Home
-          homeGoalie
+          homeGoalie,
+          game.date  // Enable B2B/rest adjustments
         );
         
         return {
