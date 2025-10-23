@@ -333,23 +333,26 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
                       : 'none'
                   }}
                 >
-                  {/* Regression indicator */}
+                  {/* Regression indicator - HIGH CONTRAST */}
                   {team.regressionDirection && (
                     <div style={{
                       position: 'absolute',
                       top: '4px',
                       right: '4px',
                       fontSize: isMobile ? '0.5rem' : '0.563rem',
-                      fontWeight: '800',
-                      color: team.regressionDirection === 'FADE' ? '#EF4444' : '#10B981',
+                      fontWeight: '900',
+                      color: '#FFFFFF',
                       background: team.regressionDirection === 'FADE' 
-                        ? 'rgba(239, 68, 68, 0.3)' 
-                        : 'rgba(16, 185, 129, 0.3)',
-                      padding: isMobile ? '0.125rem 0.2rem' : '0.125rem 0.25rem',
-                      borderRadius: '3px',
-                      border: `1px solid ${team.regressionDirection === 'FADE' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)'}`,
-                      letterSpacing: '0.02em',
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
+                        ? 'rgba(239, 68, 68, 0.95)' 
+                        : 'rgba(16, 185, 129, 0.95)',
+                      padding: isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem',
+                      borderRadius: '4px',
+                      border: `2px solid ${team.regressionDirection === 'FADE' ? '#DC2626' : '#059669'}`,
+                      letterSpacing: '0.03em',
+                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+                      boxShadow: team.regressionDirection === 'FADE' 
+                        ? '0 2px 8px rgba(239, 68, 68, 0.6)' 
+                        : '0 2px 8px rgba(16, 185, 129, 0.6)'
                     }}>
                       {team.regressionDirection}
                     </div>
@@ -483,23 +486,26 @@ const LeagueHeatmap = ({ dataProcessor, isMobile }) => {
                       : 'none'
                   }}
                 >
-                  {/* Regression indicator */}
+                  {/* Regression indicator - HIGH CONTRAST */}
                   {team.regressionDirection && (
                     <div style={{
                       position: 'absolute',
                       top: '4px',
                       right: '4px',
                       fontSize: isMobile ? '0.5rem' : '0.563rem',
-                      fontWeight: '800',
-                      color: team.regressionDirection === 'FADE' ? '#EF4444' : '#10B981',
+                      fontWeight: '900',
+                      color: '#FFFFFF',
                       background: team.regressionDirection === 'FADE' 
-                        ? 'rgba(239, 68, 68, 0.3)' 
-                        : 'rgba(16, 185, 129, 0.3)',
-                      padding: isMobile ? '0.125rem 0.2rem' : '0.125rem 0.25rem',
-                      borderRadius: '3px',
-                      border: `1px solid ${team.regressionDirection === 'FADE' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(16, 185, 129, 0.6)'}`,
-                      letterSpacing: '0.02em',
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
+                        ? 'rgba(239, 68, 68, 0.95)' 
+                        : 'rgba(16, 185, 129, 0.95)',
+                      padding: isMobile ? '0.2rem 0.3rem' : '0.25rem 0.4rem',
+                      borderRadius: '4px',
+                      border: `2px solid ${team.regressionDirection === 'FADE' ? '#DC2626' : '#059669'}`,
+                      letterSpacing: '0.03em',
+                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+                      boxShadow: team.regressionDirection === 'FADE' 
+                        ? '0 2px 8px rgba(239, 68, 68, 0.6)' 
+                        : '0 2px 8px rgba(16, 185, 129, 0.6)'
                     }}>
                       {team.regressionDirection}
                     </div>

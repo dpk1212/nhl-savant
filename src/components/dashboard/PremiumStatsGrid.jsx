@@ -173,32 +173,59 @@ const PremiumStatsGrid = ({ dataProcessor, isMobile }) => {
 
   return (
     <div style={{
-      padding: isMobile ? '1rem' : '2rem 0',
-      marginBottom: isMobile ? '2rem' : '3rem'
+      padding: isMobile ? '2rem 1rem' : '4rem 2rem',
+      marginBottom: isMobile ? '2rem' : '3rem',
+      background: 'linear-gradient(180deg, rgba(26, 31, 46, 0.4) 0%, rgba(10, 14, 26, 0.6) 100%)',
+      borderRadius: '16px',
+      border: '1px solid rgba(255, 215, 0, 0.15)',
+      position: 'relative',
+      overflow: 'hidden',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
     }}>
-      {/* Section Header */}
+      {/* Premium animated background */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'radial-gradient(circle at 30% 50%, rgba(255, 215, 0, 0.04) 0%, transparent 50%), radial-gradient(circle at 70% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 50%)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Section Header - PREMIUM */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         style={{
           textAlign: 'center',
-          marginBottom: isMobile ? '1.5rem' : '2rem'
+          marginBottom: isMobile ? '2rem' : '3rem',
+          position: 'relative',
+          zIndex: 1
         }}
       >
-        <h3 style={{
-          fontSize: isMobile ? '1.25rem' : '1.5rem',
-          fontWeight: '700',
-          color: 'var(--color-text-primary)',
-          marginBottom: '0.5rem'
+        <h2 style={{
+          fontSize: isMobile ? '1.75rem' : '2.5rem',
+          fontWeight: '900',
+          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          marginBottom: '0.75rem',
+          letterSpacing: '-0.03em',
+          filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.3))'
         }}>
           Real-Time Analytics Matrix
-        </h3>
+        </h2>
         <p style={{
-          color: 'var(--color-text-muted)',
-          fontSize: isMobile ? '0.875rem' : '0.938rem'
+          color: 'rgba(255, 255, 255, 0.75)',
+          fontSize: isMobile ? '0.938rem' : '1.125rem',
+          fontWeight: '500',
+          letterSpacing: '0.03em',
+          textTransform: 'uppercase'
         }}>
-          Live metrics updated continuously
+          Driving Value Through Data Excellence
         </p>
       </motion.div>
 
@@ -231,14 +258,15 @@ const PremiumStatsGrid = ({ dataProcessor, isMobile }) => {
               className="premium-stat-card"
               style={{
                 background: card.gradient,
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${card.color}40`,
-                borderRadius: '12px',
-                padding: isMobile ? '1rem' : '1.25rem',
+                backdropFilter: 'blur(16px)',
+                border: `2px solid ${card.color}50`,
+                borderRadius: '16px',
+                padding: isMobile ? '1.25rem' : '1.5rem',
                 position: 'relative',
                 overflow: 'hidden',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                boxShadow: `0 4px 16px ${card.color}15, inset 0 1px 0 rgba(255, 255, 255, 0.1)`
               }}
             >
               {/* Glow effect on hover */}
@@ -293,14 +321,16 @@ const PremiumStatsGrid = ({ dataProcessor, isMobile }) => {
                 </div>
               </div>
 
-              {/* Value */}
+              {/* Value - PREMIUM */}
               <div style={{
-                fontSize: isMobile ? '1.75rem' : '2.25rem',
-                fontWeight: '800',
+                fontSize: isMobile ? '2rem' : '2.75rem',
+                fontWeight: '900',
                 color: card.color,
                 lineHeight: '1',
-                marginBottom: '0.5rem',
-                fontFeatureSettings: '"tnum"'
+                marginBottom: '0.625rem',
+                fontFeatureSettings: '"tnum"',
+                textShadow: `0 0 20px ${card.color}40`,
+                filter: `drop-shadow(0 2px 4px ${card.color}30)`
               }}>
                 <AnimatedCounter
                   value={card.value}
@@ -310,23 +340,25 @@ const PremiumStatsGrid = ({ dataProcessor, isMobile }) => {
                 />
               </div>
 
-              {/* Label */}
+              {/* Label - PREMIUM */}
               <div style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                fontWeight: '700',
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontWeight: '800',
                 color: 'var(--color-text-primary)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '0.25rem'
+                letterSpacing: '0.08em',
+                marginBottom: '0.375rem',
+                opacity: 0.95
               }}>
                 {card.label}
               </div>
 
-              {/* Description */}
+              {/* Description - PREMIUM */}
               <div style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'var(--color-text-muted)',
-                lineHeight: '1.4'
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                color: 'rgba(255, 255, 255, 0.65)',
+                lineHeight: '1.5',
+                fontWeight: '500'
               }}>
                 {card.description}
               </div>
