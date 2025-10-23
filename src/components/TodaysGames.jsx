@@ -1895,6 +1895,35 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       alignItems: 'center',
             flexShrink: 0
           }}>
+            {/* Total Games Counter */}
+            <div style={{
+              textAlign: 'center',
+              padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
+              background: 'rgba(148, 163, 184, 0.12)',
+              borderRadius: '8px',
+              border: '1px solid rgba(148, 163, 184, 0.25)'
+            }}>
+              <div style={{
+                fontSize: isMobile ? '1.125rem' : '1.375rem',
+                fontWeight: '800',
+                color: '#94A3B8',
+                lineHeight: '1',
+                marginBottom: '0.125rem'
+              }}>
+                {allEdges.length}
+                </div>
+              <div style={{
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
+                color: 'var(--color-text-muted)',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Total
+              </div>
+            </div>
+            
+            {/* +EV Bets Counter */}
             <div style={{
               textAlign: 'center',
               padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
@@ -1918,9 +1947,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                Games
+                +EV
               </div>
             </div>
+            
+            {/* Elite Bets Counter */}
             <div style={{
               textAlign: 'center',
               padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
