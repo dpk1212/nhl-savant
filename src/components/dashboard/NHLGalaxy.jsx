@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Flame, Snowflake, Target, Zap } from 'lucide-
 
 const NHLGalaxy = ({ dataProcessor, isMobile }) => {
   const [hoveredTeam, setHoveredTeam] = useState(null);
+  const [lockedTeam, setLockedTeam] = useState(null);
   const [activeView, setActiveView] = useState('performance'); // performance, betting, divisions
   const [dimensions, setDimensions] = useState({ width: 1200, height: 700 });
 
@@ -46,8 +47,11 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       const xGD = xGF - xGA;
 
       // Normalize positions (0-100 scale)
+      // X-axis: Higher xGF (better offense) = further right
       const x = ((xGF - minXGF) / (maxXGF - minXGF)) * 100;
-      const y = 100 - ((xGA - minXGA) / (maxXGA - minXGA)) * 100; // Inverted: lower xGA = higher on graph
+      // Y-axis: Higher xGA (worse defense) = higher on graph (NOT inverted)
+      // Lower xGA (better defense) = lower on graph (bottom)
+      const y = ((xGA - minXGA) / (maxXGA - minXGA)) * 100;
 
       // Determine temperature
       let temperature = 'neutral';
@@ -307,17 +311,73 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         border: '1px solid rgba(255, 255, 255, 0.1)',
         overflow: 'hidden'
       }}>
-        {/* Zone overlays */}
+        {/* Orbital Rings - Performance Tiers */}
+        <svg
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            opacity: 0.3
+          }}
+        >
+          {/* Elite Ring */}
+          <ellipse
+            cx={dimensions.width * 0.75}
+            cy={dimensions.height * 0.25}
+            rx={dimensions.width * 0.2}
+            ry={dimensions.height * 0.15}
+            fill="none"
+            stroke="rgba(16, 185, 129, 0.4)"
+            strokeWidth="1"
+            strokeDasharray="5,5"
+            style={{
+              animation: 'orbitRotate 30s linear infinite'
+            }}
+          />
+          {/* Average Ring */}
+          <ellipse
+            cx={dimensions.width * 0.5}
+            cy={dimensions.height * 0.5}
+            rx={dimensions.width * 0.25}
+            ry={dimensions.height * 0.2}
+            fill="none"
+            stroke="rgba(148, 163, 184, 0.3)"
+            strokeWidth="1"
+            strokeDasharray="5,5"
+            style={{
+              animation: 'orbitRotate 40s linear infinite reverse'
+            }}
+          />
+          {/* Struggling Ring */}
+          <ellipse
+            cx={dimensions.width * 0.25}
+            cy={dimensions.height * 0.75}
+            rx={dimensions.width * 0.2}
+            ry={dimensions.height * 0.15}
+            fill="none"
+            stroke="rgba(239, 68, 68, 0.4)"
+            strokeWidth="1"
+            strokeDasharray="5,5"
+            style={{
+              animation: 'orbitRotate 35s linear infinite'
+            }}
+          />
+        </svg>
+
+        {/* Zone overlays - CORRECTED */}
         <div style={{
           position: 'absolute',
           bottom: 0,
           right: 0,
           width: '50%',
           height: '50%',
-          background: 'linear-gradient(45deg, rgba(16, 185, 129, 0.1) 0%, transparent 70%)',
+          background: 'linear-gradient(45deg, rgba(16, 185, 129, 0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
-          borderLeft: '1px dashed rgba(16, 185, 129, 0.3)',
-          borderTop: '1px dashed rgba(16, 185, 129, 0.3)'
+          borderLeft: '2px dashed rgba(16, 185, 129, 0.3)',
+          borderTop: '2px dashed rgba(16, 185, 129, 0.3)'
         }} />
         <div style={{
           position: 'absolute',
@@ -325,29 +385,29 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           left: 0,
           width: '50%',
           height: '50%',
-          background: 'linear-gradient(225deg, rgba(239, 68, 68, 0.1) 0%, transparent 70%)',
+          background: 'linear-gradient(225deg, rgba(239, 68, 68, 0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
-          borderRight: '1px dashed rgba(239, 68, 68, 0.3)',
-          borderBottom: '1px dashed rgba(239, 68, 68, 0.3)'
+          borderRight: '2px dashed rgba(239, 68, 68, 0.3)',
+          borderBottom: '2px dashed rgba(239, 68, 68, 0.3)'
         }} />
 
-        {/* Zone labels */}
+        {/* Zone labels - CORRECTED */}
         <div style={{
           position: 'absolute',
           bottom: '20px',
           right: '20px',
-          padding: '0.5rem 1rem',
-          background: 'rgba(16, 185, 129, 0.2)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(16, 185, 129, 0.4)',
-          borderRadius: '8px',
-          fontSize: isMobile ? '0.688rem' : '0.75rem',
-          fontWeight: '800',
+          padding: '0.625rem 1.25rem',
+          background: 'rgba(16, 185, 129, 0.25)',
+          backdropFilter: 'blur(12px)',
+          border: '2px solid rgba(16, 185, 129, 0.5)',
+          borderRadius: '10px',
+          fontSize: isMobile ? '0.75rem' : '0.875rem',
+          fontWeight: '900',
           color: '#10B981',
           textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.08em',
           pointerEvents: 'none',
-          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
         }}>
           ✓ ELITE ZONE
         </div>
@@ -355,67 +415,86 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           position: 'absolute',
           top: '20px',
           left: '20px',
-          padding: '0.5rem 1rem',
-          background: 'rgba(239, 68, 68, 0.2)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderRadius: '8px',
-          fontSize: isMobile ? '0.688rem' : '0.75rem',
-          fontWeight: '800',
+          padding: '0.625rem 1.25rem',
+          background: 'rgba(239, 68, 68, 0.25)',
+          backdropFilter: 'blur(12px)',
+          border: '2px solid rgba(239, 68, 68, 0.5)',
+          borderRadius: '10px',
+          fontSize: isMobile ? '0.75rem' : '0.875rem',
+          fontWeight: '900',
           color: '#EF4444',
           textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.08em',
           pointerEvents: 'none',
-          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
         }}>
           ✗ DANGER ZONE
         </div>
 
-        {/* Axis labels */}
+        {/* Axis labels - CORRECTED */}
         <div style={{
           position: 'absolute',
           bottom: '10px',
           right: '10px',
-          fontSize: '0.75rem',
-          color: 'rgba(255, 255, 255, 0.5)',
-          fontWeight: '600',
-          textAlign: 'right'
+          fontSize: '0.813rem',
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontWeight: '700',
+          textAlign: 'right',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
         }}>
           → Better Offense
         </div>
         <div style={{
           position: 'absolute',
-          bottom: '10px',
+          top: '10px',
           left: '10px',
-          fontSize: '0.75rem',
-          color: 'rgba(255, 255, 255, 0.5)',
-          fontWeight: '600'
+          fontSize: '0.813rem',
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontWeight: '700',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
         }}>
-          Better Defense ↑
+          Better Defense ↓
         </div>
 
         {/* Team orbs */}
         <AnimatePresence>
           {displayedTeams.map((team, index) => {
             const isHovered = hoveredTeam === team.team;
+            const isLocked = lockedTeam === team.team;
+            const isActive = isHovered || isLocked;
+            const shouldDim = (hoveredTeam || lockedTeam) && !isActive;
             const xPos = (team.x / 100) * dimensions.width;
             const yPos = (team.y / 100) * dimensions.height;
 
             return (
               <motion.div
                 key={team.team}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0, x: dimensions.width / 2, y: dimensions.height / 2 }}
+                animate={{ 
+                  opacity: shouldDim ? 0.3 : 1, 
+                  scale: 1,
+                  x: xPos,
+                  y: yPos
+                }}
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{
-                  duration: 0.6,
-                  delay: index * 0.02,
+                  duration: 0.8,
+                  delay: index * 0.03,
                   type: 'spring',
-                  stiffness: 100
+                  stiffness: 80,
+                  damping: 12
                 }}
-                whileHover={{ scale: 1.2, zIndex: 100 }}
-                onHoverStart={() => setHoveredTeam(team.team)}
-                onHoverEnd={() => setHoveredTeam(null)}
+                whileHover={{ scale: 1.5, zIndex: 100 }}
+                onHoverStart={() => !lockedTeam && setHoveredTeam(team.team)}
+                onHoverEnd={() => !lockedTeam && setHoveredTeam(null)}
+                onClick={() => {
+                  if (lockedTeam === team.team) {
+                    setLockedTeam(null);
+                  } else {
+                    setLockedTeam(team.team);
+                    setHoveredTeam(null);
+                  }
+                }}
                 style={{
                   position: 'absolute',
                   left: xPos,
@@ -482,14 +561,21 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
 
                 {/* The orb */}
                 <motion.div
-                  animate={isHovered ? {
+                  animate={isActive ? {
                     boxShadow: [
                       getTeamGlow(team.temperature, team.tempValue),
-                      `0 0 ${50}px ${getTeamColor(team.temperature, team.tempValue)}`,
+                      `0 0 ${60}px ${getTeamColor(team.temperature, team.tempValue)}`,
                       getTeamGlow(team.temperature, team.tempValue)
                     ]
-                  } : {}}
-                  transition={{ duration: 1, repeat: isHovered ? Infinity : 0 }}
+                  } : {
+                    boxShadow: getTeamGlow(team.temperature, team.tempValue),
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ 
+                    duration: isActive ? 1 : 3, 
+                    repeat: Infinity,
+                    ease: 'easeInOut'
+                  }}
                   style={{
                     width: team.size,
                     height: team.size,
@@ -527,8 +613,8 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                   </span>
                 </motion.div>
 
-                {/* Hover tooltip */}
-                {isHovered && !isMobile && (
+                {/* Tooltip (hover or locked) */}
+                {isActive && !isMobile && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -549,7 +635,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                       zIndex: 1000
                     }}
                   >
-                    {/* Team name */}
+                    {/* Team name with lock indicator */}
                     <div style={{
                       fontSize: '1rem',
                       fontWeight: '800',
@@ -557,11 +643,26 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'space-between',
                       gap: '0.5rem'
                     }}>
-                      {team.name}
-                      {team.temperature === 'hot' && <Flame size={16} color="#EF4444" />}
-                      {team.temperature === 'cold' && <Snowflake size={16} color="#3B82F6" />}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {team.name}
+                        {team.temperature === 'hot' && <Flame size={16} color="#EF4444" />}
+                        {team.temperature === 'cold' && <Snowflake size={16} color="#3B82F6" />}
+                      </div>
+                      {isLocked && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#FFD700',
+                          background: 'rgba(255, 215, 0, 0.2)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(255, 215, 0, 0.4)'
+                        }}>
+                          🔒 LOCKED
+                        </div>
+                      )}
                     </div>
 
                     {/* Stats */}
@@ -683,6 +784,10 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
+        }
+        @keyframes orbitRotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>
