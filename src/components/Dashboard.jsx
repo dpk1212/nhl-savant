@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lu
 import DataStatus from './DataStatus';
 import Observatory from './dashboard/Observatory';
 import PremiumStatsGrid from './dashboard/PremiumStatsGrid';
+import LeagueHeatmap from './dashboard/LeagueHeatmap';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
   const [opportunities, setOpportunities] = useState([]);
@@ -115,6 +116,9 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
 
         {/* Premium Stats Grid */}
         <PremiumStatsGrid dataProcessor={dataProcessor} isMobile={isMobile} />
+
+        {/* League Heatmap */}
+        <LeagueHeatmap dataProcessor={dataProcessor} isMobile={isMobile} />
 
         {/* OLD League Stats Grid - Keep for now but will be removed */}
         {false && leagueStats && (
