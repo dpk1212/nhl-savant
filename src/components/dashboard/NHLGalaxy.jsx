@@ -53,7 +53,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
 
       // Normalize positions with safe range to prevent cutoff
       // Mobile needs significantly more padding due to smaller screen and team orbs
-      const paddingPercent = isMobile ? 23 : 10;
+      const paddingPercent = isMobile ? 28 : 10;
       const rangePercent = 100 - (paddingPercent * 2);
       
       // X-axis: Higher xGF (better offense) = further right
@@ -322,10 +322,11 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         width: '100%',
         height: dimensions.height,
         marginTop: isMobile ? '1rem' : '2rem',
+        padding: isMobile ? '20px' : '0',
         background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 70%)',
         borderRadius: '16px',
         border: '1px solid rgba(255, 255, 255, 0.1)',
-        overflow: 'hidden'
+        overflow: 'visible'
       }}>
         {/* Orbital Rings - Performance Tiers */}
         <svg
@@ -596,11 +597,11 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                       right: team.regressionDirection === 'up' ? '-25px' : 'auto',
                       color: team.regressionDirection === 'up' ? '#10B981' : '#EF4444',
                       filter: `drop-shadow(0 0 8px ${team.regressionDirection === 'up' ? '#10B981' : '#EF4444'})`,
-                      // Rotate arrow to point diagonally
-                      // TrendingUp naturally points up-right (↗), so:
-                      // 'up' (improve) = rotate 45deg clockwise to point bottom-right (↘)
+                      // Use separate rotate property to avoid conflict with framer-motion transforms
+                      // TrendingUp naturally points up-right at 45deg
+                      // 'up' (improve) = rotate 135deg total to point bottom-right (↘)
                       // 'down' (decline) = rotate -135deg to point top-left (↖)
-                      transform: team.regressionDirection === 'up' ? 'rotate(45deg)' : 'rotate(-135deg)'
+                      rotate: team.regressionDirection === 'up' ? '135deg' : '-135deg'
                     }}
                   >
                     <TrendingUp size={20} strokeWidth={3} />
