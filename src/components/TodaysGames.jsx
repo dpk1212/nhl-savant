@@ -2156,23 +2156,62 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       </div>
                     </div>
                     
-                    {/* Game Status Info */}
-                    {game.clock && (
+                    {/* Premium Game Status Info */}
+                    {(game.clock || game.venue || game.winningGoalie || game.winningGoalScorer) && (
                       <div style={{ 
-                        textAlign: 'center',
-                        padding: '1rem',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        borderTop: '1px solid var(--color-border)',
-                        borderBottom: '1px solid var(--color-border)'
+                        padding: isMobile ? '0.875rem 1rem' : '1rem 1.5rem',
+                        background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.25) 100%)',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
                       }}>
-                        <div style={{ 
-                          color: game.status === 'LIVE' ? '#EF4444' : 'var(--color-text-muted)',
-                          fontSize: '0.9rem',
-                          fontWeight: '600',
-                          letterSpacing: '0.05em'
-                        }}>
-                          {game.period && `Period ${game.period} • `}{game.clock}
-                        </div>
+                        {/* Clock/Period */}
+                        {game.clock && (
+                          <div style={{ 
+                            color: game.status === 'LIVE' ? '#EF4444' : '#10B981',
+                            fontSize: isMobile ? '0.875rem' : '0.938rem',
+                            fontWeight: '700',
+                            letterSpacing: '0.05em',
+                            textAlign: 'center'
+                          }}>
+                            {game.periodType === 'OT' ? '🚨 OVERTIME' : game.periodType === 'SO' ? '🎯 SHOOTOUT' : ''}
+                            {game.periodType === 'REG' && game.period && `Period ${game.period}`} {game.clock && `• ${game.clock}`}
+                          </div>
+                        )}
+                        
+                        {/* Premium Details for FINAL games */}
+                        {game.status === 'FINAL' && (
+                          <div style={{ 
+                            display: 'flex',
+                            flexDirection: isMobile ? 'column' : 'row',
+                            gap: isMobile ? '0.5rem' : '1.5rem',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            fontSize: '0.75rem',
+                            color: 'var(--color-text-muted)'
+                          }}>
+                            {game.venue && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <span>📍</span>
+                                <span style={{ fontWeight: '600' }}>{game.venue}</span>
+                              </div>
+                            )}
+                            {game.winningGoalie && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <span>🥅</span>
+                                <span style={{ fontWeight: '600' }}>W: {game.winningGoalie}</span>
+                              </div>
+                            )}
+                            {game.winningGoalScorer && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <span>🚨</span>
+                                <span style={{ fontWeight: '600' }}>GWG: {game.winningGoalScorer}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -2185,8 +2224,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       }}>
                         <div style={{ 
                           fontSize: '0.75rem',
-                          color: '#10B981',
-                          marginBottom: '1rem',
+                          marginBottom: '1.25rem',
                           fontWeight: '700',
                           textTransform: 'uppercase',
                           letterSpacing: '0.12em',
@@ -2194,17 +2232,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           alignItems: 'center',
                           justifyContent: 'space-between'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '1rem' }}>📊</span>
-                            <span>YOUR BETS</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                            <span style={{ fontSize: '1.125rem', filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' }}>🎯</span>
+                            <span style={{
+                              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              fontWeight: '800'
+                            }}>NHL Savant Model Bets</span>
                           </div>
                           <div style={{ 
-                            background: 'rgba(16, 185, 129, 0.15)',
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%)',
                             color: '#10B981',
-                            padding: '0.25rem 0.625rem',
-                            borderRadius: '12px',
-                            fontSize: '0.688rem',
-                            fontWeight: 'bold'
+                            padding: '0.375rem 0.75rem',
+                            borderRadius: '14px',
+                            fontSize: '0.75rem',
+                            fontWeight: '800',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
                           }}>
                             {gameBets.length}
                           </div>
@@ -2248,12 +2294,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                                 cursor: 'default'
                               }}
                             >
-                              {/* Premium outcome badge */}
+                              {/* Premium outcome badge - positioned top-left to avoid overlap */}
                               {outcome.status !== 'pending' && (
                                 <div style={{ 
                                   position: 'absolute',
                                   top: '0.625rem',
-                                  right: '0.625rem',
+                                  left: '0.625rem',
                                   background: isWinning 
                                     ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
                                     : isPush 
@@ -2271,7 +2317,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                                     : isPush 
                                     ? '0 2px 8px rgba(251, 191, 36, 0.4)' 
                                     : '0 2px 8px rgba(239, 68, 68, 0.4)',
-                                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                  zIndex: 10
                                 }}>
                                   {isWinning ? 'W' : isPush ? 'P' : 'L'}
                                 </div>
@@ -2281,7 +2328,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                                 display: 'flex', 
                                 justifyContent: 'space-between', 
                                 alignItems: 'center',
-                                gap: '0.75rem'
+                                gap: '0.75rem',
+                                paddingLeft: outcome.status !== 'pending' ? '2.5rem' : '0' // Space for badge
                               }}>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ 
