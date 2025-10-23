@@ -13,7 +13,9 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
     const updateDimensions = () => {
       const container = document.getElementById('galaxy-container');
       if (container) {
-        const width = container.offsetWidth;
+        // Use clientWidth to get width WITHOUT padding/borders
+        // This gives us the actual drawable area
+        const width = container.clientWidth;
         // Mobile: Taller canvas for better readability and to prevent cutoff
         // Desktop: Responsive height based on viewport
         const height = isMobile ? 600 : Math.min(700, window.innerHeight * 0.6);
@@ -53,7 +55,8 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
 
       // Normalize positions with safe range to prevent cutoff
       // Mobile needs significantly more padding due to smaller screen and team orbs
-      const paddingPercent = isMobile ? 28 : 10;
+      // Increased to 32% mobile / 12% desktop for extra safety margin
+      const paddingPercent = isMobile ? 32 : 12;
       const rangePercent = 100 - (paddingPercent * 2);
       
       // X-axis: Higher xGF (better offense) = further right
@@ -172,7 +175,7 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
         borderRadius: '20px',
         border: '1px solid rgba(255, 215, 0, 0.2)',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
       }}
     >
