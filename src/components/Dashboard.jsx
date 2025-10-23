@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lucide-react';
 import DataStatus from './DataStatus';
+import Observatory from './dashboard/Observatory';
+import PremiumStatsGrid from './dashboard/PremiumStatsGrid';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
   const [opportunities, setOpportunities] = useState([]);
@@ -108,8 +110,14 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
           <DataStatus dataProcessor={dataProcessor} loading={loading} error={error} />
         </div>
 
-        {/* League Stats Grid */}
-        {leagueStats && (
+        {/* Hero: The Observatory */}
+        <Observatory dataProcessor={dataProcessor} isMobile={isMobile} />
+
+        {/* Premium Stats Grid */}
+        <PremiumStatsGrid dataProcessor={dataProcessor} isMobile={isMobile} />
+
+        {/* OLD League Stats Grid - Keep for now but will be removed */}
+        {false && leagueStats && (
           <div 
             className="dashboard-stats-grid"
             style={{
