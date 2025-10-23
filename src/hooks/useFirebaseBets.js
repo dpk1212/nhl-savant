@@ -13,32 +13,35 @@ export function useFirebaseBets() {
   const [error, setError] = useState(null);
   
   useEffect(() => {
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0];
+    // Get today's date AND yesterday's date (for games that started yesterday but are still live)
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
     
-    console.log(`📊 Subscribing to Firebase bets for ${today}`);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    // Query for today's bets
-    // Note: Removed orderBy to avoid needing composite index
-    // Bets will be sorted in the component if needed
-    const q = query(
-      collection(db, 'bets'),
-      where('date', '==', today)
-    );
+    // Before 6 AM, use yesterday's date (games from night before)
+    const currentHour = now.getHours();
+    const dateToQuery = currentHour < 6 ? yesterdayStr : today;
     
-    // Real-time subscription
+    console.log(`📊 Fetching Firebase bets for ${dateToQuery} (current hour: ${currentHour})`);
+    
+    // Simple query - just get all bets and filter in memory to avoid index issues
     const unsubscribe = onSnapshot(
-      q,
+      collection(db, 'bets'),
       (snapshot) => {
-        const fetchedBets = snapshot.docs
+        const allBets = snapshot.docs
           .map(doc => ({
             id: doc.id,
             ...doc.data()
           }))
+          .filter(bet => bet.date === dateToQuery) // Filter for today's date
           .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp desc
         
-        console.log(`✅ Loaded ${fetchedBets.length} bets from Firebase for ${today}`);
-        setBets(fetchedBets);
+        console.log(`✅ Loaded ${allBets.length} bets from Firebase for ${dateToQuery}`);
+        console.log('Bets:', allBets.map(b => `${b.game?.awayTeam} @ ${b.game?.homeTeam}`));
+        setBets(allBets);
         setLoading(false);
       },
       (err) => {
