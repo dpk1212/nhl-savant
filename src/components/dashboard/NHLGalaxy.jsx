@@ -52,8 +52,8 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
       const xGD = xGF - xGA;
 
       // Normalize positions with safe range to prevent cutoff
-      // Mobile needs more padding due to smaller screen
-      const paddingPercent = isMobile ? 15 : 10;
+      // Mobile needs significantly more padding due to smaller screen and team orbs
+      const paddingPercent = isMobile ? 20 : 10;
       const rangePercent = 100 - (paddingPercent * 2);
       
       // X-axis: Higher xGF (better offense) = further right
@@ -570,13 +570,16 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                   zIndex: isActive ? 100 : 10
                 }}
               >
-                {/* Regression arrow */}
+                {/* Regression arrow - Points toward direction of regression on graph */}
                 {team.regressionDirection && (
                   <motion.div
-                    initial={{ opacity: 0, y: 0 }}
+                    initial={{ opacity: 0, x: 0, y: 0 }}
                     animate={{
                       opacity: [0.5, 1, 0.5],
-                      y: team.regressionDirection === 'up' ? [-10, -20, -10] : [10, 20, 10]
+                      // 'up' = will improve = move toward bottom-right (ELITE ZONE)
+                      // 'down' = will decline = move toward top-left (DANGER ZONE)
+                      x: team.regressionDirection === 'up' ? [5, 10, 5] : [-5, -10, -5],
+                      y: team.regressionDirection === 'up' ? [5, 10, 5] : [-5, -10, -5]
                     }}
                     transition={{
                       duration: 2,
@@ -585,19 +588,18 @@ const NHLGalaxy = ({ dataProcessor, isMobile }) => {
                     }}
                     style={{
                       position: 'absolute',
-                      top: team.regressionDirection === 'up' ? '-30px' : 'auto',
-                      bottom: team.regressionDirection === 'down' ? '-30px' : 'auto',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
+                      // Position arrow diagonally
+                      top: team.regressionDirection === 'up' ? 'auto' : '-25px',
+                      bottom: team.regressionDirection === 'up' ? '-25px' : 'auto',
+                      left: team.regressionDirection === 'up' ? 'auto' : '-25px',
+                      right: team.regressionDirection === 'up' ? '-25px' : 'auto',
                       color: team.regressionDirection === 'up' ? '#10B981' : '#EF4444',
-                      filter: `drop-shadow(0 0 8px ${team.regressionDirection === 'up' ? '#10B981' : '#EF4444'})`
+                      filter: `drop-shadow(0 0 8px ${team.regressionDirection === 'up' ? '#10B981' : '#EF4444'})`,
+                      // Rotate arrow to point diagonally
+                      transform: team.regressionDirection === 'up' ? 'rotate(-45deg)' : 'rotate(135deg)'
                     }}
                   >
-                    {team.regressionDirection === 'up' ? (
-                      <TrendingUp size={20} strokeWidth={3} />
-                    ) : (
-                      <TrendingDown size={20} strokeWidth={3} />
-                    )}
+                    <TrendingUp size={20} strokeWidth={3} />
                   </motion.div>
                 )}
 

@@ -64,10 +64,10 @@ const Observatory = ({ dataProcessor, isMobile }) => {
     return teams.map(team => ({
       team: team.team,
       name: team.name || team.team,
-      // X: Offensive xG/60 (10-90% of width for padding)
-      x: normalizeToRange(team.xGF_per60 || 0, minXGF, maxXGF, 10, 90),
-      // Y: Defensive xG/60 (inverted - lower is better, so flip)
-      y: normalizeToRange(team.xGA_per60 || 0, minXGA, maxXGA, 90, 10),
+      // X: Offensive xG/60 (mobile needs more padding: 15-85% vs 10-90%)
+      x: normalizeToRange(team.xGF_per60 || 0, minXGF, maxXGF, isMobile ? 15 : 10, isMobile ? 85 : 90),
+      // Y: Defensive xG/60 (inverted - lower is better, so flip, with mobile padding)
+      y: normalizeToRange(team.xGA_per60 || 0, minXGA, maxXGA, isMobile ? 85 : 90, isMobile ? 15 : 10),
       // Size: PDO (20-60px range)
       size: normalizeToRange(team.pdo || 100, minPDO, maxPDO, 20, 60),
       color: getPerformanceColor(team),
