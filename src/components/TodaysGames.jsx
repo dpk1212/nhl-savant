@@ -1598,12 +1598,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     console.log(`🥅 TodaysGames getGoalieForTeam: ${goalieData.goalie} (${teamCode})`, { found: !!stats, hasProcessor: !!goalieProcessor });
     
     // Return goalie with or without stats
-    return {
+    const result = {
       name: goalieData.goalie,
       team: teamCode,
       confirmed: true,
       ...(stats || {}) // Spread stats if available
     };
+    console.log(`   📊 Returning goalie object:`, { name: result.name, hasGSAE: result.gsae !== undefined, gsae: result.gsae });
+    return result;
   };
   
   // Calculate opportunities with consistent logic
