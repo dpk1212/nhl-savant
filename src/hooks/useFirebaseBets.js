@@ -21,11 +21,12 @@ export function useFirebaseBets() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    // Before 6 AM, use yesterday's date (games from night before)
+    // ALWAYS use yesterday's date if before noon (games from previous night)
+    // This matches the live scores logic which shows yesterday's games until 6 AM
     const currentHour = now.getHours();
-    const dateToQuery = currentHour < 6 ? yesterdayStr : today;
+    const dateToQuery = currentHour < 12 ? yesterdayStr : today;
     
-    console.log(`📊 Fetching Firebase bets for ${dateToQuery} (current hour: ${currentHour})`);
+    console.log(`📊 Fetching Firebase bets for ${dateToQuery} (current hour: ${currentHour}, today: ${today}, yesterday: ${yesterdayStr})`);
     
     // Simple query - just get all bets and filter in memory to avoid index issues
     const unsubscribe = onSnapshot(
