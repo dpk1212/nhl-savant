@@ -123,10 +123,9 @@ const AdvancedMatchupDetails = ({
         hits.push(`📈 ${homeTeam} PDO ${homePDO.toFixed(1)} (unlucky — ${impact})`);
       }
     }
-    }
-      
-      return hits.slice(0, 3); // Max 3 quick hits
-    } catch (error) {
+    
+    return hits.slice(0, 3); // Max 3 quick hits
+  } catch (error) {
       console.error('Quick Hits generation error:', error);
       // Return empty array if generation fails - component will still render
       return [];
