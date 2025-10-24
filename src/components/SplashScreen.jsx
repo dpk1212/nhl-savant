@@ -5,7 +5,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Text, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import {
@@ -157,60 +156,8 @@ function ParticleExplosion({ phase, onComplete }) {
   );
 }
 
-// Floating Stats
-function FloatingStats({ phase }) {
-  if (phase !== 2) return null;
-  
-  return (
-    <>
-      <Text
-        position={[-2, 1.5, 0]}
-        fontSize={0.3}
-        color="#60A5FA"
-        anchorX="center"
-        anchorY="middle"
-      >
-        4 GAMES
-      </Text>
-      <Text
-        position={[0, 1, 0]}
-        fontSize={0.3}
-        color="#3B82F6"
-        anchorX="center"
-        anchorY="middle"
-      >
-        +EV: 4
-      </Text>
-      <Text
-        position={[2, 0.5, 0]}
-        fontSize={0.3}
-        color="#D4AF37"
-        anchorX="center"
-        anchorY="middle"
-      >
-        ELITE: 3
-      </Text>
-    </>
-  );
-}
-
-// Logo Text
-function LogoText({ phase }) {
-  if (phase !== 3) return null;
-  
-  return (
-    <Text
-      position={[0, 0, 0]}
-      fontSize={0.8}
-      color="#D4AF37"
-      anchorX="center"
-      anchorY="middle"
-      letterSpacing={0.05}
-    >
-      NHL SAVANT
-    </Text>
-  );
-}
+// Floating Stats - Removed Text components to fix Suspense error
+// Using HTML overlays instead (see main component)
 
 // Camera Animation
 function CameraAnimation({ phase }) {
@@ -257,9 +204,7 @@ function Scene({ phase, onParticleComplete }) {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <RinkTunnel phase={phase} />
       <ProbabilityWave phase={phase} />
-      <FloatingStats phase={phase} />
       <ParticleExplosion phase={phase} onComplete={onParticleComplete} />
-      <LogoText phase={phase} />
     </>
   );
 }
@@ -317,6 +262,80 @@ export default function SplashScreen({ onComplete }) {
         <Scene phase={phase} onParticleComplete={() => {}} />
       </Canvas>
       
+      {/* HTML Text Overlays - Phase 2: Floating Stats */}
+      {phase === 2 && (
+        <div style={{
+          position: 'absolute',
+          top: '30%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '3rem',
+          opacity: fadeOut ? 0 : 1,
+          transition: 'opacity 0.5s ease',
+          animation: 'fadeIn 0.5s ease-in'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            color: '#60A5FA',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '800',
+            fontSize: '1.5rem',
+            letterSpacing: '0.05em',
+            textShadow: '0 0 20px rgba(96, 165, 250, 0.5)'
+          }}>
+            4 GAMES
+          </div>
+          <div style={{
+            textAlign: 'center',
+            color: '#3B82F6',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '800',
+            fontSize: '1.5rem',
+            letterSpacing: '0.05em',
+            textShadow: '0 0 20px rgba(59, 130, 246, 0.5)'
+          }}>
+            +EV: 4
+          </div>
+          <div style={{
+            textAlign: 'center',
+            color: '#D4AF37',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '800',
+            fontSize: '1.5rem',
+            letterSpacing: '0.05em',
+            textShadow: '0 0 20px rgba(212, 175, 55, 0.5)'
+          }}>
+            ELITE: 3
+          </div>
+        </div>
+      )}
+      
+      {/* HTML Text Overlays - Phase 3: Logo */}
+      {phase === 3 && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          opacity: fadeOut ? 0 : 1,
+          transition: 'opacity 0.5s ease',
+          animation: 'logoReveal 1s ease-out'
+        }}>
+          <h1 style={{
+            color: '#D4AF37',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '900',
+            fontSize: '4rem',
+            letterSpacing: '0.15em',
+            textShadow: '0 0 40px rgba(212, 175, 55, 0.8), 0 0 80px rgba(212, 175, 55, 0.4)',
+            margin: 0
+          }}>
+            NHL SAVANT
+          </h1>
+        </div>
+      )}
+      
       {/* Skip hint */}
       <div
         style={{
@@ -333,6 +352,26 @@ export default function SplashScreen({ onComplete }) {
       >
         Press any key or tap to skip
       </div>
+      
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes logoReveal {
+          from { 
+            opacity: 0; 
+            transform: scale(0.8);
+            filter: blur(10px);
+          }
+          to { 
+            opacity: 1; 
+            transform: scale(1);
+            filter: blur(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
