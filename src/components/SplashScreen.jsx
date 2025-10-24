@@ -1,229 +1,28 @@
 /**
- * 3D Welcome Splash Screen - "Ice Matrix Wave"
- * Three.js powered animated intro with wireframe rink and probability wave
+ * Premium Splash Screen - Minimal, Fast, Elegant
+ * Apple/Stripe/Linear inspired - First-class experience
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
-import gsap from 'gsap';
-import {
-  waveVertexShader,
-  waveFragmentShader,
-  particleVertexShader,
-  particleFragmentShader,
-} from '../shaders/waveShader';
+import { useEffect, useState } from 'react';
 
-// Wireframe Hockey Rink Tunnel
-function RinkTunnel({ phase }) {
-  const meshRef = useRef();
-  
-  useEffect(() => {
-    if (!meshRef.current) return;
-    
-    // Create custom rink geometry
-    const geometry = new THREE.BufferGeometry();
-    const vertices = [];
-    const segments = 50;
-    const radius = 3;
-    
-    // Create tunnel rings
-    for (let i = 0; i < segments; i++) {
-      const z = (i / segments) * 20 - 10;
-      const points = 24;
-      
-      for (let j = 0; j <= points; j++) {
-        const angle = (j / points) * Math.PI * 2;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius * 0.6; // Hockey rink oval shape
-        vertices.push(x, y, z);
-      }
-    }
-    
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    meshRef.current.geometry = geometry;
-  }, []);
-  
-  useFrame((state) => {
-    if (meshRef.current && phase === 1) {
-      meshRef.current.rotation.z += 0.002;
-    }
-  });
-  
-  return (
-    <points ref={meshRef}>
-      <pointsMaterial
-        color="#3B82F6"
-        size={0.05}
-        transparent
-        opacity={phase === 1 ? 1 : 0}
-      />
-    </points>
-  );
-}
-
-// Probability Wave
-function ProbabilityWave({ phase }) {
-  const meshRef = useRef();
-  const uniforms = useRef({
-    uTime: { value: 0 },
-    uAmplitude: { value: 0.5 },
-    uFrequency: { value: 2.0 },
-    uColorStart: { value: new THREE.Color('#3B82F6') }, // Blue
-    uColorEnd: { value: new THREE.Color('#D4AF37') },   // Gold
-  });
-  
-  useFrame((state) => {
-    if (meshRef.current && phase === 2) {
-      uniforms.current.uTime.value = state.clock.elapsedTime;
-    }
-  });
-  
-  return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 3, 0, 0]} position={[0, -1, 0]}>
-      <planeGeometry args={[8, 8, 64, 64]} />
-      <shaderMaterial
-        vertexShader={waveVertexShader}
-        fragmentShader={waveFragmentShader}
-        uniforms={uniforms.current}
-        transparent
-        opacity={phase === 2 ? 1 : 0}
-      />
-    </mesh>
-  );
-}
-
-// Particle Explosion
-function ParticleExplosion({ phase, onComplete }) {
-  const particlesRef = useRef();
-  const [particleCount] = useState(2000);
-  
-  useEffect(() => {
-    if (!particlesRef.current) return;
-    
-    const geometry = particlesRef.current.geometry;
-    const positions = new Float32Array(particleCount * 3);
-    const scales = new Float32Array(particleCount);
-    const velocities = new Float32Array(particleCount * 3);
-    
-    for (let i = 0; i < particleCount; i++) {
-      // Start in center
-      positions[i * 3] = (Math.random() - 0.5) * 2;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 2;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
-      
-      scales[i] = Math.random();
-      
-      // Explosion velocities
-      velocities[i * 3] = (Math.random() - 0.5) * 3;
-      velocities[i * 3 + 1] = (Math.random() - 0.5) * 3;
-      velocities[i * 3 + 2] = (Math.random() - 0.5) * 3;
-    }
-    
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
-    geometry.setAttribute('aVelocity', new THREE.BufferAttribute(velocities, 3));
-  }, [particleCount]);
-  
-  const uniforms = useRef({
-    uTime: { value: 0 },
-    uSize: { value: 8.0 },
-  });
-  
-  useFrame((state) => {
-    if (particlesRef.current && phase === 3) {
-      uniforms.current.uTime.value = (state.clock.elapsedTime - 2.5) * 2;
-      
-      if (uniforms.current.uTime.value > 1.5 && onComplete) {
-        onComplete();
-      }
-    }
-  });
-  
-  return (
-    <points ref={particlesRef}>
-      <bufferGeometry />
-      <shaderMaterial
-        vertexShader={particleVertexShader}
-        fragmentShader={particleFragmentShader}
-        uniforms={uniforms.current}
-        transparent
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-        opacity={phase === 3 ? 1 : 0}
-      />
-    </points>
-  );
-}
-
-// Floating Stats - Removed Text components to fix Suspense error
-// Using HTML overlays instead (see main component)
-
-// Camera Animation
-function CameraAnimation({ phase }) {
-  const { camera } = useThree();
-  
-  useEffect(() => {
-    const timeline = gsap.timeline();
-    
-    // Phase 1: Fly through rink tunnel (0-1s)
-    timeline.to(camera.position, {
-      z: -5,
-      duration: 1,
-      ease: 'power2.inOut',
-    });
-    
-    // Phase 2: Pull back for wave view (1-2.5s)
-    timeline.to(camera.position, {
-      z: 5,
-      y: 3,
-      duration: 1.5,
-      ease: 'power1.out',
-    });
-    
-    // Phase 3: Center for explosion (2.5-3.5s)
-    timeline.to(camera.position, {
-      z: 4,
-      y: 0,
-      duration: 1,
-      ease: 'power2.inOut',
-    });
-    
-    return () => timeline.kill();
-  }, [camera]);
-  
-  return null;
-}
-
-// Main Scene
-function Scene({ phase, onParticleComplete }) {
-  return (
-    <>
-      <CameraAnimation phase={phase} />
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
-      <RinkTunnel phase={phase} />
-      <ProbabilityWave phase={phase} />
-      <ParticleExplosion phase={phase} onComplete={onParticleComplete} />
-    </>
-  );
-}
-
-// Main Component
 export default function SplashScreen({ onComplete }) {
-  const [phase, setPhase] = useState(1);
-  const [fadeOut, setFadeOut] = useState(false);
-  
+  const [phase, setPhase] = useState('fade-in'); // fade-in, reveal, fade-out
+
   useEffect(() => {
-    const timer1 = setTimeout(() => setPhase(2), 1000);
-    const timer2 = setTimeout(() => setPhase(3), 2500);
-    const timer3 = setTimeout(() => setFadeOut(true), 3500);
-    const timer4 = setTimeout(() => onComplete(), 4000);
+    // Phase 1: Fade in (0-0.5s)
+    const timer1 = setTimeout(() => setPhase('reveal'), 300);
     
-    // Skip on any key press or click
-    const handleSkip = () => {
-      setFadeOut(true);
-      setTimeout(onComplete, 500);
+    // Phase 2: Reveal (0.5-1.5s)
+    const timer2 = setTimeout(() => setPhase('fade-out'), 1500);
+    
+    // Phase 3: Complete (1.5-2s)
+    const timer3 = setTimeout(() => onComplete(), 2000);
+    
+    // Skip on any interaction
+    const handleSkip = (e) => {
+      e.preventDefault();
+      setPhase('fade-out');
+      setTimeout(onComplete, 300);
     };
     
     window.addEventListener('keydown', handleSkip);
@@ -234,145 +33,94 @@ export default function SplashScreen({ onComplete }) {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
-      clearTimeout(timer4);
       window.removeEventListener('keydown', handleSkip);
       window.removeEventListener('click', handleSkip);
       window.removeEventListener('touchstart', handleSkip);
     };
   }, [onComplete]);
-  
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 9999,
-        background: '#000',
-        opacity: fadeOut ? 0 : 1,
-        transition: 'opacity 0.5s ease-out',
-      }}
-    >
-      <Canvas
-        camera={{ position: [0, 0, 10], fov: 75 }}
-        gl={{ antialias: true, alpha: false }}
-      >
-        <Scene phase={phase} onParticleComplete={() => {}} />
-      </Canvas>
-      
-      {/* HTML Text Overlays - Phase 2: Floating Stats */}
-      {phase === 2 && (
-        <div style={{
-          position: 'absolute',
-          top: '30%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          gap: '3rem',
-          opacity: fadeOut ? 0 : 1,
-          transition: 'opacity 0.5s ease',
-          animation: 'fadeIn 0.5s ease-in'
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      zIndex: 9999,
+      background: 'linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: phase === 'fade-out' ? 0 : 1,
+      transition: 'opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+    }}>
+      {/* Logo Container */}
+      <div style={{
+        textAlign: 'center',
+        opacity: phase === 'fade-in' ? 0 : 1,
+        transform: phase === 'fade-in' ? 'translateY(20px)' : 'translateY(0)',
+        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}>
+        {/* Main Logo */}
+        <h1 style={{
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          fontSize: 'clamp(2.5rem, 8vw, 5rem)',
+          fontWeight: '900',
+          letterSpacing: '-0.03em',
+          margin: 0,
+          marginBottom: '0.5rem',
+          background: 'linear-gradient(135deg, #ffffff 0%, #a0aec0 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          textFillColor: 'transparent',
         }}>
-          <div style={{
-            textAlign: 'center',
-            color: '#60A5FA',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '800',
-            fontSize: '1.5rem',
-            letterSpacing: '0.05em',
-            textShadow: '0 0 20px rgba(96, 165, 250, 0.5)'
-          }}>
-            4 GAMES
-          </div>
-          <div style={{
-            textAlign: 'center',
-            color: '#3B82F6',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '800',
-            fontSize: '1.5rem',
-            letterSpacing: '0.05em',
-            textShadow: '0 0 20px rgba(59, 130, 246, 0.5)'
-          }}>
-            +EV: 4
-          </div>
-          <div style={{
-            textAlign: 'center',
-            color: '#D4AF37',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '800',
-            fontSize: '1.5rem',
-            letterSpacing: '0.05em',
-            textShadow: '0 0 20px rgba(212, 175, 55, 0.5)'
-          }}>
-            ELITE: 3
-          </div>
-        </div>
-      )}
-      
-      {/* HTML Text Overlays - Phase 3: Logo */}
-      {phase === 3 && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          opacity: fadeOut ? 0 : 1,
-          transition: 'opacity 0.5s ease',
-          animation: 'logoReveal 1s ease-out'
-        }}>
-          <h1 style={{
-            color: '#D4AF37',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '900',
-            fontSize: '4rem',
-            letterSpacing: '0.15em',
-            textShadow: '0 0 40px rgba(212, 175, 55, 0.8), 0 0 80px rgba(212, 175, 55, 0.4)',
-            margin: 0
-          }}>
-            NHL SAVANT
-          </h1>
-        </div>
-      )}
-      
-      {/* Skip hint */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          NHL SAVANT
+        </h1>
+        
+        {/* Tagline */}
+        <p style={{
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
+          fontWeight: '500',
+          letterSpacing: '0.1em',
+          margin: 0,
           color: 'rgba(255, 255, 255, 0.5)',
-          fontSize: '0.875rem',
-          fontFamily: 'Inter, sans-serif',
-          opacity: fadeOut ? 0 : 1,
-          transition: 'opacity 0.3s ease',
-        }}
-      >
-        Press any key or tap to skip
+          textTransform: 'uppercase',
+          opacity: phase === 'reveal' ? 1 : 0,
+          transform: phase === 'reveal' ? 'translateY(0)' : 'translateY(10px)',
+          transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s'
+        }}>
+          Advanced NHL Analytics
+        </p>
+        
+        {/* Subtle accent line */}
+        <div style={{
+          width: phase === 'reveal' ? '120px' : '0',
+          height: '2px',
+          background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent)',
+          margin: '1.5rem auto 0',
+          transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s'
+        }} />
       </div>
       
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes logoReveal {
-          from { 
-            opacity: 0; 
-            transform: scale(0.8);
-            filter: blur(10px);
-          }
-          to { 
-            opacity: 1; 
-            transform: scale(1);
-            filter: blur(0);
-          }
-        }
-      `}</style>
+      {/* Skip hint */}
+      <div style={{
+        position: 'absolute',
+        bottom: '2rem',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: '0.75rem',
+        fontWeight: '500',
+        color: 'rgba(255, 255, 255, 0.3)',
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        opacity: phase === 'reveal' ? 1 : 0,
+        transition: 'opacity 0.5s ease 0.6s'
+      }}>
+        Press any key to skip
+      </div>
     </div>
   );
 }
-
