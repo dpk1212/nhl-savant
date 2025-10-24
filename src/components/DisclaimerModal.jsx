@@ -12,7 +12,9 @@ const DisclaimerModal = () => {
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
 
   useEffect(() => {
-    // Check if user has previously acknowledged
+    // USER TRACKING: Check if user has previously acknowledged
+    // Once accepted, modal will NEVER show again (stored in browser localStorage)
+    // User can clear localStorage manually to see modal again (for testing)
     const acknowledged = localStorage.getItem('nhl_savant_disclaimer_acknowledged');
     if (!acknowledged) {
       setIsVisible(true);
@@ -25,7 +27,9 @@ const DisclaimerModal = () => {
       return;
     }
 
-    // Save acknowledgment
+    // PERMANENT SAVE: Once user accepts, they will NEVER see this modal again
+    // Stored in browser localStorage (persists across sessions)
+    // Only cleared if user manually clears browser data or localStorage
     localStorage.setItem('nhl_savant_disclaimer_acknowledged', 'true');
     localStorage.setItem('nhl_savant_disclaimer_date', new Date().toISOString());
     setIsVisible(false);
@@ -65,7 +69,7 @@ const DisclaimerModal = () => {
         maxHeight: '85vh',
         backgroundColor: 'var(--color-bg-secondary)',
         borderRadius: '16px',
-        border: '2px solid rgba(239, 68, 68, 0.4)',
+        border: '2px solid rgba(251, 191, 36, 0.4)',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
         zIndex: 9999,
         display: 'flex',
@@ -75,20 +79,20 @@ const DisclaimerModal = () => {
         {/* Header */}
         <div style={{
           padding: '1.5rem',
-          borderBottom: '2px solid rgba(239, 68, 68, 0.3)',
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)'
+          borderBottom: '2px solid rgba(251, 191, 36, 0.3)',
+          background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)'
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
             gap: '1rem'
           }}>
-            <AlertTriangle size={32} color="#EF4444" style={{ flexShrink: 0 }} />
+            <AlertTriangle size={32} color="#F59E0B" style={{ flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <h2 style={{
                 fontSize: '1.5rem',
                 fontWeight: '900',
-                color: '#EF4444',
+                color: '#F59E0B',
                 margin: '0 0 0.5rem 0',
                 textTransform: 'uppercase',
                 letterSpacing: '0.02em'
@@ -115,8 +119,8 @@ const DisclaimerModal = () => {
         }}>
           {/* Warning Box */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.05) 100%)',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
             borderRadius: '8px',
             padding: '1rem',
             marginBottom: '1.5rem'

@@ -20,8 +20,8 @@ const LegalFooter = () => {
       }}>
         {/* Critical Disclaimer Banner */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 100%)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
+          background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.05) 100%)',
+          border: '1px solid rgba(251, 191, 36, 0.3)',
           borderRadius: '8px',
           padding: '1rem 1.25rem',
           marginBottom: '1.5rem',
@@ -29,7 +29,7 @@ const LegalFooter = () => {
           gap: '1rem',
           alignItems: 'flex-start'
         }}>
-          <AlertTriangle size={20} color="#EF4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <AlertTriangle size={20} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div style={{ flex: 1 }}>
             <p style={{
               fontSize: '0.813rem',

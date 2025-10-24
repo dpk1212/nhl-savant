@@ -2152,6 +2152,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 game={game}
                 awayTeam={game.awayTeam}
                 homeTeam={game.homeTeam}
+                dataProcessor={dataProcessor}
                 isMobile={isMobile}
               />
             </>
