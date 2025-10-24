@@ -15,6 +15,9 @@ import PerformanceDashboard from './components/PerformanceDashboard';
 import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
+import LegalFooter from './components/LegalFooter';
+import DisclaimerModal from './components/DisclaimerModal';
+import Disclaimer from './pages/Disclaimer';
 
 function App() {
   const [dataProcessor, setDataProcessor] = useState(null);
@@ -157,6 +160,9 @@ function App() {
     <ErrorBoundary>
       <Router>
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)' }}>
+          {/* First-time user disclaimer modal */}
+          <DisclaimerModal />
+          
           <Navigation />
           <main>
             <Routes>
@@ -173,8 +179,12 @@ function App() {
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
               <Route path="/performance" element={<PerformanceDashboard />} />
+              <Route path="/disclaimer" element={<Disclaimer />} />
             </Routes>
           </main>
+          
+          {/* Legal footer on every page */}
+          <LegalFooter />
         </div>
       </Router>
     </ErrorBoundary>
