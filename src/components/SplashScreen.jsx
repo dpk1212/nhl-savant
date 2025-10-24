@@ -205,7 +205,6 @@ function LogoText({ phase }) {
       color="#D4AF37"
       anchorX="center"
       anchorY="middle"
-      font="/fonts/Inter-Bold.woff"
       letterSpacing={0.05}
     >
       NHL SAVANT
