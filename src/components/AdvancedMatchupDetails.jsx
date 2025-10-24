@@ -30,12 +30,13 @@ const AdvancedMatchupDetails = ({
   // Generate INSIGHTFUL bet-specific Quick Hits
   // Priority: Situational factors → Key matchup advantages → Regression opportunities
   const generateQuickHits = () => {
-    const hits = [];
-    const betType = bestEdge?.type || 'TOTAL';
-    
-    // PRIORITY 1: Check for situational factors (if dataProcessor available)
-    // These are HIGH IMPACT and users want to know about them
-    if (dataProcessor?.scheduleHelper && game?.date) {
+    try {
+      const hits = [];
+      const betType = bestEdge?.type || 'TOTAL';
+      
+      // PRIORITY 1: Check for situational factors (if dataProcessor available)
+      // These are HIGH IMPACT and users want to know about them
+      if (dataProcessor?.scheduleHelper && game?.date) {
       const scheduleHelper = dataProcessor.scheduleHelper;
       
       // Check away team situation
@@ -120,9 +121,14 @@ const AdvancedMatchupDetails = ({
         const impact = betType.includes('OVER') ? 'supports OVER' : 'due to bounce back';
         hits.push(`📈 ${homeTeam} PDO ${homePDO.toFixed(1)} (unlucky — ${impact})`);
       }
+      }
+      
+      return hits.slice(0, 3); // Max 3 quick hits
+    } catch (error) {
+      console.error('Quick Hits generation error:', error);
+      // Return empty array if generation fails - component will still render
+      return [];
     }
-    
-    return hits.slice(0, 3); // Max 3 quick hits
   };
   
   const quickHits = !isExpanded ? generateQuickHits() : [];
