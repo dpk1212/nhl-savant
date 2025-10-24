@@ -21,12 +21,12 @@ const Navigation = () => {
       position: 'sticky',
       top: 0,
       zIndex: 1000,
-      background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.95) 0%, rgba(17, 24, 39, 0.98) 100%)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderBottom: '1px solid rgba(212, 175, 55, 0.15)',
-      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(212, 175, 55, 0.1) inset',
-      padding: '1rem 1.5rem'
+      background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(17, 24, 39, 0.95) 100%)',
+      backdropFilter: 'blur(24px)',
+      WebkitBackdropFilter: 'blur(24px)',
+      borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(212, 175, 55, 0.15) inset, 0 8px 32px rgba(212, 175, 55, 0.08)',
+      padding: '0.875rem 1.5rem'
     }}>
       <div style={{
         maxWidth: '1400px',
@@ -35,10 +35,10 @@ const Navigation = () => {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        {/* Premium Logo/Title */}
+        {/* PREMIUM Logo/Title - Enhanced */}
         <Link to="/" style={{
-          fontSize: '1.5rem',
-          fontWeight: '700',
+          fontSize: '1.375rem',
+          fontWeight: '900',
           background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -46,25 +46,39 @@ const Navigation = () => {
           textDecoration: 'none',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.625rem',
-          letterSpacing: '0.02em',
-          textShadow: '0 0 30px rgba(212, 175, 55, 0.3)',
+          gap: '0.75rem',
+          letterSpacing: '-0.01em',
           transition: 'all 0.3s ease',
-          position: 'relative'
+          position: 'relative',
+          filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.3)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.filter = 'brightness(1.2)';
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.filter = 'drop-shadow(0 0 30px rgba(212, 175, 55, 0.5)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) brightness(1.15)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.filter = 'brightness(1)';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.filter = 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.3)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))';
         }}>
-          <span style={{ 
-            fontSize: '1.75rem',
-            filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.5))'
-          }}>🏒</span>
-          NHL Savant
+          {/* Premium icon container */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '36px',
+            height: '36px',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(255, 215, 0, 0.15) 100%)',
+            borderRadius: '8px',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            boxShadow: '0 0 16px rgba(212, 175, 55, 0.25)',
+            transition: 'all 0.3s ease'
+          }}>
+            <span style={{ 
+              fontSize: '1.25rem',
+              filter: 'drop-shadow(0 0 6px rgba(212, 175, 55, 0.6))'
+            }}>🏒</span>
+          </div>
+          <span style={{ fontWeight: '900', letterSpacing: '-0.02em' }}>NHL Savant</span>
         </Link>
 
         {/* Premium Desktop Navigation */}
