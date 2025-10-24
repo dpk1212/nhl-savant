@@ -804,9 +804,38 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
           }
           
           if (isTotal) {
-            // TOTAL-specific: Focus on goal impact
+            // TOTAL-specific: REWRITTEN to be specific and helpful
             const direction = factor.impact > 0 ? 'OVER' : 'UNDER';
-            return `${factor.explanation} This pushes the total ${direction} by ~${Math.abs(factor.impact).toFixed(2)} goals.`;
+            const impactAmount = Math.abs(factor.impact).toFixed(2);
+            
+            // Build context-specific explanation
+            if (factor.name.includes('Expected Goals')) {
+              // Show which team has offense/defense advantage
+              const awayXGF = factor.awayMetric?.value || 0;
+              const homeXGF = factor.homeMetric?.value || 0;
+              const betterOffense = awayXGF > homeXGF ? game.awayTeam : game.homeTeam;
+              const offenseRank = Math.max(awayXGF, homeXGF) > 2.7 ? 'elite' : Math.max(awayXGF, homeXGF) > 2.5 ? 'strong' : 'solid';
+              
+              return `${betterOffense}'s ${offenseRank} offense (${Math.max(awayXGF, homeXGF).toFixed(2)} xGF/60) creates ${impactAmount}-goal ${direction} edge.`;
+            } else if (factor.name.includes('Against') || factor.name.includes('Defense')) {
+              // Show defensive advantage
+              const awayXGA = factor.awayMetric?.value || 0;
+              const homeXGA = factor.homeMetric?.value || 0;
+              const betterDefense = awayXGA < homeXGA ? game.awayTeam : game.homeTeam;
+              const defenseRank = Math.min(awayXGA, homeXGA) < 2.3 ? 'elite' : Math.min(awayXGA, homeXGA) < 2.5 ? 'strong' : 'solid';
+              
+              return `${betterDefense}'s ${defenseRank} defense (${Math.min(awayXGA, homeXGA).toFixed(2)} xGA/60) limits scoring, ${impactAmount}-goal ${direction} edge.`;
+            } else if (factor.name.includes('Power Play')) {
+              return `Special teams advantage creates ${impactAmount}-goal ${direction} edge.`;
+            } else if (factor.name.includes('PDO') || factor.name.includes('Regression')) {
+              const team = factor.impact < 0 ? 
+                (factor.awayMetric?.value > factor.homeMetric?.value ? game.awayTeam : game.homeTeam) :
+                (factor.awayMetric?.value < factor.homeMetric?.value ? game.awayTeam : game.homeTeam);
+              return `${team}'s regression indicators point toward ${impactAmount}-goal ${direction} edge.`;
+            }
+            
+            // Fallback with some context
+            return `${factor.name} matchup creates ${impactAmount}-goal ${direction} edge.`;
           }
           
           return factor.explanation; // fallback

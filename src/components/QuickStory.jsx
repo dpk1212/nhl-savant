@@ -171,35 +171,48 @@ const QuickStory = ({ game, bestEdge, factors, isMobile, dataProcessor }) => {
       }
       
     } else {
-      // Moneyline narrative - situational context + team advantage
+      // Moneyline narrative - situational context + team advantage WITH SPECIFICS
       const teamPick = pick.includes(awayTeam) ? awayTeam : homeTeam;
       const opponent = teamPick === awayTeam ? homeTeam : awayTeam;
       const pickContext = teamPick === awayTeam ? awayContext : homeContext;
+      const oppContext = teamPick === awayTeam ? homeContext : awayContext;
       const modelProb = (teamPick === awayTeam ? game.edges.moneyline?.away?.modelProb : game.edges.moneyline?.home?.modelProb) || 0;
       
       // Lead with situational edge if strong
       if (pickContext?.homecomingBoost > 0) {
-        narrative = `${teamPick} returning home after ${pickContext.tripLength}-game road trip with fresh legs and home crowd energy. `;
-      } else if (pickContext?.isB2B) {
-        narrative = `${teamPick} on back-to-back, but `;
+        narrative = `${teamPick} returns home after ${pickContext.tripLength}-game road trip with fresh legs (+${(pickContext.homecomingBoost * 100).toFixed(0)}% boost). `;
+      } else if (oppContext?.roadTripPenalty < -0.05) {
+        const oppAwayStreak = oppContext.awayStreak || 0;
+        narrative = `${opponent} fatigued on game ${oppAwayStreak + 1} of road trip (${(oppContext.roadTripPenalty * 100).toFixed(0)}% penalty), while `;
+      } else if (pickContext?.isB2B && !oppContext?.isB2B) {
+        narrative = `Despite back-to-back, ${teamPick} `;
       } else {
-        narrative = setupContext;
+        narrative = setupContext || '';
       }
       
-      // Add matchup advantages
+      // Add matchup advantages WITH TEAM NAMES AND CONTEXT
       if (topFactors.length > 0) {
         const topFactor = topFactors[0];
-        const pickAdvantage = teamPick === awayTeam ? topFactor.awayMetric.value : topFactor.homeMetric.value;
-        const oppValue = teamPick === awayTeam ? topFactor.homeMetric.value : topFactor.awayMetric.value;
+        const pickAdvantage = teamPick === awayTeam ? topFactor.awayMetric?.value : topFactor.homeMetric?.value;
+        const oppValue = teamPick === awayTeam ? topFactor.homeMetric?.value : topFactor.awayMetric?.value;
         
-        if (topFactor.name.includes('For') || topFactor.name.includes('GF')) {
-          narrative += `their offense (${pickAdvantage.toFixed(2)} ${topFactor.name}) significantly outpaces ${opponent}'s (${oppValue.toFixed(2)}). `;
-        } else {
-          narrative += `they hold a clear edge in ${topFactor.name.toLowerCase()}. `;
+        if (pickAdvantage && oppValue) {
+          if (topFactor.name.includes('Expected Goals') || topFactor.name.includes('xGF')) {
+            const pickRank = pickAdvantage > 2.7 ? 'elite' : pickAdvantage > 2.5 ? 'strong' : 'solid';
+            narrative += `${teamPick}'s ${pickRank} offense (${pickAdvantage.toFixed(2)} xGF/60) outmatches ${opponent}'s attack (${oppValue.toFixed(2)}). `;
+          } else if (topFactor.name.includes('Against') || topFactor.name.includes('Defense') || topFactor.name.includes('xGA')) {
+            const pickRank = pickAdvantage < 2.3 ? 'elite' : pickAdvantage < 2.5 ? 'strong' : 'solid';
+            narrative += `${teamPick}'s ${pickRank} defense (${pickAdvantage.toFixed(2)} xGA/60) limits ${opponent} (${oppValue.toFixed(2)} xGF/60). `;
+          } else {
+            // Generic factor - be specific about which team
+            narrative += `${teamPick} holds clear statistical advantage in ${topFactor.name.toLowerCase()}. `;
+          }
         }
       }
       
-      narrative += `Model gives ${teamPick} ${(modelProb * 100).toFixed(0)}% win probability — value at current odds.`;
+      // Clear conclusion with probability
+      const winProb = (modelProb * 100).toFixed(0);
+      narrative += `Model projects ${teamPick} at ${winProb}% win probability — strong value at current odds.`;
     }
     
       return narrative;
