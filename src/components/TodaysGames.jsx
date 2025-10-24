@@ -2146,7 +2146,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 );
               })()}
               
-              {/* 2.5. Quick Story - Plain language explanation */}
+              {/* 2.5. Quick Story - Plain language explanation WITH SITUATIONAL CONTEXT */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (bestEdge && analyticsData && analyticsData.factors) {
@@ -2156,6 +2156,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       bestEdge={bestEdge}
                       factors={analyticsData.factors}
                       isMobile={isMobile}
+                      dataProcessor={dataProcessor}
                     />
                   );
                 }

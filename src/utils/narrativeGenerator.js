@@ -55,95 +55,124 @@ export function generateBetNarrative(game, edge, dataProcessor) {
 
     if (isOver) {
       icon = '🔥';
-      headline = `High-scoring game expected: ${predictedTotal.toFixed(1)} total goals predicted (${difference.toFixed(1)} above market)`;
+      headline = `Offensive matchup projects ${predictedTotal.toFixed(1)} goals (market ${marketTotal.toFixed(1)})`;
       
-      // Identify offensive strengths
+      // Explain offensive matchup advantages
+      const awayOffenseRank = away_5v5.xGF_per60 > 2.7 ? 'elite' : away_5v5.xGF_per60 > 2.5 ? 'strong' : 'average';
+      const homeOffenseRank = home_5v5.xGF_per60 > 2.7 ? 'elite' : home_5v5.xGF_per60 > 2.5 ? 'strong' : 'average';
+      
       if (away_5v5.xGF_per60 > 2.5) {
-        bullets.push(`${getTeamName(awayTeam)}: Strong offense (${away_5v5.xGF_per60.toFixed(2)} xGF/60)`);
+        bullets.push(`✓ ${getTeamName(awayTeam)}: ${awayOffenseRank} offense generating ${away_5v5.xGF_per60.toFixed(2)} xGF/60 (quality chances)`);
       }
       if (home_5v5.xGF_per60 > 2.5) {
-        bullets.push(`${getTeamName(homeTeam)}: Strong offense (${home_5v5.xGF_per60.toFixed(2)} xGF/60)`);
+        bullets.push(`✓ ${getTeamName(homeTeam)}: ${homeOffenseRank} offense generating ${home_5v5.xGF_per60.toFixed(2)} xGF/60 (quality chances)`);
       }
       
-      // Identify defensive weaknesses
+      // Explain defensive vulnerabilities
       if (away_5v5.xGA_per60 > 2.7) {
-        bullets.push(`${getTeamName(awayTeam)}: Weak defense allows ${away_5v5.xGA_per60.toFixed(2)} xGA/60`);
+        const rank = away_5v5.xGA_per60 > 2.9 ? 'bottom-10' : 'below-average';
+        bullets.push(`✓ ${getTeamName(awayTeam)}: ${rank} defense bleeds ${away_5v5.xGA_per60.toFixed(2)} xGA/60 (allows dangerous looks)`);
       }
       if (home_5v5.xGA_per60 > 2.7) {
-        bullets.push(`${getTeamName(homeTeam)}: Weak defense allows ${home_5v5.xGA_per60.toFixed(2)} xGA/60`);
+        const rank = home_5v5.xGA_per60 > 2.9 ? 'bottom-10' : 'below-average';
+        bullets.push(`✓ ${getTeamName(homeTeam)}: ${rank} defense bleeds ${home_5v5.xGA_per60.toFixed(2)} xGA/60 (allows dangerous looks)`);
       }
 
-      // PP/PK matchups
+      // PP/PK matchup advantages
       if (away_PP && home_PK && away_PP.xGF_per60 > 6.0) {
-        bullets.push(`🏒 ${getTeamName(awayTeam)} elite PP (${away_PP.xGF_per60.toFixed(2)} xGF/60) vs weak PK`);
+        bullets.push(`⚡ ${getTeamName(awayTeam)} elite PP (${away_PP.xGF_per60.toFixed(1)} xGF/60) vs vulnerable PK = power play opportunities`);
       }
       if (home_PP && away_PK && home_PP.xGF_per60 > 6.0) {
-        bullets.push(`🏒 ${getTeamName(homeTeam)} elite PP (${home_PP.xGF_per60.toFixed(2)} xGF/60) vs weak PK`);
+        bullets.push(`⚡ ${getTeamName(homeTeam)} elite PP (${home_PP.xGF_per60.toFixed(1)} xGF/60) vs vulnerable PK = power play opportunities`);
       }
 
     } else {
       icon = '❄️';
-      headline = `Low-scoring defensive battle: ${predictedTotal.toFixed(1)} total goals predicted (${difference.toFixed(1)} below market)`;
+      headline = `Defensive structure projects ${predictedTotal.toFixed(1)} goals (market ${marketTotal.toFixed(1)})`;
       
-      // Identify defensive strengths
-      if (away_5v5.xGA_per60 < 2.3) {
-        bullets.push(`${getTeamName(awayTeam)}: Elite defense (${away_5v5.xGA_per60.toFixed(2)} xGA/60)`);
+      // Explain defensive strengths
+      const awayDefenseRank = away_5v5.xGA_per60 < 2.2 ? 'elite (top-10)' : away_5v5.xGA_per60 < 2.4 ? 'strong (top-third)' : 'solid';
+      const homeDefenseRank = home_5v5.xGA_per60 < 2.2 ? 'elite (top-10)' : home_5v5.xGA_per60 < 2.4 ? 'strong (top-third)' : 'solid';
+      
+      if (away_5v5.xGA_per60 < 2.4) {
+        bullets.push(`🛡️ ${getTeamName(awayTeam)}: ${awayDefenseRank} defense limits quality chances to ${away_5v5.xGA_per60.toFixed(2)} xGA/60`);
       }
-      if (home_5v5.xGA_per60 < 2.3) {
-        bullets.push(`${getTeamName(homeTeam)}: Elite defense (${home_5v5.xGA_per60.toFixed(2)} xGA/60)`);
+      if (home_5v5.xGA_per60 < 2.4) {
+        bullets.push(`🛡️ ${getTeamName(homeTeam)}: ${homeDefenseRank} defense limits quality chances to ${home_5v5.xGA_per60.toFixed(2)} xGA/60`);
       }
       
-      // Identify offensive weaknesses
-      if (away_5v5.xGF_per60 < 2.2) {
-        bullets.push(`${getTeamName(awayTeam)}: Struggling offense (${away_5v5.xGF_per60.toFixed(2)} xGF/60)`);
+      // Explain offensive struggles
+      if (away_5v5.xGF_per60 < 2.3) {
+        const issue = away_5v5.xGF_per60 < 2.0 ? 'bottom-10 offense' : 'struggling offense';
+        bullets.push(`✓ ${getTeamName(awayTeam)}: ${issue} generates only ${away_5v5.xGF_per60.toFixed(2)} xGF/60 (limited chances)`);
       }
-      if (home_5v5.xGF_per60 < 2.2) {
-        bullets.push(`${getTeamName(homeTeam)}: Struggling offense (${home_5v5.xGF_per60.toFixed(2)} xGF/60)`);
+      if (home_5v5.xGF_per60 < 2.3) {
+        const issue = home_5v5.xGF_per60 < 2.0 ? 'bottom-10 offense' : 'struggling offense';
+        bullets.push(`✓ ${getTeamName(homeTeam)}: ${issue} generates only ${home_5v5.xGF_per60.toFixed(2)} xGF/60 (limited chances)`);
       }
     }
 
-    // Add PDO regression insights
+    // Add PDO regression insights with betting context
     if (awayPDO > 102) {
-      bullets.push(`⚠️ ${getTeamName(awayTeam)} due for regression (PDO ${awayPDO.toFixed(1)} - unsustainably lucky)`);
+      const impact = isOver ? 'UNDER bet' : 'may regress';
+      bullets.push(`⚠️ ${getTeamName(awayTeam)}: PDO ${awayPDO.toFixed(1)} (hot shooting/goaltending luck unsustainable — favors ${impact})`);
     } else if (awayPDO < 98) {
-      bullets.push(`📈 ${getTeamName(awayTeam)} underperforming luck metrics (PDO ${awayPDO.toFixed(1)} - due to improve)`);
+      const impact = isOver ? 'OVER potential' : 'bounce-back candidate';
+      bullets.push(`📈 ${getTeamName(awayTeam)}: PDO ${awayPDO.toFixed(1)} (unlucky results should normalize — ${impact})`);
     }
     
     if (homePDO > 102) {
-      bullets.push(`⚠️ ${getTeamName(homeTeam)} due for regression (PDO ${homePDO.toFixed(1)} - unsustainably lucky)`);
+      const impact = isOver ? 'UNDER bet' : 'may regress';
+      bullets.push(`⚠️ ${getTeamName(homeTeam)}: PDO ${homePDO.toFixed(1)} (hot shooting/goaltending luck unsustainable — favors ${impact})`);
     } else if (homePDO < 98) {
-      bullets.push(`📈 ${getTeamName(homeTeam)} underperforming luck metrics (PDO ${homePDO.toFixed(1)} - due to improve)`);
+      const impact = isOver ? 'OVER potential' : 'bounce-back candidate';
+      bullets.push(`📈 ${getTeamName(homeTeam)}: PDO ${homePDO.toFixed(1)} (unlucky results should normalize — ${impact})`);
     }
 
   } else if (market === 'MONEYLINE') {
     const isAway = pick === getTeamName(awayTeam);
     const favoredTeam = isAway ? awayTeam : homeTeam;
+    const favoredTeamName = getTeamName(favoredTeam);
     const favoredTeam_5v5 = isAway ? away_5v5 : home_5v5;
     const underdog_5v5 = isAway ? home_5v5 : away_5v5;
+    const underdogTeam = isAway ? homeTeam : awayTeam;
+    const underdogName = getTeamName(underdogTeam);
     
     const winProb = edge.modelProb * 100;
     
     icon = isAway ? '✈️' : '🏠';
-    headline = `${pick} favored with ${winProb.toFixed(1)}% win probability (Model edge: ${edge.evPercent.toFixed(1)}% EV)`;
+    headline = `${pick}: ${winProb.toFixed(0)}% win probability creates value at current odds`;
     
-    bullets.push(`${pick}: Superior xG differential (+${(favoredTeam_5v5.xGF_per60 - favoredTeam_5v5.xGA_per60).toFixed(2)} xGD/60)`);
+    // Explain xG differential advantage
+    const xgDiff = (favoredTeam_5v5.xGF_per60 - favoredTeam_5v5.xGA_per60).toFixed(2);
+    const oppDiff = (underdog_5v5.xGF_per60 - underdog_5v5.xGA_per60).toFixed(2);
+    bullets.push(`✓ ${favoredTeamName}: +${xgDiff} xGD/60 vs ${underdogName}'s ${oppDiff} xGD/60 (controls play better)`);
     
+    // Explain specific matchup advantages
     if (favoredTeam_5v5.xGF_per60 > underdog_5v5.xGF_per60 + 0.3) {
-      bullets.push(`Offensive advantage: ${favoredTeam_5v5.xGF_per60.toFixed(2)} vs ${underdog_5v5.xGF_per60.toFixed(2)} xGF/60`);
+      const offensiveTier = favoredTeam_5v5.xGF_per60 > 2.7 ? 'elite' : 'superior';
+      bullets.push(`⚔️ Offense: ${favoredTeamName} ${offensiveTier} (${favoredTeam_5v5.xGF_per60.toFixed(2)} xGF) outpaces ${underdogName} (${underdog_5v5.xGF_per60.toFixed(2)} xGF)`);
     }
     
     if (favoredTeam_5v5.xGA_per60 < underdog_5v5.xGA_per60 - 0.3) {
-      bullets.push(`Defensive advantage: ${favoredTeam_5v5.xGA_per60.toFixed(2)} vs ${underdog_5v5.xGA_per60.toFixed(2)} xGA/60`);
+      const defensiveTier = favoredTeam_5v5.xGA_per60 < 2.3 ? 'elite' : 'superior';
+      bullets.push(`🛡️ Defense: ${favoredTeamName} ${defensiveTier} (${favoredTeam_5v5.xGA_per60.toFixed(2)} xGA) limits opponents better than ${underdogName} (${underdog_5v5.xGA_per60.toFixed(2)} xGA)`);
     }
 
+    // PDO regression angle for moneyline
     const favoredPDO = isAway ? awayPDO : homePDO;
+    const underdogPDO = isAway ? homePDO : awayPDO;
+    
     if (favoredPDO < 98) {
-      bullets.push(`📈 Regression play: PDO ${favoredPDO.toFixed(1)} suggests unlucky results should improve`);
+      bullets.push(`📈 Value angle: ${favoredTeamName} PDO ${favoredPDO.toFixed(1)} (been unlucky, results should improve)`);
+    } else if (underdogPDO > 102) {
+      bullets.push(`⚠️ Regression angle: ${underdogName} PDO ${underdogPDO.toFixed(1)} (overperforming, due to cool off)`);
     }
   }
 
-  // Add EV summary
-  bullets.push(`💰 Edge: ${edge.evPercent > 0 ? '+' : ''}${edge.evPercent.toFixed(1)}% EV at ${edge.odds > 0 ? '+' : ''}${edge.odds} odds`);
+  // Enhanced EV summary with confidence
+  const confidence = edge.evPercent > 10 ? 'ELITE' : edge.evPercent > 7 ? 'HIGH' : edge.evPercent > 5 ? 'GOOD' : 'MODERATE';
+  bullets.push(`💰 Value: ${edge.evPercent > 0 ? '+' : ''}${edge.evPercent.toFixed(1)}% EV at ${edge.odds > 0 ? '+' : ''}${edge.odds} | Confidence: ${confidence}`);
 
   return {
     icon,
