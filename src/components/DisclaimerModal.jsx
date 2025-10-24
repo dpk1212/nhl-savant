@@ -1,26 +1,15 @@
 /**
  * Disclaimer Modal Component
- * First-time user acknowledgment - must accept before using site
+ * Shown when user clicks first game card - must accept before expanding
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, Shield, X } from 'lucide-react';
 import { trackDisclaimerAccepted } from '../utils/analytics';
 import { Link } from 'react-router-dom';
 
-const DisclaimerModal = () => {
-  const [isVisible, setIsVisible] = useState(false);
+const DisclaimerModal = ({ isVisible, onAccept, onDecline }) => {
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
-
-  useEffect(() => {
-    // USER TRACKING: Check if user has previously acknowledged
-    // Once accepted, modal will NEVER show again (stored in browser localStorage)
-    // User can clear localStorage manually to see modal again (for testing)
-    const acknowledged = localStorage.getItem('nhl_savant_disclaimer_acknowledged');
-    if (!acknowledged) {
-      setIsVisible(true);
-    }
-  }, []);
 
   const handleAccept = () => {
     if (!hasAcknowledged) {
@@ -37,13 +26,17 @@ const DisclaimerModal = () => {
     // ANALYTICS: Track disclaimer acceptance
     trackDisclaimerAccepted();
     
-    setIsVisible(false);
+    if (onAccept) onAccept();
   };
 
   const handleDecline = () => {
-    // Redirect away or show message
-    alert('You must accept the terms to use NHL Savant. Redirecting...');
-    window.location.href = 'https://www.google.com';
+    if (onDecline) {
+      onDecline();
+    } else {
+      // Default behavior: redirect away
+      alert('You must accept the terms to use NHL Savant. Redirecting...');
+      window.location.href = 'https://www.google.com';
+    }
   };
 
   if (!isVisible) return null;
