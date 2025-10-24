@@ -15,9 +15,9 @@ export class ModelBacktester {
     
     console.log(`📊 Backtester initialized with ${gamesData.length} games`);
     if (scheduleHelper) {
-      console.log(`📅 B2B/rest adjustments: ENABLED`);
+      console.log(`📅 Situational adjustments: ENABLED (B2B, rest, road trip fatigue, homecoming boost)`);
     } else {
-      console.log(`📅 B2B/rest adjustments: DISABLED (no schedule data)`);
+      console.log(`📅 Situational adjustments: DISABLED (no schedule data)`);
     }
   }
 
