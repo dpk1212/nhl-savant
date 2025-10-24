@@ -7,13 +7,18 @@ import { getTeamCode } from './teamNameMapper.js';
  * Calculates Brier score, RMSE, calibration curves, and more
  */
 export class ModelBacktester {
-  constructor(teamsData, goaliesData, gamesData) {
+  constructor(teamsData, goaliesData, gamesData, scheduleHelper = null) {
     // Initialize processors
     const goalieProcessor = new GoalieProcessor(goaliesData);
-    this.dataProcessor = new NHLDataProcessor(teamsData, goalieProcessor);
+    this.dataProcessor = new NHLDataProcessor(teamsData, goalieProcessor, scheduleHelper);
     this.games = gamesData;
     
     console.log(`📊 Backtester initialized with ${gamesData.length} games`);
+    if (scheduleHelper) {
+      console.log(`📅 B2B/rest adjustments: ENABLED`);
+    } else {
+      console.log(`📅 B2B/rest adjustments: DISABLED (no schedule data)`);
+    }
   }
 
   /**
@@ -48,7 +53,15 @@ export class ModelBacktester {
         }
 
         // Get model prediction
-        const prediction = this.predictGame(game.home_team, game.away_team, withGoalie);
+        // CRITICAL: Pass actual starting goalies for proper testing
+        const prediction = this.predictGame(
+          game.home_team, 
+          game.away_team, 
+          withGoalie,
+          game.home_goalie || null,  // NEW: actual home goalie
+          game.away_goalie || null,  // NEW: actual away goalie
+          game.date || null          // NEW: game date for B2B/rest detection
+        );
 
         // Store results
         results.predictions.push({
@@ -117,9 +130,11 @@ export class ModelBacktester {
    * @param {string} homeTeamCode - Home team abbreviation
    * @param {string} awayTeamCode - Away team abbreviation
    * @param {boolean} withGoalie - Include goalie adjustment
+   * @param {string} homeGoalieName - Starting goalie for home team (optional)
+   * @param {string} awayGoalieName - Starting goalie for away team (optional)
    * @returns {Object} Prediction with scores and win probability
    */
-  predictGame(homeTeamCode, awayTeamCode, withGoalie = true) {
+  predictGame(homeTeamCode, awayTeamCode, withGoalie = true, homeGoalieName = null, awayGoalieName = null, gameDate = null) {
     // Temporarily disable goalie if testing without
     const originalGoalieProcessor = this.dataProcessor.goalieProcessor;
     if (!withGoalie) {
@@ -127,9 +142,25 @@ export class ModelBacktester {
     }
 
     try {
-      // Predict scores
-      const homeScore = this.dataProcessor.predictTeamScore(homeTeamCode, awayTeamCode);
-      const awayScore = this.dataProcessor.predictTeamScore(awayTeamCode, homeTeamCode);
+      // Predict scores with actual starting goalies
+      // CRITICAL FIX #1: Pass isHome flag to enable home ice advantage (5.8% boost)
+      // CRITICAL FIX #2: Pass actual starting goalies for proper goalie integration
+      // CRITICAL FIX #3: Pass gameDate to enable B2B/rest adjustments
+      // NOTE: The 4th parameter is the OPPOSING team's goalie (the one being shot at)
+      const homeScore = this.dataProcessor.predictTeamScore(
+        homeTeamCode, 
+        awayTeamCode, 
+        true,           // isHome = true for home team
+        awayGoalieName, // FIXED: Pass AWAY goalie (home team shoots at away goalie)
+        gameDate        // FIXED: Pass gameDate for B2B/rest detection
+      );
+      const awayScore = this.dataProcessor.predictTeamScore(
+        awayTeamCode, 
+        homeTeamCode, 
+        false,          // isHome = false for away team
+        homeGoalieName, // FIXED: Pass HOME goalie (away team shoots at home goalie)
+        gameDate        // FIXED: Pass gameDate for B2B/rest detection
+      );
       const total = homeScore + awayScore;
 
       // Win probability
