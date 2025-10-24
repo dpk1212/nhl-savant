@@ -232,33 +232,12 @@ const QuickStory = ({ game, bestEdge, factors, isMobile, dataProcessor }) => {
   
   return (
     <div style={{ 
-      padding: isMobile ? '1rem' : '1.25rem',
-      background: 'rgba(212, 175, 55, 0.08)',
-      border: ELEVATION.flat.border,
-      borderRadius: '10px',
-      margin: isMobile ? '0.75rem' : '1.25rem'
+      fontSize: TYPOGRAPHY.body.size, 
+      lineHeight: '1.6', 
+      color: 'var(--color-text-primary)',
+      fontWeight: TYPOGRAPHY.caption.weight
     }}>
-      <div style={{ 
-        fontSize: TYPOGRAPHY.label.size, 
-        fontWeight: TYPOGRAPHY.heading.weight, 
-        color: 'var(--color-accent)', 
-        marginBottom: '0.625rem',
-        textTransform: TYPOGRAPHY.label.textTransform,
-        letterSpacing: TYPOGRAPHY.label.letterSpacing,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem'
-      }}>
-        📖 THE QUICK STORY
-      </div>
-      <div style={{ 
-        fontSize: TYPOGRAPHY.body.size, 
-        lineHeight: '1.6', 
-        color: 'var(--color-text-primary)',
-        fontWeight: TYPOGRAPHY.caption.weight
-      }}>
-        {story}
-      </div>
+      {story}
     </div>
   );
 };

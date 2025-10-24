@@ -23,9 +23,10 @@ const AdvancedMatchupDetails = ({
   homeGoalie, // Goalie stats for home team
   isMobile,
   bestEdge, // For bet-specific prioritization
-  statsAnalyzer // For league context
+  statsAnalyzer, // For league context
+  defaultExpanded = false // Collapsed by default for cleaner UX
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   
   // Generate INSIGHTFUL bet-specific Quick Hits
   // Priority: Situational factors → Key matchup advantages → Regression opportunities
