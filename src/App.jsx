@@ -1,5 +1,5 @@
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Papa from 'papaparse';
 import { trackPageView, trackEngagement, trackFirstVisit, getPageName } from './utils/analytics';
 import { loadNHLData, loadOddsFiles, loadStartingGoalies, loadGoaliesCSV } from './utils/dataProcessing';
@@ -19,8 +19,14 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LegalFooter from './components/LegalFooter';
 import DisclaimerModal from './components/DisclaimerModal';
 import Disclaimer from './pages/Disclaimer';
+import SplashScreenFallback from './components/SplashScreenFallback';
+import { useSplashScreen } from './hooks/useSplashScreen';
+
+// Lazy load 3D splash screen to reduce initial bundle size
+const SplashScreen = lazy(() => import('./components/SplashScreen'));
 
 function App() {
+  const { showSplash, hasWebGL, dismissSplash } = useSplashScreen();
   const [dataProcessor, setDataProcessor] = useState(null);
   const [oddsData, setOddsData] = useState(null);
   const [goalieData, setGoalieData] = useState(null);
@@ -30,6 +36,17 @@ function App() {
   const [scheduleHelper, setScheduleHelper] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Show splash screen on first visit
+  if (showSplash) {
+    return hasWebGL ? (
+      <Suspense fallback={<SplashScreenFallback onComplete={dismissSplash} />}>
+        <SplashScreen onComplete={dismissSplash} />
+      </Suspense>
+    ) : (
+      <SplashScreenFallback onComplete={dismissSplash} />
+    );
+  }
 
   useEffect(() => {
     const loadData = async () => {
