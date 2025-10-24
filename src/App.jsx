@@ -38,15 +38,16 @@ function App() {
   const [error, setError] = useState(null);
   
   // Show splash screen on first visit
-  if (showSplash) {
-    return hasWebGL ? (
-      <Suspense fallback={<SplashScreenFallback onComplete={dismissSplash} />}>
-        <SplashScreen onComplete={dismissSplash} />
-      </Suspense>
-    ) : (
-      <SplashScreenFallback onComplete={dismissSplash} />
-    );
-  }
+  // TEMPORARILY DISABLED - debugging React error #300
+  // if (showSplash) {
+  //   return hasWebGL ? (
+  //     <Suspense fallback={<SplashScreenFallback onComplete={dismissSplash} />}>
+  //       <SplashScreen onComplete={dismissSplash} />
+  //     </Suspense>
+  //   ) : (
+  //     <SplashScreenFallback onComplete={dismissSplash} />
+  //   );
+  // }
 
   useEffect(() => {
     const loadData = async () => {
