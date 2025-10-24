@@ -17,15 +17,16 @@ const QuickStatsBar = ({
   if (!game || !dataProcessor) return null;
 
   try {
-    // Get stats from dataProcessor with error handling
-    const awayStats = dataProcessor.getTeamStats(awayTeam);
-    const homeStats = dataProcessor.getTeamStats(homeTeam);
+    // Get all teams and find our specific teams
+    const allTeams = dataProcessor.getTeamsBySituation('5on5');
+    const awayStats = allTeams.find(t => t.team === awayTeam);
+    const homeStats = allTeams.find(t => t.team === homeTeam);
     
     // Extract key stats
-    const awayXGF = awayStats?.xGF || 0;
-    const homeXGF = homeStats?.xGF || 0;
-    const awayXGA = awayStats?.xGA || 0;
-    const homeXGA = homeStats?.xGA || 0;
+    const awayXGF = awayStats?.xGF_per60 || 0;
+    const homeXGF = homeStats?.xGF_per60 || 0;
+    const awayXGA = awayStats?.xGA_per60 || 0;
+    const homeXGA = homeStats?.xGA_per60 || 0;
     
     // If no stats available, don't render
     if (!awayXGF && !homeXGF && !awayXGA && !homeXGA) {
