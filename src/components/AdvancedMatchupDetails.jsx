@@ -27,57 +27,98 @@ const AdvancedMatchupDetails = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  // Generate bet-specific Quick Hits
+  // Generate INSIGHTFUL bet-specific Quick Hits
+  // Priority: Situational factors → Key matchup advantages → Regression opportunities
   const generateQuickHits = () => {
     const hits = [];
     const betType = bestEdge?.type || 'TOTAL';
     
-    // Prioritize based on bet type
-    if (betType === 'TOTAL' || betType === 'OVER' || betType === 'UNDER') {
-      // Danger Zone insight (HIGH IMPACT for totals)
-      if (dangerZoneData && dangerZoneData.away && dangerZoneData.home) {
-        const awayHighDanger = dangerZoneData.away.high?.shots || 0;
-        const homeHighDanger = dangerZoneData.home.high?.shots || 0;
-        if (Math.abs(awayHighDanger - homeHighDanger) > 2) {
-          const leader = awayHighDanger > homeHighDanger ? awayTeam : homeTeam;
-          const diff = Math.abs(awayHighDanger - homeHighDanger).toFixed(1);
-          hits.push(`${leader} generates ${diff} more high-danger chances per game`);
+    // PRIORITY 1: Check for situational factors (if dataProcessor available)
+    // These are HIGH IMPACT and users want to know about them
+    if (dataProcessor?.scheduleHelper && game?.date) {
+      const scheduleHelper = dataProcessor.scheduleHelper;
+      
+      // Check away team situation
+      const awayRest = scheduleHelper.getDaysRest(awayTeam, game.date);
+      const awayAwayStreak = scheduleHelper.getConsecutiveAwayGames(awayTeam, game.date);
+      const awayRoadTripAdj = scheduleHelper.getRoadTripAdjustment(awayTeam, game.date);
+      
+      if (awayRest === 1) {
+        hits.push(`⚡ ${awayTeam} on back-to-back (-3% fatigue penalty in model)`);
+      } else if (awayRoadTripAdj < -0.05) {
+        hits.push(`🛫 ${awayTeam} fatigued (game ${awayAwayStreak + 1} of road trip, ${(awayRoadTripAdj * 100).toFixed(0)}% penalty)`);
+      } else if (awayRest >= 3) {
+        hits.push(`💪 ${awayTeam} well-rested (${awayRest} days off = +4% boost)`);
+      }
+      
+      // Check home team situation
+      const homeRest = scheduleHelper.getDaysRest(homeTeam, game.date);
+      const { isHomecoming, tripLength } = scheduleHelper.isHomecomingGame(homeTeam, game.date);
+      const homecomingBoost = scheduleHelper.getHomecomingAdjustment(homeTeam, game.date);
+      
+      if (homeRest === 1 && hits.length < 3) {
+        hits.push(`⚡ ${homeTeam} on back-to-back (-3% fatigue penalty in model)`);
+      } else if (isHomecoming && hits.length < 3) {
+        hits.push(`🏠 ${homeTeam} homecoming after ${tripLength}-game trip (+${(homecomingBoost * 100).toFixed(0)}% boost)`);
+      } else if (homeRest >= 3 && hits.length < 3) {
+        hits.push(`💪 ${homeTeam} well-rested (${homeRest} days off = +4% boost)`);
+      }
+    }
+    
+    // PRIORITY 2: Key matchup advantages
+    if (hits.length < 3) {
+      if (betType === 'TOTAL' || betType === 'OVER' || betType === 'UNDER') {
+        // Danger Zone insight (explains SCORING likelihood)
+        if (dangerZoneData && dangerZoneData.away && dangerZoneData.home) {
+          const awayHighDanger = dangerZoneData.away.high?.shots || 0;
+          const homeHighDanger = dangerZoneData.home.high?.shots || 0;
+          if (Math.abs(awayHighDanger - homeHighDanger) > 2) {
+            const leader = awayHighDanger > homeHighDanger ? awayTeam : homeTeam;
+            const diff = Math.abs(awayHighDanger - homeHighDanger).toFixed(1);
+            hits.push(`🎯 ${leader} generates ${diff} more high-danger chances/game (quality scoring opportunities)`);
+          }
+        }
+        
+        // Physical play insight (explains DEFENSIVE impact)
+        if (physicalData && physicalData.length > 0 && hits.length < 3) {
+          const blockMetric = physicalData.find(m => m.stat === 'Shot Blocks');
+          if (blockMetric) {
+            const leader = blockMetric.advantage === 'away' ? awayTeam : homeTeam;
+            hits.push(`🛡️ ${leader} blocks ${blockMetric.diff} more shots/game (limits scoring chances)`);
+          }
         }
       }
       
-      // Physical play insight (HIGH IMPACT for totals)
-      if (physicalData && physicalData.length > 0) {
-        const blockMetric = physicalData.find(m => m.stat === 'Shot Blocks');
-        if (blockMetric) {
-          const leader = blockMetric.advantage === 'away' ? awayTeam : homeTeam;
-          hits.push(`${leader} blocks ${blockMetric.diff} more shots per game`);
+      // Possession insight (explains CONTROL)
+      if (possessionData && possessionData.away && possessionData.home && hits.length < 3) {
+        const awayCorsi = possessionData.away.corsiPct || 50;
+        const homeCorsi = possessionData.home.corsiPct || 50;
+        if (Math.abs(awayCorsi - homeCorsi) > 5) {
+          const leader = awayCorsi > homeCorsi ? awayTeam : homeTeam;
+          const value = Math.max(awayCorsi, homeCorsi).toFixed(1);
+          const impact = betType === 'MONEYLINE' ? 'dictates pace' : 'drives scoring chances';
+          hits.push(`📊 ${leader} controls ${value}% shot attempts (${impact})`);
         }
       }
     }
     
-    // Regression insight (MODERATE IMPACT for all bet types)
-    if (regressionData && regressionData.away && regressionData.home) {
+    // PRIORITY 3: Regression opportunities (explains VALUE)
+    if (regressionData && regressionData.away && regressionData.home && hits.length < 3) {
       const awayPDO = regressionData.away.pdo || 100;
       const homePDO = regressionData.home.pdo || 100;
+      
       if (awayPDO > 102) {
-        hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) suggests regression due`);
-      } else if (homePDO > 102) {
-        hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) suggests regression due`);
-      } else if (awayPDO < 98) {
-        hits.push(`${awayTeam}'s PDO (${awayPDO.toFixed(1)}) indicates potential bounce-back`);
-      } else if (homePDO < 98) {
-        hits.push(`${homeTeam}'s PDO (${homePDO.toFixed(1)}) indicates potential bounce-back`);
-      }
-    }
-    
-    // Possession insight (HIGH IMPACT for ML bets, MODERATE for totals)
-    if (possessionData && possessionData.away && possessionData.home && hits.length < 3) {
-      const awayCorsi = possessionData.away.corsiPct || 50;
-      const homeCorsi = possessionData.home.corsiPct || 50;
-      if (Math.abs(awayCorsi - homeCorsi) > 5) {
-        const leader = awayCorsi > homeCorsi ? awayTeam : homeTeam;
-        const value = Math.max(awayCorsi, homeCorsi).toFixed(1);
-        hits.push(`${leader} controls ${value}% of shot attempts (elite possession)`);
+        const impact = betType.includes('UNDER') ? 'supports UNDER' : 'overperforming';
+        hits.push(`⚠️ ${awayTeam} PDO ${awayPDO.toFixed(1)} (unsustainable luck — ${impact})`);
+      } else if (homePDO > 102 && hits.length < 3) {
+        const impact = betType.includes('UNDER') ? 'supports UNDER' : 'overperforming';
+        hits.push(`⚠️ ${homeTeam} PDO ${homePDO.toFixed(1)} (unsustainable luck — ${impact})`);
+      } else if (awayPDO < 98 && hits.length < 3) {
+        const impact = betType.includes('OVER') ? 'supports OVER' : 'due to bounce back';
+        hits.push(`📈 ${awayTeam} PDO ${awayPDO.toFixed(1)} (unlucky — ${impact})`);
+      } else if (homePDO < 98 && hits.length < 3) {
+        const impact = betType.includes('OVER') ? 'supports OVER' : 'due to bounce back';
+        hits.push(`📈 ${homeTeam} PDO ${homePDO.toFixed(1)} (unlucky — ${impact})`);
       }
     }
     
