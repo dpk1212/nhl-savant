@@ -1796,64 +1796,125 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '0.75rem' : '1.5rem 1rem' }} className="animate-fade-in">
-      {/* PREMIUM COMPACT HEADER */}
+      {/* ✨ PREMIUM ELITE HEADER - COMPLETELY OVERHAULED */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
-        backdropFilter: 'blur(8px)',
-        border: '1px solid rgba(16, 185, 129, 0.15)',
-        borderRadius: isMobile ? '12px' : '14px',
-        padding: isMobile ? '0.875rem 1rem' : '1.25rem 1.5rem',
-        marginBottom: isMobile ? '1rem' : '1.5rem',
+        background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(17, 24, 39, 0.95) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(212, 175, 55, 0.2)',
+        borderRadius: isMobile ? '16px' : '20px',
+        padding: isMobile ? '1.25rem 1.25rem 1rem' : '1.75rem 2rem 1.5rem',
+        marginBottom: isMobile ? '1.25rem' : '1.75rem',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(212, 175, 55, 0.15) inset, 0 20px 60px rgba(212, 175, 55, 0.08)',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
-        {/* Subtle animated background */}
+        {/* Animated gold shimmer gradient */}
         <div style={{
           position: 'absolute',
           top: 0,
-          left: 0,
+          left: '-100%',
           right: 0,
           bottom: 0,
-          background: 'linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.03), transparent)',
-          animation: 'shimmer 3s infinite',
+          background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.08), rgba(255, 215, 0, 0.12), rgba(212, 175, 55, 0.08), transparent)',
+          animation: 'shimmer 4s infinite',
           pointerEvents: 'none'
         }} />
         
-        {/* Compact header content */}
+        {/* Ambient glow effect */}
+        <div style={{
+          position: 'absolute',
+          top: '-50%',
+          left: '20%',
+          width: '60%',
+          height: '200%',
+          background: 'radial-gradient(ellipse, rgba(212, 175, 55, 0.15) 0%, transparent 60%)',
+          filter: 'blur(40px)',
+          pointerEvents: 'none',
+          opacity: 0.6
+        }} />
+        
+        {/* Premium header content with sophisticated layout */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
           position: 'relative',
           zIndex: 1,
-          gap: isMobile ? '0.75rem' : '1rem'
+          gap: isMobile ? '1rem' : '1.5rem',
+          flexWrap: isMobile ? 'wrap' : 'nowrap'
         }}>
-          {/* Left: Title & Date */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', marginBottom: '0.25rem' }}>
-              <Calendar size={isMobile ? 20 : 24} color="#10B981" style={{ flexShrink: 0 }} />
+          {/* Left: Premium Title & Live Status */}
+          <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.625rem' : '0.875rem', marginBottom: isMobile ? '0.5rem' : '0.625rem' }}>
+              {/* Glowing calendar icon */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(255, 215, 0, 0.15) 100%)',
+                borderRadius: '10px',
+                padding: isMobile ? '0.5rem' : '0.625rem',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                boxShadow: '0 0 20px rgba(212, 175, 55, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Calendar size={isMobile ? 18 : 22} color="#D4AF37" style={{ flexShrink: 0, filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.5))' }} />
+              </div>
               <h1 style={{ 
-                fontSize: isMobile ? '1.125rem' : '1.5rem',
-                  fontWeight: '800',
-                background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                fontSize: isMobile ? '1.375rem' : '1.875rem',
+                fontWeight: '900',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 margin: 0,
-                letterSpacing: '-0.01em',
-                lineHeight: '1.2',
+                letterSpacing: '-0.02em',
+                lineHeight: '1.1',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
-                textOverflow: 'ellipsis'
+                textOverflow: 'ellipsis',
+                textShadow: '0 0 30px rgba(212, 175, 55, 0.3)',
+                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+              }}>
+                Today's Games
+              </h1>
+              {/* LIVE pulse indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)',
+                padding: '0.375rem 0.625rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)'
+              }}>
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#10B981',
+                  boxShadow: '0 0 8px #10B981',
+                  animation: 'pulse 2s infinite'
+                }} />
+                <span style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '700',
+                  color: '#10B981',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
                 }}>
-                  Today's Games
-                </h1>
+                  LIVE
+                </span>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexWrap: 'wrap' }}>
-                  <span style={{ 
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                    color: 'var(--color-text-muted)',
-                fontWeight: '600',
+            {/* Premium date and time display */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.625rem' : '0.875rem', flexWrap: 'wrap' }}>
+              <span style={{ 
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                color: 'rgba(212, 175, 55, 0.8)',
+                fontWeight: '700',
                 whiteSpace: 'nowrap'
                   }}>
                 {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -1914,108 +1975,177 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             </div>
           </div>
           
-          {/* Right: Compact stats */}
+          {/* Right: PREMIUM ELITE STAT BADGES - Redesigned for sophistication */}
           <div style={{ 
-                      display: 'flex',
-            gap: isMobile ? '0.5rem' : '0.75rem',
-                      alignItems: 'center',
-            flexShrink: 0
+            display: 'flex',
+            gap: isMobile ? '0.625rem' : '0.875rem',
+            alignItems: 'center',
+            flexShrink: 0,
+            flexWrap: 'wrap'
           }}>
-            {/* Total Games Counter */}
+            {/* Total Games Counter - Sophisticated glass badge */}
             <div style={{
+              position: 'relative',
               textAlign: 'center',
-              padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
-              background: 'rgba(148, 163, 184, 0.12)',
-              borderRadius: '8px',
-              border: '1px solid rgba(148, 163, 184, 0.25)'
+              padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.125rem',
+              background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.18) 0%, rgba(148, 163, 184, 0.08) 100%)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '12px',
+              border: '1px solid rgba(148, 163, 184, 0.35)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.1) inset',
+              transition: 'all 0.3s ease',
+              cursor: 'default'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.15) inset';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.1) inset';
             }}>
               <div style={{
-                fontSize: isMobile ? '1.125rem' : '1.375rem',
-                fontWeight: '800',
-                color: '#94A3B8',
+                fontSize: isMobile ? '1.5rem' : '1.875rem',
+                fontWeight: '900',
+                background: 'linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
                 lineHeight: '1',
-                marginBottom: '0.125rem'
+                marginBottom: '0.25rem',
+                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
               }}>
                 {allEdges.length}
-                </div>
+              </div>
               <div style={{
-                fontSize: isMobile ? '0.563rem' : '0.625rem',
-                color: 'var(--color-text-muted)',
-                fontWeight: '700',
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(203, 213, 225, 0.9)',
+                fontWeight: '800',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.08em'
               }}>
-                Games
+                GAMES
               </div>
             </div>
             
-            {/* +EV Bets Counter */}
+            {/* +EV Bets Counter - Premium blue gradient */}
             <div style={{
+              position: 'relative',
               textAlign: 'center',
-              padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
-              background: 'rgba(59, 130, 246, 0.12)',
-              borderRadius: '8px',
-              border: '1px solid rgba(59, 130, 246, 0.25)'
+              padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.125rem',
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.12) 100%)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '12px',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.3), 0 1px 0 rgba(59, 130, 246, 0.2) inset',
+              transition: 'all 0.3s ease',
+              cursor: 'default',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 24px rgba(59, 130, 246, 0.45), 0 1px 0 rgba(59, 130, 246, 0.3) inset';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(59, 130, 246, 0.3), 0 1px 0 rgba(59, 130, 246, 0.2) inset';
             }}>
               <div style={{
-                fontSize: isMobile ? '1.125rem' : '1.375rem',
-                fontWeight: '800',
-                color: '#3B82F6',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '100%',
+                height: '100%',
+                background: 'radial-gradient(ellipse, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                fontSize: isMobile ? '1.5rem' : '1.875rem',
+                fontWeight: '900',
+                background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
                 lineHeight: '1',
-                marginBottom: '0.125rem'
+                marginBottom: '0.25rem',
+                position: 'relative',
+                zIndex: 1,
+                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
               }}>
                 {opportunityCounts.total}
-                </div>
+              </div>
               <div style={{
-                fontSize: isMobile ? '0.563rem' : '0.625rem',
-                color: 'var(--color-text-muted)',
-                fontWeight: '700',
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(96, 165, 250, 1)',
+                fontWeight: '800',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.08em',
+                position: 'relative',
+                zIndex: 1
               }}>
                 +EV
               </div>
             </div>
             
-            {/* Elite Bets Counter */}
+            {/* Elite Bets Counter - PREMIUM GOLD GRADIENT - The Showpiece */}
             <div style={{
+              position: 'relative',
               textAlign: 'center',
-              padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
-              background: 'rgba(16, 185, 129, 0.12)',
-              borderRadius: '8px',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              position: 'relative'
+              padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.125rem',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '12px',
+              border: '1px solid rgba(212, 175, 55, 0.5)',
+              boxShadow: '0 4px 20px rgba(212, 175, 55, 0.35), 0 1px 0 rgba(255, 215, 0, 0.25) inset',
+              transition: 'all 0.3s ease',
+              cursor: 'default',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(212, 175, 55, 0.5), 0 1px 0 rgba(255, 215, 0, 0.35) inset';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(212, 175, 55, 0.35), 0 1px 0 rgba(255, 215, 0, 0.25) inset';
             }}>
-              {opportunityCounts.highValue > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  width: '8px',
-                  height: '8px',
-                  background: '#10B981',
-                  borderRadius: '50%',
-                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-                  animation: 'pulse 2s infinite'
-                }} />
-              )}
+              {/* Radial glow effect */}
               <div style={{
-                fontSize: isMobile ? '1.125rem' : '1.375rem',
-                fontWeight: '800',
-                color: '#10B981',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '120%',
+                height: '120%',
+                background: 'radial-gradient(ellipse, rgba(255, 215, 0, 0.2) 0%, transparent 70%)',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                fontSize: isMobile ? '1.5rem' : '1.875rem',
+                fontWeight: '900',
+                background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #FFD700 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
                 lineHeight: '1',
-                marginBottom: '0.125rem'
+                marginBottom: '0.25rem',
+                position: 'relative',
+                zIndex: 1,
+                filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.6)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
               }}>
                 {opportunityCounts.highValue}
-          </div>
-          <div style={{ 
-                fontSize: isMobile ? '0.563rem' : '0.625rem',
-                color: 'var(--color-text-muted)',
-                fontWeight: '700',
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: '900',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.08em',
+                position: 'relative',
+                zIndex: 1,
+                filter: 'drop-shadow(0 0 6px rgba(212, 175, 55, 0.4))'
               }}>
-                Elite
+                ELITE
               </div>
             </div>
           </div>
