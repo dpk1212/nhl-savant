@@ -1796,305 +1796,169 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '0.75rem' : '1.5rem 1rem' }} className="animate-fade-in">
-      {/* ✨ ULTRA-COMPACT PREMIUM HEADER */}
+      {/* ✨ MINIMAL PREMIUM HEADER - Apple/Linear level simplicity */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(17, 24, 39, 0.95) 100%)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(212, 175, 55, 0.2)',
-        borderRadius: isMobile ? '12px' : '14px',
-        padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.25rem',
-        marginBottom: isMobile ? '1rem' : '1.25rem',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(212, 175, 55, 0.15) inset',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        background: 'rgba(17, 24, 39, 0.6)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        borderRadius: '10px',
+        padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.25rem',
+        marginBottom: isMobile ? '1rem' : '1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        flexWrap: 'wrap'
       }}>
-        {/* Animated gold shimmer gradient */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: '-100%',
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.08), rgba(255, 215, 0, 0.12), rgba(212, 175, 55, 0.08), transparent)',
-          animation: 'shimmer 4s infinite',
-          pointerEvents: 'none'
-        }} />
-        
-        {/* Ambient glow effect */}
-        <div style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '20%',
-          width: '60%',
-          height: '200%',
-          background: 'radial-gradient(ellipse, rgba(212, 175, 55, 0.15) 0%, transparent 60%)',
-          filter: 'blur(40px)',
-          pointerEvents: 'none',
-          opacity: 0.6
-        }} />
-        
-        {/* Premium header content with sophisticated layout */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          position: 'relative',
-          zIndex: 1,
-          gap: isMobile ? '1rem' : '1.5rem',
-          flexWrap: isMobile ? 'wrap' : 'nowrap'
-        }}>
-          {/* Left: ULTRA-COMPACT Title & Badges - Everything inline */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.625rem', flexWrap: 'wrap' }}>
-              {/* Compact calendar icon */}
-              <Calendar size={isMobile ? 16 : 18} color="#D4AF37" style={{ flexShrink: 0, filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.5))' }} />
-              
-              <h1 style={{ 
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '800',
-                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                margin: 0,
-                letterSpacing: '-0.01em',
-                lineHeight: '1',
-                whiteSpace: 'nowrap'
-              }}>
-                Today's Games
-              </h1>
-              
-              {/* Inline date & time */}
-              <span style={{ 
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(212, 175, 55, 0.7)',
-                fontWeight: '600',
-                whiteSpace: 'nowrap'
-              }}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </span>
-              
-              <LiveClock />
-              
-              {/* Compact LIVE indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                background: 'rgba(16, 185, 129, 0.15)',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '4px',
-                border: '1px solid rgba(16, 185, 129, 0.3)'
-              }}>
-                <div style={{
-                  width: '5px',
-                  height: '5px',
-                  borderRadius: '50%',
-                  background: '#10B981',
-                  boxShadow: '0 0 6px #10B981',
-                  animation: 'pulse 2s infinite'
-                }} />
-                <span style={{
-                  fontSize: '0.625rem',
-                  fontWeight: '700',
-                  color: '#10B981',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  LIVE
-                </span>
-              </div>
-              
-              {/* Compact goalie status */}
-              {startingGoalies && startingGoalies.games && (
-                <span style={{
-                  fontSize: '0.625rem',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  color: '#10B981',
-                  fontWeight: '700',
-                  whiteSpace: 'nowrap'
-                }}>
-                  🥅 {(() => {
-                    let confirmed = 0;
-                    let total = 0;
-                    
-                    if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
-                      startingGoalies.games.forEach(game => {
-                        total += 2;
-                        if (game.away?.goalie) {
-                          if (game.away.confirmed === undefined || game.away.confirmed === true) {
-                            confirmed++;
-                          }
-                        }
-                        if (game.home?.goalie) {
-                          if (game.home.confirmed === undefined || game.home.confirmed === true) {
-                            confirmed++;
-                          }
-                        }
-                      });
-                    }
-                    return `${confirmed}/${total}`;
-                  })()}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {/* Right: PREMIUM ELITE STAT BADGES - Redesigned for sophistication */}
-          <div style={{ 
-            display: 'flex',
-            gap: isMobile ? '0.625rem' : '0.875rem',
-            alignItems: 'center',
-            flexShrink: 0,
-            flexWrap: 'wrap'
+        {/* Left: Date/Time info - clean & minimal */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{
+            fontSize: isMobile ? '0.813rem' : '0.875rem',
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontWeight: '600',
+            letterSpacing: '-0.01em'
           }}>
-            {/* COMPACT Games Badge */}
-            <div style={{
-              textAlign: 'center',
-              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-              background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.18) 0%, rgba(148, 163, 184, 0.08) 100%)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '8px',
-              border: '1px solid rgba(148, 163, 184, 0.35)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.25)';
+            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          </span>
+          
+          <span style={{
+            width: '3px',
+            height: '3px',
+            borderRadius: '50%',
+            background: 'rgba(255, 255, 255, 0.3)'
+          }} />
+          
+          <LiveClock />
+          
+          {startingGoalies && startingGoalies.games && (
+            <>
+              <span style={{
+                width: '3px',
+                height: '3px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.3)'
+              }} />
+              <span style={{
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                color: '#10B981',
+                fontWeight: '600'
+              }}>
+                🥅 {(() => {
+                  let confirmed = 0;
+                  let total = 0;
+                  if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
+                    startingGoalies.games.forEach(game => {
+                      total += 2;
+                      if (game.away?.goalie && (game.away.confirmed === undefined || game.away.confirmed === true)) confirmed++;
+                      if (game.home?.goalie && (game.home.confirmed === undefined || game.home.confirmed === true)) confirmed++;
+                    });
+                  }
+                  return `${confirmed}/${total}`;
+                })()}
+              </span>
+            </>
+          )}
+        </div>
+          
+        {/* Right: MINIMAL stat badges - no gradients, just clean */}
+        <div style={{ 
+          display: 'flex',
+          gap: isMobile ? '0.5rem' : '0.625rem',
+          alignItems: 'center'
+        }}>
+          {/* Games */}
+          <div style={{
+            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+            background: 'rgba(148, 163, 184, 0.1)',
+            borderRadius: '6px',
+            border: '1px solid rgba(148, 163, 184, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span style={{
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '700',
+              color: '#CBD5E1'
             }}>
-              <div style={{
-                fontSize: isMobile ? '1.25rem' : '1.5rem',
-                fontWeight: '900',
-                background: 'linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                lineHeight: '1',
-                marginBottom: '0.125rem'
-              }}>
-                {allEdges.length}
-              </div>
-              <div style={{
-                fontSize: isMobile ? '0.563rem' : '0.625rem',
-                color: 'rgba(203, 213, 225, 0.9)',
-                fontWeight: '800',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                GAMES
-              </div>
-            </div>
-            
-            {/* COMPACT +EV Badge */}
-            <div style={{
-              textAlign: 'center',
-              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.12) 100%)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '8px',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
-              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.3)';
+              {allEdges.length}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(203, 213, 225, 0.7)',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em'
             }}>
-              <div style={{
-                fontSize: isMobile ? '1.25rem' : '1.5rem',
-                fontWeight: '900',
-                background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                lineHeight: '1',
-                marginBottom: '0.125rem'
-              }}>
-                {opportunityCounts.total}
-              </div>
-              <div style={{
-                fontSize: isMobile ? '0.563rem' : '0.625rem',
-                color: 'rgba(96, 165, 250, 1)',
-                fontWeight: '800',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                +EV
-              </div>
-            </div>
-            
-            {/* COMPACT Elite Badge - Still premium but smaller */}
-            <div style={{
-              textAlign: 'center',
-              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '8px',
-              border: '1px solid rgba(212, 175, 55, 0.5)',
-              boxShadow: '0 2px 10px rgba(212, 175, 55, 0.35)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)';
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(212, 175, 55, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 2px 10px rgba(212, 175, 55, 0.35)';
+              Games
+            </span>
+          </div>
+
+          {/* +EV */}
+          <div style={{
+            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+            background: 'rgba(59, 130, 246, 0.12)',
+            borderRadius: '6px',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span style={{
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '700',
+              color: '#60A5FA'
             }}>
-              <div style={{
-                fontSize: isMobile ? '1.25rem' : '1.5rem',
-                fontWeight: '900',
-                background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #FFD700 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                lineHeight: '1',
-                marginBottom: '0.125rem',
-                filter: 'drop-shadow(0 0 6px rgba(212, 175, 55, 0.5))'
-              }}>
-                {opportunityCounts.highValue}
-              </div>
-              <div style={{
-                fontSize: isMobile ? '0.563rem' : '0.625rem',
-                background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: '900',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.4))'
-              }}>
-                ELITE
-              </div>
-            </div>
+              {opportunityCounts.total}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(96, 165, 250, 0.9)',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em'
+            }}>
+              +EV
+            </span>
+          </div>
+
+          {/* Elite */}
+          <div style={{
+            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+            background: 'rgba(212, 175, 55, 0.12)',
+            borderRadius: '6px',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span style={{
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '700',
+              color: '#D4AF37'
+            }}>
+              {opportunityCounts.highValue}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(212, 175, 55, 0.9)',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em'
+            }}>
+              Elite
+            </span>
           </div>
         </div>
-        
-        {/* Countdown to first game - compact version */}
-        {allEdges.length > 0 && allEdges[0].gameTime && (
-          <div style={{ 
-            marginTop: isMobile ? '0.625rem' : '0.75rem',
-            paddingTop: isMobile ? '0.625rem' : '0.75rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            position: 'relative',
-            zIndex: 1
-          }}>
-          <GameCountdown firstGameTime={allEdges[0].gameTime} />
-          </div>
-        )}
       </div>
+
+      {/* Countdown - minimal */}
+      {allEdges.length > 0 && allEdges[0].gameTime && (
+        <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
+          <GameCountdown firstGameTime={allEdges[0].gameTime} />
+        </div>
+      )}
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
@@ -2357,6 +2221,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                         awayGoalie={getGoalieForTeam(game.awayTeam)}
                         homeGoalie={getGoalieForTeam(game.homeTeam)}
                         isMobile={isMobile}
+                        dataProcessor={dataProcessor}
+                        game={game}
                         bestEdge={bestEdge}
                         statsAnalyzer={statsAnalyzer}
                         defaultExpanded={false}
