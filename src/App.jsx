@@ -25,6 +25,7 @@ import { useSplashScreen } from './hooks/useSplashScreen';
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
 
 function App() {
+  // ALL HOOKS FIRST - Called on every render
   const { showSplash, hasWebGL, dismissSplash } = useSplashScreen();
   const [dataProcessor, setDataProcessor] = useState(null);
   const [oddsData, setOddsData] = useState(null);
@@ -36,19 +37,14 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Show splash screen on first visit
-  if (showSplash) {
-    return hasWebGL ? (
-      <Suspense fallback={<SplashScreenFallback onComplete={dismissSplash} />}>
-        <SplashScreen onComplete={dismissSplash} />
-      </Suspense>
-    ) : (
-      <SplashScreenFallback onComplete={dismissSplash} />
-    );
-  }
-
+  // useEffect hook - MUST be before any returns
   useEffect(() => {
     const loadData = async () => {
+      // Only load data if NOT showing splash
+      if (showSplash) {
+        return;
+      }
+      
       try {
         setLoading(true);
         
@@ -140,7 +136,18 @@ function App() {
     };
 
     loadData();
-  }, []);
+  }, [showSplash]); // Add showSplash as dependency to re-trigger when splash dismisses
+  
+  // CONDITIONAL RENDERING - After all hooks
+  if (showSplash) {
+    return hasWebGL ? (
+      <Suspense fallback={<SplashScreenFallback onComplete={dismissSplash} />}>
+        <SplashScreen onComplete={dismissSplash} />
+      </Suspense>
+    ) : (
+      <SplashScreenFallback onComplete={dismissSplash} />
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner />;
