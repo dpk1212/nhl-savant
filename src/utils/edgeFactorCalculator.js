@@ -379,6 +379,7 @@ export class EdgeFactorCalculator {
 
   /**
    * Generate "The Story" narrative from factors
+   * REWRITTEN: Specific, contextual, helpful
    */
   generateStory(factors, awayTeam, homeTeam) {
     if (!factors || factors.length === 0) return "Analyzing statistical matchup...";
@@ -390,38 +391,76 @@ export class EdgeFactorCalculator {
     const totalImpact = factors.reduce((sum, f) => sum + f.impact, 0);
     const favorsUnder = totalImpact < 0;
 
-    // Build narrative
+    // Build SPECIFIC narrative with team names
     let story = "";
 
-    // Mention top factor
-    const top = topFactors[0];
-    if (top.importance === 'CRITICAL') {
-      story += `${top.name.toLowerCase()} is the key driver. `;
+    // Identify which team has advantages
+    const topFactor = topFactors[0];
+    let advantageTeam = null;
+    let disadvantageTeam = null;
+    
+    if (topFactor.awayMetric && topFactor.homeMetric) {
+      // Determine advantage based on stat type
+      const awayBetter = topFactor.name.includes('Against') || topFactor.name.includes('Defense')
+        ? topFactor.awayMetric.value < topFactor.homeMetric.value
+        : topFactor.awayMetric.value > topFactor.homeMetric.value;
+      
+      advantageTeam = awayBetter ? awayTeam : homeTeam;
+      disadvantageTeam = awayBetter ? homeTeam : awayTeam;
     }
 
-    // Describe overall matchup
-    if (favorsUnder) {
-      story += `Strong defensive metrics suggest a low-scoring affair. `;
+    // Start with KEY MATCHUP
+    if (advantageTeam && topFactor.awayMetric && topFactor.homeMetric) {
+      const advValue = advantageTeam === awayTeam ? topFactor.awayMetric.value : topFactor.homeMetric.value;
+      const disValue = disadvantageTeam === awayTeam ? topFactor.awayMetric.value : topFactor.homeMetric.value;
+      
+      if (topFactor.name.includes('Expected Goals') || topFactor.name.includes('xGF')) {
+        const rank = advValue > 2.7 ? 'elite' : advValue > 2.5 ? 'strong' : 'solid';
+        story += `${advantageTeam}'s ${rank} offense (${advValue.toFixed(2)} xGF/60) `;
+        story += `faces ${disadvantageTeam}'s defense (${disValue.toFixed(2)} xGA/60). `;
+      } else if (topFactor.name.includes('Against') || topFactor.name.includes('Defense')) {
+        const rank = advValue < 2.3 ? 'elite' : advValue < 2.5 ? 'strong' : 'solid';
+        story += `${advantageTeam}'s ${rank} defense (${advValue.toFixed(2)} xGA/60) `;
+        story += `shuts down ${disadvantageTeam}'s attack (${disValue.toFixed(2)} xGF/60). `;
+      } else {
+        story += `${advantageTeam} holds edge in ${topFactor.name.toLowerCase()}. `;
+      }
     } else {
-      story += `Offensive advantages point to a higher-scoring game. `;
+      // Fallback if we can't determine team advantage
+      story += `${topFactor.name} heavily influences this matchup. `;
     }
 
-    // Add specific details from top factors
-    topFactors.forEach((factor, idx) => {
-      if (idx < 2 && factor.explanation) {
-        const shortExplanation = factor.explanation.split('.')[0];
-        if (shortExplanation && shortExplanation.length < 100) {
-          story += shortExplanation + ". ";
+    // Add SECOND factor for depth
+    if (topFactors.length > 1 && topFactors[1].awayMetric && topFactors[1].homeMetric) {
+      const factor2 = topFactors[1];
+      const awayBetter2 = factor2.name.includes('Against') || factor2.name.includes('Defense')
+        ? factor2.awayMetric.value < factor2.homeMetric.value
+        : factor2.awayMetric.value > factor2.homeMetric.value;
+      
+      const team2 = awayBetter2 ? awayTeam : homeTeam;
+      
+      if (factor2.name.includes('Power Play') || factor2.name.includes('PP')) {
+        story += `${team2}'s power play adds scoring threat. `;
+      } else if (factor2.name.includes('PDO') || factor2.name.includes('Regression')) {
+        const pdoValue = team2 === awayTeam ? factor2.awayMetric.value : factor2.homeMetric.value;
+        if (pdoValue > 102) {
+          story += `${team2} (PDO ${pdoValue.toFixed(1)}) due for regression. `;
+        } else if (pdoValue < 98) {
+          story += `${team2} (PDO ${pdoValue.toFixed(1)}) primed for bounce-back. `;
         }
       }
-    });
+    }
 
-    // Conclusion
+    // CONCLUSION with clear direction
     const absImpact = Math.abs(totalImpact);
-    if (absImpact > 0.5) {
-      story += `Combined factors create a ${absImpact.toFixed(1)}-goal edge ${favorsUnder ? 'UNDER' : 'OVER'} market expectations.`;
+    if (absImpact > 0.4) {
+      const direction = favorsUnder ? 'UNDER' : 'OVER';
+      story += `These matchup advantages create ${absImpact.toFixed(1)}-goal edge favoring ${direction}.`;
+    } else if (absImpact > 0.2) {
+      const direction = favorsUnder ? 'defensive' : 'offensive';
+      story += `Combined factors tilt toward ${direction} edge.`;
     } else {
-      story += `Statistical edges are modest, suggesting the market line is fairly efficient.`;
+      story += `Evenly matched teams, market line is efficient.`;
     }
 
     return story;
