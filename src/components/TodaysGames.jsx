@@ -4,6 +4,7 @@ import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
 import { GoalieProcessor } from '../utils/goalieProcessor';
+import { trackBetView, trackBetExpand, trackBetsLoaded, trackSectionView } from '../utils/analytics';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
 import QuickSummary from './QuickSummary';
@@ -1588,6 +1589,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       // CONSULTANT FIX: Run model validation to detect systematic bias
       validatePredictions(edges);
       
+      // ANALYTICS: Track bets loaded
+      const betsWithEV = edges.filter(game => {
+        const bestBet = getBestBet(game);
+        return bestBet && bestBet.evPercent > 0;
+      }).length;
+      trackBetsLoaded(edges.length, betsWithEV);
+      
       // Get all opportunities (games with positive EV)
       const topOpportunities = calculator.getTopEdges(0); // 0 = all with positive EV
       setTopEdges(topOpportunities);
@@ -2090,6 +2098,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               defaultExpanded={false}
               index={index}
               isMobile={isMobile}
+              onToggle={(isExpanded) => {
+                if (isExpanded) {
+                  trackBetExpand(game);
+                }
+              }}
             >
               
               {/* STEP 1: THE BET */}
