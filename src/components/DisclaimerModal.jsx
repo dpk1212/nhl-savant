@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, X } from 'lucide-react';
+import { trackDisclaimerAccepted } from '../utils/analytics';
 import { Link } from 'react-router-dom';
 
 const DisclaimerModal = () => {
@@ -32,6 +33,10 @@ const DisclaimerModal = () => {
     // Only cleared if user manually clears browser data or localStorage
     localStorage.setItem('nhl_savant_disclaimer_acknowledged', 'true');
     localStorage.setItem('nhl_savant_disclaimer_date', new Date().toISOString());
+    
+    // ANALYTICS: Track disclaimer acceptance
+    trackDisclaimerAccepted();
+    
     setIsVisible(false);
   };
 

@@ -9,8 +9,16 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
  *   <YourContent />
  * </CollapsibleGameCard>
  */
-const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false }) => {
+const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false, onToggle }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  const handleToggle = () => {
+    const newState = !isExpanded;
+    setIsExpanded(newState);
+    if (onToggle) {
+      onToggle(newState);
+    }
+  };
 
   return (
     <div 
@@ -32,7 +40,7 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index 
     >
       {/* Clickable Header */}
       <div 
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleToggle}
         style={{
           cursor: 'pointer',
           position: 'relative',

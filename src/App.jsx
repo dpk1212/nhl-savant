@@ -1,6 +1,7 @@
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
+import { trackPageView, trackEngagement, trackFirstVisit, getPageName } from './utils/analytics';
 import { loadNHLData, loadOddsFiles, loadStartingGoalies, loadGoaliesCSV } from './utils/dataProcessing';
 import { GoalieProcessor } from './utils/goalieProcessor';
 import { ScheduleHelper } from './utils/scheduleHelper';
@@ -159,13 +160,54 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)' }}>
-          {/* First-time user disclaimer modal */}
-          <DisclaimerModal />
-          
-          <Navigation />
-          <main>
-            <Routes>
+        <AppContent 
+          dataProcessor={dataProcessor}
+          oddsData={oddsData}
+          startingGoalies={startingGoalies}
+          goalieData={goalieData}
+          statsAnalyzer={statsAnalyzer}
+          edgeFactorCalc={edgeFactorCalc}
+          loading={loading}
+          error={error}
+        />
+      </Router>
+    </ErrorBoundary>
+  );
+}
+
+// Separate component to use useLocation hook
+function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc, loading, error }) {
+  const location = useLocation();
+  const pageStartTime = useRef(Date.now());
+
+  // Track first visit
+  useEffect(() => {
+    trackFirstVisit();
+  }, []);
+
+  // Track page views and engagement on route change
+  useEffect(() => {
+    const pageName = getPageName(location.pathname);
+    trackPageView(pageName);
+    pageStartTime.current = Date.now();
+
+    // Track time on page when leaving
+    return () => {
+      const timeSpent = Math.floor((Date.now() - pageStartTime.current) / 1000);
+      if (timeSpent > 3) { // Only track if spent more than 3 seconds
+        trackEngagement(pageName, timeSpent);
+      }
+    };
+  }, [location.pathname]);
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)' }}>
+      {/* First-time user disclaimer modal */}
+      <DisclaimerModal />
+      
+      <Navigation />
+      <main>
+        <Routes>
               {/* Today's Games is the primary landing page */}
               <Route path="/" element={<TodaysGames 
                 dataProcessor={dataProcessor} 
@@ -180,15 +222,13 @@ function App() {
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
               <Route path="/performance" element={<PerformanceDashboard />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
-            </Routes>
-          </main>
-          
-          {/* Legal footer on every page */}
-          <LegalFooter />
-        </div>
-      </Router>
-    </ErrorBoundary>
-  );
-}
+          </Routes>
+        </main>
+        
+        {/* Legal footer on every page */}
+        <LegalFooter />
+      </div>
+    );
+  }
 
 export default App;
