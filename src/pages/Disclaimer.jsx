@@ -53,20 +53,20 @@ const Disclaimer = () => {
 
         {/* Critical Warning Banner */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-          border: '2px solid rgba(239, 68, 68, 0.4)',
+          background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)',
+          border: '2px solid rgba(251, 191, 36, 0.4)',
           borderRadius: '10px',
           padding: '1.5rem',
           marginBottom: '2rem',
           display: 'flex',
           gap: '1rem'
         }}>
-          <AlertTriangle size={24} color="#EF4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <AlertTriangle size={24} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
             <h3 style={{
               fontSize: '1.125rem',
               fontWeight: '800',
-              color: '#EF4444',
+              color: '#F59E0B',
               margin: '0 0 0.75rem 0',
               textTransform: 'uppercase',
               letterSpacing: '0.05em'

@@ -9,17 +9,23 @@ import { Target, Shield, TrendingUp, Activity } from 'lucide-react';
 const QuickStatsBar = ({ 
   game, 
   awayTeam, 
-  homeTeam, 
+  homeTeam,
+  dataProcessor,
   isMobile = false 
 }) => {
-  if (!game) return null;
+  if (!game || !dataProcessor) return null;
 
-  // Extract key stats from game data
-  const awayXGF = game.awayStats?.xGF || 0;
-  const homeXGF = game.homeStats?.xGF || 0;
-  const awayXGA = game.awayStats?.xGA || 0;
-  const homeXGA = game.homeStats?.xGA || 0;
+  // Get stats from dataProcessor
+  const awayStats = dataProcessor.getTeamStats(awayTeam);
+  const homeStats = dataProcessor.getTeamStats(homeTeam);
   
+  // Extract key stats
+  const awayXGF = awayStats?.xGF || 0;
+  const homeXGF = homeStats?.xGF || 0;
+  const awayXGA = awayStats?.xGA || 0;
+  const homeXGA = homeStats?.xGA || 0;
+  
+  // Get goalie info from game edges (if available)
   const awayGoalie = game.goalies?.away?.name || null;
   const homeGoalie = game.goalies?.home?.name || null;
 
