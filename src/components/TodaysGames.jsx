@@ -32,144 +32,137 @@ import {
 import { getStatDisplayName, getStatTooltip, getStatColorCode } from '../utils/statDisplayNames';
 import QuickStory from './QuickStory';
 import CollapsibleGameCard from './CollapsibleGameCard';
+import StepSection from './StepSection';
+import QuickStatsBar from './QuickStatsBar';
 
 // ========================================
 // INLINE HELPER COMPONENTS
 // ========================================
 
-// Compact Header - Team names, time, rating badge, win probabilities, best bet preview
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed }) => (
+// Compact Header - REDESIGNED for density and scannability
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor }) => (
   <div style={{ 
     display: 'flex', 
     flexDirection: 'column',
-    padding: isMobile ? MOBILE_SPACING.cardPadding : '1.25rem',
+    padding: isMobile ? '0.75rem' : '0.875rem', // REDUCED from 1.25rem
     borderBottom: isCollapsed ? 'none' : ELEVATION.flat.border,
     background: 'rgba(26, 31, 46, 0.3)'
   }}>
-    {/* Top row: Teams, time, rating */}
+    {/* Top row: Teams with inline badges */}
     <div style={{ 
       display: 'flex', 
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: isCollapsed && bestEdge ? '0.75rem' : '0'
-  }}>
-    <div style={{ flex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-        <span style={{ 
-          fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.25rem', 
-          fontWeight: TYPOGRAPHY.heading.weight, 
-          color: 'var(--color-text-primary)',
-          letterSpacing: TYPOGRAPHY.heading.letterSpacing
-        }}>
-          {awayTeam} <span style={{ color: 'var(--color-text-muted)' }}>@</span> {homeTeam}
-        </span>
-        <span style={{ 
-          fontSize: TYPOGRAPHY.label.size, 
-          color: 'var(--color-text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.375rem',
-          fontWeight: TYPOGRAPHY.label.weight
-        }}>
-          <Calendar size={14} />
-          {gameTime}
-        </span>
-      </div>
-      {awayWinProb && homeWinProb && (
-        <div style={{ 
-          fontSize: TYPOGRAPHY.caption.size, 
-          color: 'var(--color-text-muted)',
-          fontWeight: TYPOGRAPHY.caption.weight,
-          display: 'flex',
-          gap: '0.5rem'
-        }}>
-          <span style={{ color: awayWinProb > homeWinProb ? '#10B981' : 'var(--color-text-muted)' }}>
-            {awayTeam}: {(awayWinProb * 100).toFixed(0)}%
+      marginBottom: '0.5rem', // Tighter
+      gap: '0.75rem'
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.625rem', flexWrap: 'wrap' }}>
+          <span style={{ 
+            fontSize: isMobile ? '1.125rem' : '1.25rem', 
+            fontWeight: '800', 
+            color: 'var(--color-text-primary)',
+            letterSpacing: '-0.01em'
+          }}>
+            {awayTeam} <span style={{ color: 'var(--color-text-muted)', fontWeight: '400' }}>@</span> {homeTeam}
           </span>
-          <span>|</span>
-          <span style={{ color: homeWinProb > awayWinProb ? '#10B981' : 'var(--color-text-muted)' }}>
-            {homeTeam}: {(homeWinProb * 100).toFixed(0)}%
-          </span>
+          {rating > 0 && <RatingBadge evPercent={rating} size="small" />}
         </div>
-      )}
-    </div>
-    {rating > 0 && <RatingBadge evPercent={rating} size="small" />}
+        
+        {/* Win Probabilities as BADGES - promoted */}
+        {awayWinProb && homeWinProb && (
+          <div style={{ 
+            display: 'flex',
+            gap: '0.5rem',
+            marginTop: '0.375rem',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{
+              padding: '0.25rem 0.5rem',
+              background: awayWinProb > homeWinProb ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              border: awayWinProb > homeWinProb ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              color: awayWinProb > homeWinProb ? '#10B981' : 'var(--color-text-secondary)'
+            }}>
+              {awayTeam} {(awayWinProb * 100).toFixed(0)}%
+            </div>
+            <div style={{
+              padding: '0.25rem 0.5rem',
+              background: homeWinProb > awayWinProb ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              border: homeWinProb > awayWinProb ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              color: homeWinProb > awayWinProb ? '#10B981' : 'var(--color-text-secondary)'
+            }}>
+              {homeTeam} {(homeWinProb * 100).toFixed(0)}%
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Game time - compact */}
+      <div style={{ 
+        fontSize: '0.75rem', 
+        color: 'var(--color-text-muted)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.375rem',
+        fontWeight: '600',
+        whiteSpace: 'nowrap'
+      }}>
+        <Calendar size={12} />
+        {gameTime}
+      </div>
     </div>
     
-    {/* Best bet preview - only show when collapsed */}
+    {/* Best bet preview - SINGLE LINE when collapsed */}
     {isCollapsed && bestEdge && (
       <div style={{
-        marginTop: '0.75rem',
-        padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 1rem',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
-        borderRadius: '8px',
+        padding: isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
+        borderRadius: '6px',
         border: '1px solid rgba(16, 185, 129, 0.2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '0.75rem',
-        flexWrap: 'wrap'
+        gap: '0.75rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          flex: 1,
+          minWidth: 0,
+          fontSize: isMobile ? '0.75rem' : '0.813rem',
+          fontWeight: '700'
+        }}>
+          <span style={{ fontSize: '1rem' }}>💰</span>
           <span style={{ 
-            fontSize: isMobile ? '1rem' : '1.125rem',
-            filter: 'grayscale(0.3)'
-          }}>💰</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: isMobile ? '0.813rem' : '0.875rem',
-              fontWeight: '700',
-              color: 'var(--color-text-primary)',
-              marginBottom: '0.125rem',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {bestEdge.pick}
-            </div>
-            <div style={{
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'var(--color-text-muted)',
-              fontWeight: '600'
-            }}>
-              {bestEdge.market === 'MONEYLINE' ? 'Moneyline' : bestEdge.market === 'TOTAL' ? 'Total' : bestEdge.market}
-              {' • '}
-              {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
-            </div>
-          </div>
+            color: 'var(--color-text-primary)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {bestEdge.pick}
+          </span>
+          <span style={{ color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.688rem' }}>
+            {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+          </span>
         </div>
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          flexShrink: 0
+          padding: '0.25rem 0.5rem',
+          background: getEVColorScale(bestEdge.evPercent).background,
+          border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
+          borderRadius: '6px',
+          fontSize: '0.813rem',
+          fontWeight: '800',
+          color: getEVColorScale(bestEdge.evPercent).color,
+          whiteSpace: 'nowrap'
         }}>
-          <div style={{
-            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-            background: getEVColorScale(bestEdge.evPercent).background,
-            border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
-            borderRadius: '6px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: isMobile ? '0.938rem' : '1rem',
-              fontWeight: '800',
-              color: getEVColorScale(bestEdge.evPercent).color,
-              lineHeight: '1'
-            }}>
-              +{bestEdge.evPercent.toFixed(1)}%
-            </div>
-            <div style={{
-              fontSize: isMobile ? '0.563rem' : '0.625rem',
-              color: 'var(--color-text-muted)',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginTop: '0.125rem'
-            }}>
-              EV
-            </div>
-          </div>
+          +{bestEdge.evPercent.toFixed(1)}%
         </div>
       </div>
     )}
@@ -299,9 +292,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
       background: GRADIENTS.hero,
       border: ELEVATION.elevated.border,
       boxShadow: ELEVATION.elevated.shadow,
-      borderRadius: '12px',
-      padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem',
-      margin: isMobile ? MOBILE_SPACING.sectionGap : '1.25rem',
+      borderRadius: '10px',
+      padding: isMobile ? '0.75rem' : '0.875rem', // REDUCED from 1.5rem
+      margin: 0, // Removed margin since StepSection handles it
       position: 'relative',
       overflow: 'hidden'
     }}>
@@ -697,8 +690,8 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
         background: GRADIENTS.factors, 
         border: ELEVATION.raised.border,
         boxShadow: ELEVATION.raised.shadow,
-        borderRadius: MOBILE_SPACING.borderRadius,
-        padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem',
+        borderRadius: '10px',
+        padding: isMobile ? '0.75rem' : '0.875rem', // REDUCED from 1.5rem
         textAlign: 'center'
       }}>
         <div style={{ fontSize: TYPOGRAPHY.body.size, color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
@@ -745,7 +738,7 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
     }}>
       {/* Header with bet context */}
       <div style={{
-        padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem',
+        padding: isMobile ? '0.625rem' : '0.75rem', // REDUCED for compactness
         background: 'rgba(0, 0, 0, 0.15)',
         borderBottom: ELEVATION.flat.border
       }}>
@@ -769,7 +762,7 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
       </div>
       
       {/* Factors list */}
-      <div style={{ padding: isMobile ? MOBILE_SPACING.innerPadding : '1rem' }}>
+      <div style={{ padding: isMobile ? '0.625rem' : '0.75rem' }}> {/* REDUCED */}
       {topFactors.map((factor, idx) => {
         // Determine who has the advantage
         const awayVal = factor.awayMetric?.value || 0;
@@ -845,11 +838,11 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
         
         return (
           <div key={idx} style={{ 
-            marginBottom: idx < topFactors.length - 1 ? '0.875rem' : '0',
+            marginBottom: idx < topFactors.length - 1 ? '0.625rem' : '0', // REDUCED
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%)',
             border: '1px solid rgba(16, 185, 129, 0.2)',
-            borderRadius: '10px',
-            padding: '1rem',
+            borderRadius: '8px', // Tighter
+            padding: '0.75rem', // REDUCED from 1rem
             boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
           }}>
             {/* Header: Factor name */}
@@ -1058,9 +1051,9 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
     <div style={{
       background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.05) 100%)',
       border: '1px solid rgba(212, 175, 55, 0.3)',
-      borderRadius: '12px',
-      padding: isMobile ? MOBILE_SPACING.cardPadding : '1.25rem',
-      margin: isMobile ? `${MOBILE_SPACING.sectionGap} ${MOBILE_SPACING.cardPadding}` : '1.25rem',
+      borderRadius: '10px',
+      padding: isMobile ? '0.75rem' : '0.875rem', // REDUCED from 1.25rem
+      margin: 0, // Removed since StepSection handles spacing
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(212, 175, 55, 0.1)',
       position: 'relative',
       overflow: 'hidden'
@@ -2141,6 +2134,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             .sort((a, b) => b.evPercent - a.evPercent)[0];
 
           const headerContent = (
+            <>
               <CompactHeader
                 awayTeam={game.awayTeam}
                 homeTeam={game.homeTeam}
@@ -2149,8 +2143,18 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 awayWinProb={game.edges.moneyline?.away?.modelProb}
                 homeWinProb={game.edges.moneyline?.home?.modelProb}
                 isMobile={isMobile}
-              bestEdge={bestEdge}
-            />
+                bestEdge={bestEdge}
+                game={game}
+                dataProcessor={dataProcessor}
+              />
+              {/* Quick Stats Bar - only show when collapsed */}
+              <QuickStatsBar 
+                game={game}
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+                isMobile={isMobile}
+              />
+            </>
           );
 
           return (
@@ -2162,91 +2166,140 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               isMobile={isMobile}
             >
               
-              {/* 2. Hero Bet Card - Best value proposition */}
+              {/* STEP 1: THE BET */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 return (
-              <HeroBetCard
-                bestEdge={bestEdge}
-                game={game}
-                isMobile={isMobile}
-                    factors={analyticsData?.factors || []}
-              />
+                  <StepSection
+                    stepNumber={1}
+                    title="THE BET"
+                    emoji="🎯"
+                    accentColor="#D4AF37"
+                    isMobile={isMobile}
+                  >
+                    <HeroBetCard
+                      bestEdge={bestEdge}
+                      game={game}
+                      isMobile={isMobile}
+                      factors={analyticsData?.factors || []}
+                    />
+                  </StepSection>
                 );
               })()}
               
-              {/* 2.5. Quick Story - Plain language explanation WITH SITUATIONAL CONTEXT */}
+              {/* STEP 2: THE STORY */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (bestEdge && analyticsData && analyticsData.factors) {
                   return (
-                    <QuickStory
-                      game={game}
-                      bestEdge={bestEdge}
-                      factors={analyticsData.factors}
+                    <StepSection
+                      stepNumber={2}
+                      title="WHY THIS BET WORKS"
+                      emoji="📖"
+                      accentColor="#3B82F6"
                       isMobile={isMobile}
-                      dataProcessor={dataProcessor}
-                    />
+                    >
+                      <QuickStory
+                        game={game}
+                        bestEdge={bestEdge}
+                        factors={analyticsData.factors}
+                        isMobile={isMobile}
+                        dataProcessor={dataProcessor}
+                      />
+                    </StepSection>
                   );
                 }
                 return null;
-                })()}
+              })()}
               
-              {/* 3. Compact Factors - Top 3 critical factors */}
+              {/* STEP 3: THE EVIDENCE */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (analyticsData && analyticsData.factors && analyticsData.factors.length > 0) {
                   return (
-                    <CompactFactors
-                      factors={analyticsData.factors}
-                      totalImpact={analyticsData.totalImpact}
-                      awayTeam={game.awayTeam}
-                      homeTeam={game.homeTeam}
+                    <StepSection
+                      stepNumber={3}
+                      title="KEY STATISTICAL DRIVERS"
+                      emoji="📊"
+                      accentColor="#8B5CF6"
                       isMobile={isMobile}
-                      bestEdge={bestEdge}
-                    />
+                    >
+                      <CompactFactors
+                        factors={analyticsData.factors}
+                        totalImpact={analyticsData.totalImpact}
+                        awayTeam={game.awayTeam}
+                        homeTeam={game.homeTeam}
+                        isMobile={isMobile}
+                        bestEdge={bestEdge}
+                      />
+                    </StepSection>
                   );
                 }
                 return null;
               })()}
               
-              {/* 3b. Alternative Bet Card - Secondary opportunities */}
+              {/* STEP 4: MORE OPTIONS */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 return (
-                  <AlternativeBetCard 
-                    game={game}
-                    bestEdge={bestEdge}
-                    awayTeam={game.awayTeam}
-                    homeTeam={game.homeTeam}
+                  <StepSection
+                    stepNumber={4}
+                    title="ALTERNATIVE BETS"
+                    emoji="💡"
+                    accentColor="#F59E0B"
                     isMobile={isMobile}
-                    factors={analyticsData?.factors || []}
-                  />
+                  >
+                    <AlternativeBetCard 
+                      game={game}
+                      bestEdge={bestEdge}
+                      awayTeam={game.awayTeam}
+                      homeTeam={game.homeTeam}
+                      isMobile={isMobile}
+                      factors={analyticsData?.factors || []}
+                    />
+                  </StepSection>
                 );
               })()}
               
-              {/* 4. Markets Grid - Moneyline + Total */}
-              <MarketsGrid game={game} isMobile={isMobile} />
+              {/* STEP 5: ALL MARKETS */}
+              <StepSection
+                stepNumber={5}
+                title="COMPLETE ODDS BOARD"
+                emoji="📈"
+                accentColor="#64748B"
+                isMobile={isMobile}
+              >
+                <MarketsGrid game={game} isMobile={isMobile} />
+              </StepSection>
               
-              {/* 5. Expandable Deep Analytics */}
+              {/* STEP 6: DEEP ANALYTICS */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (analyticsData) {
                   return (
-                    <AdvancedMatchupDetails
-                    awayTeam={game.awayTeam}
-                    homeTeam={game.homeTeam}
-                      dangerZoneData={analyticsData.dangerZoneData}
-                      reboundData={analyticsData.reboundData}
-                      physicalData={analyticsData.physicalData}
-                      possessionData={analyticsData.possessionData}
-                      regressionData={analyticsData.regressionData}
-                      awayGoalie={getGoalieForTeam(game.awayTeam)}
-                      homeGoalie={getGoalieForTeam(game.homeTeam)}
+                    <StepSection
+                      stepNumber={6}
+                      title="ADVANCED MATCHUP ANALYSIS"
+                      emoji="🔬"
+                      accentColor="#10B981"
                       isMobile={isMobile}
-                      bestEdge={bestEdge}
-                      statsAnalyzer={statsAnalyzer}
-                    />
+                    >
+                      <AdvancedMatchupDetails
+                        awayTeam={game.awayTeam}
+                        homeTeam={game.homeTeam}
+                        dangerZoneData={analyticsData.dangerZoneData}
+                        reboundData={analyticsData.reboundData}
+                        physicalData={analyticsData.physicalData}
+                        possessionData={analyticsData.possessionData}
+                        regressionData={analyticsData.regressionData}
+                        awayGoalie={getGoalieForTeam(game.awayTeam)}
+                        homeGoalie={getGoalieForTeam(game.homeTeam)}
+                        isMobile={isMobile}
+                        bestEdge={bestEdge}
+                        statsAnalyzer={statsAnalyzer}
+                        defaultExpanded={false}
+                      />
+                    </StepSection>
                   );
                 }
                 return null;

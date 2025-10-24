@@ -19,13 +19,14 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index 
         animationDelay: `${index * 0.1}s`,
         position: 'relative',
         overflow: 'hidden',
-        // Premium collapsed state styling
+        // Optimized collapsed state styling - less visual weight
         background: isExpanded 
           ? 'var(--color-bg-secondary)' 
-          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)',
+          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%)',
         border: isExpanded 
           ? '1px solid var(--color-border)' 
-          : '1px solid rgba(16, 185, 129, 0.2)',
+          : '1px solid rgba(16, 185, 129, 0.15)',
+        borderRadius: '10px', // Tightened from default
         transition: 'all 0.3s ease'
       }}
     >
@@ -50,37 +51,37 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index 
         }}
       >
         {/* Pass isExpanded state to header via cloneElement if needed */}
-        <div style={{ position: 'relative', paddingRight: isMobile ? '48px' : '56px' }}>
+        <div style={{ position: 'relative', paddingRight: isMobile ? '44px' : '50px' }}>
           {/* Clone header and inject isCollapsed prop */}
           {React.cloneElement(header, { isCollapsed: !isExpanded })}
           
-          {/* Chevron Icon - Fixed positioning to avoid overlap */}
+          {/* Chevron Icon - Optimized, cleaner design */}
           <div style={{
             position: 'absolute',
             top: '50%',
-            right: isMobile ? '0.75rem' : '1rem',
+            right: isMobile ? '0.625rem' : '0.875rem',
             transform: 'translateY(-50%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: isMobile ? '32px' : '40px',
-            height: isMobile ? '32px' : '40px',
-            borderRadius: '10px',
+            width: isMobile ? '30px' : '36px',
+            height: isMobile ? '30px' : '36px',
+            borderRadius: '8px',
             background: isExpanded 
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%)' 
-              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
-            border: `2px solid ${isExpanded ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.3)'}`,
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.12) 100%)' 
+              : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)',
+            border: `1.5px solid ${isExpanded ? 'rgba(16, 185, 129, 0.35)' : 'rgba(59, 130, 246, 0.25)'}`,
             boxShadow: isExpanded 
-              ? '0 2px 8px rgba(16, 185, 129, 0.2)' 
-              : '0 2px 8px rgba(59, 130, 246, 0.2)',
+              ? '0 2px 6px rgba(16, 185, 129, 0.18)' 
+              : '0 2px 6px rgba(59, 130, 246, 0.18)',
             transition: 'all 0.3s ease',
             pointerEvents: 'none',
             zIndex: 10
           }}>
             {isExpanded ? (
-              <ChevronUp size={isMobile ? 18 : 22} color="#10B981" strokeWidth={2.5} />
+              <ChevronUp size={isMobile ? 16 : 20} color="#10B981" strokeWidth={2.5} />
             ) : (
-              <ChevronDown size={isMobile ? 18 : 22} color="#3B82F6" strokeWidth={2.5} />
+              <ChevronDown size={isMobile ? 16 : 20} color="#3B82F6" strokeWidth={2.5} />
             )}
           </div>
         </div>
