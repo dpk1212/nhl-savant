@@ -24,6 +24,8 @@ const AdvancedMatchupDetails = ({
   isMobile,
   bestEdge, // For bet-specific prioritization
   statsAnalyzer, // For league context
+  dataProcessor, // For schedule/situational analysis
+  game, // Game object with date for situational factors
   defaultExpanded = false // Collapsed by default for cleaner UX
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
