@@ -13,27 +13,32 @@ const QuickStatsBar = ({
   dataProcessor,
   isMobile = false 
 }) => {
+  // ROBUST ERROR HANDLING: Prevent crashes if data unavailable
   if (!game || !dataProcessor) return null;
 
-  // Get stats from dataProcessor
-  const awayStats = dataProcessor.getTeamStats(awayTeam);
-  const homeStats = dataProcessor.getTeamStats(homeTeam);
-  
-  // Extract key stats
-  const awayXGF = awayStats?.xGF || 0;
-  const homeXGF = homeStats?.xGF || 0;
-  const awayXGA = awayStats?.xGA || 0;
-  const homeXGA = homeStats?.xGA || 0;
-  
-  // Get goalie info from game edges (if available)
-  const awayGoalie = game.goalies?.away?.name || null;
-  const homeGoalie = game.goalies?.home?.name || null;
+  try {
+    // Get stats from dataProcessor with error handling
+    const awayStats = dataProcessor.getTeamStats(awayTeam);
+    const homeStats = dataProcessor.getTeamStats(homeTeam);
+    
+    // Extract key stats
+    const awayXGF = awayStats?.xGF || 0;
+    const homeXGF = homeStats?.xGF || 0;
+    const awayXGA = awayStats?.xGA || 0;
+    const homeXGA = homeStats?.xGA || 0;
+    
+    // If no stats available, don't render
+    if (!awayXGF && !homeXGF && !awayXGA && !homeXGA) return null;
+    
+    // Get goalie info from game edges (if available)
+    const awayGoalie = game.goalies?.away?.name || null;
+    const homeGoalie = game.goalies?.home?.name || null;
 
-  // Determine advantages
-  const offenseLeader = awayXGF > homeXGF ? awayTeam : homeTeam;
-  const offenseValue = Math.max(awayXGF, homeXGF).toFixed(2);
-  const defenseLeader = awayXGA < homeXGA ? awayTeam : homeTeam;
-  const defenseValue = Math.min(awayXGA, homeXGA).toFixed(2);
+    // Determine advantages
+    const offenseLeader = awayXGF > homeXGF ? awayTeam : homeTeam;
+    const offenseValue = Math.max(awayXGF, homeXGF).toFixed(2);
+    const defenseLeader = awayXGA < homeXGA ? awayTeam : homeTeam;
+    const defenseValue = Math.min(awayXGA, homeXGA).toFixed(2);
 
   const StatBadge = ({ icon: Icon, label, value, isAdvantage = false }) => (
     <div style={{
@@ -121,7 +126,12 @@ const QuickStatsBar = ({
         </div>
       )}
     </div>
-  );
+    );
+  } catch (error) {
+    // FAIL GRACEFULLY: Don't crash the entire app if stats fail
+    console.warn('QuickStatsBar error:', error);
+    return null;
+  }
 };
 
 export default QuickStatsBar;
