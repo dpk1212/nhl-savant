@@ -37,8 +37,8 @@ const AdvancedMatchupDetails = ({
       
       // PRIORITY 1: Check for situational factors (if dataProcessor available)
       // These are HIGH IMPACT and users want to know about them
-      if (dataProcessor?.scheduleHelper && game?.date) {
-      const scheduleHelper = dataProcessor.scheduleHelper;
+      if (dataProcessor && dataProcessor.scheduleHelper && game && game.date) {
+        const scheduleHelper = dataProcessor.scheduleHelper;
       
       // Check away team situation
       const awayRest = scheduleHelper.getDaysRest(awayTeam, game.date);
@@ -122,7 +122,8 @@ const AdvancedMatchupDetails = ({
         const impact = betType.includes('OVER') ? 'supports OVER' : 'due to bounce back';
         hits.push(`📈 ${homeTeam} PDO ${homePDO.toFixed(1)} (unlucky — ${impact})`);
       }
-      }
+    }
+    }
       
       return hits.slice(0, 3); // Max 3 quick hits
     } catch (error) {
