@@ -12,10 +12,11 @@ const QuickStory = ({ game, bestEdge, factors, isMobile, dataProcessor }) => {
   
   // Generate story from top factors, bet type, AND situational context
   const generateStory = () => {
-    const topFactors = factors.slice(0, 3);
-    const { awayTeam, homeTeam } = game;
-    const betType = bestEdge.type || bestEdge.market;
-    const pick = bestEdge.pick || bestEdge.displayPick;
+    try {
+      const topFactors = factors.slice(0, 3);
+      const { awayTeam, homeTeam } = game;
+      const betType = bestEdge.type || bestEdge.market;
+      const pick = bestEdge.pick || bestEdge.displayPick;
     
     // Get situational context from scheduleHelper (if available)
     const scheduleHelper = dataProcessor?.scheduleHelper;
@@ -201,7 +202,17 @@ const QuickStory = ({ game, bestEdge, factors, isMobile, dataProcessor }) => {
       narrative += `Model gives ${teamPick} ${(modelProb * 100).toFixed(0)}% win probability — value at current odds.`;
     }
     
-    return narrative;
+      return narrative;
+    } catch (error) {
+      console.error('QuickStory generation error:', error);
+      // Fallback to simple narrative if advanced features fail
+      const modelTotal = game.edges?.total?.predictedTotal || 0;
+      const marketTotal = game.edges?.total?.marketTotal || 0;
+      if (modelTotal && marketTotal) {
+        return `Model projects ${modelTotal.toFixed(1)} goals vs market's ${marketTotal.toFixed(1)}.`;
+      }
+      return `Advanced model analysis suggests value in this matchup.`;
+    }
   };
   
   const story = generateStory();
