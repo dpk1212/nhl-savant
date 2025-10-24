@@ -1591,8 +1591,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       
       // ANALYTICS: Track bets loaded
       const betsWithEV = edges.filter(game => {
-        const bestBet = getBestBet(game);
-        return bestBet && bestBet.evPercent > 0;
+        return game.bestEdge && game.bestEdge.evPercent > 0;
       }).length;
       trackBetsLoaded(edges.length, betsWithEV);
       
