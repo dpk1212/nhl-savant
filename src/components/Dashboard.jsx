@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lucide-react';
 import DataStatus from './DataStatus';
-import NeuralNetwork from './dashboard/NeuralNetwork';
 import NHLGalaxy from './dashboard/NHLGalaxy';
 import LeagueHeatmap from './dashboard/LeagueHeatmap';
 
@@ -110,9 +109,6 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
         <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
           <DataStatus dataProcessor={dataProcessor} loading={loading} error={error} />
         </div>
-
-        {/* Hero: The Neural Engine */}
-        <NeuralNetwork dataProcessor={dataProcessor} isMobile={isMobile} />
 
         {/* THE CENTERPIECE: NHL Galaxy - Van Gogh Masterpiece */}
         <NHLGalaxy dataProcessor={dataProcessor} isMobile={isMobile} />
