@@ -32,6 +32,7 @@ export const TEAM_NAME_MAP = {
   'Tampa Bay Lightning': 'TBL',
   'Toronto Maple Leafs': 'TOR',
   'Utah Hockey Club': 'UTA',
+  'Utah Mammoth': 'UTA',  // Alternative name for Utah
   'Vancouver Canucks': 'VAN',
   'Vegas Golden Knights': 'VGK',
   'Washington Capitals': 'WSH',

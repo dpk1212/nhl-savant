@@ -200,6 +200,154 @@ export class ScheduleHelper {
   }
 
   /**
+   * Count consecutive away games before this game
+   * Used for road trip fatigue detection
+   * @param {string} team - Team code
+   * @param {string} gameDate - Game date
+   * @returns {number} Number of consecutive away games (0 if home game or first away)
+   */
+  getConsecutiveAwayGames(team, gameDate) {
+    const games = this.gamesByTeam[team];
+    if (!games || games.length === 0) return 0;
+
+    const targetTimestamp = this.parseDate(gameDate);
+    if (!targetTimestamp) return 0;
+
+    // Get all games before this one, sorted newest first
+    const prevGames = games
+      .filter(g => g.timestamp < targetTimestamp)
+      .sort((a, b) => b.timestamp - a.timestamp);
+
+    // Count consecutive away games
+    let awayStreak = 0;
+    for (const game of prevGames) {
+      if (game.location === 'away') {
+        awayStreak++;
+      } else {
+        break; // Hit a home game, stop counting
+      }
+    }
+
+    return awayStreak;
+  }
+
+  /**
+   * Calculate road trip fatigue adjustment
+   * Research: Teams on game 3+ of road trip show 3-8% performance decline
+   * @param {string} team - Team code
+   * @param {string} gameDate - Game date
+   * @returns {number} Adjustment value (negative for fatigue)
+   */
+  getRoadTripAdjustment(team, gameDate) {
+    const awayStreak = this.getConsecutiveAwayGames(team, gameDate);
+
+    // No penalty for home games or first 2 away games
+    if (awayStreak < 2) return 0;
+
+    // Progressive fatigue penalty
+    if (awayStreak === 2) return -0.03; // 3rd game of trip: -3%
+    if (awayStreak === 3) return -0.05; // 4th game: -5%
+    if (awayStreak >= 4) return -0.08; // 5th+ game: -8%
+
+    return 0;
+  }
+
+  /**
+   * Check if team is returning home from a long road trip
+   * @param {string} team - Team code
+   * @param {string} gameDate - Game date
+   * @returns {Object} { isHomecoming: boolean, tripLength: number }
+   */
+  isHomecomingGame(team, gameDate) {
+    const games = this.gamesByTeam[team];
+    if (!games || games.length === 0) {
+      return { isHomecoming: false, tripLength: 0 };
+    }
+
+    const targetTimestamp = this.parseDate(gameDate);
+    if (!targetTimestamp) {
+      return { isHomecoming: false, tripLength: 0 };
+    }
+
+    // Current game must be home
+    const currentGame = games.find(g => g.timestamp === targetTimestamp);
+    if (!currentGame || currentGame.location !== 'home') {
+      return { isHomecoming: false, tripLength: 0 };
+    }
+
+    // Count previous consecutive away games
+    const prevGames = games
+      .filter(g => g.timestamp < targetTimestamp)
+      .sort((a, b) => b.timestamp - a.timestamp);
+
+    let awayStreak = 0;
+    for (const game of prevGames) {
+      if (game.location === 'away') {
+        awayStreak++;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      isHomecoming: awayStreak >= 3, // Only if trip was 3+ games
+      tripLength: awayStreak
+    };
+  }
+
+  /**
+   * Calculate homecoming boost adjustment
+   * Research: Teams return home from 3+ game trips with +3-6% boost
+   * Fresh crowd energy, familiar surroundings, own bed
+   * @param {string} team - Team code
+   * @param {string} gameDate - Game date
+   * @returns {number} Adjustment value (positive for boost)
+   */
+  getHomecomingAdjustment(team, gameDate) {
+    const { isHomecoming, tripLength } = this.isHomecomingGame(team, gameDate);
+
+    if (!isHomecoming) return 0;
+
+    // Longer trip = bigger homecoming boost
+    if (tripLength === 3) return 0.03; // +3% boost
+    if (tripLength === 4) return 0.05; // +5% boost
+    if (tripLength >= 5) return 0.06; // +6% boost (rare but powerful)
+
+    return 0;
+  }
+
+  /**
+   * Get COMBINED situational adjustment
+   * Includes: B2B/rest, road trip fatigue, homecoming boost
+   * @param {string} team - Team code
+   * @param {string} gameDate - Game date
+   * @param {boolean} isHome - Whether team is home or away
+   * @returns {number} Combined adjustment value
+   */
+  getCombinedAdjustment(team, gameDate, isHome) {
+    let adjustment = 0;
+
+    // Base rest adjustment (B2B, extra rest)
+    adjustment += this.getRestAdjustment(team, gameDate);
+
+    if (isHome) {
+      // Check for homecoming boost
+      const homecomingAdj = this.getHomecomingAdjustment(team, gameDate);
+      if (homecomingAdj !== 0) {
+        adjustment += homecomingAdj;
+      }
+    } else {
+      // Check for road trip fatigue
+      const roadTripAdj = this.getRoadTripAdjustment(team, gameDate);
+      if (roadTripAdj !== 0) {
+        adjustment += roadTripAdj;
+      }
+    }
+
+    return adjustment;
+  }
+
+  /**
    * Get detailed rest info (for debugging/display)
    */
   getRestInfo(team, gameDate) {
