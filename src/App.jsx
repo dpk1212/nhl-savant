@@ -17,7 +17,6 @@ import Methodology from './components/Methodology';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import LegalFooter from './components/LegalFooter';
-import DisclaimerModal from './components/DisclaimerModal';
 import Disclaimer from './pages/Disclaimer';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
@@ -220,9 +219,6 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-background)' }}>
-      {/* First-time user disclaimer modal */}
-      <DisclaimerModal />
-      
       <Navigation />
       <main>
         <Routes>

@@ -14,10 +14,16 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index 
 
   const handleToggle = () => {
     const newState = !isExpanded;
-    setIsExpanded(newState);
+    
+    // If onToggle returns false, prevent expansion (for disclaimer, etc.)
     if (onToggle) {
-      onToggle(newState);
+      const shouldExpand = onToggle(newState);
+      if (shouldExpand === false && newState === true) {
+        return; // Don't expand if callback says no
+      }
     }
+    
+    setIsExpanded(newState);
   };
 
   return (

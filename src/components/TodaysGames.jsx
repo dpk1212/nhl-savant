@@ -35,6 +35,7 @@ import QuickStory from './QuickStory';
 import CollapsibleGameCard from './CollapsibleGameCard';
 import StepSection from './StepSection';
 import QuickStatsBar from './QuickStatsBar';
+import DisclaimerModal from './DisclaimerModal';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -1554,6 +1555,17 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   
+  // DISCLAIMER: State for first-time user acknowledgment
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [pendingGameExpand, setPendingGameExpand] = useState(null);
+  const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  
+  // Check if user has previously acknowledged disclaimer
+  useEffect(() => {
+    const acknowledged = localStorage.getItem('nhl_savant_disclaimer_acknowledged');
+    setHasAcknowledged(!!acknowledged);
+  }, []);
+  
   // FIREBASE: Auto-track all recommended bets
   useBetTracking(allEdges, dataProcessor);
   
@@ -2099,6 +2111,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               isMobile={isMobile}
               onToggle={(isExpanded) => {
                 if (isExpanded) {
+                  // Check if user has acknowledged disclaimer
+                  if (!hasAcknowledged) {
+                    // Show disclaimer modal first
+                    setPendingGameExpand(game);
+                    setShowDisclaimer(true);
+                    return false; // Prevent expansion
+                  }
                   trackBetExpand(game);
                 }
               }}
@@ -2801,6 +2820,24 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           )}
         </>
       )}
+      
+      {/* Disclaimer Modal - shown when user clicks first game card */}
+      <DisclaimerModal 
+        isVisible={showDisclaimer}
+        onAccept={() => {
+          setHasAcknowledged(true);
+          setShowDisclaimer(false);
+          // Now allow the pending game to expand
+          if (pendingGameExpand) {
+            trackBetExpand(pendingGameExpand);
+            setPendingGameExpand(null);
+          }
+        }}
+        onDecline={() => {
+          setShowDisclaimer(false);
+          setPendingGameExpand(null);
+        }}
+      />
     </div>
   );
 };
