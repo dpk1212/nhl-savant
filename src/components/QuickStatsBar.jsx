@@ -21,6 +21,14 @@ const QuickStatsBar = ({
     const awayStats = dataProcessor.getTeamStats(awayTeam);
     const homeStats = dataProcessor.getTeamStats(homeTeam);
     
+    console.log('🔍 QuickStatsBar Debug:', {
+      awayTeam,
+      homeTeam,
+      awayStats,
+      homeStats,
+      hasDataProcessor: !!dataProcessor
+    });
+    
     // Extract key stats
     const awayXGF = awayStats?.xGF || 0;
     const homeXGF = homeStats?.xGF || 0;
@@ -28,7 +36,10 @@ const QuickStatsBar = ({
     const homeXGA = homeStats?.xGA || 0;
     
     // If no stats available, don't render
-    if (!awayXGF && !homeXGF && !awayXGA && !homeXGA) return null;
+    if (!awayXGF && !homeXGF && !awayXGA && !homeXGA) {
+      console.warn('⚠️ QuickStatsBar: No stats available');
+      return null;
+    }
     
     // Get goalie info from game edges (if available)
     const awayGoalie = game.goalies?.away?.name || null;

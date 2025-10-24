@@ -1796,19 +1796,19 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '0.75rem' : '1.5rem 1rem' }} className="animate-fade-in">
-      {/* ✨ PREMIUM ELITE HEADER - COMPLETELY OVERHAULED */}
+      {/* ✨ ULTRA-COMPACT PREMIUM HEADER */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(26, 31, 46, 0.98) 0%, rgba(17, 24, 39, 0.95) 100%)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid rgba(212, 175, 55, 0.2)',
-        borderRadius: isMobile ? '16px' : '20px',
-        padding: isMobile ? '1.25rem 1.25rem 1rem' : '1.75rem 2rem 1.5rem',
-        marginBottom: isMobile ? '1.25rem' : '1.75rem',
+        borderRadius: isMobile ? '12px' : '14px',
+        padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.25rem',
+        marginBottom: isMobile ? '1rem' : '1.25rem',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(212, 175, 55, 0.15) inset, 0 20px 60px rgba(212, 175, 55, 0.08)',
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(212, 175, 55, 0.15) inset',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
         {/* Animated gold shimmer gradient */}
         <div style={{
@@ -1845,61 +1845,59 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           gap: isMobile ? '1rem' : '1.5rem',
           flexWrap: isMobile ? 'wrap' : 'nowrap'
         }}>
-          {/* Left: Premium Title & Live Status */}
-          <div style={{ flex: isMobile ? '1 1 100%' : '1 1 auto', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.625rem' : '0.875rem', marginBottom: isMobile ? '0.5rem' : '0.625rem' }}>
-              {/* Glowing calendar icon */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(255, 215, 0, 0.15) 100%)',
-                borderRadius: '10px',
-                padding: isMobile ? '0.5rem' : '0.625rem',
-                border: '1px solid rgba(212, 175, 55, 0.3)',
-                boxShadow: '0 0 20px rgba(212, 175, 55, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Calendar size={isMobile ? 18 : 22} color="#D4AF37" style={{ flexShrink: 0, filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.5))' }} />
-              </div>
+          {/* Left: ULTRA-COMPACT Title & Badges - Everything inline */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.625rem', flexWrap: 'wrap' }}>
+              {/* Compact calendar icon */}
+              <Calendar size={isMobile ? 16 : 18} color="#D4AF37" style={{ flexShrink: 0, filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.5))' }} />
+              
               <h1 style={{ 
-                fontSize: isMobile ? '1.375rem' : '1.875rem',
-                fontWeight: '900',
+                fontSize: isMobile ? '1rem' : '1.125rem',
+                fontWeight: '800',
                 background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 margin: 0,
-                letterSpacing: '-0.02em',
-                lineHeight: '1.1',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                textShadow: '0 0 30px rgba(212, 175, 55, 0.3)',
-                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+                letterSpacing: '-0.01em',
+                lineHeight: '1',
+                whiteSpace: 'nowrap'
               }}>
                 Today's Games
               </h1>
-              {/* LIVE pulse indicator */}
+              
+              {/* Inline date & time */}
+              <span style={{ 
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(212, 175, 55, 0.7)',
+                fontWeight: '600',
+                whiteSpace: 'nowrap'
+              }}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+              
+              <LiveClock />
+              
+              {/* Compact LIVE indicator */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.375rem',
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)',
-                padding: '0.375rem 0.625rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)'
+                gap: '0.25rem',
+                background: 'rgba(16, 185, 129, 0.15)',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '4px',
+                border: '1px solid rgba(16, 185, 129, 0.3)'
               }}>
                 <div style={{
-                  width: '6px',
-                  height: '6px',
+                  width: '5px',
+                  height: '5px',
                   borderRadius: '50%',
                   background: '#10B981',
-                  boxShadow: '0 0 8px #10B981',
+                  boxShadow: '0 0 6px #10B981',
                   animation: 'pulse 2s infinite'
                 }} />
                 <span style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontSize: '0.625rem',
                   fontWeight: '700',
                   color: '#10B981',
                   textTransform: 'uppercase',
@@ -1908,70 +1906,42 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                   LIVE
                 </span>
               </div>
-            </div>
-            {/* Premium date and time display */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.625rem' : '0.875rem', flexWrap: 'wrap' }}>
-              <span style={{ 
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
-                color: 'rgba(212, 175, 55, 0.8)',
-                fontWeight: '700',
-                whiteSpace: 'nowrap'
-                  }}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </span>
-                  <LiveClock />
-                  
+              
               {/* Compact goalie status */}
-              {(() => {
-                console.log('🥅 startingGoalies check:', { 
-                  exists: !!startingGoalies, 
-                  hasGames: !!startingGoalies?.games,
-                  gamesLength: startingGoalies?.games?.length,
-                  fullData: startingGoalies 
-                });
-                return null;
-              })()}
               {startingGoalies && startingGoalies.games && (
                 <span style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  padding: isMobile ? '0.125rem 0.375rem' : '0.2rem 0.5rem',
-                  borderRadius: '6px',
+                  fontSize: '0.625rem',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '4px',
                   background: 'rgba(16, 185, 129, 0.12)',
                   border: '1px solid rgba(16, 185, 129, 0.25)',
-                      color: '#10B981',
+                  color: '#10B981',
                   fontWeight: '700',
-                  whiteSpace: 'nowrap',
-                  letterSpacing: '0.02em'
-                    }}>
-                      🥅 {(() => {
-                        let confirmed = 0;
-                        let total = 0;
-                        
-                        if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
-                          startingGoalies.games.forEach(game => {
-                            // Count total goalies (2 per game)
-                            total += 2;
-                            
-                            // Count confirmed goalies
-                            // A goalie is confirmed if: goalie exists AND confirmed is not explicitly false
-                            if (game.away?.goalie) {
-                              if (game.away.confirmed === undefined || game.away.confirmed === true) {
-                                confirmed++;
-                              }
-                            }
-                            if (game.home?.goalie) {
-                              if (game.home.confirmed === undefined || game.home.confirmed === true) {
-                                confirmed++;
-                              }
-                            }
-                          });
+                  whiteSpace: 'nowrap'
+                }}>
+                  🥅 {(() => {
+                    let confirmed = 0;
+                    let total = 0;
+                    
+                    if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
+                      startingGoalies.games.forEach(game => {
+                        total += 2;
+                        if (game.away?.goalie) {
+                          if (game.away.confirmed === undefined || game.away.confirmed === true) {
+                            confirmed++;
+                          }
                         }
-                        
-                        console.log('🥅 Goalie count:', { confirmed, total, gamesCount: startingGoalies?.games?.length });
-                        return `${confirmed}/${total}`;
-                      })()}
-                    </span>
-                  )}
+                        if (game.home?.goalie) {
+                          if (game.home.confirmed === undefined || game.home.confirmed === true) {
+                            confirmed++;
+                          }
+                        }
+                      });
+                    }
+                    return `${confirmed}/${total}`;
+                  })()}
+                </span>
+              )}
             </div>
           </div>
           
@@ -1983,167 +1953,128 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             flexShrink: 0,
             flexWrap: 'wrap'
           }}>
-            {/* Total Games Counter - Sophisticated glass badge */}
+            {/* COMPACT Games Badge */}
             <div style={{
-              position: 'relative',
               textAlign: 'center',
-              padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.125rem',
+              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
               background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.18) 0%, rgba(148, 163, 184, 0.08) 100%)',
               backdropFilter: 'blur(12px)',
-              borderRadius: '12px',
+              borderRadius: '8px',
               border: '1px solid rgba(148, 163, 184, 0.35)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.1) inset',
-              transition: 'all 0.3s ease',
-              cursor: 'default'
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+              transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.15) inset';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.1) inset';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.25)';
             }}>
               <div style={{
-                fontSize: isMobile ? '1.5rem' : '1.875rem',
+                fontSize: isMobile ? '1.25rem' : '1.5rem',
                 fontWeight: '900',
                 background: 'linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 lineHeight: '1',
-                marginBottom: '0.25rem',
-                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+                marginBottom: '0.125rem'
               }}>
                 {allEdges.length}
               </div>
               <div style={{
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
                 color: 'rgba(203, 213, 225, 0.9)',
                 fontWeight: '800',
                 textTransform: 'uppercase',
-                letterSpacing: '0.08em'
+                letterSpacing: '0.05em'
               }}>
                 GAMES
               </div>
             </div>
             
-            {/* +EV Bets Counter - Premium blue gradient */}
+            {/* COMPACT +EV Badge */}
             <div style={{
-              position: 'relative',
               textAlign: 'center',
-              padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.125rem',
+              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
               background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.12) 100%)',
               backdropFilter: 'blur(12px)',
-              borderRadius: '12px',
+              borderRadius: '8px',
               border: '1px solid rgba(59, 130, 246, 0.4)',
-              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.3), 0 1px 0 rgba(59, 130, 246, 0.2) inset',
-              transition: 'all 0.3s ease',
-              cursor: 'default',
-              overflow: 'hidden'
+              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 24px rgba(59, 130, 246, 0.45), 0 1px 0 rgba(59, 130, 246, 0.3) inset';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(59, 130, 246, 0.3), 0 1px 0 rgba(59, 130, 246, 0.2) inset';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.3)';
             }}>
               <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '100%',
-                height: '100%',
-                background: 'radial-gradient(ellipse, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
-                pointerEvents: 'none'
-              }} />
-              <div style={{
-                fontSize: isMobile ? '1.5rem' : '1.875rem',
+                fontSize: isMobile ? '1.25rem' : '1.5rem',
                 fontWeight: '900',
                 background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 lineHeight: '1',
-                marginBottom: '0.25rem',
-                position: 'relative',
-                zIndex: 1,
-                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+                marginBottom: '0.125rem'
               }}>
                 {opportunityCounts.total}
               </div>
               <div style={{
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
                 color: 'rgba(96, 165, 250, 1)',
                 fontWeight: '800',
                 textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                position: 'relative',
-                zIndex: 1
+                letterSpacing: '0.05em'
               }}>
                 +EV
               </div>
             </div>
             
-            {/* Elite Bets Counter - PREMIUM GOLD GRADIENT - The Showpiece */}
+            {/* COMPACT Elite Badge - Still premium but smaller */}
             <div style={{
-              position: 'relative',
               textAlign: 'center',
-              padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.125rem',
+              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
               background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%)',
               backdropFilter: 'blur(12px)',
-              borderRadius: '12px',
+              borderRadius: '8px',
               border: '1px solid rgba(212, 175, 55, 0.5)',
-              boxShadow: '0 4px 20px rgba(212, 175, 55, 0.35), 0 1px 0 rgba(255, 215, 0, 0.25) inset',
-              transition: 'all 0.3s ease',
-              cursor: 'default',
-              overflow: 'hidden'
+              boxShadow: '0 2px 10px rgba(212, 175, 55, 0.35)',
+              transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(212, 175, 55, 0.5), 0 1px 0 rgba(255, 215, 0, 0.35) inset';
+              e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(212, 175, 55, 0.5)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(212, 175, 55, 0.35), 0 1px 0 rgba(255, 215, 0, 0.25) inset';
+              e.currentTarget.style.boxShadow = '0 2px 10px rgba(212, 175, 55, 0.35)';
             }}>
-              {/* Radial glow effect */}
               <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '120%',
-                height: '120%',
-                background: 'radial-gradient(ellipse, rgba(255, 215, 0, 0.2) 0%, transparent 70%)',
-                pointerEvents: 'none'
-              }} />
-              <div style={{
-                fontSize: isMobile ? '1.5rem' : '1.875rem',
+                fontSize: isMobile ? '1.25rem' : '1.5rem',
                 fontWeight: '900',
                 background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #FFD700 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 lineHeight: '1',
-                marginBottom: '0.25rem',
-                position: 'relative',
-                zIndex: 1,
-                filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.6)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+                marginBottom: '0.125rem',
+                filter: 'drop-shadow(0 0 6px rgba(212, 175, 55, 0.5))'
               }}>
                 {opportunityCounts.highValue}
               </div>
               <div style={{
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
                 background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 fontWeight: '900',
                 textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                position: 'relative',
-                zIndex: 1,
-                filter: 'drop-shadow(0 0 6px rgba(212, 175, 55, 0.4))'
+                letterSpacing: '0.05em',
+                filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.4))'
               }}>
                 ELITE
               </div>
