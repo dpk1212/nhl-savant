@@ -808,7 +808,7 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
               // Show which team has offense/defense advantage
               const awayXGF = factor.awayMetric?.value || 0;
               const homeXGF = factor.homeMetric?.value || 0;
-              const betterOffense = awayXGF > homeXGF ? game.awayTeam : game.homeTeam;
+              const betterOffense = awayXGF > homeXGF ? awayTeam : homeTeam;
               const offenseRank = Math.max(awayXGF, homeXGF) > 2.7 ? 'elite' : Math.max(awayXGF, homeXGF) > 2.5 ? 'strong' : 'solid';
               
               return `${betterOffense}'s ${offenseRank} offense (${Math.max(awayXGF, homeXGF).toFixed(2)} xGF/60) creates ${impactAmount}-goal ${direction} edge.`;
@@ -816,7 +816,7 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
               // Show defensive advantage
               const awayXGA = factor.awayMetric?.value || 0;
               const homeXGA = factor.homeMetric?.value || 0;
-              const betterDefense = awayXGA < homeXGA ? game.awayTeam : game.homeTeam;
+              const betterDefense = awayXGA < homeXGA ? awayTeam : homeTeam;
               const defenseRank = Math.min(awayXGA, homeXGA) < 2.3 ? 'elite' : Math.min(awayXGA, homeXGA) < 2.5 ? 'strong' : 'solid';
               
               return `${betterDefense}'s ${defenseRank} defense (${Math.min(awayXGA, homeXGA).toFixed(2)} xGA/60) limits scoring, ${impactAmount}-goal ${direction} edge.`;
@@ -824,8 +824,8 @@ const CompactFactors = ({ factors, totalImpact, awayTeam, homeTeam, isMobile, be
               return `Special teams advantage creates ${impactAmount}-goal ${direction} edge.`;
             } else if (factor.name.includes('PDO') || factor.name.includes('Regression')) {
               const team = factor.impact < 0 ? 
-                (factor.awayMetric?.value > factor.homeMetric?.value ? game.awayTeam : game.homeTeam) :
-                (factor.awayMetric?.value < factor.homeMetric?.value ? game.awayTeam : game.homeTeam);
+                (factor.awayMetric?.value > factor.homeMetric?.value ? awayTeam : homeTeam) :
+                (factor.awayMetric?.value < factor.homeMetric?.value ? awayTeam : homeTeam);
               return `${team}'s regression indicators point toward ${impactAmount}-goal ${direction} edge.`;
             }
             
