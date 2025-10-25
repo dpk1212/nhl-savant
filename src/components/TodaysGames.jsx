@@ -2072,56 +2072,56 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '0.625rem' : '0.75rem' }}>
                   {gamesInSlot.map((game, gameIndex) => {
                     const index = allEdges.indexOf(game);
-          // Find the best edge for this game to show in narrative
-          const bestEdge = topEdges
-            .filter(e => e.game === game.game && e.evPercent > 0)
-            .sort((a, b) => b.evPercent - a.evPercent)[0];
+                    // Find the best edge for this game to show in narrative
+                    const bestEdge = topEdges
+                      .filter(e => e.game === game.game && e.evPercent > 0)
+                      .sort((a, b) => b.evPercent - a.evPercent)[0];
 
-          const headerContent = (
-            <>
-              <CompactHeader
-                awayTeam={game.awayTeam}
-                homeTeam={game.homeTeam}
-                gameTime={game.gameTime}
-                rating={bestEdge?.evPercent || 0}
-                awayWinProb={game.edges.moneyline?.away?.modelProb}
-                homeWinProb={game.edges.moneyline?.home?.modelProb}
-                isMobile={isMobile}
-                bestEdge={bestEdge}
-                game={game}
-                dataProcessor={dataProcessor}
-              />
-              {/* Quick Stats Bar - only show when collapsed */}
-              <QuickStatsBar 
-                game={game}
-                awayTeam={game.awayTeam}
-                homeTeam={game.homeTeam}
-                dataProcessor={dataProcessor}
-                isMobile={isMobile}
-              />
-            </>
-          );
+                    const headerContent = (
+                      <>
+                        <CompactHeader
+                          awayTeam={game.awayTeam}
+                          homeTeam={game.homeTeam}
+                          gameTime={game.gameTime}
+                          rating={bestEdge?.evPercent || 0}
+                          awayWinProb={game.edges.moneyline?.away?.modelProb}
+                          homeWinProb={game.edges.moneyline?.home?.modelProb}
+                          isMobile={isMobile}
+                          bestEdge={bestEdge}
+                          game={game}
+                          dataProcessor={dataProcessor}
+                        />
+                        {/* Quick Stats Bar - only show when collapsed */}
+                        <QuickStatsBar 
+                          game={game}
+                          awayTeam={game.awayTeam}
+                          homeTeam={game.homeTeam}
+                          dataProcessor={dataProcessor}
+                          isMobile={isMobile}
+                        />
+                      </>
+                    );
 
-          return (
-            <CollapsibleGameCard
-              key={index}
-              header={headerContent}
-              defaultExpanded={false}
-              index={index}
-              isMobile={isMobile}
-              onToggle={(isExpanded) => {
-                if (isExpanded) {
-                  // Check if user has acknowledged disclaimer
-                  if (!hasAcknowledged) {
-                    // Show disclaimer modal first
-                    setPendingGameExpand(game);
-                    setShowDisclaimer(true);
-                    return false; // Prevent expansion
-                  }
-                  trackBetExpand(game);
-                }
-              }}
-            >
+                    return (
+                      <CollapsibleGameCard
+                        key={index}
+                        header={headerContent}
+                        defaultExpanded={false}
+                        index={index}
+                        isMobile={isMobile}
+                        onToggle={(isExpanded) => {
+                          if (isExpanded) {
+                            // Check if user has acknowledged disclaimer
+                            if (!hasAcknowledged) {
+                              // Show disclaimer modal first
+                              setPendingGameExpand(game);
+                              setShowDisclaimer(true);
+                              return false; // Prevent expansion
+                            }
+                            trackBetExpand(game);
+                          }
+                        }}
+                      >
               
               {/* STEP 1: THE BET */}
               {(() => {
