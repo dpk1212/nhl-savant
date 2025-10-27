@@ -57,24 +57,24 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       alignItems: 'center',
       marginBottom: '0.5rem', // Tighter
       gap: '0.75rem'
-    }}>
+  }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.625rem', flexWrap: 'wrap' }}>
-          <span style={{ 
+        <span style={{ 
             fontSize: isMobile ? '1.125rem' : '1.25rem', 
             fontWeight: '800', 
-            color: 'var(--color-text-primary)',
+          color: 'var(--color-text-primary)',
             letterSpacing: '-0.01em'
-          }}>
+        }}>
             {awayTeam} <span style={{ color: 'var(--color-text-muted)', fontWeight: '400' }}>@</span> {homeTeam}
-          </span>
+        </span>
           {rating > 0 && <RatingBadge evPercent={rating} size="small" />}
-        </div>
+      </div>
         
         {/* Win Probabilities as BADGES - promoted */}
-        {awayWinProb && homeWinProb && (
-          <div style={{ 
-            display: 'flex',
+      {awayWinProb && homeWinProb && (
+        <div style={{ 
+          display: 'flex',
             gap: '0.5rem',
             marginTop: '0.375rem',
             flexWrap: 'wrap'
@@ -101,9 +101,9 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
             }}>
               {homeTeam} {(homeWinProb * 100).toFixed(0)}%
             </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
       
       {/* Game time - compact */}
       <div style={{ 
@@ -132,7 +132,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         justifyContent: 'space-between',
         gap: '0.75rem'
       }}>
-        <div style={{ 
+            <div style={{
           display: 'flex', 
           alignItems: 'center', 
           gap: '0.5rem',
@@ -143,28 +143,28 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         }}>
           <span style={{ fontSize: '1rem' }}>💰</span>
           <span style={{ 
-            color: 'var(--color-text-primary)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {bestEdge.pick}
+              color: 'var(--color-text-primary)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {bestEdge.pick}
           </span>
           <span style={{ color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.688rem' }}>
-            {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+              {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
           </span>
         </div>
         <div style={{
           padding: '0.25rem 0.5rem',
-          background: getEVColorScale(bestEdge.evPercent).background,
-          border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
-          borderRadius: '6px',
+            background: getEVColorScale(bestEdge.evPercent).background,
+            border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
+            borderRadius: '6px',
           fontSize: '0.813rem',
-          fontWeight: '800',
-          color: getEVColorScale(bestEdge.evPercent).color,
+              fontWeight: '800',
+              color: getEVColorScale(bestEdge.evPercent).color,
           whiteSpace: 'nowrap'
-        }}>
-          +{bestEdge.evPercent.toFixed(1)}%
+            }}>
+              +{bestEdge.evPercent.toFixed(1)}%
         </div>
       </div>
     )}
@@ -1601,14 +1601,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       // CONSULTANT FIX: Run model validation to detect systematic bias
       validatePredictions(edges);
       
-      // ANALYTICS: Track bets loaded
+      // ANALYTICS: Track bets loaded (only B-rated or higher)
       const betsWithEV = edges.filter(game => {
-        return game.bestEdge && game.bestEdge.evPercent > 0;
+        return game.bestEdge && game.bestEdge.evPercent >= 3;
       }).length;
       trackBetsLoaded(edges.length, betsWithEV);
       
-      // Get all opportunities (games with positive EV)
-      const topOpportunities = calculator.getTopEdges(0); // 0 = all with positive EV
+      // Get all opportunities (games with B-rated or higher bets)
+      const topOpportunities = calculator.getTopEdges(3); // 3% = B-rated minimum
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData, startingGoalies]);
@@ -1651,25 +1651,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   }, [goalieProcessor, startingGoalies]); // Re-create when goalieProcessor or startingGoalies change
   
   // Calculate opportunities with consistent logic
-  // STANDARD DEFINITIONS:
-  // - Opportunity = Any game with at least one bet having EV > 0%
-  // - High Value = Any opportunity with best bet EV > 5%
+  // STANDARD DEFINITIONS (UPDATED - NO MORE C-RATED BETS):
+  // - Opportunity = Any game with at least one B-rated or higher bet (EV >= 3%)
+  // - High Value = Any opportunity with best bet EV > 5% (B+ or higher)
   const getOpportunityCounts = () => {
-    // Filter to only games that have at least one positive EV bet
+    // Filter to only games that have at least one B-rated or higher bet (>= 3% EV)
     const opportunities = allEdges.filter(game => {
-      let hasPositiveEV = false;
+      let hasQualityBet = false;
       
-      // Check moneyline
-      if (game.edges.moneyline?.away?.evPercent > 0 || game.edges.moneyline?.home?.evPercent > 0) {
-        hasPositiveEV = true;
+      // Check moneyline (only count B-rated or higher)
+      if (game.edges.moneyline?.away?.evPercent >= 3 || game.edges.moneyline?.home?.evPercent >= 3) {
+        hasQualityBet = true;
       }
       
-      // Check totals
-      if (game.edges.total?.over?.evPercent > 0 || game.edges.total?.under?.evPercent > 0) {
-        hasPositiveEV = true;
+      // Check totals (only count B-rated or higher)
+      if (game.edges.total?.over?.evPercent >= 3 || game.edges.total?.under?.evPercent >= 3) {
+        hasQualityBet = true;
       }
       
-      return hasPositiveEV;
+      return hasQualityBet;
     });
     
     // High value = GAMES (not individual bets) where BEST bet has EV > 5%
@@ -1824,22 +1824,22 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         borderRadius: '10px',
         padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.25rem',
         marginBottom: isMobile ? '1rem' : '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
+          display: 'flex', 
+          alignItems: 'center',
         justifyContent: 'space-between',
         gap: '1rem',
         flexWrap: 'wrap'
       }}>
         {/* Left: Date/Time info - clean & minimal */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{
+                  <span style={{ 
             fontSize: isMobile ? '0.813rem' : '0.875rem',
             color: 'rgba(255, 255, 255, 0.9)',
-            fontWeight: '600',
+                fontWeight: '600',
             letterSpacing: '-0.01em'
-          }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-          </span>
+                  }}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </span>
           
           <span style={{
             width: '3px',
@@ -1848,11 +1848,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             background: 'rgba(255, 255, 255, 0.3)'
           }} />
           
-          <LiveClock />
-          
-          {startingGoalies && startingGoalies.games && (
+                  <LiveClock />
+                  
+              {startingGoalies && startingGoalies.games && (
             <>
-              <span style={{
+                <span style={{
                 width: '3px',
                 height: '3px',
                 borderRadius: '50%',
@@ -1860,34 +1860,34 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               }} />
               <span style={{
                 fontSize: isMobile ? '0.75rem' : '0.813rem',
-                color: '#10B981',
+                      color: '#10B981',
                 fontWeight: '600'
-              }}>
-                🥅 {(() => {
-                  let confirmed = 0;
-                  let total = 0;
-                  if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
-                    startingGoalies.games.forEach(game => {
-                      total += 2;
+                    }}>
+                      🥅 {(() => {
+                        let confirmed = 0;
+                        let total = 0;
+                        if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
+                          startingGoalies.games.forEach(game => {
+                            total += 2;
                       if (game.away?.goalie && (game.away.confirmed === undefined || game.away.confirmed === true)) confirmed++;
                       if (game.home?.goalie && (game.home.confirmed === undefined || game.home.confirmed === true)) confirmed++;
                     });
                   }
-                  return `${confirmed}/${total}`;
-                })()}
-              </span>
+                        return `${confirmed}/${total}`;
+                      })()}
+                    </span>
             </>
-          )}
-        </div>
+                  )}
+          </div>
           
         {/* Right: MINIMAL stat badges - no gradients, just clean */}
-        <div style={{ 
-          display: 'flex',
+          <div style={{ 
+                      display: 'flex',
           gap: isMobile ? '0.5rem' : '0.625rem',
           alignItems: 'center'
-        }}>
+          }}>
           {/* Games */}
-          <div style={{
+            <div style={{
             padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
             background: 'rgba(148, 163, 184, 0.1)',
             borderRadius: '6px',
@@ -1900,24 +1900,24 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               fontSize: isMobile ? '1.125rem' : '1.25rem',
               fontWeight: '700',
               color: '#CBD5E1'
-            }}>
-              {allEdges.length}
+              }}>
+                {allEdges.length}
             </span>
             <span style={{
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               color: 'rgba(203, 213, 225, 0.7)',
               fontWeight: '600',
-              textTransform: 'uppercase',
+                textTransform: 'uppercase',
               letterSpacing: '0.03em'
-            }}>
-              Games
+              }}>
+                Games
             </span>
-          </div>
-
+            </div>
+            
           {/* +EV */}
-          <div style={{
+            <div style={{
             padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-            background: 'rgba(59, 130, 246, 0.12)',
+              background: 'rgba(59, 130, 246, 0.12)',
             borderRadius: '6px',
             border: '1px solid rgba(59, 130, 246, 0.3)',
             display: 'flex',
@@ -1928,22 +1928,22 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               fontSize: isMobile ? '1.125rem' : '1.25rem',
               fontWeight: '700',
               color: '#60A5FA'
-            }}>
-              {opportunityCounts.total}
+              }}>
+                {opportunityCounts.total}
             </span>
             <span style={{
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               color: 'rgba(96, 165, 250, 0.9)',
               fontWeight: '600',
-              textTransform: 'uppercase',
+                textTransform: 'uppercase',
               letterSpacing: '0.03em'
-            }}>
-              +EV
+              }}>
+                +EV
             </span>
-          </div>
-
+            </div>
+            
           {/* Elite */}
-          <div style={{
+            <div style={{
             padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
             background: 'rgba(212, 175, 55, 0.12)',
             borderRadius: '6px',
@@ -1956,28 +1956,28 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               fontSize: isMobile ? '1.125rem' : '1.25rem',
               fontWeight: '700',
               color: '#D4AF37'
-            }}>
-              {opportunityCounts.highValue}
+              }}>
+                {opportunityCounts.highValue}
             </span>
             <span style={{
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               color: 'rgba(212, 175, 55, 0.9)',
               fontWeight: '600',
-              textTransform: 'uppercase',
+                textTransform: 'uppercase',
               letterSpacing: '0.03em'
-            }}>
-              Elite
+              }}>
+                Elite
             </span>
+            </div>
           </div>
         </div>
-      </div>
-
+        
       {/* Countdown - minimal */}
-      {allEdges.length > 0 && allEdges[0].gameTime && (
+        {allEdges.length > 0 && allEdges[0].gameTime && (
         <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
           <GameCountdown firstGameTime={allEdges[0].gameTime} />
-        </div>
-      )}
+          </div>
+        )}
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
@@ -2072,22 +2072,22 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '0.625rem' : '0.75rem' }}>
                   {gamesInSlot.map((game, gameIndex) => {
                     const index = allEdges.indexOf(game);
-                    // Find the best edge for this game to show in narrative
-                    const bestEdge = topEdges
-                      .filter(e => e.game === game.game && e.evPercent > 0)
-                      .sort((a, b) => b.evPercent - a.evPercent)[0];
+          // Find the best edge for this game to show in narrative
+          const bestEdge = topEdges
+            .filter(e => e.game === game.game && e.evPercent > 0)
+            .sort((a, b) => b.evPercent - a.evPercent)[0];
 
-                    const headerContent = (
+          const headerContent = (
                       <>
-                        <CompactHeader
-                          awayTeam={game.awayTeam}
-                          homeTeam={game.homeTeam}
-                          gameTime={game.gameTime}
-                          rating={bestEdge?.evPercent || 0}
-                          awayWinProb={game.edges.moneyline?.away?.modelProb}
-                          homeWinProb={game.edges.moneyline?.home?.modelProb}
-                          isMobile={isMobile}
-                          bestEdge={bestEdge}
+              <CompactHeader
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+                gameTime={game.gameTime}
+                rating={bestEdge?.evPercent || 0}
+                awayWinProb={game.edges.moneyline?.away?.modelProb}
+                homeWinProb={game.edges.moneyline?.home?.modelProb}
+                isMobile={isMobile}
+              bestEdge={bestEdge}
                           game={game}
                           dataProcessor={dataProcessor}
                         />
@@ -2100,15 +2100,15 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           isMobile={isMobile}
                         />
                       </>
-                    );
+          );
 
-                    return (
-                      <CollapsibleGameCard
-                        key={index}
-                        header={headerContent}
-                        defaultExpanded={false}
-                        index={index}
-                        isMobile={isMobile}
+          return (
+            <CollapsibleGameCard
+              key={index}
+              header={headerContent}
+              defaultExpanded={false}
+              index={index}
+              isMobile={isMobile}
                         onToggle={(isExpanded) => {
                           if (isExpanded) {
                             // Check if user has acknowledged disclaimer
@@ -2134,12 +2134,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                     accentColor="#D4AF37"
                     isMobile={isMobile}
                   >
-                    <HeroBetCard
-                      bestEdge={bestEdge}
-                      game={game}
-                      isMobile={isMobile}
-                      factors={analyticsData?.factors || []}
-                    />
+              <HeroBetCard
+                bestEdge={bestEdge}
+                game={game}
+                isMobile={isMobile}
+                    factors={analyticsData?.factors || []}
+              />
                   </StepSection>
                 );
               })()}
@@ -2156,18 +2156,18 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       accentColor="#3B82F6"
                       isMobile={isMobile}
                     >
-                      <QuickStory
-                        game={game}
-                        bestEdge={bestEdge}
-                        factors={analyticsData.factors}
-                        isMobile={isMobile}
+                    <QuickStory
+                      game={game}
+                      bestEdge={bestEdge}
+                      factors={analyticsData.factors}
+                      isMobile={isMobile}
                         dataProcessor={dataProcessor}
-                      />
+                    />
                     </StepSection>
                   );
                 }
                 return null;
-              })()}
+                })()}
               
               {/* STEP 3: THE EVIDENCE */}
               {(() => {
@@ -2181,14 +2181,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       accentColor="#8B5CF6"
                       isMobile={isMobile}
                     >
-                      <CompactFactors
-                        factors={analyticsData.factors}
-                        totalImpact={analyticsData.totalImpact}
-                        awayTeam={game.awayTeam}
-                        homeTeam={game.homeTeam}
-                        isMobile={isMobile}
-                        bestEdge={bestEdge}
-                      />
+                    <CompactFactors
+                      factors={analyticsData.factors}
+                      totalImpact={analyticsData.totalImpact}
+                      awayTeam={game.awayTeam}
+                      homeTeam={game.homeTeam}
+                      isMobile={isMobile}
+                      bestEdge={bestEdge}
+                    />
                     </StepSection>
                   );
                 }
@@ -2206,14 +2206,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                     accentColor="#F59E0B"
                     isMobile={isMobile}
                   >
-                    <AlternativeBetCard 
-                      game={game}
-                      bestEdge={bestEdge}
-                      awayTeam={game.awayTeam}
-                      homeTeam={game.homeTeam}
-                      isMobile={isMobile}
-                      factors={analyticsData?.factors || []}
-                    />
+                  <AlternativeBetCard 
+                    game={game}
+                    bestEdge={bestEdge}
+                    awayTeam={game.awayTeam}
+                    homeTeam={game.homeTeam}
+                    isMobile={isMobile}
+                    factors={analyticsData?.factors || []}
+                  />
                   </StepSection>
                 );
               })()}
@@ -2226,7 +2226,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 accentColor="#64748B"
                 isMobile={isMobile}
               >
-                <MarketsGrid game={game} isMobile={isMobile} />
+              <MarketsGrid game={game} isMobile={isMobile} />
               </StepSection>
               
               {/* STEP 6: DEEP ANALYTICS */}
@@ -2241,23 +2241,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       accentColor="#10B981"
                       isMobile={isMobile}
                     >
-                      <AdvancedMatchupDetails
-                        awayTeam={game.awayTeam}
-                        homeTeam={game.homeTeam}
-                        dangerZoneData={analyticsData.dangerZoneData}
-                        reboundData={analyticsData.reboundData}
-                        physicalData={analyticsData.physicalData}
-                        possessionData={analyticsData.possessionData}
-                        regressionData={analyticsData.regressionData}
-                        awayGoalie={getGoalieForTeam(game.awayTeam)}
-                        homeGoalie={getGoalieForTeam(game.homeTeam)}
-                        isMobile={isMobile}
+                    <AdvancedMatchupDetails
+                    awayTeam={game.awayTeam}
+                    homeTeam={game.homeTeam}
+                      dangerZoneData={analyticsData.dangerZoneData}
+                      reboundData={analyticsData.reboundData}
+                      physicalData={analyticsData.physicalData}
+                      possessionData={analyticsData.possessionData}
+                      regressionData={analyticsData.regressionData}
+                      awayGoalie={getGoalieForTeam(game.awayTeam)}
+                      homeGoalie={getGoalieForTeam(game.homeTeam)}
+                      isMobile={isMobile}
                         dataProcessor={dataProcessor}
                         game={game}
-                        bestEdge={bestEdge}
-                        statsAnalyzer={statsAnalyzer}
+                      bestEdge={bestEdge}
+                      statsAnalyzer={statsAnalyzer}
                         defaultExpanded={false}
-                      />
+                    />
                     </StepSection>
                   );
                 }
