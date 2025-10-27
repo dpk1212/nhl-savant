@@ -63,7 +63,10 @@ export default function PerformanceDashboard() {
       const snapshot = await getDocs(q);
       const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       
-      if (bets.length === 0) {
+      // FILTER: Only include B-rated or higher bets (>= 3% EV)
+      const qualityBets = bets.filter(b => b.prediction?.rating !== 'C');
+      
+      if (qualityBets.length === 0) {
         setStats({
           totalBets: 0,
           wins: 0,
@@ -77,25 +80,25 @@ export default function PerformanceDashboard() {
         return;
       }
       
-      // Calculate stats
-      const wins = bets.filter(b => b.result?.outcome === 'WIN').length;
-      const losses = bets.filter(b => b.result?.outcome === 'LOSS').length;
-      const pushes = bets.filter(b => b.result?.outcome === 'PUSH').length;
-      const totalProfit = bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+      // Calculate overall stats (B-rated or higher only)
+      const wins = qualityBets.filter(b => b.result?.outcome === 'WIN').length;
+      const losses = qualityBets.filter(b => b.result?.outcome === 'LOSS').length;
+      const pushes = qualityBets.filter(b => b.result?.outcome === 'PUSH').length;
+      const totalProfit = qualityBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
       
       setStats({
-        totalBets: bets.length,
+        totalBets: qualityBets.length,
         wins,
         losses,
         pushes,
         winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
-        roi: bets.length > 0 ? (totalProfit / bets.length) * 100 : 0,
+        roi: qualityBets.length > 0 ? (totalProfit / qualityBets.length) * 100 : 0,
         profit: totalProfit
       });
       
-      // Calculate by market
+      // Calculate by market (B-rated or higher only)
       const marketStats = {};
-      bets.forEach(b => {
+      qualityBets.forEach(b => {
         const market = b.bet?.market || 'UNKNOWN';
         if (!marketStats[market]) {
           marketStats[market] = { bets: 0, wins: 0, losses: 0, profit: 0 };
@@ -113,11 +116,9 @@ export default function PerformanceDashboard() {
       });
       setByMarket(marketStats);
       
-      // Calculate by rating (EXCLUDE C-rated bets - not recommended anymore)
+      // Calculate by rating (already filtered to B-rated or higher)
       const ratingStats = {};
-      bets
-        .filter(b => b.prediction?.rating !== 'C') // Only show B-rated or higher
-        .forEach(b => {
+      qualityBets.forEach(b => {
         const rating = b.prediction?.rating || 'UNKNOWN';
         if (!ratingStats[rating]) {
           ratingStats[rating] = { bets: 0, wins: 0, losses: 0, profit: 0 };
@@ -135,8 +136,8 @@ export default function PerformanceDashboard() {
       });
       setByRating(ratingStats);
       
-      // Only show B-rated or higher in recent bets
-      setRecentBets(bets.filter(b => b.prediction?.rating !== 'C').slice(0, 20));
+      // Recent bets (already filtered to B-rated or higher)
+      setRecentBets(qualityBets.slice(0, 20));
       setLoading(false);
     } catch (error) {
       console.error('Error loading performance data:', error);
