@@ -8,10 +8,10 @@ export function useBetTracking(allEdges, dataProcessor) {
   useEffect(() => {
     if (!allEdges || allEdges.length === 0) return;
     
-    // Track all games with at least one positive EV bet
+    // Track all games with at least one B-rated or higher bet (>= 3% EV)
     const opportunities = allEdges.filter(game => {
       const bestBet = getBestBet(game);
-      return bestBet && bestBet.evPercent > 0;
+      return bestBet && bestBet.evPercent >= 3;
     });
     
     console.log(`📊 Found ${opportunities.length} betting opportunities to track`);
@@ -45,8 +45,8 @@ export function useBetTracking(allEdges, dataProcessor) {
         console.error(`Failed to save main bet for ${bestBetId}:`, error);
       }
       
-      // Save/update alternate bet if it's also positive EV
-      if (alternateBet && alternateBet.evPercent > 0) {
+      // Save/update alternate bet if it's also B-rated or higher (>= 3% EV)
+      if (alternateBet && alternateBet.evPercent >= 3) {
         const altBetId = `${game.date}_${game.awayTeam}_${game.homeTeam}_${alternateBet.market}_${alternateBet.pick.replace(/\s+/g, '_')}`;
         try {
           await tracker.current.saveBet(game, alternateBet, {
@@ -170,7 +170,7 @@ export function useBetTracking(allEdges, dataProcessor) {
       const bestML = (awayML?.evPercent || -Infinity) > (homeML?.evPercent || -Infinity) ? awayML : homeML;
       const bestMLTeam = (awayML?.evPercent || -Infinity) > (homeML?.evPercent || -Infinity) ? game.awayTeam : game.homeTeam;
       
-      if (!bestML || bestML.evPercent <= 0) return null;
+      if (!bestML || bestML.evPercent < 3) return null; // Only B-rated or higher
       
       return {
         ...bestML,
@@ -189,7 +189,7 @@ export function useBetTracking(allEdges, dataProcessor) {
       const line = game.rawOdds?.total?.line || over?.line || under?.line;
       const isOver = (over?.evPercent || -Infinity) > (under?.evPercent || -Infinity);
       
-      if (!bestTotal || bestTotal.evPercent <= 0) return null;
+      if (!bestTotal || bestTotal.evPercent < 3) return null; // Only B-rated or higher
       
       return {
         ...bestTotal,

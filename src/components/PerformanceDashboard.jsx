@@ -113,9 +113,11 @@ export default function PerformanceDashboard() {
       });
       setByMarket(marketStats);
       
-      // Calculate by rating
+      // Calculate by rating (EXCLUDE C-rated bets - not recommended anymore)
       const ratingStats = {};
-      bets.forEach(b => {
+      bets
+        .filter(b => b.prediction?.rating !== 'C') // Only show B-rated or higher
+        .forEach(b => {
         const rating = b.prediction?.rating || 'UNKNOWN';
         if (!ratingStats[rating]) {
           ratingStats[rating] = { bets: 0, wins: 0, losses: 0, profit: 0 };
@@ -133,7 +135,8 @@ export default function PerformanceDashboard() {
       });
       setByRating(ratingStats);
       
-      setRecentBets(bets.slice(0, 20));
+      // Only show B-rated or higher in recent bets
+      setRecentBets(bets.filter(b => b.prediction?.rating !== 'C').slice(0, 20));
       setLoading(false);
     } catch (error) {
       console.error('Error loading performance data:', error);
