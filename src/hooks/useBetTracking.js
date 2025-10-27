@@ -10,58 +10,51 @@ export function useBetTracking(allEdges, dataProcessor) {
     
     // Track all games with at least one B-rated or higher bet (>= 3% EV)
     const opportunities = allEdges.filter(game => {
-      const bestBet = getBestBet(game);
-      return bestBet && bestBet.evPercent >= 3;
+      const bestML = getBestMoneyline(game);
+      const bestTotal = getBestTotal(game);
+      return (bestML && bestML.evPercent >= 3) || (bestTotal && bestTotal.evPercent >= 3);
     });
     
-    console.log(`📊 Found ${opportunities.length} betting opportunities to track`);
+    console.log(`📊 Found ${opportunities.length} games to track (ML + Total only)`);
     
     opportunities.forEach(async (game) => {
-      const bestBet = getBestBet(game);
-      const alternateBet = getAlternateBet(game, bestBet);
+      const bestML = getBestMoneyline(game);
+      const bestTotal = getBestTotal(game);
       
       // Create a game-level ID to track if we've processed this game
       const gameId = `${game.date}_${game.awayTeam}_${game.homeTeam}`;
-      
-      // Only CREATE new bets if we haven't processed this game yet
-      // But always UPDATE existing bets with new odds
       const isFirstTime = !savedBets.current.has(gameId);
       
-      // Save/update best bet
-      const bestBetId = `${game.date}_${game.awayTeam}_${game.homeTeam}_${bestBet.market}_${bestBet.pick.replace(/\s+/g, '_')}`;
-      try {
-        await tracker.current.saveBet(game, bestBet, {
-          awayScore: game.edges.total?.awayScore || 0,
-          homeScore: game.edges.total?.homeScore || 0,
-          totalScore: game.edges.total?.predictedTotal || 0,
-          awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
-          homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
-        });
-        
-        if (isFirstTime) {
-          console.log(`✅ Created main bet: ${bestBet.market} ${bestBet.pick} (+${bestBet.evPercent.toFixed(1)}% EV)`);
-        }
-      } catch (error) {
-        console.error(`Failed to save main bet for ${bestBetId}:`, error);
-      }
+      // Prediction data (same for both bets)
+      const predictionData = {
+        awayScore: game.edges.total?.awayScore || 0,
+        homeScore: game.edges.total?.homeScore || 0,
+        totalScore: game.edges.total?.predictedTotal || 0,
+        awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
+        homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
+      };
       
-      // Save/update alternate bet if it's also B-rated or higher (>= 3% EV)
-      if (alternateBet && alternateBet.evPercent >= 3) {
-        const altBetId = `${game.date}_${game.awayTeam}_${game.homeTeam}_${alternateBet.market}_${alternateBet.pick.replace(/\s+/g, '_')}`;
+      // Save/update MONEYLINE bet (if exists and >= 3% EV)
+      if (bestML && bestML.evPercent >= 3) {
         try {
-          await tracker.current.saveBet(game, alternateBet, {
-            awayScore: game.edges.total?.awayScore || 0,
-            homeScore: game.edges.total?.homeScore || 0,
-            totalScore: game.edges.total?.predictedTotal || 0,
-            awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
-            homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
-          });
-          
+          await tracker.current.saveBet(game, bestML, predictionData);
           if (isFirstTime) {
-            console.log(`✅ Created alternate bet: ${alternateBet.market} ${alternateBet.pick} (+${alternateBet.evPercent.toFixed(1)}% EV)`);
+            console.log(`✅ Tracked ML: ${bestML.pick} (+${bestML.evPercent.toFixed(1)}% EV)`);
           }
         } catch (error) {
-          console.error(`Failed to save alternate bet for ${altBetId}:`, error);
+          console.error(`Failed to save ML bet:`, error);
+        }
+      }
+      
+      // Save/update TOTAL bet (if exists and >= 3% EV)
+      if (bestTotal && bestTotal.evPercent >= 3) {
+        try {
+          await tracker.current.saveBet(game, bestTotal, predictionData);
+          if (isFirstTime) {
+            console.log(`✅ Tracked Total: ${bestTotal.pick} (+${bestTotal.evPercent.toFixed(1)}% EV)`);
+          }
+        } catch (error) {
+          console.error(`Failed to save Total bet:`, error);
         }
       }
       
@@ -73,131 +66,66 @@ export function useBetTracking(allEdges, dataProcessor) {
     
   }, [allEdges]);
   
-  function getBestBet(game) {
-    let bestBet = null;
-    let bestEV = 0;
+  // Get best MONEYLINE bet (home OR away, whichever has higher EV)
+  function getBestMoneyline(game) {
+    const awayML = game.edges.moneyline?.away;
+    const homeML = game.edges.moneyline?.home;
     
-    // Check moneyline
-    if (game.edges.moneyline?.away && game.edges.moneyline.away.evPercent > bestEV) {
-      bestEV = game.edges.moneyline.away.evPercent;
-      bestBet = {
-        ...game.edges.moneyline.away,
+    if (!awayML && !homeML) return null;
+    
+    // Pick the side with higher EV
+    const awayEV = awayML?.evPercent || -Infinity;
+    const homeEV = homeML?.evPercent || -Infinity;
+    
+    if (awayEV > homeEV && awayML) {
+      return {
+        ...awayML,
         market: 'MONEYLINE',
-        pick: `${game.awayTeam} (AWAY)`,
+        pick: `${game.awayTeam} ML`,
         team: game.awayTeam
       };
-    }
-    if (game.edges.moneyline?.home && game.edges.moneyline.home.evPercent > bestEV) {
-      bestEV = game.edges.moneyline.home.evPercent;
-      bestBet = {
-        ...game.edges.moneyline.home,
+    } else if (homeML) {
+      return {
+        ...homeML,
         market: 'MONEYLINE',
-        pick: `${game.homeTeam} (HOME)`,
+        pick: `${game.homeTeam} ML`,
         team: game.homeTeam
       };
     }
     
-    // Check totals
-    if (game.edges.total?.over && game.edges.total.over.evPercent > bestEV) {
-      bestEV = game.edges.total.over.evPercent;
-      bestBet = {
-        ...game.edges.total.over,
-        market: 'TOTAL',
-        pick: `OVER ${game.rawOdds.total?.line || game.edges.total.over.line}`,
-        line: game.rawOdds.total?.line || game.edges.total.over.line
-      };
-    }
-    if (game.edges.total?.under && game.edges.total.under.evPercent > bestEV) {
-      bestEV = game.edges.total.under.evPercent;
-      bestBet = {
-        ...game.edges.total.under,
-        market: 'TOTAL',
-        pick: `UNDER ${game.rawOdds.total?.line || game.edges.total.under.line}`,
-        line: game.rawOdds.total?.line || game.edges.total.under.line
-      };
-    }
-    
-    // Check puck line
-    if (game.edges.puckLine?.away && game.edges.puckLine.away.evPercent > bestEV) {
-      bestEV = game.edges.puckLine.away.evPercent;
-      bestBet = {
-        ...game.edges.puckLine.away,
-        market: 'PUCK_LINE',
-        pick: `${game.awayTeam} ${game.edges.puckLine.away.line > 0 ? '+' : ''}${game.edges.puckLine.away.line}`,
-        team: game.awayTeam
-      };
-    }
-    if (game.edges.puckLine?.home && game.edges.puckLine.home.evPercent > bestEV) {
-      bestEV = game.edges.puckLine.home.evPercent;
-      bestBet = {
-        ...game.edges.puckLine.home,
-        market: 'PUCK_LINE',
-        pick: `${game.homeTeam} ${game.edges.puckLine.home.line > 0 ? '+' : ''}${game.edges.puckLine.home.line}`,
-        team: game.homeTeam
-      };
-    }
-    
-    // Check team totals
-    if (Array.isArray(game.edges.teamTotals)) {
-      game.edges.teamTotals.forEach(bet => {
-        if (bet && bet.evPercent > bestEV) {
-          bestEV = bet.evPercent;
-          bestBet = {
-            ...bet,
-            market: 'TEAM_TOTAL',
-            pick: bet.pick || `${bet.team} ${bet.side} ${bet.line}`
-          };
-        }
-      });
-    }
-    
-    return bestBet;
+    return null;
   }
   
-  // Get alternate bet (opposite market from best bet)
-  function getAlternateBet(game, bestBet) {
-    if (!bestBet) return null;
+  // Get best TOTAL bet (over OR under, whichever has higher EV)
+  function getBestTotal(game) {
+    const over = game.edges.total?.over;
+    const under = game.edges.total?.under;
     
-    const isValueBetTotal = bestBet.market === 'TOTAL';
+    if (!over && !under) return null;
     
-    if (isValueBetTotal) {
-      // Best bet is TOTAL, find best ML alternative
-      const awayML = game.edges?.moneyline?.away;
-      const homeML = game.edges?.moneyline?.home;
-      
-      if (!awayML && !homeML) return null;
-      
-      const bestML = (awayML?.evPercent || -Infinity) > (homeML?.evPercent || -Infinity) ? awayML : homeML;
-      const bestMLTeam = (awayML?.evPercent || -Infinity) > (homeML?.evPercent || -Infinity) ? game.awayTeam : game.homeTeam;
-      
-      if (!bestML || bestML.evPercent < 3) return null; // Only B-rated or higher
-      
+    // Pick the side with higher EV
+    const overEV = over?.evPercent || -Infinity;
+    const underEV = under?.evPercent || -Infinity;
+    
+    const line = game.rawOdds?.total?.line || over?.line || under?.line;
+    
+    if (overEV > underEV && over) {
       return {
-        ...bestML,
-        market: 'MONEYLINE',
-        pick: `${bestMLTeam} ML`,
-        team: bestMLTeam
-      };
-    } else {
-      // Best bet is ML (or other), find best TOTAL alternative
-      const over = game.edges?.total?.over;
-      const under = game.edges?.total?.under;
-      
-      if (!over && !under) return null;
-      
-      const bestTotal = (over?.evPercent || -Infinity) > (under?.evPercent || -Infinity) ? over : under;
-      const line = game.rawOdds?.total?.line || over?.line || under?.line;
-      const isOver = (over?.evPercent || -Infinity) > (under?.evPercent || -Infinity);
-      
-      if (!bestTotal || bestTotal.evPercent < 3) return null; // Only B-rated or higher
-      
-      return {
-        ...bestTotal,
+        ...over,
         market: 'TOTAL',
-        pick: isOver ? `OVER ${line}` : `UNDER ${line}`,
+        pick: `OVER ${line}`,
+        line: line
+      };
+    } else if (under) {
+      return {
+        ...under,
+        market: 'TOTAL',
+        pick: `UNDER ${line}`,
         line: line
       };
     }
+    
+    return null;
   }
   
   return tracker.current;
