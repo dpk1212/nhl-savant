@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
 /**
@@ -75,46 +75,7 @@ const ProfitTimelineChart = ({ bets }) => {
       return timelineData;
     }
     
-    // Special case: Single market selected + All Ratings = Show 5 lines (All + each rating)
-    const isSingleMarket = !selectedMarkets.includes('ALL') && selectedMarkets.length === 1;
-    const isAllRatings = selectedRatings.includes('ALL');
-    
-    if (isSingleMarket && isAllRatings) {
-      const market = selectedMarkets[0];
-      
-      // Track cumulative for each rating within this market
-      let cumulativeAll = 0;
-      let cumulativeAPlus = 0;
-      let cumulativeA = 0;
-      let cumulativeBPlus = 0;
-      let cumulativeB = 0;
-      
-      return timelineData.map((point) => {
-        const matchesMarket = point.betDetails.market === market;
-        
-        if (matchesMarket) {
-          const profit = point.betDetails.profit;
-          cumulativeAll += profit;
-          
-          // Add to specific rating cumulative
-          if (point.betDetails.rating === 'A+') cumulativeAPlus += profit;
-          if (point.betDetails.rating === 'A') cumulativeA += profit;
-          if (point.betDetails.rating === 'B+') cumulativeBPlus += profit;
-          if (point.betDetails.rating === 'B') cumulativeB += profit;
-        }
-        
-        return {
-          ...point,
-          marketAll: parseFloat(cumulativeAll.toFixed(2)),
-          marketAPlus: parseFloat(cumulativeAPlus.toFixed(2)),
-          marketA: parseFloat(cumulativeA.toFixed(2)),
-          marketBPlus: parseFloat(cumulativeBPlus.toFixed(2)),
-          marketB: parseFloat(cumulativeB.toFixed(2))
-        };
-      });
-    }
-    
-    // Regular filtering: Recalculate cumulative based on filters
+    // Recalculate cumulative based on filters
     let cumulative = 0;
     return timelineData.map((point, index) => {
       // Check if this bet matches filters
@@ -449,88 +410,15 @@ const ProfitTimelineChart = ({ bets }) => {
               tickFormatter={(value) => `${value >= 0 ? '+' : ''}${value}u`}
             />
             <Tooltip content={<CustomTooltip />} />
-            {/* Legend only shown when 5 lines are displayed */}
-            {(!selectedMarkets.includes('ALL') && selectedMarkets.length === 1 && selectedRatings.includes('ALL')) && (
-              <Legend 
-                verticalAlign="top" 
-                height={36}
-                iconType="line"
-                wrapperStyle={{ paddingBottom: '10px', fontSize: '0.813rem' }}
-              />
-            )}
-            
-            {/* Conditional rendering: 5 lines when single market + all ratings, 1 line otherwise */}
-            {(!selectedMarkets.includes('ALL') && selectedMarkets.length === 1 && selectedRatings.includes('ALL')) ? (
-              <>
-                {/* 5 Lines: All + Each Rating */}
-                <Line 
-                  type="monotone" 
-                  dataKey="marketAll"
-                  stroke="#64748B"
-                  strokeWidth={3}
-                  dot={false}
-                  name="All"
-                  activeDot={{ r: 6, fill: '#64748B' }}
-                  animationDuration={500}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="marketAPlus"
-                  stroke="#10B981"
-                  strokeWidth={2.5}
-                  dot={false}
-                  name="A+"
-                  strokeDasharray="5 5"
-                  activeDot={{ r: 5, fill: '#10B981' }}
-                  animationDuration={500}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="marketA"
-                  stroke="#059669"
-                  strokeWidth={2.5}
-                  dot={false}
-                  name="A"
-                  strokeDasharray="5 5"
-                  activeDot={{ r: 5, fill: '#059669' }}
-                  animationDuration={500}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="marketBPlus"
-                  stroke="#0EA5E9"
-                  strokeWidth={2.5}
-                  dot={false}
-                  name="B+"
-                  strokeDasharray="5 5"
-                  activeDot={{ r: 5, fill: '#0EA5E9' }}
-                  animationDuration={500}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="marketB"
-                  stroke="#8B5CF6"
-                  strokeWidth={2.5}
-                  dot={false}
-                  name="B"
-                  strokeDasharray="5 5"
-                  activeDot={{ r: 5, fill: '#8B5CF6' }}
-                  animationDuration={500}
-                />
-              </>
-            ) : (
-              /* Single Line: Standard behavior */
-              <Line 
-                type="monotone" 
-                dataKey={lineKey}
-                stroke={finalProfit >= 0 ? '#10B981' : '#EF4444'}
-                strokeWidth={3}
-                dot={false}
-                activeDot={{ r: 6, fill: finalProfit >= 0 ? '#10B981' : '#EF4444' }}
-                animationDuration={500}
-              />
-            )}
-            
+            <Line 
+              type="monotone" 
+              dataKey={lineKey}
+              stroke={finalProfit >= 0 ? '#10B981' : '#EF4444'}
+              strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 6, fill: finalProfit >= 0 ? '#10B981' : '#EF4444' }}
+              animationDuration={500}
+            />
             {/* Zero line */}
             <Line 
               type="monotone" 
