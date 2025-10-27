@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { TrendingUp, Activity, Target, DollarSign, Calendar, Award, BarChart3 } from 'lucide-react';
+import ProfitTimelineChart from './ProfitTimelineChart';
 
 function StatCard({ icon, label, value, target, status }) {
   return (
@@ -43,6 +44,7 @@ function StatCard({ icon, label, value, target, status }) {
 export default function PerformanceDashboard() {
   const [stats, setStats] = useState(null);
   const [recentBets, setRecentBets] = useState([]);
+  const [allBets, setAllBets] = useState([]); // All quality bets for timeline chart
   const [loading, setLoading] = useState(true);
   const [byMarket, setByMarket] = useState({});
   const [byRating, setByRating] = useState({});
@@ -135,6 +137,9 @@ export default function PerformanceDashboard() {
         stats.winRate = stats.wins + stats.losses > 0 ? (stats.wins / (stats.wins + stats.losses)) * 100 : 0;
       });
       setByRating(ratingStats);
+      
+      // Store all quality bets for timeline chart
+      setAllBets(qualityBets);
       
       // Recent bets (already filtered to B-rated or higher)
       setRecentBets(qualityBets.slice(0, 20));
@@ -239,6 +244,9 @@ export default function PerformanceDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Profit Timeline Chart */}
+      <ProfitTimelineChart bets={allBets} />
       
       {/* By Market */}
       {Object.keys(byMarket).length > 0 && (
