@@ -3,10 +3,14 @@ import { BetTracker } from '../firebase/betTracker';
 
 export function useBetTracking(allEdges, dataProcessor) {
   const tracker = useRef(new BetTracker());
-  const savedBets = useRef(new Set()); // Tracks which games we've CREATED bets for (not updated)
+  const processingLock = useRef(new Map()); // Prevent concurrent processing of same game
+  const processedToday = useRef(new Set()); // Prevent re-processing in same session
   
   useEffect(() => {
     if (!allEdges || allEdges.length === 0) return;
+    
+    // Get today's date for deduplication
+    const today = new Date().toISOString().split('T')[0];
     
     // Track all games with at least one B-rated or higher bet (>= 3% EV)
     const opportunities = allEdges.filter(game => {
@@ -17,52 +21,68 @@ export function useBetTracking(allEdges, dataProcessor) {
     
     console.log(`📊 Found ${opportunities.length} games to track (ML + Total only)`);
     
-    opportunities.forEach(async (game) => {
-      const bestML = getBestMoneyline(game);
-      const bestTotal = getBestTotal(game);
-      
-      // Create a game-level ID to track if we've processed this game
-      const gameId = `${game.date}_${game.awayTeam}_${game.homeTeam}`;
-      const isFirstTime = !savedBets.current.has(gameId);
-      
-      // Prediction data (same for both bets)
-      const predictionData = {
-        awayScore: game.edges.total?.awayScore || 0,
-        homeScore: game.edges.total?.homeScore || 0,
-        totalScore: game.edges.total?.predictedTotal || 0,
-        awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
-        homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
-      };
-      
-      // Save/update MONEYLINE bet (if exists and >= 3% EV)
-      if (bestML && bestML.evPercent >= 3) {
+    // FIXED: Process games sequentially with proper locking
+    (async () => {
+      for (const game of opportunities) {
+        const bestML = getBestMoneyline(game);
+        const bestTotal = getBestTotal(game);
+        
+        // Create unique game identifier
+        const gameId = `${game.date || today}_${game.awayTeam}_${game.homeTeam}`;
+        
+        // Skip if already processed in this session (prevents duplicate triggers)
+        if (processedToday.current.has(gameId)) {
+          continue;
+        }
+        
+        // Skip if currently being processed (prevents race conditions)
+        if (processingLock.current.has(gameId)) {
+          console.log(`⏳ Already processing ${gameId}, skipping...`);
+          continue;
+        }
+        
+        // Lock this game for processing
+        processingLock.current.set(gameId, true);
+        
         try {
-          await tracker.current.saveBet(game, bestML, predictionData);
-          if (isFirstTime) {
-            console.log(`✅ Tracked ML: ${bestML.pick} (+${bestML.evPercent.toFixed(1)}% EV)`);
+          // Prediction data (same for both bets)
+          const predictionData = {
+            awayScore: game.edges.total?.awayScore || 0,
+            homeScore: game.edges.total?.homeScore || 0,
+            totalScore: game.edges.total?.predictedTotal || 0,
+            awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
+            homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
+          };
+          
+          let savedAny = false;
+          
+          // Save/update MONEYLINE bet (if exists and >= 3% EV)
+          if (bestML && bestML.evPercent >= 3) {
+            await tracker.current.saveBet(game, bestML, predictionData);
+            console.log(`✅ Tracked ML: ${game.awayTeam} @ ${game.homeTeam} - ${bestML.pick} (+${bestML.evPercent.toFixed(1)}% EV)`);
+            savedAny = true;
           }
+          
+          // Save/update TOTAL bet (if exists and >= 3% EV)
+          if (bestTotal && bestTotal.evPercent >= 3) {
+            await tracker.current.saveBet(game, bestTotal, predictionData);
+            console.log(`✅ Tracked Total: ${game.awayTeam} @ ${game.homeTeam} - ${bestTotal.pick} (+${bestTotal.evPercent.toFixed(1)}% EV)`);
+            savedAny = true;
+          }
+          
+          // Mark as processed for this session (only if we saved something)
+          if (savedAny) {
+            processedToday.current.add(gameId);
+          }
+          
         } catch (error) {
-          console.error(`Failed to save ML bet:`, error);
+          console.error(`❌ Failed to save bets for ${gameId}:`, error);
+        } finally {
+          // Release lock
+          processingLock.current.delete(gameId);
         }
       }
-      
-      // Save/update TOTAL bet (if exists and >= 3% EV)
-      if (bestTotal && bestTotal.evPercent >= 3) {
-        try {
-          await tracker.current.saveBet(game, bestTotal, predictionData);
-          if (isFirstTime) {
-            console.log(`✅ Tracked Total: ${bestTotal.pick} (+${bestTotal.evPercent.toFixed(1)}% EV)`);
-          }
-        } catch (error) {
-          console.error(`Failed to save Total bet:`, error);
-        }
-      }
-      
-      // Mark this game as processed (only matters for first time)
-      if (isFirstTime) {
-        savedBets.current.add(gameId);
-      }
-    });
+    })();
     
   }, [allEdges]);
   
@@ -130,3 +150,4 @@ export function useBetTracking(allEdges, dataProcessor) {
   
   return tracker.current;
 }
+
