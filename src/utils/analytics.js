@@ -355,3 +355,4 @@ export const getPageName = (pathname) => {
   return routes[pathname] || pathname;
 };
 
+
