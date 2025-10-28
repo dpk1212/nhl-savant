@@ -131,19 +131,14 @@ regulationGames.forEach((game, index) => {
     const awayCode = teamNameToCode[awayTeam] || awayTeam.substring(0, 3).toUpperCase();
     const homeCode = teamNameToCode[homeTeam] || homeTeam.substring(0, 3).toUpperCase();
     
-    // Predict scores
+    // Predict scores (same as production)
     const awayPredicted = dataProcessor.predictTeamScore(awayCode, homeCode, false, awayGoalie);
     const homePredicted = dataProcessor.predictTeamScore(homeCode, awayCode, true, homeGoalie);
     const predictedTotal = awayPredicted + homePredicted;
     
-    // Predict win probability
-    const homeWinProb = dataProcessor.estimateWinProbability(
-      homePredicted,
-      awayPredicted,
-      homeCode,
-      awayCode,
-      true
-    );
+    // CRITICAL FIX: Use the ACTUAL production win probability calculation
+    // This uses Poisson distribution with pre-calculated scores (same as EdgeCalculator)
+    const homeWinProb = dataProcessor.calculatePoissonWinProb(homePredicted, awayPredicted);
     
     // Calculate errors
     const error = predictedTotal - actualTotal;
