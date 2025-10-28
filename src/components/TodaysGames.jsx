@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
@@ -1566,8 +1566,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     setHasAcknowledged(!!acknowledged);
   }, []);
   
-  // FIREBASE: Auto-track all recommended bets (using memoized edges to prevent unnecessary re-runs)
-  useBetTracking(memoizedAllEdges, dataProcessor);
+  // FIREBASE: Auto-track all recommended bets
+  useBetTracking(allEdges, dataProcessor);
   
   // Initialize GoalieProcessor when goalies.csv data is available
   useEffect(() => {
@@ -1588,7 +1588,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Initialize edge calculator and memoize allEdges to prevent unnecessary re-renders
+  // Initialize edge calculator
   useEffect(() => {
     if (dataProcessor && oddsData) {
       // FIX: Pass starting goalies to EdgeCalculator
@@ -1612,13 +1612,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData, startingGoalies]);
-  
-  // Memoize allEdges to prevent useBetTracking from re-running unnecessarily
-  // Only recalculate when the actual data changes, not when array reference changes
-  const memoizedAllEdges = useMemo(() => allEdges, [
-    allEdges.length,
-    allEdges.map(g => `${g.awayTeam}_${g.homeTeam}_${g.bestEdge?.evPercent || 0}`).join('|')
-  ]);
   
   // Helper function to get goalie stats for a team
   // CRITICAL: Wrapped in useCallback to ensure re-renders when goalieProcessor initializes
