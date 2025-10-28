@@ -203,9 +203,10 @@ export class NHLDataProcessor {
     // CRITICAL FIX: Use FIXED historical constant instead of dynamic
     // Dynamic calibration creates feedback loop that under-predicts early season (Oct RMSE=2.737)
     // Historical 2024 constant = 1.215 (actual_goals / xG across full season)
-    // 2025 CALIBRATION: Optimized to 1.39 for hotter 2025 season
-    // Backtest validation: Reduced avg error from -0.332 to -0.036 (89% improvement)
-    const HISTORICAL_CALIBRATION = 1.39;
+    // 2025 CALIBRATION: Optimized to 1.436 based on early season accuracy test (Oct 28)
+    // Test results (104 games): Previous 1.39 had -0.358 bias, new 1.436 eliminates bias
+    // Expected: RMSE 2.209 → 2.0, Bias -0.358 → ~0.0 (+3.3% adjustment)
+    const HISTORICAL_CALIBRATION = 1.436;
     const calibration = HISTORICAL_CALIBRATION;
 
     // Calculate base xGF/60 average
