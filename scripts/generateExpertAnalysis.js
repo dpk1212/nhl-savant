@@ -38,30 +38,17 @@ const firebaseConfig = {
   measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
+// Initialize Firebase (for writing cache only)
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/**
- * Fetch Perplexity API key from Firebase Secrets collection
- */
-async function getPerplexityKey() {
-  try {
-    console.log('⏳ Fetching Perplexity API key from Firebase Secrets...');
-    const secretDoc = await getDoc(doc(db, 'Secrets', 'Perplexity'));
-    
-    if (secretDoc.exists()) {
-      const key = secretDoc.data().Key;
-      console.log('✅ Perplexity API key loaded from Firebase');
-      return key;
-    } else {
-      console.error('❌ Perplexity secret document not found in Firebase');
-      return null;
-    }
-  } catch (error) {
-    console.error('❌ Could not fetch Perplexity key from Firebase:', error.code, error.message);
-    return null;
-  }
+// Get Perplexity API key from environment variable (GitHub Secret)
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+
+if (!PERPLEXITY_API_KEY) {
+  console.error('❌ PERPLEXITY_API_KEY environment variable not set');
+  console.error('ℹ️ Add PERPLEXITY_API_KEY as a GitHub Secret');
+  process.exit(1);
 }
 
 /**
@@ -209,16 +196,8 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
 async function main() {
   console.log('🚀 Starting Expert Analysis Generation');
   console.log(`📅 Date: ${new Date().toISOString()}`);
+  console.log('✅ Perplexity API key loaded from environment');
   console.log('');
-
-  // Fetch Perplexity API key from Firebase
-  const apiKey = await getPerplexityKey();
-  
-  if (!apiKey) {
-    console.error('❌ Could not retrieve Perplexity API key from Firebase');
-    console.error('ℹ️ Make sure Firestore rules allow reads from Secrets collection');
-    process.exit(1);
-  }
 
   // Get today's games
   const games = getTodaysGames();
@@ -237,7 +216,7 @@ async function main() {
   for (const game of games) {
     console.log(`⏳ Generating analysis: ${game.awayTeam} @ ${game.homeTeam}`);
     
-    const cards = await generateAnalysis(game.awayTeam, game.homeTeam, apiKey);
+    const cards = await generateAnalysis(game.awayTeam, game.homeTeam, PERPLEXITY_API_KEY);
     
     if (cards && cards.length > 0) {
       await cacheAnalysis(game.awayTeam, game.homeTeam, cards);
