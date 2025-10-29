@@ -199,6 +199,8 @@ Write in complete sentences and paragraphs. Be conversational but analytical. Us
     const data = await response.json();
     let content = data.choices?.[0]?.message?.content || '[]';
     
+    console.log(`📥 Raw Perplexity response (first 500 chars):`, content.substring(0, 500));
+    
     // Clean markdown formatting
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
@@ -209,6 +211,20 @@ Write in complete sentences and paragraphs. Be conversational but analytical. Us
         throw new Error('Response is not an array');
       }
       cards = cards.slice(0, 4); // Max 4 cards
+      console.log(`✅ Parsed ${cards.length} cards from Perplexity`);
+      
+      // VALIDATE each card has only valid fields
+      cards = cards.map((card, idx) => {
+        if (!card || typeof card !== 'object') {
+          throw new Error(`Card ${idx} is not an object: ${typeof card}`);
+        }
+        
+        // Only allow 'analysis' field, remove any others
+        return {
+          analysis: String(card.analysis || '')
+        };
+      });
+      
     } catch (parseError) {
       console.error('❌ Failed to parse JSON:', content);
       throw parseError;
@@ -262,6 +278,17 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
     
     console.log(`💾 Writing to Firebase: ${cacheKey}`);
     console.log(`   Data size: ${dataToWrite.content.length} characters`);
+    console.log(`   Content preview: ${dataToWrite.content.substring(0, 200)}...`);
+    
+    // VALIDATE: Check for undefined or null values
+    for (const [key, value] of Object.entries(dataToWrite)) {
+      if (value === undefined) {
+        throw new Error(`Field '${key}' is undefined`);
+      }
+      if (value === null) {
+        throw new Error(`Field '${key}' is null`);
+      }
+    }
     
     await setDoc(cacheRef, dataToWrite);
     console.log(`✅ Cached analysis for ${awayTeam} @ ${homeTeam}`);
@@ -270,6 +297,9 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
     console.error(`   Error code: ${error.code}`);
     console.error(`   Error message: ${error.message}`);
     console.error(`   Document ID: ${cacheKey}`);
+    if (error.stack) {
+      console.error(`   Stack trace:`, error.stack);
+    }
     throw error; // Re-throw to stop execution
   }
 }
