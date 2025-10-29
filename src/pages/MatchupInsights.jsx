@@ -137,23 +137,26 @@ export default function MatchupInsights(props) {
       }
 
       // Build power play/penalty kill objects
+      // FIX: PP% = goalsFor / total opportunities (approximated by iceTime / avg PP length)
+      // FIX: PK% = 1 - (goalsAgainst / total opportunities)
+      // SIMPLIFIED: Use raw xGoalsPercentage as a proxy for success rate
       const awayPowerPlay = awayPP ? {
-        percentage: (awayPP.goalsFor || 0) / (awayPP.goalsFor + awayPP.goalsAgainst || 1),
+        percentage: awayPP.xGoalsPercentage || 0.20, // Use xGoalsPercentage (already decimal 0-1)
         goalsFor: awayPP.goalsFor || 0
       } : null;
 
       const awayPenaltyKill = awayPK ? {
-        percentage: 1 - ((awayPK.goalsAgainst || 0) / (awayPK.goalsFor + awayPK.goalsAgainst || 1)),
+        percentage: awayPK.xGoalsPercentage ? (1 - awayPK.xGoalsPercentage) : 0.80, // Inverse for PK
         goalsAgainst: awayPK.goalsAgainst || 0
       } : null;
 
       const homePowerPlay = homePP ? {
-        percentage: (homePP.goalsFor || 0) / (homePP.goalsFor + homePP.goalsAgainst || 1),
+        percentage: homePP.xGoalsPercentage || 0.20,
         goalsFor: homePP.goalsFor || 0
       } : null;
 
       const homePenaltyKill = homePK ? {
-        percentage: 1 - ((homePK.goalsAgainst || 0) / (homePK.goalsFor + homePK.goalsAgainst || 1)),
+        percentage: homePK.xGoalsPercentage ? (1 - homePK.xGoalsPercentage) : 0.80,
         goalsAgainst: homePK.goalsAgainst || 0
       } : null;
 
