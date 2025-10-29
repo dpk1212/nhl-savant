@@ -1,10 +1,9 @@
 /**
  * Battle Bars - Offense vs Defense Matchup Visualization
- * Shows horizontal bars comparing offensive and defensive stats
+ * PURE VISUAL - No text explanations, just data comparison
  */
 
 import { useState } from 'react';
-import Tooltip from './Tooltip';
 
 export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, awayStats5v5, homeStats5v5, awayPP, homePP, awayPK, homePK }) {
   const [activeView, setActiveView] = useState('5v5'); // '5v5', 'pp', 'overall'
@@ -40,23 +39,20 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
           label: 'xGoals For/60',
           awayValue: (awayStats5v5?.xGoalsFor || 0) / awayIceTime60,
           homeValue: (homeStats5v5?.xGoalsFor || 0) / homeIceTime60,
-          format: 'decimal',
-          tooltip: 'Expected Goals For per 60 minutes: Predicted goals based on shot quality and location (5v5)'
+          format: 'decimal'
         },
         {
           label: 'xGoals Against/60',
           awayValue: (awayStats5v5?.xGoalsAgainst || 0) / awayIceTime60,
           homeValue: (homeStats5v5?.xGoalsAgainst || 0) / homeIceTime60,
           format: 'decimal',
-          inverse: true,
-          tooltip: 'Expected Goals Against per 60 minutes: Predicted goals allowed based on opponent shot quality (5v5, lower is better)'
+          inverse: true
         },
         {
           label: 'High Danger Shots For/60',
           awayValue: (awayStats5v5?.highDangerShotsFor || 0) / awayIceTime60,
           homeValue: (homeStats5v5?.highDangerShotsFor || 0) / homeIceTime60,
-          format: 'decimal',
-          tooltip: 'High Danger Shots For per 60 minutes: Shots from the slot and crease area with high scoring probability (5v5)'
+          format: 'decimal'
         }
       ];
     } else {
@@ -116,11 +112,7 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
             textTransform: 'uppercase',
             letterSpacing: '0.05em'
           }}>
-            {stat.tooltip ? (
-              <Tooltip text={stat.tooltip}>
-                {stat.label}
-              </Tooltip>
-            ) : stat.label}
+            {stat.label}
           </div>
           <div style={{
             fontSize: '0.875rem',

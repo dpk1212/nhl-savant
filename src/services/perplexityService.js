@@ -139,3 +139,176 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
     return `Expert analysis temporarily unavailable. Our model shows this as a competitive matchup between ${awayTeam} and ${homeTeam}. Check the statistical breakdowns below for detailed insights.`;
   }
 }
+
+/**
+ * Get AI-generated insight cards (structured JSON)
+ * @param {string} awayTeam - Away team name
+ * @param {string} homeTeam - Home team name
+ * @param {boolean} forceRefresh - Bypass cache
+ * @returns {Promise<Array>} Array of insight card objects
+ */
+export async function getMatchupInsightCards(awayTeam, homeTeam, forceRefresh = false) {
+  // Determine time of day for caching (morning vs pregame)
+  const now = new Date();
+  const hour = now.getHours();
+  const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame'; // 10am-4pm = morning, else pregame
+  
+  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-${timeKey}`;
+  const cacheRef = doc(db, 'perplexityCache', cacheKey);
+
+  try {
+    // Check cache first
+    if (!forceRefresh) {
+      try {
+        const cachedDoc = await getDoc(cacheRef);
+        if (cachedDoc.exists()) {
+          const data = cachedDoc.data();
+          const age = Date.now() - data.timestamp;
+          const maxAge = 6 * 60 * 60 * 1000; // 6 hours
+          
+          if (age < maxAge) {
+            console.log('✅ Using cached insight cards');
+            return JSON.parse(data.content);
+          }
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Cache read failed:', cacheError.code);
+      }
+    }
+
+    // Fetch API key from Firebase
+    const apiKey = await getPerplexityKey();
+    
+    if (!apiKey) {
+      console.log('ℹ️ Using fallback insight cards (no API key)');
+      return [
+        {
+          icon: '🎯',
+          title: 'Matchup Analysis',
+          insight: `${awayTeam} and ${homeTeam} present contrasting styles. Check the detailed statistics below to identify key advantages in this matchup.`
+        },
+        {
+          icon: '📊',
+          title: 'Statistical Edge',
+          insight: 'Advanced metrics reveal scoring opportunities. Review the visual analytics to understand expected goal differentials and shot quality advantages.'
+        },
+        {
+          icon: '🥅',
+          title: 'Key Factors',
+          insight: 'Goaltending, special teams, and shot quality will determine this game. Explore the visual breakdowns for deeper insights.'
+        }
+      ];
+    }
+
+    console.log('⏳ Fetching fresh insight cards from Perplexity AI...');
+    
+    const prompt = `Generate 3-4 brief analytical insight cards (40-60 words each) for ${awayTeam} @ ${homeTeam} NHL game.
+
+Return ONLY a valid JSON array with this exact format (no markdown, no explanation):
+[
+  {
+    "icon": "🎯",
+    "title": "Brief Title (2-4 words)",
+    "insight": "40-60 word insight with specific numbers and analysis"
+  }
+]
+
+Icon options: 🎯 (offense/scoring), 🥅 (goaltending), ⚡ (special teams), 🎖️ (advantage), 📊 (trends), 🔥 (momentum)
+
+Focus on:
+1. Biggest statistical edge (offense vs defense mismatch with numbers)
+2. Goaltending advantage if significant (include SV% or GSAX)
+3. Special teams or key trend (PP%, PK%, recent form)
+4. Regression/momentum factor (if applicable)
+
+Be specific with numbers. No generic statements. Each card should be actionable insight.`;
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert NHL analyst. Return ONLY valid JSON arrays, no markdown formatting.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 600,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Perplexity API Error Details:', errorText);
+      throw new Error(`Perplexity API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let content = data.choices?.[0]?.message?.content || '[]';
+    
+    // Clean up markdown formatting if present
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    // Parse JSON
+    let cards;
+    try {
+      cards = JSON.parse(content);
+      if (!Array.isArray(cards)) {
+        throw new Error('Response is not an array');
+      }
+      // Limit to 4 cards max
+      cards = cards.slice(0, 4);
+    } catch (parseError) {
+      console.error('❌ Failed to parse insight cards JSON:', content);
+      throw parseError;
+    }
+
+    // Cache the result
+    try {
+      await setDoc(cacheRef, {
+        content: JSON.stringify(cards),
+        timestamp: Date.now(),
+        awayTeam,
+        homeTeam,
+        timeKey
+      });
+      console.log(`✅ Fresh insight cards fetched and cached (${timeKey})`);
+    } catch (cacheError) {
+      console.warn('⚠️ Cache write failed:', cacheError.code);
+    }
+
+    return cards;
+
+  } catch (error) {
+    console.error('❌ Error fetching insight cards:', error);
+    
+    // Return fallback cards
+    return [
+      {
+        icon: '🎯',
+        title: 'Matchup Overview',
+        insight: `${awayTeam} faces ${homeTeam} in what should be a competitive matchup. Review the statistical breakdowns below for detailed analysis.`
+      },
+      {
+        icon: '📊',
+        title: 'Key Metrics',
+        insight: 'Expected goals, shot quality, and special teams effectiveness will be critical factors. Check the visual analytics for specific advantages.'
+      },
+      {
+        icon: '🥅',
+        title: 'Goaltending',
+        insight: 'Goaltending performance could swing this game. Compare save percentages and recent form in the analysis below.'
+      }
+    ];
+  }
+}
