@@ -19,10 +19,10 @@
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import fetch from 'node-fetch';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+// Note: fetch is built-in to Node.js 18+, no import needed
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
