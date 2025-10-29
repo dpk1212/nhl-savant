@@ -58,18 +58,18 @@ export default function MatchupInsights(props) {
     if (!selectedGame || !props?.dataProcessor || !props?.goalieData) return null;
 
     try {
-      const teams = props.dataProcessor.teams;
+      const dataProc = props.dataProcessor;
       const goalies = props.goalieData;
 
       // Get team stats
-      const awayStats = getTeamStats(teams, selectedGame.awayTeam, 'all');
-      const homeStats = getTeamStats(teams, selectedGame.homeTeam, 'all');
-      const awayStats5v5 = getTeamStats(teams, selectedGame.awayTeam, '5on5');
-      const homeStats5v5 = getTeamStats(teams, selectedGame.homeTeam, '5on5');
-      const awayPP = getTeamStats(teams, selectedGame.awayTeam, '5on4');
-      const awayPK = getTeamStats(teams, selectedGame.awayTeam, '4on5');
-      const homePP = getTeamStats(teams, selectedGame.homeTeam, '5on4');
-      const homePK = getTeamStats(teams, selectedGame.homeTeam, '4on5');
+      const awayStats = getTeamStats(dataProc, selectedGame.awayTeam, 'all');
+      const homeStats = getTeamStats(dataProc, selectedGame.homeTeam, 'all');
+      const awayStats5v5 = getTeamStats(dataProc, selectedGame.awayTeam, '5on5');
+      const homeStats5v5 = getTeamStats(dataProc, selectedGame.homeTeam, '5on5');
+      const awayPP = getTeamStats(dataProc, selectedGame.awayTeam, '5on4');
+      const awayPK = getTeamStats(dataProc, selectedGame.awayTeam, '4on5');
+      const homePP = getTeamStats(dataProc, selectedGame.homeTeam, '5on4');
+      const homePK = getTeamStats(dataProc, selectedGame.homeTeam, '4on5');
 
       // Get goalie stats (use default names if not provided)
       const awayGoalie = getGoalieStats(goalies, `${selectedGame.awayTeam} Goalie`);
@@ -105,8 +105,13 @@ export default function MatchupInsights(props) {
 
       // Get team names (fallback to codes)
       const getTeamName = (code) => {
-        const teamData = teams[code];
-        return teamData?.teamName || code;
+        try {
+          const allTeams = dataProc.getTeamsBySituation('all');
+          const teamData = allTeams?.find(t => t.name === code);
+          return teamData?.teamName || code;
+        } catch {
+          return code;
+        }
       };
 
       return {
