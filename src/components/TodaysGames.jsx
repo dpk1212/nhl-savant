@@ -1983,26 +1983,45 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* Compact Picks Bar - USE FIREBASE BETS DIRECTLY */}
-      {firebaseBets && firebaseBets.length > 0 && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <CompactPicksBar 
-            picks={firebaseBets
-              .filter(bet => bet.status === 'PENDING' && bet.prediction?.rating && bet.prediction.rating !== 'C')
-              .map(bet => ({
-                pick: bet.bet.pick,
-                market: bet.bet.market,
-                grade: bet.prediction.rating,
-                odds: bet.bet.odds,
-                edge: `${bet.prediction.evPercent.toFixed(1)}%`,
-                gameTime: bet.game.gameTime
-              }))}
-            onViewAll={() => {
-              document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-          />
-        </div>
-      )}
+      {/* Compact Picks Bar - USE FIREBASE BETS DIRECTLY, GROUPED BY GAME */}
+      {firebaseBets && firebaseBets.length > 0 && (() => {
+        const qualityBets = firebaseBets.filter(bet => 
+          bet.status === 'PENDING' && 
+          bet.prediction?.rating && 
+          bet.prediction.rating !== 'C'
+        );
+
+        // Group bets by game
+        const betsByGame = {};
+        qualityBets.forEach(bet => {
+          const gameKey = `${bet.game.awayTeam}_${bet.game.homeTeam}`;
+          if (!betsByGame[gameKey]) {
+            betsByGame[gameKey] = {
+              game: `${bet.game.awayTeam} @ ${bet.game.homeTeam}`,
+              gameTime: bet.game.gameTime,
+              bets: []
+            };
+          }
+          betsByGame[gameKey].bets.push({
+            pick: bet.bet.pick,
+            market: bet.bet.market,
+            grade: bet.prediction.rating,
+            odds: bet.bet.odds,
+            edge: `${bet.prediction.evPercent.toFixed(1)}%`
+          });
+        });
+
+        return Object.keys(betsByGame).length > 0 ? (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <CompactPicksBar 
+              gameGroups={Object.values(betsByGame)}
+              onViewAll={() => {
+                document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
+          </div>
+        ) : null;
+      })()}
 
       {/* Deep Analytics Cards for Each Game - Grouped by Time */}
       <div>
