@@ -11,6 +11,10 @@ import ShotDangerChart from '../components/matchup/ShotDangerChart';
 import RecentFormTimeline from '../components/matchup/RecentFormTimeline';
 import SEOHeader from '../components/matchup/SEOHeader';
 import KeyInsights from '../components/matchup/KeyInsights';
+import QuickStatsCards from '../components/matchup/QuickStatsCards';
+import HeadToHeadTable from '../components/matchup/HeadToHeadTable';
+import RadarComparison from '../components/matchup/RadarComparison';
+import StickySummaryBar from '../components/matchup/StickySummaryBar';
 import { 
   getTeamStats, 
   getGoalieStats,
@@ -388,49 +392,204 @@ export default function MatchupInsights(props) {
           {/* AI Analysis Header */}
           <SEOHeader matchupData={matchupData} />
 
+          {/* Sticky Summary Bar - follows scroll */}
+          <StickySummaryBar
+            awayTeam={matchupData.away}
+            homeTeam={matchupData.home}
+            matchupData={matchupData}
+          />
+
+          {/* Overall Advantage - Premium Display */}
+          {matchupData.edges.overall && (
+            <div className="elevated-card" style={{
+              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              borderRadius: '20px',
+              padding: '2.5rem',
+              marginBottom: '2rem',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Gradient Background */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '400px',
+                height: '400px',
+                background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(60px)',
+                pointerEvents: 'none'
+              }} />
+
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h2 style={{
+                  fontSize: '2rem',
+                  fontWeight: '700',
+                  color: '#F1F5F9',
+                  marginBottom: '0.5rem',
+                  background: 'linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  {matchupData.away.name} @ {matchupData.home.name}
+                </h2>
+
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#64748B',
+                  marginBottom: '2rem'
+                }}>
+                  {matchupData.gameTime || 'Game Time TBD'}
+                </div>
+
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  color: '#94A3B8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '1rem'
+                }}>
+                  Model Win Probability
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <div style={{
+                    flex: 1,
+                    textAlign: 'right'
+                  }}>
+                    <div style={{
+                      fontSize: '3rem',
+                      fontWeight: '900',
+                      background: matchupData.edges.overall.favorite === 'away'
+                        ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                        : 'linear-gradient(135deg, #64748B 0%, #475569 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      {matchupData.edges.overall.awayAdvantage}%
+                    </div>
+                    <div style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '700',
+                      color: '#F1F5F9',
+                      marginTop: '0.5rem'
+                    }}>
+                      {matchupData.away.code}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '700',
+                    color: '#64748B'
+                  }}>
+                    -
+                  </div>
+
+                  <div style={{
+                    flex: 1,
+                    textAlign: 'left'
+                  }}>
+                    <div style={{
+                      fontSize: '3rem',
+                      fontWeight: '900',
+                      background: matchupData.edges.overall.favorite === 'home'
+                        ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                        : 'linear-gradient(135deg, #64748B 0%, #475569 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      {matchupData.edges.overall.homeAdvantage}%
+                    </div>
+                    <div style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '700',
+                      color: '#F1F5F9',
+                      marginTop: '0.5rem'
+                    }}>
+                      {matchupData.home.code}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confidence Badge */}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.75rem 1.5rem',
+                  background: 
+                    matchupData.edges.overall.confidence === 'high' ? 'rgba(16, 185, 129, 0.1)' :
+                    matchupData.edges.overall.confidence === 'medium' ? 'rgba(245, 158, 11, 0.1)' :
+                    'rgba(100, 116, 139, 0.1)',
+                  borderRadius: '12px',
+                  border: `1px solid ${
+                    matchupData.edges.overall.confidence === 'high' ? 'rgba(16, 185, 129, 0.3)' :
+                    matchupData.edges.overall.confidence === 'medium' ? 'rgba(245, 158, 11, 0.3)' :
+                    'rgba(100, 116, 139, 0.3)'
+                  }`
+                }}>
+                  <span style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    color:
+                      matchupData.edges.overall.confidence === 'high' ? '#10B981' :
+                      matchupData.edges.overall.confidence === 'medium' ? '#F59E0B' :
+                      '#64748B',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {matchupData.edges.overall.confidence} Confidence Prediction
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Stats Cards - 3 Biggest Edges */}
+          <QuickStatsCards
+            awayTeam={matchupData.away}
+            homeTeam={matchupData.home}
+            edges={matchupData.edges}
+            matchupData={matchupData}
+          />
+
           {/* Key Insights */}
           {matchupData.insights && matchupData.insights.length > 0 && (
             <KeyInsights insights={matchupData.insights} />
           )}
 
-          {/* Quick Stats Summary */}
-          <div className="elevated-card" style={{
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            border: '1px solid rgba(148, 163, 184, 0.1)',
-            borderRadius: '16px',
-            padding: '2rem',
-            marginBottom: '2rem',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-            textAlign: 'center'
-          }}>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              color: '#F1F5F9',
-              marginBottom: '1.5rem'
-            }}>
-              {matchupData.away.name} @ {matchupData.home.name}
-            </h2>
+          {/* Head-to-Head Comparison Table */}
+          <HeadToHeadTable
+            awayTeam={matchupData.away}
+            homeTeam={matchupData.home}
+            matchupData={matchupData}
+            dataProcessor={props.dataProcessor}
+          />
 
-            <div style={{
-              fontSize: '0.875rem',
-              fontWeight: '700',
-              color: '#94A3B8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginBottom: '0.75rem'
-            }}>
-              Overall Advantage
-            </div>
-            <div style={{
-              fontSize: '2rem',
-              fontWeight: '700',
-              color: matchupData.edges.overall > 55 ? '#10B981' : matchupData.edges.overall < 45 ? '#EF4444' : '#94A3B8'
-            }}>
-              {matchupData.away.code} {matchupData.edges.overall.toFixed(0)}% - {(100 - matchupData.edges.overall).toFixed(0)}% {matchupData.home.code}
-            </div>
-          </div>
+          {/* Radar Comparison Chart */}
+          <RadarComparison
+            awayTeam={matchupData.away}
+            homeTeam={matchupData.home}
+            matchupData={matchupData}
+            dataProcessor={props.dataProcessor}
+          />
 
           {/* Battle Bars */}
           <BattleBars
