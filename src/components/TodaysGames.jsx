@@ -1983,24 +1983,26 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* Compact Picks Bar - ALWAYS RENDER FOR TESTING */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <CompactPicksBar 
-          picks={allEdges
-            .filter(game => game?.bestEdge?.evPercent >= 3)
-            .map(game => ({
-              pick: game.bestEdge.pick || `${game.awayTeam} @ ${game.homeTeam}`,
-              market: game.bestEdge.market,
-              grade: getRating(game.bestEdge.evPercent).grade,
-              odds: game.bestEdge.odds,
-              edge: `${game.bestEdge.evPercent.toFixed(1)}%`,
-              gameTime: game.gameTime
-            }))}
-          onViewAll={() => {
-            document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }}
-        />
-      </div>
+      {/* Compact Picks Bar - USE FIREBASE BETS DIRECTLY */}
+      {firebaseBets && firebaseBets.length > 0 && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <CompactPicksBar 
+            picks={firebaseBets
+              .filter(bet => bet.status === 'PENDING' && bet.prediction?.rating && bet.prediction.rating !== 'C')
+              .map(bet => ({
+                pick: bet.bet.pick,
+                market: bet.bet.market,
+                grade: bet.prediction.rating,
+                odds: bet.bet.odds,
+                edge: `${bet.prediction.evPercent.toFixed(1)}%`,
+                gameTime: bet.game.gameTime
+              }))}
+            onViewAll={() => {
+              document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          />
+        </div>
+      )}
 
       {/* Deep Analytics Cards for Each Game - Grouped by Time */}
       <div>
