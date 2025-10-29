@@ -27,12 +27,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Initialize Firebase Admin SDK (bypasses security rules, better for server-side)
+const serviceAccount = {
+  project_id: process.env.VITE_FIREBASE_PROJECT_ID,
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+};
+
+// Validate credentials before initializing
+if (!serviceAccount.project_id) {
+  console.error('❌ VITE_FIREBASE_PROJECT_ID environment variable not set');
+  process.exit(1);
+}
+if (!serviceAccount.client_email) {
+  console.error('❌ FIREBASE_CLIENT_EMAIL environment variable not set');
+  process.exit(1);
+}
+if (!serviceAccount.private_key) {
+  console.error('❌ FIREBASE_PRIVATE_KEY environment variable not set');
+  process.exit(1);
+}
+
+console.log(`✅ Service account loaded: ${serviceAccount.client_email}`);
+
 admin.initializeApp({
-  credential: admin.credential.cert({
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-  })
+  credential: admin.credential.cert(serviceAccount)
 });
 
 const db = admin.firestore();
