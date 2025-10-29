@@ -91,7 +91,7 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'sonar',  // Try base sonar model (most compatible)
         messages: [
           {
             role: 'system',
@@ -103,12 +103,15 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
           }
         ],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 500,
+        stream: false
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Perplexity API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('❌ Perplexity API Error Details:', errorText);
+      throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
