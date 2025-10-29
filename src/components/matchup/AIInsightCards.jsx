@@ -1,34 +1,28 @@
 /**
- * AI Insight Cards - Text-based insights from Perplexity
- * THE ONLY TEXT ON THE PAGE - Everything else is pure visual
- * 3-4 cards with icon, title, and 40-60 word insight
+ * AI Insight Cards - Blog-Style Human Analysis
+ * Natural, conversational paragraphs (100-150 words each)
+ * Swipeable carousel on mobile
  */
 
 import { useState, useEffect } from 'react';
 import { getMatchupInsightCards } from '../../services/perplexityService';
-import { RefreshCw, Target, Shield, Zap, Award, TrendingUp, Flame } from 'lucide-react';
-
-const iconMap = {
-  '🎯': Target,
-  '🥅': Shield,
-  '⚡': Zap,
-  '🎖️': Award,
-  '📊': TrendingUp,
-  '🔥': Flame
-};
+import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AIInsightCards({ awayTeam, homeTeam }) {
-  const [cards, setCards] = useState([]);
+  const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   useEffect(() => {
     if (awayTeam && homeTeam) {
-      loadCards();
+      loadInsights();
     }
   }, [awayTeam?.name, homeTeam?.name]);
 
-  const loadCards = async (forceRefresh = false) => {
+  const loadInsights = async (forceRefresh = false) => {
     if (forceRefresh) {
       setRefreshing(true);
     } else {
@@ -41,57 +35,83 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
         homeTeam.name,
         forceRefresh
       );
-      setCards(result);
+      setInsights(result);
+      setActiveIndex(0);
     } catch (error) {
-      console.error('Error loading insight cards:', error);
-      setCards([]);
+      console.error('Error loading insights:', error);
+      setInsights([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe && activeIndex < insights.length - 1) {
+      setActiveIndex(activeIndex + 1);
+    }
+    
+    if (isRightSwipe && activeIndex > 0) {
+      setActiveIndex(activeIndex - 1);
+    }
+    
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
+  const goToNext = () => {
+    if (activeIndex < insights.length - 1) {
+      setActiveIndex(activeIndex + 1);
+    }
+  };
+
+  const goToPrevious = () => {
+    if (activeIndex > 0) {
+      setActiveIndex(activeIndex - 1);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '2rem'
+        marginBottom: '2rem',
+        padding: '3rem 2rem',
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(148, 163, 184, 0.1)',
+        borderRadius: '20px',
+        textAlign: 'center'
       }}>
-        {[1, 2, 3].map(i => (
-          <div
-            key={i}
-            style={{
-              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(148, 163, 184, 0.1)',
-              borderRadius: '16px',
-              padding: '2rem',
-              minHeight: '200px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <div style={{
-              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              color: '#64748B',
-              fontSize: '0.875rem'
-            }}>
-              Loading insights...
-            </div>
-          </div>
-        ))}
+        <div style={{
+          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          color: '#64748B',
+          fontSize: '1rem'
+        }}>
+          Loading expert analysis...
+        </div>
       </div>
     );
   }
 
-  if (!cards || cards.length === 0) return null;
+  if (!insights || insights.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      {/* Header with refresh */}
+    <div style={{ marginBottom: '2.5rem' }}>
+      {/* Header */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -99,35 +119,46 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
         marginBottom: '1.5rem'
       }}>
         <h2 style={{
-          fontSize: '1.75rem',
+          fontSize: '1.875rem',
           fontWeight: '700',
           color: '#F1F5F9',
           background: 'linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
+          backgroundClip: 'text',
+          margin: 0
         }}>
           Expert Analysis
         </h2>
 
         <button
-          onClick={() => loadCards(true)}
+          onClick={() => loadInsights(true)}
           disabled={refreshing}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            padding: '0.5rem 1rem',
+            padding: '0.625rem 1.25rem',
             background: refreshing 
               ? 'rgba(59, 130, 246, 0.2)'
               : 'rgba(59, 130, 246, 0.1)',
             border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '8px',
+            borderRadius: '10px',
             color: '#3B82F6',
             fontSize: '0.875rem',
             fontWeight: '600',
             cursor: refreshing ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!refreshing) {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!refreshing) {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+            }
           }}
         >
           <RefreshCw 
@@ -140,104 +171,160 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
         </button>
       </div>
 
-      {/* Cards Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.5rem'
-      }}>
-        {cards.map((card, index) => {
-          const IconComponent = iconMap[card.icon] || Target;
-          
-          return (
-            <div
-              key={index}
+      {/* Carousel Container */}
+      <div style={{ position: 'relative' }}>
+        {/* Navigation Arrows - Desktop */}
+        {insights.length > 1 && (
+          <>
+            <button
+              onClick={goToPrevious}
+              disabled={activeIndex === 0}
               style={{
-                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-                backdropFilter: 'blur(20px) saturate(180%)',
-                border: '1px solid rgba(148, 163, 184, 0.1)',
-                borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                animation: `slideInUp 0.5s ease-out ${index * 0.1}s both`,
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px 0 rgba(0, 0, 0, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)';
+                position: 'absolute',
+                left: '-20px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10,
+                background: activeIndex === 0 ? 'rgba(71, 85, 105, 0.5)' : 'rgba(59, 130, 246, 0.9)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: activeIndex === 0 ? 'not-allowed' : 'pointer',
+                opacity: activeIndex === 0 ? 0.3 : 1,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                transition: 'all 0.2s ease'
               }}
             >
-              {/* Gradient Orb Background */}
-              <div style={{
+              <ChevronLeft size={24} color="white" />
+            </button>
+
+            <button
+              onClick={goToNext}
+              disabled={activeIndex === insights.length - 1}
+              style={{
                 position: 'absolute',
-                top: '-30%',
-                right: '-20%',
-                width: '150px',
-                height: '150px',
-                background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                right: '-20px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10,
+                background: activeIndex === insights.length - 1 ? 'rgba(71, 85, 105, 0.5)' : 'rgba(59, 130, 246, 0.9)',
+                border: 'none',
                 borderRadius: '50%',
-                opacity: 0.1,
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: activeIndex === insights.length - 1 ? 'not-allowed' : 'pointer',
+                opacity: activeIndex === insights.length - 1 ? 0.3 : 1,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <ChevronRight size={24} color="white" />
+            </button>
+          </>
+        )}
 
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                {/* Icon */}
+        {/* Carousel Slider */}
+        <div
+          style={{
+            overflow: 'hidden',
+            borderRadius: '20px'
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            style={{
+              display: 'flex',
+              transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: `translateX(-${activeIndex * 100}%)`
+            }}
+          >
+            {insights.map((insight, index) => (
+              <div
+                key={index}
+                style={{
+                  minWidth: '100%',
+                  background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                  backdropFilter: 'blur(20px) saturate(180%)',
+                  border: '1px solid rgba(148, 163, 184, 0.1)',
+                  padding: '2.5rem',
+                  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Subtle gradient orb */}
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  position: 'absolute',
+                  top: '-20%',
+                  right: '-10%',
+                  width: '200px',
+                  height: '200px',
                   background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                  borderRadius: '12px',
-                  marginBottom: '1rem',
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
-                }}>
-                  <IconComponent size={24} color="white" strokeWidth={2.5} />
-                </div>
+                  borderRadius: '50%',
+                  opacity: 0.05,
+                  filter: 'blur(60px)',
+                  pointerEvents: 'none'
+                }} />
 
-                {/* Title */}
-                <h3 style={{
-                  fontSize: '1.125rem',
-                  fontWeight: '700',
-                  color: '#F1F5F9',
-                  marginBottom: '0.75rem'
-                }}>
-                  {card.title}
-                </h3>
-
-                {/* Insight Text */}
+                {/* Blog-style paragraph */}
                 <p style={{
-                  fontSize: '0.9375rem',
-                  lineHeight: '1.6',
-                  color: '#CBD5E1'
+                  position: 'relative',
+                  zIndex: 1,
+                  fontSize: '1.0625rem',
+                  lineHeight: '1.75',
+                  color: '#E2E8F0',
+                  margin: 0,
+                  fontWeight: '400',
+                  letterSpacing: '0.01em'
                 }}>
-                  {card.insight}
+                  {insight.analysis}
                 </p>
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        </div>
+
+        {/* Pagination Dots */}
+        {insights.length > 1 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            marginTop: '1.5rem'
+          }}>
+            {insights.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                style={{
+                  width: index === activeIndex ? '32px' : '8px',
+                  height: '8px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: index === activeIndex 
+                    ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                    : 'rgba(148, 163, 184, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  padding: 0
+                }}
+                aria-label={`Go to insight ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <style>{`
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -246,8 +333,13 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
+
+        @media (max-width: 768px) {
+          .expert-analysis-header h2 {
+            font-size: 1.5rem;
+          }
+        }
       `}</style>
     </div>
   );
 }
-

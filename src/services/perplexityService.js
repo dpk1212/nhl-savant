@@ -180,48 +180,36 @@ export async function getMatchupInsightCards(awayTeam, homeTeam, forceRefresh = 
     const apiKey = await getPerplexityKey();
     
     if (!apiKey) {
-      console.log('ℹ️ Using fallback insight cards (no API key)');
+      console.log('ℹ️ Using fallback blog-style insights (no API key)');
       return [
         {
-          icon: '🎯',
-          title: 'Matchup Analysis',
-          insight: `${awayTeam} and ${homeTeam} present contrasting styles. Check the detailed statistics below to identify key advantages in this matchup.`
+          analysis: `This ${awayTeam} at ${homeTeam} matchup presents some intriguing contrasts in playing styles. Both teams bring unique strengths to the ice, and the outcome will likely hinge on which team can impose their game plan more effectively. Looking at the advanced analytics below, you'll find clear advantages in certain areas that could prove decisive. Pay special attention to the offensive and defensive metrics—they tell an interesting story about how these two teams match up.`
         },
         {
-          icon: '📊',
-          title: 'Statistical Edge',
-          insight: 'Advanced metrics reveal scoring opportunities. Review the visual analytics to understand expected goal differentials and shot quality advantages.'
-        },
-        {
-          icon: '🥅',
-          title: 'Key Factors',
-          insight: 'Goaltending, special teams, and shot quality will determine this game. Explore the visual breakdowns for deeper insights.'
+          analysis: `The goaltending and special teams battle could be the difference-maker tonight. Both areas have been crucial for these teams this season, and we're seeing some significant differentials in the underlying numbers. The team that can capitalize on power play opportunities while staying disciplined will have a major edge. Check out the detailed breakdowns below to see exactly where the advantages lie.`
         }
       ];
     }
 
-    console.log('⏳ Fetching fresh insight cards from Perplexity AI...');
+    console.log('⏳ Fetching fresh blog-style insights from Perplexity AI...');
     
-    const prompt = `Generate 3-4 brief analytical insight cards (40-60 words each) for ${awayTeam} @ ${homeTeam} NHL game.
+    const prompt = `Write 2-3 conversational analysis paragraphs (100-150 words each) for the ${awayTeam} @ ${homeTeam} NHL game.
 
-Return ONLY a valid JSON array with this exact format (no markdown, no explanation):
+Write like a human sports analyst writing a mini blog post, not a structured report. Use natural language, tell a story, provide context and conclusion. Be specific with player names, recent stats, and trends.
+
+Return ONLY a valid JSON array with this format (no markdown, no explanation):
 [
   {
-    "icon": "🎯",
-    "title": "Brief Title (2-4 words)",
-    "insight": "40-60 word insight with specific numbers and analysis"
+    "analysis": "100-150 word paragraph in natural, conversational tone"
   }
 ]
 
-Icon options: 🎯 (offense/scoring), 🥅 (goaltending), ⚡ (special teams), 🎖️ (advantage), 📊 (trends), 🔥 (momentum)
+Topics to cover (pick 2-3 most relevant):
+1. Most significant matchup advantage - tell the story with recent context (e.g., "Columbus has been struggling defensively over the past two weeks, giving up 3.8 goals per game while Toronto's top line has been on fire...")
+2. Key factor that will determine the game - goaltending, special teams, momentum, injuries (tell the story naturally)
+3. Under-the-radar insight or betting angle - something casual bettors might miss
 
-Focus on:
-1. Biggest statistical edge (offense vs defense mismatch with numbers)
-2. Goaltending advantage if significant (include SV% or GSAX)
-3. Special teams or key trend (PP%, PK%, recent form)
-4. Regression/momentum factor (if applicable)
-
-Be specific with numbers. No generic statements. Each card should be actionable insight.`;
+Write in complete sentences and paragraphs. Be conversational but analytical. Use player names and specific recent stats.`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -242,7 +230,7 @@ Be specific with numbers. No generic statements. Each card should be actionable 
           }
         ],
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: 1000,
         stream: false
       }),
     });
@@ -292,22 +280,13 @@ Be specific with numbers. No generic statements. Each card should be actionable 
   } catch (error) {
     console.error('❌ Error fetching insight cards:', error);
     
-    // Return fallback cards
+    // Return fallback blog-style insights
     return [
       {
-        icon: '🎯',
-        title: 'Matchup Overview',
-        insight: `${awayTeam} faces ${homeTeam} in what should be a competitive matchup. Review the statistical breakdowns below for detailed analysis.`
+        analysis: `Tonight's ${awayTeam} at ${homeTeam} game sets up as an interesting matchup with both teams bringing different strengths to the ice. The advanced metrics below reveal some key areas where one team has a clear edge. While we couldn't fetch the latest real-time analysis, the statistical breakdowns will give you a comprehensive view of how these teams match up in terms of offense, defense, goaltending, and special teams.`
       },
       {
-        icon: '📊',
-        title: 'Key Metrics',
-        insight: 'Expected goals, shot quality, and special teams effectiveness will be critical factors. Check the visual analytics for specific advantages.'
-      },
-      {
-        icon: '🥅',
-        title: 'Goaltending',
-        insight: 'Goaltending performance could swing this game. Compare save percentages and recent form in the analysis below.'
+        analysis: `Dive into the visual analytics below to understand the key factors that could determine this game. Pay close attention to the expected goals differential, shot quality metrics, and how each team's strengths align against their opponent's weaknesses. The data tells a compelling story about where the value might lie in this matchup.`
       }
     ];
   }
