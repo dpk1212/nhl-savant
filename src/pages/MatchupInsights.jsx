@@ -10,6 +10,7 @@ import GoalieComparison from '../components/matchup/GoalieComparison';
 import ShotDangerChart from '../components/matchup/ShotDangerChart';
 import RecentFormTimeline from '../components/matchup/RecentFormTimeline';
 import SEOHeader from '../components/matchup/SEOHeader';
+import KeyInsights from '../components/matchup/KeyInsights';
 import { 
   getTeamStats, 
   getGoalieStats,
@@ -18,7 +19,8 @@ import {
   calculateShotQualityEdge,
   calculateSpecialTeamsEdge,
   calculateOverallAdvantage,
-  getRecentForm
+  getRecentForm,
+  calculatePercentileRank
 } from '../utils/matchupCalculations';
 
 export default function MatchupInsights(props) {
@@ -114,6 +116,89 @@ export default function MatchupInsights(props) {
         }
       };
 
+      // Generate key insights
+      const insights = [];
+
+      // 1. Offensive Strength Analysis
+      const awayXGFRank = calculatePercentileRank(dataProc, selectedGame.awayTeam, 'xGoalsFor', '5on5', true);
+      const homeXGARank = calculatePercentileRank(dataProc, selectedGame.homeTeam, 'xGoalsAgainst', '5on5', false);
+      
+      if (awayXGFRank && homeXGARank) {
+        const awayName = getTeamName(selectedGame.awayTeam);
+        const homeName = getTeamName(selectedGame.homeTeam);
+        
+        if (awayXGFRank.percentile >= 70 && homeXGARank.percentile < 50) {
+          insights.push({
+            type: 'offense',
+            title: `${awayName} Offensive Firepower`,
+            description: `${awayName} ranks ${awayXGFRank.rank} in xGoals For (Top ${awayXGFRank.percentile}%) facing a ${homeName} defense ranked ${homeXGARank.rank} (${homeXGARank.tier})`,
+            stat: `${(awayStats5v5?.xGoalsFor / ((awayStats5v5?.iceTime || 1) / 60)).toFixed(2)} xGF/60`
+          });
+        } else if (homeXGARank.percentile >= 70) {
+          insights.push({
+            type: 'defense',
+            title: `${homeName} Defensive Wall`,
+            description: `${homeName} allows 13.16 xGA/60 (Top ${homeXGARank.percentile}%), making it difficult for ${awayName} offense`,
+            stat: `Rank ${homeXGARank.rank} in defensive efficiency`
+          });
+        }
+      }
+
+      // 2. High Danger Shots Analysis
+      const awayHDRank = calculatePercentileRank(dataProc, selectedGame.awayTeam, 'highDangerShotsFor', '5on5', true);
+      const homeHDRank = calculatePercentileRank(dataProc, selectedGame.homeTeam, 'highDangerShotsAgainst', '5on5', false);
+      
+      if (awayHDRank && awayHDRank.percentile >= 75) {
+        insights.push({
+          type: 'offense',
+          title: 'High Danger Scoring Chances',
+          description: `${getTeamName(selectedGame.awayTeam)} generates quality scoring opportunities from dangerous areas (${awayHDRank.tier} tier)`,
+          stat: `${((awayStats5v5?.highDangerShotsFor || 0) / ((awayStats5v5?.iceTime || 1) / 60)).toFixed(2)} HD Shots/60`
+        });
+      }
+
+      // 3. Special Teams Impact
+      if (specialTeamsEdge !== 0 && Math.abs(specialTeamsEdge) > 0.5) {
+        const advantageTeam = specialTeamsEdge > 0 ? getTeamName(selectedGame.awayTeam) : getTeamName(selectedGame.homeTeam);
+        insights.push({
+          type: 'special',
+          title: 'Special Teams Mismatch',
+          description: `${advantageTeam} has a significant power play/penalty kill advantage that could swing this game`,
+          stat: `${Math.abs(specialTeamsEdge).toFixed(2)} goal advantage expected from special teams`
+        });
+      }
+
+      // 4. Goalie Analysis
+      if (goalieEdge !== 0 && Math.abs(goalieEdge) > 3) {
+        const advantageTeam = goalieEdge > 0 ? getTeamName(selectedGame.awayTeam) : getTeamName(selectedGame.homeTeam);
+        const goalieAdvantage = goalieEdge > 0 ? awayGoalie : homeGoalie;
+        if (goalieAdvantage && !goalieAdvantage.isDefault) {
+          insights.push({
+            type: 'positive',
+            title: 'Goaltending Advantage',
+            description: `${advantageTeam}'s ${goalieAdvantage.name} provides a significant edge with elite save percentage`,
+            stat: `${((goalieAdvantage.savePct || 0.905) * 100).toFixed(1)}% Save% | ${(goalieAdvantage.gsax || 0).toFixed(1)} GSAX`
+          });
+        }
+      }
+
+      // 5. Overall Prediction
+      if (overallAdvantage) {
+        const leadTeam = overallAdvantage.awayAdvantage > overallAdvantage.homeAdvantage 
+          ? getTeamName(selectedGame.awayTeam)
+          : getTeamName(selectedGame.homeTeam);
+        const winProb = Math.max(overallAdvantage.awayAdvantage, overallAdvantage.homeAdvantage);
+        
+        if (winProb >= 60) {
+          insights.push({
+            type: winProb >= 70 ? 'positive' : 'offense',
+            title: 'Model Prediction',
+            description: `Advanced metrics favor ${leadTeam} with ${winProb.toFixed(0)}% win probability based on xGoals, shot quality, and matchup edges`,
+            stat: `${leadTeam} ${winProb.toFixed(0)}-${(100 - winProb).toFixed(0)}`
+          });
+        }
+      }
+
       return {
         away: {
           code: selectedGame.awayTeam,
@@ -144,6 +229,7 @@ export default function MatchupInsights(props) {
           specialTeams: specialTeamsEdge,
           overall: overallAdvantage
         },
+        insights: insights,
         gameTime: selectedGame.gameTime,
         date: selectedGame.date
       };
@@ -301,6 +387,11 @@ export default function MatchupInsights(props) {
         <div>
           {/* AI Analysis Header */}
           <SEOHeader matchupData={matchupData} />
+
+          {/* Key Insights */}
+          {matchupData.insights && matchupData.insights.length > 0 && (
+            <KeyInsights insights={matchupData.insights} />
+          )}
 
           {/* Quick Stats Summary */}
           <div className="elevated-card" style={{

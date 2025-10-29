@@ -27,6 +27,65 @@ export function getTeamStats(dataProcessor, teamCode, situation = 'all') {
 }
 
 /**
+ * Calculate percentile rank for a team's stat
+ * @param {Object} dataProcessor - DataProcessor instance
+ * @param {string} teamCode - 3-letter team code
+ * @param {string} statName - Name of the stat (e.g., 'xGoalsFor', 'highDangerShotsFor')
+ * @param {string} situation - 'all', '5on5', '5on4', '4on5'
+ * @param {boolean} higherIsBetter - True if higher values are better
+ * @returns {Object} { percentile, rank, totalTeams, value, tier }
+ */
+export function calculatePercentileRank(dataProcessor, teamCode, statName, situation = '5on5', higherIsBetter = true) {
+  if (!dataProcessor || !teamCode || !statName) return null;
+  
+  try {
+    const teams = dataProcessor.getTeamsBySituation(situation);
+    if (!teams || teams.length === 0) return null;
+    
+    const team = teams.find(t => t.name === teamCode);
+    if (!team || team[statName] === undefined) return null;
+    
+    const teamValue = team[statName];
+    
+    // Get all values for this stat
+    const allValues = teams
+      .map(t => t[statName])
+      .filter(v => v !== undefined && v !== null && !isNaN(v))
+      .sort((a, b) => higherIsBetter ? b - a : a - b); // Sort desc if higher is better
+    
+    if (allValues.length === 0) return null;
+    
+    // Find rank (1-indexed)
+    const rank = allValues.findIndex(v => v === teamValue) + 1;
+    
+    // Calculate percentile (0-100)
+    const percentile = higherIsBetter
+      ? Math.round(((allValues.length - rank + 1) / allValues.length) * 100)
+      : Math.round((rank / allValues.length) * 100);
+    
+    // Determine tier
+    let tier = 'AVERAGE';
+    if (percentile >= 90) tier = 'ELITE';
+    else if (percentile >= 75) tier = 'STRONG';
+    else if (percentile >= 60) tier = 'ABOVE AVG';
+    else if (percentile >= 40) tier = 'AVERAGE';
+    else if (percentile >= 25) tier = 'BELOW AVG';
+    else tier = 'WEAK';
+    
+    return {
+      percentile,
+      rank,
+      totalTeams: teams.length,
+      value: teamValue,
+      tier
+    };
+  } catch (error) {
+    console.error('Error calculating percentile rank:', error);
+    return null;
+  }
+}
+
+/**
  * Get goalie stats for a specific situation
  * @param {Array} goalies - goalieData array
  * @param {string} goalieName - Goalie name
