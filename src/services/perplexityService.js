@@ -150,19 +150,14 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
   // CLIENT-SIDE: ONLY reads from cache, NEVER calls API
   // GitHub Action generates content and writes to cache
   
-  const now = new Date();
-  const hour = now.getHours();
-  const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame';
-  
-  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-${timeKey}`;
+  // SIMPLIFIED: No timeKey - just use date (we only generate once per day)
+  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
   console.log('🔍 Looking for Expert Analysis:', {
     awayTeam,
     homeTeam,
-    cacheKey,
-    hour,
-    timeKey
+    cacheKey
   });
 
   try {
