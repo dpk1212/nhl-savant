@@ -1,13 +1,12 @@
 /**
- * AI Insight Cards - Blog-Style Human Analysis
- * Natural, conversational paragraphs (100-150 words each)
- * Swipeable carousel on mobile
- * PREMIUM STYLED - Top section showcase
+ * AI Insight Cards - Expert Analysis
+ * Matches CollapsibleGameCard branding: elevated-card, subtle gradients, clean design
+ * NO rainbow gradients, NO sparkles, NO glow effects
  */
 
 import { useState, useEffect } from 'react';
 import { getMatchupInsightCards } from '../../services/perplexityService';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AIInsightCards({ awayTeam, homeTeam }) {
   const [insights, setInsights] = useState([]);
@@ -28,8 +27,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
     try {
       const result = await getMatchupInsightCards(
         awayTeam.name,
-        homeTeam.name,
-        false
+        homeTeam.name
       );
       setInsights(result);
       setActiveIndex(0);
@@ -82,51 +80,19 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
 
   if (loading) {
     return (
-      <div style={{
-        marginBottom: '3rem',
-        padding: '4rem 2rem',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.15) 50%, rgba(139, 92, 246, 0.15) 100%)',
-        backdropFilter: 'blur(20px)',
-        border: '2px solid rgba(16, 185, 129, 0.3)',
-        borderRadius: '24px',
+      <div className="elevated-card" style={{
+        marginBottom: '2rem',
+        padding: '2rem',
         textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(16, 185, 129, 0.2), 0 0 0 1px rgba(16, 185, 129, 0.1)'
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%)',
+        border: '1px solid rgba(16, 185, 129, 0.15)',
+        borderRadius: '10px'
       }}>
-        {/* Premium glow background */}
         <div style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '400px',
-          height: '400px',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          animation: 'pulse 3s ease-in-out infinite'
-        }}></div>
-        
-        <div style={{
-          position: 'relative',
-          zIndex: 1
+          color: '#64748B',
+          fontSize: '1rem'
         }}>
-          <Sparkles size={48} color="#10B981" strokeWidth={2} style={{ marginBottom: '1rem' }} />
-          <div style={{
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            color: '#10B981',
-            fontSize: '1.25rem',
-            fontWeight: '700',
-            marginBottom: '0.5rem'
-          }}>
-            Loading Expert Analysis...
-          </div>
-          <div style={{
-            color: '#94A3B8',
-            fontSize: '0.9375rem'
-          }}>
-            Powered by AI insights and real-time data
-          </div>
+          Loading expert analysis...
         </div>
       </div>
     );
@@ -135,98 +101,51 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
   // Show "Waiting" state if no insights
   if (!insights || insights.length === 0) {
     return (
-      <div style={{
-        marginBottom: '3rem',
-        padding: '4rem 2rem',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.15) 50%, rgba(139, 92, 246, 0.15) 100%)',
-        backdropFilter: 'blur(20px)',
-        border: '2px solid rgba(16, 185, 129, 0.3)',
-        borderRadius: '24px',
+      <div className="elevated-card" style={{
+        marginBottom: '2rem',
+        padding: '2rem',
         textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(16, 185, 129, 0.2), 0 0 0 1px rgba(16, 185, 129, 0.1)'
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%)',
+        border: '1px solid rgba(16, 185, 129, 0.15)',
+        borderRadius: '10px'
       }}>
-        {/* Premium glow background */}
         <div style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '400px',
-          height: '400px',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%)',
-          pointerEvents: 'none'
-        }}></div>
-        
-        <div style={{
-          position: 'relative',
-          zIndex: 1
+          color: '#F1F5F9',
+          fontSize: '1.25rem',
+          fontWeight: '700',
+          marginBottom: '0.75rem'
         }}>
-          <Sparkles size={48} color="#10B981" strokeWidth={2} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-          <div style={{
-            color: '#10B981',
-            fontSize: '1.5rem',
-            fontWeight: '900',
-            marginBottom: '0.75rem',
-            letterSpacing: '-0.02em'
-          }}>
-            Waiting for Expert Articles
-          </div>
-          <div style={{
-            color: '#94A3B8',
-            fontSize: '0.9375rem',
-            maxWidth: '500px',
-            margin: '0 auto',
-            lineHeight: 1.6
-          }}>
-            Expert analysis articles are generated daily before games. Check back closer to game time for professional insights.
-          </div>
+          Waiting for Expert Articles
+        </div>
+        <div style={{
+          color: '#94A3B8',
+          fontSize: '0.9375rem',
+          maxWidth: '500px',
+          margin: '0 auto',
+          lineHeight: 1.6
+        }}>
+          Expert analysis articles are generated daily before games. Check back closer to game time for professional insights.
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ marginBottom: '3rem' }}>
-      {/* PREMIUM HEADER */}
-      <div style={{
-        marginBottom: '2rem',
-        textAlign: 'center'
-      }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          marginBottom: '0.75rem'
+    <div style={{ marginBottom: '2rem' }}>
+      {/* Header - Brand Matched */}
+      <div style={{ marginBottom: '1rem' }}>
+        <h2 style={{
+          fontSize: '1.5rem',
+          fontWeight: '700',
+          color: '#F1F5F9',
+          margin: 0,
+          letterSpacing: '-0.01em'
         }}>
-          <Sparkles size={32} color="#10B981" strokeWidth={2.5} />
-          <h2 style={{
-            fontSize: '2.5rem',
-            fontWeight: '900',
-            background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 50%, #8B5CF6 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            margin: 0,
-            letterSpacing: '-0.03em'
-          }}>
-            Expert Analysis
-          </h2>
-          <Sparkles size={32} color="#8B5CF6" strokeWidth={2.5} />
-        </div>
-        <p style={{
-          fontSize: '0.9375rem',
-          color: '#94A3B8',
-          maxWidth: '700px',
-          margin: '0 auto',
-          lineHeight: 1.6
-        }}>
-          AI-powered insights and professional analysis to inform your betting decisions
-        </p>
+          Expert Analysis
+        </h2>
       </div>
 
-      {/* PREMIUM CAROUSEL CONTAINER */}
+      {/* Carousel Container */}
       <div style={{ position: 'relative' }}>
         {/* Navigation Arrows - Desktop */}
         {insights.length > 1 && (
@@ -242,21 +161,21 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 zIndex: 10,
                 background: activeIndex === 0 
                   ? 'rgba(71, 85, 105, 0.5)' 
-                  : 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%)',
+                  : 'rgba(16, 185, 129, 0.8)',
                 border: 'none',
                 borderRadius: '50%',
-                width: '48px',
-                height: '48px',
+                width: '40px',
+                height: '40px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: activeIndex === 0 ? 'not-allowed' : 'pointer',
                 opacity: activeIndex === 0 ? 0.3 : 1,
-                boxShadow: activeIndex === 0 ? 'none' : '0 8px 24px rgba(16, 185, 129, 0.4)',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.2s ease'
               }}
+              className="desktop-only-arrow"
             >
-              <ChevronLeft size={28} color="#FFFFFF" strokeWidth={3} />
+              <ChevronLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
             </button>
 
             <button
@@ -270,21 +189,21 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 zIndex: 10,
                 background: activeIndex === insights.length - 1 
                   ? 'rgba(71, 85, 105, 0.5)' 
-                  : 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%)',
+                  : 'rgba(16, 185, 129, 0.8)',
                 border: 'none',
                 borderRadius: '50%',
-                width: '48px',
-                height: '48px',
+                width: '40px',
+                height: '40px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: activeIndex === insights.length - 1 ? 'not-allowed' : 'pointer',
                 opacity: activeIndex === insights.length - 1 ? 0.3 : 1,
-                boxShadow: activeIndex === insights.length - 1 ? 'none' : '0 8px 24px rgba(16, 185, 129, 0.4)',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.2s ease'
               }}
+              className="desktop-only-arrow"
             >
-              <ChevronRight size={28} color="#FFFFFF" strokeWidth={3} />
+              <ChevronRight size={24} color="#FFFFFF" strokeWidth={2.5} />
             </button>
           </>
         )}
@@ -296,7 +215,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
           onTouchEnd={handleTouchEnd}
           style={{
             display: 'flex',
-            transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'transform 0.3s ease',
             transform: `translateX(-${activeIndex * 100}%)`,
             touchAction: 'pan-y'
           }}
@@ -309,34 +228,17 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 padding: '0 0.5rem'
               }}
             >
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.15) 50%, rgba(139, 92, 246, 0.15) 100%)',
-                backdropFilter: 'blur(20px) saturate(180%)',
-                border: '2px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '20px',
-                padding: '2.5rem',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 20px 60px rgba(16, 185, 129, 0.2), 0 0 0 1px rgba(16, 185, 129, 0.1)',
-                minHeight: '200px'
+              <div className="elevated-card" style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '10px',
+                padding: '1.5rem',
+                minHeight: '150px',
+                transition: 'all 0.2s ease'
               }}>
-                {/* Premium glow background */}
                 <div style={{
-                  position: 'absolute',
-                  top: '-30%',
-                  right: '-10%',
-                  width: '300px',
-                  height: '300px',
-                  background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%)',
-                  pointerEvents: 'none'
-                }}></div>
-                
-                {/* Content */}
-                <div style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  fontSize: '1.0625rem',
-                  lineHeight: 1.8,
+                  fontSize: '1rem',
+                  lineHeight: 1.7,
                   color: '#E2E8F0',
                   fontWeight: '400'
                 }}>
@@ -353,25 +255,24 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '0.75rem',
-          marginTop: '2rem'
+          gap: '0.5rem',
+          marginTop: '1.5rem'
         }}>
           {insights.map((_, index) => (
             <button
               key={index}
               onClick={() => setActiveIndex(index)}
               style={{
-                width: activeIndex === index ? '48px' : '12px',
-                height: '12px',
-                borderRadius: '6px',
+                width: activeIndex === index ? '32px' : '8px',
+                height: '8px',
+                borderRadius: '4px',
                 background: activeIndex === index 
-                  ? 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)'
+                  ? 'rgba(16, 185, 129, 0.8)'
                   : 'rgba(148, 163, 184, 0.3)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                padding: 0,
-                boxShadow: activeIndex === index ? '0 4px 12px rgba(16, 185, 129, 0.4)' : 'none'
+                padding: 0
               }}
               aria-label={`Go to insight ${index + 1}`}
             />
@@ -380,24 +281,9 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
       )}
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-            transform: translateX(-50%) scale(1);
-          }
-          50% {
-            opacity: 0.7;
-            transform: translateX(-50%) scale(1.05);
-          }
-        }
-
         @media (max-width: 768px) {
-          .ai-insight-cards h2 {
-            font-size: 2rem !important;
-          }
-          .ai-insight-cards-card {
-            padding: 1.5rem !important;
-            font-size: 0.9375rem !important;
+          .desktop-only-arrow {
+            display: none !important;
           }
         }
       `}</style>
