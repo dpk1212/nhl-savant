@@ -1983,50 +1983,24 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* Compact Picks Bar - Quick view of all recommendations */}
-      {allEdges && allEdges.length > 0 && (() => {
-        // Prepare picks data from allEdges (B-rated or higher: evPercent >= 3)
-        const recommendedPicks = allEdges
-          .filter(game => {
-            return game && 
-                   game.bestEdge && 
-                   typeof game.bestEdge.evPercent === 'number' && 
-                   game.bestEdge.evPercent >= 3 &&
-                   game.awayTeam &&
-                   game.homeTeam;
-          })
-          .map(game => {
-            const rating = getRating(game.bestEdge.evPercent);
-            return {
-              pick: `${game.bestEdge.pick || `${game.awayTeam} @ ${game.homeTeam}`}`,
-              market: game.bestEdge.market || 'UNKNOWN',
-              grade: rating.grade,
-              odds: game.bestEdge.odds || 0,
-              edge: `${Math.abs(game.bestEdge.evPercent).toFixed(1)}%`,
+      {/* Compact Picks Bar - ALWAYS RENDER FOR TESTING */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <CompactPicksBar 
+          picks={allEdges
+            .filter(game => game?.bestEdge?.evPercent >= 3)
+            .map(game => ({
+              pick: game.bestEdge.pick || `${game.awayTeam} @ ${game.homeTeam}`,
+              market: game.bestEdge.market,
+              grade: getRating(game.bestEdge.evPercent).grade,
+              odds: game.bestEdge.odds,
+              edge: `${game.bestEdge.evPercent.toFixed(1)}%`,
               gameTime: game.gameTime
-            };
-          });
-
-        if (recommendedPicks.length === 0) {
-          return null;
-        }
-
-        const scrollToFirstGame = () => {
-          const firstGame = document.querySelector('[class*="elevated-card"]');
-          if (firstGame) {
-            firstGame.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        };
-
-        return (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <CompactPicksBar 
-              picks={recommendedPicks} 
-              onViewAll={scrollToFirstGame}
-            />
-          </div>
-        );
-      })()}
+            }))}
+          onViewAll={() => {
+            document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
+      </div>
 
       {/* Deep Analytics Cards for Each Game - Grouped by Time */}
       <div>
