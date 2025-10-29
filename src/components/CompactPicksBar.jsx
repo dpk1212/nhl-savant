@@ -3,15 +3,15 @@ import { ChevronDown, TrendingUp } from 'lucide-react';
 function getGradeColor(grade) {
   switch (grade) {
     case 'A+':
-      return { bg: 'rgba(212, 175, 55, 0.15)', text: '#D4AF37', border: 'rgba(212, 175, 55, 0.3)' };
+      return '#D4AF37';
     case 'A':
-      return { bg: 'rgba(16, 185, 129, 0.15)', text: '#10B981', border: 'rgba(16, 185, 129, 0.3)' };
+      return '#10B981';
     case 'B+':
-      return { bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6', border: 'rgba(59, 130, 246, 0.3)' };
+      return '#3B82F6';
     case 'B':
-      return { bg: 'rgba(139, 92, 246, 0.15)', text: '#8B5CF6', border: 'rgba(139, 92, 246, 0.3)' };
+      return '#8B5CF6';
     default:
-      return { bg: 'rgba(100, 116, 139, 0.15)', text: '#64748B', border: 'rgba(100, 116, 139, 0.3)' };
+      return '#64748B';
   }
 }
 
@@ -21,8 +21,8 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
-export default function CompactPicksBar({ picks, onViewAll }) {
-  if (!picks || picks.length === 0) {
+export default function CompactPicksBar({ gameGroups, onViewAll }) {
+  if (!gameGroups || gameGroups.length === 0) {
     return null;
   }
 
@@ -31,6 +31,8 @@ export default function CompactPicksBar({ picks, onViewAll }) {
       onViewAll();
     }
   };
+
+  const totalPicks = gameGroups.reduce((sum, group) => sum + group.bets.length, 0);
 
   return (
     <div style={{
@@ -51,91 +53,123 @@ export default function CompactPicksBar({ picks, onViewAll }) {
     className="compact-picks-bar">
       {/* Count Badge */}
       <div style={{
+        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+        padding: '0.5rem 1rem',
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
         flexShrink: 0,
-        fontSize: '0.875rem',
         fontWeight: '600',
-        color: 'var(--color-text-primary)',
-        paddingRight: '1rem',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+        fontSize: '0.9rem',
+        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
       }}>
-        <TrendingUp size={16} color="#3B82F6" />
+        <TrendingUp size={18} />
         <span>TODAY'S PICKS</span>
         <span style={{
-          background: 'rgba(59, 130, 246, 0.2)',
-          color: '#3B82F6',
+          background: 'rgba(255, 255, 255, 0.2)',
           padding: '0.125rem 0.5rem',
-          borderRadius: '0.75rem',
-          fontSize: '0.75rem',
-          fontWeight: '700'
+          borderRadius: '12px',
+          fontSize: '0.85rem'
         }}>
-          {picks.length}
+          {totalPicks}
         </span>
       </div>
 
-      {/* Picks Badges - Horizontal Scroll */}
-      <div style={{
+      {/* Games with Grouped Picks */}
+      <div className="compact-picks-scroll" style={{
         display: 'flex',
-        gap: '0.75rem',
-        overflowX: 'auto',
-        overflowY: 'hidden',
+        gap: '1rem',
         flex: 1,
-        padding: '0.25rem 0',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-        WebkitOverflowScrolling: 'touch'
-      }}
-      className="compact-picks-scroll">
-        {picks.map((pick, index) => {
-          const colors = getGradeColor(pick.grade);
-          const icon = getMarketIcon(pick.market);
-          
-          return (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0.875rem',
-                background: colors.bg,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: colors.text,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              className="compact-pick-badge"
-              onClick={scrollToGames}
-            >
-              <span>{icon}</span>
-              <span>{pick.pick}</span>
-              <span style={{
-                background: colors.border,
-                padding: '0.125rem 0.375rem',
-                borderRadius: '0.25rem',
-                fontSize: '0.75rem',
-                fontWeight: '700'
-              }}>
-                {pick.grade}
-              </span>
-              <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-                {pick.odds > 0 ? '+' : ''}{pick.odds}
-              </span>
-              {pick.edge && (
-                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>
-                  • {pick.edge}
-                </span>
-              )}
+        overflow: 'auto',
+        padding: '0.25rem 0'
+      }}>
+        {gameGroups.map((gameGroup, groupIndex) => (
+          <div
+            key={groupIndex}
+            style={{
+              background: 'rgba(31, 41, 55, 0.6)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              borderRadius: '10px',
+              padding: '0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              flexShrink: 0,
+              minWidth: '280px'
+            }}
+          >
+            {/* Game Header */}
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#94A3B8',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+              paddingBottom: '0.5rem'
+            }}>
+              {gameGroup.game}
             </div>
-          );
-        })}
+
+            {/* Picks for this game */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {gameGroup.bets.map((bet, betIndex) => (
+                <div
+                  key={betIndex}
+                  className="compact-pick-badge"
+                  style={{
+                    background: `linear-gradient(135deg, ${getGradeColor(bet.grade)}15 0%, ${getGradeColor(bet.grade)}25 100%)`,
+                    border: `1.5px solid ${getGradeColor(bet.grade)}`,
+                    borderRadius: '6px',
+                    padding: '0.5rem 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer'
+                  }}
+                  onClick={scrollToGames}
+                >
+                  {/* Market Icon */}
+                  <span style={{ fontSize: '1rem' }}>{getMarketIcon(bet.market)}</span>
+
+                  {/* Pick Text */}
+                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap', flex: 1 }}>
+                    {bet.pick}
+                  </span>
+
+                  {/* Grade Badge */}
+                  <span style={{
+                    background: getGradeColor(bet.grade),
+                    color: '#000',
+                    padding: '0.125rem 0.4rem',
+                    borderRadius: '4px',
+                    fontSize: '0.7rem',
+                    fontWeight: '700'
+                  }}>
+                    {bet.grade}
+                  </span>
+
+                  {/* Odds */}
+                  <span style={{ color: '#94A3B8', fontWeight: '500', fontSize: '0.8rem' }}>
+                    {bet.odds > 0 ? `+${bet.odds}` : bet.odds}
+                  </span>
+
+                  {/* Edge */}
+                  <span style={{
+                    color: getGradeColor(bet.grade),
+                    fontWeight: '600',
+                    fontSize: '0.75rem'
+                  }}>
+                    • {bet.edge}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* View All Button */}
@@ -216,4 +250,3 @@ export default function CompactPicksBar({ picks, onViewAll }) {
     </div>
   );
 }
-
