@@ -225,25 +225,52 @@ Write in complete sentences and paragraphs. Be conversational but analytical. Us
  * Cache analysis in Firebase
  */
 async function cacheAnalysis(awayTeam, homeTeam, cards) {
+  // VALIDATE INPUT DATA
+  if (!awayTeam || !homeTeam) {
+    console.error('❌ Invalid team names:', { awayTeam, homeTeam });
+    throw new Error('Team names cannot be empty');
+  }
+  
+  if (!cards || !Array.isArray(cards) || cards.length === 0) {
+    console.error('❌ Invalid cards data:', { cards });
+    throw new Error('Cards must be a non-empty array');
+  }
+  
   const now = new Date();
   const hour = now.getHours();
   const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame';
   
-  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-${timeKey}`;
+  const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}-${timeKey}`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
+  
+  // VALIDATE DOCUMENT ID
+  if (cacheKey.includes('/') || cacheKey.startsWith('.') || cacheKey.startsWith('__')) {
+    console.error('❌ Invalid document ID:', cacheKey);
+    throw new Error('Invalid document ID format');
+  }
 
   try {
-    await setDoc(cacheRef, {
+    // Prepare data object with validation
+    const dataToWrite = {
       content: JSON.stringify(cards),
       timestamp: Date.now(),
-      awayTeam,
-      homeTeam,
-      timeKey,
+      awayTeam: String(awayTeam),
+      homeTeam: String(homeTeam),
+      timeKey: String(timeKey),
       generatedBy: 'github-action'
-    });
+    };
+    
+    console.log(`💾 Writing to Firebase: ${cacheKey}`);
+    console.log(`   Data size: ${dataToWrite.content.length} characters`);
+    
+    await setDoc(cacheRef, dataToWrite);
     console.log(`✅ Cached analysis for ${awayTeam} @ ${homeTeam}`);
   } catch (error) {
-    console.error(`❌ Failed to cache analysis for ${awayTeam} @ ${homeTeam}:`, error.message);
+    console.error(`❌ Failed to cache analysis for ${awayTeam} @ ${homeTeam}:`);
+    console.error(`   Error code: ${error.code}`);
+    console.error(`   Error message: ${error.message}`);
+    console.error(`   Document ID: ${cacheKey}`);
+    throw error; // Re-throw to stop execution
   }
 }
 
