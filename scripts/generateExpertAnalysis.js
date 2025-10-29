@@ -52,31 +52,88 @@ if (!PERPLEXITY_API_KEY) {
 }
 
 /**
- * Get today's NHL games from schedule
+ * Team name mapping (from ScheduleHelper - KEEP IN SYNC)
+ */
+const TEAM_NAME_TO_CODE = {
+  'Anaheim Ducks': 'ANA',
+  'Boston Bruins': 'BOS',
+  'Buffalo Sabres': 'BUF',
+  'Calgary Flames': 'CGY',
+  'Carolina Hurricanes': 'CAR',
+  'Chicago Blackhawks': 'CHI',
+  'Colorado Avalanche': 'COL',
+  'Columbus Blue Jackets': 'CBJ',
+  'Dallas Stars': 'DAL',
+  'Detroit Red Wings': 'DET',
+  'Edmonton Oilers': 'EDM',
+  'Florida Panthers': 'FLA',
+  'Los Angeles Kings': 'LAK',
+  'Minnesota Wild': 'MIN',
+  'Montreal Canadiens': 'MTL',
+  'Nashville Predators': 'NSH',
+  'New Jersey Devils': 'NJD',
+  'New York Islanders': 'NYI',
+  'New York Rangers': 'NYR',
+  'Ottawa Senators': 'OTT',
+  'Philadelphia Flyers': 'PHI',
+  'Pittsburgh Penguins': 'PIT',
+  'San Jose Sharks': 'SJS',
+  'Seattle Kraken': 'SEA',
+  'St. Louis Blues': 'STL',
+  'Tampa Bay Lightning': 'TBL',
+  'Toronto Maple Leafs': 'TOR',
+  'Utah Mammoth': 'UTA',
+  'Vancouver Canucks': 'VAN',
+  'Vegas Golden Knights': 'VGK',
+  'Washington Capitals': 'WSH',
+  'Winnipeg Jets': 'WPG'
+};
+
+/**
+ * Get today's NHL games from schedule (SAME AS APP.JSX)
+ * Uses nhl-202526-asplayed.csv with columns: Date, Visitor, Home
  */
 function getTodaysGames() {
   try {
-    const schedulePath = join(__dirname, '../public/schedule-2025-moneypuck.csv');
+    // SAME FILE AS PRODUCTION APP
+    const schedulePath = join(__dirname, '../public/nhl-202526-asplayed.csv');
     const scheduleData = readFileSync(schedulePath, 'utf-8');
     const lines = scheduleData.trim().split('\n');
-    const headers = lines[0].split(',');
     
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    // CSV Format: Date,Start Time (Sask),Start Time (ET),Visitor,Score,Home,Score,Status
+    const today = new Date();
+    const month = today.getMonth() + 1; // 0-indexed, add 1
+    const day = today.getDate();
+    const year = today.getFullYear();
+    const todayStr = `${month}/${day}/${year}`; // Format: "10/29/2025"
+    
+    console.log(`🔍 Looking for games on: ${todayStr}`);
     
     const games = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',');
-      const row = {};
-      headers.forEach((header, index) => {
-        row[header.trim()] = values[index]?.trim();
-      });
+      const line = lines[i];
+      if (!line.trim()) continue;
       
-      if (row.game_date === today) {
-        games.push({
-          awayTeam: row.away_team,
-          homeTeam: row.home_team,
-          date: row.game_date
-        });
+      const values = line.split(',');
+      const gameDate = values[0]?.trim();
+      const visitorName = values[3]?.trim(); // Full name like "Toronto Maple Leafs"
+      const homeName = values[5]?.trim(); // Full name like "Columbus Blue Jackets"
+      
+      if (gameDate === todayStr && visitorName && homeName) {
+        // Convert full names to team codes (SAME AS PRODUCTION)
+        const awayTeam = TEAM_NAME_TO_CODE[visitorName];
+        const homeTeam = TEAM_NAME_TO_CODE[homeName];
+        
+        if (awayTeam && homeTeam) {
+          games.push({
+            awayTeam,
+            homeTeam,
+            date: todayStr
+          });
+          console.log(`   ✓ Found: ${awayTeam} @ ${homeTeam}`);
+        } else {
+          console.warn(`   ⚠️ Could not map teams: ${visitorName} vs ${homeName}`);
+        }
       }
     }
     
