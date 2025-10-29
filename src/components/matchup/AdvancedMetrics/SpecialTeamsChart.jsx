@@ -9,10 +9,19 @@ import { Zap, Shield } from 'lucide-react';
 export default function SpecialTeamsChart({ awayTeam, homeTeam, awayPP, awayPK, homePP, homePK }) {
   if (!awayPP || !awayPK || !homePP || !homePK) return null;
 
-  const awayPPPct = (awayPP.percentage * 100).toFixed(1);
-  const awayPKPct = (awayPK.percentage * 100).toFixed(1);
-  const homePPPct = (homePP.percentage * 100).toFixed(1);
-  const homePKPct = (homePK.percentage * 100).toFixed(1);
+  // REAL DATA - Calculate percentages from xGoalsPercentage  
+  const awayPPPct = awayPP.xGoalsPercentage ? (awayPP.xGoalsPercentage * 100).toFixed(1) : 'N/A';
+  const awayPKPct = awayPK.xGoalsPercentage ? ((1 - awayPK.xGoalsPercentage) * 100).toFixed(1) : 'N/A';
+  const homePPPct = homePP.xGoalsPercentage ? (homePP.xGoalsPercentage * 100).toFixed(1) : 'N/A';
+  const homePKPct = homePK.xGoalsPercentage ? ((1 - homePK.xGoalsPercentage) * 100).toFixed(1) : 'N/A';
+
+  // Check for small sample sizes
+  const awayPPGames = awayPP.games_played || 0;
+  const awayPKGames = awayPK.games_played || 0;
+  const homePPGames = homePP.games_played || 0;
+  const homePKGames = homePK.games_played || 0;
+  const minGames = Math.min(awayPPGames, awayPKGames, homePPGames, homePKGames);
+  const isSmallSample = minGames < 10;
 
   // Calculate advantages
   const awayPPvsHomePK = parseFloat(awayPPPct) - (100 - parseFloat(homePKPct));
@@ -74,7 +83,7 @@ export default function SpecialTeamsChart({ awayTeam, homeTeam, awayPP, awayPK, 
   return (
     <div>
       <h4 style={{
-        fontSize: '1rem',
+        fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
         fontWeight: '700',
         color: '#F1F5F9',
         marginBottom: '0.75rem'
@@ -82,13 +91,41 @@ export default function SpecialTeamsChart({ awayTeam, homeTeam, awayPP, awayPK, 
         Special Teams Battle Grid
       </h4>
       <p style={{
-        fontSize: '0.875rem',
+        fontSize: window.innerWidth < 768 ? '0.8125rem' : '0.875rem',
         color: '#94A3B8',
-        marginBottom: '1.5rem',
+        marginBottom: '1rem',
         lineHeight: 1.5
       }}>
         Head-to-head special teams matchups. Green = advantage, Red = disadvantage.
       </p>
+
+      {/* Data Source Label */}
+      <div style={{
+        fontSize: '0.75rem',
+        color: '#64748B',
+        marginBottom: '1rem',
+        fontStyle: 'italic'
+      }}>
+        📊 Source: teams.csv (5on4 PP / 4on5 PK situations, 2025-26 season)
+      </div>
+
+      {/* Sample Size Warning */}
+      {isSmallSample && (
+        <div style={{
+          background: 'rgba(245, 158, 11, 0.1)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: '8px',
+          padding: '0.75rem',
+          fontSize: '0.8125rem',
+          color: '#F59E0B',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          ⚠️ <span>Small sample size ({minGames} games) - special teams stats may be volatile early in season</span>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Matchup 1: Away PP vs Home PK */}

@@ -318,17 +318,21 @@ export default function MatchupInsights(props) {
       )}
 
       {/* Advanced Metrics - Swipeable Carousel */}
-      {matchupData && (
-        <AdvancedMetricsCarousel matchupData={matchupData} />
+      {matchupData && props.dataProcessor && (
+        <AdvancedMetricsCarousel 
+          matchupData={matchupData} 
+          dataProcessor={props.dataProcessor}
+        />
       )}
 
       {/* Recent Form & Momentum */}
-      {matchupData && (
+      {matchupData && props.scheduleHelper && (
         <TrendMomentumChart
           awayTeam={matchupData.away}
           homeTeam={matchupData.home}
           awayStats={matchupData.away.stats5v5}
           homeStats={matchupData.home.stats5v5}
+          scheduleHelper={props.scheduleHelper}
         />
       )}
 

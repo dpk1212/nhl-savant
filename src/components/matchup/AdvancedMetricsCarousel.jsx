@@ -11,7 +11,7 @@ import SpecialTeamsChart from './AdvancedMetrics/SpecialTeamsChart';
 import GoalieChart from './AdvancedMetrics/GoalieChart';
 import PossessionChart from './AdvancedMetrics/PossessionChart';
 
-export default function AdvancedMetricsCarousel({ matchupData }) {
+export default function AdvancedMetricsCarousel({ matchupData, dataProcessor }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -27,6 +27,7 @@ export default function AdvancedMetricsCarousel({ matchupData }) {
           homeTeam={matchupData.home}
           awayStats={matchupData.away.stats5v5}
           homeStats={matchupData.home.stats5v5}
+          dataProcessor={dataProcessor}
         />
       )
     },

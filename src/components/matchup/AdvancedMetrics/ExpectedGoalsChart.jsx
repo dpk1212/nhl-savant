@@ -2,11 +2,13 @@
  * Expected Goals Analysis - Scatter Plot
  * Shows team offensive power vs opponent defensive weakness
  * Quadrants indicate matchup favorability
+ * NO FAKE DATA - Uses real league averages calculated from teams.csv
  */
 
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, Cell } from 'recharts';
+import { useMemo } from 'react';
 
-export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, homeStats }) {
+export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, homeStats, dataProcessor }) {
   if (!awayStats || !homeStats) return null;
 
   const awayXGF = awayStats.xGF_per60 || 0;
@@ -14,9 +16,26 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
   const homeXGF = homeStats.xGF_per60 || 0;
   const homeXGA = homeStats.xGA_per60 || 0;
 
-  // League averages
-  const leagueAvgXGF = 2.5;
-  const leagueAvgXGA = 2.5;
+  // Calculate REAL league averages from all teams
+  const { leagueAvgXGF, leagueAvgXGA } = useMemo(() => {
+    if (!dataProcessor) return { leagueAvgXGF: 2.5, leagueAvgXGA: 2.5 };
+    
+    try {
+      const allTeams = dataProcessor.getTeamsBySituation('5on5');
+      if (!allTeams || allTeams.length === 0) return { leagueAvgXGF: 2.5, leagueAvgXGA: 2.5 };
+      
+      const avgXGF = allTeams.reduce((sum, t) => sum + (t.xGF_per60 || 0), 0) / allTeams.length;
+      const avgXGA = allTeams.reduce((sum, t) => sum + (t.xGA_per60 || 0), 0) / allTeams.length;
+      
+      return { 
+        leagueAvgXGF: parseFloat(avgXGF.toFixed(2)), 
+        leagueAvgXGA: parseFloat(avgXGA.toFixed(2))
+      };
+    } catch (error) {
+      console.warn('Could not calculate league averages:', error);
+      return { leagueAvgXGF: 2.5, leagueAvgXGA: 2.5 };
+    }
+  }, [dataProcessor]);
 
   // Prepare data for scatter plot
   // X-axis: Team's offensive power (xGF/60)
@@ -71,7 +90,7 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
   return (
     <div>
       <h4 style={{
-        fontSize: '1rem',
+        fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
         fontWeight: '700',
         color: '#F1F5F9',
         marginBottom: '0.75rem'
@@ -79,7 +98,7 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
         Offensive Power vs Defensive Weakness
       </h4>
       <p style={{
-        fontSize: '0.875rem',
+        fontSize: window.innerWidth < 768 ? '0.8125rem' : '0.875rem',
         color: '#94A3B8',
         marginBottom: '1rem',
         lineHeight: 1.5
@@ -87,7 +106,17 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
         Scatter plot showing each team's offense against opponent's defense. Top-right = elite matchup, bottom-left = tough battle.
       </p>
       
-      <ResponsiveContainer width="100%" height={350}>
+      {/* Data Source Label */}
+      <div style={{
+        fontSize: '0.75rem',
+        color: '#64748B',
+        marginBottom: '0.75rem',
+        fontStyle: 'italic'
+      }}>
+        📊 Source: teams.csv 5v5 data (League avg: xGF={leagueAvgXGF}, xGA={leagueAvgXGA})
+      </div>
+      
+      <ResponsiveContainer width="100%" height={window.innerWidth < 768 ? 200 : 350}>
         <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
           {/* Quadrant backgrounds */}
           <defs>
