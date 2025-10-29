@@ -157,16 +157,30 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
   const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-${timeKey}`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
+  console.log('🔍 Looking for Expert Analysis:', {
+    awayTeam,
+    homeTeam,
+    cacheKey,
+    hour,
+    timeKey
+  });
+
   try {
     const cachedDoc = await getDoc(cacheRef);
     if (cachedDoc.exists()) {
-      console.log('✅ Loaded Expert Analysis from cache');
-      return JSON.parse(cachedDoc.data().content);
+      console.log('✅ Found cached document:', cachedDoc.data());
+      const content = cachedDoc.data().content;
+      console.log('📄 Content type:', typeof content);
+      console.log('📄 Content preview:', content.substring(0, 100));
+      
+      const parsed = JSON.parse(content);
+      console.log('✅ Parsed', parsed.length, 'insight cards');
+      return parsed;
     } else {
-      console.log('ℹ️ Expert Analysis not yet generated for this game');
+      console.log('❌ No cached document found at:', cacheKey);
     }
   } catch (error) {
-    console.log('ℹ️ Expert Analysis not available:', error.code);
+    console.error('❌ Error loading Expert Analysis:', error);
   }
   
   // NO API CALL - Client never generates content
