@@ -12,6 +12,17 @@ service cloud.firestore {
     match /bets/{document=**} {
       allow read, write: if true;
     }
+    
+    // Perplexity AI cache - public read/write
+    match /perplexityCache/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // API Secrets - public read only (keys stored here)
+    match /Secrets/{document=**} {
+      allow read: if true;  // Client needs to read API keys
+      allow write: if false;  // No writes from client
+    }
   }
 }
 

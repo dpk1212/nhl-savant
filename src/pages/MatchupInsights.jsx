@@ -4,28 +4,16 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import AIInsightCards from '../components/matchup/AIInsightCards';
 import PredictionSummary from '../components/matchup/PredictionSummary';
 import DominanceMatrix from '../components/matchup/DominanceMatrix';
-import ExpectedGoalsChart from '../components/matchup/AdvancedMetrics/ExpectedGoalsChart';
-import ShotQualityChart from '../components/matchup/AdvancedMetrics/ShotQualityChart';
-import SpecialTeamsChart from '../components/matchup/AdvancedMetrics/SpecialTeamsChart';
-import GoalieChart from '../components/matchup/AdvancedMetrics/GoalieChart';
-import PossessionChart from '../components/matchup/AdvancedMetrics/PossessionChart';
+import AdvancedMetricsCarousel from '../components/matchup/AdvancedMetricsCarousel';
 import { getTeamStats, getGoalieStats } from '../utils/matchupCalculations';
 
 export default function MatchupInsights(props) {
   const [selectedGame, setSelectedGame] = useState(null);
   const [todaysGames, setTodaysGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedSections, setExpandedSections] = useState({
-    xgoals: false,
-    shotquality: false,
-    specialteams: false,
-    goalie: false,
-    possession: false
-  });
 
   // Load today's games with proper time formatting
   useEffect(() => {
@@ -192,12 +180,6 @@ export default function MatchupInsights(props) {
     }
   }, [selectedGame, props?.dataProcessor, props?.goalieData, props]);
 
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
 
   if (loading) {
     return (
@@ -323,227 +305,10 @@ export default function MatchupInsights(props) {
         />
       )}
 
-      {/* Advanced Metrics - Collapsible Sections */}
-      <div style={{ marginTop: '2rem' }}>
-        <h2 style={{
-          fontSize: '1.5rem',
-          fontWeight: '700',
-          background: 'linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          marginBottom: '1rem'
-        }}>
-          Advanced Metrics Deep Dive
-        </h2>
-
-        {/* Expected Goals */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: '16px',
-          marginBottom: '1rem',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-        }}>
-          <button
-            onClick={() => toggleSection('xgoals')}
-            style={{
-              width: '100%',
-              padding: '1rem 1.5rem',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              color: '#F1F5F9',
-              fontSize: '1.125rem',
-              fontWeight: '700'
-            }}
-          >
-            <span>Expected Goals Analysis</span>
-            {expandedSections.xgoals ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {expandedSections.xgoals && matchupData && (
-            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
-              <ExpectedGoalsChart
-                awayTeam={matchupData.away}
-                homeTeam={matchupData.home}
-                awayStats={matchupData.away.stats5v5}
-                homeStats={matchupData.home.stats5v5}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Shot Quality */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: '16px',
-          marginBottom: '1rem',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-        }}>
-          <button
-            onClick={() => toggleSection('shotquality')}
-            style={{
-              width: '100%',
-              padding: '1rem 1.5rem',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              color: '#F1F5F9',
-              fontSize: '1.125rem',
-              fontWeight: '700'
-            }}
-          >
-            <span>Shot Quality Matrix</span>
-            {expandedSections.shotquality ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {expandedSections.shotquality && matchupData && (
-            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
-              <ShotQualityChart
-                awayTeam={matchupData.away}
-                homeTeam={matchupData.home}
-                awayStats={matchupData.away.stats5v5}
-                homeStats={matchupData.home.stats5v5}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Special Teams */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: '16px',
-          marginBottom: '1rem',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-        }}>
-          <button
-            onClick={() => toggleSection('specialteams')}
-            style={{
-              width: '100%',
-              padding: '1rem 1.5rem',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              color: '#F1F5F9',
-              fontSize: '1.125rem',
-              fontWeight: '700'
-            }}
-          >
-            <span>Special Teams Breakdown</span>
-            {expandedSections.specialteams ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {expandedSections.specialteams && matchupData && (
-            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
-              <SpecialTeamsChart
-                awayTeam={matchupData.away}
-                homeTeam={matchupData.home}
-                awayPP={matchupData.away.powerPlay}
-                awayPK={matchupData.away.penaltyKill}
-                homePP={matchupData.home.powerPlay}
-                homePK={matchupData.home.penaltyKill}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Goalie */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: '16px',
-          marginBottom: '1rem',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-        }}>
-          <button
-            onClick={() => toggleSection('goalie')}
-            style={{
-              width: '100%',
-              padding: '1rem 1.5rem',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              color: '#F1F5F9',
-              fontSize: '1.125rem',
-              fontWeight: '700'
-            }}
-          >
-            <span>Goaltending Deep Dive</span>
-            {expandedSections.goalie ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {expandedSections.goalie && matchupData && (
-            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
-              <GoalieChart
-                awayTeam={matchupData.away}
-                homeTeam={matchupData.home}
-                awayGoalie={matchupData.away.goalie}
-                homeGoalie={matchupData.home.goalie}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Possession */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: '16px',
-          marginBottom: '1rem',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-        }}>
-          <button
-            onClick={() => toggleSection('possession')}
-            style={{
-              width: '100%',
-              padding: '1rem 1.5rem',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              color: '#F1F5F9',
-              fontSize: '1.125rem',
-              fontWeight: '700'
-            }}
-          >
-            <span>Possession & Pace</span>
-            {expandedSections.possession ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {expandedSections.possession && matchupData && (
-            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
-              <PossessionChart
-                awayTeam={matchupData.away}
-                homeTeam={matchupData.home}
-                awayStats={matchupData.away.stats5v5}
-                homeStats={matchupData.home.stats5v5}
-              />
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Advanced Metrics - Swipeable Carousel */}
+      {matchupData && (
+        <AdvancedMetricsCarousel matchupData={matchupData} />
+      )}
 
       {/* Mobile Optimization */}
       <style>{`

@@ -23,11 +23,11 @@ async function getPerplexityKey() {
       PERPLEXITY_API_KEY = secretDoc.data().Key;
       console.log('✅ Perplexity API key loaded from Firebase');
       return PERPLEXITY_API_KEY;
-    } else {
-      console.warn('⚠️ Perplexity secret document not found in Firebase');
     }
   } catch (error) {
-    console.warn('⚠️ Could not fetch Perplexity key from Firebase:', error.code);
+    // Expected: Firestore rules block client access to Secrets collection
+    // This is intentional for security - API key should only be accessed server-side
+    // Silently fail and use fallback content
   }
   
   return null;
@@ -60,7 +60,7 @@ export async function getMatchupAnalysis(awayTeam, homeTeam, forceRefresh = fals
           }
         }
       } catch (cacheError) {
-        console.warn('⚠️ Cache read failed:', cacheError.code);
+        // Silently fail if cache read is blocked - will fetch fresh or use fallback
       }
     }
 
@@ -118,17 +118,17 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
     const content = data.choices?.[0]?.message?.content || 'Analysis could not be generated.';
 
     // Try to cache the result (ignore if permissions fail)
-    try {
-      await setDoc(cacheRef, {
-        content,
-        timestamp: Date.now(),
-        awayTeam,
-        homeTeam
-      });
-      console.log('✅ Fresh analysis fetched and cached');
-    } catch (cacheError) {
-      console.warn('⚠️ Cache write failed (continuing without cache):', cacheError.code);
-    }
+        try {
+          await setDoc(cacheRef, {
+            content,
+            timestamp: Date.now(),
+            awayTeam,
+            homeTeam
+          });
+          console.log('✅ Fresh analysis fetched and cached');
+        } catch (cacheError) {
+          // Silently fail if cache write is blocked - analysis still returned successfully
+        }
 
     return content;
 

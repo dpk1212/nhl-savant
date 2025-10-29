@@ -1,9 +1,9 @@
 /**
  * Possession & Pace Chart
- * Shows Corsi and Fenwick percentages
+ * Side-by-side bar comparison instead of radar (better for close values)
  */
 
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeStats }) {
   if (!awayStats || !homeStats) return null;
@@ -20,30 +20,27 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
   const awayFenwickPer60 = awayStats.fenwick_per60 || 0;
   const homeFenwickPer60 = homeStats.fenwick_per60 || 0;
 
+  // Create data for grouped bar chart
   const data = [
     {
-      metric: 'Corsi %',
+      name: 'Corsi %',
       [awayTeam.code]: awayCorsi,
       [homeTeam.code]: homeCorsi,
-      fullMark: 60,
     },
     {
-      metric: 'Fenwick %',
+      name: 'Fenwick %',
       [awayTeam.code]: awayFenwick,
       [homeTeam.code]: homeFenwick,
-      fullMark: 60,
     },
     {
-      metric: 'Corsi/60',
-      [awayTeam.code]: Math.min(awayCorsiPer60 / 2, 60),
-      [homeTeam.code]: Math.min(homeCorsiPer60 / 2, 60),
-      fullMark: 60,
+      name: 'Corsi/60',
+      [awayTeam.code]: awayCorsiPer60,
+      [homeTeam.code]: homeCorsiPer60,
     },
     {
-      metric: 'Fenwick/60',
-      [awayTeam.code]: Math.min(awayFenwickPer60 / 2, 60),
-      [homeTeam.code]: Math.min(homeFenwickPer60 / 2, 60),
-      fullMark: 60,
+      name: 'Fenwick/60',
+      [awayTeam.code]: awayFenwickPer60,
+      [homeTeam.code]: homeFenwickPer60,
     },
   ];
 
@@ -67,41 +64,16 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
       </p>
       
       <ResponsiveContainer width="100%" height={280}>
-        <RadarChart data={data}>
-          <PolarGrid stroke="rgba(148, 163, 184, 0.2)" />
-          <PolarAngleAxis 
-            dataKey="metric" 
-            stroke="#94A3B8"
-            style={{ fontSize: '0.75rem', fontWeight: '600' }}
+        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+          <XAxis 
+            dataKey="name" 
+            stroke="#94A3B8" 
+            style={{ fontSize: '0.875rem', fontWeight: '600' }}
           />
-          <PolarRadiusAxis 
-            angle={90} 
-            domain={[0, 60]} 
-            stroke="#94A3B8"
-            style={{ fontSize: '0.75rem' }}
-          />
-          <Radar
-            name={awayTeam.code}
-            dataKey={awayTeam.code}
-            stroke="#3B82F6"
-            fill="#3B82F6"
-            fillOpacity={0.3}
-            strokeWidth={2}
-          />
-          <Radar
-            name={homeTeam.code}
-            dataKey={homeTeam.code}
-            stroke="#10B981"
-            fill="#10B981"
-            fillOpacity={0.3}
-            strokeWidth={2}
-          />
-          <Legend 
-            wrapperStyle={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#94A3B8'
-            }}
+          <YAxis 
+            stroke="#94A3B8" 
+            style={{ fontSize: '0.875rem', fontWeight: '600' }}
           />
           <Tooltip 
             contentStyle={{
@@ -111,8 +83,32 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
               color: '#F1F5F9',
               fontSize: '0.875rem'
             }}
+            formatter={(value, name) => {
+              // Format percentages vs rates
+              if (name.includes('%')) {
+                return `${value.toFixed(1)}%`;
+              }
+              return value.toFixed(1);
+            }}
           />
-        </RadarChart>
+          <Legend 
+            wrapperStyle={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#94A3B8'
+            }}
+          />
+          <Bar
+            dataKey={awayTeam.code}
+            fill="#3B82F6"
+            radius={[8, 8, 0, 0]}
+          />
+          <Bar
+            dataKey={homeTeam.code}
+            fill="#10B981"
+            radius={[8, 8, 0, 0]}
+          />
+        </BarChart>
       </ResponsiveContainer>
 
       <div style={{
@@ -182,4 +178,3 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
     </div>
   );
 }
-
