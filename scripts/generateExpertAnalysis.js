@@ -17,8 +17,7 @@
  * - Firebase credentials (VITE_FIREBASE_*)
  */
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -27,20 +26,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Firebase configuration from environment variables
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID
-};
+// Initialize Firebase Admin SDK (bypasses security rules, better for server-side)
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  })
+});
 
-// Initialize Firebase (for writing cache only)
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = admin.firestore();
 
 // Get Perplexity API key from environment variable (GitHub Secret)
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
@@ -257,7 +252,7 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
   const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame';
   
   const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}-${timeKey}`;
-  const cacheRef = doc(db, 'perplexityCache', cacheKey);
+  const cacheRef = db.collection('perplexityCache').doc(cacheKey);
   
   // VALIDATE DOCUMENT ID
   if (cacheKey.includes('/') || cacheKey.startsWith('.') || cacheKey.startsWith('__')) {
@@ -290,7 +285,7 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
       }
     }
     
-    await setDoc(cacheRef, dataToWrite);
+    await cacheRef.set(dataToWrite);
     console.log(`✅ Cached analysis for ${awayTeam} @ ${homeTeam}`);
   } catch (error) {
     console.error(`❌ Failed to cache analysis for ${awayTeam} @ ${homeTeam}:`);
