@@ -266,10 +266,9 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
   }
   
   const now = new Date();
-  const hour = now.getHours();
-  const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame';
   
-  const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}-${timeKey}`;
+  // SIMPLIFIED: No timeKey - just use date (we only generate once per day)
+  const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}`;
   const cacheRef = db.collection('perplexityCache').doc(cacheKey);
   
   // VALIDATE DOCUMENT ID
@@ -285,7 +284,6 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
       timestamp: Date.now(),
       awayTeam: String(awayTeam),
       homeTeam: String(homeTeam),
-      timeKey: String(timeKey),
       generatedBy: 'github-action'
     };
     
