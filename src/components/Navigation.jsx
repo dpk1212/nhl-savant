@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart } from 'lucide-react';
 
 const Navigation = () => {
   const location = useLocation();
@@ -10,6 +10,7 @@ const Navigation = () => {
   // Premium navigation links with Lucide icons
   const navLinks = [
     { path: '/', label: "Today's Games", icon: Target },
+    { path: '/matchup-insights', label: 'Matchup Insights', icon: LineChart },
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
     { path: '/performance', label: 'Performance', icon: TrendingUp },
     { path: '/methodology', label: 'Methodology', icon: BookOpen },

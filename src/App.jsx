@@ -18,6 +18,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import LegalFooter from './components/LegalFooter';
 import Disclaimer from './pages/Disclaimer';
+import MatchupInsights from './pages/MatchupInsights';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 
@@ -238,6 +239,11 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 edgeFactorCalc={edgeFactorCalc}
               />} />
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
+              <Route path="/matchup-insights" element={<MatchupInsights 
+                dataProcessor={dataProcessor} 
+                goalieData={goalieData}
+                todaysGames={oddsData?.todaysGames || []}
+              />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
               <Route path="/performance" element={<PerformanceDashboard />} />
