@@ -231,6 +231,15 @@ Return ONLY valid JSON. Be bold. Be specific. Give users a reason to screenshot 
     // Clean markdown formatting
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
+    // CRITICAL FIX: Unescape quotes that Perplexity sometimes adds
+    // Replace \" with " but only within JSON values, not the structure
+    content = content.replace(/\\"/g, '"');
+    
+    // Also handle escaped backslashes
+    content = content.replace(/\\\\/g, '\\');
+    
+    console.log(`🔧 Cleaned content (first 500 chars):`, content.substring(0, 500));
+    
     let cards;
     try {
       cards = JSON.parse(content);
