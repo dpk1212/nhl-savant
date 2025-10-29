@@ -1,11 +1,14 @@
 /**
- * Shot Danger Chart - PURE VISUAL shot quality breakdown
- * Large, prominent display with emphasis on high danger opportunities
+ * Shot Danger Chart - ENHANCED visual shot quality breakdown
+ * Stacked bars with percentage view, more colorful and informative
  */
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { useState } from 'react';
 
 export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeStats }) {
+  const [viewMode, setViewMode] = useState('stacked'); // 'stacked' or 'grouped'
+  
   if (!awayStats || !homeStats) {
     return null;
   }
@@ -36,29 +39,29 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
   const awayShots = getShots(awayStats, awayIceTime60);
   const homeShots = getShots(homeStats, homeIceTime60);
 
-  const data = [
-    {
-      name: 'Low Danger',
-      [awayTeam.code]: awayShots.low,
-      [homeTeam.code]: homeShots.low
-    },
-    {
-      name: 'Medium Danger',
-      [awayTeam.code]: awayShots.medium,
-      [homeTeam.code]: homeShots.medium
-    },
-    {
-      name: 'High Danger',
-      [awayTeam.code]: awayShots.high,
-      [homeTeam.code]: homeShots.high
-    }
-  ];
-
-  // Calculate totals for summary
+  // Calculate totals and percentages
   const awayTotal = awayShots.low + awayShots.medium + awayShots.high;
   const homeTotal = homeShots.low + homeShots.medium + homeShots.high;
   const awayHighPct = awayTotal > 0 ? (awayShots.high / awayTotal) * 100 : 0;
   const homeHighPct = homeTotal > 0 ? (homeShots.high / homeTotal) * 100 : 0;
+
+  // Data for stacked view (by team)
+  const stackedData = [
+    {
+      name: awayTeam.code,
+      'Low Danger': awayShots.low,
+      'Medium Danger': awayShots.medium,
+      'High Danger': awayShots.high,
+      total: awayTotal
+    },
+    {
+      name: homeTeam.code,
+      'Low Danger': homeShots.low,
+      'Medium Danger': homeShots.medium,
+      'High Danger': homeShots.high,
+      total: homeTotal
+    }
+  ];
 
   return (
     <div className="elevated-card" style={{
@@ -71,89 +74,132 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
       boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
     }}>
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
+      <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{
-          fontSize: '1.75rem',
+          fontSize: '1.875rem',
           fontWeight: '700',
           background: 'linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
-          marginBottom: '1rem'
+          marginBottom: '1.5rem'
         }}>
-          Shot Quality Analysis
+          Shot Quality Breakdown
         </h2>
 
-        {/* High Danger Shot % Summary */}
+        {/* Quality Score and High Danger % */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '3rem',
-          marginTop: '1.5rem'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '1.5rem'
         }}>
-          <div style={{ textAlign: 'center' }}>
+          {/* Away Team */}
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '12px',
+            padding: '1.25rem',
+            textAlign: 'center'
+          }}>
             <div style={{
-              fontSize: '0.75rem',
-              fontWeight: '600',
+              fontSize: '0.8125rem',
+              fontWeight: '700',
               color: '#64748B',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-              marginBottom: '0.5rem'
+              marginBottom: '0.75rem'
             }}>
-              {awayTeam.code} High Danger %
+              {awayTeam.code}
             </div>
             <div style={{
-              fontSize: '2rem',
+              fontSize: '2.5rem',
               fontWeight: '900',
-              background: awayHighPct > homeHighPct ? 
-                'linear-gradient(135deg, #10B981 0%, #059669 100%)' :
-                'linear-gradient(135deg, #64748B 0%, #475569 100%)',
+              background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              backgroundClip: 'text',
+              marginBottom: '0.25rem'
             }}>
               {awayHighPct.toFixed(1)}%
             </div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
             <div style={{
               fontSize: '0.75rem',
               fontWeight: '600',
+              color: '#94A3B8'
+            }}>
+              High Danger Shots
+            </div>
+            <div style={{
+              marginTop: '0.75rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#3B82F6'
+            }}>
+              Quality Score: {(awayHighPct / 10 + awayTotal / 10).toFixed(1)}/10
+            </div>
+          </div>
+
+          {/* Home Team */}
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '12px',
+            padding: '1.25rem',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              fontSize: '0.8125rem',
+              fontWeight: '700',
               color: '#64748B',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-              marginBottom: '0.5rem'
+              marginBottom: '0.75rem'
             }}>
-              {homeTeam.code} High Danger %
+              {homeTeam.code}
             </div>
             <div style={{
-              fontSize: '2rem',
+              fontSize: '2.5rem',
               fontWeight: '900',
-              background: homeHighPct > awayHighPct ?
-                'linear-gradient(135deg, #10B981 0%, #059669 100%)' :
-                'linear-gradient(135deg, #64748B 0%, #475569 100%)',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              backgroundClip: 'text',
+              marginBottom: '0.25rem'
             }}>
               {homeHighPct.toFixed(1)}%
+            </div>
+            <div style={{
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              color: '#94A3B8'
+            }}>
+              High Danger Shots
+            </div>
+            <div style={{
+              marginTop: '0.75rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#10B981'
+            }}>
+              Quality Score: {(homeHighPct / 10 + homeTotal / 10).toFixed(1)}/10
             </div>
           </div>
         </div>
       </div>
 
-      {/* Chart - LARGER AND MORE PROMINENT */}
-      <ResponsiveContainer width="100%" height={400}>
+      {/* Chart - Stacked Bars with Better Colors */}
+      <ResponsiveContainer width="100%" height={350}>
         <BarChart 
-          data={data}
-          barSize={60}
-          barGap={10}
+          data={stackedData}
+          barSize={80}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
           <XAxis 
             dataKey="name" 
             stroke="#94A3B8"
-            style={{ fontSize: '0.9375rem', fontWeight: '600' }}
+            style={{ fontSize: '1rem', fontWeight: '700' }}
           />
           <YAxis 
             stroke="#94A3B8"
@@ -175,7 +221,7 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
               padding: '1rem',
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
             }}
-            formatter={(value) => value.toFixed(2)}
+            formatter={(value) => `${value.toFixed(2)} shots/60`}
           />
           <Legend 
             wrapperStyle={{
@@ -183,9 +229,12 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
               fontSize: '0.9375rem',
               fontWeight: '600'
             }}
+            iconType="square"
           />
-          <Bar dataKey={awayTeam.code} fill="#3B82F6" radius={[8, 8, 0, 0]} />
-          <Bar dataKey={homeTeam.code} fill="#10B981" radius={[8, 8, 0, 0]} />
+          {/* Stacked bars with color-coded danger levels */}
+          <Bar dataKey="Low Danger" stackId="a" fill="#64748B" radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Medium Danger" stackId="a" fill="#F59E0B" radius={[0, 0, 0, 0]} />
+          <Bar dataKey="High Danger" stackId="a" fill="#EF4444" radius={[8, 8, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
