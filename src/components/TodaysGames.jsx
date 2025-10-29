@@ -36,6 +36,7 @@ import CollapsibleGameCard from './CollapsibleGameCard';
 import StepSection from './StepSection';
 import QuickStatsBar from './QuickStatsBar';
 import DisclaimerModal from './DisclaimerModal';
+import CompactPicksBar from './CompactPicksBar';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -1980,6 +1981,35 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         )}
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
+
+      {/* Compact Picks Bar - Quick view of all recommendations */}
+      {(() => {
+        // Prepare picks data from allEdges (B-rated or higher)
+        const recommendedPicks = allEdges
+          .filter(game => game.bestEdge && game.bestEdge.rating && game.bestEdge.rating !== 'C')
+          .map(game => ({
+            pick: `${game.awayTeam} @ ${game.homeTeam}`,
+            market: game.bestEdge.market,
+            grade: game.bestEdge.rating,
+            odds: game.bestEdge.odds,
+            edge: `${Math.abs(game.bestEdge.evPercent).toFixed(1)}% edge`,
+            gameTime: game.gameTime
+          }));
+
+        const scrollToFirstGame = () => {
+          const firstGame = document.querySelector('.elevated-card');
+          if (firstGame) {
+            firstGame.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        };
+
+        return recommendedPicks.length > 0 ? (
+          <CompactPicksBar 
+            picks={recommendedPicks} 
+            onViewAll={scrollToFirstGame}
+          />
+        ) : null;
+      })()}
 
       {/* Deep Analytics Cards for Each Game - Grouped by Time */}
       <div>
