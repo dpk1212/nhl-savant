@@ -9,6 +9,7 @@ import GameSelector from '../components/matchup/GameSelector';
 import MatchupSpotlightHero from '../components/matchup/MatchupSpotlightHero';
 import DominanceMatrix from '../components/matchup/DominanceMatrix';
 import AdvancedMetricsCarousel from '../components/matchup/AdvancedMetricsCarousel';
+import TrendMomentumChart from '../components/matchup/TrendMomentumChart';
 import { getTeamStats, getGoalieStats } from '../utils/matchupCalculations';
 
 export default function MatchupInsights(props) {
@@ -319,6 +320,16 @@ export default function MatchupInsights(props) {
       {/* Advanced Metrics - Swipeable Carousel */}
       {matchupData && (
         <AdvancedMetricsCarousel matchupData={matchupData} />
+      )}
+
+      {/* Recent Form & Momentum */}
+      {matchupData && (
+        <TrendMomentumChart
+          awayTeam={matchupData.away}
+          homeTeam={matchupData.home}
+          awayStats={matchupData.away.stats5v5}
+          homeStats={matchupData.home.stats5v5}
+        />
       )}
 
       {/* Mobile Optimization */}
