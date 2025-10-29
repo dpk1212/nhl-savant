@@ -8,9 +8,7 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
     return null;
   }
 
-  const awayS
-
-avePct = (awayGoalie.savePct || 0.900) * 100;
+  const awaySavePct = (awayGoalie.savePct || 0.900) * 100;
   const homeSavePct = (homeGoalie.savePct || 0.900) * 100;
   const awayGSAX = awayGoalie.gsax || 0;
   const homeGSAX = homeGoalie.gsax || 0;
