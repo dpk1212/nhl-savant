@@ -27,8 +27,8 @@ export function useBetTracking(allEdges, dataProcessor) {
         const bestML = getBestMoneyline(game);
         const bestTotal = getBestTotal(game);
         
-        // Create unique game identifier
-        const gameId = `${game.date || today}_${game.awayTeam}_${game.homeTeam}`;
+        // Create unique game identifier (no date to match bet ID generation)
+        const gameId = `${game.awayTeam}_${game.homeTeam}`;
         
         // Skip if already processed in this session (prevents duplicate triggers)
         if (processedToday.current.has(gameId)) {
@@ -150,5 +150,6 @@ export function useBetTracking(allEdges, dataProcessor) {
   
   return tracker.current;
 }
+
 
 
