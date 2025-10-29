@@ -95,13 +95,16 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
           marginBottom: '1.5rem'
         }}>
           {/* Away Team */}
-          <div style={{
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            textAlign: 'center'
-          }}>
+          <div 
+            className="shot-card-mobile"
+            style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              textAlign: 'center'
+            }}
+          >
             <div style={{
               fontSize: '0.8125rem',
               fontWeight: '700',
@@ -130,24 +133,19 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
             }}>
               High Danger Shots
             </div>
-            <div style={{
-              marginTop: '0.75rem',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#3B82F6'
-            }}>
-              Quality Score: {(awayHighPct / 10 + awayTotal / 10).toFixed(1)}/10
-            </div>
           </div>
 
           {/* Home Team */}
-          <div style={{
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            textAlign: 'center'
-          }}>
+          <div 
+            className="shot-card-mobile"
+            style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              textAlign: 'center'
+            }}
+          >
             <div style={{
               fontSize: '0.8125rem',
               fontWeight: '700',
@@ -176,20 +174,23 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
             }}>
               High Danger Shots
             </div>
-            <div style={{
-              marginTop: '0.75rem',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#10B981'
-            }}>
-              Quality Score: {(homeHighPct / 10 + homeTotal / 10).toFixed(1)}/10
-            </div>
           </div>
         </div>
       </div>
 
       {/* Chart - Stacked Bars with Better Colors */}
-      <ResponsiveContainer width="100%" height={350}>
+      <ResponsiveContainer width="100%" height={350} className="shot-chart-responsive">
+        <style>{`
+          @media (max-width: 768px) {
+            .shot-chart-responsive {
+              height: 280px !important;
+            }
+            
+            .shot-card-mobile {
+              padding: 1rem !important;
+            }
+          }
+        `}</style>
         <BarChart 
           data={stackedData}
           barSize={80}

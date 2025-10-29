@@ -96,7 +96,14 @@ export default function RadarComparison({ awayTeam, homeTeam, matchupData, dataP
           League percentile rankings • Larger area = better team
         </p>
 
-        <ResponsiveContainer width="100%" height={500}>
+        <ResponsiveContainer width="100%" height={500} className="radar-chart-responsive">
+          <style>{`
+            @media (max-width: 768px) {
+              .radar-chart-responsive {
+                height: 350px !important;
+              }
+            }
+          `}</style>
           <RadarChart data={radarData}>
             <PolarGrid 
               stroke="rgba(148, 163, 184, 0.2)" 

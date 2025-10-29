@@ -38,12 +38,36 @@ export default function MatchupInsights(props) {
 
     try {
       // Map todaysGames to expected format
-      const games = props.todaysGames.map(game => ({
-        awayTeam: game.away || game.awayTeam,
-        homeTeam: game.home || game.homeTeam,
-        gameTime: game.time || game.gameTime,
-        date: new Date().toISOString().split('T')[0]
-      }));
+      const games = props.todaysGames.map(game => {
+        // Extract and format game time
+        let formattedTime = 'TBD';
+        const timeStr = game.time || game.gameTime || game.startTime;
+        
+        if (timeStr) {
+          // If it's already a formatted time string, use it
+          if (typeof timeStr === 'string' && timeStr.includes(':')) {
+            formattedTime = timeStr;
+          } else if (game.date) {
+            // Try to extract time from date field if available
+            const dateObj = new Date(game.date);
+            if (!isNaN(dateObj.getTime())) {
+              formattedTime = dateObj.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                timeZone: 'America/New_York'
+              }) + ' ET';
+            }
+          }
+        }
+        
+        return {
+          awayTeam: game.away || game.awayTeam,
+          homeTeam: game.home || game.homeTeam,
+          gameTime: formattedTime,
+          date: new Date().toISOString().split('T')[0],
+          ...game
+        };
+      });
 
       setTodaysGames(games);
       if (games.length > 0 && !selectedGame) {
