@@ -34,20 +34,21 @@ export default function CompactPicksBar({ picks, onViewAll }) {
 
   return (
     <div style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%)',
-      backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(59, 130, 246, 0.3)',
-      padding: '0.75rem 1.5rem',
+      position: 'relative',
+      width: '100%',
+      background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(31, 41, 55, 0.98) 100%)',
+      backdropFilter: 'blur(12px)',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
+      borderRadius: '12px',
+      padding: '0.875rem 1.5rem',
       display: 'flex',
       alignItems: 'center',
       gap: '1rem',
       flexWrap: 'nowrap',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
-      marginBottom: '1rem'
-    }}>
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.1)',
+      animation: 'fadeInSlide 0.4s ease-out'
+    }}
+    className="compact-picks-bar">
       {/* Count Badge */}
       <div style={{
         display: 'flex',
@@ -162,21 +163,50 @@ export default function CompactPicksBar({ picks, onViewAll }) {
       </button>
 
       <style>{`
+        @keyframes fadeInSlide {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .compact-picks-bar {
+          will-change: transform;
+        }
+        
         .compact-picks-scroll::-webkit-scrollbar {
           display: none;
         }
         
+        .compact-pick-badge {
+          will-change: transform;
+        }
+        
         .compact-pick-badge:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+          transform: translateY(-1px) scale(1.02);
+          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .view-all-button {
+          will-change: transform;
         }
         
         .view-all-button:hover {
           background: rgba(59, 130, 246, 0.25);
           border-color: rgba(59, 130, 246, 0.5);
+          transform: translateY(-1px);
         }
         
         @media (max-width: 768px) {
+          .compact-picks-bar {
+            padding: 0.75rem 1rem;
+            gap: 0.75rem;
+          }
+          
           .compact-picks-scroll {
             flex: 1;
             min-width: 0;
