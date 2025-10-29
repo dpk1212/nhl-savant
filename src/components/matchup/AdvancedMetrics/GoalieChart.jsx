@@ -1,9 +1,10 @@
 /**
  * Goalie Deep Dive Chart
- * Shows GSAX and save % comparison
+ * DUAL-AXIS: GSAX as bars (left) + Save% as line (right)
+ * Better visualization for two different scales
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 export default function GoalieChart({ awayTeam, homeTeam, awayGoalie, homeGoalie }) {
   if (!awayGoalie || !homeGoalie || awayGoalie.isDefault || homeGoalie.isDefault) {
@@ -53,11 +54,11 @@ export default function GoalieChart({ awayTeam, homeTeam, awayGoalie, homeGoalie
         marginBottom: '1rem',
         lineHeight: 1.5
       }}>
-        GSAX (Goals Saved Above Expected) measures how many goals a goalie prevents vs average. Elite: +10 GSAX, Strong: +5 GSAX.
+        GSAX (bars) shows goals prevented vs average. Save% (line) shows overall performance. Elite: GSAX +10, Save% 92+.
       </p>
       
       <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
           <XAxis 
             dataKey="name" 
@@ -98,12 +99,30 @@ export default function GoalieChart({ awayTeam, homeTeam, awayGoalie, homeGoalie
               color: '#94A3B8'
             }}
           />
-          <ReferenceLine yAxisId="left" y={0} stroke="rgba(148, 163, 184, 0.3)" strokeDasharray="3 3" />
-          <Bar yAxisId="left" dataKey="GSAX" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
-          <Bar yAxisId="right" dataKey="Save %" fill="#10B981" radius={[8, 8, 0, 0]} />
-        </BarChart>
+          {/* Reference lines for context */}
+          <ReferenceLine yAxisId="left" y={0} stroke="#94A3B8" strokeDasharray="3 3" />
+          <ReferenceLine yAxisId="right" y={91} stroke="#64748B" strokeDasharray="3 3" label={{ value: 'Avg', fill: '#64748B', fontSize: 10 }} />
+          {/* GSAX as bars */}
+          <Bar
+            yAxisId="left"
+            dataKey="GSAX"
+            fill="#3B82F6"
+            radius={[8, 8, 0, 0]}
+          />
+          {/* Save% as line */}
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="Save %"
+            stroke="#10B981"
+            strokeWidth={3}
+            dot={{ fill: '#10B981', r: 6 }}
+            activeDot={{ r: 8 }}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
 
+      {/* Stats Summary */}
       <div style={{
         marginTop: '1rem',
         display: 'grid',
@@ -111,37 +130,48 @@ export default function GoalieChart({ awayTeam, homeTeam, awayGoalie, homeGoalie
         gap: '1rem'
       }}>
         <div style={{
-          background: 'rgba(139, 92, 246, 0.1)',
-          border: '1px solid rgba(139, 92, 246, 0.3)',
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
           borderRadius: '8px',
           padding: '0.75rem'
         }}>
           <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94A3B8', marginBottom: '0.25rem' }}>
             {awayGoalie.name || awayTeam.code}
           </div>
-          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#8B5CF6' }}>
-            {awayGSAX > 0 ? '+' : ''}{awayGSAX.toFixed(1)} GSAX
+          <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#3B82F6' }}>
+            GSAX: {awayGSAX > 0 ? '+' : ''}{awayGSAX.toFixed(1)}
           </div>
-          <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#10B981' }}>
-            {awaySV.toFixed(2)}% SV
+          <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#10B981' }}>
+            Save%: {awaySV.toFixed(2)}%
           </div>
         </div>
         <div style={{
-          background: 'rgba(139, 92, 246, 0.1)',
-          border: '1px solid rgba(139, 92, 246, 0.3)',
+          background: 'rgba(16, 185, 129, 0.1)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
           borderRadius: '8px',
           padding: '0.75rem'
         }}>
           <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94A3B8', marginBottom: '0.25rem' }}>
             {homeGoalie.name || homeTeam.code}
           </div>
-          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#8B5CF6' }}>
-            {homeGSAX > 0 ? '+' : ''}{homeGSAX.toFixed(1)} GSAX
+          <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#3B82F6' }}>
+            GSAX: {homeGSAX > 0 ? '+' : ''}{homeGSAX.toFixed(1)}
           </div>
-          <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#10B981' }}>
-            {homeSV.toFixed(2)}% SV
+          <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#10B981' }}>
+            Save%: {homeSV.toFixed(2)}%
           </div>
         </div>
+      </div>
+
+      <div style={{
+        marginTop: '0.75rem',
+        fontSize: '0.8125rem',
+        color: '#64748B',
+        lineHeight: 1.5
+      }}>
+        <strong style={{ color: '#94A3B8' }}>GSAX:</strong> Goals Saved Above Expected (positive is better)
+        <br />
+        <strong style={{ color: '#94A3B8' }}>Save%:</strong> League average ~91%, Elite 92%+
       </div>
       
       <style>{`
@@ -154,4 +184,3 @@ export default function GoalieChart({ awayTeam, homeTeam, awayGoalie, homeGoalie
     </div>
   );
 }
-

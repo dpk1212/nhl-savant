@@ -145,13 +145,16 @@ export default function AdvancedMetricsCarousel({ matchupData }) {
         </p>
       </div>
 
-      {/* Desktop Navigation Dots */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        marginBottom: '1rem'
-      }}>
+      {/* Desktop Navigation Tabs - Hidden on mobile */}
+      <div 
+        className="metrics-tabs"
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          marginBottom: '1rem'
+        }}
+      >
         {charts.map((chart, index) => (
           <button
             key={chart.id}
@@ -307,9 +310,26 @@ export default function AdvancedMetricsCarousel({ matchupData }) {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        
+        /* Mobile Optimizations */
         @media (max-width: 768px) {
+          /* Hide desktop tabs on mobile */
+          .metrics-tabs {
+            display: none !important;
+          }
+          
+          /* Hide desktop navigation arrows on mobile */
           .carousel-arrows {
             display: none !important;
+          }
+          
+          /* Make dots bigger for touch targets (48px minimum) */
+          .mobile-progress-dots button {
+            min-width: 48px !important;
+            min-height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
         }
       `}</style>
