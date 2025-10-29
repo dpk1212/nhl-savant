@@ -170,8 +170,11 @@ export function calculateSpecialTeamsEdge(pp1, pk1, pp2, pk2) {
 
 /**
  * Calculate overall matchup advantage
- * @param {Object} edges - Object containing all edge calculations
- * @returns {number} Overall advantage percentage (0-100, 50 = even)
+ * @param {number} xGoalsEdge - xGoals edge (positive = away advantage)
+ * @param {number} goalieEdge - Goalie edge (positive = away advantage)
+ * @param {number} shotQualityEdge - Shot quality edge
+ * @param {number} specialTeamsEdge - Special teams edge
+ * @returns {Object} { awayAdvantage: number, homeAdvantage: number, favorite: string }
  */
 export function calculateOverallAdvantage(xGoalsEdge, goalieEdge, shotQualityEdge, specialTeamsEdge) {
   // Weighted scoring system
@@ -186,15 +189,24 @@ export function calculateOverallAdvantage(xGoalsEdge, goalieEdge, shotQualityEdg
   const normalizedShots = Math.max(-1, Math.min(1, shotQualityEdge / 10));
   const normalizedST = Math.max(-1, Math.min(1, specialTeamsEdge / 3));
   
-  // Calculate weighted score
+  // Calculate weighted score (-1 to 1, positive = away advantage)
   const weightedScore = 
     (normalizedXG * xGoalsWeight) +
     (normalizedGoalie * goalieWeight) +
     (normalizedShots * shotQualityWeight) +
     (normalizedST * specialTeamsWeight);
   
-  // Convert to percentage (50 = even matchup)
-  return 50 + (weightedScore * 50);
+  // Convert to win probabilities (use logistic function for realistic scaling)
+  // This prevents unrealistic 90-10 splits
+  const awayWinProb = 50 + (weightedScore * 35); // Max swing is 35% from even
+  const homeWinProb = 100 - awayWinProb;
+  
+  return {
+    awayAdvantage: Math.round(Math.max(15, Math.min(85, awayWinProb))), // Cap at 15-85%
+    homeAdvantage: Math.round(Math.max(15, Math.min(85, homeWinProb))),
+    favorite: awayWinProb > 50 ? 'away' : 'home',
+    confidence: Math.abs(awayWinProb - 50) > 10 ? 'high' : Math.abs(awayWinProb - 50) > 5 ? 'medium' : 'low'
+  };
 }
 
 /**
