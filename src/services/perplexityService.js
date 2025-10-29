@@ -7,8 +7,31 @@
 import { db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-const PERPLEXITY_API_KEY = import.meta.env.VITE_PERPLEXITY_API_KEY;
 const CACHE_TTL_HOURS = 6;
+let PERPLEXITY_API_KEY = null; // Will be fetched from Firestore
+
+/**
+ * Fetch Perplexity API key from Firebase Secrets collection
+ * Caches in memory after first fetch for performance
+ */
+async function getPerplexityKey() {
+  if (PERPLEXITY_API_KEY) return PERPLEXITY_API_KEY; // Use cached key
+  
+  try {
+    const secretDoc = await getDoc(doc(db, 'Secrets', 'Perplexity'));
+    if (secretDoc.exists()) {
+      PERPLEXITY_API_KEY = secretDoc.data().Key;
+      console.log('✅ Perplexity API key loaded from Firebase');
+      return PERPLEXITY_API_KEY;
+    } else {
+      console.warn('⚠️ Perplexity secret document not found in Firebase');
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not fetch Perplexity key from Firebase:', error.code);
+  }
+  
+  return null;
+}
 
 /**
  * Get AI-generated matchup analysis
@@ -24,22 +47,28 @@ export async function getMatchupAnalysis(awayTeam, homeTeam, forceRefresh = fals
   try {
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
-      const cachedDoc = await getDoc(cacheRef);
-      if (cachedDoc.exists()) {
-        const data = cachedDoc.data();
-        const age = Date.now() - data.timestamp;
-        const maxAge = CACHE_TTL_HOURS * 60 * 60 * 1000;
-        
-        if (age < maxAge) {
-          console.log('✅ Using cached Perplexity analysis');
-          return data.content;
+      try {
+        const cachedDoc = await getDoc(cacheRef);
+        if (cachedDoc.exists()) {
+          const data = cachedDoc.data();
+          const age = Date.now() - data.timestamp;
+          const maxAge = CACHE_TTL_HOURS * 60 * 60 * 1000;
+          
+          if (age < maxAge) {
+            console.log('✅ Using cached Perplexity analysis');
+            return data.content;
+          }
         }
+      } catch (cacheError) {
+        console.warn('⚠️ Cache read failed:', cacheError.code);
       }
     }
 
-    // Fetch fresh analysis from Perplexity
-    if (!PERPLEXITY_API_KEY) {
-      console.warn('⚠️ No Perplexity API key configured - using fallback analysis');
+    // Fetch API key from Firebase Secrets
+    const apiKey = await getPerplexityKey();
+    
+    if (!apiKey) {
+      console.log('ℹ️ Using fallback analysis (Perplexity API key not available)');
       // Return generic but professional fallback analysis
       return `This ${awayTeam} vs ${homeTeam} matchup features two competitive NHL teams bringing unique strengths to the ice. Both teams will look to leverage their systems and capitalize on scoring opportunities. Check the detailed statistical breakdowns below for comprehensive insights into expected goals, shot quality metrics, special teams advantages, and goaltending matchups that will influence this game's outcome.`;
     }
@@ -58,7 +87,7 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -85,15 +114,19 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || 'Analysis could not be generated.';
 
-    // Cache the result
-    await setDoc(cacheRef, {
-      content,
-      timestamp: Date.now(),
-      awayTeam,
-      homeTeam
-    });
+    // Try to cache the result (ignore if permissions fail)
+    try {
+      await setDoc(cacheRef, {
+        content,
+        timestamp: Date.now(),
+        awayTeam,
+        homeTeam
+      });
+      console.log('✅ Fresh analysis fetched and cached');
+    } catch (cacheError) {
+      console.warn('⚠️ Cache write failed (continuing without cache):', cacheError.code);
+    }
 
-    console.log('✅ Fresh analysis fetched and cached');
     return content;
 
   } catch (error) {
