@@ -4,14 +4,34 @@
  */
 
 export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeGoalie, goalieEdge }) {
-  if (!awayGoalie || !homeGoalie) {
-    return null;
-  }
+  // Create default goalies with league-average stats when not specified
+  const defaultAwayGoalie = {
+    name: `${awayTeam.name} Goalie`,
+    savePct: 0.905,
+    gsax: 0,
+    gamesPlayed: 0,
+    wins: 0,
+    losses: 0,
+    isDefault: true
+  };
 
-  const awaySavePct = (awayGoalie.savePct || 0.900) * 100;
-  const homeSavePct = (homeGoalie.savePct || 0.900) * 100;
-  const awayGSAX = awayGoalie.gsax || 0;
-  const homeGSAX = homeGoalie.gsax || 0;
+  const defaultHomeGoalie = {
+    name: `${homeTeam.name} Goalie`,
+    savePct: 0.905,
+    gsax: 0,
+    gamesPlayed: 0,
+    wins: 0,
+    losses: 0,
+    isDefault: true
+  };
+
+  const finalAwayGoalie = awayGoalie || defaultAwayGoalie;
+  const finalHomeGoalie = homeGoalie || defaultHomeGoalie;
+
+  const awaySavePct = (finalAwayGoalie.savePct || 0.905) * 100;
+  const homeSavePct = (finalHomeGoalie.savePct || 0.905) * 100;
+  const awayGSAX = finalAwayGoalie.gsax || 0;
+  const homeGSAX = finalHomeGoalie.gsax || 0;
 
   const getSaveColor = (savePct) => {
     if (savePct >= 92) return '#10B981';
@@ -47,7 +67,7 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
         Goalie Showdown
       </h2>
 
-      {goalieEdge !== 0 && (
+      {goalieEdge !== 0 && !finalAwayGoalie.isDefault && !finalHomeGoalie.isDefault && (
         <p style={{
           fontSize: '0.875rem',
           color: '#94A3B8',
@@ -55,8 +75,22 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
           marginBottom: '2rem'
         }}>
           {Math.abs(goalieEdge) > 5 
-            ? `${goalieEdge > 0 ? awayGoalie.name : homeGoalie.name} has significant edge`
+            ? `${goalieEdge > 0 ? finalAwayGoalie.name : finalHomeGoalie.name} has significant edge`
             : 'Closely matched goalies'}
+        </p>
+      )}
+      
+      {(finalAwayGoalie.isDefault || finalHomeGoalie.isDefault) && (
+        <p style={{
+          fontSize: '0.875rem',
+          color: '#F59E0B',
+          textAlign: 'center',
+          marginBottom: '2rem',
+          padding: '0.75rem',
+          background: 'rgba(245, 158, 11, 0.1)',
+          borderRadius: '8px'
+        }}>
+          ⚠️ Using league-average goalie stats (specific starter not yet confirmed)
         </p>
       )}
 
@@ -78,7 +112,8 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
             color: '#F1F5F9',
             marginBottom: '0.5rem'
           }}>
-            {awayGoalie.name}
+            {finalAwayGoalie.name}
+            {finalAwayGoalie.isDefault && <span style={{ color: '#F59E0B', fontSize: '0.75rem', marginLeft: '0.5rem' }}>(League Avg)</span>}
           </div>
           <div style={{
             fontSize: '0.875rem',
@@ -130,16 +165,18 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
             </div>
           </div>
 
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.5rem',
-            background: 'rgba(15, 23, 42, 0.5)',
-            borderRadius: '6px',
-            fontSize: '0.75rem',
-            color: '#94A3B8'
-          }}>
-            {awayGoalie.gamesPlayed || 0} GP | {awayGoalie.wins || 0}-{awayGoalie.losses || 0}
-          </div>
+          {!finalAwayGoalie.isDefault && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.5rem',
+              background: 'rgba(15, 23, 42, 0.5)',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              color: '#94A3B8'
+            }}>
+              {finalAwayGoalie.gamesPlayed || 0} GP | {finalAwayGoalie.wins || 0}-{finalAwayGoalie.losses || 0}
+            </div>
+          )}
         </div>
 
         {/* Home Goalie */}
@@ -155,7 +192,8 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
             color: '#F1F5F9',
             marginBottom: '0.5rem'
           }}>
-            {homeGoalie.name}
+            {finalHomeGoalie.name}
+            {finalHomeGoalie.isDefault && <span style={{ color: '#F59E0B', fontSize: '0.75rem', marginLeft: '0.5rem' }}>(League Avg)</span>}
           </div>
           <div style={{
             fontSize: '0.875rem',
@@ -207,16 +245,18 @@ export default function GoalieComparison({ awayTeam, homeTeam, awayGoalie, homeG
             </div>
           </div>
 
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.5rem',
-            background: 'rgba(15, 23, 42, 0.5)',
-            borderRadius: '6px',
-            fontSize: '0.75rem',
-            color: '#94A3B8'
-          }}>
-            {homeGoalie.gamesPlayed || 0} GP | {homeGoalie.wins || 0}-{homeGoalie.losses || 0}
-          </div>
+          {!finalHomeGoalie.isDefault && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.5rem',
+              background: 'rgba(15, 23, 42, 0.5)',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              color: '#94A3B8'
+            }}>
+              {finalHomeGoalie.gamesPlayed || 0} GP | {finalHomeGoalie.wins || 0}-{finalHomeGoalie.losses || 0}
+            </div>
+          )}
         </div>
       </div>
     </div>

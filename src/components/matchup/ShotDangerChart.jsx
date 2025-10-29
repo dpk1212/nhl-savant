@@ -10,21 +10,47 @@ export default function ShotDangerChart({ awayTeam, homeTeam, awayStats, homeSta
     return null;
   }
 
+  // Calculate per-60 rates from totals
+  const awayIceTime60 = (awayStats?.iceTime || 1) / 60;
+  const homeIceTime60 = (homeStats?.iceTime || 1) / 60;
+
+  // Get shot danger breakdown, with fallbacks if fields missing
+  const getShots = (stats, iceTime60) => {
+    const low = (stats?.lowDangerShotsFor || 0) / iceTime60;
+    const medium = (stats?.mediumDangerShotsFor || 0) / iceTime60;
+    const high = (stats?.highDangerShotsFor || 0) / iceTime60;
+    
+    // Fallback: If all are 0, estimate from total shots (if available)
+    if (low === 0 && medium === 0 && high === 0 && stats?.shotsOnGoalFor) {
+      const total = (stats.shotsOnGoalFor || 0) / iceTime60;
+      return {
+        low: total * 0.50, // Estimate 50% low danger
+        medium: total * 0.30, // 30% medium
+        high: total * 0.20 // 20% high danger
+      };
+    }
+    
+    return { low, medium, high };
+  };
+
+  const awayShots = getShots(awayStats, awayIceTime60);
+  const homeShots = getShots(homeStats, homeIceTime60);
+
   const data = [
     {
       name: 'Low Danger',
-      [awayTeam.code]: awayStats.lowDangerShots || 0,
-      [homeTeam.code]: homeStats.lowDangerShots || 0
+      [awayTeam.code]: awayShots.low,
+      [homeTeam.code]: homeShots.low
     },
     {
       name: 'Medium Danger',
-      [awayTeam.code]: awayStats.mediumDangerShots || 0,
-      [homeTeam.code]: homeStats.mediumDangerShots || 0
+      [awayTeam.code]: awayShots.medium,
+      [homeTeam.code]: homeShots.medium
     },
     {
       name: 'High Danger',
-      [awayTeam.code]: awayStats.highDangerShots || 0,
-      [homeTeam.code]: homeStats.highDangerShots || 0
+      [awayTeam.code]: awayShots.high,
+      [homeTeam.code]: homeShots.high
     }
   ];
 
