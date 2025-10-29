@@ -1,35 +1,33 @@
 /**
- * Matchup Insights Page - Advanced team vs team analysis
- * Isolated implementation - NO modifications to existing components
- * Props access pattern: Direct props. access for safety
+ * Matchup Insights Page - Deep Analytics Platform
+ * Mobile-first, full nerd stats, visual context
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import GoalieComparison from '../components/matchup/GoalieComparison';
-import ShotDangerChart from '../components/matchup/ShotDangerChart';
-import RecentFormTimeline from '../components/matchup/RecentFormTimeline';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import AIInsightCards from '../components/matchup/AIInsightCards';
-import MatchupTiles from '../components/matchup/MatchupTiles';
-import RadarComparison from '../components/matchup/RadarComparison';
-import StickySummaryBar from '../components/matchup/StickySummaryBar';
-import { 
-  getTeamStats, 
-  getGoalieStats,
-  calculateXGoalsEdge,
-  calculateGoalieEdge,
-  calculateShotQualityEdge,
-  calculateSpecialTeamsEdge,
-  calculateOverallAdvantage,
-  getRecentForm,
-  calculatePercentileRank
-} from '../utils/matchupCalculations';
+import PredictionSummary from '../components/matchup/PredictionSummary';
+import DominanceMatrix from '../components/matchup/DominanceMatrix';
+import ExpectedGoalsChart from '../components/matchup/AdvancedMetrics/ExpectedGoalsChart';
+import ShotQualityChart from '../components/matchup/AdvancedMetrics/ShotQualityChart';
+import SpecialTeamsChart from '../components/matchup/AdvancedMetrics/SpecialTeamsChart';
+import GoalieChart from '../components/matchup/AdvancedMetrics/GoalieChart';
+import PossessionChart from '../components/matchup/AdvancedMetrics/PossessionChart';
+import { getTeamStats, getGoalieStats } from '../utils/matchupCalculations';
 
 export default function MatchupInsights(props) {
   const [selectedGame, setSelectedGame] = useState(null);
   const [todaysGames, setTodaysGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedSections, setExpandedSections] = useState({
+    xgoals: false,
+    shotquality: false,
+    specialteams: false,
+    goalie: false,
+    possession: false
+  });
 
-  // Load today's games
+  // Load today's games with proper time formatting
   useEffect(() => {
     if (!props || !props.dataProcessor || !props.todaysGames) {
       setLoading(false);
@@ -37,32 +35,35 @@ export default function MatchupInsights(props) {
     }
 
     try {
-      // Map todaysGames to expected format
       const games = props.todaysGames.map(game => {
-        // Extract and format game time
+        // Extract game time - try multiple sources
         let formattedTime = 'TBD';
-        const timeStr = game.time || game.gameTime || game.startTime;
         
-        if (timeStr) {
-          // If it's already a formatted time string, use it
-          if (typeof timeStr === 'string' && timeStr.includes(':')) {
-            formattedTime = timeStr;
-          } else if (game.date) {
-            // Try to extract time from date field if available
-            const dateObj = new Date(game.date);
-            if (!isNaN(dateObj.getTime())) {
-              formattedTime = dateObj.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit',
-                timeZone: 'America/New_York'
-              }) + ' ET';
-            }
+        // Try game.time first (should be formatted like "7:00 PM ET")
+        if (game.time && typeof game.time === 'string') {
+          formattedTime = game.time;
+        }
+        // Try gameTime property
+        else if (game.gameTime && typeof game.gameTime === 'string') {
+          formattedTime = game.gameTime;
+        }
+        // Try startTimeUTC and convert
+        else if (game.startTimeUTC) {
+          try {
+            const date = new Date(game.startTimeUTC);
+            formattedTime = date.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              timeZone: 'America/New_York'
+            }) + ' ET';
+          } catch (e) {
+            console.warn('Failed to parse startTimeUTC:', game.startTimeUTC);
           }
         }
         
         return {
           awayTeam: game.away || game.awayTeam,
-          homeTeam: game.home || game.homeTeam,
+          homeTeam: game.home || game.homeTeam || game.homeCode,
           gameTime: formattedTime,
           date: new Date().toISOString().split('T')[0],
           ...game
@@ -80,7 +81,7 @@ export default function MatchupInsights(props) {
     }
   }, [props?.dataProcessor, props?.todaysGames, selectedGame, props]);
 
-  // Calculate matchup data for selected game
+  // Calculate matchup data and prediction
   const matchupData = useMemo(() => {
     if (!selectedGame || !props?.dataProcessor || !props?.goalieData) return null;
 
@@ -88,9 +89,7 @@ export default function MatchupInsights(props) {
       const dataProc = props.dataProcessor;
       const goalies = props.goalieData;
 
-      // Get team stats
-      const awayStats = getTeamStats(dataProc, selectedGame.awayTeam, 'all');
-      const homeStats = getTeamStats(dataProc, selectedGame.homeTeam, 'all');
+      // Get team stats (5v5 for main analysis)
       const awayStats5v5 = getTeamStats(dataProc, selectedGame.awayTeam, '5on5');
       const homeStats5v5 = getTeamStats(dataProc, selectedGame.homeTeam, '5on5');
       const awayPP = getTeamStats(dataProc, selectedGame.awayTeam, '5on4');
@@ -98,165 +97,91 @@ export default function MatchupInsights(props) {
       const homePP = getTeamStats(dataProc, selectedGame.homeTeam, '5on4');
       const homePK = getTeamStats(dataProc, selectedGame.homeTeam, '4on5');
 
-      // Get goalie stats (use default names if not provided)
-      const awayGoalie = getGoalieStats(goalies, `${selectedGame.awayTeam} Goalie`);
-      const homeGoalie = getGoalieStats(goalies, `${selectedGame.homeTeam} Goalie`);
+      // Get goalies
+      const awayGoalieName = selectedGame.awayGoalie || `${selectedGame.awayTeam} Goalie`;
+      const homeGoalieName = selectedGame.homeGoalie || `${selectedGame.homeTeam} Goalie`;
+      const awayGoalie = getGoalieStats(goalies, awayGoalieName) || { isDefault: true };
+      const homeGoalie = getGoalieStats(goalies, homeGoalieName) || { isDefault: true };
 
-      // Calculate edges
-      const xGoalsEdgeAway = calculateXGoalsEdge(awayStats, homeStats);
-      const xGoalsEdgeHome = calculateXGoalsEdge(homeStats, awayStats);
-      const goalieEdge = awayGoalie && homeGoalie ? calculateGoalieEdge(awayGoalie, homeGoalie) : 0;
-      const shotQualityEdgeAway = calculateShotQualityEdge(awayStats, homeStats);
-      const shotQualityEdgeHome = calculateShotQualityEdge(homeStats, awayStats);
-      const specialTeamsEdge = calculateSpecialTeamsEdge(awayPP, homePK, homePP, awayPK);
-
-      // Overall advantage
-      const overallAdvantage = calculateOverallAdvantage(
-        xGoalsEdgeAway,
-        goalieEdge,
-        shotQualityEdgeAway,
-        specialTeamsEdge
+      // Calculate prediction (matching Today's Games logic)
+      const awayPredicted = dataProc.predictTeamScore(
+        selectedGame.awayTeam, 
+        selectedGame.homeTeam, 
+        false, 
+        awayGoalieName
       );
-
-      // Get recent form (if available)
-      let awayForm = null;
-      let homeForm = null;
-      try {
-        if (props.dataProcessor.asPlayedData) {
-          awayForm = getRecentForm(props.dataProcessor.asPlayedData, selectedGame.awayTeam, 10);
-          homeForm = getRecentForm(props.dataProcessor.asPlayedData, selectedGame.homeTeam, 10);
-        }
-      } catch (error) {
-        console.log('Recent form data not available:', error);
-      }
-
-      // Get team names (fallback to codes)
-      const getTeamName = (code) => {
-        try {
-          const allTeams = dataProc.getTeamsBySituation('all');
-          const teamData = allTeams?.find(t => t.name === code);
-          return teamData?.teamName || code;
-        } catch {
-          return code;
-        }
-      };
-
-      // Generate key insights
-      const insights = [];
-
-      // 1. Offensive Strength Analysis
-      const awayXGFRank = calculatePercentileRank(dataProc, selectedGame.awayTeam, 'xGoalsFor', '5on5', true);
-      const homeXGARank = calculatePercentileRank(dataProc, selectedGame.homeTeam, 'xGoalsAgainst', '5on5', false);
+      const homePredicted = dataProc.predictTeamScore(
+        selectedGame.homeTeam, 
+        selectedGame.awayTeam, 
+        true, 
+        homeGoalieName
+      );
+      const total = awayPredicted + homePredicted;
       
-      if (awayXGFRank && homeXGARank) {
-        const awayName = getTeamName(selectedGame.awayTeam);
-        const homeName = getTeamName(selectedGame.homeTeam);
-        
-        if (awayXGFRank.percentile >= 70 && homeXGARank.percentile < 50) {
-          insights.push({
-            type: 'offense',
-            title: `${awayName} Offensive Firepower`,
-            description: `${awayName} ranks ${awayXGFRank.rank} in xGoals For (Top ${awayXGFRank.percentile}%) facing a ${homeName} defense ranked ${homeXGARank.rank} (${homeXGARank.tier})`,
-            stat: `${(awayStats5v5?.xGoalsFor / ((awayStats5v5?.iceTime || 1) / 60)).toFixed(2)} xGF/60`
-          });
-        } else if (homeXGARank.percentile >= 70) {
-          insights.push({
-            type: 'defense',
-            title: `${homeName} Defensive Wall`,
-            description: `${homeName} allows 13.16 xGA/60 (Top ${homeXGARank.percentile}%), making it difficult for ${awayName} offense`,
-            stat: `Rank ${homeXGARank.rank} in defensive efficiency`
-          });
-        }
-      }
+      // Calculate win probability using production method
+      const homeWinProb = dataProc.calculatePoissonWinProb(homePredicted, awayPredicted) * 100;
+      const awayWinProb = 100 - homeWinProb;
 
-      // 2. High Danger Shots Analysis
-      const awayHDRank = calculatePercentileRank(dataProc, selectedGame.awayTeam, 'highDangerShotsFor', '5on5', true);
-      const homeHDRank = calculatePercentileRank(dataProc, selectedGame.homeTeam, 'highDangerShotsAgainst', '5on5', false);
+      // Determine recommended bet (simple logic - can be enhanced)
+      let recommendedBet = null;
+      let confidence = null;
+      let evPercent = null;
+
+      const favorite = awayWinProb > homeWinProb ? selectedGame.awayTeam : selectedGame.homeTeam;
+      const favoriteProb = Math.max(awayWinProb, homeWinProb);
       
-      if (awayHDRank && awayHDRank.percentile >= 75) {
-        insights.push({
-          type: 'offense',
-          title: 'High Danger Scoring Chances',
-          description: `${getTeamName(selectedGame.awayTeam)} generates quality scoring opportunities from dangerous areas (${awayHDRank.tier} tier)`,
-          stat: `${((awayStats5v5?.highDangerShotsFor || 0) / ((awayStats5v5?.iceTime || 1) / 60)).toFixed(2)} HD Shots/60`
-        });
+      if (favoriteProb > 60) {
+        recommendedBet = `${favorite} ML`;
+        confidence = favoriteProb > 65 ? 'HIGH' : 'MEDIUM';
+        evPercent = favoriteProb - 50; // Simplified EV calculation
       }
 
-      // 3. Special Teams Impact
-      if (specialTeamsEdge !== 0 && Math.abs(specialTeamsEdge) > 0.5) {
-        const advantageTeam = specialTeamsEdge > 0 ? getTeamName(selectedGame.awayTeam) : getTeamName(selectedGame.homeTeam);
-        insights.push({
-          type: 'special',
-          title: 'Special Teams Mismatch',
-          description: `${advantageTeam} has a significant power play/penalty kill advantage that could swing this game`,
-          stat: `${Math.abs(specialTeamsEdge).toFixed(2)} goal advantage expected from special teams`
-        });
-      }
+      // Build power play/penalty kill objects
+      const awayPowerPlay = awayPP ? {
+        percentage: (awayPP.goalsFor || 0) / (awayPP.goalsFor + awayPP.goalsAgainst || 1),
+        goalsFor: awayPP.goalsFor || 0
+      } : null;
 
-      // 4. Goalie Analysis
-      if (goalieEdge !== 0 && Math.abs(goalieEdge) > 3) {
-        const advantageTeam = goalieEdge > 0 ? getTeamName(selectedGame.awayTeam) : getTeamName(selectedGame.homeTeam);
-        const goalieAdvantage = goalieEdge > 0 ? awayGoalie : homeGoalie;
-        if (goalieAdvantage && !goalieAdvantage.isDefault) {
-          insights.push({
-            type: 'positive',
-            title: 'Goaltending Advantage',
-            description: `${advantageTeam}'s ${goalieAdvantage.name} provides a significant edge with elite save percentage`,
-            stat: `${((goalieAdvantage.savePct || 0.905) * 100).toFixed(1)}% Save% | ${(goalieAdvantage.gsax || 0).toFixed(1)} GSAX`
-          });
-        }
-      }
+      const awayPenaltyKill = awayPK ? {
+        percentage: 1 - ((awayPK.goalsAgainst || 0) / (awayPK.goalsFor + awayPK.goalsAgainst || 1)),
+        goalsAgainst: awayPK.goalsAgainst || 0
+      } : null;
 
-      // 5. Overall Prediction
-      if (overallAdvantage) {
-        const leadTeam = overallAdvantage.awayAdvantage > overallAdvantage.homeAdvantage 
-          ? getTeamName(selectedGame.awayTeam)
-          : getTeamName(selectedGame.homeTeam);
-        const winProb = Math.max(overallAdvantage.awayAdvantage, overallAdvantage.homeAdvantage);
-        
-        if (winProb >= 60) {
-          insights.push({
-            type: winProb >= 70 ? 'positive' : 'offense',
-            title: 'Model Prediction',
-            description: `Advanced metrics favor ${leadTeam} with ${winProb.toFixed(0)}% win probability based on xGoals, shot quality, and matchup edges`,
-            stat: `${leadTeam} ${winProb.toFixed(0)}-${(100 - winProb).toFixed(0)}`
-          });
-        }
-      }
+      const homePowerPlay = homePP ? {
+        percentage: (homePP.goalsFor || 0) / (homePP.goalsFor + homePP.goalsAgainst || 1),
+        goalsFor: homePP.goalsFor || 0
+      } : null;
+
+      const homePenaltyKill = homePK ? {
+        percentage: 1 - ((homePK.goalsAgainst || 0) / (homePK.goalsFor + homePK.goalsAgainst || 1)),
+        goalsAgainst: homePK.goalsAgainst || 0
+      } : null;
 
       return {
         away: {
           code: selectedGame.awayTeam,
-          name: getTeamName(selectedGame.awayTeam),
-          stats: awayStats,
           stats5v5: awayStats5v5,
-          powerPlay: awayPP,
-          penaltyKill: awayPK,
-          goalie: awayGoalie,
-          form: awayForm
+          powerPlay: awayPowerPlay,
+          penaltyKill: awayPenaltyKill,
+          goalie: awayGoalie
         },
         home: {
           code: selectedGame.homeTeam,
-          name: getTeamName(selectedGame.homeTeam),
-          stats: homeStats,
           stats5v5: homeStats5v5,
-          powerPlay: homePP,
-          penaltyKill: homePK,
-          goalie: homeGoalie,
-          form: homeForm
+          powerPlay: homePowerPlay,
+          penaltyKill: homePenaltyKill,
+          goalie: homeGoalie
         },
-        edges: {
-          xGoalsAway: xGoalsEdgeAway,
-          xGoalsHome: xGoalsEdgeHome,
-          goalie: goalieEdge,
-          shotQualityAway: shotQualityEdgeAway,
-          shotQualityHome: shotQualityEdgeHome,
-          specialTeams: specialTeamsEdge,
-          overall: overallAdvantage
-        },
-        insights: insights,
-        gameTime: selectedGame.gameTime,
-        date: selectedGame.date
+        prediction: {
+          awayScore: awayPredicted,
+          homeScore: homePredicted,
+          total,
+          awayWinProb,
+          homeWinProb,
+          recommendedBet,
+          confidence,
+          evPercent
+        }
       };
     } catch (error) {
       console.error('Error calculating matchup data:', error);
@@ -264,27 +189,12 @@ export default function MatchupInsights(props) {
     }
   }, [selectedGame, props?.dataProcessor, props?.goalieData, props]);
 
-  // Loading state
-  if (!props || !props.dataProcessor || !props.goalieData || !props.todaysGames) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '400px',
-        color: '#94A3B8',
-        padding: '2rem',
-        textAlign: 'center'
-      }}>
-        <div>
-          <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>Loading data...</p>
-          <p style={{ fontSize: '0.875rem', color: '#64748B' }}>
-            Please wait while we load team stats and schedule information.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   if (loading) {
     return (
@@ -292,10 +202,11 @@ export default function MatchupInsights(props) {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '400px',
-        color: '#94A3B8'
+        minHeight: '50vh',
+        color: '#94A3B8',
+        fontSize: '1.125rem'
       }}>
-        <p>Loading matchup insights...</p>
+        Loading matchup insights...
       </div>
     );
   }
@@ -303,172 +214,354 @@ export default function MatchupInsights(props) {
   if (todaysGames.length === 0) {
     return (
       <div style={{
-        padding: '2rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh',
+        color: '#94A3B8',
+        fontSize: '1.125rem',
         textAlign: 'center',
-        color: '#94A3B8'
+        padding: '2rem'
       }}>
-        <h2 style={{ color: '#F1F5F9', marginBottom: '1rem' }}>No Games Today</h2>
-        <p>Check back when games are scheduled!</p>
+        No games scheduled today
       </div>
     );
   }
 
   return (
     <div style={{
-      minHeight: '100vh',
-      padding: '2rem 1rem',
-      maxWidth: '1400px',
+      padding: '1rem',
+      maxWidth: '1200px',
       margin: '0 auto'
     }}>
       {/* Header */}
-      <div style={{
-        marginBottom: '2rem',
-        textAlign: 'center'
+      <h1 style={{
+        fontSize: '2rem',
+        fontWeight: '800',
+        background: 'linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        marginBottom: '1rem'
       }}>
-        <h1 style={{
-          fontSize: '2rem',
-          fontWeight: '700',
-          color: '#F1F5F9',
-          marginBottom: '0.5rem'
-        }}>
-          Matchup Insights
-        </h1>
-        <p style={{
-          color: '#94A3B8',
-          fontSize: '1rem'
-        }}>
-          Advanced analytics, expert analysis, and betting edges
-        </p>
-      </div>
+        Matchup Insights
+      </h1>
+      <p style={{
+        fontSize: '0.9375rem',
+        color: '#94A3B8',
+        marginBottom: '1.5rem',
+        lineHeight: 1.6
+      }}>
+        Deep dive analytics for advanced bettors. Explore the underlying stats and metrics that drive our recommendations.
+      </p>
 
       {/* Game Selector */}
-      <div className="elevated-card" style={{
-        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        border: '1px solid rgba(148, 163, 184, 0.1)',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        marginBottom: '2rem',
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
-      }}>
-        <h3 style={{
-          fontSize: '0.875rem',
-          fontWeight: '700',
-          color: '#94A3B8',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          marginBottom: '1rem'
-        }}>
-          Select Game
-        </h3>
-
+      {todaysGames.length > 1 && (
         <div style={{
+          marginBottom: '1.5rem',
           display: 'flex',
           gap: '0.75rem',
+          flexWrap: 'wrap',
           overflowX: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          padding: '0.5rem 0'
         }}>
-          {todaysGames.map((game, index) => (
+          {todaysGames.map((game, idx) => (
             <button
-              key={`${game.awayTeam}-${game.homeTeam}-${index}`}
+              key={idx}
               onClick={() => setSelectedGame(game)}
               style={{
-                background: selectedGame === game
-                  ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
-                  : 'rgba(15, 23, 42, 0.5)',
-                border: selectedGame === game
-                  ? '1px solid rgba(59, 130, 246, 0.5)'
+                padding: '0.75rem 1.25rem',
+                background: selectedGame === game 
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)'
+                  : 'rgba(30, 41, 59, 0.6)',
+                border: selectedGame === game 
+                  ? '1px solid rgba(16, 185, 129, 0.5)'
                   : '1px solid rgba(148, 163, 184, 0.1)',
-                borderRadius: '12px',
-                padding: '1rem 1.5rem',
-                minWidth: '200px',
+                borderRadius: '10px',
+                color: selectedGame === game ? '#10B981' : '#F1F5F9',
+                fontSize: '0.875rem',
+                fontWeight: '700',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                flexShrink: 0
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
               }}
             >
-              <div style={{
-                fontSize: '1rem',
-                fontWeight: '700',
-                color: '#F1F5F9',
-                marginBottom: '0.25rem'
-              }}>
-                {game.awayTeam} @ {game.homeTeam}
-              </div>
-              <div style={{
-                fontSize: '0.75rem',
-                color: '#94A3B8'
-              }}>
-                {game.gameTime || 'TBD'}
-              </div>
+              {game.awayTeam} @ {game.homeTeam}
             </button>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Matchup Content */}
+      {/* AI Analysis Cards */}
+      {selectedGame && (
+        <AIInsightCards
+          awayTeam={selectedGame.awayTeam}
+          homeTeam={selectedGame.homeTeam}
+        />
+      )}
+
+      {/* Prediction Summary */}
       {matchupData && (
-        <div>
-          {/* AI Insight Cards - THE ONLY TEXT ON THE PAGE */}
-          <AIInsightCards
-            awayTeam={matchupData.away}
-            homeTeam={matchupData.home}
-          />
+        <PredictionSummary
+          awayTeam={matchupData.away}
+          homeTeam={matchupData.home}
+          prediction={matchupData.prediction}
+          gameTime={selectedGame.gameTime}
+        />
+      )}
 
-          {/* Sticky Summary Bar - follows scroll */}
-          <StickySummaryBar
-            awayTeam={matchupData.away}
-            homeTeam={matchupData.home}
-            matchupData={matchupData}
-          />
+      {/* Dominance Matrix */}
+      {matchupData && props.dataProcessor && (
+        <DominanceMatrix
+          awayTeam={matchupData.away}
+          homeTeam={matchupData.home}
+          matchupData={matchupData}
+          dataProcessor={props.dataProcessor}
+        />
+      )}
 
-          {/* Radar Comparison Chart */}
-          <RadarComparison
-            awayTeam={matchupData.away}
-            homeTeam={matchupData.home}
-            matchupData={matchupData}
-            dataProcessor={props.dataProcessor}
-          />
+      {/* Advanced Metrics - Collapsible Sections */}
+      <div style={{ marginTop: '2rem' }}>
+        <h2 style={{
+          fontSize: '1.5rem',
+          fontWeight: '700',
+          background: 'linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          marginBottom: '1rem'
+        }}>
+          Advanced Metrics Deep Dive
+        </h2>
 
-          {/* Matchup Tiles - Visual Dominance Display */}
-          <MatchupTiles
-            awayTeam={matchupData.away}
-            homeTeam={matchupData.home}
-            matchupData={matchupData}
-            dataProcessor={props.dataProcessor}
-          />
-
-          {/* Goalie Comparison */}
-          {matchupData.away.goalie && matchupData.home.goalie && (
-            <GoalieComparison
-              awayTeam={matchupData.away}
-              homeTeam={matchupData.home}
-              awayGoalie={matchupData.away.goalie}
-              homeGoalie={matchupData.home.goalie}
-              goalieEdge={matchupData.edges.goalie}
-            />
-          )}
-
-          {/* Shot Danger Chart */}
-          <ShotDangerChart
-            awayTeam={matchupData.away}
-            homeTeam={matchupData.home}
-            awayStats={matchupData.away.stats}
-            homeStats={matchupData.home.stats}
-          />
-
-          {/* Recent Form Timeline */}
-          {matchupData.away.form && matchupData.home.form && (
-            <RecentFormTimeline
-              awayTeam={matchupData.away}
-              homeTeam={matchupData.home}
-              awayForm={matchupData.away.form}
-              homeForm={matchupData.home.form}
-            />
+        {/* Expected Goals */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: '16px',
+          marginBottom: '1rem',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+        }}>
+          <button
+            onClick={() => toggleSection('xgoals')}
+            style={{
+              width: '100%',
+              padding: '1rem 1.5rem',
+              background: 'transparent',
+              border: 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#F1F5F9',
+              fontSize: '1.125rem',
+              fontWeight: '700'
+            }}
+          >
+            <span>Expected Goals Analysis</span>
+            {expandedSections.xgoals ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {expandedSections.xgoals && matchupData && (
+            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+              <ExpectedGoalsChart
+                awayTeam={matchupData.away}
+                homeTeam={matchupData.home}
+                awayStats={matchupData.away.stats5v5}
+                homeStats={matchupData.home.stats5v5}
+              />
+            </div>
           )}
         </div>
-      )}
+
+        {/* Shot Quality */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: '16px',
+          marginBottom: '1rem',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+        }}>
+          <button
+            onClick={() => toggleSection('shotquality')}
+            style={{
+              width: '100%',
+              padding: '1rem 1.5rem',
+              background: 'transparent',
+              border: 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#F1F5F9',
+              fontSize: '1.125rem',
+              fontWeight: '700'
+            }}
+          >
+            <span>Shot Quality Matrix</span>
+            {expandedSections.shotquality ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {expandedSections.shotquality && matchupData && (
+            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+              <ShotQualityChart
+                awayTeam={matchupData.away}
+                homeTeam={matchupData.home}
+                awayStats={matchupData.away.stats5v5}
+                homeStats={matchupData.home.stats5v5}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Special Teams */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: '16px',
+          marginBottom: '1rem',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+        }}>
+          <button
+            onClick={() => toggleSection('specialteams')}
+            style={{
+              width: '100%',
+              padding: '1rem 1.5rem',
+              background: 'transparent',
+              border: 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#F1F5F9',
+              fontSize: '1.125rem',
+              fontWeight: '700'
+            }}
+          >
+            <span>Special Teams Breakdown</span>
+            {expandedSections.specialteams ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {expandedSections.specialteams && matchupData && (
+            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+              <SpecialTeamsChart
+                awayTeam={matchupData.away}
+                homeTeam={matchupData.home}
+                awayPP={matchupData.away.powerPlay}
+                awayPK={matchupData.away.penaltyKill}
+                homePP={matchupData.home.powerPlay}
+                homePK={matchupData.home.penaltyKill}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Goalie */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: '16px',
+          marginBottom: '1rem',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+        }}>
+          <button
+            onClick={() => toggleSection('goalie')}
+            style={{
+              width: '100%',
+              padding: '1rem 1.5rem',
+              background: 'transparent',
+              border: 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#F1F5F9',
+              fontSize: '1.125rem',
+              fontWeight: '700'
+            }}
+          >
+            <span>Goaltending Deep Dive</span>
+            {expandedSections.goalie ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {expandedSections.goalie && matchupData && (
+            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+              <GoalieChart
+                awayTeam={matchupData.away}
+                homeTeam={matchupData.home}
+                awayGoalie={matchupData.away.goalie}
+                homeGoalie={matchupData.home.goalie}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Possession */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+          borderRadius: '16px',
+          marginBottom: '1rem',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+        }}>
+          <button
+            onClick={() => toggleSection('possession')}
+            style={{
+              width: '100%',
+              padding: '1rem 1.5rem',
+              background: 'transparent',
+              border: 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#F1F5F9',
+              fontSize: '1.125rem',
+              fontWeight: '700'
+            }}
+          >
+            <span>Possession & Pace</span>
+            {expandedSections.possession ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {expandedSections.possession && matchupData && (
+            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+              <PossessionChart
+                awayTeam={matchupData.away}
+                homeTeam={matchupData.home}
+                awayStats={matchupData.away.stats5v5}
+                homeStats={matchupData.home.stats5v5}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Optimization */}
+      <style>{`
+        @media (max-width: 768px) {
+          .matchup-insights-container {
+            padding: 1rem 0.75rem !important;
+          }
+          h1 {
+            font-size: 1.5rem !important;
+          }
+          h2 {
+            font-size: 1.25rem !important;
+          }
+          h4 {
+            font-size: 0.9375rem !important;
+          }
+          p {
+            font-size: 0.8125rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
