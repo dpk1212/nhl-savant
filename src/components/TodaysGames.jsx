@@ -2000,6 +2000,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             };
           });
 
+        // Debug logging
+        console.log('🎯 Compact Picks Bar Debug:', {
+          totalGames: allEdges.length,
+          recommendedPicks: recommendedPicks.length,
+          picks: recommendedPicks
+        });
+
         const scrollToFirstGame = () => {
           const firstGame = document.querySelector('.elevated-card');
           if (firstGame) {
