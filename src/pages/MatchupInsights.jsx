@@ -600,6 +600,7 @@ export default function MatchupInsights(props) {
             homePP={matchupData.home.powerPlay}
             awayPK={matchupData.away.penaltyKill}
             homePK={matchupData.home.penaltyKill}
+            dataProcessor={props.dataProcessor}
           />
 
           {/* Goalie Comparison */}

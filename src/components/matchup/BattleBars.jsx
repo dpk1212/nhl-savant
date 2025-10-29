@@ -1,11 +1,12 @@
 /**
  * Battle Bars - Offense vs Defense Matchup Visualization
- * PURE VISUAL - No text explanations, just data comparison
+ * PURE VISUAL - No text explanations, just data + percentile badges
  */
 
 import { useState } from 'react';
+import { calculatePercentileRank } from '../../utils/matchupCalculations';
 
-export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, awayStats5v5, homeStats5v5, awayPP, homePP, awayPK, homePK }) {
+export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, awayStats5v5, homeStats5v5, awayPP, homePP, awayPK, homePK, dataProcessor }) {
   const [activeView, setActiveView] = useState('5v5'); // '5v5', 'pp', 'overall'
 
   if (!awayStats || !homeStats) {
@@ -37,22 +38,28 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
       return [
         {
           label: 'xGoals For/60',
+          field: 'xGoalsFor',
           awayValue: (awayStats5v5?.xGoalsFor || 0) / awayIceTime60,
           homeValue: (homeStats5v5?.xGoalsFor || 0) / homeIceTime60,
-          format: 'decimal'
+          format: 'decimal',
+          higherIsBetter: true
         },
         {
           label: 'xGoals Against/60',
+          field: 'xGoalsAgainst',
           awayValue: (awayStats5v5?.xGoalsAgainst || 0) / awayIceTime60,
           homeValue: (homeStats5v5?.xGoalsAgainst || 0) / homeIceTime60,
           format: 'decimal',
-          inverse: true
+          inverse: true,
+          higherIsBetter: false
         },
         {
           label: 'High Danger Shots For/60',
+          field: 'highDangerShotsFor',
           awayValue: (awayStats5v5?.highDangerShotsFor || 0) / awayIceTime60,
           homeValue: (homeStats5v5?.highDangerShotsFor || 0) / homeIceTime60,
-          format: 'decimal'
+          format: 'decimal',
+          higherIsBetter: true
         }
       ];
     } else {
@@ -82,6 +89,20 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
 
   const battleData = getBattleData();
 
+  const getTierBadge = (percentile) => {
+    if (!percentile) return null;
+    
+    let color, tier;
+    if (percentile >= 90) { color = '#10B981'; tier = 'ELITE'; }
+    else if (percentile >= 75) { color = '#3B82F6'; tier = 'STRONG'; }
+    else if (percentile >= 60) { color = '#8B5CF6'; tier = 'ABOVE AVG'; }
+    else if (percentile >= 40) { color = '#64748B'; tier = 'AVG'; }
+    else if (percentile >= 25) { color = '#F59E0B'; tier = 'BELOW AVG'; }
+    else { color = '#EF4444'; tier = 'WEAK'; }
+    
+    return { color, tier, percentile };
+  };
+
   const renderBar = (stat) => {
     const total = stat.awayValue + stat.homeValue;
     const awayPct = total > 0 ? (stat.awayValue / total) * 100 : 50;
@@ -89,6 +110,16 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
 
     const awayAdvantage = stat.inverse ? stat.awayValue < stat.homeValue : stat.awayValue > stat.homeValue;
     const homeAdvantage = stat.inverse ? stat.homeValue < stat.awayValue : stat.homeValue > stat.awayValue;
+    
+    // Calculate percentile ranks if we have the field and dataProcessor
+    let awayPercentile = null;
+    let homePercentile = null;
+    if (stat.field && dataProcessor && activeView === '5v5') {
+      const awayRank = calculatePercentileRank(dataProcessor, awayTeam.code, stat.field, '5on5', stat.higherIsBetter);
+      const homeRank = calculatePercentileRank(dataProcessor, homeTeam.code, stat.field, '5on5', stat.higherIsBetter);
+      awayPercentile = awayRank ? getTierBadge(awayRank.percentile) : null;
+      homePercentile = homeRank ? getTierBadge(homeRank.percentile) : null;
+    }
 
     return (
       <div key={stat.label} style={{ marginBottom: '1.5rem' }}>
@@ -98,12 +129,28 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
           alignItems: 'center',
           marginBottom: '0.5rem'
         }}>
-          <div style={{
-            fontSize: '0.875rem',
-            fontWeight: '600',
-            color: awayAdvantage ? '#10B981' : '#94A3B8'
-          }}>
-            {stat.format === 'percent' ? `${stat.awayValue.toFixed(1)}%` : stat.awayValue.toFixed(2)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: awayAdvantage ? '#10B981' : '#94A3B8'
+            }}>
+              {stat.format === 'percent' ? `${stat.awayValue.toFixed(1)}%` : stat.awayValue.toFixed(2)}
+            </span>
+            {awayPercentile && (
+              <span style={{
+                fontSize: '0.625rem',
+                fontWeight: '700',
+                color: awayPercentile.color,
+                background: `${awayPercentile.color}20`,
+                padding: '0.125rem 0.375rem',
+                borderRadius: '4px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                {awayPercentile.percentile}%
+              </span>
+            )}
           </div>
           <div style={{
             fontSize: '0.75rem',
@@ -114,12 +161,28 @@ export default function BattleBars({ awayTeam, homeTeam, awayStats, homeStats, a
           }}>
             {stat.label}
           </div>
-          <div style={{
-            fontSize: '0.875rem',
-            fontWeight: '600',
-            color: homeAdvantage ? '#10B981' : '#94A3B8'
-          }}>
-            {stat.format === 'percent' ? `${stat.homeValue.toFixed(1)}%` : stat.homeValue.toFixed(2)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {homePercentile && (
+              <span style={{
+                fontSize: '0.625rem',
+                fontWeight: '700',
+                color: homePercentile.color,
+                background: `${homePercentile.color}20`,
+                padding: '0.125rem 0.375rem',
+                borderRadius: '4px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                {homePercentile.percentile}%
+              </span>
+            )}
+            <span style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: homeAdvantage ? '#10B981' : '#94A3B8'
+            }}>
+              {stat.format === 'percent' ? `${stat.homeValue.toFixed(1)}%` : stat.homeValue.toFixed(2)}
+            </span>
           </div>
         </div>
 
