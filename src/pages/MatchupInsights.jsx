@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import AIInsightCards from '../components/matchup/AIInsightCards';
-import PredictionSummary from '../components/matchup/PredictionSummary';
+import GameSelector from '../components/matchup/GameSelector';
 import DominanceMatrix from '../components/matchup/DominanceMatrix';
 import AdvancedMetricsCarousel from '../components/matchup/AdvancedMetricsCarousel';
 import { getTeamStats, getGoalieStats } from '../utils/matchupCalculations';
@@ -180,6 +180,45 @@ export default function MatchupInsights(props) {
     }
   }, [selectedGame, props?.dataProcessor, props?.goalieData, props]);
 
+  // Calculate predictions for ALL games (for GameSelector)
+  const allPredictions = useMemo(() => {
+    if (!todaysGames.length || !props?.dataProcessor) return [];
+
+    return todaysGames.map(game => {
+      try {
+        const dataProc = props.dataProcessor;
+        
+        const awayGoalieName = game.awayGoalie || `${game.awayTeam} Goalie`;
+        const homeGoalieName = game.homeGoalie || `${game.homeTeam} Goalie`;
+        
+        const awayPredicted = dataProc.predictTeamScore(
+          game.awayTeam, 
+          game.homeTeam, 
+          false, 
+          awayGoalieName
+        );
+        const homePredicted = dataProc.predictTeamScore(
+          game.homeTeam, 
+          game.awayTeam, 
+          true, 
+          homeGoalieName
+        );
+        
+        const homeWinProb = dataProc.calculatePoissonWinProb(homePredicted, awayPredicted) * 100;
+        const awayWinProb = 100 - homeWinProb;
+        
+        return {
+          awayScore: awayPredicted,
+          homeScore: homePredicted,
+          awayWinProb,
+          homeWinProb
+        };
+      } catch (error) {
+        console.error('Error calculating prediction for game:', game, error);
+        return null;
+      }
+    }).filter(Boolean);
+  }, [todaysGames, props?.dataProcessor]);
 
   if (loading) {
     return (
@@ -240,58 +279,19 @@ export default function MatchupInsights(props) {
         Deep dive analytics for advanced bettors. Explore the underlying stats and metrics that drive our recommendations.
       </p>
 
-      {/* Game Selector */}
-      {todaysGames.length > 1 && (
-        <div style={{
-          marginBottom: '1.5rem',
-          display: 'flex',
-          gap: '0.75rem',
-          flexWrap: 'wrap',
-          overflowX: 'auto',
-          padding: '0.5rem 0'
-        }}>
-          {todaysGames.map((game, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedGame(game)}
-              style={{
-                padding: '0.75rem 1.25rem',
-                background: selectedGame === game 
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)'
-                  : 'rgba(30, 41, 59, 0.6)',
-                border: selectedGame === game 
-                  ? '1px solid rgba(16, 185, 129, 0.5)'
-                  : '1px solid rgba(148, 163, 184, 0.1)',
-                borderRadius: '10px',
-                color: selectedGame === game ? '#10B981' : '#F1F5F9',
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {game.awayTeam} @ {game.homeTeam}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Game Selector Carousel - PREMIUM */}
+      <GameSelector
+        games={todaysGames}
+        selectedGame={selectedGame}
+        onGameSelect={setSelectedGame}
+        predictions={allPredictions}
+      />
 
       {/* AI Analysis Cards */}
       {selectedGame && (
         <AIInsightCards
-          awayTeam={selectedGame.awayTeam}
-          homeTeam={selectedGame.homeTeam}
-        />
-      )}
-
-      {/* Prediction Summary */}
-      {matchupData && (
-        <PredictionSummary
-          awayTeam={matchupData.away}
-          homeTeam={matchupData.home}
-          prediction={matchupData.prediction}
-          gameTime={selectedGame.gameTime}
+          awayTeam={{ name: selectedGame.awayTeam }}
+          homeTeam={{ name: selectedGame.homeTeam }}
         />
       )}
 
