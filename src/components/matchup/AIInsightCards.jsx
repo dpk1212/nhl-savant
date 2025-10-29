@@ -1,12 +1,12 @@
 /**
- * AI Insight Cards - Expert Analysis
- * Matches CollapsibleGameCard branding: elevated-card, subtle gradients, clean design
- * NO rainbow gradients, NO sparkles, NO glow effects
+ * AI Insight Cards - Premium Expert Analysis
+ * Redesigned for shareability, visual impact, and engagement
+ * Features: Viral hooks, structured sections, share functionality
  */
 
 import { useState, useEffect } from 'react';
 import { getMatchupInsightCards } from '../../services/perplexityService';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Flame, Lightbulb, TrendingUp } from 'lucide-react';
 
 export default function AIInsightCards({ awayTeam, homeTeam }) {
   const [insights, setInsights] = useState([]);
@@ -14,6 +14,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (awayTeam && homeTeam) {
@@ -78,6 +79,15 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
     }
   };
 
+  const handleShare = (insight) => {
+    const shareText = `${insight.hook}\n\n${insight.headline}\n\n${insight.analysis}\n\n💡 ${insight.bettingAngle}\n\nAnalysis by NHL Savant`;
+    
+    navigator.clipboard.writeText(shareText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   if (loading) {
     return (
       <div className="elevated-card" style={{
@@ -132,17 +142,28 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
 
   return (
     <div style={{ marginBottom: '2rem' }}>
-      {/* Header - Brand Matched */}
-      <div style={{ marginBottom: '1rem' }}>
+      {/* Section Header */}
+      <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <h2 style={{
-          fontSize: '1.5rem',
-          fontWeight: '700',
-          color: '#F1F5F9',
-          margin: 0,
-          letterSpacing: '-0.01em'
+          fontSize: '2rem',
+          fontWeight: '900',
+          background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          marginBottom: '0.5rem',
+          letterSpacing: '-0.02em'
         }}>
           Expert Analysis
         </h2>
+        <p style={{
+          fontSize: '0.9375rem',
+          color: '#94A3B8',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          Bold takes and hidden edges from our analytics team
+        </p>
       </div>
 
       {/* Carousel Container */}
@@ -161,7 +182,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 zIndex: 10,
                 background: activeIndex === 0 
                   ? 'rgba(71, 85, 105, 0.5)' 
-                  : 'rgba(16, 185, 129, 0.8)',
+                  : 'rgba(16, 185, 129, 0.9)',
                 border: 'none',
                 borderRadius: '50%',
                 width: '40px',
@@ -171,7 +192,8 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 justifyContent: 'center',
                 cursor: activeIndex === 0 ? 'not-allowed' : 'pointer',
                 opacity: activeIndex === 0 ? 0.3 : 1,
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                boxShadow: activeIndex === 0 ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)'
               }}
               className="desktop-only-arrow"
             >
@@ -189,7 +211,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 zIndex: 10,
                 background: activeIndex === insights.length - 1 
                   ? 'rgba(71, 85, 105, 0.5)' 
-                  : 'rgba(16, 185, 129, 0.8)',
+                  : 'rgba(16, 185, 129, 0.9)',
                 border: 'none',
                 borderRadius: '50%',
                 width: '40px',
@@ -199,7 +221,8 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 justifyContent: 'center',
                 cursor: activeIndex === insights.length - 1 ? 'not-allowed' : 'pointer',
                 opacity: activeIndex === insights.length - 1 ? 0.3 : 1,
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                boxShadow: activeIndex === insights.length - 1 ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)'
               }}
               className="desktop-only-arrow"
             >
@@ -228,22 +251,164 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 padding: '0 0.5rem'
               }}
             >
-              <div className="elevated-card" style={{
-                background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '10px',
-                padding: '1.5rem',
-                minHeight: '150px',
-                transition: 'all 0.2s ease'
+              {/* Premium Insight Card */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                border: '2px solid',
+                borderImage: 'linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(59, 130, 246, 0.4)) 1',
+                borderRadius: '16px',
+                padding: '2rem',
+                minHeight: '400px',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
+                {/* Glowing accent */}
                 <div style={{
-                  fontSize: '1rem',
-                  lineHeight: 1.7,
-                  color: '#E2E8F0',
-                  fontWeight: '400'
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: 'linear-gradient(90deg, #10B981, #3B82F6, #8B5CF6)',
+                  opacity: 0.8
+                }} />
+
+                {/* HOT TAKE Badge */}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(245, 158, 11, 0.2))',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '20px',
+                  padding: '0.5rem 1rem',
+                  marginBottom: '1.5rem'
                 }}>
-                  {insight.analysis}
+                  <Flame size={16} color="#EF4444" />
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    color: '#EF4444',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Hot Take
+                  </span>
                 </div>
+
+                {/* Hook - The Attention Grabber */}
+                {insight.hook && (
+                  <div style={{
+                    fontSize: '1.375rem',
+                    fontWeight: '900',
+                    color: '#F1F5F9',
+                    lineHeight: 1.3,
+                    marginBottom: '1.5rem',
+                    paddingBottom: '1.5rem',
+                    borderBottom: '2px solid rgba(16, 185, 129, 0.2)'
+                  }}>
+                    "{insight.hook}"
+                  </div>
+                )}
+
+                {/* Headline */}
+                {insight.headline && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <TrendingUp size={20} color="#10B981" />
+                    <h3 style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '700',
+                      color: '#10B981',
+                      margin: 0,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.02em'
+                    }}>
+                      {insight.headline}
+                    </h3>
+                  </div>
+                )}
+
+                {/* Analysis Paragraph */}
+                {insight.analysis && (
+                  <div style={{
+                    fontSize: '1rem',
+                    lineHeight: 1.8,
+                    color: '#E2E8F0',
+                    marginBottom: '1.5rem',
+                    paddingBottom: '1.5rem',
+                    borderBottom: '1px solid rgba(148, 163, 184, 0.1)'
+                  }}>
+                    {insight.analysis}
+                  </div>
+                )}
+
+                {/* The Edge Section */}
+                {insight.bettingAngle && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginBottom: '0.75rem'
+                    }}>
+                      <Lightbulb size={18} color="#10B981" />
+                      <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '800',
+                        color: '#10B981',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        The Edge
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: '0.9375rem',
+                      lineHeight: 1.6,
+                      color: '#F1F5F9',
+                      fontWeight: '500'
+                    }}>
+                      {insight.bettingAngle}
+                    </div>
+                  </div>
+                )}
+
+                {/* Share Button */}
+                <button
+                  onClick={() => handleShare(insight)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: copied ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.15)',
+                    border: copied ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(59, 130, 246, 0.3)',
+                    borderRadius: '8px',
+                    padding: '0.75rem 1.25rem',
+                    color: copied ? '#10B981' : '#3B82F6',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    width: '100%',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Share2 size={16} />
+                  {copied ? 'Copied to Clipboard!' : 'Share This Analysis'}
+                </button>
               </div>
             </div>
           ))}
@@ -267,7 +432,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 height: '8px',
                 borderRadius: '4px',
                 background: activeIndex === index 
-                  ? 'rgba(16, 185, 129, 0.8)'
+                  ? 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)'
                   : 'rgba(148, 163, 184, 0.3)',
                 border: 'none',
                 cursor: 'pointer',
