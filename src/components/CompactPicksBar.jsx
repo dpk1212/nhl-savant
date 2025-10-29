@@ -1,4 +1,5 @@
-import { TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 
 function getGradeColor(grade) {
   switch (grade) {
@@ -22,6 +23,8 @@ function getMarketIcon(market) {
 }
 
 export default function CompactPicksBar({ gameGroups, onViewAll }) {
+  const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
+
   if (!gameGroups || gameGroups.length === 0) {
     return null;
   }
@@ -46,15 +49,20 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
       marginBottom: '1.5rem',
       animation: 'fadeIn 0.4s ease-out'
     }}>
-      {/* Header with Icon and Count */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-        marginBottom: '1.25rem',
-        paddingBottom: '1rem',
-        borderBottom: '1px solid rgba(148, 163, 184, 0.1)'
-      }}>
+      {/* Header with Icon, Count, and Toggle */}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          paddingBottom: isExpanded ? '1rem' : '0',
+          borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.1)' : 'none',
+          marginBottom: isExpanded ? '1.25rem' : '0',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+      >
         <div style={{
           width: '36px',
           height: '36px',
@@ -89,129 +97,153 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
         }}>
           {totalPicks} {totalPicks === 1 ? 'Pick' : 'Picks'}
         </div>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '8px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease'
+        }}>
+          {isExpanded ? (
+            <ChevronUp size={20} color="#60A5FA" strokeWidth={2.5} />
+          ) : (
+            <ChevronDown size={20} color="#60A5FA" strokeWidth={2.5} />
+          )}
+        </div>
       </div>
 
-      {/* Game Groups - Horizontal Scroll */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        margin: '0 -1.5rem',
-        padding: '0 1.5rem 0.5rem 1.5rem',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-        WebkitOverflowScrolling: 'touch'
-      }}
-      className="picks-scroll">
-        {gameGroups.map((gameGroup, groupIndex) => (
-          <div
-            key={groupIndex}
-            style={{
-              background: 'rgba(15, 23, 42, 0.5)',
-              border: '1px solid rgba(148, 163, 184, 0.08)',
-              borderRadius: '12px',
-              padding: '1rem',
-              minWidth: '280px',
-              maxWidth: '320px',
-              flexShrink: 0,
-              transition: 'all 0.2s ease'
-            }}
-            className="game-group-card"
-          >
-            {/* Game Header */}
-            <div style={{
-              fontSize: '0.75rem',
-              fontWeight: '700',
-              color: '#94A3B8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginBottom: '0.875rem',
-              paddingBottom: '0.75rem',
-              borderBottom: '1px solid rgba(148, 163, 184, 0.08)'
-            }}>
-              {gameGroup.game}
-            </div>
-
-            {/* Picks List */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.625rem'
-            }}>
-              {gameGroup.bets.map((bet, betIndex) => (
-                <div
-                  key={betIndex}
-                  onClick={scrollToGames}
-                  style={{
-                    background: `linear-gradient(135deg, ${getGradeColor(bet.grade)}12 0%, ${getGradeColor(bet.grade)}08 100%)`,
-                    border: `1px solid ${getGradeColor(bet.grade)}35`,
-                    borderRadius: '8px',
-                    padding: '0.75rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.625rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  className="pick-item"
-                >
-                  {/* Market Icon */}
-                  <span style={{
-                    fontSize: '1.125rem',
-                    flexShrink: 0,
-                    opacity: 0.9
-                  }}>
-                    {getMarketIcon(bet.market)}
-                  </span>
-
-                  {/* Pick Details */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      color: '#F1F5F9',
-                      marginBottom: '0.25rem',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}>
-                      {bet.pick}
-                    </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#94A3B8',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
-                      <span>{bet.odds > 0 ? `+${bet.odds}` : bet.odds}</span>
-                      <span style={{ color: getGradeColor(bet.grade), fontWeight: '700' }}>
-                        {bet.edge}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Grade Badge */}
-                  <div style={{
-                    background: getGradeColor(bet.grade),
-                    color: '#000',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: '800',
-                    lineHeight: '1',
-                    flexShrink: 0,
-                    boxShadow: `0 2px 8px ${getGradeColor(bet.grade)}40`
-                  }}>
-                    {bet.grade}
-                  </div>
+      {/* Collapsible Content */}
+      {isExpanded && (
+        <div style={{
+          animation: 'expandDown 0.3s ease-out'
+        }}>
+          {/* Game Groups - Horizontal Scroll */}
+          <div style={{
+            display: 'flex',
+            gap: '1rem',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            margin: '0 -1.5rem',
+            padding: '0 1.5rem 0.5rem 1.5rem',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+          className="picks-scroll">
+            {gameGroups.map((gameGroup, groupIndex) => (
+              <div
+                key={groupIndex}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.5)',
+                  border: '1px solid rgba(148, 163, 184, 0.08)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  minWidth: '280px',
+                  maxWidth: '320px',
+                  flexShrink: 0,
+                  transition: 'all 0.2s ease'
+                }}
+                className="game-group-card"
+              >
+                {/* Game Header */}
+                <div style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  color: '#94A3B8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '0.875rem',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '1px solid rgba(148, 163, 184, 0.08)'
+                }}>
+                  {gameGroup.game}
                 </div>
-              ))}
-            </div>
+
+                {/* Picks List */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.625rem'
+                }}>
+                  {gameGroup.bets.map((bet, betIndex) => (
+                    <div
+                      key={betIndex}
+                      onClick={scrollToGames}
+                      style={{
+                        background: `linear-gradient(135deg, ${getGradeColor(bet.grade)}12 0%, ${getGradeColor(bet.grade)}08 100%)`,
+                        border: `1px solid ${getGradeColor(bet.grade)}35`,
+                        borderRadius: '8px',
+                        padding: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.625rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      className="pick-item"
+                    >
+                      {/* Market Icon */}
+                      <span style={{
+                        fontSize: '1.125rem',
+                        flexShrink: 0,
+                        opacity: 0.9
+                      }}>
+                        {getMarketIcon(bet.market)}
+                      </span>
+
+                      {/* Pick Details */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          color: '#F1F5F9',
+                          marginBottom: '0.25rem',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {bet.pick}
+                        </div>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#94A3B8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <span>{bet.odds > 0 ? `+${bet.odds}` : bet.odds}</span>
+                          <span style={{ color: getGradeColor(bet.grade), fontWeight: '700' }}>
+                            {bet.edge}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Grade Badge */}
+                      <div style={{
+                        background: getGradeColor(bet.grade),
+                        color: '#000',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: '800',
+                        lineHeight: '1',
+                        flexShrink: 0,
+                        boxShadow: `0 2px 8px ${getGradeColor(bet.grade)}40`
+                      }}>
+                        {bet.grade}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes fadeIn {
@@ -222,6 +254,19 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @keyframes expandDown {
+          from {
+            opacity: 0;
+            max-height: 0;
+            transform: scaleY(0.95);
+          }
+          to {
+            opacity: 1;
+            max-height: 500px;
+            transform: scaleY(1);
           }
         }
 
