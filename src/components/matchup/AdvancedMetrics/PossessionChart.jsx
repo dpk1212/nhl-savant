@@ -1,9 +1,10 @@
 /**
  * Possession & Pace Chart
- * Side-by-side bar comparison instead of radar (better for close values)
+ * RADAR CHART: Multi-dimensional team profile visualization
+ * Shows Corsi%, Fenwick%, Shot attempts/60, Scoring chance control
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeStats }) {
   if (!awayStats || !homeStats) return null;
@@ -17,30 +18,35 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
   // Shot attempts per 60
   const awayCorsiPer60 = awayStats.corsi_per60 || 0;
   const homeCorsiPer60 = homeStats.corsi_per60 || 0;
-  const awayFenwickPer60 = awayStats.fenwick_per60 || 0;
-  const homeFenwickPer60 = homeStats.fenwick_per60 || 0;
+  
+  // Normalize shot attempts to 0-100 scale for radar (league range ~50-70)
+  const normalizeShots = (value) => Math.min(100, Math.max(0, (value - 40) * 3.33));
 
-  // Create data for grouped bar chart
+  // RADAR DATA - 4 dimensions
   const data = [
     {
-      name: 'Corsi %',
+      metric: 'Corsi %',
       [awayTeam.code]: awayCorsi,
       [homeTeam.code]: homeCorsi,
+      fullMark: 100
     },
     {
-      name: 'Fenwick %',
+      metric: 'Fenwick %',
       [awayTeam.code]: awayFenwick,
       [homeTeam.code]: homeFenwick,
+      fullMark: 100
     },
     {
-      name: 'Corsi/60',
-      [awayTeam.code]: awayCorsiPer60,
-      [homeTeam.code]: homeCorsiPer60,
+      metric: 'Shot Attempts/60',
+      [awayTeam.code]: normalizeShots(awayCorsiPer60),
+      [homeTeam.code]: normalizeShots(homeCorsiPer60),
+      fullMark: 100
     },
     {
-      name: 'Fenwick/60',
-      [awayTeam.code]: awayFenwickPer60,
-      [homeTeam.code]: homeFenwickPer60,
+      metric: 'Puck Control',
+      [awayTeam.code]: (awayCorsi + awayFenwick) / 2, // Average of both
+      [homeTeam.code]: (homeCorsi + homeFenwick) / 2,
+      fullMark: 100
     },
   ];
 
@@ -52,7 +58,7 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
         color: '#F1F5F9',
         marginBottom: '0.75rem'
       }}>
-        Possession & Shot Attempts
+        Possession & Control Profile
       </h4>
       <p style={{
         fontSize: '0.875rem',
@@ -60,20 +66,22 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
         marginBottom: '1rem',
         lineHeight: 1.5
       }}>
-        Corsi (all shot attempts) and Fenwick (unblocked shot attempts) measure puck possession and offensive pressure. 50%+ = controlling play.
+        Multi-dimensional view of puck possession. Larger coverage = better territorial control. 50%+ in Corsi/Fenwick = controlling play.
       </p>
       
-      <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-          <XAxis 
-            dataKey="name" 
-            stroke="#94A3B8" 
-            style={{ fontSize: '0.875rem', fontWeight: '600' }}
+      <ResponsiveContainer width="100%" height={320}>
+        <RadarChart data={data} margin={{ top: 10, right: 30, left: 30, bottom: 10 }}>
+          <PolarGrid stroke="rgba(148, 163, 184, 0.2)" />
+          <PolarAngleAxis 
+            dataKey="metric" 
+            stroke="#94A3B8"
+            style={{ fontSize: '0.75rem', fontWeight: '600' }}
           />
-          <YAxis 
-            stroke="#94A3B8" 
-            style={{ fontSize: '0.875rem', fontWeight: '600' }}
+          <PolarRadiusAxis 
+            angle={90}
+            domain={[0, 100]}
+            stroke="#94A3B8"
+            style={{ fontSize: '0.75rem' }}
           />
           <Tooltip 
             contentStyle={{
@@ -83,12 +91,14 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
               color: '#F1F5F9',
               fontSize: '0.875rem'
             }}
-            formatter={(value, name) => {
-              // Format percentages vs rates
-              if (name.includes('%')) {
-                return `${value.toFixed(1)}%`;
+            formatter={(value, name, props) => {
+              // Show actual values, not normalized
+              const metric = props.payload.metric;
+              if (metric === 'Shot Attempts/60') {
+                const actual = name === awayTeam.code ? awayCorsiPer60 : homeCorsiPer60;
+                return actual.toFixed(1);
               }
-              return value.toFixed(1);
+              return value.toFixed(1) + (metric.includes('%') ? '%' : '');
             }}
           />
           <Legend 
@@ -98,17 +108,23 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
               color: '#94A3B8'
             }}
           />
-          <Bar
+          <Radar
+            name={awayTeam.code}
             dataKey={awayTeam.code}
+            stroke="#3B82F6"
             fill="#3B82F6"
-            radius={[8, 8, 0, 0]}
+            fillOpacity={0.3}
+            strokeWidth={2}
           />
-          <Bar
+          <Radar
+            name={homeTeam.code}
             dataKey={homeTeam.code}
+            stroke="#10B981"
             fill="#10B981"
-            radius={[8, 8, 0, 0]}
+            fillOpacity={0.3}
+            strokeWidth={2}
           />
-        </BarChart>
+        </RadarChart>
       </ResponsiveContainer>
 
       <div style={{
@@ -134,6 +150,9 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
             <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#3B82F6' }}>
               Fenwick: {awayFenwick.toFixed(1)}%
             </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#3B82F6' }}>
+              Shots/60: {awayCorsiPer60.toFixed(1)}
+            </div>
           </div>
         </div>
         <div>
@@ -152,6 +171,9 @@ export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeSta
             </div>
             <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#10B981' }}>
               Fenwick: {homeFenwick.toFixed(1)}%
+            </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#10B981' }}>
+              Shots/60: {homeCorsiPer60.toFixed(1)}
             </div>
           </div>
         </div>
