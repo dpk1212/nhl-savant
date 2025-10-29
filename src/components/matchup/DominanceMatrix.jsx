@@ -1,6 +1,10 @@
 /**
  * Dominance Matrix - Mobile-first stats comparison table
  * Shows all key metrics with heatmap colors and percentile ranks
+ * 
+ * FIXED ISSUES:
+ * 1. Corsi/Fenwick now display as percentages (multiply by 100)
+ * 2. PP/PK percentages correctly calculated from situation-specific data
  */
 
 import { CheckCircle2, Minus, ChevronDown, ChevronUp } from 'lucide-react';
@@ -56,10 +60,10 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
     higherIsBetter: false
   });
 
-  // 3. PP Efficiency
-  if (awayPP && homePP) {
-    const awayPPPct = (awayPP.percentage || 0) * 100;
-    const homePPPct = (homePP.percentage || 0) * 100;
+  // 3. PP Efficiency - FIXED: Use actual percentage
+  if (awayPP && homePP && awayPP.percentage !== undefined && homePP.percentage !== undefined) {
+    const awayPPPct = awayPP.percentage * 100; // Convert decimal to percentage
+    const homePPPct = homePP.percentage * 100;
     
     metrics.push({
       id: 'powerplay',
@@ -67,16 +71,22 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
       unit: '%',
       awayValue: awayPPPct,
       homeValue: homePPPct,
-      awayRank: { percentile: awayPPPct * 4, tier: awayPPPct > 25 ? 'ELITE' : awayPPPct > 20 ? 'STRONG' : 'AVG' },
-      homeRank: { percentile: homePPPct * 4, tier: homePPPct > 25 ? 'ELITE' : homePPPct > 20 ? 'STRONG' : 'AVG' },
+      awayRank: { 
+        percentile: awayPPPct * 4, 
+        tier: awayPPPct > 25 ? 'ELITE' : awayPPPct > 20 ? 'STRONG' : awayPPPct > 15 ? 'AVG' : 'WEAK'
+      },
+      homeRank: { 
+        percentile: homePPPct * 4, 
+        tier: homePPPct > 25 ? 'ELITE' : homePPPct > 20 ? 'STRONG' : homePPPct > 15 ? 'AVG' : 'WEAK'
+      },
       higherIsBetter: true
     });
   }
 
-  // 4. PK Efficiency
-  if (awayPK && homePK) {
-    const awayPKPct = (awayPK.percentage || 0) * 100;
-    const homePKPct = (homePK.percentage || 0) * 100;
+  // 4. PK Efficiency - FIXED: Use actual percentage
+  if (awayPK && homePK && awayPK.percentage !== undefined && homePK.percentage !== undefined) {
+    const awayPKPct = awayPK.percentage * 100; // Convert decimal to percentage
+    const homePKPct = homePK.percentage * 100;
     
     metrics.push({
       id: 'penaltykill',
@@ -84,8 +94,14 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
       unit: '%',
       awayValue: awayPKPct,
       homeValue: homePKPct,
-      awayRank: { percentile: awayPKPct * 1.2, tier: awayPKPct > 85 ? 'ELITE' : awayPKPct > 80 ? 'STRONG' : 'AVG' },
-      homeRank: { percentile: homePKPct * 1.2, tier: homePKPct > 85 ? 'ELITE' : homePKPct > 80 ? 'STRONG' : 'AVG' },
+      awayRank: { 
+        percentile: awayPKPct * 1.2, 
+        tier: awayPKPct > 85 ? 'ELITE' : awayPKPct > 80 ? 'STRONG' : awayPKPct > 75 ? 'AVG' : 'WEAK'
+      },
+      homeRank: { 
+        percentile: homePKPct * 1.2, 
+        tier: homePKPct > 85 ? 'ELITE' : homePKPct > 80 ? 'STRONG' : homePKPct > 75 ? 'AVG' : 'WEAK'
+      },
       higherIsBetter: true
     });
   }
@@ -125,9 +141,9 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
     higherIsBetter: true
   });
 
-  // 7. Corsi %
-  const awayCorsi = awayStats?.corsiPercentage || 0;
-  const homeCorsi = homeStats?.corsiPercentage || 0;
+  // 7. Corsi % - FIXED: Multiply by 100
+  const awayCorsi = (awayStats?.corsiPercentage || 0) * 100; // FIX: Convert decimal to percentage
+  const homeCorsi = (homeStats?.corsiPercentage || 0) * 100;
   
   metrics.push({
     id: 'corsi',
@@ -135,14 +151,14 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
     unit: '%',
     awayValue: awayCorsi,
     homeValue: homeCorsi,
-    awayRank: { percentile: awayCorsi * 2, tier: awayCorsi > 55 ? 'ELITE' : awayCorsi > 50 ? 'STRONG' : 'AVG' },
-    homeRank: { percentile: homeCorsi * 2, tier: homeCorsi > 55 ? 'ELITE' : homeCorsi > 50 ? 'STRONG' : 'AVG' },
+    awayRank: { percentile: awayCorsi * 2, tier: awayCorsi > 55 ? 'ELITE' : awayCorsi > 50 ? 'STRONG' : awayCorsi > 48 ? 'AVG' : 'WEAK' },
+    homeRank: { percentile: homeCorsi * 2, tier: homeCorsi > 55 ? 'ELITE' : homeCorsi > 50 ? 'STRONG' : homeCorsi > 48 ? 'AVG' : 'WEAK' },
     higherIsBetter: true
   });
 
-  // 8. Fenwick %
-  const awayFenwick = awayStats?.fenwickPercentage || 0;
-  const homeFenwick = homeStats?.fenwickPercentage || 0;
+  // 8. Fenwick % - FIXED: Multiply by 100
+  const awayFenwick = (awayStats?.fenwickPercentage || 0) * 100; // FIX: Convert decimal to percentage
+  const homeFenwick = (homeStats?.fenwickPercentage || 0) * 100;
   
   metrics.push({
     id: 'fenwick',
@@ -150,8 +166,8 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
     unit: '%',
     awayValue: awayFenwick,
     homeValue: homeFenwick,
-    awayRank: { percentile: awayFenwick * 2, tier: awayFenwick > 55 ? 'ELITE' : awayFenwick > 50 ? 'STRONG' : 'AVG' },
-    homeRank: { percentile: homeFenwick * 2, tier: homeFenwick > 55 ? 'ELITE' : homeFenwick > 50 ? 'STRONG' : 'AVG' },
+    awayRank: { percentile: awayFenwick * 2, tier: awayFenwick > 55 ? 'ELITE' : awayFenwick > 50 ? 'STRONG' : awayFenwick > 48 ? 'AVG' : 'WEAK' },
+    homeRank: { percentile: homeFenwick * 2, tier: homeFenwick > 55 ? 'ELITE' : homeFenwick > 50 ? 'STRONG' : homeFenwick > 48 ? 'AVG' : 'WEAK' },
     higherIsBetter: true
   });
 
@@ -379,4 +395,3 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
     </div>
   );
 }
-

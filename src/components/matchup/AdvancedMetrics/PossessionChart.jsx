@@ -8,10 +8,11 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, 
 export default function PossessionChart({ awayTeam, homeTeam, awayStats, homeStats }) {
   if (!awayStats || !homeStats) return null;
 
-  const awayCorsi = awayStats.corsiPercentage || 50;
-  const homeCorsi = homeStats.corsiPercentage || 50;
-  const awayFenwick = awayStats.fenwickPercentage || 50;
-  const homeFenwick = homeStats.fenwickPercentage || 50;
+  // FIX: Multiply by 100 - CSV stores as decimal (0.5) not percentage (50)
+  const awayCorsi = (awayStats.corsiPercentage || 0.50) * 100;
+  const homeCorsi = (homeStats.corsiPercentage || 0.50) * 100;
+  const awayFenwick = (awayStats.fenwickPercentage || 0.50) * 100;
+  const homeFenwick = (homeStats.fenwickPercentage || 0.50) * 100;
   
   // Shot attempts per 60
   const awayCorsiPer60 = awayStats.corsi_per60 || 0;

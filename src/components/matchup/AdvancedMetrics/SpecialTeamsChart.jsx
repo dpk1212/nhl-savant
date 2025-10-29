@@ -19,6 +19,8 @@ export default function SpecialTeamsChart({ awayTeam, homeTeam, awayPP, awayPK, 
     );
   }
 
+  // FIX: Percentages are already calculated correctly in MatchupInsights.jsx
+  // They come in as decimals (0.20 = 20%) so multiply by 100
   const awayPPPct = (awayPP.percentage || 0) * 100;
   const awayPKPct = (awayPK.percentage || 0) * 100;
   const homePPPct = (homePP.percentage || 0) * 100;
