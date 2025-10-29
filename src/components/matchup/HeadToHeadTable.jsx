@@ -1,6 +1,6 @@
 /**
- * Head-to-Head Comparison Table - Premium side-by-side stat comparison
- * Shows rank, value, and visual advantage indicators
+ * Head-to-Head Comparison Table - PURE VISUAL stat comparison
+ * Numbers, ranks, and visual indicators only - NO text descriptions
  */
 
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -18,7 +18,7 @@ export default function HeadToHeadTable({ awayTeam, homeTeam, matchupData, dataP
   const awayIceTime60 = (awayStats5v5.iceTime || 1) / 60;
   const homeIceTime60 = (homeStats5v5.iceTime || 1) / 60;
 
-  // Define stats to compare
+  // Define stats to compare (VISUAL ONLY)
   const statsToCompare = [
     {
       label: 'xGoals For/60',
@@ -26,8 +26,7 @@ export default function HeadToHeadTable({ awayTeam, homeTeam, matchupData, dataP
       awayValue: (awayStats5v5.xGoalsFor || 0) / awayIceTime60,
       homeValue: (homeStats5v5.xGoalsFor || 0) / homeIceTime60,
       format: (v) => v.toFixed(2),
-      higherIsBetter: true,
-      description: 'Predicted goals based on shot quality'
+      higherIsBetter: true
     },
     {
       label: 'xGoals Against/60',
@@ -35,8 +34,7 @@ export default function HeadToHeadTable({ awayTeam, homeTeam, matchupData, dataP
       awayValue: (awayStats5v5.xGoalsAgainst || 0) / awayIceTime60,
       homeValue: (homeStats5v5.xGoalsAgainst || 0) / homeIceTime60,
       format: (v) => v.toFixed(2),
-      higherIsBetter: false,
-      description: 'Predicted goals allowed'
+      higherIsBetter: false
     },
     {
       label: 'High Danger Shots/60',
@@ -44,8 +42,7 @@ export default function HeadToHeadTable({ awayTeam, homeTeam, matchupData, dataP
       awayValue: (awayStats5v5.highDangerShotsFor || 0) / awayIceTime60,
       homeValue: (homeStats5v5.highDangerShotsFor || 0) / homeIceTime60,
       format: (v) => v.toFixed(2),
-      higherIsBetter: true,
-      description: 'Shots from high-danger areas'
+      higherIsBetter: true
     },
     {
       label: 'Corsi For %',
@@ -53,8 +50,7 @@ export default function HeadToHeadTable({ awayTeam, homeTeam, matchupData, dataP
       awayValue: (awayStats5v5.corsiPercentage || 0.5) * 100,
       homeValue: (homeStats5v5.corsiPercentage || 0.5) * 100,
       format: (v) => `${v.toFixed(1)}%`,
-      higherIsBetter: true,
-      description: 'Shot attempt share'
+      higherIsBetter: true
     }
   ];
 
@@ -176,18 +172,11 @@ export default function HeadToHeadTable({ awayTeam, homeTeam, matchupData, dataP
                   <td style={{
                     ...cellStyle,
                     textAlign: 'center',
-                    fontWeight: '600',
-                    color: '#94A3B8'
+                    fontWeight: '700',
+                    fontSize: '0.9375rem',
+                    color: '#F1F5F9'
                   }}>
-                    <div>{stat.label}</div>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: '#64748B',
-                      fontWeight: '400',
-                      marginTop: '0.25rem'
-                    }}>
-                      {stat.description}
-                    </div>
+                    {stat.label}
                   </td>
 
                   {/* Advantage Indicator */}

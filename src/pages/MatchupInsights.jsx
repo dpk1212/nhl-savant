@@ -9,8 +9,7 @@ import BattleBars from '../components/matchup/BattleBars';
 import GoalieComparison from '../components/matchup/GoalieComparison';
 import ShotDangerChart from '../components/matchup/ShotDangerChart';
 import RecentFormTimeline from '../components/matchup/RecentFormTimeline';
-import SEOHeader from '../components/matchup/SEOHeader';
-import KeyInsights from '../components/matchup/KeyInsights';
+import AIInsightCards from '../components/matchup/AIInsightCards';
 import QuickStatsCards from '../components/matchup/QuickStatsCards';
 import HeadToHeadTable from '../components/matchup/HeadToHeadTable';
 import RadarComparison from '../components/matchup/RadarComparison';
@@ -389,8 +388,11 @@ export default function MatchupInsights(props) {
       {/* Matchup Content */}
       {matchupData && (
         <div>
-          {/* AI Analysis Header */}
-          <SEOHeader matchupData={matchupData} />
+          {/* AI Insight Cards - THE ONLY TEXT ON THE PAGE */}
+          <AIInsightCards
+            awayTeam={matchupData.away}
+            homeTeam={matchupData.home}
+          />
 
           {/* Sticky Summary Bar - follows scroll */}
           <StickySummaryBar
@@ -570,12 +572,7 @@ export default function MatchupInsights(props) {
             matchupData={matchupData}
           />
 
-          {/* Key Insights */}
-          {matchupData.insights && matchupData.insights.length > 0 && (
-            <KeyInsights insights={matchupData.insights} />
-          )}
-
-          {/* Head-to-Head Comparison Table */}
+          {/* Head-to-Head Comparison Table - VISUAL ONLY */}
           <HeadToHeadTable
             awayTeam={matchupData.away}
             homeTeam={matchupData.home}

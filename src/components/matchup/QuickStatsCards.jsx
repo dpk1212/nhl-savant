@@ -1,9 +1,9 @@
 /**
  * Quick Stats Cards - Premium visual highlighting of 3 biggest edges
- * STUNNING presentation with gradients, animations, and glow effects
+ * PURE VISUAL - Icons + Numbers only, no description text
  */
 
-import { Target, Shield, Zap, TrendingUp, Percent } from 'lucide-react';
+import { Target, Shield, Zap, TrendingUp } from 'lucide-react';
 
 export default function QuickStatsCards({ awayTeam, homeTeam, edges, matchupData }) {
   if (!edges || !matchupData) return null;
@@ -17,10 +17,9 @@ export default function QuickStatsCards({ awayTeam, homeTeam, edges, matchupData
   if (xGEdge > 0.5) {
     cards.push({
       icon: Target,
-      title: 'Expected Goals Edge',
+      title: 'xGoals Edge',
       team: xGTeam.name,
-      value: `+${xGEdge.toFixed(2)} xGF/60`,
-      description: 'Quality scoring chance advantage',
+      value: `+${xGEdge.toFixed(2)}`,
       color: '#10B981',
       gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       glow: '0 0 30px rgba(16, 185, 129, 0.4)'
@@ -34,10 +33,9 @@ export default function QuickStatsCards({ awayTeam, homeTeam, edges, matchupData
     if (goalieAdvantage && !goalieAdvantage.isDefault) {
       cards.push({
         icon: Shield,
-        title: 'Goaltending Advantage',
+        title: 'Goaltending',
         team: goalieTeam.name,
-        value: `${((goalieAdvantage.savePct || 0.905) * 100).toFixed(1)}% SV%`,
-        description: `${(goalieAdvantage.gsax || 0).toFixed(1)} GSAX this season`,
+        value: `${((goalieAdvantage.savePct || 0.905) * 100).toFixed(1)}%`,
         color: '#3B82F6',
         gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
         glow: '0 0 30px rgba(59, 130, 246, 0.4)'
@@ -50,10 +48,9 @@ export default function QuickStatsCards({ awayTeam, homeTeam, edges, matchupData
     const stTeam = edges.specialTeams > 0 ? awayTeam : homeTeam;
     cards.push({
       icon: Zap,
-      title: 'Special Teams Mismatch',
+      title: 'Special Teams',
       team: stTeam.name,
-      value: `+${Math.abs(edges.specialTeams).toFixed(1)} goals`,
-      description: 'Power play / penalty kill advantage',
+      value: `+${Math.abs(edges.specialTeams).toFixed(1)}`,
       color: '#F59E0B',
       gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
       glow: '0 0 30px rgba(245, 158, 11, 0.4)'
@@ -69,7 +66,6 @@ export default function QuickStatsCards({ awayTeam, homeTeam, edges, matchupData
       title: 'Win Probability',
       team: favTeam.name,
       value: `${winProb}%`,
-      description: `${edges.overall.confidence.toUpperCase()} confidence prediction`,
       color: '#8B5CF6',
       gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
       glow: '0 0 30px rgba(139, 92, 246, 0.4)'
@@ -168,24 +164,14 @@ export default function QuickStatsCards({ awayTeam, homeTeam, edges, matchupData
 
             {/* Value */}
             <div style={{
-              fontSize: '2rem',
-              fontWeight: '800',
+              fontSize: '2.5rem',
+              fontWeight: '900',
               background: card.gradient,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              marginBottom: '0.5rem'
+              backgroundClip: 'text'
             }}>
               {card.value}
-            </div>
-
-            {/* Description */}
-            <div style={{
-              fontSize: '0.8125rem',
-              color: '#64748B',
-              lineHeight: '1.5'
-            }}>
-              {card.description}
             </div>
           </div>
         );
