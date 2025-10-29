@@ -6,18 +6,24 @@
 
 /**
  * Get team stats for a specific situation
- * @param {Object} teams - dataProcessor.teams object
+ * @param {Object} dataProcessor - DataProcessor instance
  * @param {string} teamCode - 3-letter team code
  * @param {string} situation - 'all', '5on5', '5on4', '4on5'
  * @returns {Object} Team statistics
  */
-export function getTeamStats(teams, teamCode, situation = 'all') {
-  if (!teams || !teamCode) return null;
+export function getTeamStats(dataProcessor, teamCode, situation = 'all') {
+  if (!dataProcessor || !teamCode) return null;
   
-  const team = teams[teamCode];
-  if (!team) return null;
-
-  return team[situation] || null;
+  try {
+    const teams = dataProcessor.getTeamsBySituation(situation);
+    if (!teams) return null;
+    
+    const team = teams.find(t => t.name === teamCode);
+    return team || null;
+  } catch (error) {
+    console.error('Error getting team stats:', error);
+    return null;
+  }
 }
 
 /**
