@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { TrendingUp, Activity, Target, DollarSign, Calendar, Award, BarChart3 } from 'lucide-react';
 import ProfitTimelineChart from './ProfitTimelineChart';
@@ -55,15 +55,16 @@ export default function PerformanceDashboard() {
   
   async function loadPerformanceData() {
     try {
-      // Get all completed bets
+      // Real-time subscription to completed bets
       const q = query(
         collection(db, 'bets'),
         where('status', '==', 'COMPLETED'),
         orderBy('timestamp', 'desc')
       );
       
-      const snapshot = await getDocs(q);
-      const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      // Subscribe to real-time updates
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       
       // FILTER: Only include B-rated or higher bets (>= 3% EV)
       const qualityBets = bets.filter(b => b.prediction?.rating !== 'C');
@@ -141,11 +142,18 @@ export default function PerformanceDashboard() {
       // Store all quality bets for timeline chart
       setAllBets(qualityBets);
       
-      // Recent bets (already filtered to B-rated or higher)
-      setRecentBets(qualityBets.slice(0, 20));
-      setLoading(false);
+        // Recent bets (already filtered to B-rated or higher)
+        setRecentBets(qualityBets.slice(0, 20));
+        setLoading(false);
+      }, (error) => {
+        console.error('Error loading performance data:', error);
+        setLoading(false);
+      });
+      
+      // Cleanup subscription on unmount
+      return () => unsubscribe();
     } catch (error) {
-      console.error('Error loading performance data:', error);
+      console.error('Error setting up performance subscription:', error);
       setLoading(false);
     }
   }
