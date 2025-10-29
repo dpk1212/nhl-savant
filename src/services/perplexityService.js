@@ -139,136 +139,37 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
 
 /**
  * Get AI-generated insight cards (structured JSON)
+ * CLIENT-SIDE: ONLY reads from cache, NEVER calls API
+ * GitHub Action generates content and writes to cache
+ * 
  * @param {string} awayTeam - Away team name
  * @param {string} homeTeam - Home team name
- * @param {boolean} forceRefresh - Bypass cache
- * @returns {Promise<Array>} Array of insight card objects
+ * @returns {Promise<Array>} Array of insight card objects from cache, or empty array
  */
-export async function getMatchupInsightCards(awayTeam, homeTeam, forceRefresh = false) {
-  // Determine time of day for caching (morning vs pregame)
+export async function getMatchupInsightCards(awayTeam, homeTeam) {
+  // CLIENT-SIDE: ONLY reads from cache, NEVER calls API
+  // GitHub Action generates content and writes to cache
+  
   const now = new Date();
   const hour = now.getHours();
-  const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame'; // 10am-4pm = morning, else pregame
+  const timeKey = hour >= 10 && hour < 16 ? 'morning' : 'pregame';
   
   const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-${timeKey}`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
   try {
-    // Check cache first
-    if (!forceRefresh) {
-      try {
-        const cachedDoc = await getDoc(cacheRef);
-        if (cachedDoc.exists()) {
-          const data = cachedDoc.data();
-          const age = Date.now() - data.timestamp;
-          const maxAge = 6 * 60 * 60 * 1000; // 6 hours
-          
-          if (age < maxAge) {
-            console.log('✅ Using cached insight cards');
-            return JSON.parse(data.content);
-          }
-        }
-      } catch (cacheError) {
-        console.warn('⚠️ Cache read failed:', cacheError.code);
-      }
+    const cachedDoc = await getDoc(cacheRef);
+    if (cachedDoc.exists()) {
+      console.log('✅ Loaded Expert Analysis from cache');
+      return JSON.parse(cachedDoc.data().content);
+    } else {
+      console.log('ℹ️ Expert Analysis not yet generated for this game');
     }
-
-    // Fetch API key from Firebase
-    const apiKey = await getPerplexityKey();
-    
-        if (!apiKey) {
-          console.log('ℹ️ No Perplexity API key - waiting for scheduled generation');
-          return []; // Return empty array so component shows "Waiting" state
-        }
-
-    console.log('⏳ Fetching fresh blog-style insights from Perplexity AI...');
-    
-    const prompt = `Write 2-3 conversational analysis paragraphs (100-150 words each) for the ${awayTeam} @ ${homeTeam} NHL game.
-
-Write like a human sports analyst writing a mini blog post, not a structured report. Use natural language, tell a story, provide context and conclusion. Be specific with player names, recent stats, and trends.
-
-Return ONLY a valid JSON array with this format (no markdown, no explanation):
-[
-  {
-    "analysis": "100-150 word paragraph in natural, conversational tone"
-  }
-]
-
-Topics to cover (pick 2-3 most relevant):
-1. Most significant matchup advantage - tell the story with recent context (e.g., "Columbus has been struggling defensively over the past two weeks, giving up 3.8 goals per game while Toronto's top line has been on fire...")
-2. Key factor that will determine the game - goaltending, special teams, momentum, injuries (tell the story naturally)
-3. Under-the-radar insight or betting angle - something casual bettors might miss
-
-Write in complete sentences and paragraphs. Be conversational but analytical. Use player names and specific recent stats.`;
-
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'sonar',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert NHL analyst. Return ONLY valid JSON arrays, no markdown formatting.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-        stream: false
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Perplexity API Error Details:', errorText);
-      throw new Error(`Perplexity API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    let content = data.choices?.[0]?.message?.content || '[]';
-    
-    // Clean up markdown formatting if present
-    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
-    // Parse JSON
-    let cards;
-    try {
-      cards = JSON.parse(content);
-      if (!Array.isArray(cards)) {
-        throw new Error('Response is not an array');
-      }
-      // Limit to 4 cards max
-      cards = cards.slice(0, 4);
-    } catch (parseError) {
-      console.error('❌ Failed to parse insight cards JSON:', content);
-      throw parseError;
-    }
-
-    // Cache the result
-    try {
-      await setDoc(cacheRef, {
-        content: JSON.stringify(cards),
-        timestamp: Date.now(),
-        awayTeam,
-        homeTeam,
-        timeKey
-      });
-      console.log(`✅ Fresh insight cards fetched and cached (${timeKey})`);
-    } catch (cacheError) {
-      // Silently fail if cache write is blocked
-    }
-
-    return cards;
-
   } catch (error) {
-    console.error('❌ Error fetching insight cards:', error);
-    return []; // Return empty array so component shows "Waiting" state
+    console.log('ℹ️ Expert Analysis not available:', error.code);
   }
+  
+  // NO API CALL - Client never generates content
+  // Return empty array to show "Waiting" state
+  return [];
 }

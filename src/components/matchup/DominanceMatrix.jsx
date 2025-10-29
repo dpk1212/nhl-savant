@@ -60,10 +60,14 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
     higherIsBetter: false
   });
 
-  // 3. PP Efficiency - FIXED: Use actual percentage
+  // 3. PP Efficiency - Use REAL percentile rankings
   if (awayPP && homePP && awayPP.percentage !== undefined && homePP.percentage !== undefined) {
     const awayPPPct = awayPP.percentage * 100; // Convert decimal to percentage
     const homePPPct = homePP.percentage * 100;
+    
+    // Calculate REAL percentiles using actual league data
+    const awayPPRank = calculatePercentileRank(dataProcessor, awayTeam.code, 'xGoalsPercentage', '5on4', true);
+    const homePPRank = calculatePercentileRank(dataProcessor, homeTeam.code, 'xGoalsPercentage', '5on4', true);
     
     metrics.push({
       id: 'powerplay',
@@ -71,22 +75,20 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
       unit: '%',
       awayValue: awayPPPct,
       homeValue: homePPPct,
-      awayRank: { 
-        percentile: awayPPPct * 4, 
-        tier: awayPPPct > 25 ? 'ELITE' : awayPPPct > 20 ? 'STRONG' : awayPPPct > 15 ? 'AVG' : 'WEAK'
-      },
-      homeRank: { 
-        percentile: homePPPct * 4, 
-        tier: homePPPct > 25 ? 'ELITE' : homePPPct > 20 ? 'STRONG' : homePPPct > 15 ? 'AVG' : 'WEAK'
-      },
+      awayRank: awayPPRank || { percentile: 50, tier: 'AVERAGE' },
+      homeRank: homePPRank || { percentile: 50, tier: 'AVERAGE' },
       higherIsBetter: true
     });
   }
 
-  // 4. PK Efficiency - FIXED: Use actual percentage
+  // 4. PK Efficiency - Use REAL percentile rankings
   if (awayPK && homePK && awayPK.percentage !== undefined && homePK.percentage !== undefined) {
     const awayPKPct = awayPK.percentage * 100; // Convert decimal to percentage
     const homePKPct = homePK.percentage * 100;
+    
+    // Calculate REAL percentiles using actual league data
+    const awayPKRank = calculatePercentileRank(dataProcessor, awayTeam.code, 'xGoalsPercentage', '4on5', true);
+    const homePKRank = calculatePercentileRank(dataProcessor, homeTeam.code, 'xGoalsPercentage', '4on5', true);
     
     metrics.push({
       id: 'penaltykill',
@@ -94,14 +96,8 @@ export default function DominanceMatrix({ awayTeam, homeTeam, matchupData, dataP
       unit: '%',
       awayValue: awayPKPct,
       homeValue: homePKPct,
-      awayRank: { 
-        percentile: awayPKPct * 1.2, 
-        tier: awayPKPct > 85 ? 'ELITE' : awayPKPct > 80 ? 'STRONG' : awayPKPct > 75 ? 'AVG' : 'WEAK'
-      },
-      homeRank: { 
-        percentile: homePKPct * 1.2, 
-        tier: homePKPct > 85 ? 'ELITE' : homePKPct > 80 ? 'STRONG' : homePKPct > 75 ? 'AVG' : 'WEAK'
-      },
+      awayRank: awayPKRank || { percentile: 50, tier: 'AVERAGE' },
+      homeRank: homePKRank || { percentile: 50, tier: 'AVERAGE' },
       higherIsBetter: true
     });
   }

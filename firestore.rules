@@ -13,9 +13,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // Perplexity AI cache - public read/write
+    // Perplexity AI cache - Client can read, only server (GitHub Action) can write
+    // This prevents clients from generating new API calls on every refresh
     match /perplexityCache/{document=**} {
-      allow read, write: if true;
+      allow read: if true;   // Client can read cached content
+      allow write: if false; // Only server (GitHub Action) can write
     }
     
     // API Secrets - public read only (keys stored here)
