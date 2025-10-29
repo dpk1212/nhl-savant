@@ -101,14 +101,14 @@ export function useBetTracking(allEdges, dataProcessor) {
       return {
         ...awayML,
         market: 'MONEYLINE',
-        pick: `${game.awayTeam} ML`,
+        pick: `${game.awayTeam} ML (AWAY)`,
         team: game.awayTeam
       };
     } else if (homeML) {
       return {
         ...homeML,
         market: 'MONEYLINE',
-        pick: `${game.homeTeam} ML`,
+        pick: `${game.homeTeam} ML (HOME)`,
         team: game.homeTeam
       };
     }
@@ -150,4 +150,5 @@ export function useBetTracking(allEdges, dataProcessor) {
   
   return tracker.current;
 }
+
 
