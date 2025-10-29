@@ -1,9 +1,10 @@
 /**
- * Expected Goals Analysis Chart
- * Shows xGF/60 and xGA/60 with league context
+ * Expected Goals Analysis - Scatter Plot
+ * Shows team offensive power vs opponent defensive weakness
+ * Quadrants indicate matchup favorability
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label, Cell } from 'recharts';
 
 export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, homeStats }) {
   if (!awayStats || !homeStats) return null;
@@ -13,27 +14,59 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
   const homeXGF = homeStats.xGF_per60 || 0;
   const homeXGA = homeStats.xGA_per60 || 0;
 
-  // League average (approximate)
+  // League averages
   const leagueAvgXGF = 2.5;
   const leagueAvgXGA = 2.5;
 
-  const data = [
+  // Prepare data for scatter plot
+  // X-axis: Team's offensive power (xGF/60)
+  // Y-axis: Opponent's defensive weakness (xGA/60)
+  const scatterData = [
     {
-      name: awayTeam.code,
-      'xGF/60': awayXGF,
-      'xGA/60': awayXGA,
+      name: `${awayTeam.code} Matchup`,
+      x: awayXGF, // Away team's offense
+      y: homeXGA, // Home team's defense (what away faces)
+      team: awayTeam.code,
+      color: '#3B82F6'
     },
     {
-      name: homeTeam.code,
-      'xGF/60': homeXGF,
-      'xGA/60': homeXGA,
-    },
-    {
-      name: 'League Avg',
-      'xGF/60': leagueAvgXGF,
-      'xGA/60': leagueAvgXGA,
+      name: `${homeTeam.code} Matchup`,
+      x: homeXGF, // Home team's offense
+      y: awayXGA, // Away team's defense (what home faces)
+      team: homeTeam.code,
+      color: '#10B981'
     }
   ];
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(148, 163, 184, 0.2)',
+          borderRadius: '8px',
+          padding: '1rem',
+          color: '#F1F5F9',
+          fontSize: '0.875rem'
+        }}>
+          <div style={{ fontWeight: '700', marginBottom: '0.5rem', color: data.color }}>
+            {data.team}
+          </div>
+          <div>Offense: {data.x.toFixed(2)} xGF/60</div>
+          <div>Opp Defense: {data.y.toFixed(2)} xGA/60</div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#94A3B8' }}>
+            {data.x > leagueAvgXGF && data.y > leagueAvgXGA && '✅ Elite Matchup'}
+            {data.x > leagueAvgXGF && data.y <= leagueAvgXGA && '⚠️ Tough Defense'}
+            {data.x <= leagueAvgXGF && data.y > leagueAvgXGA && '🎯 Soft Defense'}
+            {data.x <= leagueAvgXGF && data.y <= leagueAvgXGA && '⚔️ Defensive Battle'}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div>
@@ -43,7 +76,7 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
         color: '#F1F5F9',
         marginBottom: '0.75rem'
       }}>
-        Expected Goals (5v5)
+        Offensive Power vs Defensive Weakness
       </h4>
       <p style={{
         fontSize: '0.875rem',
@@ -51,43 +84,132 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
         marginBottom: '1rem',
         lineHeight: 1.5
       }}>
-        Expected goals per 60 minutes at 5-on-5. Higher xGF/60 = better offense, lower xGA/60 = better defense.
+        Scatter plot showing each team's offense against opponent's defense. Top-right = elite matchup, bottom-left = tough battle.
       </p>
       
-      <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={350}>
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+          {/* Quadrant backgrounds */}
+          <defs>
+            <pattern id="eliteMatchup" patternUnits="userSpaceOnUse" width="10" height="10">
+              <rect width="10" height="10" fill="rgba(16, 185, 129, 0.05)" />
+            </pattern>
+            <pattern id="toughDefense" patternUnits="userSpaceOnUse" width="10" height="10">
+              <rect width="10" height="10" fill="rgba(239, 68, 68, 0.05)" />
+            </pattern>
+          </defs>
+
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+          
+          {/* League Average Reference Lines */}
+          <ReferenceLine 
+            x={leagueAvgXGF} 
+            stroke="#64748B" 
+            strokeDasharray="5 5"
+            strokeWidth={2}
+          >
+            <Label 
+              value="League Avg Offense" 
+              position="top" 
+              fill="#64748B"
+              style={{ fontSize: '0.75rem', fontWeight: '600' }}
+            />
+          </ReferenceLine>
+          
+          <ReferenceLine 
+            y={leagueAvgXGA} 
+            stroke="#64748B" 
+            strokeDasharray="5 5"
+            strokeWidth={2}
+          >
+            <Label 
+              value="League Avg Defense" 
+              position="right" 
+              fill="#64748B"
+              style={{ fontSize: '0.75rem', fontWeight: '600' }}
+              angle={-90}
+            />
+          </ReferenceLine>
+
           <XAxis 
-            dataKey="name" 
-            stroke="#94A3B8" 
+            type="number"
+            dataKey="x"
+            domain={[1.8, 3.2]}
+            stroke="#94A3B8"
             style={{ fontSize: '0.875rem', fontWeight: '600' }}
+            label={{ 
+              value: 'Offensive Power (xGF/60) →', 
+              position: 'bottom', 
+              fill: '#94A3B8',
+              style: { fontSize: '0.875rem', fontWeight: '700' }
+            }}
           />
+          
           <YAxis 
-            stroke="#94A3B8" 
+            type="number"
+            dataKey="y"
+            domain={[1.8, 3.2]}
+            stroke="#94A3B8"
             style={{ fontSize: '0.875rem', fontWeight: '600' }}
-            domain={[0, 'auto']}
-          />
-          <Tooltip 
-            contentStyle={{
-              background: 'rgba(15, 23, 42, 0.95)',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              borderRadius: '8px',
-              color: '#F1F5F9',
-              fontSize: '0.875rem'
-            }}
-            formatter={(value) => value.toFixed(2)}
-          />
-          <Legend 
-            wrapperStyle={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#94A3B8'
+            label={{ 
+              value: 'Opponent Defensive Weakness (xGA/60) ↑', 
+              position: 'left', 
+              angle: -90, 
+              fill: '#94A3B8',
+              style: { fontSize: '0.875rem', fontWeight: '700', textAnchor: 'middle' }
             }}
           />
-          <Bar dataKey="xGF/60" fill="#10B981" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="xGA/60" fill="#EF4444" radius={[8, 8, 0, 0]} />
-        </BarChart>
+          
+          <Tooltip content={<CustomTooltip />} />
+          
+          <Scatter 
+            data={scatterData} 
+            fill="#8884d8"
+          >
+            {scatterData.map((entry, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={entry.color}
+                stroke={entry.color}
+                strokeWidth={2}
+                r={10}
+              />
+            ))}
+          </Scatter>
+
+          {/* Quadrant Labels */}
+          <text x="85%" y="15%" fill="#10B981" fontSize="0.75rem" fontWeight="700" textAnchor="middle">
+            Elite Matchup
+          </text>
+          <text x="15%" y="15%" fill="#EF4444" fontSize="0.75rem" fontWeight="700" textAnchor="middle">
+            Tough Defense
+          </text>
+          <text x="85%" y="95%" fill="#F59E0B" fontSize="0.75rem" fontWeight="700" textAnchor="middle">
+            Soft Defense
+          </text>
+          <text x="15%" y="95%" fill="#64748B" fontSize="0.75rem" fontWeight="700" textAnchor="middle">
+            Defensive Battle
+          </text>
+        </ScatterChart>
       </ResponsiveContainer>
+
+      {/* Legend */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '2rem',
+        marginTop: '1rem',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#3B82F6' }} />
+          <span style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: '600' }}>{awayTeam.code}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10B981' }} />
+          <span style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: '600' }}>{homeTeam.code}</span>
+        </div>
+      </div>
       
       <style>{`
         @media (max-width: 768px) {
@@ -99,4 +221,3 @@ export default function ExpectedGoalsChart({ awayTeam, homeTeam, awayStats, home
     </div>
   );
 }
-

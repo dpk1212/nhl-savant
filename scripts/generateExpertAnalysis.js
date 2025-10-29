@@ -161,23 +161,37 @@ function getTodaysGames() {
  * Generate analysis using Perplexity API
  */
 async function generateAnalysis(awayTeam, homeTeam, apiKey) {
-  const prompt = `Write 2-3 conversational analysis paragraphs (100-150 words each) for the ${awayTeam} @ ${homeTeam} NHL game.
+  const prompt = `You are NHL Savant's expert analyst. Write compelling, shareable matchup analysis for ${awayTeam} @ ${homeTeam}.
 
-Write like a human sports analyst writing a mini blog post, not a structured report. Use natural language, tell a story, provide context and conclusion. Be specific with player names, recent stats, and trends.
+CRITICAL REQUIREMENTS:
+1. Start with a BOLD, CONTROVERSIAL, or SURPRISING hook (1 sentence)
+2. Follow with 2-3 analysis paragraphs (80-120 words each)
+3. End with a specific betting angle or "hidden edge" insight
+4. Use player names, recent stats (last 3-5 games), and specific numbers
+5. Write like you're trying to go viral on Twitter - be confident, specific, controversial
 
-Return ONLY a valid JSON array with this format (no markdown, no explanation):
+STRUCTURE (JSON format):
 [
   {
-    "analysis": "100-150 word paragraph in natural, conversational tone"
+    "hook": "One sentence that makes people stop scrolling - controversial, surprising, or bold prediction",
+    "headline": "5-7 word attention-grabbing headline (not generic)",
+    "analysis": "Main analysis paragraph with specific stats and player names",
+    "bettingAngle": "The hidden edge or specific betting insight casual fans would miss"
   }
 ]
 
-Topics to cover (pick 2-3 most relevant):
-1. Most significant matchup advantage - tell the story with recent context
-2. Key factor that will determine the game - goaltending, special teams, momentum, injuries
-3. Under-the-radar insight or betting angle - something casual bettors might miss
+EXAMPLES OF GOOD HOOKS:
+- "The market is WRONG about Toronto's road defense - here's why"
+- "Columbus's power play is a trap bet tonight, and the numbers prove it"
+- "Matthews vs Werenski is the mismatch nobody's talking about"
 
-Write in complete sentences and paragraphs. Be conversational but analytical. Use player names and specific recent stats.`;
+AVOID:
+- Generic observations everyone knows
+- "Both teams are trending up/down" nonsense
+- Safe, boring analysis
+- Lack of specific numbers or player names
+
+Return ONLY valid JSON. Be bold. Be specific. Give users a reason to screenshot and share this.`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -226,15 +240,18 @@ Write in complete sentences and paragraphs. Be conversational but analytical. Us
       cards = cards.slice(0, 4); // Max 4 cards
       console.log(`✅ Parsed ${cards.length} cards from Perplexity`);
       
-      // VALIDATE each card has only valid fields
+      // VALIDATE each card has required fields for new structure
       cards = cards.map((card, idx) => {
         if (!card || typeof card !== 'object') {
           throw new Error(`Card ${idx} is not an object: ${typeof card}`);
         }
         
-        // Only allow 'analysis' field, remove any others
+        // Validate and structure the new format
         return {
-          analysis: String(card.analysis || '')
+          hook: String(card.hook || ''),
+          headline: String(card.headline || ''),
+          analysis: String(card.analysis || ''),
+          bettingAngle: String(card.bettingAngle || '')
         };
       });
       

@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import AIInsightCards from '../components/matchup/AIInsightCards';
 import GameSelector from '../components/matchup/GameSelector';
+import MatchupSpotlightHero from '../components/matchup/MatchupSpotlightHero';
 import DominanceMatrix from '../components/matchup/DominanceMatrix';
 import AdvancedMetricsCarousel from '../components/matchup/AdvancedMetricsCarousel';
 import { getTeamStats, getGoalieStats } from '../utils/matchupCalculations';
@@ -292,6 +293,16 @@ export default function MatchupInsights(props) {
         <AIInsightCards
           awayTeam={{ name: selectedGame.awayTeam }}
           homeTeam={{ name: selectedGame.homeTeam }}
+        />
+      )}
+
+      {/* Matchup Spotlight Hero - The Key Advantage */}
+      {matchupData && props.dataProcessor && (
+        <MatchupSpotlightHero
+          awayTeam={matchupData.away}
+          homeTeam={matchupData.home}
+          matchupData={matchupData}
+          dataProcessor={props.dataProcessor}
         />
       )}
 
