@@ -1,12 +1,21 @@
 /**
- * Radar Comparison Chart - Premium spider chart for 6-metric comparison
- * Stunning visual showing team strengths at-a-glance
+ * Radar Comparison Chart - Enhanced spider chart for 6-metric comparison
+ * Larger, more colorful, animated visual showing team strengths at-a-glance
  */
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { calculatePercentileRank } from '../../utils/matchupCalculations';
+import { useState, useEffect } from 'react';
 
 export default function RadarComparison({ awayTeam, homeTeam, matchupData, dataProcessor }) {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    // Trigger animation on mount
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!matchupData || !dataProcessor) return null;
 
   const awayStats5v5 = matchupData.away.stats5v5;
@@ -42,30 +51,33 @@ export default function RadarComparison({ awayTeam, homeTeam, matchupData, dataP
       backdropFilter: 'blur(20px) saturate(180%)',
       border: '1px solid rgba(148, 163, 184, 0.1)',
       borderRadius: '20px',
-      padding: '2rem',
-      marginBottom: '2rem',
+      padding: '2.5rem',
+      marginBottom: '2.5rem',
       boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      opacity: isVisible ? 1 : 0,
+      transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+      transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
     }}>
-      {/* Gradient Orb Background */}
+      {/* Enhanced Gradient Orb Background */}
       <div style={{
         position: 'absolute',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: '300px',
-        height: '300px',
-        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
+        width: '400px',
+        height: '400px',
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(16, 185, 129, 0.1) 50%, transparent 70%)',
         borderRadius: '50%',
-        filter: 'blur(60px)',
+        filter: 'blur(80px)',
         pointerEvents: 'none',
         zIndex: 0
       }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <h2 style={{
-          fontSize: '1.75rem',
+          fontSize: '1.875rem',
           fontWeight: '700',
           color: '#F1F5F9',
           marginBottom: '0.5rem',
@@ -74,17 +86,17 @@ export default function RadarComparison({ awayTeam, homeTeam, matchupData, dataP
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          Team Radar Comparison
+          Team Performance Radar
         </h2>
         <p style={{
-          fontSize: '0.875rem',
+          fontSize: '0.9375rem',
           color: '#94A3B8',
-          marginBottom: '2rem'
+          marginBottom: '2.5rem'
         }}>
-          League percentile rankings across 6 key metrics (100 = best)
+          League percentile rankings • Larger area = better team
         </p>
 
-        <ResponsiveContainer width="100%" height={450}>
+        <ResponsiveContainer width="100%" height={500}>
           <RadarChart data={radarData}>
             <PolarGrid 
               stroke="rgba(148, 163, 184, 0.2)" 
@@ -113,28 +125,34 @@ export default function RadarComparison({ awayTeam, homeTeam, matchupData, dataP
               dataKey={awayTeam.code}
               stroke="#3B82F6"
               fill="#3B82F6"
-              fillOpacity={0.25}
-              strokeWidth={3}
+              fillOpacity={0.35}
+              strokeWidth={3.5}
               dot={{
-                r: 5,
+                r: 6,
                 fill: '#3B82F6',
                 stroke: '#1E40AF',
-                strokeWidth: 2
+                strokeWidth: 2.5
               }}
+              animationBegin={200}
+              animationDuration={800}
+              animationEasing="ease-out"
             />
             <Radar 
               name={homeTeam.code}
               dataKey={homeTeam.code}
               stroke="#10B981"
               fill="#10B981"
-              fillOpacity={0.25}
-              strokeWidth={3}
+              fillOpacity={0.35}
+              strokeWidth={3.5}
               dot={{
-                r: 5,
+                r: 6,
                 fill: '#10B981',
                 stroke: '#059669',
-                strokeWidth: 2
+                strokeWidth: 2.5
               }}
+              animationBegin={200}
+              animationDuration={800}
+              animationEasing="ease-out"
             />
             <Tooltip
               contentStyle={{
