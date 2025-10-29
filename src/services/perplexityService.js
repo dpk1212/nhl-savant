@@ -4,7 +4,7 @@
  * Gracefully falls back on errors - never blocks page load
  */
 
-import { db } from '../firebase/firebase';
+import { db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const PERPLEXITY_API_KEY = import.meta.env.VITE_PERPLEXITY_API_KEY;
