@@ -18,7 +18,7 @@
  */
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -38,16 +38,31 @@ const firebaseConfig = {
   measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
-
-if (!PERPLEXITY_API_KEY) {
-  console.error('❌ PERPLEXITY_API_KEY environment variable not set');
-  process.exit(1);
-}
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+/**
+ * Fetch Perplexity API key from Firebase Secrets collection
+ */
+async function getPerplexityKey() {
+  try {
+    console.log('⏳ Fetching Perplexity API key from Firebase Secrets...');
+    const secretDoc = await getDoc(doc(db, 'Secrets', 'Perplexity'));
+    
+    if (secretDoc.exists()) {
+      const key = secretDoc.data().Key;
+      console.log('✅ Perplexity API key loaded from Firebase');
+      return key;
+    } else {
+      console.error('❌ Perplexity secret document not found in Firebase');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Could not fetch Perplexity key from Firebase:', error.code, error.message);
+    return null;
+  }
+}
 
 /**
  * Get today's NHL games from schedule
@@ -88,7 +103,7 @@ function getTodaysGames() {
 /**
  * Generate analysis using Perplexity API
  */
-async function generateAnalysis(awayTeam, homeTeam) {
+async function generateAnalysis(awayTeam, homeTeam, apiKey) {
   const prompt = `Write 2-3 conversational analysis paragraphs (100-150 words each) for the ${awayTeam} @ ${homeTeam} NHL game.
 
 Write like a human sports analyst writing a mini blog post, not a structured report. Use natural language, tell a story, provide context and conclusion. Be specific with player names, recent stats, and trends.
@@ -111,7 +126,7 @@ Write in complete sentences and paragraphs. Be conversational but analytical. Us
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -196,6 +211,15 @@ async function main() {
   console.log(`📅 Date: ${new Date().toISOString()}`);
   console.log('');
 
+  // Fetch Perplexity API key from Firebase
+  const apiKey = await getPerplexityKey();
+  
+  if (!apiKey) {
+    console.error('❌ Could not retrieve Perplexity API key from Firebase');
+    console.error('ℹ️ Make sure Firestore rules allow reads from Secrets collection');
+    process.exit(1);
+  }
+
   // Get today's games
   const games = getTodaysGames();
   console.log(`📊 Found ${games.length} games today`);
@@ -213,7 +237,7 @@ async function main() {
   for (const game of games) {
     console.log(`⏳ Generating analysis: ${game.awayTeam} @ ${game.homeTeam}`);
     
-    const cards = await generateAnalysis(game.awayTeam, game.homeTeam);
+    const cards = await generateAnalysis(game.awayTeam, game.homeTeam, apiKey);
     
     if (cards && cards.length > 0) {
       await cacheAnalysis(game.awayTeam, game.homeTeam, cards);
