@@ -67,9 +67,12 @@ export class ScheduleHelper {
     }
 
     csvData.forEach(row => {
-      const date = row.Date; // Format: "10/7/2025"
+      const date = row.Date; // Format: "10/7/2025" or "2025-10-07"
       const awayName = row.Visitor; // Full name, e.g., "New York Rangers"
       const homeName = row.Home; // Full name, e.g., "Boston Bruins"
+      const awayScore = parseInt(row.Score_1) || 0; // Away team score
+      const homeScore = parseInt(row.Score_2) || 0; // Home team score
+      const status = row.Status; // "Final", "Final OT", "Final SO", or null for upcoming games
 
       // Convert full team names to team codes
       const away = this.teamNameToCode[awayName];
@@ -85,18 +88,52 @@ export class ScheduleHelper {
       if (!gamesByTeam[away]) gamesByTeam[away] = [];
       if (!gamesByTeam[home]) gamesByTeam[home] = [];
 
+      // Determine result for away team
+      let awayResult = null;
+      let awayGoalDiff = null;
+      if (status && status.includes('Final')) {
+        awayGoalDiff = awayScore - homeScore;
+        if (awayScore > homeScore) {
+          awayResult = 'W';
+        } else if (awayScore < homeScore) {
+          awayResult = status.includes('OT') || status.includes('SO') ? 'OTL' : 'L';
+        } else {
+          awayResult = 'T'; // Tie (rare in modern NHL)
+        }
+      }
+
+      // Determine result for home team
+      let homeResult = null;
+      let homeGoalDiff = null;
+      if (status && status.includes('Final')) {
+        homeGoalDiff = homeScore - awayScore;
+        if (homeScore > awayScore) {
+          homeResult = 'W';
+        } else if (homeScore < awayScore) {
+          homeResult = status.includes('OT') || status.includes('SO') ? 'OTL' : 'L';
+        } else {
+          homeResult = 'T';
+        }
+      }
+
       gamesByTeam[away].push({
         date,
         opponent: home,
         location: 'away',
-        timestamp: this.parseDate(date)
+        timestamp: this.parseDate(date),
+        result: awayResult,
+        score: status ? `${awayScore}-${homeScore}` : null,
+        goalDifferential: awayGoalDiff
       });
 
       gamesByTeam[home].push({
         date,
         opponent: away,
         location: 'home',
-        timestamp: this.parseDate(date)
+        timestamp: this.parseDate(date),
+        result: homeResult,
+        score: status ? `${homeScore}-${awayScore}` : null,
+        goalDifferential: homeGoalDiff
       });
     });
 
@@ -369,5 +406,28 @@ export class ScheduleHelper {
                 ? `Extra rest (${rest} days)`
                 : 'Unknown'
     };
+  }
+
+  /**
+   * Get team's recent games with results
+   * Used for TrendMomentumChart to show real W/L/OTL record
+   * NOTE: This returns COMPLETED games only - no result = not included
+   * @param {string} team - Team code (e.g., "BOS", "NYR")
+   * @param {number} numGames - Number of recent games to return (default 10)
+   * @returns {Array} Recent games with result, opponent, goal differential
+   */
+  getTeamRecentGames(team, numGames = 10) {
+    const games = this.gamesByTeam[team];
+    if (!games || games.length === 0) return [];
+
+    const now = Date.now();
+    
+    // Get completed games (in the past) sorted newest to oldest
+    const completedGames = games
+      .filter(g => g.timestamp < now && g.result) // Only games with results
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, numGames);
+
+    return completedGames;
   }
 }

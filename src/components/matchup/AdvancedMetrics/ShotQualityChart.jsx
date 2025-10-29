@@ -1,28 +1,27 @@
 /**
  * Shot Quality Analysis - Danger Zone Heat Map
  * Visual representation of shot locations and danger levels
- * Shows percentage distribution across danger zones
+ * Shows REAL percentage distribution from teams.csv
+ * NO FAKE DATA - Only shows high-danger vs. other shots (no medium/low guess)
  */
 
-import { Target, AlertTriangle, Activity } from 'lucide-react';
+import { Target, Activity } from 'lucide-react';
 
 export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeStats }) {
   if (!awayStats || !homeStats) return null;
 
-  // Calculate shot quality metrics
+  // Calculate shot quality metrics - REAL DATA ONLY
   const awayHD = awayStats.highDanger_xGF_per60 || 0;
   const awayTotal = awayStats.xGF_per60 || 0;
   const homeHD = homeStats.highDanger_xGF_per60 || 0;
   const homeTotal = homeStats.xGF_per60 || 0;
 
-  // Calculate percentages
+  // Calculate REAL percentages - No guessing medium/low
   const awayHDPct = awayTotal > 0 ? (awayHD / awayTotal * 100) : 0;
-  const awayMediumPct = 100 - awayHDPct > 40 ? 40 : 100 - awayHDPct - 20; // Estimate
-  const awayLowPct = 100 - awayHDPct - awayMediumPct;
-
+  const awayOtherPct = 100 - awayHDPct; // All other shots (no separation available)
+  
   const homeHDPct = homeTotal > 0 ? (homeHD / homeTotal * 100) : 0;
-  const homeMediumPct = 100 - homeHDPct > 40 ? 40 : 100 - homeHDPct - 20;
-  const homeLowPct = 100 - homeHDPct - homeMediumPct;
+  const homeOtherPct = 100 - homeHDPct;
 
   // Determine shot quality tier
   const getShotQualityTier = (hdPct) => {
@@ -82,7 +81,7 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
   return (
     <div>
       <h4 style={{
-        fontSize: '1rem',
+        fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
         fontWeight: '700',
         color: '#F1F5F9',
         marginBottom: '0.75rem'
@@ -90,13 +89,23 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
         Shot Quality Distribution
       </h4>
       <p style={{
-        fontSize: '0.875rem',
+        fontSize: window.innerWidth < 768 ? '0.8125rem' : '0.875rem',
         color: '#94A3B8',
-        marginBottom: '1.5rem',
+        marginBottom: '1rem',
         lineHeight: 1.5
       }}>
-        Breakdown of shots by danger level. Higher % of high-danger shots = better offensive quality.
+        Breakdown showing HIGH-DANGER shots vs. all other shots. Higher % high-danger = better offensive quality.
       </p>
+      
+      {/* Data Source Label */}
+      <div style={{
+        fontSize: '0.75rem',
+        color: '#64748B',
+        marginBottom: '1.5rem',
+        fontStyle: 'italic'
+      }}>
+        📊 Source: teams.csv highDanger_xGF_per60 (Real 5v5 data, 2025-26 season)
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         {/* Away Team */}
@@ -149,7 +158,7 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
             </div>
           </div>
 
-          {/* Heat zones */}
+          {/* Heat zones - ONLY 2 CATEGORIES (REAL DATA) */}
           <div style={{
             display: 'flex',
             gap: '0.75rem',
@@ -163,24 +172,18 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
               icon={Target}
             />
             <HeatZone
-              percentage={awayMediumPct}
-              label="Medium"
-              color="#F59E0B"
-              icon={AlertTriangle}
-            />
-            <HeatZone
-              percentage={awayLowPct}
-              label="Low Danger"
+              percentage={awayOtherPct}
+              label="All Other Shots"
               color="#3B82F6"
               icon={Activity}
             />
           </div>
 
-          {/* Stats breakdown */}
+          {/* Stats breakdown - REAL DATA */}
           <div style={{
             marginTop: '1rem',
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '0.5rem'
           }}>
             <div style={{
@@ -198,20 +201,6 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
               </div>
             </div>
             <div style={{
-              background: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.2)',
-              borderRadius: '8px',
-              padding: '0.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.25rem' }}>
-                Med xG/60
-              </div>
-              <div style={{ fontSize: '1rem', fontWeight: '900', color: '#F59E0B' }}>
-                {(awayTotal * awayMediumPct / 100).toFixed(2)}
-              </div>
-            </div>
-            <div style={{
               background: 'rgba(59, 130, 246, 0.1)',
               border: '1px solid rgba(59, 130, 246, 0.2)',
               borderRadius: '8px',
@@ -219,10 +208,10 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.25rem' }}>
-                Low xG/60
+                Other xG/60
               </div>
               <div style={{ fontSize: '1rem', fontWeight: '900', color: '#3B82F6' }}>
-                {(awayTotal * awayLowPct / 100).toFixed(2)}
+                {(awayTotal - awayHD).toFixed(2)}
               </div>
             </div>
           </div>
@@ -278,7 +267,7 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
             </div>
           </div>
 
-          {/* Heat zones */}
+          {/* Heat zones - ONLY 2 CATEGORIES (REAL DATA) */}
           <div style={{
             display: 'flex',
             gap: '0.75rem',
@@ -292,24 +281,18 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
               icon={Target}
             />
             <HeatZone
-              percentage={homeMediumPct}
-              label="Medium"
-              color="#F59E0B"
-              icon={AlertTriangle}
-            />
-            <HeatZone
-              percentage={homeLowPct}
-              label="Low Danger"
+              percentage={homeOtherPct}
+              label="All Other Shots"
               color="#3B82F6"
               icon={Activity}
             />
           </div>
 
-          {/* Stats breakdown */}
+          {/* Stats breakdown - REAL DATA */}
           <div style={{
             marginTop: '1rem',
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '0.5rem'
           }}>
             <div style={{
@@ -327,20 +310,6 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
               </div>
             </div>
             <div style={{
-              background: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.2)',
-              borderRadius: '8px',
-              padding: '0.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.25rem' }}>
-                Med xG/60
-              </div>
-              <div style={{ fontSize: '1rem', fontWeight: '900', color: '#F59E0B' }}>
-                {(homeTotal * homeMediumPct / 100).toFixed(2)}
-              </div>
-            </div>
-            <div style={{
               background: 'rgba(59, 130, 246, 0.1)',
               border: '1px solid rgba(59, 130, 246, 0.2)',
               borderRadius: '8px',
@@ -348,10 +317,10 @@ export default function ShotQualityChart({ awayTeam, homeTeam, awayStats, homeSt
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.25rem' }}>
-                Low xG/60
+                Other xG/60
               </div>
               <div style={{ fontSize: '1rem', fontWeight: '900', color: '#3B82F6' }}>
-                {(homeTotal * homeLowPct / 100).toFixed(2)}
+                {(homeTotal - homeHD).toFixed(2)}
               </div>
             </div>
           </div>
