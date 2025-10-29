@@ -68,9 +68,8 @@ export async function getMatchupAnalysis(awayTeam, homeTeam, forceRefresh = fals
     const apiKey = await getPerplexityKey();
     
     if (!apiKey) {
-      console.log('ℹ️ Using fallback analysis (Perplexity API key not available)');
-      // Return generic but professional fallback analysis
-      return `This ${awayTeam} vs ${homeTeam} matchup features two competitive NHL teams bringing unique strengths to the ice. Both teams will look to leverage their systems and capitalize on scoring opportunities. Check the detailed statistical breakdowns below for comprehensive insights into expected goals, shot quality metrics, special teams advantages, and goaltending matchups that will influence this game's outcome.`;
+      console.log('ℹ️ No Perplexity API key - waiting for scheduled generation');
+      return null; // Return null so component shows "Waiting" state
     }
 
     console.log('⏳ Fetching fresh analysis from Perplexity AI...');
@@ -134,9 +133,7 @@ Write in a professional, analytical tone suitable for sports bettors. Be specifi
 
   } catch (error) {
     console.error('❌ Error fetching Perplexity analysis:', error);
-    
-    // Return graceful fallback
-    return `Expert analysis temporarily unavailable. Our model shows this as a competitive matchup between ${awayTeam} and ${homeTeam}. Check the statistical breakdowns below for detailed insights.`;
+    return null; // Return null so component shows "Waiting" state
   }
 }
 
@@ -179,17 +176,10 @@ export async function getMatchupInsightCards(awayTeam, homeTeam, forceRefresh = 
     // Fetch API key from Firebase
     const apiKey = await getPerplexityKey();
     
-    if (!apiKey) {
-      console.log('ℹ️ Using fallback blog-style insights (no API key)');
-      return [
-        {
-          analysis: `This ${awayTeam} at ${homeTeam} matchup presents some intriguing contrasts in playing styles. Both teams bring unique strengths to the ice, and the outcome will likely hinge on which team can impose their game plan more effectively. Looking at the advanced analytics below, you'll find clear advantages in certain areas that could prove decisive. Pay special attention to the offensive and defensive metrics—they tell an interesting story about how these two teams match up.`
-        },
-        {
-          analysis: `The goaltending and special teams battle could be the difference-maker tonight. Both areas have been crucial for these teams this season, and we're seeing some significant differentials in the underlying numbers. The team that can capitalize on power play opportunities while staying disciplined will have a major edge. Check out the detailed breakdowns below to see exactly where the advantages lie.`
+        if (!apiKey) {
+          console.log('ℹ️ No Perplexity API key - waiting for scheduled generation');
+          return []; // Return empty array so component shows "Waiting" state
         }
-      ];
-    }
 
     console.log('⏳ Fetching fresh blog-style insights from Perplexity AI...');
     
@@ -272,22 +262,13 @@ Write in complete sentences and paragraphs. Be conversational but analytical. Us
       });
       console.log(`✅ Fresh insight cards fetched and cached (${timeKey})`);
     } catch (cacheError) {
-      console.warn('⚠️ Cache write failed:', cacheError.code);
+      // Silently fail if cache write is blocked
     }
 
     return cards;
 
   } catch (error) {
     console.error('❌ Error fetching insight cards:', error);
-    
-    // Return fallback blog-style insights
-    return [
-      {
-        analysis: `Tonight's ${awayTeam} at ${homeTeam} game sets up as an interesting matchup with both teams bringing different strengths to the ice. The advanced metrics below reveal some key areas where one team has a clear edge. While we couldn't fetch the latest real-time analysis, the statistical breakdowns will give you a comprehensive view of how these teams match up in terms of offense, defense, goaltending, and special teams.`
-      },
-      {
-        analysis: `Dive into the visual analytics below to understand the key factors that could determine this game. Pay close attention to the expected goals differential, shot quality metrics, and how each team's strengths align against their opponent's weaknesses. The data tells a compelling story about where the value might lie in this matchup.`
-      }
-    ];
+    return []; // Return empty array so component shows "Waiting" state
   }
 }

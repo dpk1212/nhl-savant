@@ -1,0 +1,49 @@
+name: Generate Expert Analysis
+
+on:
+  schedule:
+    # Run at 9 AM ET (2 PM UTC) daily - before afternoon games
+    - cron: '0 14 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  generate-analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate expert analysis
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: node scripts/generateExpertAnalysis.js
+
+      - name: Notify completion
+        if: success()
+        run: |
+          echo "✅ Expert analysis generated successfully"
+          echo "Articles cached in Firebase for today's games"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ Expert analysis generation failed"
+          echo "Check logs for details"
+
