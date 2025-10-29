@@ -308,7 +308,7 @@ export function extractGamesListFromOdds(mergedGames) {
   return mergedGames.map(game => ({
     away: game.awayTeam,
     home: game.homeTeam,
-    time: game.time || 'TBD'
+    time: game.gameTime || 'TBD' // FIX: Changed from game.time to game.gameTime
   }));
 }
 
