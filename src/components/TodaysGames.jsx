@@ -37,6 +37,7 @@ import StepSection from './StepSection';
 import QuickStatsBar from './QuickStatsBar';
 import DisclaimerModal from './DisclaimerModal';
 import CompactPicksBar from './CompactPicksBar';
+import { getRating } from './RatingBadge';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -1984,17 +1985,20 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Compact Picks Bar - Quick view of all recommendations */}
       {(() => {
-        // Prepare picks data from allEdges (B-rated or higher)
+        // Prepare picks data from allEdges (B-rated or higher: evPercent >= 3)
         const recommendedPicks = allEdges
-          .filter(game => game.bestEdge && game.bestEdge.rating && game.bestEdge.rating !== 'C')
-          .map(game => ({
-            pick: `${game.awayTeam} @ ${game.homeTeam}`,
-            market: game.bestEdge.market,
-            grade: game.bestEdge.rating,
-            odds: game.bestEdge.odds,
-            edge: `${Math.abs(game.bestEdge.evPercent).toFixed(1)}% edge`,
-            gameTime: game.gameTime
-          }));
+          .filter(game => game.bestEdge && game.bestEdge.evPercent >= 3)
+          .map(game => {
+            const rating = getRating(game.bestEdge.evPercent);
+            return {
+              pick: `${game.awayTeam} @ ${game.homeTeam}`,
+              market: game.bestEdge.market,
+              grade: rating.grade,
+              odds: game.bestEdge.odds,
+              edge: `${Math.abs(game.bestEdge.evPercent).toFixed(1)}% edge`,
+              gameTime: game.gameTime
+            };
+          });
 
         const scrollToFirstGame = () => {
           const firstGame = document.querySelector('.elevated-card');
