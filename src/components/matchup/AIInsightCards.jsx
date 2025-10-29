@@ -250,6 +250,7 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
             {insights.map((insight, index) => (
               <div
                 key={index}
+                className="ai-insight-card-mobile"
                 style={{
                   minWidth: '100%',
                   background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
@@ -276,16 +277,19 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
                 }} />
 
                 {/* Blog-style paragraph */}
-                <p style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  fontSize: '1.0625rem',
-                  lineHeight: '1.75',
-                  color: '#E2E8F0',
-                  margin: 0,
-                  fontWeight: '400',
-                  letterSpacing: '0.01em'
-                }}>
+                <p 
+                  className="ai-insight-text-mobile"
+                  style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    fontSize: '1.0625rem',
+                    lineHeight: '1.75',
+                    color: '#E2E8F0',
+                    margin: 0,
+                    fontWeight: '400',
+                    letterSpacing: '0.01em'
+                  }}
+                >
                   {insight.analysis}
                 </p>
               </div>
@@ -337,6 +341,16 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
         @media (max-width: 768px) {
           .expert-analysis-header h2 {
             font-size: 1.5rem;
+          }
+          
+          /* Mobile compact styles for AI cards */
+          .ai-insight-card-mobile {
+            padding: 1.5rem !important;
+          }
+          
+          .ai-insight-text-mobile {
+            font-size: 0.9375rem !important;
+            line-height: 1.6 !important;
           }
         }
       `}</style>

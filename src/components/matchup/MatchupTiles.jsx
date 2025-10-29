@@ -19,64 +19,63 @@ export default function MatchupTiles({ awayTeam, homeTeam, matchupData, dataProc
 
   const tiles = [];
 
-  // 1. OFFENSE vs DEFENSE Tile
+  // Calculate all stats
   const awayXGF = (awayStats5v5?.xGoalsFor || 0) / awayIceTime60;
-  const homeXGA = (homeStats5v5?.xGoalsAgainst || 0) / homeIceTime60;
   const homeXGF = (homeStats5v5?.xGoalsFor || 0) / homeIceTime60;
   const awayXGA = (awayStats5v5?.xGoalsAgainst || 0) / awayIceTime60;
+  const homeXGA = (homeStats5v5?.xGoalsAgainst || 0) / homeIceTime60;
 
   const awayXGFRank = calculatePercentileRank(dataProcessor, awayTeam.code, 'xGoalsFor', '5on5', true);
-  const homeXGARank = calculatePercentileRank(dataProcessor, homeTeam.code, 'xGoalsAgainst', '5on5', false);
   const homeXGFRank = calculatePercentileRank(dataProcessor, homeTeam.code, 'xGoalsFor', '5on5', true);
   const awayXGARank = calculatePercentileRank(dataProcessor, awayTeam.code, 'xGoalsAgainst', '5on5', false);
+  const homeXGARank = calculatePercentileRank(dataProcessor, homeTeam.code, 'xGoalsAgainst', '5on5', false);
 
-  const awayOffenseScore = (awayXGFRank?.percentile || 50) - (homeXGARank?.percentile || 50);
-  const homeOffenseScore = (homeXGFRank?.percentile || 50) - (awayXGARank?.percentile || 50);
-
+  // 1. OFFENSIVE FIREPOWER - Who scores more
   tiles.push({
-    title: 'OFFENSE vs DEFENSE',
+    title: 'OFFENSIVE FIREPOWER',
     icon: Target,
     color: '#10B981',
     away: {
-      label: `${awayTeam.code} Offense`,
+      label: `${awayTeam.code}`,
       value: awayXGF.toFixed(2),
       unit: 'xGF/60',
       percentile: awayXGFRank?.percentile || 50,
       tier: awayXGFRank?.tier || 'AVG'
     },
     home: {
-      label: `${homeTeam.code} Defense`,
-      value: homeXGA.toFixed(2),
-      unit: 'xGA/60',
-      percentile: homeXGARank?.percentile || 50,
-      tier: homeXGARank?.tier || 'AVG'
-    },
-    advantage: awayOffenseScore > 10 ? 'away' : awayOffenseScore < -10 ? 'home' : 'even',
-    advantageText: awayOffenseScore > 10 ? `${awayTeam.code} MAJOR EDGE` : 
-                   awayOffenseScore < -10 ? `${homeTeam.code} MAJOR EDGE` : 'EVEN MATCHUP'
-  });
-
-  tiles.push({
-    title: 'DEFENSE vs OFFENSE',
-    icon: Target,
-    color: '#3B82F6',
-    away: {
-      label: `${homeTeam.code} Offense`,
+      label: `${homeTeam.code}`,
       value: homeXGF.toFixed(2),
       unit: 'xGF/60',
       percentile: homeXGFRank?.percentile || 50,
       tier: homeXGFRank?.tier || 'AVG'
     },
-    home: {
-      label: `${awayTeam.code} Defense`,
+    advantage: awayXGF > homeXGF * 1.1 ? 'away' : homeXGF > awayXGF * 1.1 ? 'home' : 'even',
+    advantageText: awayXGF > homeXGF * 1.1 ? `${awayTeam.code} SCORING EDGE` : 
+                   homeXGF > awayXGF * 1.1 ? `${homeTeam.code} SCORING EDGE` : 'EVEN MATCHUP'
+  });
+
+  // 2. DEFENSIVE STRENGTH - Who allows less (lower is better)
+  tiles.push({
+    title: 'DEFENSIVE STRENGTH',
+    icon: Shield,
+    color: '#3B82F6',
+    away: {
+      label: `${awayTeam.code}`,
       value: awayXGA.toFixed(2),
       unit: 'xGA/60',
       percentile: awayXGARank?.percentile || 50,
       tier: awayXGARank?.tier || 'AVG'
     },
-    advantage: homeOffenseScore > 10 ? 'away' : homeOffenseScore < -10 ? 'home' : 'even',
-    advantageText: homeOffenseScore > 10 ? `${homeTeam.code} MAJOR EDGE` : 
-                   homeOffenseScore < -10 ? `${awayTeam.code} MAJOR EDGE` : 'EVEN MATCHUP'
+    home: {
+      label: `${homeTeam.code}`,
+      value: homeXGA.toFixed(2),
+      unit: 'xGA/60',
+      percentile: homeXGARank?.percentile || 50,
+      tier: homeXGARank?.tier || 'AVG'
+    },
+    advantage: awayXGA < homeXGA * 0.9 ? 'away' : homeXGA < awayXGA * 0.9 ? 'home' : 'even',
+    advantageText: awayXGA < homeXGA * 0.9 ? `${awayTeam.code} DEFENSIVE EDGE` : 
+                   homeXGA < awayXGA * 0.9 ? `${homeTeam.code} DEFENSIVE EDGE` : 'EVEN MATCHUP'
   });
 
   // 2. POWER PLAY vs PENALTY KILL
@@ -201,17 +200,42 @@ export default function MatchupTiles({ awayTeam, homeTeam, matchupData, dataProc
         Key Matchup Advantages
       </h2>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '1.5rem'
-      }}>
+      <div 
+        className="matchup-tiles-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '1.5rem'
+        }}
+      >
+      <style>{`
+        @media (max-width: 768px) {
+          .matchup-tiles-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+            gap: 1rem !important;
+          }
+          
+          .matchup-tile-mobile {
+            padding: 1.25rem !important;
+          }
+          
+          .matchup-tile-icon-mobile {
+            width: 32px !important;
+            height: 32px !important;
+          }
+          
+          .matchup-tile-value-mobile {
+            font-size: 1.5rem !important;
+          }
+        }
+      `}</style>
         {tiles.map((tile, index) => {
           const IconComponent = tile.icon;
           
           return (
             <div
               key={index}
+              className="matchup-tile-mobile"
               style={{
                 background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
                 backdropFilter: 'blur(20px) saturate(180%)',
@@ -230,15 +254,18 @@ export default function MatchupTiles({ awayTeam, homeTeam, matchupData, dataProc
                 gap: '0.75rem',
                 marginBottom: '1.5rem'
               }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: `${tile.color}20`,
-                  borderRadius: '10px'
-                }}>
+                <div 
+                  className="matchup-tile-icon-mobile"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: `${tile.color}20`,
+                    borderRadius: '10px'
+                  }}
+                >
                   <IconComponent size={22} color={tile.color} strokeWidth={2.5} />
                 </div>
                 <div style={{
@@ -271,12 +298,15 @@ export default function MatchupTiles({ awayTeam, homeTeam, matchupData, dataProc
                   }}>
                     {tile.away.label}
                   </div>
-                  <div style={{
-                    fontSize: '1.875rem',
-                    fontWeight: '900',
-                    color: '#F1F5F9',
-                    marginBottom: '0.25rem'
-                  }}>
+                  <div 
+                    className="matchup-tile-value-mobile"
+                    style={{
+                      fontSize: '1.875rem',
+                      fontWeight: '900',
+                      color: '#F1F5F9',
+                      marginBottom: '0.25rem'
+                    }}
+                  >
                     {tile.away.value}
                     <span style={{
                       fontSize: '0.875rem',
@@ -351,12 +381,15 @@ export default function MatchupTiles({ awayTeam, homeTeam, matchupData, dataProc
                   }}>
                     {tile.home.label}
                   </div>
-                  <div style={{
-                    fontSize: '1.875rem',
-                    fontWeight: '900',
-                    color: '#F1F5F9',
-                    marginBottom: '0.25rem'
-                  }}>
+                  <div 
+                    className="matchup-tile-value-mobile"
+                    style={{
+                      fontSize: '1.875rem',
+                      fontWeight: '900',
+                      color: '#F1F5F9',
+                      marginBottom: '0.25rem'
+                    }}
+                  >
                     {tile.home.value}
                     <span style={{
                       fontSize: '0.875rem',
