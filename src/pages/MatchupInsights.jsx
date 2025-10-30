@@ -1,16 +1,11 @@
 /**
- * Matchup Insights Page - Deep Analytics Platform
- * Mobile-first, full nerd stats, visual context
+ * Matchup Insights Page - Expert Analysis & Game Selection
+ * Simplified view focused on AI-generated insights
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import AIInsightCards from '../components/matchup/AIInsightCards';
 import GameSelector from '../components/matchup/GameSelector';
-import MatchupSpotlightHero from '../components/matchup/MatchupSpotlightHero';
-import DominanceMatrix from '../components/matchup/DominanceMatrix';
-import AdvancedMetricsCarousel from '../components/matchup/AdvancedMetricsCarousel';
-import TrendMomentumChart from '../components/matchup/TrendMomentumChart';
-import { getTeamStats, getGoalieStats } from '../utils/matchupCalculations';
 
 export default function MatchupInsights(props) {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -71,116 +66,7 @@ export default function MatchupInsights(props) {
     }
   }, [props?.dataProcessor, props?.todaysGames, selectedGame, props]);
 
-  // Calculate matchup data and prediction
-  const matchupData = useMemo(() => {
-    if (!selectedGame || !props?.dataProcessor || !props?.goalieData) return null;
-
-    try {
-      const dataProc = props.dataProcessor;
-      const goalies = props.goalieData;
-
-      // Get team stats (5v5 for main analysis)
-      const awayStats5v5 = getTeamStats(dataProc, selectedGame.awayTeam, '5on5');
-      const homeStats5v5 = getTeamStats(dataProc, selectedGame.homeTeam, '5on5');
-      const awayPP = getTeamStats(dataProc, selectedGame.awayTeam, '5on4');
-      const awayPK = getTeamStats(dataProc, selectedGame.awayTeam, '4on5');
-      const homePP = getTeamStats(dataProc, selectedGame.homeTeam, '5on4');
-      const homePK = getTeamStats(dataProc, selectedGame.homeTeam, '4on5');
-
-      // Get goalies
-      const awayGoalieName = selectedGame.awayGoalie || `${selectedGame.awayTeam} Goalie`;
-      const homeGoalieName = selectedGame.homeGoalie || `${selectedGame.homeTeam} Goalie`;
-      const awayGoalie = getGoalieStats(goalies, awayGoalieName) || { isDefault: true };
-      const homeGoalie = getGoalieStats(goalies, homeGoalieName) || { isDefault: true };
-
-      // Calculate prediction (matching Today's Games logic)
-      const awayPredicted = dataProc.predictTeamScore(
-        selectedGame.awayTeam, 
-        selectedGame.homeTeam, 
-        false, 
-        awayGoalieName
-      );
-      const homePredicted = dataProc.predictTeamScore(
-        selectedGame.homeTeam, 
-        selectedGame.awayTeam, 
-        true, 
-        homeGoalieName
-      );
-      const total = awayPredicted + homePredicted;
-      
-      // Calculate win probability using production method
-      const homeWinProb = dataProc.calculatePoissonWinProb(homePredicted, awayPredicted) * 100;
-      const awayWinProb = 100 - homeWinProb;
-
-      // Determine recommended bet (simple logic - can be enhanced)
-      let recommendedBet = null;
-      let confidence = null;
-      let evPercent = null;
-
-      const favorite = awayWinProb > homeWinProb ? selectedGame.awayTeam : selectedGame.homeTeam;
-      const favoriteProb = Math.max(awayWinProb, homeWinProb);
-      
-      if (favoriteProb > 60) {
-        recommendedBet = `${favorite} ML`;
-        confidence = favoriteProb > 65 ? 'HIGH' : 'MEDIUM';
-        evPercent = favoriteProb - 50; // Simplified EV calculation
-      }
-
-      // Build power play/penalty kill objects
-      // FIX: PP% = goalsFor / total opportunities (approximated by iceTime / avg PP length)
-      // FIX: PK% = 1 - (goalsAgainst / total opportunities)
-      // SIMPLIFIED: Use raw xGoalsPercentage as a proxy for success rate
-      const awayPowerPlay = awayPP ? {
-        percentage: awayPP.xGoalsPercentage || 0.20, // Use xGoalsPercentage (already decimal 0-1)
-        goalsFor: awayPP.goalsFor || 0
-      } : null;
-
-      const awayPenaltyKill = awayPK ? {
-        percentage: awayPK.xGoalsPercentage ? (1 - awayPK.xGoalsPercentage) : 0.80, // Inverse for PK
-        goalsAgainst: awayPK.goalsAgainst || 0
-      } : null;
-
-      const homePowerPlay = homePP ? {
-        percentage: homePP.xGoalsPercentage || 0.20,
-        goalsFor: homePP.goalsFor || 0
-      } : null;
-
-      const homePenaltyKill = homePK ? {
-        percentage: homePK.xGoalsPercentage ? (1 - homePK.xGoalsPercentage) : 0.80,
-        goalsAgainst: homePK.goalsAgainst || 0
-      } : null;
-
-      return {
-        away: {
-          code: selectedGame.awayTeam,
-          stats5v5: awayStats5v5,
-          powerPlay: awayPowerPlay,
-          penaltyKill: awayPenaltyKill,
-          goalie: awayGoalie
-        },
-        home: {
-          code: selectedGame.homeTeam,
-          stats5v5: homeStats5v5,
-          powerPlay: homePowerPlay,
-          penaltyKill: homePenaltyKill,
-          goalie: homeGoalie
-        },
-        prediction: {
-          awayScore: awayPredicted,
-          homeScore: homePredicted,
-          total,
-          awayWinProb,
-          homeWinProb,
-          recommendedBet,
-          confidence,
-          evPercent
-        }
-      };
-    } catch (error) {
-      console.error('Error calculating matchup data:', error);
-      return null;
-    }
-  }, [selectedGame, props?.dataProcessor, props?.goalieData, props]);
+  // No longer need matchupData - page simplified to only show game selector and AI insights
 
   // Calculate predictions for ALL games (for GameSelector)
   const allPredictions = useMemo(() => {
@@ -278,7 +164,7 @@ export default function MatchupInsights(props) {
         marginBottom: '1.5rem',
         lineHeight: 1.6
       }}>
-        Deep dive analytics for advanced bettors. Explore the underlying stats and metrics that drive our recommendations.
+        Expert AI-generated analysis and insights for today's matchups. Bold takes and hidden edges from our analytics.
       </p>
 
       {/* Game Selector Carousel - PREMIUM */}
@@ -294,45 +180,6 @@ export default function MatchupInsights(props) {
         <AIInsightCards
           awayTeam={{ name: selectedGame.awayTeam }}
           homeTeam={{ name: selectedGame.homeTeam }}
-        />
-      )}
-
-      {/* Matchup Spotlight Hero - The Key Advantage */}
-      {matchupData && props.dataProcessor && (
-        <MatchupSpotlightHero
-          awayTeam={matchupData.away}
-          homeTeam={matchupData.home}
-          matchupData={matchupData}
-          dataProcessor={props.dataProcessor}
-        />
-      )}
-
-      {/* Dominance Matrix */}
-      {matchupData && props.dataProcessor && (
-        <DominanceMatrix
-          awayTeam={matchupData.away}
-          homeTeam={matchupData.home}
-          matchupData={matchupData}
-          dataProcessor={props.dataProcessor}
-        />
-      )}
-
-      {/* Advanced Metrics - Swipeable Carousel */}
-      {matchupData && props.dataProcessor && (
-        <AdvancedMetricsCarousel 
-          matchupData={matchupData} 
-          dataProcessor={props.dataProcessor}
-        />
-      )}
-
-      {/* Recent Form & Momentum */}
-      {matchupData && props.scheduleHelper && (
-        <TrendMomentumChart
-          awayTeam={matchupData.away}
-          homeTeam={matchupData.home}
-          awayStats={matchupData.away.stats5v5}
-          homeStats={matchupData.home.stats5v5}
-          scheduleHelper={props.scheduleHelper}
         />
       )}
 
