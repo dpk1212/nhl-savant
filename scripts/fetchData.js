@@ -7,6 +7,7 @@
 
 import Firecrawl from '@mendable/firecrawl-js';
 import fs from 'fs/promises';
+import { readFileSync } from 'fs';
 import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -74,18 +75,43 @@ async function fetchAllData() {
     // 3. Fetch Starting Goalies from MoneyPuck Homepage
     console.log('🥅 Fetching starting goalies from MoneyPuck...');
     
-    const moneyPuckResult = await firecrawl.scrape('https://moneypuck.com/index.html', {
+    // Add cache-busting to get fresh data
+    const cacheBuster = Date.now();
+    const moneyPuckResult = await firecrawl.scrape(`https://moneypuck.com/index.html?_=${cacheBuster}`, {
       formats: ['markdown', 'html'],
       onlyMainContent: true,
-      waitFor: 3000
+      waitFor: 3000,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     console.log('   - Scraped MoneyPuck homepage');
     console.log(`   - Size: ${moneyPuckResult.markdown?.length || 0} characters`);
     
     // Parse starting goalies from MoneyPuck homepage
-    const startingGoalies = parseMoneyPuckStartingGoalies(moneyPuckResult.markdown);
-    console.log(`   - Parsed ${startingGoalies.length} games from MoneyPuck`);
+    const scrapedGoalies = parseMoneyPuckStartingGoalies(moneyPuckResult.markdown);
+    console.log(`   - Parsed ${scrapedGoalies.length} games from MoneyPuck scrape`);
+    
+    // VALIDATE: Filter to only today's scheduled games
+    const scheduledGames = getTodaysScheduledGames();
+    console.log(`   - Schedule shows ${scheduledGames.length} games today`);
+    
+    const startingGoalies = scrapedGoalies.filter(game => {
+      const awayTeam = game.matchup.split(' @ ')[0];
+      const homeTeam = game.matchup.split(' @ ')[1];
+      
+      return scheduledGames.some(sg => 
+        sg.awayTeam === awayTeam && sg.homeTeam === homeTeam
+      );
+    });
+    
+    if (startingGoalies.length < scrapedGoalies.length) {
+      console.log(`   ⚠️  Filtered out ${scrapedGoalies.length - startingGoalies.length} games (not scheduled today)`);
+    }
+    
+    console.log(`   ✅ ${startingGoalies.length} games match today's schedule`);
     
     // CRITICAL: Don't overwrite with empty data!
     if (startingGoalies.length === 0) {
@@ -140,6 +166,60 @@ async function fetchAllData() {
     }
     console.error('\nPartial results:', results);
     throw error;
+  }
+}
+
+/**
+ * Get today's scheduled games from CSV to validate scrape results
+ */
+function getTodaysScheduledGames() {
+  try {
+    const schedulePath = join(__dirname, '../public/nhl-202526-asplayed.csv');
+    const scheduleData = readFileSync(schedulePath, 'utf-8');
+    const lines = scheduleData.trim().split('\n');
+    
+    const today = new Date();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    const year = today.getFullYear();
+    const todayStr = `${month}/${day}/${year}`;
+    
+    const teamMap = {
+      'Anaheim Ducks': 'ANA', 'Boston Bruins': 'BOS', 'Buffalo Sabres': 'BUF',
+      'Calgary Flames': 'CGY', 'Carolina Hurricanes': 'CAR', 'Chicago Blackhawks': 'CHI',
+      'Colorado Avalanche': 'COL', 'Columbus Blue Jackets': 'CBJ', 'Dallas Stars': 'DAL',
+      'Detroit Red Wings': 'DET', 'Edmonton Oilers': 'EDM', 'Florida Panthers': 'FLA',
+      'Los Angeles Kings': 'LAK', 'Minnesota Wild': 'MIN', 'Montreal Canadiens': 'MTL',
+      'Nashville Predators': 'NSH', 'New Jersey Devils': 'NJD', 'New York Islanders': 'NYI',
+      'New York Rangers': 'NYR', 'Ottawa Senators': 'OTT', 'Philadelphia Flyers': 'PHI',
+      'Pittsburgh Penguins': 'PIT', 'San Jose Sharks': 'SJS', 'Seattle Kraken': 'SEA',
+      'St. Louis Blues': 'STL', 'Tampa Bay Lightning': 'TBL', 'Toronto Maple Leafs': 'TOR',
+      'Utah Mammoth': 'UTA', 'Vancouver Canucks': 'VAN', 'Vegas Golden Knights': 'VGK',
+      'Washington Capitals': 'WSH', 'Winnipeg Jets': 'WPG'
+    };
+    
+    const games = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+      
+      const values = line.split(',');
+      const gameDate = values[0]?.trim();
+      
+      if (gameDate === todayStr) {
+        const awayTeam = teamMap[values[3]?.trim()];
+        const homeTeam = teamMap[values[5]?.trim()];
+        
+        if (awayTeam && homeTeam) {
+          games.push({ awayTeam, homeTeam });
+        }
+      }
+    }
+    
+    return games;
+  } catch (error) {
+    console.log('   ⚠️  Could not load schedule:', error.message);
+    return [];
   }
 }
 
