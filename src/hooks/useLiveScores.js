@@ -18,8 +18,10 @@ export function useLiveScores() {
       console.log('📊 Fetching live scores from JSON...');
       
       // Add cache-busting query parameter to force fresh data
+      // Use Vite's BASE_URL to ensure correct path on GitHub Pages
       const cacheBuster = Date.now();
-      const response = await fetch(`/live_scores.json?_=${cacheBuster}`);
+      const basePath = import.meta.env.BASE_URL || '/';
+      const response = await fetch(`${basePath}live_scores.json?_=${cacheBuster}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
