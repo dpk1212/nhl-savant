@@ -61,25 +61,34 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     const tied = liveScore.awayScore === liveScore.homeScore;
     const scoreDiff = Math.abs(liveScore.awayScore - liveScore.homeScore);
     
-    // Determine what we predicted/bet
-    const predictedAway = awayWinProb > homeWinProb;
-    const predictedHome = homeWinProb > awayWinProb;
-    const predictedTeam = predictedAway ? awayTeam : homeTeam;
-    const predictedCorrectly = (predictedAway && awayLeading && isFinal) || (predictedHome && homeLeading && isFinal);
-    
     // Check if we had a bet on this game
     const hasBet = bestEdge && bestEdge.market && bestEdge.evPercent > 0;
     
-    // Calculate SOPHISTICATED LIVE probability
+    // Determine what team we're tracking (BET if exists, otherwise MODEL PREDICTION)
+    let ourTeam, ourTeamIsAway, ourPreGameProb;
+    
+    if (hasBet && bestEdge.market === 'MONEYLINE') {
+      // We have a bet - track THAT team (could be underdog for value)
+      ourTeam = bestEdge.team;
+      ourTeamIsAway = ourTeam === awayTeam;
+      ourPreGameProb = ourTeamIsAway ? awayWinProb : homeWinProb;
+    } else {
+      // No bet - track MODEL'S PREDICTION (favorite)
+      const predictedAway = awayWinProb > homeWinProb;
+      ourTeam = predictedAway ? awayTeam : homeTeam;
+      ourTeamIsAway = predictedAway;
+      ourPreGameProb = Math.max(awayWinProb, homeWinProb);
+    }
+    
+    const ourTeamLeading = ourTeamIsAway ? awayLeading : homeLeading;
+    const predictedCorrectly = isFinal && ourTeamLeading;
+    
+    // Calculate SOPHISTICATED LIVE probability FOR OUR BET/PICK
     let liveProbability = 50;
     
     if (isFinal) {
-      // Final: 100% for winner, 0% for loser
-      if (predictedAway) {
-        liveProbability = awayLeading ? 100 : 0;
-      } else {
-        liveProbability = homeLeading ? 100 : 0;
-      }
+      // Final: 100% if our team won, 0% if they lost
+      liveProbability = ourTeamLeading ? 100 : 0;
     } else if (isLive) {
       // Sophisticated live model based on score + time
       const period = liveScore.period || 1;
@@ -87,15 +96,16 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       const isOT = periodString.includes('OT') || period > 3;
       
       if (tied) {
-        // Tied game - use pre-game probability with slight regression
-        liveProbability = predictedAway ? awayWinProb : homeWinProb;
-        // Slight regression toward 50% in regulation
+        // Tied game - use OUR TEAM's pre-game probability with SLIGHT boost toward 50%
+        // If we bet on underdog at 41%, at 0-0 they're slightly better (~44%)
+        // If we bet on favorite at 59%, at 0-0 they're slightly worse (~56%)
+        liveProbability = ourPreGameProb;
+        // Slight regression toward 50% in regulation (game is still open)
         if (!isOT) {
-          liveProbability = 50 + ((liveProbability - 50) * 0.7);
+          liveProbability = 50 + ((liveProbability - 50) * 0.8);
         }
       } else {
         // Leading team probability based on score differential and period
-        // More sophisticated than simple linear
         const leadProb = (() => {
           if (isOT) {
             // OT: next goal wins - heavily favor leader
@@ -118,12 +128,8 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           }
         })();
         
-        // Apply to our pick
-        if (predictedAway) {
-          liveProbability = awayLeading ? leadProb : (100 - leadProb);
-        } else {
-          liveProbability = homeLeading ? leadProb : (100 - leadProb);
-        }
+        // Apply to OUR team (bet or prediction)
+        liveProbability = ourTeamLeading ? leadProb : (100 - leadProb);
       }
     }
     
@@ -146,46 +152,67 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           justifyContent: 'space-between',
           marginBottom: '0.75rem'
         }}>
-          {isLive ? (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.375rem',
-              padding: '0.375rem 0.75rem',
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              borderRadius: '16px',
-              fontSize: '0.688rem',
-              fontWeight: '800',
-              color: '#EF4444',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              <span style={{ 
-                width: '6px', 
-                height: '6px', 
-                background: '#EF4444', 
-                borderRadius: '50%',
-                animation: 'pulse 2s infinite'
-              }} />
-              {liveScore.period || 'LIVE'}
-            </div>
-          ) : (
-            <div style={{
-              display: 'inline-flex',
-              padding: '0.375rem 0.75rem',
-              background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '16px',
-              fontSize: '0.688rem',
-              fontWeight: '800',
-              color: '#10B981',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              FINAL
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {isLive ? (
+              <>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.375rem 0.75rem',
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: '16px',
+                  fontSize: '0.688rem',
+                  fontWeight: '800',
+                  color: '#EF4444',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  <span style={{ 
+                    width: '6px', 
+                    height: '6px', 
+                    background: '#EF4444', 
+                    borderRadius: '50%',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                  {(() => {
+                    const period = liveScore.period || 0;
+                    const periodDesc = liveScore.periodDescriptor || '';
+                    if (periodDesc.includes('OT')) return 'OT';
+                    if (periodDesc.includes('SO')) return 'SO';
+                    if (period === 0) return 'LIVE';
+                    return `P${period}`;
+                  })()}
+                </div>
+                {liveScore.clock && (
+                  <div style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: 'var(--color-text-secondary)',
+                    fontFeatureSettings: '"tnum"'
+                  }}>
+                    {liveScore.clock}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{
+                display: 'inline-flex',
+                padding: '0.375rem 0.75rem',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '16px',
+                fontSize: '0.688rem',
+                fontWeight: '800',
+                color: '#10B981',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                FINAL
+              </div>
+            )}
+          </div>
           
           {rating > 0 && (
             <RatingBadge evPercent={rating} size="small" />
@@ -344,7 +371,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
                   letterSpacing: '0.02em',
                   marginBottom: '2px'
                 }}>
-                  {bestEdge.team || bestEdge.pick}
+                  {ourTeam}
                 </div>
                 <div style={{
                   fontSize: '0.688rem',
@@ -361,7 +388,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
                 color: '#3B82F6',
                 letterSpacing: '0.02em'
               }}>
-                {predictedTeam} to win
+                {ourTeam} to win
               </div>
             )}
             {isFinal && (
