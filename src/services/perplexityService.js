@@ -4,11 +4,11 @@
  * Gracefully falls back on errors - never blocks page load
  */
 
-import { db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const CACHE_TTL_HOURS = 6;
 let PERPLEXITY_API_KEY = null; // Will be fetched from Firestore
+let db = null; // Will be initialized when needed
 
 /**
  * Fetch Perplexity API key from Firebase Secrets collection
@@ -188,12 +188,14 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
  * Searches real-time sources: DailyFaceoff, beat reporters, team announcements
  * 
  * @param {string} date - Date in YYYY-MM-DD format (default: today)
+ * @param {object} dbInstance - Optional Firestore instance (for Node.js usage)
  * @returns {Promise<Object>} Goalies data with games array
  */
-export async function fetchStartingGoalies(date = null) {
+export async function fetchStartingGoalies(date = null, dbInstance = null) {
   const targetDate = date || new Date().toISOString().split('T')[0];
   const cacheKey = `starting-goalies-${targetDate}`;
-  const cacheRef = doc(db, 'perplexityCache', cacheKey);
+  const firestore = dbInstance || db;
+  const cacheRef = doc(firestore, 'perplexityCache', cacheKey);
 
   try {
     // Check cache first (30 min TTL for goalie data - they update frequently)
@@ -299,7 +301,7 @@ IMPORTANT:
       }))
     };
 
-    // Cache the result
+    // Cache the result (use the cacheRef which already has firestore)
     await setDoc(cacheRef, {
       goalies: goaliesData,
       timestamp: Date.now()
