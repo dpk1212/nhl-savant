@@ -5,10 +5,10 @@
  */
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase/config.js';
 
 const CACHE_TTL_HOURS = 6;
 let PERPLEXITY_API_KEY = null; // Will be fetched from Firestore
-let db = null; // Will be initialized when needed
 
 /**
  * Fetch Perplexity API key from Firebase Secrets collection
