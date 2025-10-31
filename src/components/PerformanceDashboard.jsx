@@ -289,9 +289,9 @@ export default function PerformanceDashboard() {
         <StatCard
           icon={<Target size={24} color="#10B981" />}
           label="Prediction Accuracy"
-          value="65.4%"
-          target="Based on 112 games"
-          status="good"
+          value={`${stats.winRate.toFixed(1)}%`}
+          target={`Based on ${stats.wins + stats.losses} games`}
+          status={stats.winRate >= 55 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<TrendingUp size={24} color="#D4AF37" />}
