@@ -459,7 +459,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
               fontWeight: '700',
               color: awayWinProb > homeWinProb ? '#10B981' : 'var(--color-text-secondary)'
             }}>
-              {awayTeam} {(awayWinProb * 100).toFixed(0)}%
+              {awayTeam} {(awayWinProb > 1 ? awayWinProb : awayWinProb * 100).toFixed(0)}%
             </div>
             <div style={{
               padding: '0.25rem 0.5rem',
@@ -470,7 +470,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
               fontWeight: '700',
               color: homeWinProb > awayWinProb ? '#10B981' : 'var(--color-text-secondary)'
             }}>
-              {homeTeam} {(homeWinProb * 100).toFixed(0)}%
+              {homeTeam} {(homeWinProb > 1 ? homeWinProb : homeWinProb * 100).toFixed(0)}%
             </div>
         </div>
       )}
