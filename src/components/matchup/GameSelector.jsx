@@ -53,6 +53,8 @@ export default function GameSelector({ games, selectedGame, onGameSelect, predic
     const newIndex = Math.round(scrollLeft / (cardWidth + gap));
     if (newIndex !== activeIndex && newIndex >= 0 && newIndex < games.length) {
       setActiveIndex(newIndex);
+      // FIX: Call onGameSelect when swiping to update Expert Analysis below
+      onGameSelect(games[newIndex]);
     }
   };
 
