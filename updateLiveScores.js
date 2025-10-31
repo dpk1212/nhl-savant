@@ -60,6 +60,35 @@ class NHLScoreUpdater {
   }
 
   /**
+   * Fetch detailed live game data including clock
+   */
+  async fetchLiveGameDetails(gameData) {
+    try {
+      const url = `${this.nhlApiBase}/gamecenter/${gameData.gameId}/play-by-play`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.warn(`⚠️  Could not fetch live details for game ${gameData.gameId}`);
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // Update period and clock from detailed data
+      if (data.periodDescriptor) {
+        gameData.period = data.periodDescriptor.number || gameData.period;
+        gameData.periodDescriptor = data.periodDescriptor.periodType || gameData.periodDescriptor;
+      }
+      
+      if (data.clock) {
+        gameData.clock = data.clock.timeRemaining || '';
+      }
+    } catch (error) {
+      console.warn(`⚠️  Error fetching live game details: ${error.message}`);
+    }
+  }
+
+  /**
    * Fetch game data from NHL API for specified date
    */
   async fetchGames(date = null) {
@@ -88,7 +117,7 @@ class NHLScoreUpdater {
       const games = gameWeek[0]?.games || [];
       console.log(`✅ Found ${games.length} games\n`);
 
-      return this.processGames(games, date);
+      return await this.processGames(games, date);
 
     } catch (error) {
       console.error(`❌ Error fetching NHL data: ${error.message}`);
@@ -99,7 +128,7 @@ class NHLScoreUpdater {
   /**
    * Process raw NHL API game data into clean format
    */
-  processGames(games, date) {
+  async processGames(games, date) {
     const processed = [];
 
     for (const game of games) {
@@ -113,9 +142,9 @@ class NHLScoreUpdater {
           homeScore: game.homeTeam.score || 0,
           totalScore: (game.awayTeam.score || 0) + (game.homeTeam.score || 0),
           gameState: game.gameState || 'FUT',  // FUT, LIVE, FINAL, OFF
-          period: game.period || 0,
+          period: game.periodDescriptor?.number || 0,
           periodDescriptor: game.periodDescriptor?.periodType || '',
-          clock: game.clock?.timeRemaining || '',
+          clock: '',
           gameTime: game.startTimeUTC || '',
           lastUpdate: new Date().toISOString()
         };
@@ -126,6 +155,8 @@ class NHLScoreUpdater {
           gameData.status = 'FINAL';
         } else if (gameData.gameState === 'LIVE') {
           gameData.status = 'LIVE';
+          // Fetch detailed clock data for LIVE games
+          await this.fetchLiveGameDetails(gameData);
         } else if (['FUT', 'PRE'].includes(gameData.gameState)) {
           gameData.status = 'SCHEDULED';
         } else {
