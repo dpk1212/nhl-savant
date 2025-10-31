@@ -52,11 +52,19 @@ async function validateBettingResults() {
       return;
     }
     
-    // Collect all bets
-    const bets = [];
+    // Collect all bets and filter out totals
+    const allBets = [];
     snapshot.forEach(doc => {
-      bets.push({ id: doc.id, ...doc.data() });
+      allBets.push({ id: doc.id, ...doc.data() });
     });
+    
+    // FILTER OUT TOTALS: Totals betting disabled Oct 31, 2025
+    const bets = allBets.filter(bet => 
+      bet.bet?.market !== 'TOTAL' && 
+      !bet.bet?.market?.includes('TOTAL')
+    );
+    
+    console.log(`📊 Analyzing ${bets.length} bets (${allBets.length - bets.length} totals excluded)\n`);
     
     // Calculate metrics
     const metrics = {

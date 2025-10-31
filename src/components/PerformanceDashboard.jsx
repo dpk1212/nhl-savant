@@ -129,8 +129,13 @@ export default function PerformanceDashboard() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       
-      // FILTER: Only include B-rated or higher bets (>= 3% EV)
-      const qualityBets = bets.filter(b => b.prediction?.rating !== 'C');
+      // FILTER: Only include B-rated or higher bets (>= 3% EV) AND exclude totals
+      // Totals betting disabled Oct 31, 2025 - not profitable with public data
+      const qualityBets = bets.filter(b => 
+        b.prediction?.rating !== 'C' && 
+        b.bet?.market !== 'TOTAL' && 
+        !b.bet?.market?.includes('TOTAL')
+      );
       
       if (qualityBets.length === 0) {
         setStats({
@@ -205,16 +210,13 @@ export default function PerformanceDashboard() {
       // Calculate Kelly analysis for all bets and by market
       const sortedBets = qualityBets.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       const mlBets = sortedBets.filter(b => b.bet?.market === 'MONEYLINE');
-      const totalBets = sortedBets.filter(b => b.bet?.market === 'TOTAL');
       
       const allKelly = simulateKelly(sortedBets);
       const mlKelly = simulateKelly(mlBets);
-      const totalKelly = simulateKelly(totalBets);
       
       setKellyAnalysis({
         all: { ...allKelly, bets: sortedBets.length },
-        moneyline: { ...mlKelly, bets: mlBets.length },
-        totals: { ...totalKelly, bets: totalBets.length }
+        moneyline: { ...mlKelly, bets: mlBets.length }
       });
       
       // Store all quality bets for timeline chart
@@ -312,8 +314,8 @@ export default function PerformanceDashboard() {
         />
       </div>
       
-      {/* Market Performance Comparison - NEW SECTION */}
-      {kellyAnalysis && byMarket.MONEYLINE && byMarket.TOTAL && (
+      {/* Market Performance - Moneyline Focus */}
+      {kellyAnalysis && byMarket.MONEYLINE && (
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ 
             fontSize: '1.5rem', 
@@ -321,124 +323,64 @@ export default function PerformanceDashboard() {
             color: 'var(--color-text-primary)',
             marginBottom: '1rem'
           }}>
-            Performance by Market Type
+            Moneyline Performance
           </h2>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.5rem'
+          <div className="elevated-card" style={{ 
+            padding: '1.5rem',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.3)'
           }}>
-            {/* MONEYLINE Card - Success */}
-            <div className="elevated-card" style={{ 
-              padding: '1.5rem',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.3)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
-                  🎯 MONEYLINE PICKS
-                </h3>
-                <span style={{ 
-                  padding: '0.25rem 0.75rem',
-                  background: 'rgba(16, 185, 129, 0.2)',
-                  color: '#10B981',
-                  borderRadius: '1rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '700'
-                }}>
-                  ELITE
-                </span>
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#10B981', marginBottom: '0.25rem' }}>
-                  +{byMarket.MONEYLINE.roi.toFixed(1)}%
-                </div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                  ROI on {byMarket.MONEYLINE.bets} bets
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Win Rate</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
-                    {byMarket.MONEYLINE.winRate.toFixed(1)}%
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Profit</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
-                    +{byMarket.MONEYLINE.profit.toFixed(2)}u
-                  </div>
-                </div>
-              </div>
-              {kellyAnalysis.moneyline && (
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-                    Hypothetical Bankroll ($500 start)
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                    <span>Flat Betting: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.flatBankroll.toFixed(0)}</strong></span>
-                    <span>Kelly: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.kellyBankroll.toFixed(0)}</strong></span>
-                  </div>
-                </div>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
+                🎯 MONEYLINE PICKS
+              </h3>
+              <span style={{ 
+                padding: '0.25rem 0.75rem',
+                background: 'rgba(16, 185, 129, 0.2)',
+                color: '#10B981',
+                borderRadius: '1rem',
+                fontSize: '0.75rem',
+                fontWeight: '700'
+              }}>
+                ELITE
+              </span>
             </div>
-
-            {/* TOTALS Card - Warning */}
-            <div className="elevated-card" style={{ 
-              padding: '1.5rem',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%)',
-              border: '1px solid rgba(245, 158, 11, 0.3)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#F59E0B' }}>
-                  📊 TOTAL PICKS
-                </h3>
-                <span style={{ 
-                  padding: '0.25rem 0.75rem',
-                  background: 'rgba(245, 158, 11, 0.2)',
-                  color: '#F59E0B',
-                  borderRadius: '1rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '700'
-                }}>
-                  DEVELOPING
-                </span>
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#10B981', marginBottom: '0.25rem' }}>
+                +{byMarket.MONEYLINE.roi.toFixed(1)}%
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#F59E0B', marginBottom: '0.25rem' }}>
-                  {byMarket.TOTAL.roi.toFixed(1)}%
-                </div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                  ROI on {byMarket.TOTAL.bets} bets
-                </div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                ROI on {byMarket.MONEYLINE.bets} bets
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Win Rate</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#F59E0B' }}>
-                    {byMarket.TOTAL.winRate.toFixed(1)}%
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Profit</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#EF4444' }}>
-                    {byMarket.TOTAL.profit.toFixed(2)}u
-                  </div>
-                </div>
-              </div>
-              {kellyAnalysis.totals && (
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-                    Hypothetical Bankroll ($500 start)
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                    <span>Flat Betting: <strong style={{ color: '#EF4444' }}>${kellyAnalysis.totals.flatBankroll.toFixed(0)}</strong></span>
-                    <span>Kelly: <strong style={{ color: '#F59E0B' }}>${kellyAnalysis.totals.kellyBankroll.toFixed(0)}</strong></span>
-                  </div>
-                </div>
-              )}
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Win Rate</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
+                  {byMarket.MONEYLINE.winRate.toFixed(1)}%
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Profit</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
+                  +{byMarket.MONEYLINE.profit.toFixed(2)}u
+                </div>
+              </div>
+            </div>
+            {kellyAnalysis.moneyline && (
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
+                  Hypothetical Bankroll ($500 start)
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                  <span>Flat Betting: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.flatBankroll.toFixed(0)}</strong></span>
+                  <span>Kelly: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.kellyBankroll.toFixed(0)}</strong></span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem' }}>
+            <strong>📌 Note:</strong> Totals betting was disabled Oct 31, 2025. Analysis showed public data insufficient for consistent edge. Focus remains on elite moneyline performance.
           </div>
         </div>
       )}
@@ -497,26 +439,11 @@ export default function PerformanceDashboard() {
                     {kellyAnalysis.moneyline.flatBankroll > kellyAnalysis.moneyline.kellyBankroll ? '🏆 Flat' : '🏆 Kelly'}
                   </td>
                 </tr>
-                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(245, 158, 11, 0.05)' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: '600', color: '#F59E0B' }}>Totals</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>{kellyAnalysis.totals.bets}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>${kellyAnalysis.totals.flatBankroll.toFixed(2)}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', color: '#EF4444' }}>
-                    {kellyAnalysis.totals.flatROI.toFixed(2)}%
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>${kellyAnalysis.totals.kellyBankroll.toFixed(2)}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', color: kellyAnalysis.totals.kellyROI > 0 ? '#10B981' : '#F59E0B' }}>
-                    {kellyAnalysis.totals.kellyROI.toFixed(2)}%
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                    {kellyAnalysis.totals.flatBankroll > kellyAnalysis.totals.kellyBankroll ? '🏆 Flat' : '🏆 Kelly'}
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>
           <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem' }}>
-            <strong>Key Insight:</strong> Moneyline picks show consistent profitability (+20.81% ROI), while Kelly sizing provides better risk management on underperforming Total bets (cuts losses in half).
+            <strong>Key Insight:</strong> Moneyline model delivers consistent profitability with elite 64.7% win rate. Kelly sizing optimizes risk-adjusted returns for long-term bankroll growth.
           </div>
         </div>
       )}
