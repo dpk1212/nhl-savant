@@ -56,67 +56,127 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
   
   // If game is live or final, show live score layout instead
   if (isLive || isFinal) {
+    const awayLeading = liveScore.awayScore > liveScore.homeScore;
+    const homeLeading = liveScore.homeScore > liveScore.awayScore;
+    const tied = liveScore.awayScore === liveScore.homeScore;
+    
     return (
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column',
-        padding: isMobile ? '0.75rem' : '0.875rem',
+        padding: isMobile ? '1.25rem' : '1.5rem',
         borderBottom: isCollapsed ? 'none' : ELEVATION.flat.border,
         background: isLive 
-          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(26, 31, 46, 0.8) 100%)'
-          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(26, 31, 46, 0.8) 100%)'
+          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)'
+          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        {/* Live Status Badge */}
+        {/* Glow effect for live games */}
         {isLive && (
           <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-            padding: '0.25rem 0.625rem',
-            background: 'rgba(239, 68, 68, 0.2)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            borderRadius: '12px',
-            fontSize: '0.688rem',
-            fontWeight: '800',
-            color: '#EF4444',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            alignSelf: 'flex-start',
-            marginBottom: '0.625rem'
-          }}>
-            <span style={{ 
-              width: '6px', 
-              height: '6px', 
-              background: '#EF4444', 
-              borderRadius: '50%',
-              animation: 'pulse 2s infinite'
-            }} />
-            {liveScore.period || 'LIVE'}
-          </div>
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '2px',
+            background: 'linear-gradient(90deg, transparent, #EF4444, transparent)',
+            animation: 'shimmer 2s infinite'
+          }} />
         )}
         
-        {/* Score Display */}
+        {/* Status Badge */}
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '1rem'
+          justifyContent: 'space-between',
+          marginBottom: '1rem'
+        }}>
+          {isLive ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 0.875rem',
+              background: 'rgba(239, 68, 68, 0.25)',
+              border: '2px solid rgba(239, 68, 68, 0.5)',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: '900',
+              color: '#EF4444',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)'
+            }}>
+              <span style={{ 
+                width: '8px', 
+                height: '8px', 
+                background: '#EF4444', 
+                borderRadius: '50%',
+                boxShadow: '0 0 8px #EF4444',
+                animation: 'pulse 2s infinite'
+              }} />
+              {liveScore.period || 'LIVE'}
+            </div>
+          ) : (
+            <div style={{
+              display: 'inline-flex',
+              padding: '0.5rem 0.875rem',
+              background: 'rgba(16, 185, 129, 0.2)',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: '900',
+              color: '#10B981',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em'
+            }}>
+              FINAL
+            </div>
+          )}
+          
+          {/* Rating badge if exists */}
+          {rating > 0 && (
+            <RatingBadge evPercent={rating} size="small" />
+          )}
+        </div>
+        
+        {/* Premium Score Display */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: isMobile ? '1rem' : '1.5rem',
+          marginBottom: '0.75rem'
         }}>
           {/* Away Team */}
-          <div style={{ flex: 1 }}>
+          <div style={{ 
+            textAlign: 'left',
+            padding: isMobile ? '0.75rem' : '1rem',
+            background: awayLeading 
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+              : 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '12px',
+            border: awayLeading 
+              ? '2px solid rgba(16, 185, 129, 0.3)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            transition: 'all 0.3s ease'
+          }}>
             <div style={{
-              fontSize: isMobile ? '1rem' : '1.125rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               fontWeight: '700',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '0.25rem'
+              color: awayLeading ? '#10B981' : 'var(--color-text-secondary)',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.05em'
             }}>
               {awayTeam}
             </div>
             <div style={{
-              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontSize: isMobile ? '2.5rem' : '3rem',
               fontWeight: '900',
-              color: (liveScore.awayScore > liveScore.homeScore && isFinal) ? '#10B981' : 'var(--color-text-primary)',
-              lineHeight: 1
+              color: awayLeading ? '#10B981' : 'var(--color-text-primary)',
+              lineHeight: 1,
+              textShadow: awayLeading ? '0 0 20px rgba(16, 185, 129, 0.3)' : 'none'
             }}>
               {liveScore.awayScore ?? 0}
             </div>
@@ -124,51 +184,79 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           
           {/* VS Divider */}
           <div style={{
-            fontSize: '0.875rem',
-            fontWeight: '600',
-            color: 'var(--color-text-muted)',
-            padding: '0 0.5rem'
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.25rem'
           }}>
-            @
+            <div style={{
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              fontWeight: '700',
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em'
+            }}>
+              @
+            </div>
+            {tied && (
+              <div style={{
+                fontSize: '0.625rem',
+                fontWeight: '600',
+                color: '#F59E0B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                TIED
+              </div>
+            )}
           </div>
           
           {/* Home Team */}
-          <div style={{ flex: 1, textAlign: 'right' }}>
+          <div style={{ 
+            textAlign: 'right',
+            padding: isMobile ? '0.75rem' : '1rem',
+            background: homeLeading 
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.15) 100%)'
+              : 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '12px',
+            border: homeLeading 
+              ? '2px solid rgba(16, 185, 129, 0.3)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            transition: 'all 0.3s ease'
+          }}>
             <div style={{
-              fontSize: isMobile ? '1rem' : '1.125rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               fontWeight: '700',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '0.25rem'
+              color: homeLeading ? '#10B981' : 'var(--color-text-secondary)',
+              marginBottom: '0.5rem',
+              letterSpacing: '0.05em'
             }}>
               {homeTeam}
             </div>
             <div style={{
-              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontSize: isMobile ? '2.5rem' : '3rem',
               fontWeight: '900',
-              color: (liveScore.homeScore > liveScore.awayScore && isFinal) ? '#10B981' : 'var(--color-text-primary)',
-              lineHeight: 1
+              color: homeLeading ? '#10B981' : 'var(--color-text-primary)',
+              lineHeight: 1,
+              textShadow: homeLeading ? '0 0 20px rgba(16, 185, 129, 0.3)' : 'none'
             }}>
               {liveScore.homeScore ?? 0}
             </div>
           </div>
         </div>
         
-        {/* Final Status */}
-        {isFinal && (
+        {/* Live game time or final note */}
+        {isLive && liveScore.timeRemaining && (
           <div style={{
-            marginTop: '0.625rem',
-            padding: '0.375rem 0.625rem',
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '6px',
-            fontSize: '0.75rem',
-            fontWeight: '700',
-            color: '#10B981',
             textAlign: 'center',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontSize: '0.813rem',
+            fontWeight: '600',
+            color: 'var(--color-text-secondary)',
+            padding: '0.5rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px'
           }}>
-            Final
+            {liveScore.timeRemaining}
           </div>
         )}
       </div>
@@ -303,7 +391,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       </div>
     )}
   </div>
-  );
+);
 };
 
 // Calculate implied probability from odds
@@ -2280,7 +2368,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           dataProcessor={dataProcessor}
                           liveScores={liveScores}
                         />
-                        {/* Quick Stats Bar - only show when collapsed */}
+                        {/* Quick Stats Bar - only show when collapsed AND pre-game (hide during live/final) */}
+                        {(() => {
+                          // Check if game is live or final
+                          const liveScore = liveScores?.find(score => 
+                            (score.awayTeam === game.awayTeam && score.homeTeam === game.homeTeam) ||
+                            (score.away === game.awayTeam && score.home === game.homeTeam)
+                          );
+                          const isLiveOrFinal = liveScore && (
+                            liveScore.status === 'LIVE' || 
+                            liveScore.status === 'In Progress' || 
+                            liveScore.status === 'FINAL' || 
+                            liveScore.status === 'Final'
+                          );
+                          
+                          // Only show pre-game stats if not live/final
+                          if (!isLiveOrFinal) {
+                            return (
                         <QuickStatsBar 
                           game={game}
                           awayTeam={game.awayTeam}
@@ -2288,6 +2392,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           dataProcessor={dataProcessor}
                           isMobile={isMobile}
                         />
+                            );
+                          }
+                          return null;
+                        })()}
                       </>
           );
 
