@@ -70,8 +70,9 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     // Check if we had a bet on this game
     const hasBet = bestEdge && bestEdge.market && bestEdge.evPercent > 0;
     
-    // Calculate LIVE probability based on current score
-    let liveProbability = 50; // Default for tied
+    // Calculate SOPHISTICATED LIVE probability
+    let liveProbability = 50;
+    
     if (isFinal) {
       // Final: 100% for winner, 0% for loser
       if (predictedAway) {
@@ -80,16 +81,48 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         liveProbability = homeLeading ? 100 : 0;
       }
     } else if (isLive) {
-      // Live: estimate based on score differential
+      // Sophisticated live model based on score + time
+      const period = liveScore.period || 1;
+      const periodString = liveScore.periodDescriptor || '';
+      const isOT = periodString.includes('OT') || period > 3;
+      
       if (tied) {
-        liveProbability = 50;
+        // Tied game - use pre-game probability with slight regression
+        liveProbability = predictedAway ? awayWinProb : homeWinProb;
+        // Slight regression toward 50% in regulation
+        if (!isOT) {
+          liveProbability = 50 + ((liveProbability - 50) * 0.7);
+        }
       } else {
-        // Simple model: each goal is worth ~15-20% probability swing
-        const leadingTeamProb = Math.min(95, 50 + (scoreDiff * 18));
+        // Leading team probability based on score differential and period
+        // More sophisticated than simple linear
+        const leadProb = (() => {
+          if (isOT) {
+            // OT: next goal wins - heavily favor leader
+            return scoreDiff === 1 ? 85 : 95;
+          } else if (period === 3) {
+            // 3rd period: harder to come back
+            if (scoreDiff === 1) return 72;
+            if (scoreDiff === 2) return 88;
+            return 95;
+          } else if (period === 2) {
+            // 2nd period: moderate difficulty
+            if (scoreDiff === 1) return 65;
+            if (scoreDiff === 2) return 80;
+            return 92;
+          } else {
+            // 1st period: easiest to come back
+            if (scoreDiff === 1) return 58;
+            if (scoreDiff === 2) return 72;
+            return 85;
+          }
+        })();
+        
+        // Apply to our pick
         if (predictedAway) {
-          liveProbability = awayLeading ? leadingTeamProb : (100 - leadingTeamProb);
+          liveProbability = awayLeading ? leadProb : (100 - leadProb);
         } else {
-          liveProbability = homeLeading ? leadingTeamProb : (100 - leadingTeamProb);
+          liveProbability = homeLeading ? leadProb : (100 - leadProb);
         }
       }
     }
@@ -2461,8 +2494,16 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 homeTeam={game.homeTeam}
                 gameTime={game.gameTime}
                 rating={bestEdge?.evPercent || 0}
-                awayWinProb={(game.edges.moneyline?.away?.modelProb || 0) * 100}
-                homeWinProb={(game.edges.moneyline?.home?.modelProb || 0) * 100}
+                awayWinProb={(() => {
+                  const prob = game.edges.moneyline?.away?.modelProb || 0;
+                  // Check if already percentage (>1) or decimal (<=1)
+                  return prob > 1 ? prob : prob * 100;
+                })()}
+                homeWinProb={(() => {
+                  const prob = game.edges.moneyline?.home?.modelProb || 0;
+                  // Check if already percentage (>1) or decimal (<=1)
+                  return prob > 1 ? prob : prob * 100;
+                })()}
                 isMobile={isMobile}
               bestEdge={bestEdge}
                           game={game}
