@@ -5,6 +5,7 @@ export class EdgeCalculator {
   constructor(dataProcessor, oddsFiles, startingGoalies = null) {
     this.dataProcessor = dataProcessor;
     this.startingGoalies = startingGoalies;
+    // TOTALS BETTING REMOVED: Focus on elite 64.7% moneyline performance
     
     // Use parseBothFiles if we have both money and total files
     if (oddsFiles && oddsFiles.moneyText && oddsFiles.totalText) {
@@ -71,14 +72,13 @@ export class EdgeCalculator {
           },
           edges: {
             moneyline: this.calculateMoneylineEdge(game, awayScore, homeScore),
-            puckLine: this.calculatePuckLineEdge(game, awayScore, homeScore),
-            total: this.calculateTotalEdge(game, awayScore, homeScore),
-            teamTotals: this.calculateTeamTotalEdges(game, awayScore, homeScore)
+            puckLine: this.calculatePuckLineEdge(game, awayScore, homeScore)
+            // TOTALS REMOVED: Focus on moneyline (64.7% win rate) and puck line
           },
           rawOdds: {
             moneyline: game.moneyline,
-            puckLine: game.puckLine,
-            total: game.total
+            puckLine: game.puckLine
+            // TOTALS REMOVED: Not profitable with public data
           }
         };
       } catch (error) {
@@ -168,77 +168,29 @@ export class EdgeCalculator {
     };
   }
 
-  // Calculate total (over/under) edge
-  calculateTotalEdge(game, awayScore, homeScore) {
-    if (!game.total.line || !game.total.over || !game.total.under) {
-      return null;
-    }
-    
-    // Use pre-calculated scores (already includes starting goalies and home ice)
-    const predictedTotal = awayScore + homeScore;
-    
-    const marketTotal = game.total.line;
-    
-    // Calculate edge (how much our model differs from market)
-    const edge = predictedTotal - marketTotal;
-    
-    // FIX: Use POISSON distribution (industry standard for hockey)
-    // Hockey goals are discrete, rare events - Poisson is more accurate than Normal
-    // P(Over) = P(Total > marketTotal) = 1 - P(Total <= marketTotal)
-    const overProb = 1 - this.dataProcessor.poissonCDF(Math.floor(marketTotal), predictedTotal);
-    const underProb = 1 - overProb;
-    
-    // Calculate EV
-    const overEV = this.dataProcessor.calculateEV(overProb, game.total.over);
-    const underEV = this.dataProcessor.calculateEV(underProb, game.total.under);
-    
-    // Determine recommendation
-    let recommendation = 'NO BET';
-    if (edge > 0.3 && overEV > 0) recommendation = 'OVER';
-    else if (edge < -0.3 && underEV > 0) recommendation = 'UNDER';
-    
-    // Calculate Kelly stakes
-    const overKelly = this.dataProcessor.calculateKellyStake(overProb, game.total.over);
-    const underKelly = this.dataProcessor.calculateKellyStake(underProb, game.total.under);
-    
-    return {
-      predictedTotal: predictedTotal,
-      awayScore: awayScore,  // FIX: Add individual scores for display
-      homeScore: homeScore,  // FIX: Add individual scores for display
-      marketTotal: marketTotal,
-      edge: edge,
-      recommendation: recommendation,
-      over: {
-        ev: overEV,
-        evPercent: overEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
-        modelProb: overProb,
-        odds: game.total.over,
-        kelly: overKelly
-      },
-      under: {
-        ev: underEV,
-        evPercent: underEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
-        modelProb: underProb,
-        odds: game.total.under,
-        kelly: underKelly
-      }
-    };
-  }
-
-  // Calculate team total edges (individual team over/under)
-  calculateTeamTotalEdges(game, awayScore, homeScore) {
-    // Use pre-calculated scores (already includes starting goalies and home ice)
-    return {
-      away: {
-        predicted: awayScore,
-        team: game.awayTeam
-      },
-      home: {
-        predicted: homeScore,
-        team: game.homeTeam
-      }
-    };
-  }
+  // ============================================================================
+  // TOTALS BETTING REMOVED - October 31, 2025
+  // ============================================================================
+  // 
+  // After exhaustive testing of 4 approaches (Ensemble, Adjuster, Amplification,
+  // Bayesian), totals betting was determined to be UNPROFITABLE with public data.
+  //
+  // Our xG model agrees with Vegas within ±0.5 goals, providing no betting edge.
+  // Vegas has access to sharp money flow and injury timing that we don't have.
+  //
+  // CURRENT PERFORMANCE:
+  // - Moneyline: 64.7% win rate (ELITE - 52.4% break-even)
+  // - Totals: ~52.4% win rate (break-even, not profitable)
+  //
+  // See BAYESIAN_TOTALS_FINAL_REPORT.md and TOTALS_BETTING_FINAL_SUMMARY.md
+  // for full analysis and reasoning.
+  //
+  // REMOVED METHODS:
+  // - calculateTotalEdge() - Calculated OVER/UNDER edges
+  // - calculateTeamTotalEdges() - Calculated individual team totals
+  //
+  // FOCUS: Moneyline and Puck Line betting (where we have proven edge)
+  // ============================================================================
 
   // Get top edges across all markets
   getTopEdges(minEV = 0) {
@@ -308,40 +260,7 @@ export class EdgeCalculator {
         });
       }
       
-      // Total edges
-      if (gameEdges.edges.total) {
-        if (gameEdges.edges.total.over.ev > minEV) {
-          opportunities.push({
-            game: gameEdges.game,
-            gameTime: gameEdges.gameTime,
-            market: 'TOTAL',
-            pick: `OVER ${gameEdges.edges.total.marketTotal}`,
-            team: null,
-            odds: gameEdges.edges.total.over.odds,
-            ev: gameEdges.edges.total.over.ev,
-            evPercent: gameEdges.edges.total.over.evPercent,
-            modelProb: gameEdges.edges.total.over.modelProb,
-            kelly: gameEdges.edges.total.over.kelly,
-            predictedTotal: gameEdges.edges.total.predictedTotal
-          });
-        }
-        
-        if (gameEdges.edges.total.under.ev > minEV) {
-          opportunities.push({
-            game: gameEdges.game,
-            gameTime: gameEdges.gameTime,
-            market: 'TOTAL',
-            pick: `UNDER ${gameEdges.edges.total.marketTotal}`,
-            team: null,
-            odds: gameEdges.edges.total.under.odds,
-            ev: gameEdges.edges.total.under.ev,
-            evPercent: gameEdges.edges.total.under.evPercent,
-            modelProb: gameEdges.edges.total.under.modelProb,
-            kelly: gameEdges.edges.total.under.kelly,
-            predictedTotal: gameEdges.edges.total.predictedTotal
-          });
-        }
-      }
+      // TOTALS EDGES REMOVED: Focus on moneyline and puck line only
     });
     
     // Sort by EV percentage (highest first)
