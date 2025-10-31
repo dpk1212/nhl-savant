@@ -252,7 +252,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
               letterSpacing: '0.05em',
               marginBottom: '0.375rem'
             }}>
-              {hasBet ? 'YOUR BET' : 'YOU PICKED'}
+              {hasBet ? 'NHL SAVANT BET' : 'NHL SAVANT PICK'}
             </div>
             
             {/* LIVE Probability Bar */}
