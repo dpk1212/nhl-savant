@@ -59,14 +59,40 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     const awayLeading = liveScore.awayScore > liveScore.homeScore;
     const homeLeading = liveScore.homeScore > liveScore.awayScore;
     const tied = liveScore.awayScore === liveScore.homeScore;
+    const scoreDiff = Math.abs(liveScore.awayScore - liveScore.homeScore);
     
-    // Determine if we predicted correctly
+    // Determine what we predicted/bet
     const predictedAway = awayWinProb > homeWinProb;
     const predictedHome = homeWinProb > awayWinProb;
+    const predictedTeam = predictedAway ? awayTeam : homeTeam;
     const predictedCorrectly = (predictedAway && awayLeading && isFinal) || (predictedHome && homeLeading && isFinal);
     
     // Check if we had a bet on this game
     const hasBet = bestEdge && bestEdge.market && bestEdge.evPercent > 0;
+    
+    // Calculate LIVE probability based on current score
+    let liveProbability = 50; // Default for tied
+    if (isFinal) {
+      // Final: 100% for winner, 0% for loser
+      if (predictedAway) {
+        liveProbability = awayLeading ? 100 : 0;
+      } else {
+        liveProbability = homeLeading ? 100 : 0;
+      }
+    } else if (isLive) {
+      // Live: estimate based on score differential
+      if (tied) {
+        liveProbability = 50;
+      } else {
+        // Simple model: each goal is worth ~15-20% probability swing
+        const leadingTeamProb = Math.min(95, 50 + (scoreDiff * 18));
+        if (predictedAway) {
+          liveProbability = awayLeading ? leadingTeamProb : (100 - leadingTeamProb);
+        } else {
+          liveProbability = homeLeading ? leadingTeamProb : (100 - leadingTeamProb);
+        }
+      }
+    }
     
     return (
       <div style={{ 
@@ -206,7 +232,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           </div>
         </div>
         
-        {/* Prediction Bar with Sparkline */}
+        {/* Prediction Bar with LIVE Probability Sparkline */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -216,106 +242,108 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           borderRadius: '8px',
           border: '1px solid rgba(255, 255, 255, 0.08)'
         }}>
-          {/* Probability Sparkline */}
-          <div style={{
-            flex: 1,
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1px',
-            background: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '4px',
-            padding: '2px',
-            position: 'relative'
-          }}>
-            {/* Away side (left) */}
+          {/* YOUR PICK Label + Sparkline */}
+          <div style={{ flex: 1 }}>
             <div style={{
-              width: `${awayWinProb}%`,
-              height: '100%',
-              background: predictedAway 
-                ? 'linear-gradient(90deg, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0.3))'
-                : 'rgba(100, 116, 139, 0.3)',
-              borderRadius: '2px',
-              transition: 'all 0.3s ease'
-            }} />
-            {/* Home side (right) */}
+              fontSize: '0.625rem',
+              fontWeight: '700',
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: '0.375rem'
+            }}>
+              {hasBet ? 'YOUR BET' : 'YOU PICKED'}
+            </div>
+            
+            {/* LIVE Probability Bar */}
             <div style={{
-              width: `${homeWinProb}%`,
-              height: '100%',
-              background: predictedHome 
-                ? 'linear-gradient(270deg, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0.3))'
-                : 'rgba(100, 116, 139, 0.3)',
-              borderRadius: '2px',
-              transition: 'all 0.3s ease'
-            }} />
-            {/* Center line */}
-            <div style={{
-              position: 'absolute',
-              left: '50%',
-              top: 0,
-              bottom: 0,
-              width: '1px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              transform: 'translateX(-50%)'
-            }} />
+              height: '28px',
+              background: 'rgba(0, 0, 0, 0.4)',
+              borderRadius: '6px',
+              padding: '3px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Probability fill */}
+              <div style={{
+                width: `${liveProbability}%`,
+                height: '100%',
+                background: liveProbability >= 50
+                  ? 'linear-gradient(90deg, #10B981, #059669)'
+                  : 'linear-gradient(90deg, #EF4444, #DC2626)',
+                borderRadius: '4px',
+                transition: 'all 0.5s ease',
+                boxShadow: liveProbability >= 50 
+                  ? '0 0 12px rgba(16, 185, 129, 0.4)'
+                  : '0 0 12px rgba(239, 68, 68, 0.4)'
+              }} />
+              
+              {/* Percentage text overlay */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: '0.75rem',
+                fontWeight: '900',
+                color: 'white',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+                letterSpacing: '0.02em'
+              }}>
+                {Math.round(liveProbability)}%
+              </div>
+            </div>
           </div>
           
-          {/* Prediction Summary */}
+          {/* What You Picked/Bet */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
-            minWidth: isMobile ? '100px' : '120px'
+            minWidth: isMobile ? '90px' : '110px'
           }}>
             {hasBet ? (
               <>
                 <div style={{
-                  fontSize: '0.688rem',
-                  fontWeight: '700',
-                  color: 'var(--color-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  {bestEdge.market === 'MONEYLINE' ? 'BET' : bestEdge.market}
-                </div>
-                <div style={{
                   fontSize: '0.813rem',
                   fontWeight: '800',
                   color: '#3B82F6',
-                  letterSpacing: '0.02em'
+                  letterSpacing: '0.02em',
+                  marginBottom: '2px'
                 }}>
-                  {bestEdge.team || bestEdge.pick} {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+                  {bestEdge.team || bestEdge.pick}
+                </div>
+                <div style={{
+                  fontSize: '0.688rem',
+                  fontWeight: '700',
+                  color: 'var(--color-text-secondary)'
+                }}>
+                  {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
                 </div>
               </>
             ) : (
-              <>
-                <div style={{
-                  fontSize: '0.688rem',
-                  fontWeight: '700',
-                  color: 'var(--color-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  PREDICTED
-                </div>
-                <div style={{
-                  fontSize: '0.813rem',
-                  fontWeight: '800',
-                  color: '#3B82F6',
-                  letterSpacing: '0.02em'
-                }}>
-                  {predictedAway ? awayTeam : homeTeam} {Math.round(Math.max(awayWinProb, homeWinProb))}%
-                </div>
-              </>
+              <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '800',
+                color: '#3B82F6',
+                letterSpacing: '0.02em'
+              }}>
+                {predictedTeam} to win
+              </div>
             )}
             {isFinal && (
               <div style={{
-                fontSize: '0.625rem',
-                fontWeight: '600',
+                fontSize: '0.688rem',
+                fontWeight: '700',
                 color: predictedCorrectly ? '#10B981' : '#EF4444',
-                marginTop: '2px'
+                marginTop: '4px',
+                padding: '2px 6px',
+                background: predictedCorrectly 
+                  ? 'rgba(16, 185, 129, 0.15)' 
+                  : 'rgba(239, 68, 68, 0.15)',
+                borderRadius: '4px'
               }}>
-                {predictedCorrectly ? '✓ CORRECT' : '✗ WRONG'}
+                {predictedCorrectly ? '✓ WIN' : '✗ LOSS'}
               </div>
             )}
           </div>
