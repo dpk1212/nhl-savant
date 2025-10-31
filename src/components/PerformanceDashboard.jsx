@@ -145,17 +145,37 @@ export default function PerformanceDashboard() {
           pushes: 0,
           winRate: 0,
           roi: 0,
-          profit: 0
+          profit: 0,
+          predictionAccuracy: 0,
+          predictionsTracked: 0,
+          correctPredictions: 0
         });
         setLoading(false);
         return;
       }
       
       // Calculate overall stats (B-rated or higher only)
+      // Betting results (for ROI)
       const wins = qualityBets.filter(b => b.result?.outcome === 'WIN').length;
       const losses = qualityBets.filter(b => b.result?.outcome === 'LOSS').length;
       const pushes = qualityBets.filter(b => b.result?.outcome === 'PUSH').length;
       const totalProfit = qualityBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+      
+      // Prediction accuracy (predicted winner vs actual winner)
+      const predictionsWithResults = qualityBets.filter(b => 
+        b.result?.winner && 
+        b.prediction?.awayWinProb !== undefined && 
+        b.prediction?.homeWinProb !== undefined
+      );
+      
+      const correctPredictions = predictionsWithResults.filter(b => {
+        const predictedWinner = b.prediction.homeWinProb > b.prediction.awayWinProb ? 'HOME' : 'AWAY';
+        return predictedWinner === b.result.winner;
+      }).length;
+      
+      const predictionAccuracy = predictionsWithResults.length > 0 
+        ? (correctPredictions / predictionsWithResults.length) * 100 
+        : 0;
       
       setStats({
         totalBets: qualityBets.length,
@@ -164,7 +184,10 @@ export default function PerformanceDashboard() {
         pushes,
         winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
         roi: qualityBets.length > 0 ? (totalProfit / qualityBets.length) * 100 : 0,
-        profit: totalProfit
+        profit: totalProfit,
+        predictionAccuracy,
+        predictionsTracked: predictionsWithResults.length,
+        correctPredictions
       });
       
       // Calculate by market (B-rated or higher only)
@@ -289,9 +312,9 @@ export default function PerformanceDashboard() {
         <StatCard
           icon={<Target size={24} color="#10B981" />}
           label="Prediction Accuracy"
-          value={`${stats.winRate.toFixed(1)}%`}
-          target={`Based on ${stats.wins + stats.losses} games`}
-          status={stats.winRate >= 55 ? 'good' : 'warning'}
+          value={`${stats.predictionAccuracy.toFixed(1)}%`}
+          target={`${stats.correctPredictions}/${stats.predictionsTracked} winners predicted correctly`}
+          status={stats.predictionAccuracy >= 55 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<TrendingUp size={24} color="#D4AF37" />}
