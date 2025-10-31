@@ -66,9 +66,9 @@ export function parseOddsTrader(markdownText) {
   const yesterdayDay = yesterday.getDate();
   const yesterdayPattern = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`;
   
-  // Always include yesterday's games to catch live/finished games
-  // This ensures games stay visible even after they start
-  const includeYesterday = true; // Changed from: currentHour < 6
+  // Only include yesterday's games before 6 AM ET (for late night games)
+  const currentHour = today.getHours();
+  const includeYesterday = currentHour < 6;
   
   console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} and ${yesterdayPattern}`);
   
