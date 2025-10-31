@@ -54,68 +54,59 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
   const isLive = liveScore && (liveScore.status === 'LIVE' || liveScore.status === 'In Progress');
   const isFinal = liveScore && (liveScore.status === 'FINAL' || liveScore.status === 'Final');
   
-  // If game is live or final, show live score layout instead
+  // If game is live or final, show sleek compact score + prediction layout
   if (isLive || isFinal) {
     const awayLeading = liveScore.awayScore > liveScore.homeScore;
     const homeLeading = liveScore.homeScore > liveScore.awayScore;
     const tied = liveScore.awayScore === liveScore.homeScore;
     
+    // Determine if we predicted correctly
+    const predictedAway = awayWinProb > homeWinProb;
+    const predictedHome = homeWinProb > awayWinProb;
+    const predictedCorrectly = (predictedAway && awayLeading && isFinal) || (predictedHome && homeLeading && isFinal);
+    
+    // Check if we had a bet on this game
+    const hasBet = bestEdge && bestEdge.market && bestEdge.evPercent > 0;
+    
     return (
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column',
-        padding: isMobile ? '1.5rem' : '2rem',
+        padding: isMobile ? '1rem' : '1.25rem',
         borderBottom: isCollapsed ? 'none' : ELEVATION.flat.border,
         background: isLive 
           ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(11, 15, 31, 1) 100%)'
           : 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(11, 15, 31, 1) 100%)',
         position: 'relative',
-        overflow: 'hidden',
-        minHeight: isMobile ? '180px' : '220px'
+        overflow: 'hidden'
       }}>
-        {/* Glow effect for live games */}
-        {isLive && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '3px',
-            background: 'linear-gradient(90deg, transparent, #EF4444, transparent)',
-            animation: 'shimmer 2s infinite',
-            boxShadow: '0 0 10px #EF4444'
-          }} />
-        )}
-        
-        {/* Status Badge - Top Left */}
+        {/* Top Bar: Status + Rating */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: isMobile ? '1.25rem' : '1.5rem'
+          marginBottom: '0.75rem'
         }}>
           {isLive ? (
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.625rem',
-              padding: '0.625rem 1.125rem',
+              gap: '0.375rem',
+              padding: '0.375rem 0.75rem',
               background: 'rgba(239, 68, 68, 0.2)',
-              border: '2px solid rgba(239, 68, 68, 0.6)',
-              borderRadius: '24px',
-              fontSize: '0.813rem',
-              fontWeight: '900',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              borderRadius: '16px',
+              fontSize: '0.688rem',
+              fontWeight: '800',
               color: '#EF4444',
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              letterSpacing: '0.05em'
             }}>
               <span style={{ 
-                width: '10px', 
-                height: '10px', 
+                width: '6px', 
+                height: '6px', 
                 background: '#EF4444', 
                 borderRadius: '50%',
-                boxShadow: '0 0 12px #EF4444, 0 0 6px #EF4444',
                 animation: 'pulse 2s infinite'
               }} />
               {liveScore.period || 'LIVE'}
@@ -123,204 +114,212 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           ) : (
             <div style={{
               display: 'inline-flex',
-              padding: '0.625rem 1.125rem',
+              padding: '0.375rem 0.75rem',
               background: 'rgba(16, 185, 129, 0.15)',
-              border: '2px solid rgba(16, 185, 129, 0.5)',
-              borderRadius: '24px',
-              fontSize: '0.813rem',
-              fontWeight: '900',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              borderRadius: '16px',
+              fontSize: '0.688rem',
+              fontWeight: '800',
               color: '#10B981',
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
+              letterSpacing: '0.05em'
             }}>
-              ✓ FINAL
+              FINAL
             </div>
           )}
           
-          {/* Rating badge if exists */}
           {rating > 0 && (
             <RatingBadge evPercent={rating} size="small" />
           )}
         </div>
         
-        {/* ELITE Score Display */}
+        {/* Compact Score Display */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: isMobile ? '1rem' : '2rem'
+          gap: isMobile ? '0.75rem' : '1rem',
+          marginBottom: '0.75rem'
         }}>
-          {/* Away Team - Left Side */}
+          {/* Away Team */}
           <div style={{ 
-            flex: 1,
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            padding: isMobile ? '1rem 1.25rem' : '1.5rem 2rem',
-            background: awayLeading 
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%)'
-              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-            borderRadius: '16px',
-            border: awayLeading 
-              ? '2px solid rgba(16, 185, 129, 0.5)'
-              : '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: awayLeading 
-              ? '0 8px 32px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(16, 185, 129, 0.2)'
-              : '0 4px 12px rgba(0, 0, 0, 0.3)',
-            transition: 'all 0.3s ease',
-            position: 'relative',
-            overflow: 'hidden'
+            alignItems: 'center',
+            gap: '0.625rem',
+            flex: 1
           }}>
-            {awayLeading && (
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                padding: '0.25rem 0.5rem',
-                background: 'rgba(16, 185, 129, 0.3)',
-                borderBottomLeftRadius: '8px',
-                fontSize: '0.625rem',
-                fontWeight: '800',
-                color: '#10B981',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                WIN
-              </div>
-            )}
             <div style={{
-              fontSize: isMobile ? '1rem' : '1.25rem',
-              fontWeight: '800',
+              fontSize: isMobile ? '0.938rem' : '1rem',
+              fontWeight: '700',
               color: awayLeading ? '#10B981' : 'var(--color-text-secondary)',
-              marginBottom: isMobile ? '0.5rem' : '0.75rem',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase'
+              letterSpacing: '0.02em'
             }}>
               {awayTeam}
             </div>
             <div style={{
-              fontSize: isMobile ? '3.5rem' : '4.5rem',
+              fontSize: isMobile ? '1.75rem' : '2rem',
               fontWeight: '900',
               color: awayLeading ? '#10B981' : 'var(--color-text-primary)',
-              lineHeight: 0.9,
-              textShadow: awayLeading 
-                ? '0 0 30px rgba(16, 185, 129, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5)' 
-                : '0 2px 4px rgba(0, 0, 0, 0.5)',
-              fontFeatureSettings: '"tnum"'
+              fontFeatureSettings: '"tnum"',
+              minWidth: isMobile ? '30px' : '36px',
+              textAlign: 'center'
             }}>
               {liveScore.awayScore ?? 0}
             </div>
           </div>
           
-          {/* VS Divider - Center */}
+          {/* Divider */}
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0 0.5rem'
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: 'var(--color-text-muted)',
+            padding: '0 0.25rem'
           }}>
-            <div style={{
-              width: '2px',
-              height: isMobile ? '40px' : '60px',
-              background: 'linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.2), transparent)'
-            }} />
-            <div style={{
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              fontWeight: '700',
-              color: 'rgba(255, 255, 255, 0.3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
-            }}>
-              {tied ? 'TIED' : 'VS'}
-            </div>
-            <div style={{
-              width: '2px',
-              height: isMobile ? '40px' : '60px',
-              background: 'linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.2), transparent)'
-            }} />
+            @
           </div>
           
-          {/* Home Team - Right Side */}
+          {/* Home Team */}
           <div style={{ 
-            flex: 1,
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            padding: isMobile ? '1rem 1.25rem' : '1.5rem 2rem',
-            background: homeLeading 
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.2) 100%)'
-              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.05) 100%)',
-            borderRadius: '16px',
-            border: homeLeading 
-              ? '2px solid rgba(16, 185, 129, 0.5)'
-              : '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: homeLeading 
-              ? '0 8px 32px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(16, 185, 129, 0.2)'
-              : '0 4px 12px rgba(0, 0, 0, 0.3)',
-            transition: 'all 0.3s ease',
-            position: 'relative',
-            overflow: 'hidden'
+            alignItems: 'center',
+            gap: '0.625rem',
+            flex: 1,
+            justifyContent: 'flex-end'
           }}>
-            {homeLeading && (
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                padding: '0.25rem 0.5rem',
-                background: 'rgba(16, 185, 129, 0.3)',
-                borderBottomRightRadius: '8px',
-                fontSize: '0.625rem',
-                fontWeight: '800',
-                color: '#10B981',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                WIN
-              </div>
-            )}
             <div style={{
-              fontSize: isMobile ? '1rem' : '1.25rem',
-              fontWeight: '800',
-              color: homeLeading ? '#10B981' : 'var(--color-text-secondary)',
-              marginBottom: isMobile ? '0.5rem' : '0.75rem',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase'
-            }}>
-              {homeTeam}
-            </div>
-            <div style={{
-              fontSize: isMobile ? '3.5rem' : '4.5rem',
+              fontSize: isMobile ? '1.75rem' : '2rem',
               fontWeight: '900',
               color: homeLeading ? '#10B981' : 'var(--color-text-primary)',
-              lineHeight: 0.9,
-              textShadow: homeLeading 
-                ? '0 0 30px rgba(16, 185, 129, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5)' 
-                : '0 2px 4px rgba(0, 0, 0, 0.5)',
-              fontFeatureSettings: '"tnum"'
+              fontFeatureSettings: '"tnum"',
+              minWidth: isMobile ? '30px' : '36px',
+              textAlign: 'center'
             }}>
               {liveScore.homeScore ?? 0}
+            </div>
+            <div style={{
+              fontSize: isMobile ? '0.938rem' : '1rem',
+              fontWeight: '700',
+              color: homeLeading ? '#10B981' : 'var(--color-text-secondary)',
+              letterSpacing: '0.02em'
+            }}>
+              {homeTeam}
             </div>
           </div>
         </div>
         
-        {/* Live game time */}
-        {isLive && liveScore.timeRemaining && (
+        {/* Prediction Bar with Sparkline */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          padding: '0.625rem 0.875rem',
+          background: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }}>
+          {/* Probability Sparkline */}
           <div style={{
-            marginTop: '1rem',
-            textAlign: 'center',
-            fontSize: '0.875rem',
-            fontWeight: '700',
-            color: 'var(--color-text-secondary)',
-            padding: '0.625rem 1rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            borderRadius: '12px',
-            border: '1px solid rgba(239, 68, 68, 0.3)'
+            flex: 1,
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1px',
+            background: 'rgba(0, 0, 0, 0.3)',
+            borderRadius: '4px',
+            padding: '2px',
+            position: 'relative'
           }}>
-            ⏱ {liveScore.timeRemaining}
+            {/* Away side (left) */}
+            <div style={{
+              width: `${awayWinProb}%`,
+              height: '100%',
+              background: predictedAway 
+                ? 'linear-gradient(90deg, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0.3))'
+                : 'rgba(100, 116, 139, 0.3)',
+              borderRadius: '2px',
+              transition: 'all 0.3s ease'
+            }} />
+            {/* Home side (right) */}
+            <div style={{
+              width: `${homeWinProb}%`,
+              height: '100%',
+              background: predictedHome 
+                ? 'linear-gradient(270deg, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0.3))'
+                : 'rgba(100, 116, 139, 0.3)',
+              borderRadius: '2px',
+              transition: 'all 0.3s ease'
+            }} />
+            {/* Center line */}
+            <div style={{
+              position: 'absolute',
+              left: '50%',
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              transform: 'translateX(-50%)'
+            }} />
           </div>
-        )}
+          
+          {/* Prediction Summary */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            minWidth: isMobile ? '100px' : '120px'
+          }}>
+            {hasBet ? (
+              <>
+                <div style={{
+                  fontSize: '0.688rem',
+                  fontWeight: '700',
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  {bestEdge.market === 'MONEYLINE' ? 'BET' : bestEdge.market}
+                </div>
+                <div style={{
+                  fontSize: '0.813rem',
+                  fontWeight: '800',
+                  color: '#3B82F6',
+                  letterSpacing: '0.02em'
+                }}>
+                  {bestEdge.team || bestEdge.pick} {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  fontSize: '0.688rem',
+                  fontWeight: '700',
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  PREDICTED
+                </div>
+                <div style={{
+                  fontSize: '0.813rem',
+                  fontWeight: '800',
+                  color: '#3B82F6',
+                  letterSpacing: '0.02em'
+                }}>
+                  {predictedAway ? awayTeam : homeTeam} {Math.round(Math.max(awayWinProb, homeWinProb))}%
+                </div>
+              </>
+            )}
+            {isFinal && (
+              <div style={{
+                fontSize: '0.625rem',
+                fontWeight: '600',
+                color: predictedCorrectly ? '#10B981' : '#EF4444',
+                marginTop: '2px'
+              }}>
+                {predictedCorrectly ? '✓ CORRECT' : '✗ WRONG'}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
