@@ -2414,6 +2414,18 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             .filter(e => e.game === game.game && e.evPercent > 0)
             .sort((a, b) => b.evPercent - a.evPercent)[0];
 
+          // Check if game is live or final
+          const liveScore = liveScores?.find(score => 
+            (score.awayTeam === game.awayTeam && score.homeTeam === game.homeTeam) ||
+            (score.away === game.awayTeam && score.home === game.homeTeam)
+          );
+          const isLiveOrFinal = liveScore && (
+            liveScore.status === 'LIVE' || 
+            liveScore.status === 'In Progress' || 
+            liveScore.status === 'FINAL' || 
+            liveScore.status === 'Final'
+          );
+
           const headerContent = (
                       <>
               <CompactHeader
@@ -2421,8 +2433,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 homeTeam={game.homeTeam}
                 gameTime={game.gameTime}
                 rating={bestEdge?.evPercent || 0}
-                awayWinProb={game.edges.moneyline?.away?.modelProb}
-                homeWinProb={game.edges.moneyline?.home?.modelProb}
+                awayWinProb={(game.edges.moneyline?.away?.modelProb || 0) * 100}
+                homeWinProb={(game.edges.moneyline?.home?.modelProb || 0) * 100}
                 isMobile={isMobile}
               bestEdge={bestEdge}
                           game={game}
@@ -2460,6 +2472,26 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       </>
           );
 
+          // If game is live or final, just show the compact header without expansion
+          if (isLiveOrFinal) {
+            return (
+              <div 
+                key={index}
+                className="elevated-card"
+                style={{
+                  marginBottom: gameIndex < gamesInSlot.length - 1 ? (isMobile ? '0.625rem' : '0.75rem') : 0,
+                  padding: 0,
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border)',
+                  overflow: 'hidden'
+                }}
+              >
+                {headerContent}
+              </div>
+            );
+          }
+
+          // For pre-game, show the full collapsible card
           return (
             <CollapsibleGameCard
               key={index}
