@@ -44,7 +44,139 @@ import { getRating } from './RatingBadge';
 // ========================================
 
 // Compact Header - REDESIGNED for density and scannability
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor }) => (
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores }) => {
+  // Check if there's a live score for this game
+  const liveScore = liveScores?.find(score => 
+    (score.awayTeam === awayTeam && score.homeTeam === homeTeam) ||
+    (score.away === awayTeam && score.home === homeTeam)
+  );
+  
+  const isLive = liveScore && (liveScore.status === 'LIVE' || liveScore.status === 'In Progress');
+  const isFinal = liveScore && (liveScore.status === 'FINAL' || liveScore.status === 'Final');
+  
+  // If game is live or final, show live score layout instead
+  if (isLive || isFinal) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        padding: isMobile ? '0.75rem' : '0.875rem',
+        borderBottom: isCollapsed ? 'none' : ELEVATION.flat.border,
+        background: isLive 
+          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(26, 31, 46, 0.8) 100%)'
+          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(26, 31, 46, 0.8) 100%)'
+      }}>
+        {/* Live Status Badge */}
+        {isLive && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            padding: '0.25rem 0.625rem',
+            background: 'rgba(239, 68, 68, 0.2)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '12px',
+            fontSize: '0.688rem',
+            fontWeight: '800',
+            color: '#EF4444',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            alignSelf: 'flex-start',
+            marginBottom: '0.625rem'
+          }}>
+            <span style={{ 
+              width: '6px', 
+              height: '6px', 
+              background: '#EF4444', 
+              borderRadius: '50%',
+              animation: 'pulse 2s infinite'
+            }} />
+            {liveScore.period || 'LIVE'}
+          </div>
+        )}
+        
+        {/* Score Display */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          {/* Away Team */}
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: isMobile ? '1rem' : '1.125rem',
+              fontWeight: '700',
+              color: 'var(--color-text-secondary)',
+              marginBottom: '0.25rem'
+            }}>
+              {awayTeam}
+            </div>
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontWeight: '900',
+              color: (liveScore.awayScore > liveScore.homeScore && isFinal) ? '#10B981' : 'var(--color-text-primary)',
+              lineHeight: 1
+            }}>
+              {liveScore.awayScore ?? 0}
+            </div>
+          </div>
+          
+          {/* VS Divider */}
+          <div style={{
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            color: 'var(--color-text-muted)',
+            padding: '0 0.5rem'
+          }}>
+            @
+          </div>
+          
+          {/* Home Team */}
+          <div style={{ flex: 1, textAlign: 'right' }}>
+            <div style={{
+              fontSize: isMobile ? '1rem' : '1.125rem',
+              fontWeight: '700',
+              color: 'var(--color-text-secondary)',
+              marginBottom: '0.25rem'
+            }}>
+              {homeTeam}
+            </div>
+            <div style={{
+              fontSize: isMobile ? '2rem' : '2.5rem',
+              fontWeight: '900',
+              color: (liveScore.homeScore > liveScore.awayScore && isFinal) ? '#10B981' : 'var(--color-text-primary)',
+              lineHeight: 1
+            }}>
+              {liveScore.homeScore ?? 0}
+            </div>
+          </div>
+        </div>
+        
+        {/* Final Status */}
+        {isFinal && (
+          <div style={{
+            marginTop: '0.625rem',
+            padding: '0.375rem 0.625rem',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            fontWeight: '700',
+            color: '#10B981',
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            Final
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Otherwise, show normal pre-game prediction layout
+  return (
   <div style={{ 
     display: 'flex', 
     flexDirection: 'column',
@@ -171,7 +303,8 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       </div>
     )}
   </div>
-);
+  );
+};
 
 // Calculate implied probability from odds
 const calculateImpliedProb = (odds) => {
@@ -2145,6 +2278,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               bestEdge={bestEdge}
                           game={game}
                           dataProcessor={dataProcessor}
+                          liveScores={liveScores}
                         />
                         {/* Quick Stats Bar - only show when collapsed */}
                         <QuickStatsBar 
