@@ -182,3 +182,143 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
   // Return empty array to show "Waiting" state
   return [];
 }
+
+/**
+ * Fetch confirmed starting goalies for today's NHL games using Perplexity AI
+ * Searches real-time sources: DailyFaceoff, beat reporters, team announcements
+ * 
+ * @param {string} date - Date in YYYY-MM-DD format (default: today)
+ * @returns {Promise<Object>} Goalies data with games array
+ */
+export async function fetchStartingGoalies(date = null) {
+  const targetDate = date || new Date().toISOString().split('T')[0];
+  const cacheKey = `starting-goalies-${targetDate}`;
+  const cacheRef = doc(db, 'perplexityCache', cacheKey);
+
+  try {
+    // Check cache first (30 min TTL for goalie data - they update frequently)
+    const cachedDoc = await getDoc(cacheRef);
+    if (cachedDoc.exists()) {
+      const data = cachedDoc.data();
+      const age = Date.now() - data.timestamp;
+      const maxAge = 30 * 60 * 1000; // 30 minutes
+      
+      if (age < maxAge) {
+        console.log('✅ Using cached goalie data');
+        return data.goalies;
+      }
+    }
+
+    // Fetch API key from Firebase
+    const apiKey = await getPerplexityKey();
+    if (!apiKey) {
+      console.log('ℹ️ No Perplexity API key available');
+      return null;
+    }
+
+    console.log(`⏳ Fetching starting goalies for ${targetDate} from Perplexity AI...`);
+    
+    const prompt = `List ALL confirmed starting goalies for NHL games on ${targetDate}. 
+For each game, provide:
+- Away team code (3 letters, e.g., BUF)
+- Away goalie full name
+- Home team code (3 letters, e.g., BOS)  
+- Home goalie full name
+
+Search DailyFaceoff, team beat reporters on Twitter/X, and official team announcements.
+Format as JSON array:
+[
+  {"awayTeam": "BUF", "awayGoalie": "Alex Lyon", "homeTeam": "BOS", "homeGoalie": "Joonas Korpisalo"},
+  {"awayTeam": "CGY", "awayGoalie": "Dan Vladar", "homeTeam": "OTT", "homeGoalie": "Linus Ullmark"}
+]
+
+IMPORTANT: 
+- Only include games with confirmed starters
+- If a goalie is not yet confirmed, set to null
+- Use proper team codes (TOR not TO, TBL not TB, LAK not LA, SJS not SJ, VGK not VEG)
+- Return ONLY the JSON array, no other text`;
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an NHL data assistant. Always return valid JSON arrays with no markdown formatting.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.2, // Low temperature for factual data
+        max_tokens: 1500,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Perplexity API Error:', errorText);
+      throw new Error(`Perplexity API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let content = data.choices?.[0]?.message?.content || '[]';
+    
+    // Clean up response - remove markdown code blocks if present
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    // Parse JSON response
+    const gamesArray = JSON.parse(content);
+    
+    console.log(`📊 Parsed ${gamesArray.length} games from Perplexity`);
+    
+    // Format for starting_goalies.json
+    const goaliesData = {
+      date: targetDate,
+      lastUpdated: new Date().toISOString(),
+      source: 'Perplexity AI (DailyFaceoff, beat reporters)',
+      games: gamesArray.map((game, idx) => ({
+        gameId: `game_${idx}`,
+        matchup: `${game.awayTeam} @ ${game.homeTeam}`,
+        time: 'TBD',
+        away: {
+          team: game.awayTeam,
+          goalie: game.awayGoalie
+        },
+        home: {
+          team: game.homeTeam,
+          goalie: game.homeGoalie
+        }
+      }))
+    };
+
+    // Cache the result
+    await setDoc(cacheRef, {
+      goalies: goaliesData,
+      timestamp: Date.now()
+    });
+
+    console.log(`✅ Fetched ${goaliesData.games.length} games with starting goalies`);
+    
+    // Log confirmation summary
+    let confirmedCount = 0;
+    goaliesData.games.forEach(game => {
+      if (game.away.goalie) confirmedCount++;
+      if (game.home.goalie) confirmedCount++;
+    });
+    console.log(`🥅 ${confirmedCount}/${goaliesData.games.length * 2} goalies confirmed`);
+    
+    return goaliesData;
+
+  } catch (error) {
+    console.error('❌ Error fetching goalies from Perplexity:', error);
+    return null;
+  }
+}
