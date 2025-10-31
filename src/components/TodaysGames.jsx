@@ -1868,13 +1868,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       🥅 {(() => {
                         let confirmed = 0;
                         let total = 0;
+                        
                         if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
-                          startingGoalies.games.forEach(game => {
-                            total += 2;
-                      if (game.away?.goalie && (game.away.confirmed === undefined || game.away.confirmed === true)) confirmed++;
-                      if (game.home?.goalie && (game.home.confirmed === undefined || game.home.confirmed === true)) confirmed++;
-                    });
-                  }
+                          // Only count goalies for games actually displayed on page
+                          allEdges.forEach(edge => {
+                            const matchingGame = startingGoalies.games.find(g => 
+                              (g.away?.team === edge.awayTeam || g.matchup?.includes(edge.awayTeam)) &&
+                              (g.home?.team === edge.homeTeam || g.matchup?.includes(edge.homeTeam))
+                            );
+                            
+                            if (matchingGame) {
+                              total += 2;
+                              if (matchingGame.away?.goalie && (matchingGame.away.confirmed === undefined || matchingGame.away.confirmed === true)) confirmed++;
+                              if (matchingGame.home?.goalie && (matchingGame.home.confirmed === undefined || matchingGame.home.confirmed === true)) confirmed++;
+                            }
+                          });
+                        }
+                        
                         return `${confirmed}/${total}`;
                       })()}
                     </span>
