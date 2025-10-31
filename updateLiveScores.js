@@ -2,7 +2,7 @@
 /**
  * NHL Live Score Updater (Node.js version)
  * =========================================
- * Fetches live scores from NHL API and updates JSON file for display.
+ * Fetches live scores from NHL API and updates BOTH JSON file AND Firebase.
  * Does NOT rescrape odds - only updates scores 2-3 times during game time.
  * 
  * Usage:
@@ -16,15 +16,47 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase Admin SDK (simplified service account like generateExpertAnalysis.js)
+const serviceAccount = {
+  project_id: process.env.VITE_FIREBASE_PROJECT_ID,
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+};
+
+// Initialize Firebase if credentials are available
+if (!admin.apps.length && serviceAccount.project_id && serviceAccount.client_email && serviceAccount.private_key) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log('✅ Firebase Admin initialized');
+  } catch (error) {
+    console.warn('⚠️  Could not initialize Firebase Admin:', error.message);
+    console.warn('   Scores will only be saved to JSON file');
+  }
+} else if (!admin.apps.length) {
+  console.warn('⚠️  Missing Firebase credentials in environment variables');
+  console.warn('   Required: VITE_FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY');
+  console.warn('   Scores will only be saved to JSON file');
+}
+
+const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 class NHLScoreUpdater {
   constructor(outputDir = 'public') {
     this.outputDir = path.join(__dirname, outputDir);
     this.outputFile = path.join(this.outputDir, 'live_scores.json');
     this.nhlApiBase = 'https://api-web.nhle.com/v1';
+    this.db = db;
   }
 
   /**
@@ -89,7 +121,8 @@ class NHLScoreUpdater {
         };
 
         // Determine status
-        if (['OFF', 'FINAL'].includes(gameData.gameState)) {
+        // CRIT = Critical (final moments/just ended), OFF = Officially Over, FINAL = Final
+        if (['OFF', 'FINAL', 'CRIT'].includes(gameData.gameState)) {
           gameData.status = 'FINAL';
         } else if (gameData.gameState === 'LIVE') {
           gameData.status = 'LIVE';
@@ -142,11 +175,38 @@ class NHLScoreUpdater {
         'utf-8'
       );
 
-      console.log(`\n✅ Saved ${games.length} games to ${this.outputFile}`);
+      console.log(`✅ Saved ${games.length} games to ${this.outputFile}`);
       return true;
 
     } catch (error) {
       console.error(`❌ Error saving to JSON: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Save game data to Firebase Firestore
+   */
+  async saveToFirebase(games) {
+    if (!this.db) {
+      console.log('⏭️  Skipping Firebase (not initialized)');
+      return true;
+    }
+
+    try {
+      const data = {
+        lastUpdate: new Date().toISOString(),
+        games: games,
+        gamesCount: games.length
+      };
+
+      await this.db.collection('live_scores').doc('current').set(data);
+
+      console.log(`✅ Saved ${games.length} games to Firebase`);
+      return true;
+
+    } catch (error) {
+      console.error(`❌ Error saving to Firebase: ${error.message}`);
       return false;
     }
   }
@@ -161,7 +221,11 @@ class NHLScoreUpdater {
       return false;
     }
 
-    return await this.saveToJson(games);
+    // Save to both JSON and Firebase
+    const jsonSuccess = await this.saveToJson(games);
+    const firebaseSuccess = await this.saveToFirebase(games);
+
+    return jsonSuccess && firebaseSuccess;
   }
 }
 
