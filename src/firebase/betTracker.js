@@ -6,25 +6,37 @@ export class BetTracker {
   // Generate deterministic bet ID that's stable across odds/line changes
   // CRITICAL: Do NOT use date in ID - odds can be scraped on different days for same game
   generateBetId(date, awayTeam, homeTeam, market, edge) {
+    // ⚠️ TOTALS BETTING DISABLED - Not profitable with public data
+    if (market === 'TOTAL' || market?.includes('TOTAL')) {
+      console.warn('⚠️ TOTALS BETTING DISABLED - Focus on 64.7% moneyline win rate');
+      return null;
+    }
+    
     if (market === 'MONEYLINE') {
       // ML bets: Use team being bet on (not odds, not date)
       const team = edge.team || awayTeam;
       return `${awayTeam}_${homeTeam}_MONEYLINE_${team}`;
-    } else if (market === 'TOTAL') {
-      // Total bets: Use side (OVER/UNDER) but NOT line number or date
-      // This ensures same bet ID when line moves from 6.5 to 6.0
-      const side = edge.pick.toUpperCase().includes('OVER') ? 'OVER' : 'UNDER';
-      return `${awayTeam}_${homeTeam}_TOTAL_${side}`;
     }
-    // Fallback for other markets
+    // Fallback for other markets (puck line, etc)
     return `${awayTeam}_${homeTeam}_${market}_${edge.pick.replace(/\s+/g, '_')}`;
   }
   
   // Save a recommended bet with history tracking using Firebase transactions
   async saveBet(game, bestEdge, prediction) {
+    // ⚠️ TOTALS BETTING DISABLED - Skip totals bets
+    if (!bestEdge || bestEdge.market === 'TOTAL' || bestEdge.market?.includes('TOTAL')) {
+      console.log('⏭️ Skipping totals bet (disabled) - Focus on moneyline edge');
+      return;
+    }
+    
     // Get date first (game.date might be undefined)
     const gameDate = game.date || new Date().toISOString().split('T')[0];
     const betId = this.generateBetId(gameDate, game.awayTeam, game.homeTeam, bestEdge.market, bestEdge);
+    
+    // If generateBetId returns null (totals bet), skip
+    if (!betId) {
+      return;
+    }
     
     const betData = {
       id: betId,
