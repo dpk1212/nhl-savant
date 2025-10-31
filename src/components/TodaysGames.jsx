@@ -1872,15 +1872,18 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                         if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
                           // Only count goalies for games actually displayed on page
                           allEdges.forEach(edge => {
-                            const matchingGame = startingGoalies.games.find(g => 
-                              (g.away?.team === edge.awayTeam || g.matchup?.includes(edge.awayTeam)) &&
-                              (g.home?.team === edge.homeTeam || g.matchup?.includes(edge.homeTeam))
-                            );
+                            const matchingGame = startingGoalies.games.find(g => {
+                              // Try exact team code match first
+                              const teamMatch = g.away?.team === edge.awayTeam && g.home?.team === edge.homeTeam;
+                              // Try matchup string (e.g., "COL @ VGK" matches game "COL @ VGK")
+                              const matchupMatch = g.matchup === `${edge.awayTeam} @ ${edge.homeTeam}`;
+                              return teamMatch || matchupMatch;
+                            });
                             
                             if (matchingGame) {
                               total += 2;
-                              if (matchingGame.away?.goalie && (matchingGame.away.confirmed === undefined || matchingGame.away.confirmed === true)) confirmed++;
-                              if (matchingGame.home?.goalie && (matchingGame.home.confirmed === undefined || matchingGame.home.confirmed === true)) confirmed++;
+                              if (matchingGame.away?.goalie) confirmed++;
+                              if (matchingGame.home?.goalie) confirmed++;
                             }
                           });
                         }
