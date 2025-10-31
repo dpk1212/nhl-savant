@@ -311,10 +311,10 @@ export default function PerformanceDashboard() {
       }}>
         <StatCard
           icon={<Target size={24} color="#10B981" />}
-          label="Prediction Accuracy"
-          value={`${stats.predictionAccuracy.toFixed(1)}%`}
-          target={`${stats.correctPredictions}/${stats.predictionsTracked} winners predicted correctly`}
-          status={stats.predictionAccuracy >= 55 ? 'good' : 'warning'}
+          label="Betting Win Rate"
+          value={`${stats.winRate.toFixed(1)}%`}
+          target={`${stats.wins}/${stats.wins + stats.losses} bets won`}
+          status={stats.winRate >= 55 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<TrendingUp size={24} color="#D4AF37" />}
