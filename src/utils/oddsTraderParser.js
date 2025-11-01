@@ -49,13 +49,14 @@ export function parseOddsTrader(markdownText) {
   const games = [];
   const lines = markdownText.split('\n');
   
-  // Generate today's date pattern dynamically (e.g., "WED 10/22")
+  // Generate today's date pattern dynamically (e.g., "WED 10/22" or "WED 10/2")
   const today = new Date();
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const dayOfWeek = dayNames[today.getDay()];
   const month = today.getMonth() + 1; // 0-indexed
   const day = today.getDate();
   const todayPattern = `${dayOfWeek} ${month}/${day}`;
+  const todayPatternPadded = `${dayOfWeek} ${month}/${day.toString().padStart(2, '0')}`; // With leading zero
   
   // Also include yesterday's games - this handles when today's games are live/finished
   // and OddsTrader has moved them off the main page
@@ -65,19 +66,23 @@ export function parseOddsTrader(markdownText) {
   const yesterdayMonth = yesterday.getMonth() + 1;
   const yesterdayDay = yesterday.getDate();
   const yesterdayPattern = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`;
+  const yesterdayPatternPadded = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay.toString().padStart(2, '0')}`;
   
   // Only include yesterday's games before 6 AM ET (for late night games)
   const currentHour = today.getHours();
   const includeYesterday = currentHour < 6;
   
-  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} and ${yesterdayPattern}`);
+  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} or ${todayPatternPadded}`);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
     // Look for today's games (and yesterday's if before 6 AM)
     // Note: LIVE games are detected but skipped since betting markets are closed
-    const isMatchingDate = line.includes(todayPattern) || (includeYesterday && line.includes(yesterdayPattern)) || line.includes('LIVE');
+    // Check both padded and non-padded date formats (e.g., "SAT 11/1" and "SAT 11/01")
+    const isMatchingDate = line.includes(todayPattern) || line.includes(todayPatternPadded) || 
+                          (includeYesterday && (line.includes(yesterdayPattern) || line.includes(yesterdayPatternPadded))) || 
+                          line.includes('LIVE');
     
     if (isMatchingDate) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
