@@ -34,12 +34,19 @@ async function fetchAllData() {
   const fetchTimestamp = new Date().toISOString();
   
   try {
+    // Add cache-busting to get fresh data
+    const cacheBuster = Date.now();
+    
     // 1. Fetch Moneyline Odds
     console.log('📊 Fetching moneyline odds from OddsTrader...');
-    const moneylineResult = await firecrawl.scrape('https://www.oddstrader.com/nhl/?eid&g=game&m=money', {
+    const moneylineResult = await firecrawl.scrape(`https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=${cacheBuster}`, {
       formats: ['markdown'],
       onlyMainContent: false, // Get full page content
-      waitFor: 3000 // Wait for JavaScript to load odds
+      waitFor: 3000, // Wait for JavaScript to load odds
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     await fs.writeFile(
@@ -55,10 +62,14 @@ async function fetchAllData() {
     
     // 2. Fetch Total Odds
     console.log('📊 Fetching total odds from OddsTrader...');
-    const totalsResult = await firecrawl.scrape('https://www.oddstrader.com/nhl/?eid=0&g=game&m=total', {
+    const totalsResult = await firecrawl.scrape(`https://www.oddstrader.com/nhl/?eid=0&g=game&m=total&_=${cacheBuster}`, {
       formats: ['markdown'],
       onlyMainContent: false,
-      waitFor: 3000
+      waitFor: 3000,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     await fs.writeFile(
@@ -75,8 +86,7 @@ async function fetchAllData() {
     // 3. Fetch Starting Goalies from MoneyPuck Homepage
     console.log('🥅 Fetching starting goalies from MoneyPuck...');
     
-    // Add cache-busting to get fresh data
-    const cacheBuster = Date.now();
+    // Reuse cache-busting timestamp from above
     const moneyPuckResult = await firecrawl.scrape(`https://moneypuck.com/index.html?_=${cacheBuster}`, {
       formats: ['markdown', 'html'],
       onlyMainContent: true,
