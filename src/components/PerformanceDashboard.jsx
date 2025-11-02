@@ -111,6 +111,7 @@ export default function PerformanceDashboard() {
   const [byMarket, setByMarket] = useState({});
   const [byRating, setByRating] = useState({});
   const [kellyAnalysis, setKellyAnalysis] = useState(null);
+  const [last10Stats, setLast10Stats] = useState(null);
   
   useEffect(() => {
     loadPerformanceData();
@@ -177,13 +178,18 @@ export default function PerformanceDashboard() {
         ? (correctPredictions / predictionsWithResults.length) * 100 
         : 0;
       
+      // Calculate bankroll-based ROI (matches flat betting simulation)
+      // Profit is in units, convert to $10 flat bets for consistency
+      const flatBettingProfit = totalProfit * 10;
+      const bankrollROI = (flatBettingProfit / STARTING_BANKROLL) * 100;
+      
       setStats({
         totalBets: qualityBets.length,
         wins,
         losses,
         pushes,
         winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
-        roi: qualityBets.length > 0 ? (totalProfit / qualityBets.length) * 100 : 0,
+        roi: bankrollROI,
         profit: totalProfit,
         predictionAccuracy,
         predictionsTracked: predictionsWithResults.length,
@@ -205,7 +211,9 @@ export default function PerformanceDashboard() {
       
       Object.keys(marketStats).forEach(market => {
         const stats = marketStats[market];
-        stats.roi = stats.bets > 0 ? (stats.profit / stats.bets) * 100 : 0;
+        // Use bankroll-based ROI calculation (profit in units * $10 / $500 starting bankroll)
+        const marketFlatProfit = stats.profit * 10;
+        stats.roi = stats.bets > 0 ? (marketFlatProfit / STARTING_BANKROLL) * 100 : 0;
         stats.winRate = stats.wins + stats.losses > 0 ? (stats.wins / (stats.wins + stats.losses)) * 100 : 0;
       });
       setByMarket(marketStats);
@@ -231,7 +239,8 @@ export default function PerformanceDashboard() {
       setByRating(ratingStats);
       
       // Calculate Kelly analysis for all bets and by market
-      const sortedBets = qualityBets.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      // Sort a COPY for Kelly simulation (needs oldest to newest for sequential bankroll tracking)
+      const sortedBets = [...qualityBets].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       const mlBets = sortedBets.filter(b => b.bet?.market === 'MONEYLINE');
       
       const allKelly = simulateKelly(sortedBets);
@@ -244,6 +253,25 @@ export default function PerformanceDashboard() {
       
       // Store all quality bets for timeline chart
       setAllBets(qualityBets);
+      
+      // Calculate Last 10 stats to showcase recent performance/streaks
+      const last10Bets = qualityBets.slice(0, 10);
+      if (last10Bets.length > 0) {
+        const last10Wins = last10Bets.filter(b => b.result?.outcome === 'WIN').length;
+        const last10Losses = last10Bets.filter(b => b.result?.outcome === 'LOSS').length;
+        const last10Profit = last10Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+        const last10Streak = last10Bets.map(b => b.result?.outcome === 'WIN' ? 'W' : b.result?.outcome === 'LOSS' ? 'L' : 'P');
+        
+        setLast10Stats({
+          wins: last10Wins,
+          losses: last10Losses,
+          record: `${last10Wins}-${last10Losses}`,
+          winRate: last10Wins + last10Losses > 0 ? (last10Wins / (last10Wins + last10Losses)) * 100 : 0,
+          profit: last10Profit,
+          streak: last10Streak,
+          count: last10Bets.length
+        });
+      }
       
         // Recent bets (already filtered to B-rated or higher)
         setRecentBets(qualityBets.slice(0, 20));
@@ -336,6 +364,75 @@ export default function PerformanceDashboard() {
           value={stats.totalBets}
         />
       </div>
+      
+      {/* Last 10 Bets - Showcase Recent Performance */}
+      {last10Stats && last10Stats.count >= 5 && (
+        <div className="elevated-card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <Award size={24} color="#D4AF37" />
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)', margin: 0 }}>
+              Last 10 Bets
+            </h3>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '1rem' }}>
+            <div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                Record
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
+                {last10Stats.record}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                Win Rate
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: last10Stats.winRate >= 60 ? '#10B981' : 'var(--color-text-primary)' }}>
+                {last10Stats.winRate.toFixed(1)}%
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                Profit
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: last10Stats.profit >= 0 ? '#10B981' : '#EF4444' }}>
+                {last10Stats.profit >= 0 ? '+' : ''}{last10Stats.profit.toFixed(2)}u
+              </div>
+            </div>
+          </div>
+          
+          {/* Visual Streak */}
+          <div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
+              Recent Streak (newest to oldest)
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {last10Stats.streak.map((result, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    borderRadius: '0.375rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '700',
+                    fontSize: '0.875rem',
+                    background: result === 'W' ? 'rgba(16, 185, 129, 0.2)' : result === 'L' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 114, 128, 0.2)',
+                    color: result === 'W' ? '#10B981' : result === 'L' ? '#EF4444' : '#9CA3AF',
+                    border: `1px solid ${result === 'W' ? '#10B981' : result === 'L' ? '#EF4444' : '#6B7280'}`
+                  }}
+                  title={result === 'W' ? 'Win' : result === 'L' ? 'Loss' : 'Push'}
+                >
+                  {result}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Market Performance - Moneyline Focus */}
       {kellyAnalysis && byMarket.MONEYLINE && (
