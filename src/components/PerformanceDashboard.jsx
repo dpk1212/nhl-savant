@@ -355,14 +355,14 @@ export default function PerformanceDashboard() {
           icon={<Target size={24} color="#10B981" />}
           label="Betting Win Rate"
           value={`${stats.winRate.toFixed(1)}%`}
-          target={`${stats.wins}-${stats.losses} record`}
+          target="Target: 55%+"
           status={stats.winRate >= 55 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<TrendingUp size={24} color="#D4AF37" />}
           label="ML ROI"
           value={byMarket.MONEYLINE ? `+${byMarket.MONEYLINE.roi.toFixed(1)}%` : 'N/A'}
-          target={byMarket.MONEYLINE ? `+${byMarket.MONEYLINE.profit.toFixed(2)}u profit` : ''}
+          target="Target: 8%+"
           status="good"
         />
         <StatCard
@@ -376,7 +376,7 @@ export default function PerformanceDashboard() {
           icon={<Activity size={24} color="#8B5CF6" />}
           label="Bets Tracked"
           value={stats.totalBets}
-          target="Season to date"
+          target="Recommended +EV ML picks"
         />
       </div>
       
