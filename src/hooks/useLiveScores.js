@@ -18,8 +18,10 @@ export function useLiveScores() {
       const today = new Date().toISOString().split('T')[0];
       console.log(`📊 Fetching live scores from NHL API for ${today}...`);
       
-      // Fetch from NHL API schedule endpoint
-      const response = await fetch(`https://api-web.nhle.com/v1/schedule/${today}`);
+      // Use CORS proxy to bypass browser restrictions
+      const corsProxy = 'https://corsproxy.io/?';
+      const nhlApiUrl = `https://api-web.nhle.com/v1/schedule/${today}`;
+      const response = await fetch(`${corsProxy}${encodeURIComponent(nhlApiUrl)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -66,9 +68,13 @@ export function useLiveScores() {
       setScores(processedGames);
       setLastUpdate(new Date().toISOString());
       console.log(`✅ Live scores updated: ${processedGames.length} games`);
+      processedGames.forEach(game => {
+        console.log(`   📊 ${game.awayTeam} @ ${game.homeTeam}: ${game.status} (${game.awayScore}-${game.homeScore})`);
+      });
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching live scores:', error);
+      console.error('❌ Error fetching live scores:', error);
+      console.error('Error details:', error.message);
       setLoading(false);
     }
   };
@@ -76,8 +82,9 @@ export function useLiveScores() {
   // Fetch detailed live game data including clock
   const fetchLiveGameDetails = async (gameData) => {
     try {
+      const corsProxy = 'https://corsproxy.io/?';
       const url = `https://api-web.nhle.com/v1/gamecenter/${gameData.gameId}/play-by-play`;
-      const response = await fetch(url);
+      const response = await fetch(`${corsProxy}${encodeURIComponent(url)}`);
       
       if (!response.ok) {
         console.warn(`⚠️  Could not fetch live details for game ${gameData.gameId}`);
