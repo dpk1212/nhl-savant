@@ -362,7 +362,7 @@ export default function PerformanceDashboard() {
           icon={<TrendingUp size={24} color="#D4AF37" />}
           label="ML ROI"
           value={byMarket.MONEYLINE ? `+${byMarket.MONEYLINE.roi.toFixed(1)}%` : 'N/A'}
-          target={byMarket.MONEYLINE ? `$${(byMarket.MONEYLINE.profit * 100).toFixed(0)} earned` : ''}
+          target={byMarket.MONEYLINE ? `On ${byMarket.MONEYLINE.bets} bets` : ''}
           status="good"
         />
         <StatCard
