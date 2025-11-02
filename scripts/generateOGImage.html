@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NHL Savant OG Image Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #canvas {
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            width: 1200px;
+            height: 630px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20% 30%, white, transparent),
+                radial-gradient(2px 2px at 60% 70%, white, transparent),
+                radial-gradient(1px 1px at 50% 50%, white, transparent),
+                radial-gradient(1px 1px at 80% 10%, white, transparent),
+                radial-gradient(2px 2px at 90% 60%, white, transparent),
+                radial-gradient(1px 1px at 33% 80%, white, transparent);
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.3;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 80px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 72px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+            text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+        }
+        .tagline {
+            font-size: 32px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 20px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        .stats {
+            display: flex;
+            gap: 60px;
+            margin-top: 60px;
+        }
+        .stat {
+            flex: 1;
+        }
+        .stat-value {
+            font-size: 64px;
+            font-weight: 900;
+            color: #10B981;
+            text-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .url {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+        }
+        .badge {
+            padding: 12px 24px;
+            background: rgba(212, 175, 55, 0.2);
+            border: 2px solid #D4AF37;
+            border-radius: 50px;
+            font-size: 18px;
+            color: #D4AF37;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .puck {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(40px);
+        }
+        .puck1 { top: -50px; right: -50px; }
+        .puck2 { bottom: -50px; left: -50px; }
+    </style>
+</head>
+<body>
+    <div id="canvas">
+        <div class="stars"></div>
+        <div class="puck puck1"></div>
+        <div class="puck puck2"></div>
+        <div class="content">
+            <div>
+                <div class="logo">NHL SAVANT</div>
+                <div class="tagline">Advanced NHL Betting Analytics</div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">52.9%</div>
+                        <div class="stat-label">Win Rate</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">+30.3%</div>
+                        <div class="stat-label">ROI</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">$1,516</div>
+                        <div class="stat-label">Profit</div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <div class="url">dpk1212.github.io/nhl-savant</div>
+                <div class="badge">ELITE ANALYTICS</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+        <h2 style="color: white;">Instructions:</h2>
+        <ol style="color: white; text-align: left; max-width: 800px; margin: 20px auto; line-height: 1.8;">
+            <li>Open this HTML file in your browser (you're here!)</li>
+            <li>Take a screenshot of JUST the canvas (1200x630 area)</li>
+            <li>Save as <code>og-image.png</code></li>
+            <li>Move to <code>/Users/dalekolnitys/NHL Savant/nhl-savant/public/</code></li>
+            <li>Run <code>npm run deploy</code></li>
+        </ol>
+        <p style="color: #D4AF37; font-weight: bold; margin-top: 30px;">
+            OR use browser DevTools to screenshot the #canvas element directly!
+        </p>
+        <button onclick="copyInstructions()" style="
+            padding: 15px 30px;
+            background: #D4AF37;
+            color: #0A0E27;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+        ">Copy Path to Clipboard</button>
+    </div>
+
+    <script>
+        function copyInstructions() {
+            const path = '/Users/dalekolnitys/NHL Savant/nhl-savant/public/og-image.png';
+            navigator.clipboard.writeText(path).then(() => {
+                alert('Save path copied! Now save your screenshot to this location.');
+            });
+        }
+    </script>
+</body>
+</html>
+

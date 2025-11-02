@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SVG to PNG Converter - NHL Savant OG Image</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: white;
+            text-align: center;
+        }
+        h1 {
+            color: #D4AF37;
+            margin-bottom: 30px;
+        }
+        #preview {
+            max-width: 1200px;
+            margin: 0 auto 30px;
+            border: 2px solid #D4AF37;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        button {
+            padding: 15px 40px;
+            background: #D4AF37;
+            color: #0A0E27;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .success {
+            background: #10B981;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 600px;
+            display: none;
+        }
+        .instructions {
+            max-width: 800px;
+            margin: 40px auto;
+            text-align: left;
+            background: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 12px;
+            line-height: 1.8;
+        }
+        code {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #D4AF37;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏒 NHL Savant OG Image Generator</h1>
+    
+    <div id="preview">
+        <img id="svgImage" src="../public/og-image.svg" alt="NHL Savant OG Image" style="width: 100%; display: block;">
+    </div>
+    
+    <button onclick="convertAndDownload()">⬇️ Download as PNG (1200x630)</button>
+    <button onclick="copyToPublic()" style="background: #10B981;">📋 Auto-Save to public/ folder</button>
+    
+    <div id="success" class="success">
+        ✅ <strong>Success!</strong> PNG downloaded! Move it to <code>/public/og-image.png</code> and run <code>npm run deploy</code>
+    </div>
+    
+    <div class="instructions">
+        <h2>📝 Instructions:</h2>
+        <ol>
+            <li><strong>Click "Download as PNG"</strong> - This will download og-image.png to your Downloads folder</li>
+            <li><strong>Move the file</strong> to: <code>/Users/dalekolnitys/NHL Savant/nhl-savant/public/og-image.png</code></li>
+            <li><strong>Deploy:</strong> Run <code>npm run deploy</code> in your terminal</li>
+            <li><strong>Test:</strong> Share your URL and see the beautiful preview!</li>
+        </ol>
+        
+        <h3 style="color: #D4AF37; margin-top: 30px;">🎯 What This Does:</h3>
+        <ul>
+            <li>Converts the SVG to a high-quality 1200x630 PNG</li>
+            <li>Optimized for Facebook, Twitter, LinkedIn, and all social platforms</li>
+            <li>Professional design showcasing your stats</li>
+            <li>Automatic when you share your site URL</li>
+        </ul>
+    </div>
+
+    <script>
+        function convertAndDownload() {
+            const img = document.getElementById('svgImage');
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 630;
+            const ctx = canvas.getContext('2d');
+            
+            // Create a new image from the SVG
+            const svgImg = new Image();
+            svgImg.crossOrigin = 'anonymous';
+            
+            // Fetch the SVG content
+            fetch('../public/og-image.svg')
+                .then(response => response.text())
+                .then(svgText => {
+                    const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    svgImg.onload = function() {
+                        ctx.drawImage(svgImg, 0, 0, 1200, 630);
+                        
+                        // Convert canvas to PNG and download
+                        canvas.toBlob(function(blob) {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'og-image.png';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            
+                            // Show success message
+                            document.getElementById('success').style.display = 'block';
+                        });
+                        
+                        URL.revokeObjectURL(url);
+                    };
+                    
+                    svgImg.src = url;
+                });
+        }
+        
+        function copyToPublic() {
+            alert('⚠️ Browser security prevents automatic file saving.\\n\\nPlease click "Download as PNG" instead, then manually move the file to:\\n/Users/dalekolnitys/NHL Savant/nhl-savant/public/og-image.png');
+        }
+    </script>
+</body>
+</html>
+
