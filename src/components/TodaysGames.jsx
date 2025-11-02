@@ -2759,11 +2759,17 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         })()}
       </div>
 
-      {/* No games message or show live scores */}
-      {allEdges.length === 0 && (
+      {/* Live/Final Games Section - Always show if available */}
+      {liveScores && liveScores.length > 0 && (
         <>
-          {/* Show live games from Firestore if available */}
-          {liveScores && liveScores.length > 0 ? (
+          {/* Show live/final games that don't have odds */}
+          {(() => {
+            // Filter to only show games that are LIVE or FINAL (not pre-game)
+            const liveOrFinalGames = liveScores.filter(score => 
+              score.status === 'LIVE' || score.status === 'FINAL'
+            );
+            
+            return liveOrFinalGames.length > 0 ? (
             <div>
               <div style={{ 
                 textAlign: 'center', 
@@ -2774,13 +2780,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 border: '1px solid rgba(239, 68, 68, 0.3)'
               }}>
                 <Activity size={32} color="#EF4444" style={{ margin: '0 auto 0.75rem auto', animation: 'pulse 1.5s infinite' }} />
-                <h3 style={{ marginBottom: '0.5rem', color: '#EF4444' }}>Live Games</h3>
+                <h3 style={{ marginBottom: '0.5rem', color: '#EF4444' }}>Live & Final Games</h3>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-                  Showing {liveScores.length} game{liveScores.length > 1 ? 's' : ''} in progress
+                  Showing {liveOrFinalGames.length} game{liveOrFinalGames.length > 1 ? 's' : ''}
                 </p>
               </div>
               
-              {liveScores.map((game, idx) => {
+              {liveOrFinalGames.map((game, idx) => {
                 // Find bets from Firebase that match this game
                 const gameMatchup = `${game.awayTeam} @ ${game.homeTeam}`;
                 const gameBets = firebaseBets
@@ -3295,7 +3301,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 </p>
               </div>
             </div>
-          ) : (
+          ) : null;
+          })()}
+        </>
+      )}
+      
+      {/* No games message - only show if NO games at all */}
+      {allEdges.length === 0 && (!liveScores || liveScores.length === 0) && (
         <div className="elevated-card" style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
           <Calendar size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 1rem auto' }} />
           <h3 style={{ marginBottom: '0.5rem' }}>No Games Today</h3>
@@ -3303,8 +3315,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             Check back later for today's matchups and analysis.
           </p>
         </div>
-          )}
-        </>
       )}
       
       {/* Disclaimer Modal - shown when user clicks first game card */}
