@@ -355,27 +355,28 @@ export default function PerformanceDashboard() {
           icon={<Target size={24} color="#10B981" />}
           label="Betting Win Rate"
           value={`${stats.winRate.toFixed(1)}%`}
-          target={`${stats.wins}/${stats.wins + stats.losses} bets won`}
+          target={`${stats.wins}-${stats.losses} record`}
           status={stats.winRate >= 55 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<TrendingUp size={24} color="#D4AF37" />}
           label="ML ROI"
           value={byMarket.MONEYLINE ? `+${byMarket.MONEYLINE.roi.toFixed(1)}%` : 'N/A'}
-          target={byMarket.MONEYLINE ? `${byMarket.MONEYLINE.bets} bets` : ''}
+          target={byMarket.MONEYLINE ? `+${byMarket.MONEYLINE.profit.toFixed(2)}u profit` : ''}
           status="good"
         />
         <StatCard
           icon={<DollarSign size={24} color="#10B981" />}
           label="Total Profit"
           value={`+${stats.profit.toFixed(2)}u`}
-          target={`$${(stats.profit * 100).toFixed(0)} (at $100/unit)`}
+          target={`$${(stats.profit * 100).toFixed(0)} at $100/unit`}
           status={stats.profit > 0 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<Activity size={24} color="#8B5CF6" />}
           label="Bets Tracked"
           value={stats.totalBets}
+          target="Season to date"
         />
       </div>
       
@@ -386,9 +387,6 @@ export default function PerformanceDashboard() {
             <Award size={24} color="#D4AF37" />
             <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)', margin: 0 }}>
               Last {last10Stats.size} Bets
-              <span style={{ fontSize: '0.875rem', fontWeight: '400', color: 'var(--color-text-secondary)', marginLeft: '0.5rem' }}>
-                (Best Recent Window)
-              </span>
             </h3>
           </div>
           
