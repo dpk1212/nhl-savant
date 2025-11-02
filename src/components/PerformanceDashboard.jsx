@@ -31,7 +31,7 @@ function StatCard({ icon, label, value, target, status }) {
           paddingTop: '0.5rem',
           borderTop: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
-          Target: {target}
+          {target}
           {status && <span style={{ marginLeft: '0.5rem', color: status === 'good' ? '#10B981' : '#F59E0B' }}>
             {status === 'good' ? '✓' : '○'}
           </span>}
