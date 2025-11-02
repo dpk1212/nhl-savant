@@ -254,23 +254,37 @@ export default function PerformanceDashboard() {
       // Store all quality bets for timeline chart
       setAllBets(qualityBets);
       
-      // Calculate Last 10 stats to showcase recent performance/streaks
-      const last10Bets = qualityBets.slice(0, 10);
-      if (last10Bets.length > 0) {
-        const last10Wins = last10Bets.filter(b => b.result?.outcome === 'WIN').length;
-        const last10Losses = last10Bets.filter(b => b.result?.outcome === 'LOSS').length;
-        const last10Profit = last10Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
-        const last10Streak = last10Bets.map(b => b.result?.outcome === 'WIN' ? 'W' : b.result?.outcome === 'LOSS' ? 'L' : 'P');
-        
-        setLast10Stats({
-          wins: last10Wins,
-          losses: last10Losses,
-          record: `${last10Wins}-${last10Losses}`,
-          winRate: last10Wins + last10Losses > 0 ? (last10Wins / (last10Wins + last10Losses)) * 100 : 0,
-          profit: last10Profit,
-          streak: last10Streak,
-          count: last10Bets.length
-        });
+      // Calculate stats for multiple windows to find best performing recent period
+      const windows = [5, 10, 15, 20];
+      let bestWindow = null;
+      let bestProfit = -Infinity;
+      
+      windows.forEach(windowSize => {
+        if (qualityBets.length >= windowSize) {
+          const windowBets = qualityBets.slice(0, windowSize);
+          const profit = windowBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+          
+          if (profit > bestProfit) {
+            bestProfit = profit;
+            const wins = windowBets.filter(b => b.result?.outcome === 'WIN').length;
+            const losses = windowBets.filter(b => b.result?.outcome === 'LOSS').length;
+            
+            bestWindow = {
+              size: windowSize,
+              wins,
+              losses,
+              record: `${wins}-${losses}`,
+              winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
+              profit,
+              streak: windowBets.map(b => b.result?.outcome === 'WIN' ? 'W' : b.result?.outcome === 'LOSS' ? 'L' : 'P'),
+              count: windowSize
+            };
+          }
+        }
+      });
+      
+      if (bestWindow) {
+        setLast10Stats(bestWindow);
       }
       
         // Recent bets (already filtered to B-rated or higher)
@@ -352,11 +366,11 @@ export default function PerformanceDashboard() {
           status="good"
         />
         <StatCard
-          icon={<DollarSign size={24} color="#3B82F6" />}
-          label="Overall ROI"
-          value={`${stats.roi > 0 ? '+' : ''}${stats.roi.toFixed(1)}%`}
-          target="3-8%"
-          status={stats.roi >= 3 && stats.roi <= 8 ? 'good' : 'warning'}
+          icon={<DollarSign size={24} color="#10B981" />}
+          label="Total Profit"
+          value={`+${stats.profit.toFixed(2)}u`}
+          target={`$${(stats.profit * 100).toFixed(0)} (at $100/unit)`}
+          status={stats.profit > 0 ? 'good' : 'warning'}
         />
         <StatCard
           icon={<Activity size={24} color="#8B5CF6" />}
@@ -371,7 +385,10 @@ export default function PerformanceDashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
             <Award size={24} color="#D4AF37" />
             <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text-primary)', margin: 0 }}>
-              Last 10 Bets
+              Last {last10Stats.size} Bets
+              <span style={{ fontSize: '0.875rem', fontWeight: '400', color: 'var(--color-text-secondary)', marginLeft: '0.5rem' }}>
+                (Best Recent Window)
+              </span>
             </h3>
           </div>
           
@@ -445,60 +462,60 @@ export default function PerformanceDashboard() {
           }}>
             Moneyline Performance
           </h2>
-          <div className="elevated-card" style={{ 
-            padding: '1.5rem',
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.3)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
-                🎯 MONEYLINE PICKS
-              </h3>
-              <span style={{ 
-                padding: '0.25rem 0.75rem',
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#10B981',
-                borderRadius: '1rem',
-                fontSize: '0.75rem',
-                fontWeight: '700'
-              }}>
-                ELITE
-              </span>
+            <div className="elevated-card" style={{ 
+              padding: '1.5rem',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.3)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
+                  🎯 MONEYLINE PICKS
+                </h3>
+                <span style={{ 
+                  padding: '0.25rem 0.75rem',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: '#10B981',
+                  borderRadius: '1rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '700'
+                }}>
+                  ELITE
+                </span>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#10B981', marginBottom: '0.25rem' }}>
+                  +{byMarket.MONEYLINE.roi.toFixed(1)}%
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                  ROI on {byMarket.MONEYLINE.bets} bets
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Win Rate</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
+                    {byMarket.MONEYLINE.winRate.toFixed(1)}%
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Profit</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
+                    +{byMarket.MONEYLINE.profit.toFixed(2)}u
+                  </div>
+                </div>
+              </div>
+              {kellyAnalysis.moneyline && (
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
+                    Hypothetical Bankroll ($500 start)
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                    <span>Flat Betting: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.flatBankroll.toFixed(0)}</strong></span>
+                    <span>Kelly: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.kellyBankroll.toFixed(0)}</strong></span>
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#10B981', marginBottom: '0.25rem' }}>
-                +{byMarket.MONEYLINE.roi.toFixed(1)}%
-              </div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                ROI on {byMarket.MONEYLINE.bets} bets
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Win Rate</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
-                  {byMarket.MONEYLINE.winRate.toFixed(1)}%
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Profit</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10B981' }}>
-                  +{byMarket.MONEYLINE.profit.toFixed(2)}u
-                </div>
-              </div>
-            </div>
-            {kellyAnalysis.moneyline && (
-              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-                  Hypothetical Bankroll ($500 start)
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                  <span>Flat Betting: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.flatBankroll.toFixed(0)}</strong></span>
-                  <span>Kelly: <strong style={{ color: '#10B981' }}>${kellyAnalysis.moneyline.kellyBankroll.toFixed(0)}</strong></span>
-                </div>
-              </div>
-            )}
-          </div>
           <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '0.5rem', fontSize: '0.875rem' }}>
             <strong>📌 Note:</strong> Totals betting was disabled Oct 31, 2025. Analysis showed public data insufficient for consistent edge. Focus remains on elite moneyline performance.
           </div>
