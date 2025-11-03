@@ -357,8 +357,9 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
   // Format pick description (MONEYLINE ONLY)
   const pickDesc = `${bestEdge.team} ML`;
 
-  // Format top 3 factors (bullets are already formatted strings)
-  const topFactors = factors.slice(0, 3).join('\n');
+  // Format top factors - EXCLUDE the last bullet (EV summary) since it has actual percentages
+  // We'll inject those ourselves via placeholders
+  const topFactors = factors.slice(0, -1).slice(0, 3).join('\n');
 
   const modelProb = (bestEdge.modelProb * 100).toFixed(1);
   const impliedProb = ((1 / (bestEdge.odds < 0 
@@ -401,7 +402,7 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. Never invent stats—only use what is provided.'
+            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. CRITICAL: Use ONLY the placeholder syntax {EV_PERCENT}, {MODEL_PROB}, {MARKET_PROB} for all percentage numbers - never write actual numbers. Never invent stats—only use what is provided.'
           },
           {
             role: 'user',
@@ -451,17 +452,19 @@ async function generateFullStory(game, bestEdge, altBet, factors, altFactors, ap
   // Format primary bet (MONEYLINE ONLY)
   const primaryPick = `${bestEdge.team} ML`;
 
-  // Format factors (bullets are already formatted strings)
-  const primaryFactors = factors.slice(0, 5).map(f => `  ${f}`).join('\n');
+  // Format factors - EXCLUDE the last bullet (EV summary) since it has actual percentages
+  // We'll inject those ourselves via placeholders
+  const primaryFactors = factors.slice(0, -1).slice(0, 5).map(f => `  ${f}`).join('\n');
 
   // Format alternative bet (MONEYLINE ONLY)
   let altSection = '';
   if (altBet && altFactors && altFactors.length > 0) {
     const altPick = `${altBet.team} ML`;
-    const altFactorList = altFactors.slice(0, 5).map(f => `  ${f}`).join('\n');
+    // EXCLUDE the last bullet (EV summary) from alt factors too
+    const altFactorList = altFactors.slice(0, -1).slice(0, 5).map(f => `  ${f}`).join('\n');
 
     altSection = `
-ALTERNATIVE BET: ${altPick} at ${altBet.odds > 0 ? '+' : ''}${altBet.odds} with +${altBet.evPercent.toFixed(1)}% EV
+ALTERNATIVE BET: ${altPick} at ${altBet.odds > 0 ? '+' : ''}${altBet.odds}
 Supporting factors:
 ${altFactorList}`;
   }
@@ -516,7 +519,7 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. Never invent stats—only use provided data. Focus on VALUE and market inefficiencies.'
+            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. CRITICAL: Use ONLY the placeholder syntax {EV_PERCENT}, {MODEL_PROB}, {MARKET_PROB} for all percentage numbers - never write actual percentage numbers. Never invent stats—only use provided data. Focus on VALUE and market inefficiencies.'
           },
           {
             role: 'user',
