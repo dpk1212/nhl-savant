@@ -1,5 +1,5 @@
 // Edge Calculator - Calculate betting edges across all markets
-import { parseBothFiles } from './oddsTraderParser';
+import { parseBothFiles } from './oddsTraderParser.js';
 
 export class EdgeCalculator {
   constructor(dataProcessor, oddsFiles, startingGoalies = null) {

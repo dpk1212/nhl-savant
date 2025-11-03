@@ -2,7 +2,7 @@
  * Narrative Generator - Creates plain-English explanations for betting predictions
  */
 
-import { getTeamName } from './oddsTraderParser';
+import { getTeamName } from './oddsTraderParser.js';
 
 /**
  * Generate a narrative explanation for a specific bet
