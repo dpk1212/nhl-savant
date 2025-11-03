@@ -365,14 +365,20 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
-  const prompt = `You are affirming NHL Savant's model prediction. Our model picks: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds} with +${bestEdge.evPercent.toFixed(1)}% EV.
+  const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
+OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
+EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV
+MODEL PROBABILITY: ${modelProb}% (vs market's implied ${impliedProb}%)
 
-Our model projects ${modelProb}% probability vs market's ${impliedProb}%.
-
-Top supporting factors:
+KEY FACTORS FROM OUR MODEL:
 ${topFactors}
 
-Write 1-2 compelling sentences explaining WHY this is the smart bet. Be confident, specific, and data-driven. Use the factors and probabilities above. Return plain text (no JSON, no markdown).`;
+INSTRUCTIONS:
+Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value. Lead with the edge/mispricing. Use insider language like "the market is undervaluing...", "our model sees...", "this creates an inefficiency...". Be confident and contrarian.
+
+CRITICAL: Use ONLY the stats and factors provided above. Do not invent any records, shooting percentages, or data not given. Focus on the VALUE and the edge.
+
+Return plain text only (no markdown, no JSON, no bold/italic).`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -386,15 +392,15 @@ Write 1-2 compelling sentences explaining WHY this is the smart bet. Be confiden
         messages: [
           {
             role: 'system',
-            content: 'You are an expert NHL analyst affirming betting recommendations. Be confident and data-driven.'
+            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. Never invent stats—only use what is provided.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 200,
+        temperature: 0.8,
+        max_tokens: 150,
         stream: false
       }),
     });
@@ -419,7 +425,7 @@ Write 1-2 compelling sentences explaining WHY this is the smart bet. Be confiden
 }
 
 /**
- * Generate full story (2-3 paragraphs covering primary and alternative bets)
+ * Generate full story (2 paragraphs, 150-200 words, premium tone)
  */
 async function generateFullStory(game, bestEdge, altBet, factors, altFactors, apiKey) {
   if (!bestEdge || !factors || factors.length === 0) {
@@ -445,18 +451,36 @@ Supporting factors:
 ${altFactorList}`;
   }
 
-  const prompt = `You are providing deep analysis for NHL Savant's betting recommendations for ${game.awayTeam} @ ${game.homeTeam}.
+  const modelProb = (bestEdge.modelProb * 100).toFixed(1);
+  const impliedProb = ((1 / (bestEdge.odds < 0 
+    ? (1 + (100 / Math.abs(bestEdge.odds)))
+    : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
-PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds} with +${bestEdge.evPercent.toFixed(1)}% EV
-Supporting factors:
+  const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
+
+PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
+EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV
+MODEL PROBABILITY: ${modelProb}% (vs market's implied ${impliedProb}%)
+
+KEY FACTORS FROM OUR MODEL:
 ${primaryFactors}${altSection}
 
-Write 2-3 paragraphs of in-depth analysis covering:
-1. Why the primary bet has strong value (use specific stats and factors)
-2. ${altBet ? 'How the alternative bet provides additional opportunity' : 'Additional context about this matchup'}
-3. Key matchup dynamics that create these edges
+INSTRUCTIONS:
+Write EXACTLY 2 paragraphs (150-200 words total) that make readers feel they're getting premium betting service insights:
 
-Be analytical, confident, and data-driven. Write in a professional tone for serious bettors. Return plain text (no JSON, no markdown formatting, no bold/italic markers).`;
+PARAGRAPH 1 (~80-100 words): Lead with THE EDGE. Explain why our model identifies value and what mispricing the market has. Use the factors above to show WHY this creates betting value. Be contrarian—what is the market missing?
+
+PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Mention the alternative bet opportunity.' : 'Add supporting dynamics from the factors.'} End with conviction about the value at these odds.
+
+TONE: Confident, insider, contrarian—like a top 1% sharp bettor. Use language like "our model sees...", "the market undervalues...", "this creates an inefficiency...". Focus on VALUE, not just analysis.
+
+CRITICAL CONSTRAINTS:
+- Use ONLY the statistics and factors provided above. Do not invent team records, shooting percentages, recent game results, or any data not given.
+- Do not reference specific player names unless provided.
+- If a stat wasn't provided, don't mention it.
+- Focus on the metrics given: xGF/60, xGA/60, GSAE, EV%, probabilities, and the bullet points above.
+
+Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -470,7 +494,7 @@ Be analytical, confident, and data-driven. Write in a professional tone for seri
         messages: [
           {
             role: 'system',
-            content: 'You are an expert NHL analyst providing detailed betting analysis. Be analytical and confident.'
+            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. Never invent stats—only use provided data. Focus on VALUE and market inefficiencies.'
           },
           {
             role: 'user',
@@ -478,7 +502,7 @@ Be analytical, confident, and data-driven. Write in a professional tone for seri
           }
         ],
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: 400,
         stream: false
       }),
     });
