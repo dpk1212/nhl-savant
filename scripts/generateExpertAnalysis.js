@@ -366,8 +366,17 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
+  // Sanity check - verify implied prob calculation
+  const sanityCheck = bestEdge.odds > 0 
+    ? (100 / (bestEdge.odds + 100)).toFixed(1)
+    : (Math.abs(bestEdge.odds) / (Math.abs(bestEdge.odds) + 100)).toFixed(1);
+  
+  if (sanityCheck !== impliedProb) {
+    console.log(`   ⚠️ WARNING: Implied prob mismatch! Calculated=${impliedProb}%, Expected=${sanityCheck}%`);
+  }
+
   // Log exact numbers we'll inject
-  console.log(`   📊 Numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+  console.log(`   📊 BET HOOK - Numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
@@ -474,8 +483,17 @@ ${altFactorList}`;
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
+  // Sanity check - verify implied prob calculation
+  const sanityCheckFS = bestEdge.odds > 0 
+    ? (100 / (bestEdge.odds + 100)).toFixed(1)
+    : (Math.abs(bestEdge.odds) / (Math.abs(bestEdge.odds) + 100)).toFixed(1);
+  
+  if (sanityCheckFS !== impliedProb) {
+    console.log(`   ⚠️ WARNING: Implied prob mismatch! Calculated=${impliedProb}%, Expected=${sanityCheckFS}%`);
+  }
+
   // Log exact numbers we'll inject
-  console.log(`   📊 Full Story numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+  console.log(`   📊 FULL STORY - Numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 
@@ -781,7 +799,8 @@ async function main() {
       
       // Log the exact bestEdge data we're using (should match UI exactly)
       console.log(`   ✓ Best Edge: ${bestEdge.pick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}`);
-      console.log(`   ✓ EV: ${bestEdge.evPercent.toFixed(1)}%, Model: ${(bestEdge.modelProb * 100).toFixed(1)}%`);
+      console.log(`   ✓ Raw bestEdge data: EV=${bestEdge.evPercent}, modelProb=${bestEdge.modelProb} (decimal)`);
+      console.log(`   ✓ Formatted for display: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${(bestEdge.modelProb * 100).toFixed(1)}%`);
 
       // Generate narrative data to get bullets (supporting factors)
       const narrativeData = generateBetNarrative(gameEdge, bestEdge, dataProcessor);
