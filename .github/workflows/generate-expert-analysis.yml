@@ -2,8 +2,10 @@ name: Generate Expert Analysis
 
 on:
   schedule:
-    # Run at 9 AM ET (2 PM UTC) daily - before afternoon games
+    # Run at 9 AM ET (2 PM UTC) daily - generates matchup insights
     - cron: '0 14 * * *'
+    # Run at 2 PM ET (7 PM UTC) daily - generates bet narratives after odds available
+    - cron: '0 19 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -35,7 +37,8 @@ jobs:
         if: success()
         run: |
           echo "✅ Expert analysis generated successfully"
-          echo "Articles cached in Firebase for today's games"
+          echo "📰 Matchup insights cached in Firebase"
+          echo "🎯 Bet narratives cached (if odds data available)"
 
       - name: Notify failure
         if: failure()

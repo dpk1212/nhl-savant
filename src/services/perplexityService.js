@@ -184,6 +184,74 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
 }
 
 /**
+ * Get AI-generated bet hook (1-2 sentences) - CLIENT-SIDE READ ONLY
+ * GitHub Action generates content and writes to cache
+ * 
+ * @param {string} awayTeam - Away team name
+ * @param {string} homeTeam - Home team name
+ * @returns {Promise<string|null>} Bet hook text or null if not available
+ */
+export async function getBetHook(awayTeam, homeTeam) {
+  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-bet-hook`;
+  const cacheRef = doc(db, 'perplexityCache', cacheKey);
+
+  console.log('🔍 Looking for Bet Hook:', {
+    awayTeam,
+    homeTeam,
+    cacheKey
+  });
+
+  try {
+    const cachedDoc = await getDoc(cacheRef);
+    if (cachedDoc.exists()) {
+      console.log('✅ Found cached bet hook');
+      return cachedDoc.data().content;
+    } else {
+      console.log('❌ No cached bet hook found');
+    }
+  } catch (error) {
+    console.error('❌ Error loading bet hook:', error);
+  }
+  
+  // NO API CALL - Client never generates content
+  return null;
+}
+
+/**
+ * Get AI-generated full story (2-3 paragraphs) - CLIENT-SIDE READ ONLY
+ * GitHub Action generates content and writes to cache
+ * 
+ * @param {string} awayTeam - Away team name
+ * @param {string} homeTeam - Home team name
+ * @returns {Promise<string|null>} Full story text or null if not available
+ */
+export async function getFullStory(awayTeam, homeTeam) {
+  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-full-story`;
+  const cacheRef = doc(db, 'perplexityCache', cacheKey);
+
+  console.log('🔍 Looking for Full Story:', {
+    awayTeam,
+    homeTeam,
+    cacheKey
+  });
+
+  try {
+    const cachedDoc = await getDoc(cacheRef);
+    if (cachedDoc.exists()) {
+      console.log('✅ Found cached full story');
+      return cachedDoc.data().content;
+    } else {
+      console.log('❌ No cached full story found');
+    }
+  } catch (error) {
+    console.error('❌ Error loading full story:', error);
+  }
+  
+  // NO API CALL - Client never generates content
+  return null;
+}
+
+/**
  * Fetch confirmed starting goalies for today's NHL games using Perplexity AI
  * Searches real-time sources: DailyFaceoff, beat reporters, team announcements
  * 

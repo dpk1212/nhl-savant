@@ -23,6 +23,13 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 // Note: fetch is built-in to Node.js 18+, no import needed
 
+// Import edge calculator and data processor for bet narratives
+import { EdgeCalculator } from '../src/utils/edgeCalculator.js';
+import { DataProcessor } from '../src/utils/dataProcessing.js';
+import { GoalieProcessor } from '../src/utils/goalieProcessor.js';
+import { ScheduleHelper } from '../src/utils/scheduleHelper.js';
+import { generateDeepAnalytics } from '../src/utils/narrativeGenerator.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -342,6 +349,259 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
 }
 
 /**
+ * Generate bet hook (1-2 sentences affirming our model's pick)
+ */
+async function generateBetHook(game, bestEdge, factors, apiKey) {
+  if (!bestEdge || !factors || factors.length === 0) {
+    console.log(`⚠️ No edge data available for bet hook`);
+    return null;
+  }
+
+  // Format pick description
+  const pickDesc = bestEdge.market === 'MONEYLINE' 
+    ? `${bestEdge.team} ML` 
+    : bestEdge.market === 'PUCKLINE'
+    ? `${bestEdge.team} ${bestEdge.line > 0 ? '+' : ''}${bestEdge.line}`
+    : `${bestEdge.pick}`;
+
+  // Format top 3 factors
+  const topFactors = factors.slice(0, 3).map(f => {
+    const impact = Math.abs(f.impact).toFixed(2);
+    return `- ${f.name}: ${f.impact > 0 ? '+' : ''}${impact} goal impact`;
+  }).join('\n');
+
+  const modelProb = (bestEdge.modelProb * 100).toFixed(1);
+  const impliedProb = ((1 / (bestEdge.odds < 0 
+    ? (1 + (100 / Math.abs(bestEdge.odds)))
+    : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
+
+  const prompt = `You are affirming NHL Savant's model prediction. Our model picks: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds} with +${bestEdge.evPercent.toFixed(1)}% EV.
+
+Our model projects ${modelProb}% probability vs market's ${impliedProb}%.
+
+Top supporting factors:
+${topFactors}
+
+Write 1-2 compelling sentences explaining WHY this is the smart bet. Be confident, specific, and data-driven. Use the factors and probabilities above. Return plain text (no JSON, no markdown).`;
+
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert NHL analyst affirming betting recommendations. Be confident and data-driven.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 200,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Clean up any markdown or extra formatting
+    const cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').trim();
+    
+    console.log(`✅ Generated bet hook (${cleaned.length} chars)`);
+    return cleaned;
+  } catch (error) {
+    console.error(`❌ Error generating bet hook:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Generate full story (2-3 paragraphs covering primary and alternative bets)
+ */
+async function generateFullStory(game, bestEdge, altBet, factors, altFactors, apiKey) {
+  if (!bestEdge || !factors || factors.length === 0) {
+    console.log(`⚠️ No edge data available for full story`);
+    return null;
+  }
+
+  // Format primary bet
+  const primaryPick = bestEdge.market === 'MONEYLINE' 
+    ? `${bestEdge.team} ML` 
+    : bestEdge.market === 'PUCKLINE'
+    ? `${bestEdge.team} ${bestEdge.line > 0 ? '+' : ''}${bestEdge.line}`
+    : `${bestEdge.pick}`;
+
+  const primaryFactors = factors.slice(0, 3).map(f => {
+    const impact = Math.abs(f.impact).toFixed(2);
+    return `  - ${f.name}: ${f.impact > 0 ? '+' : ''}${impact} goal impact`;
+  }).join('\n');
+
+  // Format alternative bet
+  let altSection = '';
+  if (altBet && altFactors && altFactors.length > 0) {
+    const altPick = altBet.market === 'MONEYLINE' 
+      ? `${altBet.team} ML` 
+      : altBet.market === 'PUCKLINE'
+      ? `${altBet.team} ${altBet.line > 0 ? '+' : ''}${altBet.line}`
+      : `${altBet.pick}`;
+
+    const altFactorList = altFactors.slice(0, 3).map(f => {
+      const impact = Math.abs(f.impact).toFixed(2);
+      return `  - ${f.name}: ${f.impact > 0 ? '+' : ''}${impact} goal impact`;
+    }).join('\n');
+
+    altSection = `
+ALTERNATIVE BET: ${altPick} at ${altBet.odds > 0 ? '+' : ''}${altBet.odds} with +${altBet.evPercent.toFixed(1)}% EV
+Supporting factors:
+${altFactorList}`;
+  }
+
+  const prompt = `You are providing deep analysis for NHL Savant's betting recommendations for ${game.awayTeam} @ ${game.homeTeam}.
+
+PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds} with +${bestEdge.evPercent.toFixed(1)}% EV
+Supporting factors:
+${primaryFactors}${altSection}
+
+Write 2-3 paragraphs of in-depth analysis covering:
+1. Why the primary bet has strong value (use specific stats and factors)
+2. ${altBet ? 'How the alternative bet provides additional opportunity' : 'Additional context about this matchup'}
+3. Key matchup dynamics that create these edges
+
+Be analytical, confident, and data-driven. Write in a professional tone for serious bettors. Return plain text (no JSON, no markdown formatting, no bold/italic markers).`;
+
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert NHL analyst providing detailed betting analysis. Be analytical and confident.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 600,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Clean up any markdown or extra formatting
+    const cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim();
+    
+    console.log(`✅ Generated full story (${cleaned.length} chars)`);
+    return cleaned;
+  } catch (error) {
+    console.error(`❌ Error generating full story:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Cache bet narrative in Firebase
+ */
+async function cacheBetNarrative(awayTeam, homeTeam, content, type) {
+  if (!awayTeam || !homeTeam || !content) {
+    console.error('❌ Invalid narrative data');
+    return false;
+  }
+
+  const now = new Date();
+  const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}-${type}`;
+  const cacheRef = db.collection('perplexityCache').doc(cacheKey);
+
+  try {
+    await cacheRef.set({
+      content: String(content),
+      timestamp: Date.now(),
+      awayTeam: String(awayTeam),
+      homeTeam: String(homeTeam),
+      type: String(type),
+      generatedBy: 'github-action'
+    });
+    console.log(`✅ Cached ${type} for ${awayTeam} @ ${homeTeam}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to cache ${type}:`, error.message);
+    return false;
+  }
+}
+
+/**
+ * Load odds data and calculate edges for bet narratives
+ */
+function loadOddsAndCalculateEdges(games) {
+  try {
+    // Load required data files
+    const teamsData = readFileSync(join(__dirname, '../public/teams.csv'), 'utf-8');
+    const goaliesData = readFileSync(join(__dirname, '../public/goalies.csv'), 'utf-8');
+    const scheduleData = readFileSync(join(__dirname, '../public/nhl-202526-asplayed.csv'), 'utf-8');
+    
+    // Check if odds files exist
+    const oddsMoneyPath = join(__dirname, '../public/odds_money.md');
+    const oddsPuckPath = join(__dirname, '../public/odds_puck.md');
+    
+    let oddsMoneyData, oddsPuckData;
+    try {
+      oddsMoneyData = readFileSync(oddsMoneyPath, 'utf-8');
+      oddsPuckData = readFileSync(oddsPuckPath, 'utf-8');
+    } catch (error) {
+      console.log('ℹ️ Odds data not available yet - skipping bet narratives');
+      return null;
+    }
+
+    // Initialize processors
+    const goalieProcessor = new GoalieProcessor(goaliesData);
+    const scheduleHelper = new ScheduleHelper(scheduleData);
+    const dataProcessor = new DataProcessor(teamsData, goalieProcessor, scheduleHelper);
+    
+    // Initialize edge calculator
+    const edgeCalculator = new EdgeCalculator(
+      dataProcessor,
+      { money: oddsMoneyData, puck: oddsPuckData },
+      null // Starting goalies (optional)
+    );
+
+    const allEdges = edgeCalculator.calculateAllEdges();
+    console.log(`✅ Calculated edges for ${allEdges.length} games`);
+    
+    return { allEdges, dataProcessor };
+  } catch (error) {
+    console.error('❌ Error loading odds data:', error.message);
+    return null;
+  }
+}
+
+/**
  * Main execution
  */
 async function main() {
@@ -360,21 +620,24 @@ async function main() {
     return;
   }
 
-  // Generate analysis for each game
-  let successCount = 0;
-  let failureCount = 0;
+  // Generate matchup insights for each game
+  let insightsSuccessCount = 0;
+  let insightsFailureCount = 0;
 
+  console.log('📰 PHASE 1: Generating Matchup Insights');
+  console.log('='.repeat(50));
+  
   for (const game of games) {
-    console.log(`⏳ Generating analysis: ${game.awayTeam} @ ${game.homeTeam}`);
+    console.log(`⏳ Generating insights: ${game.awayTeam} @ ${game.homeTeam}`);
     
     const cards = await generateAnalysis(game.awayTeam, game.homeTeam, PERPLEXITY_API_KEY);
     
     if (cards && cards.length > 0) {
       await cacheAnalysis(game.awayTeam, game.homeTeam, cards);
-      successCount++;
+      insightsSuccessCount++;
       console.log('');
     } else {
-      failureCount++;
+      insightsFailureCount++;
       console.log(`⚠️ Skipped caching (generation failed)`);
       console.log('');
     }
@@ -386,12 +649,114 @@ async function main() {
   }
 
   console.log('');
-  console.log('📈 Summary:');
-  console.log(`✅ Success: ${successCount}`);
-  console.log(`❌ Failed: ${failureCount}`);
-  console.log(`📊 Total: ${games.length}`);
+  console.log('📊 Phase 1 Summary:');
+  console.log(`✅ Insights Success: ${insightsSuccessCount}`);
+  console.log(`❌ Insights Failed: ${insightsFailureCount}`);
   console.log('');
+
+  // PHASE 2: Generate bet narratives (if odds data available)
+  console.log('🎯 PHASE 2: Generating Bet Narratives');
+  console.log('='.repeat(50));
+  
+  const edgeData = loadOddsAndCalculateEdges(games);
+  
+  if (!edgeData) {
+    console.log('⏭️ Skipping bet narratives - odds data not available');
+    console.log('   (This is normal if running before odds are scraped)');
+  } else {
+    const { allEdges, dataProcessor } = edgeData;
+    let narrativesSuccessCount = 0;
+    let narrativesFailureCount = 0;
+
+    for (const gameEdge of allEdges) {
+      const gameInfo = games.find(g => 
+        g.awayTeam === gameEdge.awayTeam && g.homeTeam === gameEdge.homeTeam
+      );
+      
+      if (!gameInfo) continue;
+
+      console.log(`⏳ Generating narratives: ${gameEdge.awayTeam} @ ${gameEdge.homeTeam}`);
+      
+      // Find best edge
+      const bestEdge = [
+        ...(gameEdge.edges.moneyline ? [
+          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam },
+          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam }
+        ] : []),
+        ...(gameEdge.edges.puckLine ? [
+          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam },
+          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam }
+        ] : [])
+      ].sort((a, b) => b.evPercent - a.evPercent)[0];
+
+      if (!bestEdge || bestEdge.evPercent <= 0) {
+        console.log('   ⚠️ No positive EV bet found - skipping');
+        continue;
+      }
+
+      // Generate analytics data to get factors
+      const analyticsData = generateDeepAnalytics(gameEdge, bestEdge, dataProcessor);
+      
+      if (!analyticsData || !analyticsData.factors || analyticsData.factors.length === 0) {
+        console.log('   ⚠️ No factors available - skipping');
+        narrativesFailureCount++;
+        continue;
+      }
+
+      // Find alternative bet
+      const altBet = [
+        ...(gameEdge.edges.moneyline ? [
+          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam },
+          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam }
+        ] : []),
+        ...(gameEdge.edges.puckLine ? [
+          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam },
+          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam }
+        ] : [])
+      ].filter(e => e.evPercent > 0 && e !== bestEdge)
+        .sort((a, b) => b.evPercent - a.evPercent)[0];
+
+      // Generate bet hook
+      const betHook = await generateBetHook(gameInfo, bestEdge, analyticsData.factors, PERPLEXITY_API_KEY);
+      if (betHook) {
+        await cacheBetNarrative(gameEdge.awayTeam, gameEdge.homeTeam, betHook, 'bet-hook');
+      }
+
+      // Generate full story
+      const fullStory = await generateFullStory(
+        gameInfo, 
+        bestEdge, 
+        altBet, 
+        analyticsData.factors,
+        altBet ? analyticsData.factors : null,
+        PERPLEXITY_API_KEY
+      );
+      if (fullStory) {
+        await cacheBetNarrative(gameEdge.awayTeam, gameEdge.homeTeam, fullStory, 'full-story');
+      }
+
+      if (betHook && fullStory) {
+        narrativesSuccessCount++;
+      } else {
+        narrativesFailureCount++;
+      }
+
+      console.log('');
+
+      // Rate limiting: Wait 2 seconds between requests
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    console.log('');
+    console.log('📊 Phase 2 Summary:');
+    console.log(`✅ Narratives Success: ${narrativesSuccessCount}`);
+    console.log(`❌ Narratives Failed: ${narrativesFailureCount}`);
+  }
+
+  console.log('');
+  console.log('='.repeat(50));
   console.log('✨ Expert Analysis Generation Complete');
+  console.log('='.repeat(50));
 }
 
 // Run
