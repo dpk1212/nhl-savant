@@ -13,7 +13,13 @@ const AIBetNarrative = ({ game, bestEdge, isMobile }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!game || !bestEdge) {
+    if (!game) {
+      setLoading(false);
+      return;
+    }
+
+    // Check if we have a positive EV bet
+    if (!bestEdge || bestEdge.evPercent <= 0) {
       setLoading(false);
       return;
     }
@@ -57,7 +63,21 @@ const AIBetNarrative = ({ game, bestEdge, isMobile }) => {
     );
   }
 
-  // No narrative available yet
+  // No positive EV bet - show professional message
+  if (!bestEdge || bestEdge.evPercent <= 0) {
+    return (
+      <div style={{
+        padding: '1rem',
+        fontSize: TYPOGRAPHY.body.size,
+        color: 'var(--color-text-muted)',
+        lineHeight: '1.6'
+      }}>
+        This matchup shows balanced odds with no clear edge at current lines. Our model updates continuously as odds shift throughout the day.
+      </div>
+    );
+  }
+
+  // No narrative available yet (still generating)
   if (!narrative) {
     return (
       <div style={{

@@ -715,8 +715,8 @@ async function main() {
   } else {
     const { allEdges, dataProcessor } = edgeData;
     
-    // Import generateDeepAnalytics dynamically
-    const { generateDeepAnalytics } = await import('../src/utils/narrativeGenerator.js');
+    // Import generateBetNarrative dynamically to get factors array
+    const { generateBetNarrative } = await import('../src/utils/narrativeGenerator.js');
     
     let narrativesSuccessCount = 0;
     let narrativesFailureCount = 0;
@@ -747,14 +747,17 @@ async function main() {
         continue;
       }
 
-      // Generate analytics data to get factors
-      const analyticsData = generateDeepAnalytics(gameEdge, bestEdge, dataProcessor);
+      // Generate narrative data to get factors array
+      const narrativeData = generateBetNarrative(gameEdge, bestEdge, dataProcessor);
       
-      if (!analyticsData || !analyticsData.factors || analyticsData.factors.length === 0) {
+      if (!narrativeData || !narrativeData.factors || narrativeData.factors.length === 0) {
         console.log('   ⚠️ No factors available - skipping');
         narrativesFailureCount++;
         continue;
       }
+      
+      // Extract factors for Perplexity prompts
+      const factors = narrativeData.factors;
 
       // Find alternative bet
       const altBet = [
@@ -770,7 +773,7 @@ async function main() {
         .sort((a, b) => b.evPercent - a.evPercent)[0];
 
       // Generate bet hook
-      const betHook = await generateBetHook(gameInfo, bestEdge, analyticsData.factors, PERPLEXITY_API_KEY);
+      const betHook = await generateBetHook(gameInfo, bestEdge, factors, PERPLEXITY_API_KEY);
       if (betHook) {
         await cacheBetNarrative(gameEdge.awayTeam, gameEdge.homeTeam, betHook, 'bet-hook');
       }
@@ -780,8 +783,8 @@ async function main() {
         gameInfo, 
         bestEdge, 
         altBet, 
-        analyticsData.factors,
-        altBet ? analyticsData.factors : null,
+        factors,
+        altBet ? factors : null,
         PERPLEXITY_API_KEY
       );
       if (fullStory) {
