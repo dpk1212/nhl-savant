@@ -32,6 +32,8 @@ import {
 } from '../utils/designSystem';
 import { getStatDisplayName, getStatTooltip, getStatColorCode } from '../utils/statDisplayNames';
 import QuickStory from './QuickStory';
+import AIBetNarrative from './AIBetNarrative';
+import AIFullStory from './AIFullStory';
 import CollapsibleGameCard from './CollapsibleGameCard';
 import StepSection from './StepSection';
 import QuickStatsBar from './QuickStatsBar';
@@ -2739,7 +2741,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 );
               })()}
               
-              {/* STEP 2: THE STORY */}
+              {/* STEP 2: WHY THIS BET WORKS */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (bestEdge && analyticsData && analyticsData.factors) {
@@ -2751,12 +2753,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       accentColor="#3B82F6"
                       isMobile={isMobile}
                     >
-                    <QuickStory
+                    <AIBetNarrative
                       game={game}
                       bestEdge={bestEdge}
-                      factors={analyticsData.factors}
                       isMobile={isMobile}
-                        dataProcessor={dataProcessor}
                     />
                     </StepSection>
                   );
@@ -2790,24 +2790,21 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 return null;
               })()}
               
-              {/* STEP 4: MORE OPTIONS */}
+              {/* STEP 4: THE FULL STORY */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 return (
                   <StepSection
                     stepNumber={4}
-                    title="ALTERNATIVE BETS"
-                    emoji="💡"
+                    title="THE FULL STORY"
+                    emoji="📚"
                     accentColor="#F59E0B"
                     isMobile={isMobile}
                   >
-                  <AlternativeBetCard 
+                  <AIFullStory 
                     game={game}
                     bestEdge={bestEdge}
-                    awayTeam={game.awayTeam}
-                    homeTeam={game.homeTeam}
                     isMobile={isMobile}
-                    factors={analyticsData?.factors || []}
                   />
                   </StepSection>
                 );
