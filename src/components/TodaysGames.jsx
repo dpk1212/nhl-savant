@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
@@ -1985,6 +1985,88 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     }
   }, [dataProcessor, oddsData, startingGoalies]);
   
+  // CRITICAL FIX: Merge live/final games that may not have odds into allEdges
+  // This ensures games don't disappear when they go live
+  const allGamesToDisplay = useMemo(() => {
+    if (!liveScores || liveScores.length === 0) {
+      return allEdges;
+    }
+    
+    console.log('🔄 Merging games: ', {
+      gamesWithOdds: allEdges.length,
+      liveScores: liveScores.length
+    });
+    
+    // Start with all games that have odds
+    const merged = [...allEdges];
+    
+    // Add live/final games that DON'T have odds
+    liveScores.forEach(liveScore => {
+      // Check if this game already has odds
+      const hasOdds = allEdges.some(g => 
+        g.awayTeam === liveScore.awayTeam && g.homeTeam === liveScore.homeTeam
+      );
+      
+      // Only add if it's a live/final game AND doesn't have odds
+      const isLive = liveScore.status === 'LIVE' || liveScore.status === 'In Progress';
+      const isFinal = liveScore.status === 'FINAL' || liveScore.status === 'Final' || liveScore.status === 'CRIT';
+      
+      if ((isLive || isFinal) && !hasOdds) {
+        console.log(`  ➕ Adding live game without odds: ${liveScore.awayTeam} @ ${liveScore.homeTeam}`);
+        
+        // Create a minimal game object for display
+        // Calculate predictions if we have dataProcessor
+        let awayWinProb = 50;
+        let homeWinProb = 50;
+        
+        if (dataProcessor) {
+          try {
+            const awayScore = dataProcessor.predictTeamScore(
+              liveScore.awayTeam, 
+              liveScore.homeTeam, 
+              false
+            );
+            const homeScore = dataProcessor.predictTeamScore(
+              liveScore.homeTeam, 
+              liveScore.awayTeam, 
+              true
+            );
+            
+            // Convert to win probabilities
+            if (awayScore > homeScore) {
+              awayWinProb = 55;
+              homeWinProb = 45;
+            } else if (homeScore > awayScore) {
+              awayWinProb = 45;
+              homeWinProb = 55;
+            }
+          } catch (error) {
+            console.warn('Could not calculate predictions for live game:', error);
+          }
+        }
+        
+        merged.push({
+          game: `${liveScore.awayTeam} @ ${liveScore.homeTeam}`,
+          gameTime: 'LIVE',
+          awayTeam: liveScore.awayTeam,
+          homeTeam: liveScore.homeTeam,
+          date: new Date().toISOString().split('T')[0],
+          edges: {
+            moneyline: {
+              away: { modelProb: awayWinProb / 100 },
+              home: { modelProb: homeWinProb / 100 }
+            }
+          },
+          rawOdds: {},
+          isLiveOnly: true // Flag to indicate this game has no pre-game odds
+        });
+      }
+    });
+    
+    console.log(`  ✅ Total games to display: ${merged.length}`);
+    return merged;
+  }, [allEdges, liveScores, dataProcessor]);
+  
   // Helper function to get goalie stats for a team
   // CRITICAL: Wrapped in useCallback to ensure re-renders when goalieProcessor initializes
   const getGoalieForTeam = useCallback((teamCode) => {
@@ -2241,7 +2323,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                         
                         if (startingGoalies && startingGoalies.games && Array.isArray(startingGoalies.games)) {
                           // Only count goalies for games actually displayed on page
-                          allEdges.forEach(edge => {
+                          allGamesToDisplay.forEach(edge => {
                             const matchingGame = startingGoalies.games.find(g => {
                               // Try exact team code match first
                               const teamMatch = g.away?.team === edge.awayTeam && g.home?.team === edge.homeTeam;
@@ -2286,7 +2368,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               fontWeight: '700',
               color: '#CBD5E1'
               }}>
-                {allEdges.length}
+                {allGamesToDisplay.length}
             </span>
             <span style={{
               fontSize: isMobile ? '0.625rem' : '0.688rem',
@@ -2411,7 +2493,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         {(() => {
           // Group games by time slot
           const gamesByTime = {};
-          allEdges.forEach((game) => {
+          allGamesToDisplay.forEach((game) => {
             const time = game.gameTime;
             if (!gamesByTime[time]) {
               gamesByTime[time] = [];
@@ -2496,7 +2578,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 {/* Games in this time slot */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: isMobile ? '0.625rem' : '0.75rem' }}>
                   {gamesInSlot.map((game, gameIndex) => {
-                    const index = allEdges.indexOf(game);
+                    const index = allGamesToDisplay.indexOf(game);
           // Find the best edge for this game to show in narrative
           const bestEdge = topEdges
             .filter(e => e.game === game.game && e.evPercent > 0)
@@ -2764,10 +2846,38 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         <>
           {/* Show live/final games that don't have odds */}
           {(() => {
+            // DIAGNOSTIC: Log all live scores and their statuses
+            console.log('🔍 DIAGNOSTIC: Live scores data:', liveScores.map(s => ({
+              game: `${s.awayTeam} @ ${s.homeTeam}`,
+              status: s.status,
+              score: `${s.awayScore}-${s.homeScore}`
+            })));
+            
             // Filter to only show games that are LIVE or FINAL (not pre-game)
-            const liveOrFinalGames = liveScores.filter(score => 
-              score.status === 'LIVE' || score.status === 'FINAL'
-            );
+            // Support multiple status formats: 'LIVE', 'In Progress', 'FINAL', 'Final', 'CRIT'
+            const liveOrFinalGames = liveScores.filter(score => {
+              const isLive = score.status === 'LIVE' || score.status === 'In Progress';
+              const isFinal = score.status === 'FINAL' || score.status === 'Final' || score.status === 'CRIT';
+              const isLiveOrFinal = isLive || isFinal;
+              
+              // ONLY show games here that DON'T have odds/predictions (games not in allGamesToDisplay)
+              const hasOdds = allGamesToDisplay.some(g => 
+                g.awayTeam === score.awayTeam && g.homeTeam === score.homeTeam
+              );
+              
+              // Log why games are included/excluded
+              if (!isLiveOrFinal) {
+                console.log(`  ⏭️  Skipping ${score.awayTeam} @ ${score.homeTeam}: status="${score.status}" (not live/final)`);
+              } else if (hasOdds) {
+                console.log(`  📊 Skipping ${score.awayTeam} @ ${score.homeTeam}: Has odds (shown in main section)`);
+              } else {
+                console.log(`  ✅ Including ${score.awayTeam} @ ${score.homeTeam}: status="${score.status}" (no odds)`);
+              }
+              
+              return isLiveOrFinal && !hasOdds;
+            });
+            
+            console.log(`🎯 RESULT: Showing ${liveOrFinalGames.length} games in Live/Final section (${liveScores.length} total live scores, ${allGamesToDisplay.length} games with odds)`);
             
             return liveOrFinalGames.length > 0 ? (
             <div>
@@ -2788,7 +2898,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               
               {liveOrFinalGames.map((liveScore, idx) => {
                 // Try to find the corresponding pre-game prediction data
-                const matchingGame = allEdges.find(g => 
+                const matchingGame = allGamesToDisplay.find(g => 
                   g.awayTeam === liveScore.awayTeam && g.homeTeam === liveScore.homeTeam
                 );
                 
@@ -2848,7 +2958,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       )}
       
       {/* No games message - only show if NO games at all */}
-      {allEdges.length === 0 && (!liveScores || liveScores.length === 0) && (
+      {allGamesToDisplay.length === 0 && (!liveScores || liveScores.length === 0) && (
         <div className="elevated-card" style={{ textAlign: 'center', padding: isMobile ? '2rem 1rem' : '3rem' }}>
           <Calendar size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 1rem auto' }} />
           <h3 style={{ marginBottom: '0.5rem' }}>No Games Today</h3>
