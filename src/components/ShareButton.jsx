@@ -127,6 +127,12 @@ const ShareButton = ({
     alert('Failed to generate image. Please try again.');
   };
 
+  const handleImageCancel = () => {
+    setIsGeneratingImage(false);
+    setShareData(null);
+    setIsOpen(false);
+  };
+
   // Compact variant (for header)
   if (variant === 'compact') {
     return (
@@ -174,6 +180,7 @@ const ShareButton = ({
             shareData={shareData}
             onComplete={handleImageComplete}
             onError={handleImageError}
+            onCancel={handleImageCancel}
           />
         )}
       </div>
@@ -236,6 +243,7 @@ const ShareButton = ({
           shareData={shareData}
           onComplete={handleImageComplete}
           onError={handleImageError}
+          onCancel={handleImageCancel}
         />
       )}
     </div>
