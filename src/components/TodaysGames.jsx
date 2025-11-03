@@ -2548,6 +2548,20 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
+              onGameClick={(gameMatchup) => {
+                // Scroll to specific game card
+                const gameId = `game-${gameMatchup.replace(/\s+/g, '-').replace(/@/g, 'at')}`;
+                const gameElement = document.getElementById(gameId);
+                if (gameElement) {
+                  gameElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  // Add a brief highlight effect
+                  gameElement.style.transition = 'all 0.3s ease';
+                  gameElement.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.5)';
+                  setTimeout(() => {
+                    gameElement.style.boxShadow = '';
+                  }, 1500);
+                }
+              }}
             />
           </div>
         ) : null;
@@ -2715,18 +2729,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                       </>
           );
 
+          // Generate unique ID for the game card
+          const gameId = `game-${game.awayTeam}-at-${game.homeTeam}`.replace(/\s+/g, '-');
+
           // If game is live or final, just show the compact header without expansion
           if (isLiveOrFinal) {
             return (
               <div 
                 key={index}
+                id={gameId}
                 className="elevated-card"
                 style={{
                   marginBottom: gameIndex < gamesInSlot.length - 1 ? (isMobile ? '0.625rem' : '0.75rem') : 0,
                   padding: 0,
                   background: 'var(--color-bg-secondary)',
                   border: '1px solid var(--color-border)',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  scrollMarginTop: '80px' // Offset for fixed headers
                 }}
               >
                 {headerContent}
@@ -2738,6 +2757,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           return (
             <CollapsibleGameCard
               key={index}
+              id={gameId}
               header={headerContent}
               defaultExpanded={false}
               index={index}

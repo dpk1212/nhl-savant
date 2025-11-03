@@ -22,7 +22,7 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
-export default function CompactPicksBar({ gameGroups, onViewAll }) {
+export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
 
   if (!gameGroups || gameGroups.length === 0) {
@@ -32,6 +32,12 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
   const scrollToGames = () => {
     if (onViewAll) {
       onViewAll();
+    }
+  };
+
+  const handleGameClick = (game) => {
+    if (onGameClick) {
+      onGameClick(game);
     }
   };
 
@@ -121,6 +127,21 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
         <div style={{
           animation: 'expandDown 0.3s ease-out'
         }}>
+          {/* Disclaimer */}
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94A3B8',
+            fontStyle: 'italic',
+            marginBottom: '1rem',
+            padding: '0.625rem 0.875rem',
+            background: 'rgba(251, 191, 36, 0.08)',
+            border: '1px solid rgba(251, 191, 36, 0.2)',
+            borderRadius: '8px',
+            lineHeight: '1.4'
+          }}>
+            ⚠️ Picks generated at favorable odds. If odds have changed, model recommendation may differ.
+          </div>
+
           {/* Game Groups - Horizontal Scroll */}
           <div style={{
             display: 'flex',
@@ -137,6 +158,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
             {gameGroups.map((gameGroup, groupIndex) => (
               <div
                 key={groupIndex}
+                onClick={() => handleGameClick(gameGroup.game)}
                 style={{
                   background: 'rgba(15, 23, 42, 0.5)',
                   border: '1px solid rgba(148, 163, 184, 0.08)',
@@ -145,7 +167,8 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
                   minWidth: '280px',
                   maxWidth: '320px',
                   flexShrink: 0,
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
                 }}
                 className="game-group-card"
               >
@@ -172,7 +195,6 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
                   {gameGroup.bets.map((bet, betIndex) => (
                     <div
                       key={betIndex}
-                      onClick={scrollToGames}
                       style={{
                         background: `linear-gradient(135deg, ${getGradeColor(bet.grade)}12 0%, ${getGradeColor(bet.grade)}08 100%)`,
                         border: `1px solid ${getGradeColor(bet.grade)}35`,
@@ -181,7 +203,6 @@ export default function CompactPicksBar({ gameGroups, onViewAll }) {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.625rem',
-                        cursor: 'pointer',
                         transition: 'all 0.2s ease'
                       }}
                       className="pick-item"
