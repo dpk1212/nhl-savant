@@ -350,7 +350,7 @@ const NeuralNetwork = ({ dataProcessor, isMobile }) => {
           lineHeight: '1.6',
           maxWidth: '800px'
         }}>
-          Watch our AI process {networkData.inputs.length} input signals through {hidden1.length + hidden2.length} neural pathways to generate real-time predictions for <span style={{ color: '#F59E0B', fontWeight: '600' }}>{networkData.game}</span>
+          Watch our model process {networkData.inputs.length} input signals through {hidden1.length + hidden2.length} neural pathways to generate real-time predictions for <span style={{ color: '#F59E0B', fontWeight: '600' }}>{networkData.game}</span>
         </p>
       </div>
 

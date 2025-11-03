@@ -1,6 +1,6 @@
 /**
- * SEO Header - AI-generated matchup analysis
- * Uses Perplexity AI with caching and refresh capability
+ * SEO Header - Expert matchup analysis
+ * Uses advanced analytics with caching and refresh capability
  */
 
 import { useState, useEffect } from 'react';
@@ -72,7 +72,7 @@ export default function SEOHeader({ matchupData }) {
             fontSize: '0.875rem',
             color: '#D4AF37'
           }}>
-            AI-Powered Hot Takes
+            Expert Hot Takes
           </p>
         </div>
 

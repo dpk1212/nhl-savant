@@ -1,5 +1,5 @@
 /**
- * AI Insight Cards - Premium Expert Analysis
+ * Expert Insight Cards - Premium Analysis
  * Redesigned for shareability, visual impact, and engagement
  * Features: Viral hooks, structured sections, share functionality
  */

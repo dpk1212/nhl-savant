@@ -206,7 +206,7 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
               letterSpacing: '0.05em',
               textTransform: 'uppercase'
             }}>
-              AI-Powered Betting Analysis
+              Advanced Betting Analysis
             </div>
           </div>
           <div style={{
