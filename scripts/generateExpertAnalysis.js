@@ -357,26 +357,11 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
   // Format pick description (MONEYLINE ONLY)
   const pickDesc = `${bestEdge.team} ML`;
 
-  // Format top factors - EXCLUDE the last bullet (EV summary) since it has actual percentages
-  // We'll inject those ourselves via placeholders
+  // Format top factors - EXCLUDE the last bullet (EV summary) to avoid any number confusion
+  // Focus on qualitative factors only (offensive/defensive/special teams edges)
   const topFactors = factors.slice(0, -1).slice(0, 3).join('\n');
 
-  const modelProb = (bestEdge.modelProb * 100).toFixed(1);
-  const impliedProb = ((1 / (bestEdge.odds < 0 
-    ? (1 + (100 / Math.abs(bestEdge.odds)))
-    : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
-
-  // Sanity check - verify implied prob calculation
-  const sanityCheck = bestEdge.odds > 0 
-    ? (100 / (bestEdge.odds + 100)).toFixed(1)
-    : (Math.abs(bestEdge.odds) / (Math.abs(bestEdge.odds) + 100)).toFixed(1);
-  
-  if (sanityCheck !== impliedProb) {
-    console.log(`   ⚠️ WARNING: Implied prob mismatch! Calculated=${impliedProb}%, Expected=${sanityCheck}%`);
-  }
-
-  // Log exact numbers we'll inject
-  console.log(`   📊 BET HOOK - Numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+  console.log(`   📝 Generating qualitative bet hook (no numbers, factors only)`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
@@ -385,17 +370,20 @@ KEY FACTORS FROM OUR MODEL:
 ${topFactors}
 
 INSTRUCTIONS:
-Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value. Lead with the edge/mispricing. Use insider language like "the market is undervaluing...", "our model sees...", "this creates an inefficiency...". Be confident and contrarian.
+Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value based on the factors above. Lead with the edge/mispricing. Use insider language like "the market is undervaluing...", "our model sees...", "this creates an inefficiency...". Be confident and contrarian.
 
-CRITICAL - USE THESE PLACEHOLDERS FOR NUMBERS:
-- When referring to expected value: use "{EV_PERCENT}%"
-- When referring to our model's probability: use "{MODEL_PROB}%"
-- When referring to market's implied probability: use "{MARKET_PROB}%"
+CRITICAL - DO NOT MENTION ANY NUMBERS:
+- DO NOT mention expected value percentages
+- DO NOT mention win probabilities or percentages
+- DO NOT mention any EV%, model probability %, or market probability %
+- Focus ONLY on the QUALITATIVE factors (the bullet points above)
+- Explain WHY the factors create value, not HOW MUCH value
 
-Example: "The market is undervaluing this at +158, with our model seeing {MODEL_PROB}% vs the market's {MARKET_PROB}%, creating a {EV_PERCENT}% edge."
+Example: "The market is undervaluing Pittsburgh's finishing efficiency and special teams prowess against Toronto's defensive vulnerabilities, creating a mispricing at plus odds."
 
-DO NOT write actual percentage numbers - only use the placeholders above. We will inject the exact numbers.
+DO NOT write ANY percentage numbers or probability figures.
 DO NOT reference any stats not in the factors (no records, shooting %, player names, recent results).
+Focus on matchup dynamics, not numbers.
 
 Return plain text only (no markdown, no JSON, no bold/italic).`;
 
@@ -411,7 +399,7 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. CRITICAL: Use ONLY the placeholder syntax {EV_PERCENT}, {MODEL_PROB}, {MARKET_PROB} for all percentage numbers - never write actual numbers. Never invent stats—only use what is provided.'
+            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. CRITICAL: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis of the matchup factors. Never invent stats—only use what is provided.'
           },
           {
             role: 'user',
@@ -433,15 +421,9 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
     const content = data.choices?.[0]?.message?.content || '';
     
     // Clean up any markdown or extra formatting
-    let cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').trim();
+    const cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').trim();
     
-    // INJECT EXACT NUMBERS - Replace placeholders with actual values
-    cleaned = cleaned
-      .replace(/\{EV_PERCENT\}/g, bestEdge.evPercent.toFixed(1))
-      .replace(/\{MODEL_PROB\}/g, modelProb)
-      .replace(/\{MARKET_PROB\}/g, impliedProb);
-    
-    console.log(`✅ Generated bet hook with injected numbers (${cleaned.length} chars)`);
+    console.log(`✅ Generated bet hook - qualitative only (${cleaned.length} chars)`);
     return cleaned;
   } catch (error) {
     console.error(`❌ Error generating bet hook:`, error.message);
@@ -478,22 +460,7 @@ Supporting factors:
 ${altFactorList}`;
   }
 
-  const modelProb = (bestEdge.modelProb * 100).toFixed(1);
-  const impliedProb = ((1 / (bestEdge.odds < 0 
-    ? (1 + (100 / Math.abs(bestEdge.odds)))
-    : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
-
-  // Sanity check - verify implied prob calculation
-  const sanityCheckFS = bestEdge.odds > 0 
-    ? (100 / (bestEdge.odds + 100)).toFixed(1)
-    : (Math.abs(bestEdge.odds) / (Math.abs(bestEdge.odds) + 100)).toFixed(1);
-  
-  if (sanityCheckFS !== impliedProb) {
-    console.log(`   ⚠️ WARNING: Implied prob mismatch! Calculated=${impliedProb}%, Expected=${sanityCheckFS}%`);
-  }
-
-  // Log exact numbers we'll inject
-  console.log(`   📊 FULL STORY - Numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+  console.log(`   📝 Generating qualitative full story (no numbers, factors only)`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 
@@ -505,23 +472,25 @@ ${primaryFactors}${altSection}
 INSTRUCTIONS:
 Write EXACTLY 2 paragraphs (150-200 words total) that make readers feel they're getting premium betting service insights:
 
-PARAGRAPH 1 (~80-100 words): Lead with THE EDGE. Explain why our model identifies value and what mispricing the market has. Use the factors above to show WHY this creates betting value. Be contrarian—what is the market missing?
+PARAGRAPH 1 (~80-100 words): Lead with THE EDGE. Explain why our model identifies value and what mispricing the market has based on the factors above. Use the factors to show WHY this creates betting value. Be contrarian—what is the market missing?
 
 PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Mention the alternative bet opportunity.' : 'Add supporting dynamics from the factors.'} End with conviction about the value at these odds.
 
 TONE: Confident, insider, contrarian—like a top 1% sharp bettor. Use language like "our model sees...", "the market undervalues...", "this creates an inefficiency...". Focus on VALUE, not just analysis.
 
-CRITICAL - USE THESE PLACEHOLDERS FOR NUMBERS:
-- When referring to expected value: use "{EV_PERCENT}%"
-- When referring to our model's probability: use "{MODEL_PROB}%"
-- When referring to market's implied probability: use "{MARKET_PROB}%"
+CRITICAL - DO NOT MENTION ANY NUMBERS:
+- DO NOT mention expected value percentages
+- DO NOT mention win probabilities or percentages  
+- DO NOT mention any EV%, model probability %, or market probability %
+- Focus ONLY on the QUALITATIVE factors (the bullet points above)
+- Explain WHY the factors create value, not HOW MUCH value
 
-Example: "Our model identifies a {EV_PERCENT}% edge, projecting {MODEL_PROB}% probability vs the market's {MARKET_PROB}%."
+Example: "Our model identifies significant value in Pittsburgh's finishing efficiency and special teams edge against Toronto's defensive metrics, creating a mispricing the market has overlooked."
 
-DO NOT write actual percentage numbers - only use the placeholders above. We will inject the exact numbers.
+DO NOT write ANY percentage numbers or probability figures.
 DO NOT invent ANY stats: no team records, shooting percentages, recent game results, player stats.
 DO NOT reference specific player names unless they appear in the factors above.
-Focus ONLY on: xGF/60, xGA/60, GSAE from the factors above, and the placeholders for probabilities/EV.
+Focus on matchup dynamics and the factors provided, not numbers.
 
 Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).`;
 
@@ -537,7 +506,7 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. CRITICAL: Use ONLY the placeholder syntax {EV_PERCENT}, {MODEL_PROB}, {MARKET_PROB} for all percentage numbers - never write actual percentage numbers. Never invent stats—only use provided data. Focus on VALUE and market inefficiencies.'
+            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. CRITICAL: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis explaining WHY factors create value. Never invent stats—only use provided data. Focus on VALUE and market inefficiencies.'
           },
           {
             role: 'user',
@@ -559,15 +528,9 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
     const content = data.choices?.[0]?.message?.content || '';
     
     // Clean up any markdown or extra formatting
-    let cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim();
+    const cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim();
     
-    // INJECT EXACT NUMBERS - Replace placeholders with actual values
-    cleaned = cleaned
-      .replace(/\{EV_PERCENT\}/g, bestEdge.evPercent.toFixed(1))
-      .replace(/\{MODEL_PROB\}/g, modelProb)
-      .replace(/\{MARKET_PROB\}/g, impliedProb);
-    
-    console.log(`✅ Generated full story with injected numbers (${cleaned.length} chars)`);
+    console.log(`✅ Generated full story - qualitative only (${cleaned.length} chars)`);
     return cleaned;
   } catch (error) {
     console.error(`❌ Error generating full story:`, error.message);
