@@ -642,6 +642,8 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   const modelTotal = game.edges.total?.predictedTotal || 0;
   const marketTotal = game.edges.total?.marketTotal || 0;
   const edge = modelTotal - marketTotal;
+  // Calculate probability edge (model vs market)
+  const probEdge = bestEdge.modelProb - (marketProb * 100);
   const confidence = getConfidenceLevel(bestEdge.evPercent, bestEdge.modelProb);
   
   // Generate supporting insights for primary bet
@@ -728,7 +730,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
             fontWeight: TYPOGRAPHY.label.weight,
             marginBottom: '0.25rem'
           }}>
-            Our Edge
+            Win Prob
           </div>
           <div style={{ 
             fontSize: isMobile ? '1.125rem' : TYPOGRAPHY.hero.size, 
@@ -737,9 +739,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
             fontFeatureSettings: "'tnum'",
             lineHeight: TYPOGRAPHY.hero.lineHeight
           }}>
-            {edge > 0 ? '+' : ''}{Math.abs(edge).toFixed(1)}
+            {bestEdge.modelProb.toFixed(1)}%
           </div>
-          <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>goals</div>
+          <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>model</div>
         </div>
         <div>
           <div style={{ 
@@ -896,8 +898,8 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
         fontWeight: TYPOGRAPHY.caption.weight
       }}>
         {isMobile && <span>Odds: {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}</span>}
-        <span>Model: {modelTotal.toFixed(1)}</span>
-        <span>Market: {marketTotal.toFixed(1)}</span>
+        <span>Model: {bestEdge.modelProb.toFixed(1)}%</span>
+        <span>Market: {(marketProb * 100).toFixed(1)}%</span>
       </div>
     </div>
   );
