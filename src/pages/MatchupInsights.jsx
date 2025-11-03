@@ -1,6 +1,6 @@
 /**
  * Hot Takes Page - Expert Analysis & Game Selection
- * Simplified view focused on AI-generated insights
+ * Simplified view focused on expert insights
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -66,7 +66,7 @@ export default function MatchupInsights(props) {
     }
   }, [props?.dataProcessor, props?.todaysGames, selectedGame, props]);
 
-  // No longer need matchupData - page simplified to only show game selector and AI insights
+  // No longer need matchupData - page simplified to only show game selector and expert insights
 
   // Calculate predictions for ALL games (for GameSelector)
   const allPredictions = useMemo(() => {
@@ -164,7 +164,7 @@ export default function MatchupInsights(props) {
         marginBottom: '1.5rem',
         lineHeight: 1.6
       }}>
-        Expert AI-generated analysis and insights for today's matchups. Bold takes and hidden edges from our analytics.
+        Expert analysis and insights for today's matchups. Bold takes and hidden edges from our advanced analytics.
       </p>
 
       {/* Game Selector Carousel - PREMIUM */}
@@ -175,7 +175,7 @@ export default function MatchupInsights(props) {
         predictions={allPredictions}
       />
 
-      {/* AI Analysis Cards */}
+      {/* Expert Analysis Cards */}
       {selectedGame && (
         <AIInsightCards
           awayTeam={{ name: selectedGame.awayTeam }}
