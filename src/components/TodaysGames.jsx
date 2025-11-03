@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
@@ -2059,6 +2059,7 @@ const MarketsGrid = ({ game, isMobile }) => {
 // ========================================
 
 const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc }) => {
+  const navigate = useNavigate();
   const [edgeCalculator, setEdgeCalculator] = useState(null);
   const [allEdges, setAllEdges] = useState([]);
   const [topEdges, setTopEdges] = useState([]);
@@ -2321,6 +2322,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   };
   
   const opportunityCounts = getOpportunityCounts();
+
+  // Calculate bet tracking statistics
+  const betStats = useMemo(() => {
+    if (!firebaseBets || firebaseBets.length === 0) {
+      return { totalBets: 0, totalProfit: 0 };
+    }
+    
+    // Count all bets
+    const totalBets = firebaseBets.length;
+    
+    // Sum up profit from completed bets only
+    const totalProfit = firebaseBets
+      .filter(bet => bet.status === 'COMPLETED' && bet.result?.profit !== undefined)
+      .reduce((sum, bet) => sum + (bet.result.profit || 0), 0);
+    
+    return { totalBets, totalProfit };
+  }, [firebaseBets]);
 
   // Smooth scroll handler for QuickSummary navigation
   const handleGameClick = (gameName) => {
@@ -2603,6 +2621,104 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               }}>
                 Elite
             </span>
+            </div>
+
+            {/* Tracked Bets - with performance link */}
+            <div 
+              onClick={() => navigate('/performance')}
+              style={{
+                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                background: 'rgba(139, 92, 246, 0.12)',
+                borderRadius: '6px',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.18)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span style={{
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '700',
+                color: '#A78BFA'
+              }}>
+                {betStats.totalBets}
+              </span>
+              <span style={{
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(167, 139, 250, 0.9)',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em'
+              }}>
+                Tracked
+              </span>
+              <Target size={12} color="#A78BFA" strokeWidth={2.5} style={{ opacity: 0.7 }} />
+            </div>
+
+            {/* Total Profit - with performance link */}
+            <div 
+              onClick={() => navigate('/performance')}
+              style={{
+                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                background: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                borderRadius: '6px',
+                border: betStats.totalProfit >= 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (betStats.totalProfit >= 0) {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.18)';
+                  e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                } else {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                }
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                if (betStats.totalProfit >= 0) {
+                  e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                } else {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                }
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span style={{
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '700',
+                color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444'
+              }}>
+                {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
+              </span>
+              <span style={{
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em'
+              }}>
+                Profit
+              </span>
+              <TrendingUp size={12} color={betStats.totalProfit >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2.5} style={{ opacity: 0.7 }} />
             </div>
           </div>
         </div>
