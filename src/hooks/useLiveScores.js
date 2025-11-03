@@ -15,8 +15,14 @@ export function useLiveScores() {
   
   const fetchScores = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      console.log(`📊 Fetching live scores from NHL API for ${today}...`);
+      // CRITICAL FIX: Use LOCAL date, not UTC date
+      // UTC date can be a day ahead when it's evening in North America
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
+      console.log(`📊 Fetching live scores from NHL API for ${today} (LOCAL time)...`);
       
       // Use CORS proxy to bypass browser restrictions
       const corsProxy = 'https://corsproxy.io/?';
