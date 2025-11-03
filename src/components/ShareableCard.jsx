@@ -1,26 +1,23 @@
 import { useRef, useEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
-import { X, Download, Loader } from 'lucide-react';
-import { downloadShareImage } from '../utils/shareUtils';
+import { Loader } from 'lucide-react';
 
 /**
- * ShareableCard - Generates PREMIUM shareable images with preview
- * Shows preview modal before download with enhanced visuals
+ * ShareableCard - Generates PREMIUM shareable images
+ * SIMPLIFIED - No preview, just generates and returns blob
  */
-const ShareableCard = ({ shareData, onComplete, onError, onCancel }) => {
+const ShareableCard = ({ shareData, onComplete, onError }) => {
   const cardRef = useRef(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     if (shareData && isGenerating) {
-      generatePreview();
+      generateImage();
     }
   }, [shareData]);
 
-  const generatePreview = async () => {
+  const generateImage = async () => {
     if (!cardRef.current) return;
 
     try {
@@ -44,50 +41,22 @@ const ShareableCard = ({ shareData, onComplete, onError, onCancel }) => {
 
       setDownloadProgress(70);
 
-      // Convert to data URL for preview
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      setPreviewImage(dataUrl);
-      setDownloadProgress(100);
-      setIsGenerating(false);
-      setShowPreview(true);
+      // Convert to blob and return to parent
+      canvas.toBlob((blob) => {
+        if (blob) {
+          setDownloadProgress(100);
+          setIsGenerating(false);
+          onComplete?.(blob);
+        } else {
+          onError?.('Failed to create image blob');
+          setIsGenerating(false);
+        }
+      }, 'image/png', 1.0);
     } catch (err) {
-      console.error('Preview generation error:', err);
+      console.error('Image generation error:', err);
       onError?.(err.message);
       setIsGenerating(false);
     }
-  };
-
-  const handleDownload = async () => {
-    if (!previewImage) return;
-
-    try {
-      // Convert data URL to blob
-      const response = await fetch(previewImage);
-      const blob = await response.blob();
-      
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const filename = `nhl-savant-${shareData.teams.away}-${shareData.teams.home}-${Date.now()}.png`;
-      
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      onComplete?.({ success: true, filename });
-      setShowPreview(false);
-    } catch (err) {
-      console.error('Download error:', err);
-      onError?.(err.message);
-    }
-  };
-
-  const handleCancel = () => {
-    setShowPreview(false);
-    onCancel?.();
   };
 
   if (!shareData) return null;
@@ -568,179 +537,7 @@ const ShareableCard = ({ shareData, onComplete, onError, onCancel }) => {
       </div>
     </div>
 
-      {/* PREMIUM PREVIEW MODAL */}
-      {showPreview && previewImage && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.92)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          padding: '20px',
-          animation: 'fadeIn 0.3s ease-out'
-        }}>
-          <style>{`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes slideUp {
-              from { transform: translateY(20px); opacity: 0; }
-              to { transform: translateY(0); opacity: 1; }
-            }
-          `}</style>
-
-          {/* Modal Content */}
-          <div style={{
-            maxWidth: '900px',
-            width: '100%',
-            animation: 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '24px'
-            }}>
-              <div>
-                <div style={{
-                  fontSize: '24px',
-                  fontWeight: '900',
-                  color: '#F1F5F9',
-                  marginBottom: '4px'
-                }}>
-                  Preview Your Share
-                </div>
-                <div style={{
-                  fontSize: '14px',
-                  color: '#94A3B8'
-                }}>
-                  Ready to share? Download the image below
-                </div>
-              </div>
-              <button
-                onClick={handleCancel}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  background: 'rgba(100, 116, 139, 0.2)',
-                  border: '1px solid rgba(100, 116, 139, 0.3)',
-                  color: '#94A3B8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-                  e.currentTarget.style.color = '#EF4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(100, 116, 139, 0.2)';
-                  e.currentTarget.style.borderColor = 'rgba(100, 116, 139, 0.3)';
-                  e.currentTarget.style.color = '#94A3B8';
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Image Preview */}
-            <div style={{
-              background: 'linear-gradient(135deg, #1A1F3A 0%, #0F1628 100%)',
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '24px',
-              border: '1px solid rgba(100, 116, 139, 0.3)',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
-            }}>
-              <img
-                src={previewImage}
-                alt="Share Preview"
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  borderRadius: '12px',
-                  display: 'block'
-                }}
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end'
-            }}>
-              <button
-                onClick={handleCancel}
-                style={{
-                  padding: '14px 28px',
-                  borderRadius: '10px',
-                  background: 'rgba(100, 116, 139, 0.2)',
-                  border: '1px solid rgba(100, 116, 139, 0.3)',
-                  color: '#94A3B8',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(100, 116, 139, 0.3)';
-                  e.currentTarget.style.borderColor = 'rgba(100, 116, 139, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(100, 116, 139, 0.2)';
-                  e.currentTarget.style.borderColor = 'rgba(100, 116, 139, 0.3)';
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDownload}
-                style={{
-                  padding: '14px 32px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                  border: 'none',
-                  color: '#FFFFFF',
-                  fontSize: '15px',
-                  fontWeight: '800',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.4)';
-                }}
-              >
-                <Download size={18} />
-                Download Image
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* LOADING STATE */}
+      {/* SIMPLIFIED LOADING STATE */}
       {isGenerating && (
         <div style={{
           position: 'fixed',
