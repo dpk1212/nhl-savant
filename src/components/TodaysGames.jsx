@@ -2046,22 +2046,29 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         }
         
         // Extract and format game time from live score data
+        // ALWAYS parse timestamps - never use raw ISO strings
         let formattedGameTime = 'Unknown';
-        if (liveScore.gameTime) {
-          // If gameTime is already formatted (e.g., "7:00 PM"), use it
-          formattedGameTime = liveScore.gameTime;
-        } else if (liveScore.startTimeUTC) {
-          // Convert UTC time to local time format
+        const timeSource = liveScore.startTimeUTC || liveScore.gameTime;
+        
+        if (timeSource) {
           try {
-            const gameDate = new Date(liveScore.startTimeUTC);
-            const hours = gameDate.getHours();
-            const minutes = gameDate.getMinutes();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12;
-            formattedGameTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            // Parse timestamp (handles both ISO format and formatted strings)
+            const gameDate = new Date(timeSource);
+            
+            // Check if date is valid
+            if (!isNaN(gameDate.getTime())) {
+              const hours = gameDate.getHours();
+              const minutes = gameDate.getMinutes();
+              const ampm = hours >= 12 ? 'PM' : 'AM';
+              const displayHours = hours % 12 || 12;
+              formattedGameTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+              
+              console.log(`  ⏰ Formatted game time for ${liveScore.awayTeam} @ ${liveScore.homeTeam}: ${timeSource} → ${formattedGameTime}`);
+            } else {
+              console.warn(`Invalid date for ${liveScore.awayTeam} @ ${liveScore.homeTeam}:`, timeSource);
+            }
           } catch (error) {
-            console.warn('Could not parse game time:', error);
-            formattedGameTime = 'Unknown';
+            console.warn(`Could not parse game time for ${liveScore.awayTeam} @ ${liveScore.homeTeam}:`, error);
           }
         }
         
