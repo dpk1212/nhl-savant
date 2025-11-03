@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
@@ -2324,27 +2326,35 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const opportunityCounts = getOpportunityCounts();
 
   // Calculate bet tracking statistics (MUST match Performance page logic)
-  const betStats = useMemo(() => {
-    if (!firebaseBets || firebaseBets.length === 0) {
-      return { totalBets: 0, totalProfit: 0 };
-    }
-    
-    // FILTER: Only include B-rated or higher bets (>= 3% EV) AND exclude TOTAL market
-    // This matches the Performance page filtering logic exactly
-    const qualityBets = firebaseBets.filter(bet => 
-      bet.prediction?.rating !== 'C' && 
-      bet.status === 'COMPLETED' &&
-      bet.bet?.market !== 'TOTAL' && 
-      !bet.bet?.market?.includes('TOTAL')
+  // NOTE: This queries ALL completed bets, not just today's bets
+  const [betStats, setBetStats] = useState({ totalBets: 0, totalProfit: 0 });
+  
+  useEffect(() => {
+    // Query ALL completed bets (same as Performance page)
+    const q = query(
+      collection(db, 'bets'),
+      where('status', '==', 'COMPLETED')
     );
     
-    const totalBets = qualityBets.length;
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allBets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // FILTER: Only include B-rated or higher bets AND exclude TOTAL market
+      // This matches the Performance page filtering logic EXACTLY
+      const qualityBets = allBets.filter(bet => 
+        bet.prediction?.rating !== 'C' && 
+        bet.bet?.market !== 'TOTAL' && 
+        !bet.bet?.market?.includes('TOTAL')
+      );
+      
+      const totalBets = qualityBets.length;
+      const totalProfit = qualityBets.reduce((sum, bet) => sum + (bet.result?.profit || 0), 0);
+      
+      setBetStats({ totalBets, totalProfit });
+    });
     
-    // Sum up profit from completed quality bets
-    const totalProfit = qualityBets.reduce((sum, bet) => sum + (bet.result?.profit || 0), 0);
-    
-    return { totalBets, totalProfit };
-  }, [firebaseBets]);
+    return () => unsubscribe();
+  }, []);
 
   // Smooth scroll handler for QuickSummary navigation
   const handleGameClick = (gameName) => {
