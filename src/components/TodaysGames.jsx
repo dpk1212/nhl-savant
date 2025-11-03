@@ -2045,9 +2045,29 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           }
         }
         
+        // Extract and format game time from live score data
+        let formattedGameTime = 'Unknown';
+        if (liveScore.gameTime) {
+          // If gameTime is already formatted (e.g., "7:00 PM"), use it
+          formattedGameTime = liveScore.gameTime;
+        } else if (liveScore.startTimeUTC) {
+          // Convert UTC time to local time format
+          try {
+            const gameDate = new Date(liveScore.startTimeUTC);
+            const hours = gameDate.getHours();
+            const minutes = gameDate.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            formattedGameTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+          } catch (error) {
+            console.warn('Could not parse game time:', error);
+            formattedGameTime = 'Unknown';
+          }
+        }
+        
         merged.push({
           game: `${liveScore.awayTeam} @ ${liveScore.homeTeam}`,
-          gameTime: 'LIVE',
+          gameTime: formattedGameTime,
           awayTeam: liveScore.awayTeam,
           homeTeam: liveScore.homeTeam,
           date: new Date().toISOString().split('T')[0],
