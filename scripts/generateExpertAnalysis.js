@@ -365,16 +365,11 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
-  // Log exact numbers being sent to Perplexity
-  console.log(`   📊 Sending to Perplexity: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+  // Log exact numbers we'll inject
+  console.log(`   📊 Numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
-
-⚠️ CRITICAL - USE THESE EXACT NUMBERS ⚠️
-EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV (MUST USE THIS EXACT NUMBER)
-MODEL PROBABILITY: ${modelProb}% (MUST USE THIS EXACT NUMBER)
-MARKET IMPLIED PROBABILITY: ${impliedProb}% (MUST USE THIS EXACT NUMBER)
 
 KEY FACTORS FROM OUR MODEL:
 ${topFactors}
@@ -382,12 +377,15 @@ ${topFactors}
 INSTRUCTIONS:
 Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value. Lead with the edge/mispricing. Use insider language like "the market is undervaluing...", "our model sees...", "this creates an inefficiency...". Be confident and contrarian.
 
-⚠️ DATA INTEGRITY RULES ⚠️
-1. You MUST use the EXACT percentages shown above (EV%, Model%, Market%)
-2. Do NOT invent, change, or round these numbers
-3. Do NOT reference ANY stats not explicitly provided (no records, shooting %, recent results)
-4. If you mention probabilities, use THE EXACT numbers marked "MUST USE THIS EXACT NUMBER"
-5. Focus ONLY on the factors provided in the bullet points
+CRITICAL - USE THESE PLACEHOLDERS FOR NUMBERS:
+- When referring to expected value: use "{EV_PERCENT}%"
+- When referring to our model's probability: use "{MODEL_PROB}%"
+- When referring to market's implied probability: use "{MARKET_PROB}%"
+
+Example: "The market is undervaluing this at +158, with our model seeing {MODEL_PROB}% vs the market's {MARKET_PROB}%, creating a {EV_PERCENT}% edge."
+
+DO NOT write actual percentage numbers - only use the placeholders above. We will inject the exact numbers.
+DO NOT reference any stats not in the factors (no records, shooting %, player names, recent results).
 
 Return plain text only (no markdown, no JSON, no bold/italic).`;
 
@@ -425,9 +423,15 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
     const content = data.choices?.[0]?.message?.content || '';
     
     // Clean up any markdown or extra formatting
-    const cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').trim();
+    let cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').trim();
     
-    console.log(`✅ Generated bet hook (${cleaned.length} chars)`);
+    // INJECT EXACT NUMBERS - Replace placeholders with actual values
+    cleaned = cleaned
+      .replace(/\{EV_PERCENT\}/g, bestEdge.evPercent.toFixed(1))
+      .replace(/\{MODEL_PROB\}/g, modelProb)
+      .replace(/\{MARKET_PROB\}/g, impliedProb);
+    
+    console.log(`✅ Generated bet hook with injected numbers (${cleaned.length} chars)`);
     return cleaned;
   } catch (error) {
     console.error(`❌ Error generating bet hook:`, error.message);
@@ -467,17 +471,12 @@ ${altFactorList}`;
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
-  // Log exact numbers for debugging
-  console.log(`   📊 Full Story: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+  // Log exact numbers we'll inject
+  console.log(`   📊 Full Story numbers to inject: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 
 PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
-
-⚠️ CRITICAL - USE THESE EXACT NUMBERS ⚠️
-EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV (MUST USE THIS EXACT NUMBER)
-MODEL PROBABILITY: ${modelProb}% (MUST USE THIS EXACT NUMBER)
-MARKET IMPLIED PROBABILITY: ${impliedProb}% (MUST USE THIS EXACT NUMBER)
 
 KEY FACTORS FROM OUR MODEL:
 ${primaryFactors}${altSection}
@@ -491,14 +490,17 @@ PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Ment
 
 TONE: Confident, insider, contrarian—like a top 1% sharp bettor. Use language like "our model sees...", "the market undervalues...", "this creates an inefficiency...". Focus on VALUE, not just analysis.
 
-⚠️ DATA INTEGRITY RULES - EXTREMELY IMPORTANT ⚠️
-1. You MUST use the EXACT percentages marked "MUST USE THIS EXACT NUMBER" - do not round or change them
-2. If you mention EV%, Model%, or Market%, use ONLY those exact numbers from above
-3. Do NOT invent ANY stats: no team records, shooting percentages, recent game results, player stats
-4. Do NOT reference specific player names unless they appear in the factors above
-5. If a stat wasn't provided above, DO NOT mention it
-6. Focus ONLY on: xGF/60, xGA/60, GSAE, the EV%, probabilities above, and bullet point factors
-7. Every number you write must come from the sections marked "MUST USE THIS EXACT NUMBER" or the bullet points
+CRITICAL - USE THESE PLACEHOLDERS FOR NUMBERS:
+- When referring to expected value: use "{EV_PERCENT}%"
+- When referring to our model's probability: use "{MODEL_PROB}%"
+- When referring to market's implied probability: use "{MARKET_PROB}%"
+
+Example: "Our model identifies a {EV_PERCENT}% edge, projecting {MODEL_PROB}% probability vs the market's {MARKET_PROB}%."
+
+DO NOT write actual percentage numbers - only use the placeholders above. We will inject the exact numbers.
+DO NOT invent ANY stats: no team records, shooting percentages, recent game results, player stats.
+DO NOT reference specific player names unless they appear in the factors above.
+Focus ONLY on: xGF/60, xGA/60, GSAE from the factors above, and the placeholders for probabilities/EV.
 
 Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).`;
 
@@ -536,9 +538,15 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
     const content = data.choices?.[0]?.message?.content || '';
     
     // Clean up any markdown or extra formatting
-    const cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim();
+    let cleaned = content.replace(/```/g, '').replace(/\*\*/g, '').replace(/\*/g, '').trim();
     
-    console.log(`✅ Generated full story (${cleaned.length} chars)`);
+    // INJECT EXACT NUMBERS - Replace placeholders with actual values
+    cleaned = cleaned
+      .replace(/\{EV_PERCENT\}/g, bestEdge.evPercent.toFixed(1))
+      .replace(/\{MODEL_PROB\}/g, modelProb)
+      .replace(/\{MARKET_PROB\}/g, impliedProb);
+    
+    console.log(`✅ Generated full story with injected numbers (${cleaned.length} chars)`);
     return cleaned;
   } catch (error) {
     console.error(`❌ Error generating full story:`, error.message);
