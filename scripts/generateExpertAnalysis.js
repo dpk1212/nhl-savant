@@ -557,16 +557,28 @@ async function cacheBetNarrative(awayTeam, homeTeam, content, type) {
  */
 async function loadOddsAndCalculateEdges(games) {
   try {
-    // Check if odds files exist first (before importing heavy modules)
+    // Look for odds files (they're named odds_money.md and odds_total.md, NOT odds_puck.md!)
     const oddsMoneyPath = join(__dirname, '../public/odds_money.md');
-    const oddsPuckPath = join(__dirname, '../public/odds_puck.md');
+    const oddsTotalPath = join(__dirname, '../public/odds_total.md');
     
-    let oddsMoneyData, oddsPuckData;
+    console.log(`📂 Looking for odds files:`);
+    console.log(`   Money: ${oddsMoneyPath}`);
+    console.log(`   Total: ${oddsTotalPath}`);
+    
+    let oddsMoneyData, oddsTotalData;
     try {
       oddsMoneyData = readFileSync(oddsMoneyPath, 'utf-8');
-      oddsPuckData = readFileSync(oddsPuckPath, 'utf-8');
+      console.log(`✅ Loaded odds_money.md (${oddsMoneyData.length} chars)`);
     } catch (error) {
-      console.log('ℹ️ Odds data not available yet - skipping bet narratives');
+      console.log(`❌ Could not read odds_money.md: ${error.message}`);
+      return null;
+    }
+    
+    try {
+      oddsTotalData = readFileSync(oddsTotalPath, 'utf-8');
+      console.log(`✅ Loaded odds_total.md (${oddsTotalData.length} chars)`);
+    } catch (error) {
+      console.log(`❌ Could not read odds_total.md: ${error.message}`);
       return null;
     }
 
@@ -586,10 +598,10 @@ async function loadOddsAndCalculateEdges(games) {
     const scheduleHelper = new ScheduleHelper(scheduleData);
     const dataProcessor = new DataProcessor(teamsData, goalieProcessor, scheduleHelper);
     
-    // Initialize edge calculator
+    // Initialize edge calculator (use 'total' not 'puck')
     const edgeCalculator = new EdgeCalculator(
       dataProcessor,
-      { money: oddsMoneyData, puck: oddsPuckData },
+      { moneyText: oddsMoneyData, totalText: oddsTotalData },
       null // Starting goalies (optional)
     );
 
