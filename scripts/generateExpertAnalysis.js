@@ -365,10 +365,16 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
+  // Log exact numbers being sent to Perplexity
+  console.log(`   📊 Sending to Perplexity: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
-EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV
-MODEL PROBABILITY: ${modelProb}% (vs market's implied ${impliedProb}%)
+
+⚠️ CRITICAL - USE THESE EXACT NUMBERS ⚠️
+EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV (MUST USE THIS EXACT NUMBER)
+MODEL PROBABILITY: ${modelProb}% (MUST USE THIS EXACT NUMBER)
+MARKET IMPLIED PROBABILITY: ${impliedProb}% (MUST USE THIS EXACT NUMBER)
 
 KEY FACTORS FROM OUR MODEL:
 ${topFactors}
@@ -376,7 +382,12 @@ ${topFactors}
 INSTRUCTIONS:
 Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value. Lead with the edge/mispricing. Use insider language like "the market is undervaluing...", "our model sees...", "this creates an inefficiency...". Be confident and contrarian.
 
-CRITICAL: Use ONLY the stats and factors provided above. Do not invent any records, shooting percentages, or data not given. Focus on the VALUE and the edge.
+⚠️ DATA INTEGRITY RULES ⚠️
+1. You MUST use the EXACT percentages shown above (EV%, Model%, Market%)
+2. Do NOT invent, change, or round these numbers
+3. Do NOT reference ANY stats not explicitly provided (no records, shooting %, recent results)
+4. If you mention probabilities, use THE EXACT numbers marked "MUST USE THIS EXACT NUMBER"
+5. Focus ONLY on the factors provided in the bullet points
 
 Return plain text only (no markdown, no JSON, no bold/italic).`;
 
@@ -456,11 +467,17 @@ ${altFactorList}`;
     ? (1 + (100 / Math.abs(bestEdge.odds)))
     : (1 + (bestEdge.odds / 100)))) * 100).toFixed(1);
 
+  // Log exact numbers for debugging
+  console.log(`   📊 Full Story: EV=${bestEdge.evPercent.toFixed(1)}%, Model=${modelProb}%, Market=${impliedProb}%`);
+
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 
 PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
-EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV
-MODEL PROBABILITY: ${modelProb}% (vs market's implied ${impliedProb}%)
+
+⚠️ CRITICAL - USE THESE EXACT NUMBERS ⚠️
+EXPECTED VALUE: +${bestEdge.evPercent.toFixed(1)}% EV (MUST USE THIS EXACT NUMBER)
+MODEL PROBABILITY: ${modelProb}% (MUST USE THIS EXACT NUMBER)
+MARKET IMPLIED PROBABILITY: ${impliedProb}% (MUST USE THIS EXACT NUMBER)
 
 KEY FACTORS FROM OUR MODEL:
 ${primaryFactors}${altSection}
@@ -474,11 +491,14 @@ PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Ment
 
 TONE: Confident, insider, contrarian—like a top 1% sharp bettor. Use language like "our model sees...", "the market undervalues...", "this creates an inefficiency...". Focus on VALUE, not just analysis.
 
-CRITICAL CONSTRAINTS:
-- Use ONLY the statistics and factors provided above. Do not invent team records, shooting percentages, recent game results, or any data not given.
-- Do not reference specific player names unless provided.
-- If a stat wasn't provided, don't mention it.
-- Focus on the metrics given: xGF/60, xGA/60, GSAE, EV%, probabilities, and the bullet points above.
+⚠️ DATA INTEGRITY RULES - EXTREMELY IMPORTANT ⚠️
+1. You MUST use the EXACT percentages marked "MUST USE THIS EXACT NUMBER" - do not round or change them
+2. If you mention EV%, Model%, or Market%, use ONLY those exact numbers from above
+3. Do NOT invent ANY stats: no team records, shooting percentages, recent game results, player stats
+4. Do NOT reference specific player names unless they appear in the factors above
+5. If a stat wasn't provided above, DO NOT mention it
+6. Focus ONLY on: xGF/60, xGA/60, GSAE, the EV%, probabilities above, and bullet point factors
+7. Every number you write must come from the sections marked "MUST USE THIS EXACT NUMBER" or the bullet points
 
 Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).`;
 
@@ -642,10 +662,11 @@ async function loadOddsAndCalculateEdges(games) {
       null // Starting goalies (optional)
     );
 
-    const allEdges = edgeCalculator.calculateAllEdges();
-    console.log(`✅ Calculated edges for ${allEdges.length} games`);
-    
-    return { allEdges, dataProcessor };
+            const allEdges = edgeCalculator.calculateAllEdges();
+            console.log(`✅ Calculated edges for ${allEdges.length} games`);
+            
+            // Return BOTH allEdges and edgeCalculator so we can use getTopEdges() (same as UI)
+            return { allEdges, dataProcessor, edgeCalculator };
   } catch (error) {
     console.error('❌ Error loading odds data:', error.message);
     console.error(error.stack);
@@ -716,10 +737,14 @@ async function main() {
     console.log('⏭️ Skipping bet narratives - odds data not available');
     console.log('   (This is normal if running before odds are scraped)');
   } else {
-    const { allEdges, dataProcessor } = edgeData;
+    const { allEdges, dataProcessor, edgeCalculator } = edgeData;
     
     // Import generateBetNarrative dynamically to get factors array
     const { generateBetNarrative } = await import('../src/utils/narrativeGenerator.js');
+    
+    // Get topEdges using EXACT SAME LOGIC as the UI
+    const topEdges = edgeCalculator.getTopEdges(0); // 0 = all edges, not just positive EV
+    console.log(`✅ Got ${topEdges.length} total edge opportunities`);
     
     let narrativesSuccessCount = 0;
     let narrativesFailureCount = 0;
@@ -733,18 +758,19 @@ async function main() {
 
       console.log(`⏳ Generating narratives: ${gameEdge.awayTeam} @ ${gameEdge.homeTeam}`);
       
-      // Find best edge - MONEYLINE ONLY (no puckline)
-      const bestEdge = [
-        ...(gameEdge.edges.moneyline ? [
-          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam, pick: gameEdge.awayTeam },
-          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam, pick: gameEdge.homeTeam }
-        ] : [])
-      ].sort((a, b) => b.evPercent - a.evPercent)[0];
+      // Find best edge using EXACT SAME LOGIC as UI (TodaysGames.jsx line 2612)
+      const bestEdge = topEdges
+        .filter(e => e.game === gameEdge.game && e.evPercent > 0)
+        .sort((a, b) => b.evPercent - a.evPercent)[0];
 
       if (!bestEdge || bestEdge.evPercent <= 0) {
         console.log('   ⚠️ No positive EV bet found - skipping');
         continue;
       }
+      
+      // Log the exact bestEdge data we're using (should match UI exactly)
+      console.log(`   ✓ Best Edge: ${bestEdge.pick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}`);
+      console.log(`   ✓ EV: ${bestEdge.evPercent.toFixed(1)}%, Model: ${(bestEdge.modelProb * 100).toFixed(1)}%`);
 
       // Generate narrative data to get bullets (supporting factors)
       const narrativeData = generateBetNarrative(gameEdge, bestEdge, dataProcessor);
@@ -758,13 +784,9 @@ async function main() {
       // Extract bullets (formatted factor strings) for Perplexity prompts
       const factors = narrativeData.bullets;
 
-      // Find alternative bet - MONEYLINE ONLY (opposite side if also positive EV)
-      const altBet = [
-        ...(gameEdge.edges.moneyline ? [
-          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam, pick: gameEdge.awayTeam },
-          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam, pick: gameEdge.homeTeam }
-        ] : [])
-      ].filter(e => e.evPercent > 0 && e.team !== bestEdge.team)
+      // Find alternative bet using EXACT SAME LOGIC as UI
+      const altBet = topEdges
+        .filter(e => e.game === gameEdge.game && e.evPercent > 0 && e.team !== bestEdge.team)
         .sort((a, b) => b.evPercent - a.evPercent)[0];
 
       // Generate bet hook
