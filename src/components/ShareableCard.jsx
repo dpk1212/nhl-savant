@@ -1,15 +1,30 @@
 import { useRef, useEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { Loader } from 'lucide-react';
+import { getOptimalImageScale, getOptimalRenderDelay, getOptimalImageQuality, isMobileDevice } from '../utils/deviceDetection';
+
+// Simple in-memory cache for generated images (same game = instant re-share)
+const imageCache = new Map();
 
 /**
- * ShareableCard - Generates PREMIUM shareable images
- * SIMPLIFIED - No preview, just generates and returns blob
+ * Generate cache key from share data
+ */
+const getCacheKey = (shareData) => {
+  if (!shareData) return null;
+  const { teams, bet, angle } = shareData;
+  // Create unique key based on matchup, pick, and angle
+  return `${teams.away}-${teams.home}-${bet.pick}-${bet.odds}-${angle || 'no-angle'}`;
+};
+
+/**
+ * ShareableCard - Generates OPTIMIZED shareable images
+ * Adaptive quality + caching for best mobile experience
  */
 const ShareableCard = ({ shareData, onComplete, onError }) => {
   const cardRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [slowGeneration, setSlowGeneration] = useState(false);
 
   useEffect(() => {
     if (shareData && isGenerating) {
@@ -21,15 +36,39 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
     if (!cardRef.current) return;
 
     try {
-      // Wait for fonts and rendering
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Check cache first (instant re-share for same game)
+      const cacheKey = getCacheKey(shareData);
+      const cachedBlob = imageCache.get(cacheKey);
+      
+      if (cachedBlob) {
+        // INSTANT! No rendering needed
+        setDownloadProgress(100);
+        setIsGenerating(false);
+        onComplete?.(cachedBlob);
+        return;
+      }
+
+      // Adaptive delay based on device
+      const renderDelay = getOptimalRenderDelay();
+      await new Promise(resolve => setTimeout(resolve, renderDelay));
+
+      setDownloadProgress(20);
+
+      // Show "taking longer" message if slow
+      const slowTimer = setTimeout(() => {
+        setSlowGeneration(true);
+      }, 3000);
+
+      // Adaptive scale based on device (mobile = 2x, desktop = 3x)
+      const scale = getOptimalImageScale();
+      const quality = getOptimalImageQuality();
 
       setDownloadProgress(30);
 
-      // Generate high-quality canvas
+      // Generate canvas with adaptive settings
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#0A0E27',
-        scale: 3, // ULTRA HIGH QUALITY
+        scale: scale, // ADAPTIVE: 2x mobile, 3x desktop
         logging: false,
         width: 1200,
         height: 675,
@@ -39,11 +78,21 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
         removeContainer: true
       });
 
+      clearTimeout(slowTimer);
       setDownloadProgress(70);
 
-      // Convert to blob and return to parent
+      // Convert to blob with adaptive quality
       canvas.toBlob((blob) => {
         if (blob) {
+          // Cache the blob for instant re-shares
+          imageCache.set(cacheKey, blob);
+          
+          // Clean up old cache entries (keep last 10)
+          if (imageCache.size > 10) {
+            const firstKey = imageCache.keys().next().value;
+            imageCache.delete(firstKey);
+          }
+          
           setDownloadProgress(100);
           setIsGenerating(false);
           onComplete?.(blob);
@@ -51,7 +100,7 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
           onError?.('Failed to create image blob');
           setIsGenerating(false);
         }
-      }, 'image/png', 1.0);
+      }, 'image/png', quality);
     } catch (err) {
       console.error('Image generation error:', err);
       onError?.(err.message);
@@ -537,7 +586,7 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
       </div>
     </div>
 
-      {/* SIMPLIFIED LOADING STATE */}
+      {/* OPTIMIZED LOADING STATE */}
       {isGenerating && (
         <div style={{
           position: 'fixed',
@@ -545,17 +594,17 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(8px)',
+          background: 'rgba(0, 0, 0, 0.90)',
+          backdropFilter: isMobileDevice() ? 'none' : 'blur(8px)', // No blur on mobile for performance
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 10000,
-          animation: 'fadeIn 0.2s ease-out'
+          animation: 'fadeIn 0.15s ease-out' // Faster animation
         }}>
           <div style={{
             textAlign: 'center',
-            animation: 'slideUp 0.3s ease-out'
+            animation: 'slideUp 0.2s ease-out' // Faster animation
           }}>
             {/* Animated Loader */}
             <div style={{
@@ -613,9 +662,10 @@ const ShareableCard = ({ shareData, onComplete, onError }) => {
               color: '#94A3B8',
               marginTop: '12px'
             }}>
-              {downloadProgress < 30 && 'Preparing canvas...'}
-              {downloadProgress >= 30 && downloadProgress < 70 && 'Rendering premium graphics...'}
-              {downloadProgress >= 70 && 'Almost ready...'}
+              {slowGeneration ? 'Taking longer than expected...' :
+               downloadProgress < 30 ? 'Preparing canvas...' :
+               downloadProgress >= 30 && downloadProgress < 70 ? 'Rendering premium graphics...' :
+               'Almost ready...'}
             </div>
           </div>
         </div>

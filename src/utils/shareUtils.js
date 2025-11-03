@@ -1,10 +1,43 @@
 /**
- * Share Utilities - Premium sharing functionality for NHL Savant
- * Handles native share, clipboard, and text formatting
+ * Share Utilities - OPTIMIZED Premium sharing functionality
+ * Handles native share, clipboard, and platform-specific text formatting
  */
 
 /**
- * Format share text for social media / messaging apps
+ * Format share text - COMPACT version optimized for Twitter (280 char limit awareness)
+ */
+export function formatShareTextCompact(shareData) {
+  const {
+    teams,
+    gameTime,
+    bet,
+    advantages = []
+  } = shareData;
+
+  // Compact format perfect for Twitter
+  let text = `🏒 ${bet.pick} ${bet.odds > 0 ? '+' : ''}${bet.odds} (+${bet.ev.toFixed(1)}% EV)\n`;
+  text += `${teams.away} @ ${teams.home}`;
+  
+  if (gameTime) {
+    text += ` | ${gameTime}`;
+  }
+  
+  // Add top advantages (compact format)
+  if (advantages.length > 0) {
+    text += `\n\n💰 Key edges:`;
+    advantages.slice(0, 3).forEach(adv => {
+      const cleanAdv = adv.replace(/^[•\-\*]\s*/, '').split(':')[0]; // Just the category
+      text += `\n• ${cleanAdv}`;
+    });
+  }
+  
+  text += `\n\n📊 nhlsavant.com`;
+  
+  return text;
+}
+
+/**
+ * Format share text - FULL version (default, Instagram-friendly)
  */
 export function formatShareText(shareData) {
   const {
@@ -15,26 +48,26 @@ export function formatShareText(shareData) {
     angle = null
   } = shareData;
 
-  // Build the text
-  let text = `🏒 NHL SAVANT PICK\n\n`;
-  text += `${teams.away} @ ${teams.home}`;
+  // Full format with emojis and spacing
+  let text = `🏒 NHL SAVANT PICK 🎯\n\n`;
+  text += `${bet.pick}\n`;
+  text += `${teams.away} @ ${teams.home}\n`;
   
   if (gameTime) {
-    text += ` | ${gameTime}`;
+    text += `${gameTime}\n`;
   }
   
-  text += `\n\n💰 BEST VALUE: ${bet.pick}\n`;
-  text += `Odds: ${bet.odds > 0 ? '+' : ''}${bet.odds} | `;
-  text += `EV: +${bet.ev.toFixed(1)}% | `;
-  text += `Confidence: ${bet.confidence}`;
+  text += `\n💰 +${bet.ev.toFixed(1)}% Expected Value\n`;
+  text += `📊 ${bet.confidence.level} Confidence\n`;
+  text += `🎲 Odds: ${bet.odds > 0 ? '+' : ''}${bet.odds}`;
   
   // Add key advantages if available
   if (advantages.length > 0) {
-    text += `\n\nKEY ADVANTAGES:\n`;
+    text += `\n\nKEY EDGES:\n`;
     advantages.slice(0, 3).forEach(adv => {
       // Clean up bullet point if it exists
       const cleanAdv = adv.replace(/^[•\-\*]\s*/, '');
-      text += `• ${cleanAdv}\n`;
+      text += `✓ ${cleanAdv}\n`;
     });
   }
   
@@ -43,7 +76,10 @@ export function formatShareText(shareData) {
     text += `\n${angle}`;
   }
   
-  text += `\n\n📊 Via NHL Savant | nhlsavant.com`;
+  text += `\n\n🔗 nhlsavant.com`;
+  
+  // Add hashtags for Instagram/Twitter discovery
+  text += `\n\n#NHLBetting #SportsBetting #${teams.away} #${teams.home}`;
   
   return text;
 }
