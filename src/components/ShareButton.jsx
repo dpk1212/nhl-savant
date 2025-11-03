@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Share2, Check } from 'lucide-react';
+import { Share2, Check, Copy } from 'lucide-react';
 import { formatShareText, copyToClipboard, getConfidenceLevel } from '../utils/shareUtils';
 import { getBetHook } from '../services/perplexityService';
-import { canShareFiles, isMobileDevice } from '../utils/deviceDetection';
-import ShareableCard from './ShareableCard';
+import { isMobileDevice } from '../utils/deviceDetection';
 
 /**
- * ShareButton - OPTIMIZED Premium share button
- * ONE BUTTON - Smart sharing with device-specific fallbacks
+ * ShareButton - SIMPLIFIED Premium text share button
+ * TEXT ONLY - Fast, reliable, mobile-optimized
  */
 const ShareButton = ({ 
   game, 
@@ -15,11 +14,10 @@ const ShareButton = ({
   advantages = [], 
   angle = null,
   variant = 'compact', // 'compact' or 'full'
-  isMobile = false 
+  isMobile = false
 }) => {
   const [isSharing, setIsSharing] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
-  const [shareData, setShareData] = useState(null);
   const [fetchedAngle, setFetchedAngle] = useState(null);
   
   // Fetch betting angle from Firebase if not provided
@@ -62,121 +60,57 @@ const ShareButton = ({
     };
   };
 
-  // SIMPLIFIED: One button, one action
+  // SIMPLIFIED: Text-only sharing (FAST & RELIABLE)
   const handleShare = async () => {
     const data = getShareData();
     if (!data) return;
 
     setIsSharing(true);
-    setShareData(data);
-  };
-
-  const handleShareComplete = async (imageBlob) => {
-    setIsSharing(false);
-    const data = getShareData();
-    const text = formatShareText(data);
     
     try {
-      // SMART FALLBACK CHAIN - Try best option first, gracefully degrade
+      const text = formatShareText(data);
+      const url = 'https://nhlsavant.com';
+      const title = `NHL Savant Pick: ${data.teams.away} @ ${data.teams.home}`;
       
-      // Option 1: Native share with image + text (BEST - mobile)
+      // Try native share first (mobile preferred)
       if (navigator.share) {
-        const file = new File([imageBlob], 'nhl-savant-pick.png', { type: 'image/png' });
-        
-        const sharePayload = {
-          title: `NHL Savant Pick: ${data.teams.away} @ ${data.teams.home}`,
-          text: text,
-          files: [file]
-        };
-
-        // Check if we can share files
-        const canShare = await canShareFiles();
-        
-        if (canShare && navigator.canShare && navigator.canShare(sharePayload)) {
-          try {
-            await navigator.share(sharePayload);
-            setShareSuccess(true);
-            setTimeout(() => setShareSuccess(false), 2000);
-            setShareData(null);
-            return;
-          } catch (shareError) {
-            // User cancelled or share failed, continue to fallback
-            if (shareError.name === 'AbortError') {
-              // User cancelled - just close
-              setShareData(null);
-              return;
-            }
-            console.log('Share with files failed, trying text-only...', shareError);
-          }
-        }
-        
-        // Option 2: Native share with TEXT only, download image separately
         try {
           await navigator.share({
-            title: `NHL Savant Pick: ${data.teams.away} @ ${data.teams.home}`,
-            text: text
+            title: title,
+            text: text,
+            url: url
           });
-          
-          // After sharing text, download the image
-          const url = URL.createObjectURL(imageBlob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `nhl-savant-${data.teams.away}-${data.teams.home}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
           
           setShareSuccess(true);
           setTimeout(() => setShareSuccess(false), 2000);
-          setShareData(null);
+          setIsSharing(false);
           return;
         } catch (shareError) {
+          // User cancelled or share not available
           if (shareError.name === 'AbortError') {
-            setShareData(null);
+            setIsSharing(false);
             return;
           }
-          // Continue to fallback
+          // Fall through to clipboard
         }
       }
-
-      // Option 3: Copy text + download image (desktop fallback)
-      const copySuccess = await copyToClipboard(text);
       
-      const url = URL.createObjectURL(imageBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `nhl-savant-${data.teams.away}-${data.teams.home}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
+      // Fallback: Copy to clipboard
+      const fullText = `${text}\n\n${url}`;
+      const copySuccess = await copyToClipboard(fullText);
+      
       if (copySuccess) {
-        alert('✅ Text copied to clipboard!\n📸 Image downloaded!\n\nPaste the text and attach the image to share.');
-      }
-
-      setShareSuccess(true);
-      setTimeout(() => setShareSuccess(false), 2500);
-    } catch (error) {
-      console.error('All share methods failed:', error);
-      // Last resort: just copy text
-      const fallbackCopy = await copyToClipboard(text);
-      if (fallbackCopy) {
-        alert('Text copied to clipboard! You can share it manually.');
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 2500);
       } else {
-        alert('Unable to share. Please try again.');
+        alert('Unable to copy. Please try again.');
       }
+    } catch (error) {
+      console.error('Share failed:', error);
+      alert('Unable to share. Please try again.');
+    } finally {
+      setIsSharing(false);
     }
-    
-    setShareData(null);
-  };
-
-  const handleShareError = (error) => {
-    setIsSharing(false);
-    setShareData(null);
-    console.error('Share generation failed:', error);
-    alert('Failed to generate share. Please try again.');
   };
 
   // Compact variant (for header)
@@ -221,16 +155,8 @@ const ShareButton = ({
           }}
         >
           {shareSuccess ? <Check size={16} /> : <Share2 size={16} />}
-          {!isMobile && (shareSuccess ? 'Shared!' : isSharing ? 'Creating...' : 'Share')}
+          {!isMobile && (shareSuccess ? 'Shared!' : isSharing ? 'Sharing...' : 'Share')}
         </button>
-
-        {shareData && (
-          <ShareableCard
-            shareData={shareData}
-            onComplete={handleShareComplete}
-            onError={handleShareError}
-          />
-        )}
       </>
     );
   }
@@ -301,16 +227,8 @@ const ShareButton = ({
         }}
         >
           {shareSuccess ? <Check size={20} /> : <Share2 size={20} />}
-          {shareSuccess ? 'Shared!' : isSharing ? 'Creating Share...' : 'Share This Pick'}
+          {shareSuccess ? 'Shared!' : isSharing ? 'Sharing...' : 'Share This Pick'}
         </button>
-
-      {shareData && (
-        <ShareableCard
-          shareData={shareData}
-          onComplete={handleShareComplete}
-          onError={handleShareError}
-        />
-      )}
     </>
   );
 };
