@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Activity } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { EdgeCalculator } from '../utils/edgeCalculator';
 import { getTeamName } from '../utils/oddsTraderParser';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
@@ -636,7 +637,109 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 
 // Hero Bet Card - Main value proposition
 const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
-  if (!bestEdge) return null;
+  if (!bestEdge) {
+    // Premium CTA when no bet recommendation
+    return (
+      <Link 
+        to="/matchup-insights" 
+        style={{ textDecoration: 'none', display: 'block' }}
+      >
+        <div style={{ 
+          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+          border: '1px solid rgba(139, 92, 246, 0.25)',
+          borderRadius: '12px',
+          padding: isMobile ? '1.5rem 1rem' : '2rem 1.5rem',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%)';
+          e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)';
+          e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.25)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
+        >
+          {/* Subtle gradient overlay */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '2px',
+            background: 'linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent)'
+          }} />
+          
+          {/* Icon */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '1rem'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid rgba(139, 92, 246, 0.3)'
+            }}>
+              <Sparkles size={24} color="#A78BFA" strokeWidth={2} />
+            </div>
+          </div>
+          
+          {/* Title */}
+          <div style={{
+            fontSize: isMobile ? '1rem' : '1.125rem',
+            fontWeight: '700',
+            color: '#E9D5FF',
+            marginBottom: '0.5rem',
+            letterSpacing: '-0.01em'
+          }}>
+            No Recommended Bet
+          </div>
+          
+          {/* Description */}
+          <div style={{
+            fontSize: isMobile ? '0.8125rem' : '0.875rem',
+            color: '#C4B5FD',
+            lineHeight: '1.5',
+            marginBottom: '1.25rem',
+            maxWidth: '400px',
+            margin: '0 auto 1.25rem'
+          }}>
+            Odds aren't favorable for this game. Explore our Hot Takes for deeper insights and alternative angles.
+          </div>
+          
+          {/* CTA Button */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.625rem 1.25rem',
+            background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            fontWeight: '700',
+            color: '#FFFFFF',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+          }}>
+            View Hot Takes
+            <ArrowRight size={16} strokeWidth={2.5} />
+          </div>
+        </div>
+      </Link>
+    );
+  }
   
   const marketProb = calculateImpliedProb(bestEdge.odds);
   const modelTotal = game.edges.total?.predictedTotal || 0;
