@@ -129,17 +129,17 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick }) 
         }}>
           {/* Disclaimer */}
           <div style={{
-            fontSize: '0.75rem',
+            fontSize: '0.6875rem',
             color: '#94A3B8',
-            fontStyle: 'italic',
             marginBottom: '1rem',
-            padding: '0.625rem 0.875rem',
-            background: 'rgba(251, 191, 36, 0.08)',
-            border: '1px solid rgba(251, 191, 36, 0.2)',
-            borderRadius: '8px',
-            lineHeight: '1.4'
+            padding: '0.5rem 0.75rem',
+            background: 'rgba(100, 116, 139, 0.06)',
+            border: '1px solid rgba(100, 116, 139, 0.12)',
+            borderRadius: '6px',
+            lineHeight: '1.5',
+            letterSpacing: '0.01em'
           }}>
-            ⚠️ Picks generated at favorable odds. If odds have changed, model recommendation may differ.
+            Algorithm scans live odds throughout the day. Picks shown were flagged at favorable odds—game cards may no longer display these as recommended if odds have shifted.
           </div>
 
           {/* Game Groups - Horizontal Scroll */}
