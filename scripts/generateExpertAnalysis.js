@@ -21,6 +21,7 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import Papa from 'papaparse';
 // Note: fetch is built-in to Node.js 18+, no import needed
 
 // Note: Import edge calculator and data processor only when needed
@@ -588,12 +589,45 @@ async function loadOddsAndCalculateEdges(games) {
     const { GoalieProcessor } = await import('../src/utils/goalieProcessor.js');
     const { ScheduleHelper } = await import('../src/utils/scheduleHelper.js');
     
-    // Load required data files
-    const teamsData = readFileSync(join(__dirname, '../public/teams.csv'), 'utf-8');
-    const goaliesData = readFileSync(join(__dirname, '../public/goalies.csv'), 'utf-8');
-    const scheduleData = readFileSync(join(__dirname, '../public/nhl-202526-asplayed.csv'), 'utf-8');
+    // Load and PARSE required data files (they need arrays, not raw CSV strings!)
+    console.log('📊 Loading CSV files...');
+    const teamsCSV = readFileSync(join(__dirname, '../public/teams.csv'), 'utf-8');
+    const goaliesCSV = readFileSync(join(__dirname, '../public/goalies.csv'), 'utf-8');
+    const scheduleCSV = readFileSync(join(__dirname, '../public/nhl-202526-asplayed.csv'), 'utf-8');
 
-    // Initialize processors
+    // Parse teams.csv
+    const teamsData = Papa.parse(teamsCSV, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim(),
+      transform: (value) => {
+        if (value === '' || value === null) return null;
+        const trimmed = value.toString().trim();
+        if (!isNaN(trimmed) && !isNaN(parseFloat(trimmed))) return parseFloat(trimmed);
+        return trimmed;
+      }
+    }).data.filter(row => row && Object.keys(row).some(key => row[key] !== null));
+    
+    console.log(`✅ Parsed teams.csv: ${teamsData.length} rows`);
+
+    // Parse goalies.csv
+    const goaliesData = Papa.parse(goaliesCSV, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim()
+    }).data.filter(row => row && Object.keys(row).some(key => row[key] !== null));
+    
+    console.log(`✅ Parsed goalies.csv: ${goaliesData.length} rows`);
+
+    // Parse schedule.csv
+    const scheduleData = Papa.parse(scheduleCSV, {
+      header: true,
+      skipEmptyLines: true
+    }).data.filter(row => row && Object.keys(row).some(key => row[key] !== null));
+    
+    console.log(`✅ Parsed schedule.csv: ${scheduleData.length} rows`);
+
+    // Initialize processors with PARSED data (arrays, not strings!)
     const goalieProcessor = new GoalieProcessor(goaliesData);
     const scheduleHelper = new ScheduleHelper(scheduleData);
     const dataProcessor = new NHLDataProcessor(teamsData, goalieProcessor, scheduleHelper);
