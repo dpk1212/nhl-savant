@@ -72,7 +72,7 @@ export default function SEOHeader({ matchupData }) {
             fontSize: '0.875rem',
             color: '#D4AF37'
           }}>
-            AI-Powered Matchup Insights
+            AI-Powered Hot Takes
           </p>
         </div>
 

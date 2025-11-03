@@ -1,5 +1,5 @@
 /**
- * Matchup Insights Page - Expert Analysis & Game Selection
+ * Hot Takes Page - Expert Analysis & Game Selection
  * Simplified view focused on AI-generated insights
  */
 
@@ -118,7 +118,7 @@ export default function MatchupInsights(props) {
         color: '#94A3B8',
         fontSize: '1.125rem'
       }}>
-        Loading matchup insights...
+        Loading hot takes...
       </div>
     );
   }
@@ -156,7 +156,7 @@ export default function MatchupInsights(props) {
         backgroundClip: 'text',
         marginBottom: '1rem'
       }}>
-        Matchup Insights
+        Hot Takes 🔥
       </h1>
       <p style={{
         fontSize: '0.9375rem',

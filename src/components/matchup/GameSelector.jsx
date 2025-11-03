@@ -1,5 +1,5 @@
 /**
- * Game Selector Carousel - Top of Matchup Insights Page
+ * Game Selector Carousel - Top of Hot Takes Page
  * Swipeable cards for selecting which game to analyze
  */
 
