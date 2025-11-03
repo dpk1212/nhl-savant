@@ -2323,19 +2323,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   const opportunityCounts = getOpportunityCounts();
 
-  // Calculate bet tracking statistics
+  // Calculate bet tracking statistics (MUST match Performance page logic)
   const betStats = useMemo(() => {
     if (!firebaseBets || firebaseBets.length === 0) {
       return { totalBets: 0, totalProfit: 0 };
     }
     
-    // Count all bets
-    const totalBets = firebaseBets.length;
+    // FILTER: Only include B-rated or higher bets (>= 3% EV) AND exclude TOTAL market
+    // This matches the Performance page filtering logic exactly
+    const qualityBets = firebaseBets.filter(bet => 
+      bet.prediction?.rating !== 'C' && 
+      bet.status === 'COMPLETED' &&
+      bet.bet?.market !== 'TOTAL' && 
+      !bet.bet?.market?.includes('TOTAL')
+    );
     
-    // Sum up profit from completed bets only
-    const totalProfit = firebaseBets
-      .filter(bet => bet.status === 'COMPLETED' && bet.result?.profit !== undefined)
-      .reduce((sum, bet) => sum + (bet.result.profit || 0), 0);
+    const totalBets = qualityBets.length;
+    
+    // Sum up profit from completed quality bets
+    const totalProfit = qualityBets.reduce((sum, bet) => sum + (bet.result?.profit || 0), 0);
     
     return { totalBets, totalProfit };
   }, [firebaseBets]);
@@ -2623,11 +2629,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             </span>
             </div>
 
-            {/* Tracked Bets - with performance link */}
+            {/* Tracked Bets - with performance link (hidden on mobile) */}
+            {!isMobile && (
             <div 
               onClick={() => navigate('/performance')}
               style={{
-                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                padding: '0.5rem 0.75rem',
                 background: 'rgba(139, 92, 246, 0.12)',
                 borderRadius: '6px',
                 border: '1px solid rgba(139, 92, 246, 0.3)',
@@ -2649,14 +2656,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               }}
             >
               <span style={{
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontSize: '1.25rem',
                 fontWeight: '700',
                 color: '#A78BFA'
               }}>
                 {betStats.totalBets}
               </span>
               <span style={{
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontSize: '0.688rem',
                 color: 'rgba(167, 139, 250, 0.9)',
                 fontWeight: '600',
                 textTransform: 'uppercase',
@@ -2666,12 +2673,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               </span>
               <Target size={12} color="#A78BFA" strokeWidth={2.5} style={{ opacity: 0.7 }} />
             </div>
+            )}
 
-            {/* Total Profit - with performance link */}
+            {/* Total Profit - with performance link (hidden on mobile) */}
+            {!isMobile && (
             <div 
               onClick={() => navigate('/performance')}
               style={{
-                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                padding: '0.5rem 0.75rem',
                 background: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                 borderRadius: '6px',
                 border: betStats.totalProfit >= 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
@@ -2703,14 +2712,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               }}
             >
               <span style={{
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontSize: '1.25rem',
                 fontWeight: '700',
                 color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444'
               }}>
                 {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
               </span>
               <span style={{
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontSize: '0.688rem',
                 color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
                 fontWeight: '600',
                 textTransform: 'uppercase',
@@ -2720,6 +2729,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               </span>
               <TrendingUp size={12} color={betStats.totalProfit >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2.5} style={{ opacity: 0.7 }} />
             </div>
+            )}
           </div>
         </div>
         
