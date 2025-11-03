@@ -40,6 +40,7 @@ import QuickStatsBar from './QuickStatsBar';
 import DisclaimerModal from './DisclaimerModal';
 import CompactPicksBar from './CompactPicksBar';
 import { getRating } from './RatingBadge';
+import ShareButton from './ShareButton';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -478,18 +479,35 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       )}
     </div>
       
-      {/* Game time - compact */}
-      <div style={{ 
-        fontSize: '0.75rem', 
-        color: 'var(--color-text-muted)',
+      {/* Right side: Share button + Game time */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.375rem',
-        fontWeight: '600',
-        whiteSpace: 'nowrap'
+        gap: '0.75rem'
       }}>
-        <Calendar size={12} />
-        {gameTime}
+        {/* Share Button - Compact variant */}
+        {bestEdge && !isCollapsed && (
+          <ShareButton
+            game={game}
+            bestEdge={bestEdge}
+            variant="compact"
+            isMobile={isMobile}
+          />
+        )}
+        
+        {/* Game time - compact */}
+        <div style={{ 
+          fontSize: '0.75rem', 
+          color: 'var(--color-text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.375rem',
+          fontWeight: '600',
+          whiteSpace: 'nowrap'
+        }}>
+          <Calendar size={12} />
+          {gameTime}
+        </div>
       </div>
     </div>
     
@@ -848,6 +866,22 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
           ))}
         </div>
       )}
+      
+      {/* Premium Share Button */}
+      <div style={{
+        marginTop: '1rem',
+        marginBottom: '0.75rem',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <ShareButton
+          game={game}
+          bestEdge={bestEdge}
+          advantages={insights}
+          variant="full"
+          isMobile={isMobile}
+        />
+      </div>
       
       {/* Bottom stats row */}
       <div style={{ 
