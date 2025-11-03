@@ -354,12 +354,8 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
     return null;
   }
 
-  // Format pick description
-  const pickDesc = bestEdge.market === 'MONEYLINE' 
-    ? `${bestEdge.team} ML` 
-    : bestEdge.market === 'PUCKLINE'
-    ? `${bestEdge.team} ${bestEdge.spread > 0 ? '+' : ''}${bestEdge.spread}`
-    : `${bestEdge.pick}`;
+  // Format pick description (MONEYLINE ONLY)
+  const pickDesc = `${bestEdge.team} ML`;
 
   // Format top 3 factors (bullets are already formatted strings)
   const topFactors = factors.slice(0, 3).join('\n');
@@ -431,25 +427,16 @@ async function generateFullStory(game, bestEdge, altBet, factors, altFactors, ap
     return null;
   }
 
-  // Format primary bet
-  const primaryPick = bestEdge.market === 'MONEYLINE' 
-    ? `${bestEdge.team} ML` 
-    : bestEdge.market === 'PUCKLINE'
-    ? `${bestEdge.team} ${bestEdge.spread > 0 ? '+' : ''}${bestEdge.spread}`
-    : `${bestEdge.pick}`;
+  // Format primary bet (MONEYLINE ONLY)
+  const primaryPick = `${bestEdge.team} ML`;
 
   // Format factors (bullets are already formatted strings)
   const primaryFactors = factors.slice(0, 5).map(f => `  ${f}`).join('\n');
 
-  // Format alternative bet
+  // Format alternative bet (MONEYLINE ONLY)
   let altSection = '';
   if (altBet && altFactors && altFactors.length > 0) {
-    const altPick = altBet.market === 'MONEYLINE' 
-      ? `${altBet.team} ML` 
-      : altBet.market === 'PUCKLINE'
-      ? `${altBet.team} ${altBet.spread > 0 ? '+' : ''}${altBet.spread}`
-      : `${altBet.pick}`;
-
+    const altPick = `${altBet.team} ML`;
     const altFactorList = altFactors.slice(0, 5).map(f => `  ${f}`).join('\n');
 
     altSection = `
@@ -722,15 +709,11 @@ async function main() {
 
       console.log(`⏳ Generating narratives: ${gameEdge.awayTeam} @ ${gameEdge.homeTeam}`);
       
-      // Find best edge
+      // Find best edge - MONEYLINE ONLY (no puckline)
       const bestEdge = [
         ...(gameEdge.edges.moneyline ? [
           { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam, pick: gameEdge.awayTeam },
           { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam, pick: gameEdge.homeTeam }
-        ] : []),
-        ...(gameEdge.edges.puckLine ? [
-          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam, pick: `${gameEdge.awayTeam} ${gameEdge.edges.puckLine.away.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.away.spread}` },
-          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam, pick: `${gameEdge.homeTeam} ${gameEdge.edges.puckLine.home.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.home.spread}` }
         ] : [])
       ].sort((a, b) => b.evPercent - a.evPercent)[0];
 
@@ -751,17 +734,13 @@ async function main() {
       // Extract bullets (formatted factor strings) for Perplexity prompts
       const factors = narrativeData.bullets;
 
-      // Find alternative bet
+      // Find alternative bet - MONEYLINE ONLY (opposite side if also positive EV)
       const altBet = [
         ...(gameEdge.edges.moneyline ? [
           { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam, pick: gameEdge.awayTeam },
           { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam, pick: gameEdge.homeTeam }
-        ] : []),
-        ...(gameEdge.edges.puckLine ? [
-          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam, pick: `${gameEdge.awayTeam} ${gameEdge.edges.puckLine.away.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.away.spread}` },
-          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam, pick: `${gameEdge.homeTeam} ${gameEdge.edges.puckLine.home.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.home.spread}` }
         ] : [])
-      ].filter(e => e.evPercent > 0 && e !== bestEdge)
+      ].filter(e => e.evPercent > 0 && e.team !== bestEdge.team)
         .sort((a, b) => b.evPercent - a.evPercent)[0];
 
       // Generate bet hook
