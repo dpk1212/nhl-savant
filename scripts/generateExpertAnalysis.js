@@ -584,7 +584,7 @@ async function loadOddsAndCalculateEdges(games) {
 
     // Dynamically import modules (avoids loading them when odds aren't available)
     const { EdgeCalculator } = await import('../src/utils/edgeCalculator.js');
-    const { DataProcessor } = await import('../src/utils/dataProcessing.js');
+    const { NHLDataProcessor } = await import('../src/utils/dataProcessing.js');
     const { GoalieProcessor } = await import('../src/utils/goalieProcessor.js');
     const { ScheduleHelper } = await import('../src/utils/scheduleHelper.js');
     
@@ -596,7 +596,7 @@ async function loadOddsAndCalculateEdges(games) {
     // Initialize processors
     const goalieProcessor = new GoalieProcessor(goaliesData);
     const scheduleHelper = new ScheduleHelper(scheduleData);
-    const dataProcessor = new DataProcessor(teamsData, goalieProcessor, scheduleHelper);
+    const dataProcessor = new NHLDataProcessor(teamsData, goalieProcessor, scheduleHelper);
     
     // Initialize edge calculator (use 'total' not 'puck')
     const edgeCalculator = new EdgeCalculator(
