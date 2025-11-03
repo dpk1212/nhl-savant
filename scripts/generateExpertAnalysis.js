@@ -23,12 +23,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 // Note: fetch is built-in to Node.js 18+, no import needed
 
-// Import edge calculator and data processor for bet narratives
-import { EdgeCalculator } from '../src/utils/edgeCalculator.js';
-import { DataProcessor } from '../src/utils/dataProcessing.js';
-import { GoalieProcessor } from '../src/utils/goalieProcessor.js';
-import { ScheduleHelper } from '../src/utils/scheduleHelper.js';
-import { generateDeepAnalytics } from '../src/utils/narrativeGenerator.js';
+// Note: Import edge calculator and data processor only when needed
+// (dynamically imported in loadOddsAndCalculateEdges function)
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -559,14 +555,9 @@ async function cacheBetNarrative(awayTeam, homeTeam, content, type) {
 /**
  * Load odds data and calculate edges for bet narratives
  */
-function loadOddsAndCalculateEdges(games) {
+async function loadOddsAndCalculateEdges(games) {
   try {
-    // Load required data files
-    const teamsData = readFileSync(join(__dirname, '../public/teams.csv'), 'utf-8');
-    const goaliesData = readFileSync(join(__dirname, '../public/goalies.csv'), 'utf-8');
-    const scheduleData = readFileSync(join(__dirname, '../public/nhl-202526-asplayed.csv'), 'utf-8');
-    
-    // Check if odds files exist
+    // Check if odds files exist first (before importing heavy modules)
     const oddsMoneyPath = join(__dirname, '../public/odds_money.md');
     const oddsPuckPath = join(__dirname, '../public/odds_puck.md');
     
@@ -578,6 +569,17 @@ function loadOddsAndCalculateEdges(games) {
       console.log('ℹ️ Odds data not available yet - skipping bet narratives');
       return null;
     }
+
+    // Dynamically import modules (avoids loading them when odds aren't available)
+    const { EdgeCalculator } = await import('../src/utils/edgeCalculator.js');
+    const { DataProcessor } = await import('../src/utils/dataProcessing.js');
+    const { GoalieProcessor } = await import('../src/utils/goalieProcessor.js');
+    const { ScheduleHelper } = await import('../src/utils/scheduleHelper.js');
+    
+    // Load required data files
+    const teamsData = readFileSync(join(__dirname, '../public/teams.csv'), 'utf-8');
+    const goaliesData = readFileSync(join(__dirname, '../public/goalies.csv'), 'utf-8');
+    const scheduleData = readFileSync(join(__dirname, '../public/nhl-202526-asplayed.csv'), 'utf-8');
 
     // Initialize processors
     const goalieProcessor = new GoalieProcessor(goaliesData);
@@ -597,6 +599,7 @@ function loadOddsAndCalculateEdges(games) {
     return { allEdges, dataProcessor };
   } catch (error) {
     console.error('❌ Error loading odds data:', error.message);
+    console.error(error.stack);
     return null;
   }
 }
@@ -658,13 +661,17 @@ async function main() {
   console.log('🎯 PHASE 2: Generating Bet Narratives');
   console.log('='.repeat(50));
   
-  const edgeData = loadOddsAndCalculateEdges(games);
+  const edgeData = await loadOddsAndCalculateEdges(games);
   
   if (!edgeData) {
     console.log('⏭️ Skipping bet narratives - odds data not available');
     console.log('   (This is normal if running before odds are scraped)');
   } else {
     const { allEdges, dataProcessor } = edgeData;
+    
+    // Import generateDeepAnalytics dynamically
+    const { generateDeepAnalytics } = await import('../src/utils/narrativeGenerator.js');
+    
     let narrativesSuccessCount = 0;
     let narrativesFailureCount = 0;
 
