@@ -358,14 +358,11 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
   const pickDesc = bestEdge.market === 'MONEYLINE' 
     ? `${bestEdge.team} ML` 
     : bestEdge.market === 'PUCKLINE'
-    ? `${bestEdge.team} ${bestEdge.line > 0 ? '+' : ''}${bestEdge.line}`
+    ? `${bestEdge.team} ${bestEdge.spread > 0 ? '+' : ''}${bestEdge.spread}`
     : `${bestEdge.pick}`;
 
-  // Format top 3 factors
-  const topFactors = factors.slice(0, 3).map(f => {
-    const impact = Math.abs(f.impact).toFixed(2);
-    return `- ${f.name}: ${f.impact > 0 ? '+' : ''}${impact} goal impact`;
-  }).join('\n');
+  // Format top 3 factors (bullets are already formatted strings)
+  const topFactors = factors.slice(0, 3).join('\n');
 
   const modelProb = (bestEdge.modelProb * 100).toFixed(1);
   const impliedProb = ((1 / (bestEdge.odds < 0 
@@ -438,13 +435,11 @@ async function generateFullStory(game, bestEdge, altBet, factors, altFactors, ap
   const primaryPick = bestEdge.market === 'MONEYLINE' 
     ? `${bestEdge.team} ML` 
     : bestEdge.market === 'PUCKLINE'
-    ? `${bestEdge.team} ${bestEdge.line > 0 ? '+' : ''}${bestEdge.line}`
+    ? `${bestEdge.team} ${bestEdge.spread > 0 ? '+' : ''}${bestEdge.spread}`
     : `${bestEdge.pick}`;
 
-  const primaryFactors = factors.slice(0, 3).map(f => {
-    const impact = Math.abs(f.impact).toFixed(2);
-    return `  - ${f.name}: ${f.impact > 0 ? '+' : ''}${impact} goal impact`;
-  }).join('\n');
+  // Format factors (bullets are already formatted strings)
+  const primaryFactors = factors.slice(0, 5).map(f => `  ${f}`).join('\n');
 
   // Format alternative bet
   let altSection = '';
@@ -452,13 +447,10 @@ async function generateFullStory(game, bestEdge, altBet, factors, altFactors, ap
     const altPick = altBet.market === 'MONEYLINE' 
       ? `${altBet.team} ML` 
       : altBet.market === 'PUCKLINE'
-      ? `${altBet.team} ${altBet.line > 0 ? '+' : ''}${altBet.line}`
+      ? `${altBet.team} ${altBet.spread > 0 ? '+' : ''}${altBet.spread}`
       : `${altBet.pick}`;
 
-    const altFactorList = altFactors.slice(0, 3).map(f => {
-      const impact = Math.abs(f.impact).toFixed(2);
-      return `  - ${f.name}: ${f.impact > 0 ? '+' : ''}${impact} goal impact`;
-    }).join('\n');
+    const altFactorList = altFactors.slice(0, 5).map(f => `  ${f}`).join('\n');
 
     altSection = `
 ALTERNATIVE BET: ${altPick} at ${altBet.odds > 0 ? '+' : ''}${altBet.odds} with +${altBet.evPercent.toFixed(1)}% EV
@@ -733,12 +725,12 @@ async function main() {
       // Find best edge
       const bestEdge = [
         ...(gameEdge.edges.moneyline ? [
-          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam },
-          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam }
+          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam, pick: gameEdge.awayTeam },
+          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam, pick: gameEdge.homeTeam }
         ] : []),
         ...(gameEdge.edges.puckLine ? [
-          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam },
-          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam }
+          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam, pick: `${gameEdge.awayTeam} ${gameEdge.edges.puckLine.away.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.away.spread}` },
+          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam, pick: `${gameEdge.homeTeam} ${gameEdge.edges.puckLine.home.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.home.spread}` }
         ] : [])
       ].sort((a, b) => b.evPercent - a.evPercent)[0];
 
@@ -747,27 +739,27 @@ async function main() {
         continue;
       }
 
-      // Generate narrative data to get factors array
+      // Generate narrative data to get bullets (supporting factors)
       const narrativeData = generateBetNarrative(gameEdge, bestEdge, dataProcessor);
       
-      if (!narrativeData || !narrativeData.factors || narrativeData.factors.length === 0) {
-        console.log('   ⚠️ No factors available - skipping');
+      if (!narrativeData || !narrativeData.bullets || narrativeData.bullets.length === 0) {
+        console.log('   ⚠️ No narrative bullets available - skipping');
         narrativesFailureCount++;
         continue;
       }
       
-      // Extract factors for Perplexity prompts
-      const factors = narrativeData.factors;
+      // Extract bullets (formatted factor strings) for Perplexity prompts
+      const factors = narrativeData.bullets;
 
       // Find alternative bet
       const altBet = [
         ...(gameEdge.edges.moneyline ? [
-          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam },
-          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam }
+          { ...gameEdge.edges.moneyline.away, market: 'MONEYLINE', team: gameEdge.awayTeam, pick: gameEdge.awayTeam },
+          { ...gameEdge.edges.moneyline.home, market: 'MONEYLINE', team: gameEdge.homeTeam, pick: gameEdge.homeTeam }
         ] : []),
         ...(gameEdge.edges.puckLine ? [
-          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam },
-          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam }
+          { ...gameEdge.edges.puckLine.away, market: 'PUCKLINE', team: gameEdge.awayTeam, pick: `${gameEdge.awayTeam} ${gameEdge.edges.puckLine.away.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.away.spread}` },
+          { ...gameEdge.edges.puckLine.home, market: 'PUCKLINE', team: gameEdge.homeTeam, pick: `${gameEdge.homeTeam} ${gameEdge.edges.puckLine.home.spread > 0 ? '+' : ''}${gameEdge.edges.puckLine.home.spread}` }
         ] : [])
       ].filter(e => e.evPercent > 0 && e !== bestEdge)
         .sort((a, b) => b.evPercent - a.evPercent)[0];
