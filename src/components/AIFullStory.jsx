@@ -13,7 +13,13 @@ const AIFullStory = ({ game, bestEdge, isMobile }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!game || !bestEdge) {
+    if (!game) {
+      setLoading(false);
+      return;
+    }
+
+    // Check if we have a positive EV bet
+    if (!bestEdge || bestEdge.evPercent <= 0) {
       setLoading(false);
       return;
     }
@@ -57,7 +63,26 @@ const AIFullStory = ({ game, bestEdge, isMobile }) => {
     );
   }
 
-  // No story available yet
+  // No positive EV bet - show contextual analysis
+  if (!bestEdge || bestEdge.evPercent <= 0) {
+    return (
+      <div style={{
+        padding: isMobile ? '1rem' : '1.5rem',
+        fontSize: TYPOGRAPHY.body.size,
+        color: 'var(--color-text-muted)',
+        lineHeight: '1.7'
+      }}>
+        <p style={{ marginBottom: '1rem' }}>
+          While we don't see positive expected value at current odds, our model is actively monitoring this matchup for opportunities as lines move.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Key factors being tracked include goalie performance, recent form, and situational dynamics. Check back as game time approaches—sharp line movement often creates value windows we can capitalize on.
+        </p>
+      </div>
+    );
+  }
+
+  // No story available yet (still generating)
   if (!story) {
     return (
       <div style={{
