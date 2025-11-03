@@ -31,8 +31,6 @@ export function formatShareTextCompact(shareData) {
     });
   }
   
-  text += `\n\n📊 nhlsavant.com`;
-  
   return text;
 }
 
@@ -75,8 +73,6 @@ export function formatShareText(shareData) {
   if (angle) {
     text += `\n${angle}`;
   }
-  
-  text += `\n\n🔗 nhlsavant.com`;
   
   // Add hashtags for Instagram/Twitter discovery
   text += `\n\n#NHLBetting #SportsBetting #${teams.away} #${teams.home}`;
