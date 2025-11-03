@@ -58,7 +58,7 @@ const AIBetNarrative = ({ game, bestEdge, isMobile }) => {
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite'
         }} />
-        Generating AI analysis...
+        Generating expert analysis...
       </div>
     );
   }
@@ -87,7 +87,7 @@ const AIBetNarrative = ({ game, bestEdge, isMobile }) => {
         fontStyle: 'italic',
         lineHeight: '1.6'
       }}>
-        AI analysis will be available shortly. Our model has identified strong value in this matchup.
+        Expert analysis will be available shortly. Our model has identified strong value in this matchup.
       </div>
     );
   }
