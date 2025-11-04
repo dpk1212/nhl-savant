@@ -56,7 +56,7 @@ const TourCard = ({
         position: 'fixed',
         width: isMobile ? 'calc(100% - 32px)' : '400px',
         maxWidth: isMobile ? 'none' : '90vw',
-        zIndex: 9999,
+        zIndex: 10001,
         pointerEvents: 'auto'
       }}
     >
