@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { BetTracker } from '../firebase/betTracker';
+import { getETDate } from '../utils/dateUtils';
 
 export function useBetTracking(allEdges, dataProcessor) {
   const tracker = useRef(new BetTracker());
@@ -9,8 +10,8 @@ export function useBetTracking(allEdges, dataProcessor) {
   useEffect(() => {
     if (!allEdges || allEdges.length === 0) return;
     
-    // Get today's date for deduplication
-    const today = new Date().toISOString().split('T')[0];
+    // CRITICAL FIX: Get today's date using ET timezone for deduplication
+    const today = getETDate();
     
     // Track all games with at least one B-rated or higher bet (>= 3% EV)
     const opportunities = allEdges.filter(game => {

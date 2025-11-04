@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { getMatchupInsightCards } from '../../services/perplexityService';
 import { ChevronLeft, ChevronRight, Share2, Flame, Lightbulb, TrendingUp } from 'lucide-react';
 
-export default function AIInsightCards({ awayTeam, homeTeam }) {
+export default function AIInsightCards({ awayTeam, homeTeam, prediction }) {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -20,24 +20,80 @@ export default function AIInsightCards({ awayTeam, homeTeam }) {
     if (awayTeam && homeTeam) {
       loadInsights();
     }
-  }, [awayTeam?.name, homeTeam?.name]);
+  }, [awayTeam?.name, homeTeam?.name, prediction]);
 
   const loadInsights = async () => {
     setLoading(true);
 
     try {
+      // Try to get AI-generated content from Firebase first
       const result = await getMatchupInsightCards(
         awayTeam.name,
         homeTeam.name
       );
-      setInsights(result);
+      
+      // If no AI content, generate insights from our model predictions
+      if (!result || result.length === 0) {
+        if (prediction) {
+          const generatedInsights = generateInsightsFromPrediction(awayTeam.name, homeTeam.name, prediction);
+          setInsights(generatedInsights);
+        } else {
+          setInsights([]);
+        }
+      } else {
+        setInsights(result);
+      }
       setActiveIndex(0);
     } catch (error) {
       console.error('Error loading insights:', error);
-      setInsights([]);
+      // Fall back to prediction-based insights
+      if (prediction) {
+        const generatedInsights = generateInsightsFromPrediction(awayTeam.name, homeTeam.name, prediction);
+        setInsights(generatedInsights);
+      } else {
+        setInsights([]);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Generate insights from our model predictions
+  const generateInsightsFromPrediction = (away, home, pred) => {
+    const favorite = pred.homeWinProb > pred.awayWinProb ? home : away;
+    const favoriteProb = Math.max(pred.homeWinProb, pred.awayWinProb);
+    const underdog = favorite === home ? away : home;
+    const underdogProb = Math.min(pred.homeWinProb, pred.awayWinProb);
+    const predictedTotal = pred.awayScore + pred.homeScore;
+    
+    const insights = [];
+    
+    // Insight 1: Model Pick
+    insights.push({
+      hook: `${favorite} ${favoriteProb >= 60 ? 'Heavy Favorite' : 'Slight Edge'} at ${favoriteProb.toFixed(0)}%`,
+      headline: 'Model Prediction',
+      analysis: `Our advanced analytics give ${favorite} a ${favoriteProb.toFixed(1)}% chance to win. Projected score: ${away} ${pred.awayScore.toFixed(1)} - ${home} ${pred.homeScore.toFixed(1)}. ${favoriteProb >= 60 ? `Strong confidence in ${favorite} based on recent performance metrics.` : `Close matchup with ${underdog} having a real chance at ${underdogProb.toFixed(1)}%.`}`,
+      data: `Win Prob: ${favoriteProb.toFixed(1)}% • Total: ${predictedTotal.toFixed(1)} goals`
+    });
+    
+    // Insight 2: Scoring Outlook
+    const totalDescription = predictedTotal >= 6.5 ? 'High-Scoring Affair' : predictedTotal <= 5.5 ? 'Defensive Battle' : 'Moderate Scoring';
+    insights.push({
+      hook: `Expect a ${totalDescription}`,
+      headline: 'Scoring Projection',
+      analysis: `Model projects ${predictedTotal.toFixed(1)} total goals. ${away} expected to score ${pred.awayScore.toFixed(1)} while ${home} projects at ${pred.homeScore.toFixed(1)}. ${predictedTotal >= 6.5 ? 'Both offenses showing strong metrics lately.' : predictedTotal <= 5.5 ? 'Goaltending and defense should dominate this matchup.' : 'Balanced offensive and defensive matchup expected.'}`,
+      data: `Projected Total: ${predictedTotal.toFixed(1)} goals`
+    });
+    
+    // Insight 3: Value Angle
+    insights.push({
+      hook: `${underdog} Underdog Value?`,
+      headline: 'Betting Angle',
+      analysis: `While ${favorite} is favored, ${underdog} at ${underdogProb.toFixed(1)}% creates potential value if odds are favorable. ${Math.abs(favoriteProb - underdogProb) < 15 ? 'This is a closer game than many expect.' : `${favorite} has clear advantages but upsets happen.`} Consider both ML and total plays based on current market odds.`,
+      data: `${underdog}: ${underdogProb.toFixed(1)}% • Spread potential`
+    });
+    
+    return insights;
   };
 
   const handleTouchStart = (e) => {

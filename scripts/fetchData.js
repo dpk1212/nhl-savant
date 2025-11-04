@@ -130,8 +130,18 @@ async function fetchAllData() {
       console.log('   ⚠️  Manual update may be required\n');
       results.goalies = false;
     } else {
+      // CRITICAL FIX: Use ET date (import at top would fail in Node.js, so inline)
+      const etDateStr = new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const [month, day, year] = etDateStr.split('/');
+      const etDate = `${year}-${month}-${day}`;
+      
       const goaliesData = {
-        date: new Date().toISOString().split('T')[0],
+        date: etDate,
         lastUpdated: fetchTimestamp,
         oddsLastUpdated: fetchTimestamp,
         games: startingGoalies

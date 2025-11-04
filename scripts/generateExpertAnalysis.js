@@ -24,6 +24,9 @@ import { fileURLToPath } from 'url';
 import Papa from 'papaparse';
 // Note: fetch is built-in to Node.js 18+, no import needed
 
+// Import date utilities for ET timezone handling
+import { getETDate, formatDateForSchedule, logDateDebug } from '../src/utils/dateUtils.js';
+
 // Note: Import edge calculator and data processor only when needed
 // (dynamically imported in loadOddsAndCalculateEdges function)
 
@@ -109,6 +112,8 @@ const TEAM_NAME_TO_CODE = {
 /**
  * Get today's NHL games from schedule (SAME AS APP.JSX)
  * Uses nhl-202526-asplayed.csv with columns: Date, Visitor, Home
+ * 
+ * CRITICAL FIX: Uses ET timezone to match client-side date calculations
  */
 function getTodaysGames() {
   try {
@@ -118,13 +123,12 @@ function getTodaysGames() {
     const lines = scheduleData.trim().split('\n');
     
     // CSV Format: Date,Start Time (Sask),Start Time (ET),Visitor,Score,Home,Score,Status
-    const today = new Date();
-    const month = today.getMonth() + 1; // 0-indexed, add 1
-    const day = today.getDate();
-    const year = today.getFullYear();
-    const todayStr = `${month}/${day}/${year}`; // Format: "10/29/2025"
+    // CRITICAL FIX: Use ET date instead of local/UTC date
+    const todayStr = formatDateForSchedule(); // Returns "M/D/YYYY" in ET
     
-    console.log(`🔍 Looking for games on: ${todayStr}`);
+    // Log for debugging timezone issues
+    const { utcDate, etDate } = logDateDebug('GitHub Action - getTodaysGames');
+    console.log(`🔍 Looking for games on: ${todayStr} (ET)`);
     
     const games = [];
     for (let i = 1; i < lines.length; i++) {
@@ -152,6 +156,12 @@ function getTodaysGames() {
           console.warn(`   ⚠️ Could not map teams: ${visitorName} vs ${homeName}`);
         }
       }
+    }
+    
+    if (games.length === 0) {
+      console.warn(`⚠️ No games found for ${todayStr}`);
+      console.log(`   This could be normal (off day) or a timezone issue.`);
+      console.log(`   UTC date: ${utcDate}, ET date: ${etDate}`);
     }
     
     return games;
@@ -282,6 +292,8 @@ Return ONLY valid JSON. Be bold. Be specific. Give users a reason to screenshot 
 
 /**
  * Cache analysis in Firebase
+ * 
+ * CRITICAL FIX: Uses ET timezone for cache keys to match client-side lookups
  */
 async function cacheAnalysis(awayTeam, homeTeam, cards) {
   // VALIDATE INPUT DATA
@@ -295,11 +307,18 @@ async function cacheAnalysis(awayTeam, homeTeam, cards) {
     throw new Error('Cards must be a non-empty array');
   }
   
-  const now = new Date();
-  
-  // SIMPLIFIED: No timeKey - just use date (we only generate once per day)
-  const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}`;
+  // CRITICAL FIX: Use ET date instead of UTC date
+  // This ensures cache keys match client-side lookups (which also use ET)
+  const etDate = getETDate();
+  const cacheKey = `${awayTeam}-${homeTeam}-${etDate}`;
   const cacheRef = db.collection('perplexityCache').doc(cacheKey);
+  
+  // Log for debugging
+  const utcDate = new Date().toISOString().split('T')[0];
+  console.log(`📝 Cache key: ${cacheKey}`);
+  if (utcDate !== etDate) {
+    console.log(`   ⚠️ UTC date (${utcDate}) differs from ET date (${etDate})`);
+  }
   
   // VALIDATE DOCUMENT ID
   if (cacheKey.includes('/') || cacheKey.startsWith('.') || cacheKey.startsWith('__')) {

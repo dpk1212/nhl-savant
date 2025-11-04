@@ -1,5 +1,7 @@
 // OddsTrader Parser - Simple parser for OddsTrader markdown format
 
+import { getETDate } from './dateUtils.js';
+
 // Team name mapping from OddsTrader to our CSV codes
 const TEAM_NAME_MAP = {
   'Minnesota': 'MIN',
@@ -215,7 +217,8 @@ export function parseOddsTrader(markdownText) {
         }
         
         // Add date to game for Firebase tracking (YYYY-MM-DD format)
-        currentGame.date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        // CRITICAL FIX: Use ET date to match other systems
+        currentGame.date = getETDate();
         
         games.push(currentGame);
         console.log(`  ✅ Added game: ${currentGame.awayTeam} @ ${currentGame.homeTeam}`);
