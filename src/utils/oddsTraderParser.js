@@ -78,7 +78,7 @@ export function parseOddsTrader(markdownText) {
     const line = lines[i];
     
     // Look for today's games (and yesterday's if before 6 AM)
-    // Note: LIVE games are detected but skipped since betting markets are closed
+    // Note: LIVE games are now included for Hot Takes and analysis (even if betting markets are closed)
     // Check both padded and non-padded date formats (e.g., "SAT 11/1" and "SAT 11/01")
     const isMatchingDate = line.includes(todayPattern) || line.includes(todayPatternPadded) || 
                           (includeYesterday && (line.includes(yesterdayPattern) || line.includes(yesterdayPatternPadded))) || 
@@ -92,8 +92,8 @@ export function parseOddsTrader(markdownText) {
       
       // Check if it's a LIVE game
       if (line.includes('LIVE')) {
-        console.log(`  🔴 LIVE GAME - Skipping (no betting markets available)`);
-        continue; // Skip LIVE games - betting markets are closed
+        gameTime = 'LIVE';
+        console.log(`  🔴 LIVE GAME - Including with status LIVE`);
       } else {
         // Pattern matches time that comes AFTER the date (e.g., "10/227:00 PM" -> "7:00 PM")
         const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2} [AP]M)/);
