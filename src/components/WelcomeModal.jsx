@@ -5,9 +5,23 @@ import { X, TrendingUp, Target, BarChart3, CheckCircle } from 'lucide-react';
 /**
  * Premium Welcome Modal for New Users
  * Full-screen, first-class introduction to NHL Savant
+ * MOBILE OPTIMIZED
  */
 const WelcomeModal = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Check if user has seen the welcome modal
@@ -76,21 +90,23 @@ const WelcomeModal = () => {
           onClick={(e) => e.stopPropagation()}
           style={{
             position: 'relative',
-            maxWidth: '900px',
+            maxWidth: isMobile ? '100%' : '900px',
             width: '100%',
-            maxHeight: '90vh',
+            maxHeight: isMobile ? '100vh' : '90vh',
+            height: isMobile ? '100%' : 'auto',
             overflowY: 'auto',
             background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.98) 0%, rgba(15, 20, 30, 0.98) 100%)',
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
-            borderRadius: '24px',
-            boxShadow: `
+            backdropFilter: isMobile ? 'blur(20px) saturate(180%)' : 'blur(40px) saturate(180%)',
+            WebkitBackdropFilter: isMobile ? 'blur(20px) saturate(180%)' : 'blur(40px) saturate(180%)',
+            border: isMobile ? 'none' : '1px solid rgba(212, 175, 55, 0.3)',
+            borderRadius: isMobile ? '0' : '24px',
+            boxShadow: isMobile ? 'none' : `
               0 0 80px rgba(212, 175, 55, 0.3),
               0 40px 80px rgba(0, 0, 0, 0.8),
               inset 0 0 0 1px rgba(255, 255, 255, 0.05)
             `,
-            overflow: 'hidden'
+            overflow: 'hidden',
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           {/* Animated background elements */}
@@ -110,10 +126,10 @@ const WelcomeModal = () => {
             onClick={handleClose}
             style={{
               position: 'absolute',
-              top: '1.5rem',
-              right: '1.5rem',
-              width: '40px',
-              height: '40px',
+              top: isMobile ? '1rem' : '1.5rem',
+              right: isMobile ? '1rem' : '1.5rem',
+              width: isMobile ? '44px' : '40px',
+              height: isMobile ? '44px' : '40px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -123,7 +139,8 @@ const WelcomeModal = () => {
               color: 'var(--color-text-secondary)',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              zIndex: 10
+              zIndex: 10,
+              touchAction: 'manipulation'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
@@ -141,30 +158,31 @@ const WelcomeModal = () => {
           </button>
 
           {/* Content */}
-          <div style={{ padding: '3rem 2.5rem' }}>
+          <div style={{ padding: isMobile ? '1.5rem 1.25rem' : '3rem 2.5rem' }}>
             {/* Logo/Brand Mark */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.75rem',
-              marginBottom: '2rem'
+              gap: isMobile ? '0.625rem' : '0.75rem',
+              marginBottom: isMobile ? '1.5rem' : '2rem'
             }}>
               <div style={{
-                width: '56px',
-                height: '56px',
+                width: isMobile ? '48px' : '56px',
+                height: isMobile ? '48px' : '56px',
                 background: 'linear-gradient(135deg, var(--color-accent) 0%, #C4A02C 100%)',
-                borderRadius: '16px',
+                borderRadius: isMobile ? '14px' : '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 8px 24px rgba(212, 175, 55, 0.4)',
-                fontSize: '2rem'
+                fontSize: isMobile ? '1.75rem' : '2rem',
+                flexShrink: 0
               }}>
                 🏒
               </div>
               <div>
                 <h1 style={{
-                  fontSize: '1.75rem',
+                  fontSize: isMobile ? '1.5rem' : '1.75rem',
                   fontWeight: '800',
                   background: 'linear-gradient(135deg, var(--color-accent) 0%, #E5C158 100%)',
                   WebkitBackgroundClip: 'text',
@@ -176,7 +194,7 @@ const WelcomeModal = () => {
                   NHL Savant
                 </h1>
                 <p style={{
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   color: 'var(--color-text-muted)',
                   margin: '0.25rem 0 0 0',
                   fontWeight: '600',
@@ -190,11 +208,11 @@ const WelcomeModal = () => {
 
             {/* Headline */}
             <h2 style={{
-              fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+              fontSize: isMobile ? '1.5rem' : 'clamp(1.75rem, 4vw, 2.5rem)',
               fontWeight: '800',
               color: 'var(--color-text-primary)',
               lineHeight: 1.2,
-              marginBottom: '1rem',
+              marginBottom: isMobile ? '0.75rem' : '1rem',
               letterSpacing: '-0.02em'
             }}>
               Find Tonight's NHL Edges.<br />
@@ -203,10 +221,10 @@ const WelcomeModal = () => {
 
             {/* Subheadline */}
             <p style={{
-              fontSize: 'clamp(1rem, 2vw, 1.125rem)',
+              fontSize: isMobile ? '0.938rem' : 'clamp(1rem, 2vw, 1.125rem)',
               lineHeight: 1.7,
               color: 'var(--color-text-secondary)',
-              marginBottom: '2.5rem',
+              marginBottom: isMobile ? '1.5rem' : '2.5rem',
               maxWidth: '680px'
             }}>
               Our algorithm scans <strong style={{ color: 'var(--color-accent)' }}>10,000+ data points</strong> per game to find moneyline inefficiencies the market misses. Every pick rated. Every edge quantified. Every game analyzed.
@@ -217,32 +235,32 @@ const WelcomeModal = () => {
             {/* Value Props - 3 Columns */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '1.5rem',
-              marginBottom: '2.5rem'
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: isMobile ? '1rem' : '1.5rem',
+              marginBottom: isMobile ? '1.5rem' : '2.5rem'
             }}>
               {/* Transparency */}
               <div style={{
-                padding: '1.5rem',
+                padding: isMobile ? '1.25rem' : '1.5rem',
                 background: 'rgba(59, 130, 246, 0.08)',
                 border: '1px solid rgba(59, 130, 246, 0.2)',
-                borderRadius: '16px',
+                borderRadius: isMobile ? '12px' : '16px',
                 transition: 'all 0.3s ease'
               }}>
                 <div style={{
-                  width: '44px',
-                  height: '44px',
+                  width: isMobile ? '40px' : '44px',
+                  height: isMobile ? '40px' : '44px',
                   background: 'rgba(59, 130, 246, 0.15)',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '1rem'
+                  marginBottom: isMobile ? '0.75rem' : '1rem'
                 }}>
-                  <BarChart3 size={24} color="#60A5FA" strokeWidth={2.5} />
+                  <BarChart3 size={isMobile ? 20 : 24} color="#60A5FA" strokeWidth={2.5} />
                 </div>
                 <h3 style={{
-                  fontSize: '1.125rem',
+                  fontSize: isMobile ? '1rem' : '1.125rem',
                   fontWeight: '700',
                   color: 'var(--color-text-primary)',
                   marginBottom: '0.5rem'
@@ -250,7 +268,7 @@ const WelcomeModal = () => {
                   Every Edge, Explained
                 </h3>
                 <p style={{
-                  fontSize: '0.938rem',
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
                   lineHeight: 1.6,
                   color: 'var(--color-text-secondary)',
                   margin: 0
@@ -261,26 +279,26 @@ const WelcomeModal = () => {
 
               {/* Selectivity */}
               <div style={{
-                padding: '1.5rem',
+                padding: isMobile ? '1.25rem' : '1.5rem',
                 background: 'rgba(212, 175, 55, 0.08)',
                 border: '1px solid rgba(212, 175, 55, 0.2)',
-                borderRadius: '16px',
+                borderRadius: isMobile ? '12px' : '16px',
                 transition: 'all 0.3s ease'
               }}>
                 <div style={{
-                  width: '44px',
-                  height: '44px',
+                  width: isMobile ? '40px' : '44px',
+                  height: isMobile ? '40px' : '44px',
                   background: 'rgba(212, 175, 55, 0.15)',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '1rem'
+                  marginBottom: isMobile ? '0.75rem' : '1rem'
                 }}>
-                  <Target size={24} color="#D4AF37" strokeWidth={2.5} />
+                  <Target size={isMobile ? 20 : 24} color="#D4AF37" strokeWidth={2.5} />
                 </div>
                 <h3 style={{
-                  fontSize: '1.125rem',
+                  fontSize: isMobile ? '1rem' : '1.125rem',
                   fontWeight: '700',
                   color: 'var(--color-text-primary)',
                   marginBottom: '0.5rem'
@@ -288,7 +306,7 @@ const WelcomeModal = () => {
                   Quality Over Volume
                 </h3>
                 <p style={{
-                  fontSize: '0.938rem',
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
                   lineHeight: 1.6,
                   color: 'var(--color-text-secondary)',
                   margin: 0
@@ -299,26 +317,26 @@ const WelcomeModal = () => {
 
               {/* Accountability */}
               <div style={{
-                padding: '1.5rem',
+                padding: isMobile ? '1.25rem' : '1.5rem',
                 background: 'rgba(16, 185, 129, 0.08)',
                 border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '16px',
+                borderRadius: isMobile ? '12px' : '16px',
                 transition: 'all 0.3s ease'
               }}>
                 <div style={{
-                  width: '44px',
-                  height: '44px',
+                  width: isMobile ? '40px' : '44px',
+                  height: isMobile ? '40px' : '44px',
                   background: 'rgba(16, 185, 129, 0.15)',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '1rem'
+                  marginBottom: isMobile ? '0.75rem' : '1rem'
                 }}>
-                  <TrendingUp size={24} color="#10B981" strokeWidth={2.5} />
+                  <TrendingUp size={isMobile ? 20 : 24} color="#10B981" strokeWidth={2.5} />
                 </div>
                 <h3 style={{
-                  fontSize: '1.125rem',
+                  fontSize: isMobile ? '1rem' : '1.125rem',
                   fontWeight: '700',
                   color: 'var(--color-text-primary)',
                   marginBottom: '0.5rem'
@@ -326,7 +344,7 @@ const WelcomeModal = () => {
                   Track Record, Verified
                 </h3>
                 <p style={{
-                  fontSize: '0.938rem',
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
                   lineHeight: 1.6,
                   color: 'var(--color-text-secondary)',
                   margin: 0
@@ -338,27 +356,28 @@ const WelcomeModal = () => {
 
             {/* USP Callout */}
             <div style={{
-              padding: '1.5rem',
+              padding: isMobile ? '1.25rem' : '1.5rem',
               background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.06) 100%)',
               border: '1px solid rgba(212, 175, 55, 0.3)',
-              borderRadius: '16px',
-              marginBottom: '2.5rem',
+              borderRadius: isMobile ? '12px' : '16px',
+              marginBottom: isMobile ? '1.5rem' : '2.5rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem'
+              gap: isMobile ? '0.75rem' : '1rem'
             }}>
-              <CheckCircle size={32} color="#D4AF37" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+              <CheckCircle size={isMobile ? 24 : 32} color="#D4AF37" strokeWidth={2.5} style={{ flexShrink: 0 }} />
               <div>
                 <p style={{
-                  fontSize: '1.125rem',
+                  fontSize: isMobile ? '1rem' : '1.125rem',
                   fontWeight: '700',
                   color: 'var(--color-accent)',
-                  margin: '0 0 0.25rem 0'
+                  margin: '0 0 0.25rem 0',
+                  lineHeight: 1.3
                 }}>
                   The only NHL model that shows you the edge BEFORE you bet.
                 </p>
                 <p style={{
-                  fontSize: '0.938rem',
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
                   color: 'var(--color-text-secondary)',
                   margin: 0
                 }}>
@@ -370,20 +389,21 @@ const WelcomeModal = () => {
             {/* CTA Buttons */}
             <div style={{
               display: 'flex',
-              gap: '1rem',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '0.75rem' : '1rem',
               flexWrap: 'wrap'
             }}>
               <button
                 onClick={handleViewPicks}
                 style={{
                   flex: '1 1 auto',
-                  minWidth: '200px',
-                  padding: '1rem 2rem',
+                  minWidth: isMobile ? '100%' : '200px',
+                  padding: isMobile ? '1.125rem 1.5rem' : '1rem 2rem',
                   background: 'linear-gradient(135deg, var(--color-accent) 0%, #C4A02C 100%)',
                   border: 'none',
                   borderRadius: '12px',
                   color: 'var(--color-background)',
-                  fontSize: '1.125rem',
+                  fontSize: isMobile ? '1rem' : '1.125rem',
                   fontWeight: '700',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
@@ -393,7 +413,9 @@ const WelcomeModal = () => {
                   justifyContent: 'center',
                   gap: '0.5rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  letterSpacing: '0.05em',
+                  touchAction: 'manipulation',
+                  minHeight: '52px'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
@@ -411,8 +433,9 @@ const WelcomeModal = () => {
               <button
                 onClick={handleClose}
                 style={{
-                  flex: '0 0 auto',
-                  padding: '1rem 2rem',
+                  flex: isMobile ? '1 1 auto' : '0 0 auto',
+                  minWidth: isMobile ? '100%' : 'auto',
+                  padding: isMobile ? '1.125rem 1.5rem' : '1rem 2rem',
                   background: 'transparent',
                   border: '1px solid rgba(148, 163, 184, 0.3)',
                   borderRadius: '12px',
@@ -420,7 +443,9 @@ const WelcomeModal = () => {
                   fontSize: '1rem',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  touchAction: 'manipulation',
+                  minHeight: '52px'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
@@ -439,11 +464,12 @@ const WelcomeModal = () => {
 
             {/* Footer note */}
             <p style={{
-              fontSize: '0.813rem',
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
               color: 'var(--color-text-muted)',
               textAlign: 'center',
-              marginTop: '2rem',
-              marginBottom: 0
+              marginTop: isMobile ? '1.25rem' : '2rem',
+              marginBottom: 0,
+              paddingBottom: isMobile ? '1rem' : 0
             }}>
               Free access. No sign-up required. No BS.
             </p>
