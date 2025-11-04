@@ -68,12 +68,13 @@ const WelcomeModal = () => {
           bottom: 0,
           zIndex: 10000,
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'stretch' : 'center',
           justifyContent: 'center',
-          padding: '1rem',
+          padding: isMobile ? '0' : '1rem',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)'
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          overflow: 'hidden'
         }}
         onClick={handleClose}
       >
@@ -93,8 +94,9 @@ const WelcomeModal = () => {
             maxWidth: isMobile ? '100%' : '900px',
             width: '100%',
             maxHeight: isMobile ? '100vh' : '90vh',
-            height: isMobile ? '100%' : 'auto',
-            overflowY: 'auto',
+            height: isMobile ? '100vh' : 'auto',
+            display: 'flex',
+            flexDirection: 'column',
             background: 'linear-gradient(135deg, rgba(21, 25, 35, 0.98) 0%, rgba(15, 20, 30, 0.98) 100%)',
             backdropFilter: isMobile ? 'blur(20px) saturate(180%)' : 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: isMobile ? 'blur(20px) saturate(180%)' : 'blur(40px) saturate(180%)',
@@ -105,8 +107,7 @@ const WelcomeModal = () => {
               0 40px 80px rgba(0, 0, 0, 0.8),
               inset 0 0 0 1px rgba(255, 255, 255, 0.05)
             `,
-            overflow: 'hidden',
-            WebkitOverflowScrolling: 'touch'
+            overflow: 'hidden'
           }}
         >
           {/* Animated background elements */}
@@ -157,8 +158,17 @@ const WelcomeModal = () => {
             <X size={20} strokeWidth={2.5} />
           </button>
 
-          {/* Content */}
-          <div style={{ padding: isMobile ? '1.5rem 1.25rem' : '3rem 2.5rem' }}>
+          {/* Scrollable Content Wrapper */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(212, 175, 55, 0.3) transparent'
+          }}>
+            {/* Content */}
+            <div style={{ padding: isMobile ? '1.5rem 1.25rem' : '3rem 2.5rem' }}>
             {/* Logo/Brand Mark */}
             <div style={{
               display: 'flex',
@@ -469,10 +479,11 @@ const WelcomeModal = () => {
               textAlign: 'center',
               marginTop: isMobile ? '1.25rem' : '2rem',
               marginBottom: 0,
-              paddingBottom: isMobile ? '1rem' : 0
+              paddingBottom: isMobile ? '1.5rem' : 0
             }}>
               Free access. No sign-up required. No BS.
             </p>
+            </div>
           </div>
         </motion.div>
       </motion.div>
