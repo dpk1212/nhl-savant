@@ -69,7 +69,7 @@ const ShareButton = ({
     
     try {
       const text = formatShareText(data);
-      const url = 'https://nhlsavant.com';
+      const url = 'https://dpk1212.github.io/nhl-savant/';
       const title = `NHL Savant Pick: ${data.teams.away} @ ${data.teams.home}`;
       
       // Try native share first (mobile preferred)
