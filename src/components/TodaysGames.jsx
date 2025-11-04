@@ -2764,11 +2764,26 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Compact Picks Bar - USE FIREBASE BETS DIRECTLY, GROUPED BY GAME */}
       {firebaseBets && firebaseBets.length > 0 && (() => {
-        const qualityBets = firebaseBets.filter(bet => 
-          bet.status === 'PENDING' && 
-          bet.prediction?.rating && 
-          bet.prediction.rating !== 'C'
+        // CRITICAL FIX: Only show bets for games that are scheduled TODAY
+        // Get list of today's game matchups from allEdges (actual games with odds)
+        const todaysGameMatchups = new Set(
+          allEdges.map(edge => `${edge.game.awayTeam}_${edge.game.homeTeam}`)
         );
+        
+        console.log('📅 Today\'s games:', Array.from(todaysGameMatchups));
+        console.log('📊 All Firebase bets dates:', firebaseBets.map(b => `${b.date}: ${b.game.awayTeam}@${b.game.homeTeam}`));
+        
+        const qualityBets = firebaseBets.filter(bet => {
+          const gameKey = `${bet.game.awayTeam}_${bet.game.homeTeam}`;
+          const isToday = todaysGameMatchups.has(gameKey);
+          
+          return (
+            bet.status === 'PENDING' && 
+            bet.prediction?.rating && 
+            bet.prediction.rating !== 'C' &&
+            isToday  // ONLY SHOW BETS FOR TODAY'S GAMES
+          );
+        });
 
         // Group bets by game
         const betsByGame = {};
