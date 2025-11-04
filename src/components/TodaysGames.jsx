@@ -50,7 +50,7 @@ import ShareButton from './ShareButton';
 // ========================================
 
 // Compact Header - REDESIGNED for density and scannability
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores }) => {
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets }) => {
   // Check if there's a live score for this game
   const liveScore = liveScores?.find(score => 
     (score.awayTeam === awayTeam && score.homeTeam === homeTeam) ||
@@ -67,15 +67,24 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     const tied = liveScore.awayScore === liveScore.homeScore;
     const scoreDiff = Math.abs(liveScore.awayScore - liveScore.homeScore);
     
-    // Check if we had a bet on this game
-    const hasBet = bestEdge && bestEdge.market && bestEdge.evPercent > 0;
+    // CRITICAL: Check Firebase for our ACTUAL bet (not current odds calculation)
+    // This shows the bet we made at favorable odds, even if odds have changed
+    const firebaseBet = firebaseBets?.find(bet => 
+      bet.game?.awayTeam === awayTeam && 
+      bet.game?.homeTeam === homeTeam &&
+      bet.bet?.market === 'MONEYLINE'
+    );
+    
+    // Check if we had a bet on this game (prefer Firebase bet over current edge calculation)
+    const hasBet = firebaseBet || (bestEdge && bestEdge.market === 'MONEYLINE' && bestEdge.evPercent > 0);
     
     // Determine what team we're tracking (BET if exists, otherwise MODEL PREDICTION)
     let ourTeam, ourTeamIsAway, ourPreGameProb;
     
-    if (hasBet && bestEdge.market === 'MONEYLINE') {
-      // We have a bet - track THAT team (could be underdog for value)
-      ourTeam = bestEdge.team;
+    if (hasBet) {
+      // We have a bet - use Firebase bet data if available, otherwise use bestEdge
+      const betData = firebaseBet || bestEdge;
+      ourTeam = firebaseBet ? firebaseBet.bet.pick.split(' ')[0] : bestEdge.team; // Extract team from pick like "PIT ML (AWAY)"
       ourTeamIsAway = ourTeam === awayTeam;
       ourPreGameProb = ourTeamIsAway ? awayWinProb : homeWinProb;
     } else {
@@ -384,7 +393,10 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
                   fontWeight: '700',
                   color: 'var(--color-text-secondary)'
                 }}>
-                  {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+                  {(() => {
+                    const odds = firebaseBet ? firebaseBet.bet.odds : bestEdge.odds;
+                    return odds > 0 ? `+${odds}` : odds;
+                  })()}
                 </div>
               </>
             ) : (
@@ -2933,6 +2945,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           game={game}
                           dataProcessor={dataProcessor}
                           liveScores={liveScores}
+                          firebaseBets={firebaseBets}
                         />
                         {/* Quick Stats Bar - only show when collapsed AND pre-game (hide during live/final) */}
                         {(() => {
