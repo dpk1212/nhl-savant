@@ -2289,9 +2289,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   }, [goalieProcessor, startingGoalies]); // Re-create when goalieProcessor or startingGoalies change
   
   // Calculate opportunities with consistent logic
-  // STANDARD DEFINITIONS (UPDATED - NO MORE C-RATED BETS):
-  // - Opportunity = Any game with at least one B-rated or higher bet (EV >= 3%)
-  // - High Value = Any opportunity with best bet EV > 5% (B+ or higher)
+  // STANDARD DEFINITIONS (matches rating system in RatingBadge.jsx):
+  // - +EV = Games with at least one B-rated or higher bet (EV >= 3%)
+  // - ELITE = Games where BEST bet is A-rated or higher (EV >= 7%)
+  // Rating system: A+ = 10%+, A = 7-10%, B+ = 5-7%, B = 3-5%
   const getOpportunityCounts = () => {
     // Filter to only games that have at least one B-rated or higher bet (>= 3% EV)
     const opportunities = allEdges.filter(game => {
@@ -2310,8 +2311,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       return hasQualityBet;
     });
     
-    // High value = GAMES (not individual bets) where BEST bet has EV > 5%
-    // This matches QuickSummary's logic exactly
+    // ELITE = GAMES where BEST bet is A-rated or higher (EV >= 7%)
+    // Rating system: A+ = 10%+, A = 7-10%, B+ = 5-7%, B = 3-5%
     const highValue = opportunities.filter(game => {
       let bestEV = 0;
       
@@ -2327,7 +2328,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         if (game.edges.total.under?.evPercent > bestEV) bestEV = game.edges.total.under.evPercent;
       }
       
-      return bestEV > 5;
+      // ELITE = A-rated or higher (7%+ EV)
+      return bestEV >= 7;
     }).length;
     
     return {

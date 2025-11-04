@@ -35,7 +35,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
   // Get best bet for each game
   // STANDARD DEFINITIONS:
   // - Opportunity = Any game with at least one bet having EV > 0%
-  // - High Value = Any opportunity with best bet EV > 5%
+  // - High Value (ELITE) = Any game with A-rated bet (EV >= 7%)
   const opportunities = allEdges.map(game => {
     // Find highest EV bet across all markets
     let bestBet = null;
@@ -91,7 +91,8 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
     };
   }).filter(opp => opp.bestBet && opp.bestBet.evPercent > 0);
 
-  const highValueCount = opportunities.filter(o => o.bestBet.evPercent > 5).length;
+  // ELITE = A-rated or higher (7%+ EV) - matches header counter logic
+  const highValueCount = opportunities.filter(o => o.bestBet.evPercent >= 7).length;
   
   // Sort opportunities by EV to get top ones
   const topOpportunities = [...opportunities].sort((a, b) => b.bestBet.evPercent - a.bestBet.evPercent).slice(0, 3);
