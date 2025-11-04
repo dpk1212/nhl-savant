@@ -44,7 +44,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick }) 
   const totalPicks = gameGroups.reduce((sum, group) => sum + group.bets.length, 0);
 
   return (
-    <div className="elevated-card" data-tour-id="picks-summary" style={{
+    <div className="elevated-card" style={{
       background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
       backdropFilter: 'blur(20px) saturate(180%)',
       WebkitBackdropFilter: 'blur(20px) saturate(180%)',

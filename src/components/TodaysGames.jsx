@@ -231,9 +231,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
           </div>
           
           {rating > 0 && (
-            <div data-tour-id="rating-badge">
-              <RatingBadge evPercent={rating} size="small" />
-            </div>
+            <RatingBadge evPercent={rating} size="small" />
           )}
         </div>
         
@@ -465,7 +463,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         
         {/* Win Probabilities as BADGES - promoted */}
       {awayWinProb && homeWinProb && (
-        <div data-tour-id="win-probability" style={{ 
+        <div style={{ 
           display: 'flex',
             gap: '0.5rem',
             marginTop: '0.375rem',
@@ -505,14 +503,12 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       }}>
         {/* Share Button - Compact variant */}
         {bestEdge && !isCollapsed && (
-          <div data-tour-id="share-button">
-            <ShareButton
-              game={game}
-              bestEdge={bestEdge}
-              variant="compact"
-              isMobile={isMobile}
-            />
-          </div>
+          <ShareButton
+            game={game}
+            bestEdge={bestEdge}
+            variant="compact"
+            isMobile={isMobile}
+          />
         )}
         
         {/* Game time - compact */}
@@ -2489,7 +2485,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   return (
     <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '0.75rem' : '1.5rem 1rem' }} className="animate-fade-in">
       {/* ✨ MINIMAL PREMIUM HEADER - Apple/Linear level simplicity */}
-      <div data-tour-id="performance-stats" style={{
+      <div style={{
         background: 'rgba(17, 24, 39, 0.6)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
@@ -3012,7 +3008,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             <CollapsibleGameCard
               key={index}
               id={gameId}
-              data-tour-id={index === 0 ? "game-card" : undefined}
               header={headerContent}
               defaultExpanded={false}
               index={index}
