@@ -97,9 +97,11 @@ const PremiumTour = () => {
       if (!currentStepData.target) {
         setTargetElement(null);
         setCardPosition({
+          position: 'fixed',
           top: '50%',
           left: '50%',
-          transform: 'translate(-50%, -50%)'
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10000
         });
         return;
       }
@@ -125,15 +127,17 @@ const PremiumTour = () => {
           setCardPosition(position);
         }, 300);
       } else {
-        // Element not found - fall back to center
-        console.warn(`Tour target not found: ${currentStepData.target}`);
-        setTargetElement(null);
-        setCardPosition({
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)'
-        });
-      }
+          // Element not found - fall back to center
+          console.warn(`Tour target not found: ${currentStepData.target}`);
+          setTargetElement(null);
+          setCardPosition({
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10000
+          });
+        }
     };
 
     // Small delay to ensure DOM is ready
@@ -193,7 +197,7 @@ const PremiumTour = () => {
           />
 
           {/* Floating tour card */}
-          <div style={cardPosition}>
+          <div style={{ ...cardPosition, position: cardPosition.position || 'fixed', zIndex: 10000 }}>
             <TourCard
               title={currentStepData.title}
               description={currentStepData.description}

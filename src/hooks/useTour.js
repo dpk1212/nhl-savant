@@ -29,15 +29,16 @@ export const useTour = () => {
    * Auto-trigger tour for new users on home page
    */
   useEffect(() => {
+    // DISABLED FOR NOW - causing issues
     // Only auto-trigger on home page
-    if (location.pathname === '/' && isNewUser && !hasCompletedTour && !isTourActive) {
-      // Small delay to ensure page is fully loaded
-      const timer = setTimeout(() => {
-        startTour();
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    }
+    // if (location.pathname === '/' && isNewUser && !hasCompletedTour && !isTourActive) {
+    //   // Small delay to ensure page is fully loaded
+    //   const timer = setTimeout(() => {
+    //     startTour();
+    //   }, 1500);
+    //   
+    //   return () => clearTimeout(timer);
+    // }
   }, [location.pathname, isNewUser, hasCompletedTour, isTourActive, startTour]);
 
   /**
