@@ -21,6 +21,7 @@ import Disclaimer from './pages/Disclaimer';
 import MatchupInsights from './pages/MatchupInsights';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
+import WelcomeModal from './components/WelcomeModal';
 
 // Lazy load 3D splash screen to reduce initial bundle size
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
@@ -195,6 +196,7 @@ function App() {
           loading={loading}
           error={error}
         />
+        <WelcomeModal />
       </Router>
     </ErrorBoundary>
   );
