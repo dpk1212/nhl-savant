@@ -37,23 +37,38 @@ export class GoalieProcessor {
     );
     
     // If no exact match, try matching by last name only (for MoneyPuck data)
+    // CRITICAL FIX: MoneyPuck changed to last names only (Nov 2025)
     if (!goalieRows.length) {
       console.log(`   ⚠️ No exact match, trying last name match for: ${goalieName}`);
-      const lastNameLower = goalieName.toLowerCase().trim();
+      const searchNameLower = goalieName.toLowerCase().trim();
+      
       goalieRows = this.goalieData.filter(g => {
         if (g.team !== teamCode || g.situation !== 'all') return false;
         
-        const fullName = g.name.toLowerCase();
-        const nameParts = fullName.split(' ');
-        const lastName = nameParts[nameParts.length - 1];
+        const fullNameLower = g.name.toLowerCase().trim();
+        const nameParts = fullNameLower.split(' ');
+        const lastNameOnly = nameParts[nameParts.length - 1];
         
-        // Match if last name matches or full name contains the provided name
-        const matches = lastName === lastNameLower || fullName.includes(lastNameLower);
+        // Match if:
+        // 1. Last name matches exactly (Shesterkin = Shesterkin)
+        // 2. Full name contains the search name (Igor Shesterkin contains Shesterkin)
+        // 3. Search name contains the last name (for partial matches)
+        const matches = 
+          lastNameOnly === searchNameLower ||
+          fullNameLower.includes(searchNameLower) ||
+          searchNameLower.includes(lastNameOnly);
+        
         if (matches) {
-          console.log(`   ✓ Last name match found: ${g.name} (${g.team})`);
+          console.log(`   ✓ Last name match found: ${g.name} (${g.team}) matched with "${goalieName}"`);
         }
         return matches;
       });
+      
+      // If multiple matches, take the first one (most common case)
+      if (goalieRows.length > 1) {
+        console.log(`   ℹ️ Multiple matches found, using: ${goalieRows[0].name}`);
+        goalieRows = [goalieRows[0]];
+      }
     }
     
     if (!goalieRows.length) {
