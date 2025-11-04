@@ -21,6 +21,8 @@ import Disclaimer from './pages/Disclaimer';
 import MatchupInsights from './pages/MatchupInsights';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
+import { TourProvider } from './contexts/TourContext';
+import PremiumTour from './components/onboarding/PremiumTour';
 
 // Lazy load 3D splash screen to reduce initial bundle size
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
@@ -184,18 +186,21 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
-        <AppContent 
-          dataProcessor={dataProcessor}
-          oddsData={oddsData}
-          startingGoalies={startingGoalies}
-          goalieData={goalieData}
-          statsAnalyzer={statsAnalyzer}
-          edgeFactorCalc={edgeFactorCalc}
-          loading={loading}
-          error={error}
-        />
-      </Router>
+      <TourProvider>
+        <Router>
+          <AppContent 
+            dataProcessor={dataProcessor}
+            oddsData={oddsData}
+            startingGoalies={startingGoalies}
+            goalieData={goalieData}
+            statsAnalyzer={statsAnalyzer}
+            edgeFactorCalc={edgeFactorCalc}
+            loading={loading}
+            error={error}
+          />
+          <PremiumTour />
+        </Router>
+      </TourProvider>
     </ErrorBoundary>
   );
 }
