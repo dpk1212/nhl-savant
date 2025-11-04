@@ -8,6 +8,7 @@ import { getTeamName } from '../utils/oddsTraderParser';
 import { VisualMetricsGenerator } from '../utils/visualMetricsGenerator';
 import { GoalieProcessor } from '../utils/goalieProcessor';
 import { trackBetView, trackBetExpand, trackBetsLoaded, trackSectionView } from '../utils/analytics';
+import { getETDate } from '../utils/dateUtils';
 import MathBreakdown from './MathBreakdown';
 import BetNarrative from './BetNarrative';
 import QuickSummary from './QuickSummary';
@@ -2233,7 +2234,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           gameTime: formattedGameTime,
           awayTeam: liveScore.awayTeam,
           homeTeam: liveScore.homeTeam,
-          date: new Date().toISOString().split('T')[0],
+          date: getETDate(), // CRITICAL FIX: Use ET date
           edges: {
             moneyline: {
               away: { modelProb: awayWinProb / 100 },

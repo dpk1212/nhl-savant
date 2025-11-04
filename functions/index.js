@@ -31,21 +31,46 @@ exports.updateLiveScores = onSchedule({
   logger.info("Starting live scores update...");
 
   try {
-    // Get today's date (or yesterday if before 6 AM)
+    // CRITICAL FIX: Use ET timezone for date calculation
+    // NHL operates on Eastern Time, so we need to use ET for consistency
     const now = new Date();
-    const hour = now.getHours();
-    const dateToFetch = new Date(now);
-
-    if (hour < 6) {
-      // Before 6 AM, fetch yesterday's games
-      dateToFetch.setDate(dateToFetch.getDate() - 1);
-      logger.info("Before 6 AM, fetching yesterday's games");
+    
+    // Convert to ET and extract hour
+    const etTime = now.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      hour12: false
+    });
+    const etHour = parseInt(etTime);
+    
+    // Get ET date
+    const etDateStr = now.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const [month, day, year] = etDateStr.split('/');
+    let dateStr = `${year}-${month}-${day}`;
+    
+    // If before 6 AM ET, fetch yesterday's games
+    if (etHour < 6) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayET = yesterday.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const [yMonth, yDay, yYear] = yesterdayET.split('/');
+      dateStr = `${yYear}-${yMonth}-${yDay}`;
+      logger.info(`Before 6 AM ET, fetching yesterday's games (${dateStr})`);
     }
 
-    const dateStr = dateToFetch.toISOString().split("T")[0];
     const url = `https://api-web.nhle.com/v1/schedule/${dateStr}`;
 
-    logger.info(`Fetching scores for ${dateStr} from NHL API`);
+    logger.info(`Fetching scores for ${dateStr} (ET) from NHL API`);
 
     const response = await fetch(url);
     if (!response.ok) {

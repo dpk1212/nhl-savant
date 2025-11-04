@@ -107,7 +107,15 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
 
   // Export selections to JSON file for GitHub
   const handleExportToJSON = () => {
-    const today = new Date().toISOString().split('T')[0];
+    // CRITICAL FIX: Use ET date for consistency
+    const etDateStr = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const [month, day, year] = etDateStr.split('/');
+    const today = `${year}-${month}-${day}`;
     
     const output = {
       date: today,
@@ -148,7 +156,15 @@ export default function AdminGoalies({ games, goalieData, onGoalieSelect }) {
 
   // Copy JSON to clipboard
   const handleCopyToClipboard = () => {
-    const today = new Date().toISOString().split('T')[0];
+    // CRITICAL FIX: Use ET date for consistency
+    const etDateStr = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const [month, day, year] = etDateStr.split('/');
+    const today = `${year}-${month}-${day}`;
     
     const output = {
       date: today,

@@ -6,6 +6,7 @@
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/config.js';
+import { getETDate, logDateDebug } from '../utils/dateUtils.js';
 
 const CACHE_TTL_HOURS = 6;
 let PERPLEXITY_API_KEY = null; // Will be fetched from Firestore
@@ -41,7 +42,9 @@ async function getPerplexityKey() {
  * @returns {Promise<string>} Analysis text
  */
 export async function getMatchupAnalysis(awayTeam, homeTeam, forceRefresh = false) {
-  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}`;
+  // CRITICAL FIX: Use ET date to match GitHub Action cache keys
+  const etDate = getETDate();
+  const cacheKey = `${awayTeam}-${homeTeam}-${etDate}`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
   try {
@@ -150,36 +153,52 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
   // CLIENT-SIDE: ONLY reads from cache, NEVER calls API
   // GitHub Action generates content and writes to cache
   
-  // SIMPLIFIED: No timeKey - just use date (we only generate once per day)
-  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}`;
+  // CRITICAL FIX: Use ET date to match GitHub Action cache keys
+  // This fixes the "No cached document found" issue after 8 PM ET
+  const etDate = getETDate();
+  const cacheKey = `${awayTeam}-${homeTeam}-${etDate}`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
-  console.log('🔍 Looking for Expert Analysis:', {
-    awayTeam,
-    homeTeam,
-    cacheKey
-  });
+  console.log('🔍🔍🔍 FIREBASE QUERY FOR HOT TAKES 🔍🔍🔍');
+  console.log('   Away Team:', awayTeam);
+  console.log('   Home Team:', homeTeam);
+  console.log('   Cache Key:', cacheKey);
+  console.log('   Collection: perplexityCache');
+  
+  // Log timezone debug info
+  const { utcDate, etDate: loggedETDate } = logDateDebug('Hot Takes Lookup');
+  if (utcDate !== loggedETDate) {
+    console.log('   ℹ️ Using ET date instead of UTC to match GitHub Action cache keys');
+  }
 
   try {
     const cachedDoc = await getDoc(cacheRef);
+    console.log('   Firebase Response - Exists?:', cachedDoc.exists());
+    
     if (cachedDoc.exists()) {
-      console.log('✅ Found cached document:', cachedDoc.data());
-      const content = cachedDoc.data().content;
-      console.log('📄 Content type:', typeof content);
-      console.log('📄 Content preview:', content.substring(0, 100));
+      const data = cachedDoc.data();
+      console.log('✅ Found cached document!');
+      console.log('   Full Data:', data);
+      console.log('   Content length:', data.content?.length || 0);
+      console.log('   Content preview:', data.content?.substring(0, 200));
       
-      const parsed = JSON.parse(content);
+      const parsed = JSON.parse(data.content);
       console.log('✅ Parsed', parsed.length, 'insight cards');
       return parsed;
     } else {
-      console.log('❌ No cached document found at:', cacheKey);
+      console.log('❌ NO DOCUMENT EXISTS AT THIS KEY');
+      console.log('   Check if GitHub Action ran today');
+      console.log('   Check Firebase console for key:', cacheKey);
     }
   } catch (error) {
-    console.error('❌ Error loading Expert Analysis:', error);
+    console.error('❌ ERROR loading Expert Analysis:', error);
+    console.error('   Error details:', error.message);
+    console.error('   Stack:', error.stack);
   }
   
   // NO API CALL - Client never generates content
   // Return empty array to show "Waiting" state
+  console.log('   Returning empty array (no insights)');
   return [];
 }
 
@@ -192,7 +211,9 @@ export async function getMatchupInsightCards(awayTeam, homeTeam) {
  * @returns {Promise<string|null>} Bet hook text or null if not available
  */
 export async function getBetHook(awayTeam, homeTeam) {
-  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-bet-hook`;
+  // CRITICAL FIX: Use ET date to match GitHub Action cache keys
+  const etDate = getETDate();
+  const cacheKey = `${awayTeam}-${homeTeam}-${etDate}-bet-hook`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
   console.log('🔍 Looking for Bet Hook:', {
@@ -226,7 +247,9 @@ export async function getBetHook(awayTeam, homeTeam) {
  * @returns {Promise<string|null>} Full story text or null if not available
  */
 export async function getFullStory(awayTeam, homeTeam) {
-  const cacheKey = `${awayTeam}-${homeTeam}-${new Date().toISOString().split('T')[0]}-full-story`;
+  // CRITICAL FIX: Use ET date to match GitHub Action cache keys
+  const etDate = getETDate();
+  const cacheKey = `${awayTeam}-${homeTeam}-${etDate}-full-story`;
   const cacheRef = doc(db, 'perplexityCache', cacheKey);
 
   console.log('🔍 Looking for Full Story:', {
@@ -260,7 +283,8 @@ export async function getFullStory(awayTeam, homeTeam) {
  * @returns {Promise<Object>} Goalies data with games array
  */
 export async function fetchStartingGoalies(date = null, dbInstance = null) {
-  const targetDate = date || new Date().toISOString().split('T')[0];
+  // CRITICAL FIX: Use ET date if no date provided
+  const targetDate = date || getETDate();
   const cacheKey = `starting-goalies-${targetDate}`;
   const firestore = dbInstance || db;
   const cacheRef = doc(firestore, 'perplexityCache', cacheKey);

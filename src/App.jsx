@@ -21,6 +21,8 @@ import Disclaimer from './pages/Disclaimer';
 import MatchupInsights from './pages/MatchupInsights';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
+import OnboardingModal from './components/onboarding/OnboardingModal';
+import { hasCompletedOnboarding } from './components/onboarding/onboardingUtils';
 
 // Lazy load 3D splash screen to reduce initial bundle size
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
@@ -37,6 +39,7 @@ function App() {
   const [scheduleHelper, setScheduleHelper] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // useEffect hook - MUST be before any returns
   useEffect(() => {
@@ -128,6 +131,15 @@ function App() {
         setOddsData(oddsFiles);
         
         console.log('✅ All data loaded successfully');
+        
+        // Check if user should see onboarding (after data loads, with delay)
+        setTimeout(() => {
+          if (!hasCompletedOnboarding()) {
+            console.log('👋 First-time visitor - showing onboarding');
+            setShowOnboarding(true);
+          }
+        }, 2000); // 2 second delay after data loads
+        
       } catch (err) {
         console.error('Failed to load NHL data:', err);
         setError('Failed to load NHL data. Please check if teams.csv is available.');
@@ -193,6 +205,8 @@ function App() {
           edgeFactorCalc={edgeFactorCalc}
           loading={loading}
           error={error}
+          showOnboarding={showOnboarding}
+          setShowOnboarding={setShowOnboarding}
         />
       </Router>
     </ErrorBoundary>
@@ -200,7 +214,7 @@ function App() {
 }
 
 // Separate component to use useLocation hook
-function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc, loading, error }) {
+function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc, loading, error, showOnboarding, setShowOnboarding }) {
   const location = useLocation();
   const pageStartTime = useRef(Date.now());
 
@@ -253,6 +267,16 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
         
         {/* Legal footer on every page */}
         <LegalFooter />
+        
+        {/* Premium Onboarding Modal for first-time visitors */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={() => {
+            console.log('✅ Onboarding completed!');
+            setShowOnboarding(false);
+          }}
+        />
       </div>
     );
   }

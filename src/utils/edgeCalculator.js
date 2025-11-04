@@ -64,7 +64,7 @@ export class EdgeCalculator {
           gameTime: game.gameTime,
           awayTeam: game.awayTeam,
           homeTeam: game.homeTeam,
-          date: game.date || new Date().toISOString().split('T')[0], // Add date for Firebase tracking
+          date: game.date || getETDate(), // CRITICAL FIX: Use ET date for Firebase tracking
           startTimestamp: game.startTimestamp || null,
           goalies: {
             away: awayGoalie,

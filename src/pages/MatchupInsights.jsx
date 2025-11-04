@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import AIInsightCards from '../components/matchup/AIInsightCards';
 import GameSelector from '../components/matchup/GameSelector';
+import { getETDate } from '../utils/dateUtils';
 
 export default function MatchupInsights(props) {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -50,7 +51,7 @@ export default function MatchupInsights(props) {
           awayTeam: game.away || game.awayTeam,
           homeTeam: game.home || game.homeTeam || game.homeCode,
           gameTime: formattedTime,
-          date: new Date().toISOString().split('T')[0],
+          date: getETDate(), // CRITICAL FIX: Use ET date
           ...game
         };
       });

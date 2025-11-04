@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { getETDate, getETYesterday } from '../utils/dateUtils';
 
 /**
  * Hook to fetch and subscribe to today's bets from Firebase
@@ -13,15 +14,12 @@ export function useFirebaseBets() {
   const [error, setError] = useState(null);
   
   useEffect(() => {
+    // CRITICAL FIX: Use ET dates to match bet tracker dates
     // Get last 2 days of bets (covers all edge cases with timezones)
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const today = getETDate();
+    const yesterdayStr = getETYesterday();
     
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    console.log(`📊 Fetching Firebase bets for ${yesterdayStr} AND ${today}`);
+    console.log(`📊 Fetching Firebase bets for ${yesterdayStr} AND ${today} (ET)`);
     
     // Simple query - get all recent bets and filter in memory
     const unsubscribe = onSnapshot(

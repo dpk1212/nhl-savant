@@ -233,9 +233,20 @@ async function main() {
     process.exit(1);
   }
 
-  // Get target date from args or use today
-  const targetDate = process.argv[2] || new Date().toISOString().split('T')[0];
-  console.log(`📅 Fetching starting goalies for ${targetDate}\n`);
+  // Get target date from args or use today (ET)
+  // CRITICAL FIX: Use ET date for consistency
+  let targetDate = process.argv[2];
+  if (!targetDate) {
+    const etDateStr = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const [month, day, year] = etDateStr.split('/');
+    targetDate = `${year}-${month}-${day}`;
+  }
+  console.log(`📅 Fetching starting goalies for ${targetDate} (ET)\n`);
 
   // Fetch goalies using Perplexity AI
   const goaliesData = await fetchStartingGoalies(targetDate, apiKey);

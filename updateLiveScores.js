@@ -92,8 +92,16 @@ class NHLScoreUpdater {
    * Fetch game data from NHL API for specified date
    */
   async fetchGames(date = null) {
+    // CRITICAL FIX: Use ET date if no date provided
     if (!date) {
-      date = new Date().toISOString().split('T')[0];
+      const etDateStr = new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const [month, day, year] = etDateStr.split('/');
+      date = `${year}-${month}-${day}`;
     }
 
     const url = `${this.nhlApiBase}/schedule/${date}`;

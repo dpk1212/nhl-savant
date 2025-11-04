@@ -1,5 +1,6 @@
 import { collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, setDoc, getDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from './config';
+import { getETDate } from '../utils/dateUtils';
 
 export class BetTracker {
   
@@ -29,8 +30,8 @@ export class BetTracker {
       return;
     }
     
-    // Get date first (game.date might be undefined)
-    const gameDate = game.date || new Date().toISOString().split('T')[0];
+    // CRITICAL FIX: Get date using ET timezone (game.date might be undefined)
+    const gameDate = game.date || getETDate();
     const betId = this.generateBetId(gameDate, game.awayTeam, game.homeTeam, bestEdge.market, bestEdge);
     
     // If generateBetId returns null (totals bet), skip
