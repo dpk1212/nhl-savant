@@ -2764,26 +2764,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Compact Picks Bar - USE FIREBASE BETS DIRECTLY, GROUPED BY GAME */}
       {firebaseBets && firebaseBets.length > 0 && (() => {
-        // CRITICAL FIX: Only show bets for games that are scheduled TODAY
-        // Get list of today's game matchups from allEdges (actual games with odds)
-        const todaysGameMatchups = new Set(
-          allEdges.map(edge => `${edge.game.awayTeam}_${edge.game.homeTeam}`)
-        );
+        // CRITICAL FIX: Only show bets from TODAY (ET timezone)
+        // useFirebaseBets already filters to today + yesterday, so we just need today
+        const todayET = getETDate();
         
-        console.log('📅 Today\'s games:', Array.from(todaysGameMatchups));
-        console.log('📊 All Firebase bets dates:', firebaseBets.map(b => `${b.date}: ${b.game.awayTeam}@${b.game.homeTeam}`));
+        console.log('📅 Today (ET):', todayET);
+        console.log('📊 All Firebase bets:', firebaseBets.map(b => `${b.date}: ${b.game.awayTeam}@${b.game.homeTeam} (${b.status})`));
         
         const qualityBets = firebaseBets.filter(bet => {
-          const gameKey = `${bet.game.awayTeam}_${bet.game.homeTeam}`;
-          const isToday = todaysGameMatchups.has(gameKey);
-          
           return (
+            bet.date === todayET &&  // ONLY TODAY'S BETS (ET timezone)
             bet.status === 'PENDING' && 
             bet.prediction?.rating && 
-            bet.prediction.rating !== 'C' &&
-            isToday  // ONLY SHOW BETS FOR TODAY'S GAMES
+            bet.prediction.rating !== 'C'
           );
         });
+        
+        console.log('✅ Filtered to today:', qualityBets.map(b => `${b.game.awayTeam}@${b.game.homeTeam}`));
 
         // Group bets by game
         const betsByGame = {};
