@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, HelpCircle } from 'lucide-react';
+import { useTour } from '../hooks/useTour';
 
 const Navigation = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(null);
+  const { startTour, shouldShowTour } = useTour();
   
   // Premium navigation links with Lucide icons
   const navLinks = [
@@ -18,7 +20,7 @@ const Navigation = () => {
   ];
 
   return (
-    <nav style={{
+    <nav data-tour-id="navigation" style={{
       position: 'sticky',
       top: 0,
       zIndex: 1000,
@@ -121,6 +123,45 @@ const Navigation = () => {
               </Link>
             );
           })}
+
+          {/* Help/Tour Button - Desktop */}
+          <button
+            onClick={startTour}
+            style={{
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '10px',
+              background: shouldShowTour 
+                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)'
+                : 'transparent',
+              border: shouldShowTour 
+                ? '1px solid rgba(212, 175, 55, 0.3)'
+                : '1px solid transparent',
+              color: shouldShowTour ? '#D4AF37' : 'rgba(255, 255, 255, 0.7)',
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              animation: shouldShowTour ? 'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)';
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.3)';
+              e.currentTarget.style.color = '#D4AF37';
+            }}
+            onMouseLeave={(e) => {
+              if (!shouldShowTour) {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+              }
+            }}
+            title="Show tour"
+            aria-label="Show onboarding tour"
+          >
+            <HelpCircle size={18} strokeWidth={2.5} />
+          </button>
         </div>
 
         {/* Premium Mobile Menu Button */}
@@ -226,6 +267,54 @@ const Navigation = () => {
               </Link>
             );
           })}
+
+          {/* Help/Tour Button - Mobile */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              startTour();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              padding: '1rem 1.25rem',
+              borderRadius: '10px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              color: shouldShowTour ? '#D4AF37' : 'rgba(255, 255, 255, 0.8)',
+              background: shouldShowTour 
+                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)'
+                : 'transparent',
+              border: shouldShowTour 
+                ? '1px solid rgba(212, 175, 55, 0.3)'
+                : '1px solid transparent',
+              boxShadow: shouldShowTour 
+                ? '0 4px 12px rgba(212, 175, 55, 0.2)'
+                : 'none',
+              marginTop: '0.5rem',
+              transition: 'all 0.3s ease',
+              animation: `slideIn 0.3s ease-out ${navLinks.length * 0.05}s both`,
+              cursor: 'pointer',
+              width: '100%',
+              textAlign: 'left'
+            }}
+          >
+            <HelpCircle size={20} strokeWidth={2.5} />
+            Show Tour
+            {shouldShowTour && (
+              <div style={{
+                marginLeft: 'auto',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#D4AF37',
+                boxShadow: '0 0 8px rgba(212, 175, 55, 0.6)',
+                animation: 'pulse 2s infinite'
+              }} />
+            )}
+          </button>
         </div>
       )}
 

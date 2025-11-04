@@ -9,7 +9,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
  *   <YourContent />
  * </CollapsibleGameCard>
  */
-const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false, onToggle, id }) => {
+const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false, onToggle, id, ...otherProps }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const handleToggle = () => {
@@ -29,6 +29,7 @@ const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index 
   return (
     <div 
       id={id}
+      {...otherProps}
       className="elevated-card game-card hover-lift"
       style={{
         animationDelay: `${index * 0.1}s`,
