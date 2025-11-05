@@ -810,6 +810,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   const bookmarked = isBookmarked(betId);
   
   const handleToggleBookmark = () => {
+    // Generate rating from evPercent if not present
+    const rating = bestEdge.rating || getRating(bestEdge.evPercent).grade;
+    
     toggleBookmark({
       betId,
       game: {
@@ -823,8 +826,8 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
         pick: bestEdge.pick,
         odds: bestEdge.odds,
         evPercent: bestEdge.evPercent,
-        rating: bestEdge.rating,
-        team: bestEdge.team
+        rating: rating,
+        team: bestEdge.team || null
       }
     });
   };
