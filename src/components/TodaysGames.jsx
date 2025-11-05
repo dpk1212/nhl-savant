@@ -2127,6 +2127,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [expandedGame, setExpandedGame] = useState(null);
   const { scores: liveScores } = useLiveScores(); // Real-time live scores from Firestore
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
+  const { bookmarks } = useBookmarks(); // Fetch user bookmarks
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   
   // DISCLAIMER: State for first-time user acknowledgment
@@ -2415,6 +2416,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     
     return () => unsubscribe();
   }, []);
+  
+  // Calculate bookmark statistics for top bar
+  const bookmarkStats = useMemo(() => {
+    if (!bookmarks || bookmarks.length === 0 || !firebaseBets) {
+      return { count: 0, profit: 0 };
+    }
+    
+    let totalProfit = 0;
+    
+    // Match bookmarks with completed bets to calculate profit
+    bookmarks.forEach(bookmark => {
+      const matchedBet = firebaseBets.find(bet => bet.id === bookmark.betId && bet.status === 'COMPLETED');
+      if (matchedBet?.result) {
+        totalProfit += matchedBet.result.profit || 0;
+      }
+    });
+    
+    return { count: bookmarks.length, profit: totalProfit };
+  }, [bookmarks, firebaseBets]);
 
   // Smooth scroll handler for QuickSummary navigation
   const handleGameClick = (gameName) => {
@@ -2797,6 +2817,69 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               </span>
               {!isMobile && <TrendingUp size={12} color={betStats.totalProfit >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2.5} style={{ opacity: 0.7 }} />}
             </div>
+            
+            {/* Bookmarked Picks - clickable to My Picks page */}
+            {bookmarkStats.count > 0 && (
+              <div 
+                onClick={() => navigate('/my-picks')}
+                style={{
+                  padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
+                  background: 'rgba(212, 175, 55, 0.15)',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(212, 175, 55, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: isMobile ? '0.375rem' : '0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(212, 175, 55, 0.22)';
+                  e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.6)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                {/* Shimmer effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent)',
+                  animation: 'shimmer 3s infinite'
+                }} />
+                
+                <span style={{
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
+                  fontWeight: '700',
+                  color: '#D4AF37',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  {bookmarkStats.count}
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(212, 175, 55, 0.95)',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  Saved
+                </span>
+                {!isMobile && <Bookmark size={12} color="#D4AF37" strokeWidth={2.5} style={{ opacity: 0.7, position: 'relative', zIndex: 1 }} />}
+              </div>
+            )}
           </div>
         </div>
         
