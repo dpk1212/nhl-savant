@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, Bookmark } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
