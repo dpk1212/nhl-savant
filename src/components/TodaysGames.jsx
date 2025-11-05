@@ -45,6 +45,8 @@ import DisclaimerModal from './DisclaimerModal';
 import CompactPicksBar from './CompactPicksBar';
 import { getRating } from './RatingBadge';
 import ShareButton from './ShareButton';
+import BookmarkButton from './BookmarkButton';
+import { useBookmarks } from '../hooks/useBookmarks';
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -652,6 +654,8 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 
 // Hero Bet Card - Main value proposition
 const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
+  const { toggleBookmark, isBookmarked } = useBookmarks();
+  
   if (!bestEdge) {
     // Premium CTA when no bet recommendation
     return (
@@ -801,6 +805,30 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   
   const insights = getSupportingInsights();
   
+  // Generate bet ID for bookmarking
+  const betId = `${game.date || new Date().toISOString().split('T')[0]}_${game.awayTeam}_${game.homeTeam}_${bestEdge.market}_${bestEdge.pick.replace(/\s+/g, '_')}`;
+  const bookmarked = isBookmarked(betId);
+  
+  const handleToggleBookmark = () => {
+    toggleBookmark({
+      betId,
+      game: {
+        awayTeam: game.awayTeam,
+        homeTeam: game.homeTeam,
+        gameTime: game.gameTime,
+        gameDate: game.date || new Date().toISOString().split('T')[0]
+      },
+      bet: {
+        market: bestEdge.market,
+        pick: bestEdge.pick,
+        odds: bestEdge.odds,
+        evPercent: bestEdge.evPercent,
+        rating: bestEdge.rating,
+        team: bestEdge.team
+      }
+    });
+  };
+  
   return (
     <div style={{ 
       background: GRADIENTS.hero,
@@ -816,6 +844,20 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
       {bestEdge.evPercent > 10 && (
         <div className="shimmer-overlay" />
       )}
+      
+      {/* Bookmark button in top-right corner */}
+      <div style={{
+        position: 'absolute',
+        top: isMobile ? '0.75rem' : '0.875rem',
+        right: isMobile ? '0.75rem' : '0.875rem',
+        zIndex: 2
+      }}>
+        <BookmarkButton
+          isBookmarked={bookmarked}
+          onClick={handleToggleBookmark}
+          size={isMobile ? 'small' : 'medium'}
+        />
+      </div>
       
       {/* Best bet recommendation */}
       <div style={{ 

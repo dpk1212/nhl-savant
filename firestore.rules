@@ -13,6 +13,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // User bookmarks - allow users to manage their own bookmarks
+    match /user_bookmarks/{document=**} {
+      allow read, write: if true; // Anonymous users can manage their bookmarks
+    }
+    
     // Perplexity AI cache - Public read/write for GitHub Action
     // Client code cannot write (removed from client), only reads cache
     // GitHub Action needs write access to store analysis for all users

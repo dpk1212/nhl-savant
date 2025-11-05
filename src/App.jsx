@@ -19,6 +19,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LegalFooter from './components/LegalFooter';
 import Disclaimer from './pages/Disclaimer';
 import MatchupInsights from './pages/MatchupInsights';
+import MyPicks from './pages/MyPicks';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 import WelcomeModal from './components/WelcomeModal';
@@ -241,6 +242,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 statsAnalyzer={statsAnalyzer}
                 edgeFactorCalc={edgeFactorCalc}
               />} />
+              <Route path="/my-picks" element={<MyPicks />} />
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/matchup-insights" element={<MatchupInsights 
                 dataProcessor={dataProcessor} 
