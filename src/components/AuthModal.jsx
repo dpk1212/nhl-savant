@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -33,7 +34,8 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
     pro: 'SAVANT PRO'
   };
 
-  return (
+  // Render modal outside the DOM hierarchy using portal to avoid z-index issues
+  const modalContent = (
     <div 
       style={{
         position: 'fixed',
@@ -287,6 +289,9 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
       `}</style>
     </div>
   );
+
+  // Render to document.body to escape stacking context issues
+  return createPortal(modalContent, document.body);
 };
 
 export default AuthModal;
