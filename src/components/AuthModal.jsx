@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -33,7 +34,7 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
     pro: 'SAVANT PRO'
   };
 
-  return (
+  const modalContent = (
     <div 
       style={{
         position: 'fixed',
@@ -287,6 +288,8 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
       `}</style>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default AuthModal;
