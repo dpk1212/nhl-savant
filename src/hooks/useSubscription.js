@@ -1,14 +1,48 @@
 import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../firebase/config';
 
 /**
  * Subscription hook for managing user subscription state
- * Syncs with Firestore users/{uid} collection in real-time
+ * 
+ * NEW APPROACH:
+ * 1. On mount: Call Cloud Function to check Stripe directly
+ * 2. Listen to Firestore for cached updates (faster subsequent loads)
+ * 3. Periodically refresh from Stripe (every 5 min)
  */
 export function useSubscription(user) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lastCheck, setLastCheck] = useState(null);
+
+  // Function to check subscription via Cloud Function (source of truth: Stripe)
+  const refreshSubscriptionFromStripe = async () => {
+    if (!user?.email) return;
+
+    try {
+      console.log('Checking subscription status from Stripe...');
+      const checkSubscription = httpsCallable(functions, 'checkSubscription');
+      const result = await checkSubscription({ email: user.email });
+      console.log('Subscription result from Stripe:', result.data);
+      
+      setSubscription(result.data);
+      setLastCheck(Date.now());
+      setLoading(false);
+    } catch (error) {
+      console.error('Error checking subscription from Stripe:', error);
+      // Fallback to free tier on error
+      setSubscription({
+        tier: 'free',
+        status: 'active',
+        isActive: false,
+        isTrial: false,
+        daysRemaining: 0,
+        error: error.message
+      });
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user?.uid) {
@@ -23,7 +57,10 @@ export function useSubscription(user) {
       return;
     }
 
-    // Subscribe to real-time updates from Firestore
+    // 1. First, check Stripe directly (source of truth)
+    refreshSubscriptionFromStripe();
+
+    // 2. Also listen to Firestore for cached updates (faster on subsequent loads)
     const userRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -72,14 +109,27 @@ export function useSubscription(user) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user?.uid]);
+    // 3. Set up periodic refresh from Stripe (every 5 minutes)
+    const refreshInterval = setInterval(() => {
+      const timeSinceLastCheck = Date.now() - (lastCheck || 0);
+      if (timeSinceLastCheck > 5 * 60 * 1000) { // 5 minutes
+        console.log('Refreshing subscription from Stripe (periodic check)...');
+        refreshSubscriptionFromStripe();
+      }
+    }, 60 * 1000); // Check every minute if refresh is needed
+
+    return () => {
+      unsubscribe();
+      clearInterval(refreshInterval);
+    };
+  }, [user?.uid, user?.email]);
 
   return {
     ...subscription,
     loading,
     isPremium: subscription?.isActive || false,
-    isFree: subscription?.tier === 'free' || !subscription?.isActive
+    isFree: subscription?.tier === 'free' || !subscription?.isActive,
+    refresh: refreshSubscriptionFromStripe // Expose manual refresh
   };
 }
 
