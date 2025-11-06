@@ -75,10 +75,13 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 999999,
+        zIndex: 2147483647,
         padding: '1rem',
         animation: 'fadeIn 0.2s ease-out',
-        overflow: 'auto'
+        overflow: 'auto',
+        isolation: 'isolate',
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)'
       }}
       onClick={onClose}
     >
