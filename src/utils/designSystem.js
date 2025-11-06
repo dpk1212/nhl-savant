@@ -58,10 +58,10 @@ export const TYPOGRAPHY = {
 
 // Mobile Spacing Constants
 export const MOBILE_SPACING = {
-  cardPadding: '0.875rem',
-  sectionGap: '0.75rem',
-  innerPadding: '0.75rem',
-  borderRadius: '10px'
+  cardPadding: '1.25rem',
+  sectionGap: '1rem',
+  innerPadding: '1rem',
+  borderRadius: '12px'
 };
 
 // Gradient Presets

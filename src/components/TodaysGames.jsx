@@ -2627,20 +2627,20 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   }
 
   return (
-    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '0.75rem' : '1.5rem 1rem' }} className="animate-fade-in">
+    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }} className="animate-fade-in">
       {/* ✨ MINIMAL PREMIUM HEADER - Apple/Linear level simplicity */}
       <div style={{
         background: 'rgba(17, 24, 39, 0.6)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         border: '1px solid rgba(255, 255, 255, 0.06)',
-        borderRadius: '10px',
-        padding: isMobile ? '0.625rem 0.875rem' : '0.75rem 1.25rem',
-        marginBottom: isMobile ? '1rem' : '1.5rem',
+        borderRadius: '12px',
+        padding: isMobile ? '0.875rem 1rem' : '0.75rem 1.25rem',
+        marginBottom: isMobile ? '1.25rem' : '1.5rem',
           display: 'flex', 
           alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '1rem',
+        gap: '1.25rem',
         flexWrap: 'wrap'
       }}>
         {/* Left: Date/Time info - clean & minimal */}
@@ -2708,38 +2708,38 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           </div>
           
       {/* Model Performance - Ultra Slim Bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
+          <div style={{ 
+                      display: 'flex',
+          alignItems: 'center',
         justifyContent: 'space-between',
-        gap: isMobile ? '0.5rem' : '1rem',
-        padding: isMobile ? '0.75rem 0' : '0.875rem 0',
-        marginBottom: isMobile ? '1rem' : '1.25rem',
+        gap: isMobile ? '0.875rem' : '1rem',
+        padding: isMobile ? '1rem 0' : '0.875rem 0',
+        marginBottom: isMobile ? '1.5rem' : '1.25rem',
         borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
-        flexWrap: 'wrap'
-      }}>
+          flexWrap: 'wrap'
+          }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Target size={14} color="#8B5CF6" strokeWidth={2.5} style={{ opacity: 0.7 }} />
-            <span style={{ 
+            <span style={{
               fontSize: isMobile ? '0.75rem' : '0.813rem',
               fontWeight: '600',
               color: 'rgba(148, 163, 184, 0.9)',
               letterSpacing: '0.02em',
               textTransform: 'uppercase'
-            }}>
+              }}>
               Model
             </span>
-          </div>
-          
+            </div>
+            
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
               <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: '#A78BFA' }}>
                 {betStats.totalBets}
-              </span>
+            </span>
               <span style={{ fontSize: '0.625rem', color: 'rgba(167, 139, 250, 0.7)', fontWeight: '500' }}>
                 bets
-              </span>
+            </span>
             </div>
             
             <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
@@ -2747,66 +2747,66 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
               <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444' }}>
                 {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
-              </span>
+            </span>
               <span style={{ fontSize: '0.625rem', color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)', fontWeight: '500' }}>
                 profit
-              </span>
+            </span>
             </div>
-            
+
             {bookmarkStats.count > 0 && (
               <>
                 <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
                 
-                <div 
+            <div 
                   onClick={() => navigate('/my-picks')}
-                  style={{
-                    display: 'flex',
+              style={{
+                display: 'flex',
                     alignItems: 'baseline',
                     gap: '0.25rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
                     e.currentTarget.style.opacity = '0.8';
-                  }}
-                  onMouseLeave={(e) => {
+              }}
+              onMouseLeave={(e) => {
                     e.currentTarget.style.opacity = '1';
                   }}
                 >
                   <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
                     {bookmarkStats.count}
-                  </span>
+              </span>
                   <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '500' }}>
                     saved
-                  </span>
+              </span>
                 </div>
               </>
             )}
           </div>
-        </div>
-        
+            </div>
+
         <button
-          onClick={() => navigate('/performance')}
-          style={{
+              onClick={() => navigate('/performance')}
+              style={{
             padding: '0.375rem 0.75rem',
             background: 'transparent',
             border: '1px solid rgba(139, 92, 246, 0.25)',
-            borderRadius: '6px',
+                borderRadius: '6px',
             color: '#A78BFA',
             fontSize: '0.688rem',
             fontWeight: '600',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
+                display: 'flex',
+                alignItems: 'center',
             gap: '0.25rem',
             letterSpacing: '0.02em'
-          }}
-          onMouseEnter={(e) => {
+              }}
+              onMouseEnter={(e) => {
             e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
             e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
-          }}
-          onMouseLeave={(e) => {
+              }}
+              onMouseLeave={(e) => {
             e.currentTarget.style.background = 'transparent';
             e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.25)';
           }}
@@ -2814,7 +2814,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           Details
           <ChevronRight size={12} />
         </button>
-      </div>
+        </div>
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 

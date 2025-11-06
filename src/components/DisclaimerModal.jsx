@@ -52,7 +52,7 @@ const DisclaimerModal = ({ isVisible, onAccept, onDecline }) => {
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(8px)',
-        zIndex: 9998,
+        zIndex: 999998,
         animation: 'fadeIn 0.3s ease'
       }} />
 
@@ -69,7 +69,7 @@ const DisclaimerModal = ({ isVisible, onAccept, onDecline }) => {
         borderRadius: '16px',
         border: '2px solid rgba(251, 191, 36, 0.4)',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-        zIndex: 9999,
+        zIndex: 999999,
         display: 'flex',
         flexDirection: 'column',
         animation: 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
