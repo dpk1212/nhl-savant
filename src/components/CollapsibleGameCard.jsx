@@ -9,8 +9,15 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
  *   <YourContent />
  * </CollapsibleGameCard>
  */
-const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false, onToggle, id, ...otherProps }) => {
+const CollapsibleGameCard = ({ header, children, defaultExpanded = false, index = 0, isMobile = false, onToggle, id, forceCollapse, ...otherProps }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  // Allow parent to force collapse (for paywall exits)
+  React.useEffect(() => {
+    if (forceCollapse) {
+      setIsExpanded(false);
+    }
+  }, [forceCollapse]);
 
   const handleToggle = () => {
     const newState = !isExpanded;

@@ -54,20 +54,28 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
-export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats, isFree, hasReachedLimit, isPremium }) {
+export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats, isFree, hasReachedLimit, isPremium, onUpgradeClick }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
   
   // Detect mobile for compact layout
   const isMobile = window.innerWidth <= 768;
 
-  // PREMIUM ONLY - Hide for free users
-  if (!isPremium) {
-    return null;
-  }
-
   if (!gameGroups || gameGroups.length === 0) {
     return null;
   }
+
+  const handleToggleExpand = () => {
+    // FREE USERS: Show paywall when trying to expand
+    if (!isPremium && !isExpanded) {
+      if (onUpgradeClick) {
+        onUpgradeClick();
+      }
+      return;
+    }
+    
+    // PREMIUM USERS: Toggle normally
+    setIsExpanded(!isExpanded);
+  };
 
   const scrollToGames = () => {
     if (onViewAll) {
@@ -96,7 +104,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
     }}>
       {/* PREMIUM Sleek Header - Clean & Minimal */}
       <div 
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleToggleExpand}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(212, 175, 55, 0.03)';
           e.currentTarget.style.borderRadius = '8px';
