@@ -31,6 +31,24 @@ service cloud.firestore {
       allow read: if true;  // Client needs to read API keys
       allow write: if false;  // No writes from client
     }
+    
+    // User accounts - users can manage their own account
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // Users cannot delete their own account documents
+    }
+    
+    // User usage tracking - users can manage their own usage data
+    match /user_usage/{usageDoc} {
+      // Usage docs are formatted as {userId}_{date}
+      // Extract userId from the document ID
+      allow read: if request.auth != null && 
+                     usageDoc.matches('^' + request.auth.uid + '_.*$');
+      allow write: if request.auth != null && 
+                      usageDoc.matches('^' + request.auth.uid + '_.*$');
+    }
   }
 }
 

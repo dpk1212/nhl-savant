@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getAnalytics, logEvent, setUserProperties } from 'firebase/analytics';
 
 const firebaseConfig = {
@@ -18,6 +18,15 @@ export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
 export const auth = getAuth(app);
+
+// Set up auth persistence
+setPersistence(auth, browserLocalPersistence);
+
+// Configure Google Auth Provider
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Initialize Analytics (only in browser, not during SSR)
 let analytics = null;

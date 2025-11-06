@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, Bookmark } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, Bookmark, User, LogOut, CreditCard, Crown } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
+import AuthModal from './AuthModal';
 
 const Navigation = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  
+  const { user, signOut, loading: authLoading } = useAuth();
+  const { tier, isPremium, isTrial, daysRemaining, loading: subscriptionLoading } = useSubscription(user);
   
   // Premium navigation links with Lucide icons
   const navLinks = [
@@ -122,6 +130,237 @@ const Navigation = () => {
               </Link>
             );
           })}
+          
+          {/* Upgrade Button (Free Users Only) */}
+          {user && !isPremium && !authLoading && !subscriptionLoading && (
+            <Link
+              to="/pricing"
+              style={{
+                padding: '0.625rem 1.125rem',
+                borderRadius: '10px',
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                textDecoration: 'none',
+                color: '#0A0E27',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)',
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                animation: 'pulse 2s ease-in-out infinite'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.3)';
+              }}
+            >
+              <Crown size={16} strokeWidth={2.5} />
+              Upgrade
+            </Link>
+          )}
+          
+          {/* User Menu or Sign In Button */}
+          {!authLoading && (
+            user ? (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  style={{
+                    padding: '0.5rem',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                    border: '2px solid rgba(212, 175, 55, 0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.3)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName || 'User'} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                  ) : (
+                    <User size={20} color="#D4AF37" strokeWidth={2.5} />
+                  )}
+                </button>
+                
+                {/* User Dropdown Menu */}
+                {userMenuOpen && (
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 0.5rem)',
+                      right: 0,
+                      background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(212, 175, 55, 0.2)',
+                      borderRadius: '12px',
+                      padding: '0.75rem',
+                      minWidth: '220px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                      animation: 'slideDown 0.2s ease-out',
+                      zIndex: 1000
+                    }}
+                    onMouseLeave={() => setUserMenuOpen(false)}
+                  >
+                    {/* User Info */}
+                    <div style={{ padding: '0.75rem', borderBottom: '1px solid rgba(148, 163, 184, 0.1)', marginBottom: '0.5rem' }}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#F1F5F9', marginBottom: '0.25rem' }}>
+                        {user.displayName || user.email}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.6)' }}>
+                        {isPremium ? (
+                          <span style={{ color: '#D4AF37', fontWeight: '600' }}>
+                            {tier?.toUpperCase()} {isTrial && `(${daysRemaining}d trial)`}
+                          </span>
+                        ) : (
+                          <span>Free Tier</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Menu Items */}
+                    <Link
+                      to="/account"
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: 'rgba(241, 245, 249, 0.9)',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        marginBottom: '0.25rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <User size={16} />
+                      Account
+                    </Link>
+                    
+                    {isPremium && (
+                      <Link
+                        to="/account"
+                        onClick={() => setUserMenuOpen(false)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          textDecoration: 'none',
+                          color: 'rgba(241, 245, 249, 0.9)',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease',
+                          marginBottom: '0.25rem'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <CreditCard size={16} />
+                        Billing
+                      </Link>
+                    )}
+                    
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setUserMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#EF4444',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        width: '100%',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                style={{
+                  padding: '0.625rem 1.125rem',
+                  borderRadius: '10px',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  color: '#60A5FA',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.25)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <User size={16} strokeWidth={2.5} />
+                Sign In
+              </button>
+            )
+          )}
         </div>
 
         {/* Premium Mobile Menu Button */}
@@ -269,11 +508,19 @@ const Navigation = () => {
           }
         }
         
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+        }
+        
         /* Smooth scroll behavior */
         html {
           scroll-behavior: smooth;
         }
       `}</style>
+      
+      {/* Auth Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </nav>
   );
 };

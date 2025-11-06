@@ -20,6 +20,8 @@ import LegalFooter from './components/LegalFooter';
 import Disclaimer from './pages/Disclaimer';
 import MatchupInsights from './pages/MatchupInsights';
 import MyPicks from './pages/MyPicks';
+import Pricing from './pages/Pricing';
+import Account from './pages/Account';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 import WelcomeModal from './components/WelcomeModal';
@@ -252,6 +254,8 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/inspector" element={<DataInspector dataProcessor={dataProcessor} />} />
               <Route path="/performance" element={<PerformanceDashboard />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/account" element={<Account />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
           </Routes>
         </main>
