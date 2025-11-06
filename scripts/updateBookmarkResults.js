@@ -116,6 +116,15 @@ async function getBetResults() {
     }
     
     console.log(`   Found ${betResults.length} bet results`);
+    
+    // DEBUG: Log sample of available games
+    if (betResults.length > 0) {
+      console.log('\n📋 Available bet results (sample):');
+      const uniqueGames = [...new Set(betResults.map(b => `${b.awayTeam} @ ${b.homeTeam}`))];
+      uniqueGames.slice(0, 10).forEach(game => console.log(`   - ${game}`));
+      if (uniqueGames.length > 10) console.log(`   ... and ${uniqueGames.length - 10} more games`);
+    }
+    
     return betResults;
   } catch (error) {
     console.error('❌ Error fetching bet results:', error);
@@ -218,14 +227,23 @@ async function main() {
   for (const bookmark of pendingBookmarks) {
     const matchLabel = `${bookmark.game.awayTeam} @ ${bookmark.game.homeTeam} - ${bookmark.bet.pick}`;
     
+    // DEBUG: Log bookmark details
+    console.log(`\n🔍 Checking: ${matchLabel}`);
+    console.log(`   betId: ${bookmark.betId}`);
+    console.log(`   market: ${bookmark.bet.market}`);
+    console.log(`   team: ${bookmark.bet.team}`);
+    console.log(`   gameDate: ${bookmark.game.gameDate}`);
+    
     // Try to find matching bet result
     const betResult = matchBookmarkToBet(bookmark, betResults);
     
     if (!betResult) {
-      console.log(`⏳ No result yet: ${matchLabel}`);
+      console.log(`   ❌ No matching result found`);
       notFoundCount++;
       continue;
     }
+    
+    console.log(`   ✅ Match found!`);
     
     // Update the bookmark with result
     console.log(`📝 Updating: ${matchLabel} → ${betResult.result.outcome} (${betResult.result.profit >= 0 ? '+' : ''}${betResult.result.profit.toFixed(2)}u)`);
