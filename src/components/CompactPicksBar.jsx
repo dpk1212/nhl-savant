@@ -85,7 +85,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
       WebkitBackdropFilter: 'blur(12px)',
       border: '1px solid rgba(148, 163, 184, 0.08)',
       borderRadius: '12px',
-      padding: isMobile ? '0.875rem' : '1.25rem',
+      padding: isMobile ? '0.625rem' : '1.25rem',
       marginBottom: isMobile ? '1rem' : '1.5rem',
       transition: 'all 0.3s ease'
     }}>
@@ -103,7 +103,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           display: 'flex',
           alignItems: 'center',
           gap: isMobile ? '0.625rem' : '1rem',
-          paddingBottom: isExpanded ? (isMobile ? '0.75rem' : '1rem') : (isMobile ? '0.375rem' : '0.5rem'),
+          paddingBottom: isExpanded ? (isMobile ? '0.5rem' : '1rem') : (isMobile ? '0.375rem' : '0.5rem'),
           paddingTop: isMobile ? '0.375rem' : '0.5rem',
           paddingLeft: isMobile ? '0.375rem' : '0.5rem',
           paddingRight: isMobile ? '0.375rem' : '0.5rem',
@@ -111,7 +111,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           marginRight: isMobile ? '-0.375rem' : '-0.5rem',
           marginTop: isMobile ? '-0.375rem' : '-0.5rem',
           borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
-          marginBottom: isExpanded ? (isMobile ? '0.75rem' : '1rem') : (isMobile ? '-0.375rem' : '-0.5rem'),
+          marginBottom: isExpanded ? (isMobile ? '0.5rem' : '1rem') : (isMobile ? '-0.375rem' : '-0.5rem'),
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           userSelect: 'none'
@@ -270,8 +270,8 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           <div style={{
             fontSize: '0.6875rem',
             color: '#94A3B8',
-            marginBottom: '1rem',
-            padding: '0.5rem 0.75rem',
+            marginBottom: '0.625rem',
+            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
             background: 'rgba(100, 116, 139, 0.06)',
             border: '1px solid rgba(100, 116, 139, 0.12)',
             borderRadius: '6px',
@@ -287,8 +287,8 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
             gap: '1rem',
             overflowX: 'auto',
             overflowY: 'hidden',
-            margin: '0 -1.5rem',
-            padding: '0 1.5rem 0.5rem 1.5rem',
+            margin: isMobile ? '0 -0.875rem' : '0 -1.5rem',
+            padding: isMobile ? '0 0.875rem 0.375rem 0.875rem' : '0 1.5rem 0.5rem 1.5rem',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch'
@@ -302,7 +302,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
                   background: 'rgba(15, 23, 42, 0.5)',
                   border: '1px solid rgba(148, 163, 184, 0.08)',
                   borderRadius: '12px',
-                  padding: '1rem',
+                  padding: isMobile ? '0.75rem' : '1rem',
                   minWidth: '280px',
                   maxWidth: '320px',
                   flexShrink: 0,
