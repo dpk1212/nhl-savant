@@ -97,13 +97,15 @@ export function parseOddsTrader(markdownText) {
         gameTime = 'LIVE';
         console.log(`  🔴 LIVE GAME - Including with status LIVE`);
       } else {
-        // Pattern matches time that comes AFTER the date (e.g., "10/227:00 PM" -> "7:00 PM")
-        const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2} [AP]M)/);
+        // Pattern matches time that comes AFTER the date (e.g., "11/067:00 PM" -> "7:00 PM")
+        // More flexible regex to handle various formats
+        const timeMatch = line.match(/(\d{1,2}:\d{2}\s*[AP]M)/);
         if (!timeMatch) {
-          console.log('  ⚠️ No time found, skipping');
+          console.log('  ⚠️ No time found in line, skipping');
+          console.log(`  📄 Line content: ${line.substring(0, 200)}`);
           continue;
         }
-        gameTime = timeMatch[1];
+        gameTime = timeMatch[1].trim();
         console.log(`  ⏰ Time: ${gameTime}`);
       }
       
