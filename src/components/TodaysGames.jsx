@@ -2630,24 +2630,24 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           </div>
         </div>
         
-      {/* Model Performance Section - Clean stats with context */}
+      {/* Today's Opportunities - What's available today */}
       <div className="elevated-card" style={{
         padding: isMobile ? '1.25rem' : '1.75rem',
         marginBottom: isMobile ? '1rem' : '1.5rem',
-        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%)',
-        border: '1px solid rgba(212, 175, 55, 0.15)'
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(212, 175, 55, 0.03) 100%)',
+        border: '1px solid rgba(59, 130, 246, 0.15)'
       }}>
         <div style={{ marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <div style={{
-              background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+              background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
               padding: '0.5rem',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Target size={18} color="#1A202C" strokeWidth={2.5} />
+              <Calendar size={18} color="#FFFFFF" strokeWidth={2.5} />
             </div>
             <h3 style={{ 
               fontSize: isMobile ? '1.125rem' : '1.25rem', 
@@ -2656,7 +2656,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               margin: 0,
               letterSpacing: '-0.01em'
             }}>
-              Model Performance
+              Today's Opportunities
             </h3>
           </div>
           <p style={{ 
@@ -2665,7 +2665,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             margin: 0,
             lineHeight: '1.5'
           }}>
-            Season-long tracking of our betting model's recommendations and profitability
+            {allGamesToDisplay.length} games analyzed • {opportunityCounts.total} positive EV opportunities • {opportunityCounts.highValue} elite plays
           </p>
         </div>
 
@@ -2758,7 +2758,54 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               Elite
             </span>
           </div>
+        </div>
+      </div>
 
+      {/* Model Performance - Season-long stats */}
+      <div className="elevated-card" style={{
+        padding: isMobile ? '1.25rem' : '1.75rem',
+        marginBottom: isMobile ? '1rem' : '1.5rem',
+        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)',
+        border: '1px solid rgba(139, 92, 246, 0.15)'
+      }}>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+              padding: '0.5rem',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Target size={18} color="#FFFFFF" strokeWidth={2.5} />
+            </div>
+            <h3 style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontWeight: '700', 
+              color: 'var(--color-text-primary)',
+              margin: 0,
+              letterSpacing: '-0.01em'
+            }}>
+              Model Performance
+            </h3>
+          </div>
+          <p style={{ 
+            fontSize: isMobile ? '0.813rem' : '0.875rem',
+            color: 'var(--color-text-secondary)', 
+            margin: 0,
+            lineHeight: '1.5'
+          }}>
+            Season-long tracking of our betting model's recommendations and profitability
+          </p>
+        </div>
+
+        <div style={{ 
+          display: 'flex',
+          gap: isMobile ? '0.5rem' : '0.75rem',
+          alignItems: 'center',
+          flexWrap: 'wrap'
+        }}>
           {/* Bets - with performance link */}
           <div 
             onClick={() => navigate('/performance')}
@@ -2917,8 +2964,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 Saved
               </span>
               <Bookmark size={14} color="#D4AF37" strokeWidth={2.5} style={{ opacity: 0.8, position: 'relative', zIndex: 1 }} />
-          </div>
-        )}
+            </div>
+          )}
         </div>
       </div>
 
