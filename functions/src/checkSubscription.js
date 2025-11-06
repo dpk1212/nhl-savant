@@ -24,6 +24,8 @@ const getStripe = () => {
  * 
  * Call from frontend:
  * const result = await checkSubscription({ email: user.email });
+ * 
+ * Updated: Force redeploy with Stripe key
  */
 exports.checkSubscription = functions.https.onCall(async (data, context) => {
   try {

@@ -21,8 +21,21 @@ export const getStripe = () => {
 /**
  * Redirect to Stripe checkout
  * Using pre-built Stripe payment links
+ * 
+ * SETUP INSTRUCTIONS:
+ * 1. Go to: https://dashboard.stripe.com/test/payment-links
+ * 2. Click "New" to create a payment link for each tier
+ * 3. Configure:
+ *    - Scout: $7.99/week with 2-day trial
+ *    - Elite: $25.99/month with 3-day trial  
+ *    - Pro: $150/year with 5-day trial
+ * 4. In "After payment" settings, set success URL to: https://yourdomain.com/?checkout=success
+ * 5. Copy the payment link URL (starts with https://buy.stripe.com/...)
+ * 6. Paste it below
+ * 7. IMPORTANT: In product settings, add metadata: tier=scout (or elite/pro)
  */
 export async function redirectToCheckout(tier, user) {
+  // ✅ CONFIGURED - Your actual Stripe payment links
   const paymentLinks = {
     scout: 'https://buy.stripe.com/aFa9ATg5U3UfdMl6a11Jm02',
     elite: 'https://buy.stripe.com/aFaeVdg5UduP6jT6a11Jm03',
@@ -30,8 +43,12 @@ export async function redirectToCheckout(tier, user) {
   };
 
   const paymentLink = paymentLinks[tier];
-  if (!paymentLink) {
-    throw new Error(`Invalid tier: ${tier}`);
+  
+  // Check if payment links are configured
+  if (!paymentLink || paymentLink.includes('YOUR_')) {
+    console.error('⚠️ Stripe payment links not configured!');
+    alert('Payment system is not configured yet. Please contact support.');
+    return;
   }
 
   // Add user metadata as URL parameters
@@ -46,6 +63,7 @@ export async function redirectToCheckout(tier, user) {
   }
 
   // Redirect to Stripe checkout
+  console.log('Redirecting to Stripe checkout:', tier);
   window.location.href = url.toString();
 }
 

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, CreditCard, Crown, Calendar, TrendingUp, LogOut, ArrowLeft } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 
@@ -9,6 +11,7 @@ const Account = () => {
   const { user, signOut } = useAuth();
   const { tier, isPremium, isTrial, daysRemaining, status, createdAt } = useSubscription(user);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   if (!user) {
     navigate('/');
@@ -26,9 +29,24 @@ const Account = () => {
     }
   };
 
-  const handleManageBilling = () => {
-    // In production, this would call a Cloud Function to create a Stripe Customer Portal session
-    alert('Billing management coming soon! For now, please contact support to manage your subscription.');
+  const handleManageBilling = async () => {
+    setIsLoadingPortal(true);
+    try {
+      console.log('Opening Stripe Customer Portal...');
+      
+      // Call Cloud Function to create portal session
+      const createPortal = httpsCallable(functions, 'createPortalSession');
+      const result = await createPortal({ 
+        returnUrl: window.location.href 
+      });
+      
+      // Redirect to Stripe Customer Portal
+      window.location.href = result.data.url;
+    } catch (error) {
+      console.error('Error opening billing portal:', error);
+      alert('Unable to open billing portal. Please try again or contact support.');
+      setIsLoadingPortal(false);
+    }
   };
 
   const tierDisplayNames = {
@@ -255,6 +273,7 @@ const Account = () => {
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <button
                   onClick={handleManageBilling}
+                  disabled={isLoadingPortal}
                   style={{
                     padding: '0.875rem 1.5rem',
                     background: 'rgba(59, 130, 246, 0.2)',
@@ -263,23 +282,28 @@ const Account = () => {
                     color: '#60A5FA',
                     fontSize: '0.938rem',
                     fontWeight: '600',
-                    cursor: 'pointer',
+                    cursor: isLoadingPortal ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    opacity: isLoadingPortal ? 0.6 : 1
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.3)';
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                    if (!isLoadingPortal) {
+                      e.currentTarget.style.background = 'rgba(59, 130, 246, 0.3)';
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    if (!isLoadingPortal) {
+                      e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    }
                   }}
                 >
                   <CreditCard size={18} />
-                  Manage Billing
+                  {isLoadingPortal ? 'Loading...' : 'Manage Billing'}
                 </button>
 
                 {tier !== 'pro' && (

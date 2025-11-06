@@ -7,8 +7,16 @@ admin.initializeApp();
 const { handleStripeWebhook } = require('./stripeWebhook');
 const { onUserCreated } = require('./onUserCreated');
 const { checkSubscription } = require('./checkSubscription');
+const { createPortalSession } = require('./createPortalSession');
+const { updateLiveScores, triggerScoreUpdate } = require('./liveScores');
+const { updateBetResults, triggerBetUpdate } = require('./betTracking');
 
 exports.stripeWebhook = handleStripeWebhook;
 exports.createUserDocument = onUserCreated;
 exports.checkSubscription = checkSubscription;
+exports.createPortalSession = createPortalSession;
+exports.updateLiveScores = updateLiveScores;
+exports.triggerScoreUpdate = triggerScoreUpdate;
+exports.updateBetResults = updateBetResults;
+exports.triggerBetUpdate = triggerBetUpdate;
 
