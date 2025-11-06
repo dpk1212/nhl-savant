@@ -365,7 +365,7 @@ const Navigation = () => {
           )}
         </div>
 
-        {/* PREMIUM Mobile Auth Section */}
+        {/* PREMIUM Mobile Auth Section - Minimal & Sleek */}
         <div className="mobile-auth" style={{
           display: 'flex',
           alignItems: 'center',
@@ -376,10 +376,10 @@ const Navigation = () => {
             <button
               onClick={() => setAuthModalOpen(true)}
               style={{
-                padding: '0.5rem 0.875rem',
+                padding: '0.4rem 0.75rem',
                 borderRadius: '8px',
-                fontSize: '0.813rem',
-                fontWeight: '700',
+                fontSize: '0.75rem',
+                fontWeight: '600',
                 background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
                 border: 'none',
                 color: '#0A0E27',
@@ -388,12 +388,12 @@ const Navigation = () => {
                 whiteSpace: 'nowrap',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.375rem',
+                gap: '0.25rem',
                 boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
                 flexShrink: 0
               }}
             >
-              <User size={14} strokeWidth={3} />
+              <User size={13} strokeWidth={2.5} />
               <span className="sign-in-text">Sign In</span>
             </button>
           )}
@@ -406,28 +406,38 @@ const Navigation = () => {
                   setMobileMenuOpen(false);
                 }}
                 style={{
-                  padding: '0.375rem',
+                  padding: '0',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)',
-                  border: '2px solid rgba(212, 175, 55, 0.3)',
+                  background: user.photoURL ? 'transparent' : 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                  border: user.photoURL ? '2px solid rgba(212, 175, 55, 0.4)' : '2px solid rgba(212, 175, 55, 0.3)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '36px',
-                  height: '36px',
-                  flexShrink: 0
+                  width: '32px',
+                  height: '32px',
+                  flexShrink: 0,
+                  overflow: 'hidden'
                 }}
               >
                 {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName || 'User'} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                  <img 
+                    src={user.photoURL} 
+                    alt={user.displayName || 'User'} 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      borderRadius: '50%',
+                      objectFit: 'cover'
+                    }} 
+                  />
                 ) : (
-                  <User size={18} color="#D4AF37" strokeWidth={2.5} />
+                  <User size={16} color="#D4AF37" strokeWidth={2.5} />
                 )}
               </button>
               
-              {/* Mobile User Dropdown */}
+              {/* Mobile User Dropdown - Compact */}
               {userMenuOpen && (
                 <div 
                   className="mobile-user-dropdown"
@@ -438,27 +448,39 @@ const Navigation = () => {
                     background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(212, 175, 55, 0.2)',
-                    borderRadius: '12px',
-                    padding: '0.75rem',
-                    minWidth: '200px',
+                    borderRadius: '10px',
+                    padding: '0.5rem',
+                    minWidth: '180px',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
                     animation: 'slideDown 0.2s ease-out',
                     zIndex: 1001
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* User Info */}
-                  <div style={{ padding: '0.75rem', borderBottom: '1px solid rgba(148, 163, 184, 0.1)', marginBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#F1F5F9', marginBottom: '0.25rem' }}>
-                      {user.displayName || user.email}
+                  {/* Compact User Info */}
+                  <div style={{ 
+                    padding: '0.5rem', 
+                    borderBottom: '1px solid rgba(148, 163, 184, 0.08)', 
+                    marginBottom: '0.375rem' 
+                  }}>
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      fontWeight: '600', 
+                      color: '#F1F5F9', 
+                      marginBottom: '0.15rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {user.displayName || user.email?.split('@')[0]}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.6)' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(241, 245, 249, 0.5)' }}>
                       {isPremium ? (
                         <span style={{ color: '#D4AF37', fontWeight: '600' }}>
-                          {tier?.toUpperCase()} {isTrial && `(${daysRemaining}d trial)`}
+                          {tier?.toUpperCase()}
                         </span>
                       ) : (
-                        <span>Free Tier</span>
+                        <span>Free</span>
                       )}
                     </div>
                   </div>
@@ -469,18 +491,18 @@ const Navigation = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.75rem',
-                      borderRadius: '8px',
+                      gap: '0.5rem',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
                       textDecoration: 'none',
                       color: 'rgba(241, 245, 249, 0.9)',
-                      fontSize: '0.875rem',
+                      fontSize: '0.8rem',
                       fontWeight: '500',
                       transition: 'all 0.2s ease',
                       marginBottom: '0.25rem'
                     }}
                   >
-                    <User size={16} />
+                    <User size={14} />
                     Account
                   </Link>
                   
@@ -491,18 +513,18 @@ const Navigation = () => {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.75rem',
-                        borderRadius: '8px',
+                        gap: '0.5rem',
+                        padding: '0.5rem',
+                        borderRadius: '6px',
                         textDecoration: 'none',
                         color: 'rgba(241, 245, 249, 0.9)',
-                        fontSize: '0.875rem',
+                        fontSize: '0.8rem',
                         fontWeight: '500',
                         transition: 'all 0.2s ease',
                         marginBottom: '0.25rem'
                       }}
                     >
-                      <CreditCard size={16} />
+                      <CreditCard size={14} />
                       Billing
                     </Link>
                   )}
@@ -516,19 +538,20 @@ const Navigation = () => {
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.75rem',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
+                      gap: '0.5rem',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
                       fontWeight: '500',
                       color: '#EF4444',
                       background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      textAlign: 'left'
                     }}
                   >
-                    <LogOut size={16} />
+                    <LogOut size={14} />
                     Sign Out
                   </button>
                 </div>
@@ -536,7 +559,7 @@ const Navigation = () => {
             </div>
           )}
           
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Sleek & Compact */}
           <button
             className="mobile-menu-btn"
             onClick={() => {
@@ -547,26 +570,28 @@ const Navigation = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-              padding: '0.5rem',
+            padding: '0.4rem',
             background: mobileMenuOpen 
               ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)'
-                : 'rgba(255, 255, 255, 0.05)',
+              : 'rgba(255, 255, 255, 0.05)',
             border: mobileMenuOpen 
               ? '1px solid rgba(212, 175, 55, 0.3)'
-                : '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
             color: mobileMenuOpen ? '#D4AF37' : 'rgba(255, 255, 255, 0.9)',
             cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              flexShrink: 0
+            transition: 'all 0.2s ease',
+            flexShrink: 0,
+            width: '32px',
+            height: '32px'
             }}
           >
-            {mobileMenuOpen ? <X size={20} strokeWidth={2.5} /> : <Menu size={20} strokeWidth={2.5} />}
+            {mobileMenuOpen ? <X size={18} strokeWidth={2.5} /> : <Menu size={18} strokeWidth={2.5} />}
         </button>
         </div>
       </div>
 
-      {/* Premium Mobile Menu Dropdown */}
+      {/* Premium Mobile Menu Dropdown - Compact & Sleek */}
       {mobileMenuOpen && (
         <div className="mobile-nav" style={{
           position: 'absolute',
@@ -577,36 +602,12 @@ const Navigation = () => {
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(212, 175, 55, 0.15)',
-          padding: '0.875rem',
+          padding: '0.625rem',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
           animation: 'slideDown 0.3s ease-out',
           maxHeight: 'calc(100vh - 60px)',
           overflowY: 'auto'
         }}>
-          {/* User Info Section (if logged in) */}
-          {user && (
-            <div style={{
-              padding: '0.875rem',
-              borderRadius: '10px',
-              background: 'rgba(212, 175, 55, 0.08)',
-              border: '1px solid rgba(212, 175, 55, 0.2)',
-              marginBottom: '0.875rem'
-            }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#F1F5F9', marginBottom: '0.25rem' }}>
-                {user.displayName || user.email}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.6)' }}>
-                {isPremium ? (
-                  <span style={{ color: '#D4AF37', fontWeight: '600' }}>
-                    {tier?.toUpperCase()} {isTrial && `(${daysRemaining}d trial)`}
-                  </span>
-                ) : (
-                  <span>Free Tier</span>
-                )}
-              </div>
-            </div>
-          )}
-          
           {navLinks.map((link, index) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
@@ -619,10 +620,10 @@ const Navigation = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 1rem',
+                  gap: '0.625rem',
+                  padding: '0.625rem 0.75rem',
                   borderRadius: '8px',
-                  fontSize: '0.938rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   textDecoration: 'none',
                   color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.8)',
@@ -635,21 +636,21 @@ const Navigation = () => {
                   boxShadow: isActive 
                     ? '0 2px 8px rgba(212, 175, 55, 0.2)'
                     : 'none',
-                  marginBottom: '0.375rem',
+                  marginBottom: '0.25rem',
                   transition: 'all 0.2s ease',
-                  animation: `slideIn 0.3s ease-out ${index * 0.04}s both`
+                  animation: `slideIn 0.3s ease-out ${index * 0.03}s both`
                 }}
               >
-                <Icon size={18} strokeWidth={2.5} />
+                <Icon size={16} strokeWidth={2.5} />
                 {link.label}
                 {isActive && (
                   <div style={{
                     marginLeft: 'auto',
-                    width: '6px',
-                    height: '6px',
+                    width: '5px',
+                    height: '5px',
                     borderRadius: '50%',
                     background: '#D4AF37',
-                    boxShadow: '0 0 8px rgba(212, 175, 55, 0.6)'
+                    boxShadow: '0 0 6px rgba(212, 175, 55, 0.6)'
                   }} />
                 )}
               </Link>
@@ -659,9 +660,9 @@ const Navigation = () => {
           {/* User Actions (if logged in) */}
           {user && (
             <div style={{
-              marginTop: '0.875rem',
-              paddingTop: '0.875rem',
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              marginTop: '0.625rem',
+              paddingTop: '0.625rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
               {!isPremium && (
                 <Link
@@ -670,20 +671,20 @@ const Navigation = () => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.875rem 1rem',
+                    gap: '0.625rem',
+                    padding: '0.625rem 0.75rem',
                     borderRadius: '8px',
-                    fontSize: '0.938rem',
+                    fontSize: '0.875rem',
                     fontWeight: '700',
                     textDecoration: 'none',
                     color: '#0A0E27',
                     background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
                     boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                    marginBottom: '0.375rem'
+                    marginBottom: '0.25rem'
                   }}
                 >
-                  <Crown size={18} strokeWidth={2.5} />
-                  Upgrade to Premium
+                  <Crown size={16} strokeWidth={2.5} />
+                  Upgrade
                 </Link>
               )}
               <Link
@@ -692,19 +693,19 @@ const Navigation = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 1rem',
+                  gap: '0.625rem',
+                  padding: '0.625rem 0.75rem',
                   borderRadius: '8px',
-                  fontSize: '0.938rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   textDecoration: 'none',
                   color: 'rgba(255, 255, 255, 0.8)',
                   background: 'transparent',
                   border: '1px solid transparent',
-                  marginBottom: '0.375rem'
+                  marginBottom: '0.25rem'
                 }}
               >
-                <User size={18} strokeWidth={2.5} />
+                <User size={16} strokeWidth={2.5} />
                 Account
               </Link>
               <button
@@ -716,18 +717,19 @@ const Navigation = () => {
                   width: '100%',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 1rem',
+                  gap: '0.625rem',
+                  padding: '0.625rem 0.75rem',
                   borderRadius: '8px',
-                  fontSize: '0.938rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   color: '#EF4444',
                   background: 'transparent',
-                  border: '1px solid transparent',
-                  cursor: 'pointer'
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left'
                 }}
               >
-                <LogOut size={18} strokeWidth={2.5} />
+                <LogOut size={16} strokeWidth={2.5} />
                 Sign Out
               </button>
             </div>
