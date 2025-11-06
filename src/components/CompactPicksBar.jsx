@@ -22,7 +22,7 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
-export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick }) {
+export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
 
   if (!gameGroups || gameGroups.length === 0) {
@@ -92,6 +92,46 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick }) 
             Today's Picks
           </h3>
         </div>
+        
+        {/* Opportunity Stats - Integrated */}
+        {opportunityStats && (
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '6px',
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              color: '#60A5FA',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <span style={{ fontSize: '0.875rem' }}>{opportunityStats.total}</span>
+              <span style={{ fontSize: '0.625rem', opacity: 0.8, textTransform: 'uppercase' }}>+EV</span>
+            </div>
+            
+            {opportunityStats.elite > 0 && (
+              <div style={{
+                background: 'rgba(212, 175, 55, 0.12)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '6px',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                color: '#D4AF37',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                <span style={{ fontSize: '0.875rem' }}>{opportunityStats.elite}</span>
+                <span style={{ fontSize: '0.625rem', opacity: 0.8, textTransform: 'uppercase' }}>Elite</span>
+              </div>
+            )}
+          </div>
+        )}
+        
         <div style={{
           background: 'rgba(59, 130, 246, 0.15)',
           border: '1px solid rgba(59, 130, 246, 0.3)',

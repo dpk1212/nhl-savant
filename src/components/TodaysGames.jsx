@@ -2628,222 +2628,135 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
             </>
                   )}
           </div>
-        </div>
-        
-      {/* Compact Stats - Today's opportunities and Model Performance */}
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? '0.75rem' : '1rem',
+          </div>
+          
+      {/* Model Performance - Compact */}
+      <div className="elevated-card" style={{
+        padding: isMobile ? '0.875rem' : '1rem',
+        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)',
+        border: '1px solid rgba(139, 92, 246, 0.15)',
         marginBottom: isMobile ? '1rem' : '1.5rem'
       }}>
-        {/* Today's Opportunities */}
-        <div className="elevated-card" style={{
-          flex: 1,
-          padding: isMobile ? '0.875rem' : '1rem',
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(212, 175, 55, 0.03) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.15)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <Calendar size={16} color="#3B82F6" strokeWidth={2.5} />
-            <span style={{ 
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Target size={16} color="#8B5CF6" strokeWidth={2.5} />
+            <span style={{
               fontSize: isMobile ? '0.875rem' : '0.938rem',
               fontWeight: '700',
               color: 'var(--color-text-primary)',
               letterSpacing: '-0.01em'
-            }}>
-              Today's Opportunities
+              }}>
+              Model Performance
             </span>
           </div>
-          
-          <div style={{ 
+          <button
+            onClick={() => navigate('/performance')}
+            style={{
+              padding: '0.25rem 0.625rem',
+              background: 'rgba(139, 92, 246, 0.15)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '6px',
+              color: '#A78BFA',
+              fontSize: '0.688rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)';
+              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+            }}
+          >
+            View Details
+            <ChevronRight size={12} />
+          </button>
+            </div>
+            
+            <div style={{
             display: 'flex',
-            gap: '0.5rem',
+          gap: '0.5rem',
             alignItems: 'center',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{
-              padding: '0.375rem 0.625rem',
-              background: 'rgba(148, 163, 184, 0.1)',
-              borderRadius: '6px',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem'
-            }}>
-              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#CBD5E1' }}>
-                {allGamesToDisplay.length}
-              </span>
-              <span style={{ fontSize: '0.625rem', color: 'rgba(203, 213, 225, 0.8)', fontWeight: '600', textTransform: 'uppercase' }}>
-                Games
-              </span>
-            </div>
-            
-            <div style={{
-              padding: '0.375rem 0.625rem',
-              background: 'rgba(59, 130, 246, 0.12)',
-              borderRadius: '6px',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem'
-            }}>
-              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#60A5FA' }}>
-                {opportunityCounts.total}
-              </span>
-              <span style={{ fontSize: '0.625rem', color: 'rgba(96, 165, 250, 0.9)', fontWeight: '600', textTransform: 'uppercase' }}>
-                +EV
-              </span>
-            </div>
-            
-            <div style={{
-              padding: '0.375rem 0.625rem',
-              background: 'rgba(212, 175, 55, 0.12)',
-              borderRadius: '6px',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem'
-            }}>
-              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
-                {opportunityCounts.highValue}
-              </span>
-              <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.9)', fontWeight: '600', textTransform: 'uppercase' }}>
-                Elite
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Model Performance */}
-        <div className="elevated-card" style={{
-          flex: 1,
-          padding: isMobile ? '0.875rem' : '1rem',
-          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)',
-          border: '1px solid rgba(139, 92, 246, 0.15)',
-          position: 'relative'
+          flexWrap: 'wrap'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Target size={16} color="#8B5CF6" strokeWidth={2.5} />
-              <span style={{ 
-                fontSize: isMobile ? '0.875rem' : '0.938rem',
-                fontWeight: '700',
-                color: 'var(--color-text-primary)',
-                letterSpacing: '-0.01em'
-              }}>
-                Model Performance
-              </span>
+            <div style={{
+            padding: '0.375rem 0.625rem',
+            background: 'rgba(139, 92, 246, 0.12)',
+            borderRadius: '6px',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#A78BFA' }}>
+              {betStats.totalBets}
+            </span>
+            <span style={{ fontSize: '0.625rem', color: 'rgba(167, 139, 250, 0.9)', fontWeight: '600', textTransform: 'uppercase' }}>
+              Bets
+            </span>
             </div>
-            <button
-              onClick={() => navigate('/performance')}
-              style={{
-                padding: '0.25rem 0.625rem',
-                background: 'rgba(139, 92, 246, 0.15)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
+
+          <div style={{
+            padding: '0.375rem 0.625rem',
+            background: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                 borderRadius: '6px',
-                color: '#A78BFA',
-                fontSize: '0.688rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
+            border: betStats.totalProfit >= 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)';
-                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
-                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-              }}
-            >
-              View Details
-              <ChevronRight size={12} />
-            </button>
-          </div>
-          
-          <div style={{ 
-            display: 'flex',
-            gap: '0.5rem',
-            alignItems: 'center',
-            flexWrap: 'wrap'
+            gap: '0.375rem'
           }}>
-            <div style={{
-              padding: '0.375rem 0.625rem',
-              background: 'rgba(139, 92, 246, 0.12)',
-              borderRadius: '6px',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem'
-            }}>
-              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#A78BFA' }}>
-                {betStats.totalBets}
+            <span style={{ fontSize: '1.125rem', fontWeight: '700', color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444' }}>
+              {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
               </span>
-              <span style={{ fontSize: '0.625rem', color: 'rgba(167, 139, 250, 0.9)', fontWeight: '600', textTransform: 'uppercase' }}>
-                Bets
+              <span style={{
+              fontSize: '0.625rem', 
+              color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)', 
+                fontWeight: '600',
+              textTransform: 'uppercase' 
+              }}>
+              Profit
               </span>
             </div>
 
-            <div style={{
-              padding: '0.375rem 0.625rem',
-              background: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              borderRadius: '6px',
-              border: betStats.totalProfit >= 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem'
-            }}>
-              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444' }}>
-                {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
+          {bookmarkStats.count > 0 && (
+            <div 
+              onClick={() => navigate('/my-picks')}
+              style={{
+                padding: '0.375rem 0.625rem',
+                background: 'rgba(212, 175, 55, 0.15)',
+                borderRadius: '6px',
+                border: '1px solid rgba(212, 175, 55, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.22)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
+                {bookmarkStats.count}
               </span>
-              <span style={{ 
-                fontSize: '0.625rem', 
-                color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)', 
-                fontWeight: '600', 
-                textTransform: 'uppercase' 
-              }}>
-                Profit
+              <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.95)', fontWeight: '600', textTransform: 'uppercase' }}>
+                Saved
               </span>
             </div>
-            
-            {bookmarkStats.count > 0 && (
-              <div 
-                onClick={() => navigate('/my-picks')}
-                style={{
-                  padding: '0.375rem 0.625rem',
-                  background: 'rgba(212, 175, 55, 0.15)',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(212, 175, 55, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(212, 175, 55, 0.22)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
-                  {bookmarkStats.count}
-                </span>
-                <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.95)', fontWeight: '600', textTransform: 'uppercase' }}>
-                  Saved
-                </span>
-              </div>
-            )}
+          )}
           </div>
         </div>
-      </div>
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
@@ -2891,6 +2804,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           <div style={{ marginBottom: '1.5rem' }}>
             <CompactPicksBar 
               gameGroups={gameGroups}
+              opportunityStats={{
+                total: opportunityCounts.total,
+                elite: opportunityCounts.highValue
+              }}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
