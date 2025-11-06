@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, Check } from 'lucide-react';
 import { redirectToCheckout } from '../utils/stripe';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
@@ -62,7 +63,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
     }
   ];
 
-  return (
+  const modalContent = (
     <div 
       style={{
         position: 'fixed',
@@ -381,6 +382,8 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       `}</style>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default UpgradeModal;
