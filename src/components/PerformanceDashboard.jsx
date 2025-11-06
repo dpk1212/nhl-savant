@@ -112,6 +112,7 @@ export default function PerformanceDashboard() {
   const [byRating, setByRating] = useState({});
   const [kellyAnalysis, setKellyAnalysis] = useState(null);
   const [last10Stats, setLast10Stats] = useState(null);
+  const [timeStats, setTimeStats] = useState(null);
   
   useEffect(() => {
     loadPerformanceData();
@@ -287,6 +288,37 @@ export default function PerformanceDashboard() {
         setLast10Stats(bestWindow);
       }
       
+      // Calculate time-based profit (today, this week, this month)
+      const now = new Date();
+      const todayDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // Get start of this week (Monday)
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+      const weekStartDate = startOfWeek.toISOString().split('T')[0];
+      
+      // Get start of this month
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStartDate = startOfMonth.toISOString().split('T')[0];
+      
+      const todayBets = qualityBets.filter(b => b.date === todayDate);
+      const weekBets = qualityBets.filter(b => b.date >= weekStartDate);
+      const monthBets = qualityBets.filter(b => b.date >= monthStartDate);
+      
+      const calculatePeriodStats = (bets) => {
+        const wins = bets.filter(b => b.result?.outcome === 'WIN').length;
+        const losses = bets.filter(b => b.result?.outcome === 'LOSS').length;
+        const profit = bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+        const winRate = wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0;
+        return { count: bets.length, wins, losses, profit, winRate, record: `${wins}-${losses}` };
+      };
+      
+      setTimeStats({
+        today: calculatePeriodStats(todayBets),
+        week: calculatePeriodStats(weekBets),
+        month: calculatePeriodStats(monthBets)
+      });
+      
         // Recent bets (already filtered to B-rated or higher)
         // Sort by game date (most recent first), then by timestamp within same date
         const sortedByDate = [...qualityBets].sort((a, b) => {
@@ -451,6 +483,279 @@ export default function PerformanceDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Time-Based Profit Breakdown */}
+      {timeStats && (timeStats.week.count > 0 || timeStats.month.count > 0) && (
+        <div className="elevated-card" style={{ 
+          padding: '2rem', 
+          marginBottom: '2rem',
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)',
+          border: '1px solid rgba(212, 175, 55, 0.2)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Decorative Background Elements */}
+          <div style={{
+            position: 'absolute',
+            top: '-50%',
+            right: '-10%',
+            width: '300px',
+            height: '300px',
+            background: 'radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%)',
+            borderRadius: '50%',
+            pointerEvents: 'none'
+          }} />
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+                padding: '0.75rem',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)'
+              }}>
+                <Calendar size={24} color="#1A202C" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+                  Profit Timeline
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: '0.25rem 0 0 0' }}>
+                  Track performance by time period for transparency
+                </p>
+              </div>
+            </div>
+            
+            {/* Hierarchical Time Breakdown */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+              gap: '1.5rem'
+            }}>
+              {/* This Month */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                backdropFilter: 'blur(10px)',
+                border: '2px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(212, 175, 55, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.3)';
+              }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#D4AF37', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>
+                  📅 This Month
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                    Total Profit
+                  </div>
+                  <div style={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: '800', 
+                    color: timeStats.month.profit >= 0 ? '#10B981' : '#EF4444',
+                    lineHeight: '1',
+                    textShadow: timeStats.month.profit >= 0 ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 0 20px rgba(239, 68, 68, 0.3)'
+                  }}>
+                    {timeStats.month.profit >= 0 ? '+' : ''}{timeStats.month.profit.toFixed(2)}u
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Record</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{timeStats.month.record}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Win Rate</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: timeStats.month.winRate >= 52 ? '#10B981' : 'var(--color-text-primary)' }}>
+                      {timeStats.month.winRate.toFixed(1)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Bets</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{timeStats.month.count}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* This Week */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                backdropFilter: 'blur(10px)',
+                border: timeStats.week.profit < 0 ? '2px solid rgba(239, 68, 68, 0.5)' : '2px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease',
+                cursor: 'default',
+                boxShadow: timeStats.week.profit < 0 ? '0 0 24px rgba(239, 68, 68, 0.2)' : 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = timeStats.week.profit < 0 ? '0 12px 24px rgba(239, 68, 68, 0.3)' : '0 12px 24px rgba(59, 130, 246, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = timeStats.week.profit < 0 ? '0 0 24px rgba(239, 68, 68, 0.2)' : 'none';
+              }}>
+                <div style={{ 
+                  fontSize: '0.75rem', 
+                  fontWeight: '700', 
+                  color: timeStats.week.profit < 0 ? '#EF4444' : '#3B82F6', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.05em', 
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>📊 This Week</span>
+                  {timeStats.week.profit < 0 && (
+                    <span style={{
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '6px',
+                      fontSize: '0.65rem',
+                      color: '#EF4444',
+                      fontWeight: '800'
+                    }}>
+                      REFUND ELIGIBLE
+                    </span>
+                  )}
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                    Total Profit
+                  </div>
+                  <div style={{ 
+                    fontSize: '2.5rem', 
+                    fontWeight: '800', 
+                    color: timeStats.week.profit >= 0 ? '#10B981' : '#EF4444',
+                    lineHeight: '1',
+                    textShadow: timeStats.week.profit >= 0 ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 0 20px rgba(239, 68, 68, 0.3)'
+                  }}>
+                    {timeStats.week.profit >= 0 ? '+' : ''}{timeStats.week.profit.toFixed(2)}u
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Record</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{timeStats.week.record}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Win Rate</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: timeStats.week.winRate >= 52 ? '#10B981' : 'var(--color-text-primary)' }}>
+                      {timeStats.week.winRate.toFixed(1)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Bets</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{timeStats.week.count}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Today */}
+              {timeStats.today.count > 0 && (
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  backdropFilter: 'blur(10px)',
+                  border: '2px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'all 0.3s ease',
+                  cursor: 'default'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 24px rgba(16, 185, 129, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>
+                    ⚡ Today
+                  </div>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                      Total Profit
+                    </div>
+                    <div style={{ 
+                      fontSize: '2.5rem', 
+                      fontWeight: '800', 
+                      color: timeStats.today.profit >= 0 ? '#10B981' : '#EF4444',
+                      lineHeight: '1',
+                      textShadow: timeStats.today.profit >= 0 ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 0 20px rgba(239, 68, 68, 0.3)'
+                    }}>
+                      {timeStats.today.profit >= 0 ? '+' : ''}{timeStats.today.profit.toFixed(2)}u
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Record</div>
+                      <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{timeStats.today.record}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Win Rate</div>
+                      <div style={{ fontSize: '1rem', fontWeight: '700', color: timeStats.today.winRate >= 52 ? '#10B981' : 'var(--color-text-primary)' }}>
+                        {timeStats.today.winRate.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Bets</div>
+                      <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>{timeStats.today.count}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Refund Policy Note */}
+            {timeStats.week.profit < 0 && (
+              <div style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'start',
+                gap: '0.75rem'
+              }}>
+                <div style={{ fontSize: '1.25rem' }}>💡</div>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#EF4444', marginBottom: '0.25rem' }}>
+                    Negative Week - Refund Policy Active
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', lineHeight: '1.5' }}>
+                    When NHL Savant has a negative profit week, premium subscribers are eligible for a full refund. We're committed to delivering value.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
