@@ -181,31 +181,41 @@ CRITICAL REQUIREMENTS:
 1. Start with a BOLD, CONTROVERSIAL, or SURPRISING hook (1 sentence)
 2. Follow with 2-3 analysis paragraphs (80-120 words each)
 3. End with a specific betting angle or "hidden edge" insight
-4. Use player names, recent stats (last 3-5 games), and specific numbers
+4. Focus on VERIFIED team/player information from reliable sources (DailyFaceoff, NHL.com, team beat reporters)
 5. Write like you're trying to go viral on Twitter - be confident, specific, controversial
+
+🚨 ANTI-HALLUCINATION RULES - STRICTLY ENFORCE:
+- ONLY cite stats you can verify from current, reliable sources
+- If you cannot verify a stat, DO NOT include it
+- Use REAL player names only if they're relevant to tonight's game
+- Cite your source for any specific numbers (e.g., "according to DailyFaceoff...")
+- DO NOT invent player stats, team records, or recent game results
+- DO NOT fabricate injuries, line changes, or roster moves
+- Focus on VERIFIABLE matchup dynamics over made-up numbers
 
 STRUCTURE (JSON format):
 [
   {
-    "hook": "One sentence that makes people stop scrolling - controversial, surprising, or bold prediction",
+    "hook": "One sentence that makes people stop scrolling - controversial, surprising, or bold prediction (NO FABRICATED STATS)",
     "headline": "5-7 word attention-grabbing headline (not generic)",
-    "analysis": "Main analysis paragraph with specific stats and player names",
-    "bettingAngle": "The hidden edge or specific betting insight casual fans would miss"
+    "analysis": "Main analysis paragraph with VERIFIED information only - cite sources for any numbers",
+    "bettingAngle": "The hidden edge or specific betting insight based on REAL matchup factors"
   }
 ]
 
-EXAMPLES OF GOOD HOOKS:
-- "The market is WRONG about Toronto's road defense - here's why"
-- "Columbus's power play is a trap bet tonight, and the numbers prove it"
-- "Matthews vs Werenski is the mismatch nobody's talking about"
+EXAMPLES OF GOOD HOOKS (with verification):
+- "The market is WRONG about Toronto's road defense - their underlying metrics tell a different story"
+- "Columbus's power play matchup creates value tonight based on personnel and recent trends"
+- "Matthews' faceoff dominance vs Columbus's center depth is the edge nobody's discussing"
 
 AVOID:
 - Generic observations everyone knows
-- "Both teams are trending up/down" nonsense
+- "Both teams are trending up/down" without verification
 - Safe, boring analysis
-- Lack of specific numbers or player names
+- FABRICATED stats or unverifiable claims
+- Making up player performances or team records
 
-Return ONLY valid JSON. Be bold. Be specific. Give users a reason to screenshot and share this.`;
+Return ONLY valid JSON. Be bold and confident, BUT NEVER make up data. If uncertain about a stat, focus on the matchup dynamic instead.`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -219,7 +229,7 @@ Return ONLY valid JSON. Be bold. Be specific. Give users a reason to screenshot 
         messages: [
           {
             role: 'system',
-            content: 'You are an expert NHL analyst. Return ONLY valid JSON arrays, no markdown formatting.'
+            content: 'You are an expert NHL analyst with access to real-time sources. CRITICAL: Never fabricate stats, player data, or game results. Only cite information you can verify from current, reliable sources. Return ONLY valid JSON arrays, no markdown formatting. If you cannot verify a specific stat, focus on general matchup dynamics instead.'
           },
           {
             role: 'user',
@@ -418,14 +428,14 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. CRITICAL: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis of the matchup factors. Never invent stats—only use what is provided.'
+            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. 🚨 ANTI-HALLUCINATION: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis of the matchup factors. NEVER INVENT STATS—only use what is explicitly provided in the factors list. DO NOT add player names, team records, recent results, or any data not in the provided factors. If a factor is not provided, do not mention it.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
         max_tokens: 150,
         stream: false
       }),
@@ -525,14 +535,14 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. CRITICAL: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis explaining WHY factors create value. Never invent stats—only use provided data. Focus on VALUE and market inefficiencies.'
+            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. 🚨 ANTI-HALLUCINATION: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis explaining WHY factors create value. NEVER INVENT STATS—only use data explicitly provided in the factors list. DO NOT fabricate player names, team records, shooting percentages, recent game results, injuries, or any information not in the provided factors. Stick strictly to the given data. Focus on VALUE and market inefficiencies based ONLY on provided factors.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
+        temperature: 0.6,
         max_tokens: 400,
         stream: false
       }),
