@@ -2148,6 +2148,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [gameCardViewCount, setGameCardViewCount] = useState(0);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
+  const [forceCollapseCards, setForceCollapseCards] = useState(false);
   
   // DISCLAIMER: State for first-time user acknowledgment
   const [showDisclaimer, setShowDisclaimer] = useState(false);
@@ -2869,6 +2870,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               isFree={isFree}
               hasReachedLimit={hasReachedLimit}
               isPremium={isPremium}
+              onUpgradeClick={() => setUpgradeModalOpen(true)}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
@@ -2938,6 +2940,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               isFree={isFree}
               hasReachedLimit={hasReachedLimit}
               isPremium={isPremium}
+              onUpgradeClick={() => setUpgradeModalOpen(true)}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
@@ -3156,6 +3159,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               defaultExpanded={false}
               index={index}
               isMobile={isMobile}
+              forceCollapse={forceCollapseCards}
                         onToggle={async (isExpanded) => {
                           if (isExpanded) {
                             // Check if user has acknowledged disclaimer
@@ -3356,7 +3360,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       {/* Upgrade Modal - shown when free user hits daily limit */}
       <UpgradeModal 
         isOpen={upgradeModalOpen}
-        onClose={() => setUpgradeModalOpen(false)}
+        onClose={() => {
+          setUpgradeModalOpen(false);
+          // Collapse all cards when modal closes without upgrade
+          if (!isPremium) {
+            setForceCollapseCards(true);
+            setTimeout(() => setForceCollapseCards(false), 100);
+          }
+        }}
         user={user}
       />
     </div>
