@@ -37,7 +37,10 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
     <div 
       style={{
         position: 'fixed',
-        inset: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         background: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
@@ -45,7 +48,8 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
         justifyContent: 'center',
         zIndex: 9999,
         padding: '1rem',
-        animation: 'fadeIn 0.2s ease-out'
+        animation: 'fadeIn 0.2s ease-out',
+        overflow: 'auto'
       }}
       onClick={onClose}
     >
@@ -59,6 +63,7 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
           padding: window.innerWidth < 640 ? '1.5rem' : '2.5rem',
           maxWidth: '480px',
           width: '100%',
+          margin: 'auto',
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           animation: 'slideUp 0.3s ease-out',
