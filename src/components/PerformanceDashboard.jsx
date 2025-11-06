@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { TrendingUp, Activity, Target, DollarSign, Calendar, Award, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { TrendingUp, Activity, Target, DollarSign, Calendar, Award, BarChart3, ArrowLeft } from 'lucide-react';
 import ProfitTimelineChart from './ProfitTimelineChart';
 
 function StatCard({ icon, label, value, target, status }) {
@@ -104,6 +105,7 @@ function simulateKelly(bets) {
 }
 
 export default function PerformanceDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentBets, setRecentBets] = useState([]);
   const [allBets, setAllBets] = useState([]); // All quality bets for timeline chart
@@ -367,6 +369,39 @@ export default function PerformanceDashboard() {
   
   return (
     <div className="performance-dashboard" style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Back Button - Mobile Friendly */}
+      <button
+        onClick={() => navigate('/')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.625rem 1rem',
+          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          borderRadius: '8px',
+          color: 'var(--color-text-primary)',
+          fontSize: '0.875rem',
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          marginBottom: '1.5rem'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(59, 130, 246, 0.25) 100%)';
+          e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+          e.currentTarget.style.transform = 'translateX(-4px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)';
+          e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.3)';
+          e.currentTarget.style.transform = 'translateX(0)';
+        }}
+      >
+        <ArrowLeft size={18} strokeWidth={2.5} />
+        Back to Today's Games
+      </button>
+      
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ 
