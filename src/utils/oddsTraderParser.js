@@ -81,10 +81,12 @@ export function parseOddsTrader(markdownText) {
     
     // Look for today's games (and yesterday's if before 6 AM)
     // Note: LIVE games are now included for Hot Takes and analysis (even if betting markets are closed)
+    // CRITICAL: Also include "STARTS IN" countdown format for games starting soon
     // Check both padded and non-padded date formats (e.g., "SAT 11/1" and "SAT 11/01")
     const isMatchingDate = line.includes(todayPattern) || line.includes(todayPatternPadded) || 
                           (includeYesterday && (line.includes(yesterdayPattern) || line.includes(yesterdayPatternPadded))) || 
-                          line.includes('LIVE');
+                          line.includes('LIVE') ||
+                          line.includes('STARTS IN');  // NEW: Handle countdown format
     
     if (isMatchingDate) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
@@ -96,6 +98,10 @@ export function parseOddsTrader(markdownText) {
       if (line.includes('LIVE')) {
         gameTime = 'LIVE';
         console.log(`  🔴 LIVE GAME - Including with status LIVE`);
+      } else if (line.includes('STARTS IN')) {
+        // NEW: Handle "STARTS IN 01:10:03" countdown format
+        gameTime = 'STARTING SOON';
+        console.log(`  ⏰ STARTING SOON (countdown detected)`);
       } else {
         // Pattern matches time that comes AFTER the date (e.g., "11/067:00 PM" -> "7:00 PM")
         // More flexible regex to handle various formats
