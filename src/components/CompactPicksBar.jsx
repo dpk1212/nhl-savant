@@ -44,120 +44,103 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
   const totalPicks = gameGroups.reduce((sum, group) => sum + group.bets.length, 0);
 
   return (
-    <div className="elevated-card" style={{
-      background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-      backdropFilter: 'blur(20px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-      border: '1px solid rgba(148, 163, 184, 0.1)',
-      borderRadius: '16px',
-      padding: '1.5rem',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+    <div style={{
+      background: 'rgba(17, 24, 39, 0.4)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      border: '1px solid rgba(148, 163, 184, 0.08)',
+      borderRadius: '12px',
+      padding: '1.25rem',
       marginBottom: '1.5rem',
-      animation: 'fadeIn 0.4s ease-out'
+      transition: 'all 0.3s ease'
     }}>
-      {/* Header with Icon, Count, and Toggle */}
+      {/* Sleek Header - Inline Stats */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem',
+          gap: '1rem',
           paddingBottom: isExpanded ? '1rem' : '0',
-          borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.1)' : 'none',
-          marginBottom: isExpanded ? '1.25rem' : '0',
+          borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
+          marginBottom: isExpanded ? '1rem' : '0',
           cursor: 'pointer',
           transition: 'all 0.3s ease'
         }}
       >
-        <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '10px',
-          background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-        }}>
-          <TrendingUp size={20} color="#fff" strokeWidth={2.5} />
-        </div>
-        <div style={{ flex: 1 }}>
+        {/* Icon + Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <TrendingUp size={16} color="#3B82F6" strokeWidth={2.5} style={{ opacity: 0.8 }} />
           <h3 style={{
             margin: 0,
-            fontSize: '1.125rem',
+            fontSize: '0.938rem',
             fontWeight: '700',
-            color: '#F1F5F9',
+            color: 'var(--color-text-primary)',
             letterSpacing: '-0.01em'
           }}>
             Today's Picks
           </h3>
         </div>
         
-        {/* Opportunity Stats - Integrated */}
-        {opportunityStats && (
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.12)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '6px',
-              padding: '0.25rem 0.5rem',
-              fontSize: '0.75rem',
-              fontWeight: '700',
-              color: '#60A5FA',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}>
-              <span style={{ fontSize: '0.875rem' }}>{opportunityStats.total}</span>
-              <span style={{ fontSize: '0.625rem', opacity: 0.8, textTransform: 'uppercase' }}>+EV</span>
-            </div>
-            
-            {opportunityStats.elite > 0 && (
-              <div style={{
-                background: 'rgba(212, 175, 55, 0.12)',
-                border: '1px solid rgba(212, 175, 55, 0.3)',
-                borderRadius: '6px',
-                padding: '0.25rem 0.5rem',
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                color: '#D4AF37',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}>
-                <span style={{ fontSize: '0.875rem' }}>{opportunityStats.elite}</span>
-                <span style={{ fontSize: '0.625rem', opacity: 0.8, textTransform: 'uppercase' }}>Elite</span>
+        {/* Inline Stats with Dividers */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+          {opportunityStats && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                <span style={{ fontSize: '0.938rem', fontWeight: '700', color: '#60A5FA' }}>
+                  {opportunityStats.total}
+                </span>
+                <span style={{ fontSize: '0.625rem', color: 'rgba(96, 165, 250, 0.7)', fontWeight: '500' }}>
+                  +EV
+                </span>
               </div>
-            )}
+              
+              {opportunityStats.elite > 0 && (
+                <>
+                  <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
+                  
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.938rem', fontWeight: '700', color: '#D4AF37' }}>
+                      {opportunityStats.elite}
+                    </span>
+                    <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '500' }}>
+                      elite
+                    </span>
+                  </div>
+                </>
+              )}
+              
+              <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
+            </>
+          )}
+          
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.938rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
+              {totalPicks}
+            </span>
+            <span style={{ fontSize: '0.625rem', color: 'var(--color-text-secondary)', fontWeight: '500' }}>
+              {totalPicks === 1 ? 'pick' : 'picks'}
+            </span>
           </div>
-        )}
-        
-        <div style={{
-          background: 'rgba(59, 130, 246, 0.15)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: '8px',
-          padding: '0.375rem 0.75rem',
-          fontSize: '0.875rem',
-          fontWeight: '700',
-          color: '#60A5FA'
-        }}>
-          {totalPicks} {totalPicks === 1 ? 'Pick' : 'Picks'}
         </div>
+        
+        {/* Expand/Collapse Button */}
         <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '8px',
-          background: 'rgba(59, 130, 246, 0.1)',
+          width: '28px',
+          height: '28px',
+          borderRadius: '6px',
+          background: 'transparent',
           border: '1px solid rgba(59, 130, 246, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          opacity: 0.7
         }}>
           {isExpanded ? (
-            <ChevronUp size={20} color="#60A5FA" strokeWidth={2.5} />
+            <ChevronUp size={16} color="#60A5FA" strokeWidth={2.5} />
           ) : (
-            <ChevronDown size={20} color="#60A5FA" strokeWidth={2.5} />
+            <ChevronDown size={16} color="#60A5FA" strokeWidth={2.5} />
           )}
         </div>
       </div>
