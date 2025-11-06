@@ -2868,6 +2868,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               }}
               isFree={isFree}
               hasReachedLimit={hasReachedLimit}
+              isPremium={isPremium}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
@@ -2936,6 +2937,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               gameGroups={Object.values(betsByGame)}
               isFree={isFree}
               hasReachedLimit={hasReachedLimit}
+              isPremium={isPremium}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
