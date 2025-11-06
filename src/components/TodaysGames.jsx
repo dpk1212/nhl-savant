@@ -47,6 +47,18 @@ import { getRating } from './RatingBadge';
 import ShareButton from './ShareButton';
 import BookmarkButton from './BookmarkButton';
 import { useBookmarks } from '../hooks/useBookmarks';
+import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
+import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
+import UpgradeModal from './UpgradeModal';
+import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
+
+// Wrapper for analytics logging
+const logEvent = (eventName, params) => {
+  if (analytics) {
+    firebaseLogEvent(analytics, eventName, params);
+  }
+};
 
 // ========================================
 // INLINE HELPER COMPONENTS
@@ -2130,6 +2142,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const { bookmarks } = useBookmarks(); // Fetch user bookmarks
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   
+  // PREMIUM: Authentication and subscription state
+  const { user } = useAuth();
+  const { isPremium, isFree } = useSubscription(user);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [gameCardViewCount, setGameCardViewCount] = useState(0);
+  const [hasReachedLimit, setHasReachedLimit] = useState(false);
+  
   // DISCLAIMER: State for first-time user acknowledgment
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [pendingGameExpand, setPendingGameExpand] = useState(null);
@@ -2140,6 +2159,23 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const acknowledged = localStorage.getItem('nhl_savant_disclaimer_acknowledged');
     setHasAcknowledged(!!acknowledged);
   }, []);
+  
+  // PREMIUM: Load user's usage for today
+  useEffect(() => {
+    const loadUsage = async () => {
+      if (isFree) {
+        const usage = await getUsageForToday(user?.uid);
+        const viewCount = usage.gameCardsViewed?.length || 0;
+        setGameCardViewCount(viewCount);
+        setHasReachedLimit(viewCount >= 1);
+      } else {
+        // Premium users have no limits
+        setGameCardViewCount(0);
+        setHasReachedLimit(false);
+      }
+    };
+    loadUsage();
+  }, [user, isFree, isPremium]);
   
   // FIREBASE: Auto-track all recommended bets
   useBetTracking(allEdges, dataProcessor);
@@ -2442,6 +2478,47 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const element = document.getElementById(gameId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+  
+  // PREMIUM: Handle game card expansion with gating for free users
+  const handleGameExpand = async (gameId, isExpanding) => {
+    // If collapsing, always allow
+    if (!isExpanding) {
+      return true;
+    }
+    
+    // Premium users can always expand
+    if (isPremium) {
+      return true;
+    }
+    
+    // Free users: check if they've reached their daily limit
+    if (isFree && hasReachedLimit && gameCardViewCount >= 1) {
+      // Show upgrade modal
+      logEvent('free_limit_reached', {
+        type: 'game_card',
+        viewCount: gameCardViewCount
+      });
+      setUpgradeModalOpen(true);
+      return false; // Prevent expansion
+    }
+    
+    // Free user hasn't reached limit - track this view
+    try {
+      await trackGameCardView(user?.uid, gameId);
+      setGameCardViewCount(prev => prev + 1);
+      setHasReachedLimit(true); // They've now used their 1 free view
+      
+      logEvent('game_card_view', {
+        tier: 'free',
+        viewCount: gameCardViewCount + 1
+      });
+      
+      return true; // Allow expansion
+    } catch (error) {
+      console.error('Error tracking game card view:', error);
+      return true; // Allow expansion even if tracking fails
     }
   };
 
@@ -2789,6 +2866,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 total: opportunityCounts.total,
                 elite: opportunityCounts.highValue
               }}
+              isFree={isFree}
+              hasReachedLimit={hasReachedLimit}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
@@ -2855,6 +2934,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           <div style={{ marginBottom: '1.5rem' }}>
             <CompactPicksBar 
               gameGroups={Object.values(betsByGame)}
+              isFree={isFree}
+              hasReachedLimit={hasReachedLimit}
               onViewAll={() => {
                 document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
@@ -3073,7 +3154,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
               defaultExpanded={false}
               index={index}
               isMobile={isMobile}
-                        onToggle={(isExpanded) => {
+                        onToggle={async (isExpanded) => {
                           if (isExpanded) {
                             // Check if user has acknowledged disclaimer
                             if (!hasAcknowledged) {
@@ -3082,6 +3163,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                               setShowDisclaimer(true);
                               return false; // Prevent expansion
                             }
+                            
+                            // PREMIUM: Check if free user has reached limit
+                            const canExpand = await handleGameExpand(gameId, true);
+                            if (!canExpand) {
+                              return false; // Prevent expansion and show upgrade modal
+                            }
+                            
                             trackBetExpand(game);
                           }
                         }}
@@ -3261,6 +3349,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           setShowDisclaimer(false);
           setPendingGameExpand(null);
         }}
+      />
+      
+      {/* Upgrade Modal - shown when free user hits daily limit */}
+      <UpgradeModal 
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        user={user}
       />
     </div>
   );

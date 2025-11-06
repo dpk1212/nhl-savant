@@ -103,3 +103,4 @@ export const getOptimalImageQuality = () => {
   return isMobileDevice() ? 0.92 : 0.95;
 };
 
+

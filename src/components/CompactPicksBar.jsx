@@ -54,7 +54,7 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
-export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats }) {
+export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats, isFree, hasReachedLimit }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
   
   // Detect mobile for compact layout
@@ -129,6 +129,26 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           }}>
             Today's Picks
           </h3>
+          
+          {/* Free Tier Badge */}
+          {isFree && (
+            <div style={{
+              padding: '0.25rem 0.625rem',
+              background: hasReachedLimit 
+                ? 'rgba(239, 68, 68, 0.15)' 
+                : 'rgba(16, 185, 129, 0.15)',
+              border: `1px solid ${hasReachedLimit ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+              borderRadius: '6px',
+              fontSize: '0.688rem',
+              fontWeight: '700',
+              color: hasReachedLimit ? '#EF4444' : '#10B981',
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em',
+              whiteSpace: 'nowrap'
+            }}>
+              {hasReachedLimit ? '0 Free Picks Left' : '1 Free Pick Daily'}
+            </div>
+          )}
         </div>
         
         {/* Inline Stats with Dividers */}
