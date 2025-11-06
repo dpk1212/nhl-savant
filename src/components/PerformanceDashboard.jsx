@@ -288,7 +288,13 @@ export default function PerformanceDashboard() {
       }
       
         // Recent bets (already filtered to B-rated or higher)
-        setRecentBets(qualityBets.slice(0, 20));
+        // Sort by game date (most recent first), then by timestamp within same date
+        const sortedByDate = [...qualityBets].sort((a, b) => {
+          const dateCompare = (b.date || '').localeCompare(a.date || '');
+          if (dateCompare !== 0) return dateCompare;
+          return (b.timestamp || 0) - (a.timestamp || 0);
+        });
+        setRecentBets(sortedByDate.slice(0, 20));
         setLoading(false);
       }, (error) => {
         console.error('Error loading performance data:', error);
