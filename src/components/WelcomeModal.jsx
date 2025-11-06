@@ -180,17 +180,17 @@ const WelcomeModal = () => {
             scrollbarColor: 'rgba(212, 175, 55, 0.3) transparent'
           }}>
             {/* Content */}
-            <div style={{ padding: isMobile ? '1.5rem 1.25rem' : '3rem 2.5rem' }}>
+            <div style={{ padding: isMobile ? '2rem 1.5rem 2.5rem' : '3rem 2.5rem 3.5rem' }}>
             {/* Logo/Brand Mark */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? '0.625rem' : '0.75rem',
-              marginBottom: isMobile ? '1.5rem' : '2.5rem'
+              gap: isMobile ? '0.875rem' : '1rem',
+              marginBottom: isMobile ? '2rem' : '2.5rem'
             }}>
               <div style={{
-                width: isMobile ? '52px' : '64px',
-                height: isMobile ? '52px' : '64px',
+                width: isMobile ? '60px' : '68px',
+                height: isMobile ? '60px' : '68px',
                 background: 'linear-gradient(135deg, #D4AF37 0%, #F4D03F 50%, #C4A02C 100%)',
                 borderRadius: isMobile ? '16px' : '18px',
                 display: 'flex',
@@ -202,7 +202,7 @@ const WelcomeModal = () => {
                   inset 0 2px 4px rgba(255, 255, 255, 0.3),
                   inset 0 -2px 4px rgba(0, 0, 0, 0.2)
                 `,
-                fontSize: isMobile ? '1.875rem' : '2.25rem',
+                fontSize: isMobile ? '2rem' : '2.375rem',
                 flexShrink: 0,
                 position: 'relative',
                 overflow: 'hidden'
@@ -220,7 +220,7 @@ const WelcomeModal = () => {
               </div>
               <div>
                 <h1 style={{
-                  fontSize: isMobile ? '1.625rem' : '2rem',
+                  fontSize: isMobile ? '1.75rem' : '2.125rem',
                   fontWeight: '800',
                   background: 'linear-gradient(135deg, #F4D03F 0%, #D4AF37 50%, #C4A02C 100%)',
                   WebkitBackgroundClip: 'text',
@@ -234,9 +234,9 @@ const WelcomeModal = () => {
                   NHL Savant
                 </h1>
                 <p style={{
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: 'rgba(212, 175, 55, 0.8)',
-                  margin: '0.375rem 0 0 0',
+                  fontSize: isMobile ? '0.75rem' : '0.8125rem',
+                  color: 'rgba(212, 175, 55, 0.85)',
+                  margin: '0.5rem 0 0 0',
                   fontWeight: '700',
                   textTransform: 'uppercase',
                   letterSpacing: '0.15em',
@@ -249,200 +249,211 @@ const WelcomeModal = () => {
 
             {/* Headline */}
             <h2 style={{
-              fontSize: isMobile ? '1.75rem' : 'clamp(2rem, 4.5vw, 2.75rem)',
+              fontSize: isMobile ? '2rem' : 'clamp(2.25rem, 4.5vw, 3rem)',
               fontWeight: '800',
               color: 'var(--color-text-primary)',
               lineHeight: 1.15,
-              marginBottom: isMobile ? '1rem' : '1.25rem',
+              marginBottom: isMobile ? '1.25rem' : '1.5rem',
               letterSpacing: '-0.03em',
               fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
               textShadow: '0 2px 12px rgba(0, 0, 0, 0.3)'
             }}>
-              Find Tonight's NHL Edges.<br />
               <span style={{
                 background: 'linear-gradient(135deg, #F4D03F 0%, #D4AF37 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text'
-              }}>Beat the Market.</span>
+              }}>NHL Edges, Quantified.</span><br />
+              No Prayers. Just Proven Edge.
             </h2>
 
             {/* Subheadline */}
             <p style={{
-              fontSize: isMobile ? '1rem' : 'clamp(1.0625rem, 2vw, 1.1875rem)',
-              lineHeight: 1.75,
-              color: 'rgba(248, 250, 252, 0.85)',
-              marginBottom: isMobile ? '2rem' : '2.75rem',
-              maxWidth: '680px',
+              fontSize: isMobile ? '1.0625rem' : 'clamp(1.125rem, 2vw, 1.25rem)',
+              lineHeight: 1.7,
+              color: 'rgba(248, 250, 252, 0.9)',
+              marginBottom: isMobile ? '1.5rem' : '2rem',
+              maxWidth: '720px',
               fontWeight: '400',
               letterSpacing: '-0.01em'
             }}>
-              Our algorithm scans <strong style={{ 
+              Our algorithm crunches <strong style={{ 
                 color: 'var(--color-accent)',
                 fontWeight: '700',
                 textShadow: '0 0 20px rgba(212, 175, 55, 0.3)'
-              }}>10,000+ data points</strong> per game to find moneyline inefficiencies the market misses. Every pick rated. Every edge quantified. Every game analyzed.
-              <br /><br />
-              <strong style={{ 
-                color: 'var(--color-text-primary)',
-                fontWeight: '700',
-                fontSize: '1.0625rem',
-                letterSpacing: '0.01em'
-              }}>No parlays. No prayers. Just math.</strong>
+              }}>10,000+ data points</strong> per game to reveal betting market inefficiencies—before the market moves. Every rating, every percentage, every edge shown clearly with zero hype.
+            </p>
+            
+            {/* Positioning Statement */}
+            <p style={{
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '700',
+              color: 'var(--color-text-primary)',
+              marginBottom: isMobile ? '2rem' : '2.5rem',
+              letterSpacing: '0.01em',
+              textAlign: 'center',
+              padding: isMobile ? '1.25rem 1.5rem' : '1.5rem 2rem',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.03) 100%)',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              borderRadius: isMobile ? '12px' : '16px',
+              boxShadow: '0 4px 16px rgba(212, 175, 55, 0.1)'
+            }}>
+              No parlays. No prayers. Just math.
             </p>
 
             {/* Value Props - 3 Columns */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: isMobile ? '1rem' : '1.5rem',
-              marginBottom: isMobile ? '1.5rem' : '2.5rem'
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: isMobile ? '1.25rem' : '1.5rem',
+              marginBottom: isMobile ? '2rem' : '2.5rem'
             }}>
               {/* Transparency */}
               <div style={{
-                padding: isMobile ? '1.5rem' : '1.75rem',
+                padding: isMobile ? '1.75rem 1.5rem' : '2rem 1.75rem',
                 background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%)',
                 border: '1px solid rgba(59, 130, 246, 0.25)',
-                borderRadius: isMobile ? '14px' : '18px',
+                borderRadius: isMobile ? '16px' : '20px',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: '0 4px 16px rgba(59, 130, 246, 0.08)',
                 position: 'relative',
                 overflow: 'hidden'
               }}>
                 <div style={{
-                  width: isMobile ? '44px' : '52px',
-                  height: isMobile ? '44px' : '52px',
+                  width: isMobile ? '48px' : '56px',
+                  height: isMobile ? '48px' : '56px',
                   background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 100%)',
-                  borderRadius: '12px',
+                  borderRadius: '14px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: isMobile ? '1rem' : '1.25rem',
+                  marginBottom: isMobile ? '1.125rem' : '1.375rem',
                   boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
                 }}>
-                  <BarChart3 size={isMobile ? 22 : 26} color="#60A5FA" strokeWidth={2.5} />
+                  <BarChart3 size={isMobile ? 24 : 28} color="#60A5FA" strokeWidth={2.5} />
                 </div>
                 <h3 style={{
-                  fontSize: isMobile ? '1.0625rem' : '1.1875rem',
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
                   fontWeight: '700',
                   color: 'var(--color-text-primary)',
-                  marginBottom: '0.625rem',
+                  marginBottom: '0.75rem',
                   letterSpacing: '-0.01em'
                 }}>
                   Every Edge, Explained
                 </h3>
                 <p style={{
-                  fontSize: isMobile ? '0.9375rem' : '1rem',
+                  fontSize: isMobile ? '1rem' : '1.0625rem',
                   lineHeight: 1.65,
-                  color: 'rgba(248, 250, 252, 0.75)',
+                  color: 'rgba(248, 250, 252, 0.8)',
                   margin: 0,
                   letterSpacing: '-0.005em'
                 }}>
-                  See the exact Expected Value (EV%), win probability, and model rating. No hiding behind vague scores.
+                  Every pick comes with Expected Value (EV%) and win probability—no more hiding behind scores, tout talk, or paywalls.
                 </p>
               </div>
 
               {/* Selectivity */}
               <div style={{
-                padding: isMobile ? '1.5rem' : '1.75rem',
+                padding: isMobile ? '1.75rem 1.5rem' : '2rem 1.75rem',
                 background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.06) 100%)',
                 border: '1px solid rgba(212, 175, 55, 0.3)',
-                borderRadius: isMobile ? '14px' : '18px',
+                borderRadius: isMobile ? '16px' : '20px',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: '0 4px 16px rgba(212, 175, 55, 0.12)',
                 position: 'relative',
                 overflow: 'hidden'
               }}>
                 <div style={{
-                  width: isMobile ? '44px' : '52px',
-                  height: isMobile ? '44px' : '52px',
+                  width: isMobile ? '48px' : '56px',
+                  height: isMobile ? '48px' : '56px',
                   background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.2) 100%)',
-                  borderRadius: '12px',
+                  borderRadius: '14px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: isMobile ? '1rem' : '1.25rem',
+                  marginBottom: isMobile ? '1.125rem' : '1.375rem',
                   boxShadow: '0 4px 12px rgba(212, 175, 55, 0.25)'
                 }}>
-                  <Target size={isMobile ? 22 : 26} color="#D4AF37" strokeWidth={2.5} />
+                  <Target size={isMobile ? 24 : 28} color="#D4AF37" strokeWidth={2.5} />
                 </div>
                 <h3 style={{
-                  fontSize: isMobile ? '1.0625rem' : '1.1875rem',
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
                   fontWeight: '700',
                   color: 'var(--color-text-primary)',
-                  marginBottom: '0.625rem',
+                  marginBottom: '0.75rem',
                   letterSpacing: '-0.01em'
                 }}>
                   Quality Over Volume
                 </h3>
                 <p style={{
-                  fontSize: isMobile ? '0.9375rem' : '1rem',
+                  fontSize: isMobile ? '1rem' : '1.0625rem',
                   lineHeight: 1.65,
-                  color: 'rgba(248, 250, 252, 0.75)',
+                  color: 'rgba(248, 250, 252, 0.8)',
                   margin: 0,
                   letterSpacing: '-0.005em'
                 }}>
-                  We don't post every game. We post games with +EV edges. If the market is efficient, we pass.
+                  Only +EV, actionable picks—never volume for volume's sake. If the market is efficient, we pass.
                 </p>
               </div>
 
               {/* Accountability */}
               <div style={{
-                padding: isMobile ? '1.5rem' : '1.75rem',
+                padding: isMobile ? '1.75rem 1.5rem' : '2rem 1.75rem',
                 background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%)',
                 border: '1px solid rgba(16, 185, 129, 0.25)',
-                borderRadius: isMobile ? '14px' : '18px',
+                borderRadius: isMobile ? '16px' : '20px',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: '0 4px 16px rgba(16, 185, 129, 0.08)',
                 position: 'relative',
                 overflow: 'hidden'
               }}>
                 <div style={{
-                  width: isMobile ? '44px' : '52px',
-                  height: isMobile ? '44px' : '52px',
+                  width: isMobile ? '48px' : '56px',
+                  height: isMobile ? '48px' : '56px',
                   background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%)',
-                  borderRadius: '12px',
+                  borderRadius: '14px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: isMobile ? '1rem' : '1.25rem',
+                  marginBottom: isMobile ? '1.125rem' : '1.375rem',
                   boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
                 }}>
-                  <TrendingUp size={isMobile ? 22 : 26} color="#10B981" strokeWidth={2.5} />
+                  <TrendingUp size={isMobile ? 24 : 28} color="#10B981" strokeWidth={2.5} />
                 </div>
                 <h3 style={{
-                  fontSize: isMobile ? '1.0625rem' : '1.1875rem',
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
                   fontWeight: '700',
                   color: 'var(--color-text-primary)',
-                  marginBottom: '0.625rem',
+                  marginBottom: '0.75rem',
                   letterSpacing: '-0.01em'
                 }}>
                   Track Record, Verified
                 </h3>
                 <p style={{
-                  fontSize: isMobile ? '0.9375rem' : '1rem',
+                  fontSize: isMobile ? '1rem' : '1.0625rem',
                   lineHeight: 1.65,
-                  color: 'rgba(248, 250, 252, 0.75)',
+                  color: 'rgba(248, 250, 252, 0.8)',
                   margin: 0,
                   letterSpacing: '-0.005em'
                 }}>
-                  Every pick tracked. Every result posted. Full transparency on performance.
+                  Every result posted in real time. Nothing hidden. Full-season tracking, every unit accounted for.
                 </p>
               </div>
             </div>
 
             {/* USP Callout */}
             <div style={{
-              padding: isMobile ? '1.5rem' : '2rem',
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)',
-              border: '1.5px solid rgba(212, 175, 55, 0.4)',
-              borderRadius: isMobile ? '14px' : '20px',
-              marginBottom: isMobile ? '2rem' : '3rem',
+              padding: isMobile ? '1.75rem 1.5rem' : '2.25rem 2rem',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.1) 100%)',
+              border: '1.5px solid rgba(212, 175, 55, 0.5)',
+              borderRadius: isMobile ? '16px' : '20px',
+              marginBottom: isMobile ? '2rem' : '2.75rem',
               display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? '1rem' : '1.25rem',
+              flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: isMobile ? '1.25rem' : '1.5rem',
               boxShadow: `
-                0 8px 24px rgba(212, 175, 55, 0.2),
+                0 8px 24px rgba(212, 175, 55, 0.25),
                 inset 0 1px 2px rgba(255, 255, 255, 0.1)
               `,
               position: 'relative',
@@ -454,41 +465,41 @@ const WelcomeModal = () => {
                 left: 0,
                 right: 0,
                 height: '2px',
-                background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent)'
+                background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent)'
               }} />
               <div style={{
-                width: isMobile ? '48px' : '56px',
-                height: isMobile ? '48px' : '56px',
+                width: isMobile ? '56px' : '64px',
+                height: isMobile ? '56px' : '64px',
                 background: 'linear-gradient(135deg, #D4AF37 0%, #C4A02C 100%)',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
                 boxShadow: '0 4px 16px rgba(212, 175, 55, 0.4)'
               }}>
-                <CheckCircle size={isMobile ? 26 : 32} color="#0B0F1F" strokeWidth={2.5} />
+                <CheckCircle size={isMobile ? 30 : 36} color="#0B0F1F" strokeWidth={2.5} />
               </div>
               <div>
                 <p style={{
-                  fontSize: isMobile ? '1.0625rem' : '1.1875rem',
-                  fontWeight: '700',
+                  fontSize: isMobile ? '1.125rem' : '1.3125rem',
+                  fontWeight: '800',
                   color: '#F4D03F',
-                  margin: '0 0 0.375rem 0',
-                  lineHeight: 1.35,
-                  letterSpacing: '-0.01em',
-                  textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+                  margin: '0 0 0.5rem 0',
+                  lineHeight: 1.3,
+                  letterSpacing: '-0.015em',
+                  textShadow: '0 2px 8px rgba(212, 175, 55, 0.4)'
                 }}>
-                  The only NHL model that shows you the edge BEFORE you bet.
+                  The only NHL model that shows you exactly where the math beats the market—before you ever place a bet.
                 </p>
                 <p style={{
-                  fontSize: isMobile ? '0.9375rem' : '1rem',
-                  color: 'rgba(248, 250, 252, 0.85)',
+                  fontSize: isMobile ? '1rem' : '1.0625rem',
+                  color: 'rgba(248, 250, 252, 0.9)',
                   margin: 0,
                   fontWeight: '500',
                   letterSpacing: '-0.005em'
                 }}>
-                  NHL betting, powered by data. Not hope.
+                  NHL Savant is not prediction. It's quantified edge you can actually use—no guesswork, no guru, just the data.
                 </p>
               </div>
             </div>
@@ -496,21 +507,19 @@ const WelcomeModal = () => {
             {/* CTA Buttons */}
             <div style={{
               display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: isMobile ? '0.75rem' : '1rem',
-              flexWrap: 'wrap'
+              flexDirection: 'column',
+              gap: isMobile ? '1rem' : '1.25rem'
             }}>
               <button
                 onClick={handleViewPicks}
                 style={{
-                  flex: '1 1 auto',
-                  minWidth: isMobile ? '100%' : '200px',
-                  padding: isMobile ? '1.25rem 2rem' : '1.125rem 2.5rem',
+                  width: '100%',
+                  padding: isMobile ? '1.375rem 2rem' : '1.375rem 2.5rem',
                   background: 'linear-gradient(135deg, #F4D03F 0%, #D4AF37 50%, #C4A02C 100%)',
                   border: 'none',
-                  borderRadius: '14px',
+                  borderRadius: isMobile ? '14px' : '16px',
                   color: '#0B0F1F',
-                  fontSize: isMobile ? '1.0625rem' : '1.1875rem',
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
                   fontWeight: '800',
                   cursor: 'pointer',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -522,16 +531,16 @@ const WelcomeModal = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.625rem',
+                  gap: '0.75rem',
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   touchAction: 'manipulation',
-                  minHeight: '56px',
+                  minHeight: isMobile ? '60px' : '64px',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.01)';
                   e.currentTarget.style.boxShadow = '0 16px 40px rgba(212, 175, 55, 0.6), 0 8px 16px rgba(212, 175, 55, 0.4)';
                 }}
                 onMouseLeave={(e) => {
@@ -549,26 +558,39 @@ const WelcomeModal = () => {
                   animation: 'shimmer 3s infinite'
                 }} />
                 See Tonight's Picks
-                <TrendingUp size={isMobile ? 20 : 22} strokeWidth={3} />
+                <TrendingUp size={isMobile ? 22 : 24} strokeWidth={3} />
               </button>
+              
+              {/* CTA Subcopy */}
+              <p style={{
+                fontSize: isMobile ? '0.9375rem' : '1rem',
+                color: 'rgba(248, 250, 252, 0.75)',
+                textAlign: 'center',
+                margin: 0,
+                fontWeight: '500',
+                letterSpacing: '0.005em',
+                lineHeight: 1.5
+              }}>
+                Actionable edge. Transparent numbers. Every NHL night.
+              </p>
 
               <button
                 onClick={handleClose}
                 style={{
-                  flex: isMobile ? '1 1 auto' : '0 0 auto',
-                  minWidth: isMobile ? '100%' : 'auto',
-                  padding: isMobile ? '1.25rem 2rem' : '1.125rem 2.5rem',
+                  width: '100%',
+                  padding: isMobile ? '1rem 2rem' : '1rem 2.5rem',
                   background: 'rgba(148, 163, 184, 0.08)',
                   border: '1.5px solid rgba(148, 163, 184, 0.25)',
-                  borderRadius: '14px',
-                  color: 'rgba(248, 250, 252, 0.8)',
-                  fontSize: isMobile ? '1rem' : '1.0625rem',
+                  borderRadius: isMobile ? '12px' : '14px',
+                  color: 'rgba(248, 250, 252, 0.7)',
+                  fontSize: isMobile ? '0.9375rem' : '1rem',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   touchAction: 'manipulation',
-                  minHeight: '56px',
-                  letterSpacing: '0.01em'
+                  minHeight: isMobile ? '52px' : '56px',
+                  letterSpacing: '0.02em',
+                  marginTop: isMobile ? '0.5rem' : '0.75rem'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
@@ -579,30 +601,30 @@ const WelcomeModal = () => {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.25)';
-                  e.currentTarget.style.color = 'rgba(248, 250, 252, 0.8)';
+                  e.currentTarget.style.color = 'rgba(248, 250, 252, 0.7)';
                   e.currentTarget.style.background = 'rgba(148, 163, 184, 0.08)';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                Explore Later
+                I'll Explore Later
               </button>
             </div>
 
-            {/* Footer note */}
+            {/* Footer tagline - NO MORE "FREE" */}
             <p style={{
-              fontSize: isMobile ? '0.8125rem' : '0.875rem',
-              color: 'rgba(148, 163, 184, 0.7)',
+              fontSize: isMobile ? '0.875rem' : '0.9375rem',
+              color: 'rgba(212, 175, 55, 0.7)',
               textAlign: 'center',
-              marginTop: isMobile ? '1.5rem' : '2.5rem',
+              marginTop: isMobile ? '2rem' : '2.5rem',
               marginBottom: 0,
-              paddingBottom: isMobile ? '2rem' : 0,
-              fontWeight: '500',
-              letterSpacing: '0.02em',
-              textTransform: 'uppercase',
-              fontSize: '0.75rem'
+              paddingBottom: isMobile ? '2rem' : '0.5rem',
+              fontWeight: '600',
+              letterSpacing: '0.01em',
+              lineHeight: 1.5,
+              fontStyle: 'italic'
             }}>
-              Free access. No sign-up required. No BS.
+              Let others hope. You'll know the edge—before the line moves.
             </p>
             </div>
           </div>
