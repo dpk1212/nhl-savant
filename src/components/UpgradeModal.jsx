@@ -91,8 +91,8 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           border: '1px solid rgba(212, 175, 55, 0.2)',
-          borderRadius: window.innerWidth < 640 ? '16px' : '24px',
-          padding: window.innerWidth < 640 ? '1.5rem' : '2.5rem',
+          borderRadius: window.innerWidth < 640 ? '14px' : '20px',
+          padding: window.innerWidth < 640 ? '1.125rem' : '2rem',
           maxWidth: '900px',
           width: '100%',
           margin: 'auto',
@@ -109,13 +109,13 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '1.5rem',
-            right: '1.5rem',
+            top: window.innerWidth < 640 ? '1rem' : '1.25rem',
+            right: window.innerWidth < 640 ? '1rem' : '1.25rem',
             background: 'rgba(255, 255, 255, 0.05)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: '8px',
-            width: '36px',
-            height: '36px',
+            width: '32px',
+            height: '32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -132,39 +132,39 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
           }}
         >
-          <X size={20} color="#E2E8F0" />
+          <X size={18} color="#E2E8F0" />
         </button>
 
         {/* Header */}
         <div style={{ 
           textAlign: 'center', 
-          marginBottom: window.innerWidth < 640 ? '1.5rem' : '2.5rem' 
+          marginBottom: window.innerWidth < 640 ? '1rem' : '1.75rem' 
         }}>
           <h2 style={{
-            fontSize: window.innerWidth < 640 ? '1.5rem' : '2rem',
+            fontSize: window.innerWidth < 640 ? '1.25rem' : '1.75rem',
             fontWeight: '800',
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            margin: '0 0 0.75rem 0',
+            margin: '0 0 0.625rem 0',
             letterSpacing: '-0.02em'
           }}>
             Turn Data Into Profit
           </h2>
           <p style={{
-            fontSize: window.innerWidth < 640 ? '0.938rem' : '1.125rem',
+            fontSize: window.innerWidth < 640 ? '0.8125rem' : '1rem',
             color: 'rgba(241, 245, 249, 0.8)',
-            margin: '0 0 1rem 0',
+            margin: '0 0 0.625rem 0',
             maxWidth: '650px',
             marginLeft: 'auto',
             marginRight: 'auto',
-            lineHeight: '1.6'
+            lineHeight: '1.5'
           }}>
             You've used your <strong style={{ color: '#D4AF37' }}>1 free pick today</strong>. Upgrade to unlock our elite predictive model—<strong style={{ color: '#10B981' }}>52.9% win rate, 30.3% ROI</strong> tracked since Oct 2024.
           </p>
           <p style={{
-            fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem',
+            fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
             color: 'rgba(241, 245, 249, 0.6)',
             margin: 0,
             maxWidth: '600px',
@@ -179,9 +179,9 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
         {/* Tier Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: window.innerWidth < 640 ? '1rem' : '1.5rem',
-          marginBottom: window.innerWidth < 640 ? '1.5rem' : '2rem'
+          gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: window.innerWidth < 640 ? '0.875rem' : '1.25rem',
+          marginBottom: window.innerWidth < 640 ? '1rem' : '1.5rem'
         }}>
           {tiers.map((tier) => (
             <div
@@ -193,8 +193,8 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
                 border: tier.popular 
                   ? '2px solid rgba(212, 175, 55, 0.4)'
                   : '1px solid rgba(148, 163, 184, 0.15)',
-                borderRadius: window.innerWidth < 640 ? '12px' : '16px',
-                padding: window.innerWidth < 640 ? '1.25rem' : '1.75rem',
+                borderRadius: window.innerWidth < 640 ? '10px' : '14px',
+                padding: window.innerWidth < 640 ? '1rem' : '1.375rem',
                 position: 'relative',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer'
@@ -212,14 +212,14 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
               {tier.popular && (
                 <div style={{
                   position: 'absolute',
-                  top: '-12px',
+                  top: '-10px',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
                   color: '#0A0E27',
-                  padding: '0.375rem 1rem',
+                  padding: '0.3125rem 0.875rem',
                   borderRadius: '100px',
-                  fontSize: '0.75rem',
+                  fontSize: '0.6875rem',
                   fontWeight: '700',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
@@ -232,13 +232,13 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
               {tier.savings && (
                 <div style={{
                   position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
+                  top: '0.75rem',
+                  right: '0.75rem',
                   background: 'rgba(16, 185, 129, 0.15)',
                   color: '#10B981',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
+                  padding: '0.1875rem 0.625rem',
+                  borderRadius: '5px',
+                  fontSize: '0.6875rem',
                   fontWeight: '600'
                 }}>
                   {tier.savings}
@@ -247,25 +247,25 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
 
               {/* Tier name */}
               <div style={{
-                fontSize: '1.25rem',
+                fontSize: window.innerWidth < 640 ? '1.0625rem' : '1.125rem',
                 fontWeight: '700',
                 color: '#F1F5F9',
-                marginBottom: '0.5rem'
+                marginBottom: '0.375rem'
               }}>
                 {tier.name}
               </div>
 
               {/* Price */}
-              <div style={{ marginBottom: '1rem' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
                 <span style={{
-                  fontSize: window.innerWidth < 640 ? '1.875rem' : '2.25rem',
+                  fontSize: window.innerWidth < 640 ? '1.625rem' : '1.875rem',
                   fontWeight: '800',
                   color: tier.popular ? '#D4AF37' : '#F1F5F9'
                 }}>
                   {tier.price}
                 </span>
                 <span style={{
-                  fontSize: window.innerWidth < 640 ? '0.875rem' : '1rem',
+                  fontSize: window.innerWidth < 640 ? '0.8125rem' : '0.9375rem',
                   color: 'rgba(241, 245, 249, 0.6)',
                   marginLeft: '0.25rem'
                 }}>
@@ -275,28 +275,29 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
 
               {/* Trial */}
               <div style={{
-                fontSize: '0.875rem',
+                fontSize: window.innerWidth < 640 ? '0.8125rem' : '0.875rem',
                 color: '#10B981',
                 fontWeight: '600',
-                marginBottom: '1.25rem'
+                marginBottom: '0.875rem'
               }}>
                 {tier.trial}
               </div>
 
               {/* Features */}
               <div style={{
-                marginBottom: '1.5rem'
+                marginBottom: '1rem'
               }}>
                 {tier.features.map((feature, idx) => (
                   <div key={idx} style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.625rem',
-                    marginBottom: '0.625rem',
-                    fontSize: '0.875rem',
-                    color: 'rgba(241, 245, 249, 0.9)'
+                    gap: '0.5rem',
+                    marginBottom: '0.5rem',
+                    fontSize: window.innerWidth < 640 ? '0.8125rem' : '0.8125rem',
+                    color: 'rgba(241, 245, 249, 0.9)',
+                    lineHeight: '1.3'
                   }}>
-                    <Check size={16} color={tier.popular ? '#D4AF37' : '#60A5FA'} strokeWidth={3} />
+                    <Check size={14} color={tier.popular ? '#D4AF37' : '#60A5FA'} strokeWidth={3} />
                     {feature}
                   </div>
                 ))}
@@ -307,14 +308,14 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
                 onClick={() => handleUpgrade(tier.id)}
                 style={{
                   width: '100%',
-                  padding: '0.875rem',
+                  padding: window.innerWidth < 640 ? '0.75rem' : '0.8125rem',
                   background: tier.popular
                     ? 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)'
                     : 'rgba(59, 130, 246, 0.15)',
                   border: tier.popular ? 'none' : '1px solid rgba(59, 130, 246, 0.3)',
-                  borderRadius: '10px',
+                  borderRadius: '9px',
                   color: tier.popular ? '#0A0E27' : '#60A5FA',
-                  fontSize: '0.938rem',
+                  fontSize: window.innerWidth < 640 ? '0.875rem' : '0.875rem',
                   fontWeight: '700',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
@@ -343,19 +344,19 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
         {/* Trust indicators */}
         <div style={{
           textAlign: 'center',
-          fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
+          fontSize: window.innerWidth < 640 ? '0.6875rem' : '0.8125rem',
           color: 'rgba(241, 245, 249, 0.6)',
-          lineHeight: '1.8'
+          lineHeight: '1.6'
         }}>
           <div style={{ 
-            marginBottom: '0.5rem',
-            fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem',
+            marginBottom: '0.375rem',
+            fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
             color: 'rgba(241, 245, 249, 0.8)'
           }}>
             <strong style={{ color: '#10B981' }}>Verified Performance:</strong> 52.9% Win Rate | 30.3% ROI | Real-Time Tracking
           </div>
           <div style={{ 
-            fontSize: window.innerWidth < 640 ? '0.688rem' : '0.875rem'
+            fontSize: window.innerWidth < 640 ? '0.6875rem' : '0.8125rem'
           }}>
             🔒 Secure Stripe Checkout | Cancel Anytime | <strong style={{ color: '#D4AF37' }}>7-Day Money-Back Guarantee</strong>
           </div>
