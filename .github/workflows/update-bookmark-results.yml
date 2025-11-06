@@ -1,0 +1,44 @@
+name: Update Bookmark Results
+
+on:
+  schedule:
+    # Run at 8 AM ET (1 PM UTC) daily - after overnight games finish
+    - cron: '0 13 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-bookmarks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update bookmark results
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/updateBookmarkResults.js
+
+      - name: Notify completion
+        if: success()
+        run: |
+          echo "✅ Bookmark results updated successfully"
+          echo "📚 User picks now show overnight game results"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ Bookmark results update failed"
+          echo "Check logs for details"
+
