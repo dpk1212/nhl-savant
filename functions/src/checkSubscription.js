@@ -2,8 +2,19 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(functions.config().stripe.secret_key);
+// Don't initialize Stripe at module level - do it inside the function
+let stripe = null;
+
+const getStripe = () => {
+  if (!stripe) {
+    const secretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error('Stripe secret key not configured. Run: firebase functions:config:set stripe.secret_key="sk_..."');
+    }
+    stripe = new Stripe(secretKey);
+  }
+  return stripe;
+};
 
 /**
  * HTTPS Callable Function - Check User's Subscription Status
@@ -16,6 +27,9 @@ const stripe = new Stripe(functions.config().stripe.secret_key);
  */
 exports.checkSubscription = functions.https.onCall(async (data, context) => {
   try {
+    // Initialize Stripe (lazy loading)
+    const stripe = getStripe();
+    
     // Ensure user is authenticated
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'User must be signed in');
