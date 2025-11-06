@@ -35,18 +35,19 @@ const Navigation = () => {
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-      padding: '0.75rem 1.5rem'
+      padding: '0.875rem 1rem'
     }}>
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: '0.75rem'
       }}>
         {/* MINIMAL PREMIUM Logo - Apple-level simplicity */}
         <Link to="/" style={{
-          fontSize: '1.25rem',
+          fontSize: '1.125rem',
           fontWeight: '700',
           color: '#D4AF37',
           textDecoration: 'none',
@@ -54,7 +55,8 @@ const Navigation = () => {
           alignItems: 'center',
           gap: '0.5rem',
           letterSpacing: '-0.015em',
-          transition: 'color 0.2s ease'
+          transition: 'color 0.2s ease',
+          flexShrink: 0
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.color = '#FFD700';
@@ -62,7 +64,7 @@ const Navigation = () => {
         onMouseLeave={(e) => {
           e.currentTarget.style.color = '#D4AF37';
         }}>
-          🏒 <span>NHL Savant</span>
+          🏒 <span style={{ display: window.innerWidth < 400 ? 'none' : 'inline' }}>NHL Savant</span>
         </Link>
 
         {/* Premium Desktop Navigation */}
@@ -363,44 +365,205 @@ const Navigation = () => {
           )}
         </div>
 
-        {/* Premium Mobile Menu Button */}
-        <button
-          className="mobile-menu-btn"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        {/* PREMIUM Mobile Auth Section */}
+        <div className="mobile-auth" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginLeft: 'auto'
+        }}>
+          {!authLoading && !user && (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              style={{
+                padding: '0.5rem 0.875rem',
+                borderRadius: '8px',
+                fontSize: '0.813rem',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+                border: 'none',
+                color: '#0A0E27',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                flexShrink: 0
+              }}
+            >
+              <User size={14} strokeWidth={3} />
+              <span className="sign-in-text">Sign In</span>
+            </button>
+          )}
+          
+          {user && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => {
+                  setUserMenuOpen(!userMenuOpen);
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  padding: '0.375rem',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                  border: '2px solid rgba(212, 175, 55, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '36px',
+                  height: '36px',
+                  flexShrink: 0
+                }}
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || 'User'} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                ) : (
+                  <User size={18} color="#D4AF37" strokeWidth={2.5} />
+                )}
+              </button>
+              
+              {/* Mobile User Dropdown */}
+              {userMenuOpen && (
+                <div 
+                  className="mobile-user-dropdown"
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 0.5rem)',
+                    right: 0,
+                    background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(212, 175, 55, 0.2)',
+                    borderRadius: '12px',
+                    padding: '0.75rem',
+                    minWidth: '200px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                    animation: 'slideDown 0.2s ease-out',
+                    zIndex: 1001
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* User Info */}
+                  <div style={{ padding: '0.75rem', borderBottom: '1px solid rgba(148, 163, 184, 0.1)', marginBottom: '0.5rem' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#F1F5F9', marginBottom: '0.25rem' }}>
+                      {user.displayName || user.email}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.6)' }}>
+                      {isPremium ? (
+                        <span style={{ color: '#D4AF37', fontWeight: '600' }}>
+                          {tier?.toUpperCase()} {isTrial && `(${daysRemaining}d trial)`}
+                        </span>
+                      ) : (
+                        <span>Free Tier</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <Link
+                    to="/account"
+                    onClick={() => setUserMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      color: 'rgba(241, 245, 249, 0.9)',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      marginBottom: '0.25rem'
+                    }}
+                  >
+                    <User size={16} />
+                    Account
+                  </Link>
+                  
+                  {isPremium && (
+                    <Link
+                      to="/account"
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.75rem',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: 'rgba(241, 245, 249, 0.9)',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        marginBottom: '0.25rem'
+                      }}
+                    >
+                      <CreditCard size={16} />
+                      Billing
+                    </Link>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setUserMenuOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: '#EF4444',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Mobile Menu Button */}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => {
+              setMobileMenuOpen(!mobileMenuOpen);
+              setUserMenuOpen(false);
+            }}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '0.625rem',
+              padding: '0.5rem',
             background: mobileMenuOpen 
               ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)'
-              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                : 'rgba(255, 255, 255, 0.05)',
             border: mobileMenuOpen 
               ? '1px solid rgba(212, 175, 55, 0.3)'
-              : '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '10px',
+                : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
             color: mobileMenuOpen ? '#D4AF37' : 'rgba(255, 255, 255, 0.9)',
             cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            boxShadow: mobileMenuOpen 
-              ? '0 4px 12px rgba(212, 175, 55, 0.2)'
-              : '0 2px 8px rgba(0, 0, 0, 0.2)'
-          }}
-          onMouseEnter={(e) => {
-            if (!mobileMenuOpen) {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!mobileMenuOpen) {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-            }
-          }}
-        >
-          {mobileMenuOpen ? <X size={22} strokeWidth={2.5} /> : <Menu size={22} strokeWidth={2.5} />}
+              transition: 'all 0.2s ease',
+              flexShrink: 0
+            }}
+          >
+            {mobileMenuOpen ? <X size={20} strokeWidth={2.5} /> : <Menu size={20} strokeWidth={2.5} />}
         </button>
+        </div>
       </div>
 
       {/* Premium Mobile Menu Dropdown */}
@@ -414,10 +577,36 @@ const Navigation = () => {
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(212, 175, 55, 0.15)',
-          padding: '1rem',
+          padding: '0.875rem',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-          animation: 'slideDown 0.3s ease-out'
+          animation: 'slideDown 0.3s ease-out',
+          maxHeight: 'calc(100vh - 60px)',
+          overflowY: 'auto'
         }}>
+          {/* User Info Section (if logged in) */}
+          {user && (
+            <div style={{
+              padding: '0.875rem',
+              borderRadius: '10px',
+              background: 'rgba(212, 175, 55, 0.08)',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              marginBottom: '0.875rem'
+            }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#F1F5F9', marginBottom: '0.25rem' }}>
+                {user.displayName || user.email}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(241, 245, 249, 0.6)' }}>
+                {isPremium ? (
+                  <span style={{ color: '#D4AF37', fontWeight: '600' }}>
+                    {tier?.toUpperCase()} {isTrial && `(${daysRemaining}d trial)`}
+                  </span>
+                ) : (
+                  <span>Free Tier</span>
+                )}
+              </div>
+            </div>
+          )}
+          
           {navLinks.map((link, index) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
@@ -431,9 +620,9 @@ const Navigation = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.75rem',
-                  padding: '1rem 1.25rem',
-                  borderRadius: '10px',
-                  fontSize: '1rem',
+                  padding: '0.875rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.938rem',
                   fontWeight: '600',
                   textDecoration: 'none',
                   color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.8)',
@@ -444,14 +633,14 @@ const Navigation = () => {
                     ? '1px solid rgba(212, 175, 55, 0.3)'
                     : '1px solid transparent',
                   boxShadow: isActive 
-                    ? '0 4px 12px rgba(212, 175, 55, 0.2)'
+                    ? '0 2px 8px rgba(212, 175, 55, 0.2)'
                     : 'none',
-                  marginBottom: index < navLinks.length - 1 ? '0.5rem' : 0,
-                  transition: 'all 0.3s ease',
-                  animation: `slideIn 0.3s ease-out ${index * 0.05}s both`
+                  marginBottom: '0.375rem',
+                  transition: 'all 0.2s ease',
+                  animation: `slideIn 0.3s ease-out ${index * 0.04}s both`
                 }}
               >
-                <Icon size={20} strokeWidth={2.5} />
+                <Icon size={18} strokeWidth={2.5} />
                 {link.label}
                 {isActive && (
                   <div style={{
@@ -466,6 +655,83 @@ const Navigation = () => {
               </Link>
             );
           })}
+          
+          {/* User Actions (if logged in) */}
+          {user && (
+            <div style={{
+              marginTop: '0.875rem',
+              paddingTop: '0.875rem',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              {!isPremium && (
+                <Link
+                  to="/pricing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.875rem 1rem',
+                    borderRadius: '8px',
+                    fontSize: '0.938rem',
+                    fontWeight: '700',
+                    textDecoration: 'none',
+                    color: '#0A0E27',
+                    background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+                    boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                    marginBottom: '0.375rem'
+                  }}
+                >
+                  <Crown size={18} strokeWidth={2.5} />
+                  Upgrade to Premium
+                </Link>
+              )}
+              <Link
+                to="/account"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.875rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.938rem',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  background: 'transparent',
+                  border: '1px solid transparent',
+                  marginBottom: '0.375rem'
+                }}
+              >
+                <User size={18} strokeWidth={2.5} />
+                Account
+              </Link>
+              <button
+                onClick={() => {
+                  signOut();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.875rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.938rem',
+                  fontWeight: '600',
+                  color: '#EF4444',
+                  background: 'transparent',
+                  border: '1px solid transparent',
+                  cursor: 'pointer'
+                }}
+              >
+                <LogOut size={18} strokeWidth={2.5} />
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -473,11 +739,14 @@ const Navigation = () => {
       <style>{`
         @media (min-width: 768px) {
           .desktop-nav { display: flex !important; }
-          .mobile-menu-btn { display: none !important; }
+          .mobile-auth { display: none !important; }
         }
         @media (max-width: 767px) {
           .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
+          .mobile-auth { display: flex !important; }
+        }
+        @media (max-width: 400px) {
+          .sign-in-text { display: none !important; }
         }
         
         /* Premium Animations */
