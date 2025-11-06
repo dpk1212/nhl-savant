@@ -2630,133 +2630,114 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           </div>
           </div>
           
-      {/* Model Performance - Compact */}
-      <div className="elevated-card" style={{
-        padding: isMobile ? '0.875rem' : '1rem',
-        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)',
-        border: '1px solid rgba(139, 92, 246, 0.15)',
-        marginBottom: isMobile ? '1rem' : '1.5rem'
+      {/* Model Performance - Ultra Slim Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: isMobile ? '0.5rem' : '1rem',
+        padding: isMobile ? '0.75rem 0' : '0.875rem 0',
+        marginBottom: isMobile ? '1rem' : '1.25rem',
+        borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
+        flexWrap: 'wrap'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Target size={16} color="#8B5CF6" strokeWidth={2.5} />
-            <span style={{
-              fontSize: isMobile ? '0.875rem' : '0.938rem',
-              fontWeight: '700',
-              color: 'var(--color-text-primary)',
-              letterSpacing: '-0.01em'
-              }}>
-              Model Performance
+            <Target size={14} color="#8B5CF6" strokeWidth={2.5} style={{ opacity: 0.7 }} />
+            <span style={{ 
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
+              fontWeight: '600',
+              color: 'rgba(148, 163, 184, 0.9)',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase'
+            }}>
+              Model
             </span>
           </div>
-          <button
-            onClick={() => navigate('/performance')}
-            style={{
-              padding: '0.25rem 0.625rem',
-              background: 'rgba(139, 92, 246, 0.15)',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              borderRadius: '6px',
-              color: '#A78BFA',
-              fontSize: '0.688rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)';
-              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
-              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-            }}
-          >
-            View Details
-            <ChevronRight size={12} />
-          </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+              <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: '#A78BFA' }}>
+                {betStats.totalBets}
+              </span>
+              <span style={{ fontSize: '0.625rem', color: 'rgba(167, 139, 250, 0.7)', fontWeight: '500' }}>
+                bets
+              </span>
             </div>
             
-            <div style={{
-            display: 'flex',
-          gap: '0.5rem',
-            alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-            <div style={{
-            padding: '0.375rem 0.625rem',
-            background: 'rgba(139, 92, 246, 0.12)',
-            borderRadius: '6px',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.375rem'
-          }}>
-            <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#A78BFA' }}>
-              {betStats.totalBets}
-            </span>
-            <span style={{ fontSize: '0.625rem', color: 'rgba(167, 139, 250, 0.9)', fontWeight: '600', textTransform: 'uppercase' }}>
-              Bets
-            </span>
-            </div>
-
-          <div style={{
-            padding: '0.375rem 0.625rem',
-            background: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                borderRadius: '6px',
-            border: betStats.totalProfit >= 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-            gap: '0.375rem'
-          }}>
-            <span style={{ fontSize: '1.125rem', fontWeight: '700', color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444' }}>
-              {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
+            <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
+            
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+              <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: betStats.totalProfit >= 0 ? '#10B981' : '#EF4444' }}>
+                {betStats.totalProfit >= 0 ? '+' : ''}{betStats.totalProfit.toFixed(1)}u
               </span>
-              <span style={{
-              fontSize: '0.625rem', 
-              color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)', 
-                fontWeight: '600',
-              textTransform: 'uppercase' 
-              }}>
-              Profit
+              <span style={{ fontSize: '0.625rem', color: betStats.totalProfit >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)', fontWeight: '500' }}>
+                profit
               </span>
             </div>
-
-          {bookmarkStats.count > 0 && (
-            <div 
-              onClick={() => navigate('/my-picks')}
-              style={{
-                padding: '0.375rem 0.625rem',
-                background: 'rgba(212, 175, 55, 0.15)',
-                borderRadius: '6px',
-                border: '1px solid rgba(212, 175, 55, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.22)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <span style={{ fontSize: '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
-                {bookmarkStats.count}
-              </span>
-              <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.95)', fontWeight: '600', textTransform: 'uppercase' }}>
-                Saved
-              </span>
-            </div>
-          )}
+            
+            {bookmarkStats.count > 0 && (
+              <>
+                <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
+                
+                <div 
+                  onClick={() => navigate('/my-picks')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '0.25rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '0.8';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                >
+                  <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
+                    {bookmarkStats.count}
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '500' }}>
+                    saved
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
+        
+        <button
+          onClick={() => navigate('/performance')}
+          style={{
+            padding: '0.375rem 0.75rem',
+            background: 'transparent',
+            border: '1px solid rgba(139, 92, 246, 0.25)',
+            borderRadius: '6px',
+            color: '#A78BFA',
+            fontSize: '0.688rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            letterSpacing: '0.02em'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.25)';
+          }}
+        >
+          Details
+          <ChevronRight size={12} />
+        </button>
+      </div>
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
