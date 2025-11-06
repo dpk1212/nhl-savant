@@ -2892,8 +2892,74 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* Compact Picks Bar - USE FIREBASE BETS DIRECTLY, GROUPED BY GAME */}
-      {firebaseBets && firebaseBets.length > 0 && (() => {
+      {/* Compact Picks Bar - Show positive EV opportunities */}
+      {allEdges && allEdges.length > 0 && (() => {
+        // Generate picks bar from allEdges (real-time calculations)
+        // This ensures the bar always shows when there are opportunities
+        const gameGroups = [];
+        
+        allEdges.forEach(game => {
+          const bets = [];
+          
+          // Check moneyline
+          if (game.edges?.moneyline) {
+            if (game.edges.moneyline.away?.evPercent >= 3) {
+              bets.push({
+                pick: `${game.awayTeam} ML`,
+                market: 'MONEYLINE',
+                grade: getRating(game.edges.moneyline.away.evPercent).grade,
+                odds: game.edges.moneyline.away.odds,
+                edge: `+${game.edges.moneyline.away.evPercent.toFixed(1)}%`
+              });
+            }
+            if (game.edges.moneyline.home?.evPercent >= 3) {
+              bets.push({
+                pick: `${game.homeTeam} ML`,
+                market: 'MONEYLINE',
+                grade: getRating(game.edges.moneyline.home.evPercent).grade,
+                odds: game.edges.moneyline.home.odds,
+                edge: `+${game.edges.moneyline.home.evPercent.toFixed(1)}%`
+              });
+            }
+          }
+          
+          if (bets.length > 0) {
+            gameGroups.push({
+              game: `${game.awayTeam} @ ${game.homeTeam}`,
+              gameTime: game.gameTime,
+              bets
+            });
+          }
+        });
+        
+        return gameGroups.length > 0 ? (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <CompactPicksBar 
+              gameGroups={gameGroups}
+              onViewAll={() => {
+                document.querySelector('[class*="elevated-card"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              onGameClick={(gameMatchup) => {
+                // Scroll to specific game card
+                const gameId = `game-${gameMatchup.replace(/\s+/g, '-').replace(/@/g, 'at')}`;
+                const gameElement = document.getElementById(gameId);
+                if (gameElement) {
+                  gameElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  // Add a brief highlight effect
+                  gameElement.style.transition = 'all 0.3s ease';
+                  gameElement.style.transform = 'scale(1.01)';
+                  setTimeout(() => {
+                    gameElement.style.transform = 'scale(1)';
+                  }, 300);
+                }
+              }}
+            />
+          </div>
+        ) : null;
+      })()}
+      
+      {/* LEGACY: Firebase-based picks bar (keeping for reference, can be removed) */}
+      {false && firebaseBets && firebaseBets.length > 0 && (() => {
         // CRITICAL FIX: Only show bets from TODAY (ET timezone)
         // useFirebaseBets already filters to today + yesterday, so we just need today
         const todayET = getETDate();
