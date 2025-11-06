@@ -85,13 +85,15 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           border: '1px solid rgba(212, 175, 55, 0.2)',
-          borderRadius: '24px',
-          padding: '2.5rem',
+          borderRadius: window.innerWidth < 640 ? '16px' : '24px',
+          padding: window.innerWidth < 640 ? '1.5rem' : '2.5rem',
           maxWidth: '900px',
           width: '100%',
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          animation: 'slideUp 0.3s ease-out'
+          animation: 'slideUp 0.3s ease-out',
+          maxHeight: '95vh',
+          overflowY: 'auto'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -127,9 +129,12 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
         </button>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+        <div style={{ 
+          textAlign: 'center', 
+          marginBottom: window.innerWidth < 640 ? '1.5rem' : '2.5rem' 
+        }}>
           <h2 style={{
-            fontSize: '2rem',
+            fontSize: window.innerWidth < 640 ? '1.5rem' : '2rem',
             fontWeight: '800',
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
             WebkitBackgroundClip: 'text',
@@ -141,7 +146,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
             Turn Data Into Profit
           </h2>
           <p style={{
-            fontSize: '1.125rem',
+            fontSize: window.innerWidth < 640 ? '0.938rem' : '1.125rem',
             color: 'rgba(241, 245, 249, 0.8)',
             margin: '0 0 1rem 0',
             maxWidth: '650px',
@@ -152,7 +157,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
             You've used your <strong style={{ color: '#D4AF37' }}>1 free pick today</strong>. Upgrade to unlock our elite predictive model—<strong style={{ color: '#10B981' }}>52.9% win rate, 30.3% ROI</strong> tracked since Oct 2024.
           </p>
           <p style={{
-            fontSize: '0.938rem',
+            fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem',
             color: 'rgba(241, 245, 249, 0.6)',
             margin: 0,
             maxWidth: '600px',
@@ -167,9 +172,9 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
         {/* Tier Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '2rem'
+          gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: window.innerWidth < 640 ? '1rem' : '1.5rem',
+          marginBottom: window.innerWidth < 640 ? '1.5rem' : '2rem'
         }}>
           {tiers.map((tier) => (
             <div
@@ -181,8 +186,8 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
                 border: tier.popular 
                   ? '2px solid rgba(212, 175, 55, 0.4)'
                   : '1px solid rgba(148, 163, 184, 0.15)',
-                borderRadius: '16px',
-                padding: '1.75rem',
+                borderRadius: window.innerWidth < 640 ? '12px' : '16px',
+                padding: window.innerWidth < 640 ? '1.25rem' : '1.75rem',
                 position: 'relative',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer'
@@ -246,14 +251,14 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
               {/* Price */}
               <div style={{ marginBottom: '1rem' }}>
                 <span style={{
-                  fontSize: '2.25rem',
+                  fontSize: window.innerWidth < 640 ? '1.875rem' : '2.25rem',
                   fontWeight: '800',
                   color: tier.popular ? '#D4AF37' : '#F1F5F9'
                 }}>
                   {tier.price}
                 </span>
                 <span style={{
-                  fontSize: '1rem',
+                  fontSize: window.innerWidth < 640 ? '0.875rem' : '1rem',
                   color: 'rgba(241, 245, 249, 0.6)',
                   marginLeft: '0.25rem'
                 }}>
@@ -331,18 +336,20 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
         {/* Trust indicators */}
         <div style={{
           textAlign: 'center',
-          fontSize: '0.875rem',
+          fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
           color: 'rgba(241, 245, 249, 0.6)',
           lineHeight: '1.8'
         }}>
           <div style={{ 
             marginBottom: '0.5rem',
-            fontSize: '0.938rem',
+            fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem',
             color: 'rgba(241, 245, 249, 0.8)'
           }}>
             <strong style={{ color: '#10B981' }}>Verified Performance:</strong> 52.9% Win Rate | 30.3% ROI | Real-Time Tracking
           </div>
-          <div>
+          <div style={{ 
+            fontSize: window.innerWidth < 640 ? '0.688rem' : '0.875rem'
+          }}>
             🔒 Secure Stripe Checkout | Cancel Anytime | <strong style={{ color: '#D4AF37' }}>7-Day Money-Back Guarantee</strong>
           </div>
         </div>

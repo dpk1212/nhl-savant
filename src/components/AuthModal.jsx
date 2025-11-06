@@ -11,9 +11,16 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
   const handleSignIn = async () => {
     setIsSigningIn(true);
     try {
-      await signInWithGoogle();
-      // Modal will close automatically when user state updates
-      onClose();
+      const result = await signInWithGoogle();
+      if (result) {
+        // Wait a tiny bit for state to update, then close
+        setTimeout(() => {
+          onClose();
+          setIsSigningIn(false);
+        }, 500);
+      } else {
+        setIsSigningIn(false);
+      }
     } catch (err) {
       console.error('Sign in failed:', err);
       setIsSigningIn(false);
@@ -49,49 +56,58 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           border: '1px solid rgba(212, 175, 55, 0.2)',
           borderRadius: '20px',
-          padding: '2.5rem',
+          padding: window.innerWidth < 640 ? '1.5rem' : '2.5rem',
           maxWidth: '480px',
           width: '100%',
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          animation: 'slideUp 0.3s ease-out'
+          animation: 'slideUp 0.3s ease-out',
+          maxHeight: '90vh',
+          overflowY: 'auto'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
+          disabled={isSigningIn || loading}
           style={{
             position: 'absolute',
-            top: '1.5rem',
-            right: '1.5rem',
+            top: window.innerWidth < 640 ? '1rem' : '1.5rem',
+            right: window.innerWidth < 640 ? '1rem' : '1.5rem',
             background: 'rgba(255, 255, 255, 0.05)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: '8px',
-            width: '36px',
-            height: '36px',
+            width: window.innerWidth < 640 ? '32px' : '36px',
+            height: window.innerWidth < 640 ? '32px' : '36px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
+            cursor: (isSigningIn || loading) ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: (isSigningIn || loading) ? 0.3 : 1
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            if (!isSigningIn && !loading) {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
           }}
         >
-          <X size={20} color="#E2E8F0" />
+          <X size={window.innerWidth < 640 ? 18 : 20} color="#E2E8F0" />
         </button>
 
         {/* Logo/Branding */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ 
+          textAlign: 'center', 
+          marginBottom: window.innerWidth < 640 ? '1.5rem' : '2rem' 
+        }}>
           <div style={{
-            fontSize: '2.5rem',
+            fontSize: window.innerWidth < 640 ? '2rem' : '2.5rem',
             fontWeight: '800',
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
             WebkitBackgroundClip: 'text',
@@ -103,7 +119,7 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
             🏒 NHL Savant
           </div>
           <p style={{
-            fontSize: '1.125rem',
+            fontSize: window.innerWidth < 640 ? '1rem' : '1.125rem',
             fontWeight: '600',
             color: '#F1F5F9',
             margin: 0
@@ -224,14 +240,16 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
         {/* Trust indicators */}
         <div style={{
           textAlign: 'center',
-          fontSize: '0.813rem',
+          fontSize: window.innerWidth < 640 ? '0.75rem' : '0.813rem',
           color: 'rgba(241, 245, 249, 0.6)',
           lineHeight: '1.5'
         }}>
           <div style={{ marginBottom: '0.5rem' }}>
             🔒 Secure sign-in with Google
           </div>
-          <div>
+          <div style={{ 
+            fontSize: window.innerWidth < 640 ? '0.688rem' : '0.813rem' 
+          }}>
             52.9% Win Rate | 30.3% ROI | Cancel Anytime
           </div>
         </div>
