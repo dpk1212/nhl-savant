@@ -54,18 +54,32 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
       marginBottom: '1.5rem',
       transition: 'all 0.3s ease'
     }}>
-      {/* Sleek Header - Inline Stats */}
+      {/* Sleek Header - Inline Stats - CLICKABLE */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)';
+          e.currentTarget.style.borderRadius = '8px';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '1rem',
-          paddingBottom: isExpanded ? '1rem' : '0',
+          paddingBottom: isExpanded ? '1rem' : '0.5rem',
+          paddingTop: '0.5rem',
+          paddingLeft: '0.5rem',
+          paddingRight: '0.5rem',
+          marginLeft: '-0.5rem',
+          marginRight: '-0.5rem',
+          marginTop: '-0.5rem',
           borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
-          marginBottom: isExpanded ? '1rem' : '0',
+          marginBottom: isExpanded ? '1rem' : '-0.5rem',
           cursor: 'pointer',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.2s ease',
+          userSelect: 'none'
         }}
       >
         {/* Icon + Title */}
@@ -124,23 +138,53 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           </div>
         </div>
         
-        {/* Expand/Collapse Button */}
-        <div style={{
-          width: '28px',
-          height: '28px',
-          borderRadius: '6px',
-          background: 'transparent',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease',
-          opacity: 0.7
-        }}>
+        {/* Expand/Collapse Hint Text */}
+        {!isExpanded && (
+          <div style={{
+            fontSize: '0.688rem',
+            color: 'rgba(96, 165, 250, 0.6)',
+            fontWeight: '500',
+            letterSpacing: '0.02em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span>Click to view</span>
+          </div>
+        )}
+        
+        {/* Expand/Collapse Button - More Prominent */}
+        <div 
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.stopPropagation();
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.25)';
+            e.currentTarget.style.transform = 'scale(1)';
+            e.stopPropagation();
+          }}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            flexShrink: 0
+          }}
+        >
           {isExpanded ? (
-            <ChevronUp size={16} color="#60A5FA" strokeWidth={2.5} />
+            <ChevronUp size={18} color="#60A5FA" strokeWidth={2.5} />
           ) : (
-            <ChevronDown size={16} color="#60A5FA" strokeWidth={2.5} />
+            <ChevronDown size={18} color="#60A5FA" strokeWidth={2.5} />
           )}
         </div>
       </div>
