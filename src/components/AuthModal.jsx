@@ -49,7 +49,8 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
         zIndex: 999999,
         padding: '1rem',
         animation: 'fadeIn 0.2s ease-out',
-        overflow: 'auto'
+        overflow: 'auto',
+        isolation: 'isolate'
       }}
       onClick={onClose}
     >
