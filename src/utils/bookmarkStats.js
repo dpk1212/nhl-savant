@@ -27,15 +27,29 @@ export function calculateBookmarkStats(bookmarks, completedBets) {
   let totalProfit = 0;
   let completedCount = 0;
   
-  // Match each bookmark with its corresponding completed bet
+  // Match each bookmark with its result
+  // Priority 1: Check if bookmark has result field (from automation)
+  // Priority 2: Match with completedBets collection (fallback)
   bookmarks.forEach(bookmark => {
-    const matchedBet = completedBets.find(bet => bet.id === bookmark.betId);
+    let result = null;
     
-    if (matchedBet && matchedBet.status === 'COMPLETED' && matchedBet.result) {
+    // Check if bookmark already has result (from automated update)
+    if (bookmark.result && bookmark.result.outcome) {
+      result = bookmark.result;
+    } else {
+      // Fallback: Try to match with completedBets
+      const matchedBet = completedBets.find(bet => bet.id === bookmark.betId);
+      if (matchedBet && matchedBet.status === 'COMPLETED' && matchedBet.result) {
+        result = matchedBet.result;
+      }
+    }
+    
+    // Process result if found
+    if (result) {
       completedCount++;
       
-      const outcome = matchedBet.result.outcome;
-      const profit = matchedBet.result.profit || 0;
+      const outcome = result.outcome;
+      const profit = result.profit || 0;
       
       if (outcome === 'WIN') {
         wins++;
@@ -81,11 +95,25 @@ export function groupBookmarksByStatus(bookmarks, completedBets, liveScores = []
   
   bookmarks.forEach(bookmark => {
     // Check if completed
-    const matchedBet = completedBets.find(bet => bet.id === bookmark.betId);
-    if (matchedBet && matchedBet.status === 'COMPLETED') {
+    // Priority 1: Check bookmark's own result field (from automation)
+    // Priority 2: Match with completedBets collection (fallback)
+    let result = null;
+    
+    if (bookmark.result && bookmark.result.outcome) {
+      // Bookmark has result from automation
+      result = bookmark.result;
+    } else {
+      // Try to match with completedBets
+      const matchedBet = completedBets.find(bet => bet.id === bookmark.betId);
+      if (matchedBet && matchedBet.status === 'COMPLETED' && matchedBet.result) {
+        result = matchedBet.result;
+      }
+    }
+    
+    if (result) {
       completed.push({
         ...bookmark,
-        result: matchedBet.result
+        result
       });
       return;
     }
