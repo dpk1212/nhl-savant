@@ -54,11 +54,16 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
-export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats, isFree, hasReachedLimit }) {
+export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats, isFree, hasReachedLimit, isPremium }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
   
   // Detect mobile for compact layout
   const isMobile = window.innerWidth <= 768;
+
+  // PREMIUM ONLY - Hide for free users
+  if (!isPremium) {
+    return null;
+  }
 
   if (!gameGroups || gameGroups.length === 0) {
     return null;
@@ -89,11 +94,11 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
       marginBottom: isMobile ? '1rem' : '1.5rem',
       transition: 'all 0.3s ease'
     }}>
-      {/* Sleek Header - Inline Stats - CLICKABLE */}
+      {/* PREMIUM Sleek Header - Clean & Minimal */}
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)';
+          e.currentTarget.style.background = 'rgba(212, 175, 55, 0.03)';
           e.currentTarget.style.borderRadius = '8px';
         }}
         onMouseLeave={(e) => {
@@ -102,162 +107,111 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: isMobile ? '0.625rem' : '1rem',
-          paddingBottom: isExpanded ? (isMobile ? '0.5rem' : '1rem') : (isMobile ? '0.375rem' : '0.5rem'),
-          paddingTop: isMobile ? '0.375rem' : '0.5rem',
+          justifyContent: 'space-between',
+          gap: isMobile ? '0.75rem' : '1rem',
+          paddingBottom: isExpanded ? (isMobile ? '0.625rem' : '0.875rem') : '0',
+          paddingTop: isMobile ? '0.25rem' : '0.375rem',
           paddingLeft: isMobile ? '0.375rem' : '0.5rem',
           paddingRight: isMobile ? '0.375rem' : '0.5rem',
           marginLeft: isMobile ? '-0.375rem' : '-0.5rem',
           marginRight: isMobile ? '-0.375rem' : '-0.5rem',
           marginTop: isMobile ? '-0.375rem' : '-0.5rem',
           borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
-          marginBottom: isExpanded ? (isMobile ? '0.5rem' : '1rem') : (isMobile ? '-0.375rem' : '-0.5rem'),
+          marginBottom: isExpanded ? (isMobile ? '0.625rem' : '0.875rem') : (isMobile ? '-0.375rem' : '-0.5rem'),
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           userSelect: 'none'
         }}
       >
-        {/* Icon + Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <TrendingUp size={16} color="#3B82F6" strokeWidth={2.5} style={{ opacity: 0.8 }} />
+        {/* Left: Icon + Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+          <TrendingUp size={isMobile ? 14 : 16} color="#D4AF37" strokeWidth={2.5} />
           <h3 style={{
             margin: 0,
-            fontSize: '0.938rem',
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
             fontWeight: '700',
-            color: 'var(--color-text-primary)',
-            letterSpacing: '-0.01em'
+            color: '#D4AF37',
+            letterSpacing: '-0.015em',
+            whiteSpace: 'nowrap'
           }}>
             Today's Picks
           </h3>
-          
-          {/* Free Tier Badge */}
-          {isFree && (
-            <div style={{
-              padding: '0.25rem 0.625rem',
-              background: hasReachedLimit 
-                ? 'rgba(239, 68, 68, 0.15)' 
-                : 'rgba(16, 185, 129, 0.15)',
-              border: `1px solid ${hasReachedLimit ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
-              borderRadius: '6px',
-              fontSize: '0.688rem',
-              fontWeight: '700',
-              color: hasReachedLimit ? '#EF4444' : '#10B981',
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-              whiteSpace: 'nowrap'
-            }}>
-              {hasReachedLimit ? '0 Free Picks Left' : '1 Free Pick Daily'}
-            </div>
-          )}
         </div>
         
-        {/* Inline Stats with Dividers */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+        {/* Right: Compact Stats + Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1rem', flexShrink: 0 }}>
+          {/* Single Combined Stat */}
           {opportunityStats && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                <span style={{ fontSize: '0.938rem', fontWeight: '700', color: '#60A5FA' }}>
-                  {opportunityStats.total}
-                </span>
-                <span style={{ fontSize: '0.625rem', color: 'rgba(96, 165, 250, 0.7)', fontWeight: '500' }}>
-                  +EV
-                </span>
-              </div>
-              
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem',
+              padding: '0.25rem 0.625rem',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              borderRadius: '6px'
+            }}>
               {opportunityStats.elite > 0 && (
-                <>
-                  <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
-                  
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                    <span style={{ fontSize: '0.938rem', fontWeight: '700', color: '#D4AF37' }}>
-                      {opportunityStats.elite}
-                    </span>
-                    <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '500' }}>
-                      elite
-                    </span>
-                  </div>
-                </>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                  <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '700', color: '#D4AF37' }}>
+                    {opportunityStats.elite}
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '600', textTransform: 'lowercase' }}>
+                    elite
+                  </span>
+                </div>
               )}
               
-              <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
-            </>
+              {opportunityStats.elite > 0 && opportunityStats.total > opportunityStats.elite && (
+                <div style={{ width: '1px', height: '10px', background: 'rgba(212, 175, 55, 0.3)' }} />
+              )}
+              
+              {opportunityStats.total > opportunityStats.elite && (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                  <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '700', color: '#94A3B8' }}>
+                    {totalPicks}
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(148, 163, 184, 0.7)', fontWeight: '600', textTransform: 'lowercase' }}>
+                    {totalPicks === 1 ? 'pick' : 'picks'}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
           
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-            <span style={{ fontSize: '0.938rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
-              {totalPicks}
-            </span>
-            <span style={{ fontSize: '0.625rem', color: 'var(--color-text-secondary)', fontWeight: '500' }}>
-              {totalPicks === 1 ? 'pick' : 'picks'}
-            </span>
+          {/* Minimal Toggle Button */}
+          <div 
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.stopPropagation();
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)';
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.25)';
+              e.currentTarget.style.transform = 'scale(1)';
+              e.stopPropagation();
+            }}
+            style={{
+              width: isMobile ? '28px' : '32px',
+              height: isMobile ? '28px' : '32px',
+              borderRadius: '8px',
+              background: 'rgba(212, 175, 55, 0.08)',
+              border: '1px solid rgba(212, 175, 55, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              flexShrink: 0
+            }}
+          >
+            {isExpanded ? (
+              <ChevronUp size={isMobile ? 16 : 18} color="#D4AF37" strokeWidth={2.5} />
+            ) : (
+              <ChevronDown size={isMobile ? 16 : 18} color="#D4AF37" strokeWidth={2.5} />
+            )}
           </div>
-        </div>
-        
-        {/* Expand/Collapse Hint Text - Hide on mobile to save space */}
-        {!isExpanded && !isMobile && (
-          <div style={{
-            fontSize: '0.688rem',
-            color: 'rgba(96, 165, 250, 0.6)',
-            fontWeight: '500',
-            letterSpacing: '0.02em',
-            textTransform: 'uppercase',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.375rem'
-          }}>
-            <span>Click to view</span>
-          </div>
-        )}
-        
-        {/* Expand/Collapse Button - More Prominent with Pulse Animation */}
-        <div 
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
-            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.animation = 'none';
-            e.stopPropagation();
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)';
-            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.25)';
-            e.currentTarget.style.transform = 'scale(1)';
-            if (!isExpanded) {
-              e.currentTarget.style.animation = 'pulse 2.5s ease-in-out infinite';
-            }
-            e.stopPropagation();
-          }}
-          style={{
-            width: isMobile ? '28px' : '32px',
-            height: isMobile ? '28px' : '32px',
-            borderRadius: '8px',
-            background: 'rgba(59, 130, 246, 0.08)',
-            border: '1px solid rgba(59, 130, 246, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            flexShrink: 0,
-            animation: !isExpanded ? 'pulse 2.5s ease-in-out infinite' : 'none',
-            position: 'relative'
-          }}
-        >
-          {/* Subtle ring animation when collapsed */}
-          {!isExpanded && (
-            <div style={{
-              position: 'absolute',
-              inset: '-4px',
-              borderRadius: '10px',
-              border: '2px solid rgba(59, 130, 246, 0.3)',
-              animation: 'ping 2.5s ease-in-out infinite',
-              pointerEvents: 'none'
-            }} />
-          )}
-          {isExpanded ? (
-            <ChevronUp size={isMobile ? 16 : 18} color="#60A5FA" strokeWidth={2.5} />
-          ) : (
-            <ChevronDown size={isMobile ? 16 : 18} color="#60A5FA" strokeWidth={2.5} />
-          )}
         </div>
       </div>
 
