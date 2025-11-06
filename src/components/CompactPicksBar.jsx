@@ -1,6 +1,38 @@
 import { useState } from 'react';
 import { TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 
+// Add CSS keyframes for animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  
+  @keyframes ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+  }
+`;
+if (!document.getElementById('compact-picks-bar-animations')) {
+  style.id = 'compact-picks-bar-animations';
+  document.head.appendChild(style);
+}
+
 function getGradeColor(grade) {
   switch (grade) {
     case 'A+':
@@ -24,6 +56,9 @@ function getMarketIcon(market) {
 
 export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
+  
+  // Detect mobile for compact layout
+  const isMobile = window.innerWidth <= 768;
 
   if (!gameGroups || gameGroups.length === 0) {
     return null;
@@ -50,8 +85,8 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
       WebkitBackdropFilter: 'blur(12px)',
       border: '1px solid rgba(148, 163, 184, 0.08)',
       borderRadius: '12px',
-      padding: '1.25rem',
-      marginBottom: '1.5rem',
+      padding: isMobile ? '0.875rem' : '1.25rem',
+      marginBottom: isMobile ? '1rem' : '1.5rem',
       transition: 'all 0.3s ease'
     }}>
       {/* Sleek Header - Inline Stats - CLICKABLE */}
@@ -67,16 +102,16 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '1rem',
-          paddingBottom: isExpanded ? '1rem' : '0.5rem',
-          paddingTop: '0.5rem',
-          paddingLeft: '0.5rem',
-          paddingRight: '0.5rem',
-          marginLeft: '-0.5rem',
-          marginRight: '-0.5rem',
-          marginTop: '-0.5rem',
+          gap: isMobile ? '0.625rem' : '1rem',
+          paddingBottom: isExpanded ? (isMobile ? '0.75rem' : '1rem') : (isMobile ? '0.375rem' : '0.5rem'),
+          paddingTop: isMobile ? '0.375rem' : '0.5rem',
+          paddingLeft: isMobile ? '0.375rem' : '0.5rem',
+          paddingRight: isMobile ? '0.375rem' : '0.5rem',
+          marginLeft: isMobile ? '-0.375rem' : '-0.5rem',
+          marginRight: isMobile ? '-0.375rem' : '-0.5rem',
+          marginTop: isMobile ? '-0.375rem' : '-0.5rem',
           borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.08)' : 'none',
-          marginBottom: isExpanded ? '1rem' : '-0.5rem',
+          marginBottom: isExpanded ? (isMobile ? '0.75rem' : '1rem') : (isMobile ? '-0.375rem' : '-0.5rem'),
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           userSelect: 'none'
@@ -138,8 +173,8 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           </div>
         </div>
         
-        {/* Expand/Collapse Hint Text */}
-        {!isExpanded && (
+        {/* Expand/Collapse Hint Text - Hide on mobile to save space */}
+        {!isExpanded && !isMobile && (
           <div style={{
             fontSize: '0.688rem',
             color: 'rgba(96, 165, 250, 0.6)',
@@ -154,23 +189,27 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           </div>
         )}
         
-        {/* Expand/Collapse Button - More Prominent */}
+        {/* Expand/Collapse Button - More Prominent with Pulse Animation */}
         <div 
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
             e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
             e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.animation = 'none';
             e.stopPropagation();
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)';
             e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.25)';
             e.currentTarget.style.transform = 'scale(1)';
+            if (!isExpanded) {
+              e.currentTarget.style.animation = 'pulse 2.5s ease-in-out infinite';
+            }
             e.stopPropagation();
           }}
           style={{
-            width: '32px',
-            height: '32px',
+            width: isMobile ? '28px' : '32px',
+            height: isMobile ? '28px' : '32px',
             borderRadius: '8px',
             background: 'rgba(59, 130, 246, 0.08)',
             border: '1px solid rgba(59, 130, 246, 0.25)',
@@ -178,13 +217,26 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
-            flexShrink: 0
+            flexShrink: 0,
+            animation: !isExpanded ? 'pulse 2.5s ease-in-out infinite' : 'none',
+            position: 'relative'
           }}
         >
+          {/* Subtle ring animation when collapsed */}
+          {!isExpanded && (
+            <div style={{
+              position: 'absolute',
+              inset: '-4px',
+              borderRadius: '10px',
+              border: '2px solid rgba(59, 130, 246, 0.3)',
+              animation: 'ping 2.5s ease-in-out infinite',
+              pointerEvents: 'none'
+            }} />
+          )}
           {isExpanded ? (
-            <ChevronUp size={18} color="#60A5FA" strokeWidth={2.5} />
+            <ChevronUp size={isMobile ? 16 : 18} color="#60A5FA" strokeWidth={2.5} />
           ) : (
-            <ChevronDown size={18} color="#60A5FA" strokeWidth={2.5} />
+            <ChevronDown size={isMobile ? 16 : 18} color="#60A5FA" strokeWidth={2.5} />
           )}
         </div>
       </div>
