@@ -260,7 +260,7 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
           <div style={{ 
             fontSize: window.innerWidth < 640 ? '0.688rem' : '0.813rem' 
           }}>
-            52.9% Win Rate | 30.3% ROI | Cancel Anytime
+            Verified Performance | Tracked Since Oct 2024 | Cancel Anytime
           </div>
         </div>
       </div>
