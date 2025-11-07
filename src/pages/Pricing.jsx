@@ -141,7 +141,7 @@ const Pricing = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <TrendingUp size={20} color="#10B981" />
-              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>26% ROI as of Nov 6</span>
+              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>26% ROI (38% Kelly) as of Nov 6</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Target size={20} color="#D4AF37" />

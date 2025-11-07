@@ -161,7 +161,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
             marginRight: 'auto',
             lineHeight: '1.5'
           }}>
-            You've used your <strong style={{ color: '#D4AF37' }}>1 free pick today</strong>. Upgrade to unlock our elite predictive model—<strong style={{ color: '#10B981' }}>26% ROI as of Nov 6, 2025</strong>, all results tracked publicly.
+            You've used your <strong style={{ color: '#D4AF37' }}>1 free pick today</strong>. Upgrade to unlock our elite predictive model—<strong style={{ color: '#10B981' }}>26% ROI (38% Kelly) as of Nov 6, 2025</strong>, all results tracked publicly.
           </p>
           <p style={{
             fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
@@ -353,7 +353,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
             fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
             color: 'rgba(241, 245, 249, 0.8)'
           }}>
-            <strong style={{ color: '#10B981' }}>Verified Performance:</strong> 26% ROI as of Nov 6, 2025 | All results tracked publicly since Oct 2025
+            <strong style={{ color: '#10B981' }}>Verified Performance:</strong> 26% ROI (38% Kelly) as of Nov 6, 2025 | All results tracked publicly since Oct 2025
           </div>
           <div style={{ 
             fontSize: window.innerWidth < 640 ? '0.6875rem' : '0.8125rem'
