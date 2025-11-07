@@ -141,11 +141,11 @@ const Pricing = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <TrendingUp size={20} color="#10B981" />
-              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>Profitable Performance</span>
+              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>20%+ ROI This Season</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Target size={20} color="#D4AF37" />
-              <span style={{ color: '#D4AF37', fontWeight: '600', fontSize: '0.938rem' }}>Tracked Since Oct 2024</span>
+              <span style={{ color: '#D4AF37', fontWeight: '600', fontSize: '0.938rem' }}>Tracked Since Oct 2025</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Shield size={20} color="#60A5FA" />
