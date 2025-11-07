@@ -358,7 +358,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
           <div style={{ 
             fontSize: window.innerWidth < 640 ? '0.6875rem' : '0.8125rem'
           }}>
-            🔒 Secure Stripe Checkout | Cancel Anytime | <strong style={{ color: '#D4AF37' }}>7-Day Money-Back Guarantee</strong>
+            🔒 Secure Stripe Checkout | Cancel Anytime
           </div>
         </div>
       </div>
