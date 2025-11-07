@@ -103,15 +103,17 @@ export function parseOddsTrader(markdownText) {
         gameTime = 'STARTING SOON';
         console.log(`  ⏰ STARTING SOON (countdown detected)`);
       } else {
-        // Pattern matches time that comes AFTER the date (e.g., "11/067:00 PM" -> "7:00 PM")
-        // More flexible regex to handle various formats
-        const timeMatch = line.match(/(\d{1,2}:\d{2}\s*[AP]M)/);
+        // Pattern matches time that comes AFTER the date (e.g., "11/077:00 PM" -> "7:00 PM")
+        // FIXED: Handle date immediately followed by time with no space
+        // Look for pattern like "11/077:00 PM" or "11/07 7:00 PM" or just "7:00 PM"
+        const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2}\s*[AP]M)|(\d{1,2}:\d{2}\s*[AP]M)/);
         if (!timeMatch) {
           console.log('  ⚠️ No time found in line, skipping');
           console.log(`  📄 Line content: ${line.substring(0, 200)}`);
           continue;
         }
-        gameTime = timeMatch[1].trim();
+        // Use group 1 if it matches (date+time), otherwise group 2 (time only)
+        gameTime = (timeMatch[1] || timeMatch[2]).trim();
         console.log(`  ⏰ Time: ${gameTime}`);
       }
       
