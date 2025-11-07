@@ -141,15 +141,15 @@ const Pricing = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <TrendingUp size={20} color="#10B981" />
-              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>52.9% Win Rate</span>
+              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>Profitable Performance</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Target size={20} color="#D4AF37" />
-              <span style={{ color: '#D4AF37', fontWeight: '600', fontSize: '0.938rem' }}>30.3% ROI</span>
+              <span style={{ color: '#D4AF37', fontWeight: '600', fontSize: '0.938rem' }}>Tracked Since Oct 2024</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Shield size={20} color="#60A5FA" />
-              <span style={{ color: '#60A5FA', fontWeight: '600', fontSize: '0.938rem' }}>7-Day Money Back</span>
+              <span style={{ color: '#60A5FA', fontWeight: '600', fontSize: '0.938rem' }}>Free Trial Included</span>
             </div>
           </div>
         </div>
