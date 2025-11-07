@@ -104,7 +104,7 @@ Yesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLThu 11/06
+NHLFri 11/07
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -123,44 +123,17 @@ NHLThu 11/06
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:10:03 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)MSG-B...<br>![](https://logos.oddstrader.com/logos-original/c1442ea3-f57e-4147-87c3-d0b03c05f2dc-original.PNG?d=100x100)<br>St. Louis<br>4-10<br>73%<br>o6 -125BetRivers | o6 -125 | o6½ +100 | o6½ +100 | o6 -130 | o6 -125 | o6 -125 | o6½ +104 |
-| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>5-8<br>27%<br>u6½ -120Caesars | u6 +105 | u6½ -120 | u6½ -120 | u6 -102 | u6 +100 | u6 +100 | u6½ -128 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/077:00 PM<br>![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>6-8<br>-<br>o5½ -124FanDuel | o6 -110 | o6 -105 | o6 +100 | o6 -105 | o6 -107 | o6 -107 | o5½ -124 |
+| ![](https://logos.oddstrader.com/logos-original/52534474-761e-4a71-bdd4-999393f47c56-original.PNG?d=100x100)<br>Detroit<br>9-5<br>-<br>u6 -115Caesars | u6 -110 | u6 -115 | u6 -120 | u6 -115 | u6 -117 | u6 -117 | u5½ +102 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:10:03 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)NESN...<br>![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>6-7<br>80%<br>o6 -115Bet365 | o6 -110 | o6 -125 | o6 -115 | o6 -118 | o6 -121 | o6 -121 | o6½ +106 |
-| ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>8-7<br>20%<br>u6½ -130FanDuel | u6 -110 | u6 +105 | u6 -105 | u6 -102 | u6 -104 | u6 -104 | u6½ -130 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/077:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>5-10<br>-<br>o6½ -104BetRivers | o6 -110 | o6½ -115 | o6½ -115 | o6½ -115 | o6½ -104 | o6½ -104 | o6½ -110 |
+| ![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>6-7<br>-<br>u6½ -105Caesars | u6 -110 | u6½ -105 | u6½ -105 | u6½ -105 | u6½ -121 | u6½ -121 | u6½ -110 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:10:03 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>9-4<br>79%<br>o5½ -140FanDuel | o6 -110 | o6 -110 | o6 -115 | o6 -115 | o6 -114 | o6 -114 | o5½ -140 |
-| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>9-4<br>21%<br>u6 -105Bet365 | u6 -110 | u6 -110 | u6 -105 | u6 -105 | u6 -108 | u6 -108 | u5½ +112 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/079:00 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>6-8<br>-<br>o6 -110Caesars | o6 -110 | o6 -110 | o6 -115 | o6 -110 | o6 -115 | o6 -115 | o6½ +112 |
+| ![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>4-11<br>-<br>u6½ -140FanDuel | u6 -110 | u6 -110 | u6 -105 | u6 -110 | u6 -108 | u6 -108 | u6½ -140 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:10:03 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>5-9<br>56%<br>o6 -125BetRivers | o6 -118 | o6½ +100 | o6½ -105 | o6½ -105 | o6 -125 | o6 -125 | o6½ +104 |
-| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>8-4<br>44%<br>u6½ -115Bet365 | u6 -102 | u6½ -120 | u6½ -115 | u6½ -115 | u6 +102 | u6 +102 | u6½ -128 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:40:03 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>7-6<br>75%<br>o6½ +100Caesars | o6 -125 | o6½ +100 | o6½ +100 | o6½ +100 | o6½ -103 | o6½ -103 | o6½ +100 |
-| ![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>8-6<br>25%<br>u6½ -120Caesars | u6 +105 | u6½ -120 | u6½ -120 | u6½ -120 | u6½ -121 | u6½ -121 | u6½ -122 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 11/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>8-4<br>85%<br>o6 -125Caesars | o6 -110 | o6 -125 | o6½ +100 | o6½ -102 | o6½ -105 | o6½ -105 | o6½ +102 |
-| ![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>7-6<br>15%<br>u6½ -118BetMGM | u6 -110 | u6 +105 | u6½ -120 | u6½ -118 | u6½ -118 | u6½ -118 | u6½ -124 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 11/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>7-6<br>40%<br>o5½ -105Bet365 | o5½ -115 | o5½ -110 | o5½ -105 | o5½ -110 | o5½ -112 | o5½ -112 | o5½ -106 |
-| ![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>5-10<br>60%<br>u5½ -110Caesars | u5½ -105 | u5½ -110 | u5½ -115 | u5½ -110 | u5½ -112 | u5½ -112 | u5½ -114 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 11/0610:00 PM<br>![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>6-7<br>20%<br>o6 -105Caesars | o6 -110 | o6 -105 | o6 -105 | o6 -105 | o6 -107 | o6 -107 | o6½ +110 |
-| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>7-5<br>80%<br>u6½ -134FanDuel | u6 -110 | u6 -115 | u6 -115 | u6 -115 | u6 -117 | u6 -117 | u6½ -134 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 11/0610:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>6-7<br>0%<br>o5½ +100Caesars | o5½ -105 | o5½ +100 | o5½ -105 | o5½ -105 | o5½ -108 | o5½ -108 | o5½ -102 |
-| ![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>6-8<br>100%<br>u5½ -115Bet365 | u5½ -115 | u5½ -120 | u5½ -115 | u5½ -115 | u5½ -115 | u5½ -115 | u5½ -120 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/077:00 PM<br>![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>6-8<br>-<br>o5½ -134FanDuel | o6 -110 | o6 -110 | o5½ -135 | o6 -110 | o6 -107 | o6 -107 | o5½ -134 |
-| ![](https://logos.oddstrader.com/logos-original/52534474-761e-4a71-bdd4-999393f47c56-original.PNG?d=100x100)<br>Detroit<br>9-5<br>-<br>u6 -110Caesars | u6 -110 | u6 -110 | u5½ +115 | u6 -110 | u6 -117 | u6 -117 | u5½ +110 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/077:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>5-9<br>-<br>o5½ -135Bet365 | o6 -110 | o6 -110 | o5½ -135 | o6 -110 | o6½ -104 | o6½ -104 | o6½ -105 |
-| ![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>6-7<br>-<br>u6½ -115FanDuel | u6 -110 | u6 -110 | u5½ +115 | u6 -110 | u6½ -121 | u6½ -121 | u6½ -115 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/079:00 PM<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>6-8<br>-<br>o6 -110Caesars | o6 -110 | o6 -110 | o6 -110 | o6 -110 | o6 -115 | o6 -115 | o6½ +114 |
-| ![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>4-11<br>-<br>u6½ -140FanDuel | u6 -110 | u6 -110 | u6 -110 | u6 -110 | u6 -108 | u6 -108 | u6½ -140 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/0710:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>9-4<br>-<br>o6 -122BetRivers | o6 -118 | o6½ +105 | o6½ +105 | o6 -125 | o6 -122 | o6 -122 | o6½ +108 |
-| ![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>5-9<br>-<br>u6½ -125Caesars | u6 -102 | u6½ -125 | u6½ -125 | u6 +105 | u6 -103 | u6 -103 | u6½ -132 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 11/0710:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>9-4<br>-<br>o6 -122BetRivers | o6 -118 | o6½ +100 | o6½ +105 | o6 -125 | o6 -122 | o6 -122 | o6½ -102 |
+| ![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>5-9<br>-<br>u6½ -120Caesars | u6 -102 | u6½ -120 | u6½ -125 | u6 +105 | u6 -103 | u6 -103 | u6½ -120 |
 
 ## **Best NHL Betting Odds and Spreads for Tonight’s Games**
 
@@ -260,7 +233,7 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-What are the top NBA predictions for today?Generate
+Do early-season matchups favor overs for potent offenses?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
