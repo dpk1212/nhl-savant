@@ -26,7 +26,6 @@ console.log('========================================\n');
 async function fetchAllData() {
   const results = {
     moneyline: false,
-    totals: false,
     goalies: false,
     moneyPuckGoalies: false
   };
@@ -60,30 +59,7 @@ async function fetchAllData() {
     console.log(`   - File: public/odds_money.md\n`);
     results.moneyline = true;
     
-    // 2. Fetch Total Odds
-    console.log('📊 Fetching total odds from OddsTrader...');
-    const totalsResult = await firecrawl.scrape(`https://www.oddstrader.com/nhl/?eid=0&g=game&m=total&_=${cacheBuster}`, {
-      formats: ['markdown'],
-      onlyMainContent: false,
-      waitFor: 3000,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
-    });
-    
-    await fs.writeFile(
-      join(__dirname, '../public/odds_total.md'),
-      totalsResult.markdown,
-      'utf8'
-    );
-    
-    console.log(`✅ Total odds saved`);
-    console.log(`   - Size: ${totalsResult.markdown.length} characters`);
-    console.log(`   - File: public/odds_total.md\n`);
-    results.totals = true;
-    
-    // 3. Fetch Starting Goalies from MoneyPuck Homepage
+    // 2. Fetch Starting Goalies from MoneyPuck Homepage
     console.log('🥅 Fetching starting goalies from MoneyPuck...');
     
     // Reuse cache-busting timestamp from above
@@ -165,7 +141,6 @@ async function fetchAllData() {
     console.log('========================================');
     console.log('\nUpdated files:');
     console.log('  ✓ public/odds_money.md');
-    console.log('  ✓ public/odds_total.md');
     console.log('  ✓ public/starting_goalies.json (from MoneyPuck)');
     console.log(`\nGoalie Status: ${countConfirmedGoalies(startingGoalies)}`);
     console.log(`Odds Updated: ${new Date(fetchTimestamp).toLocaleString()}`);
