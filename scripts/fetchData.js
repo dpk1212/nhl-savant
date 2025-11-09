@@ -19,8 +19,7 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '../.env') });
 
 const firecrawl = new Firecrawl({ 
-  apiKey: process.env.FIRECRAWL_API_KEY,
-  timeout: 120000 // Increase timeout to 2 minutes
+  apiKey: process.env.FIRECRAWL_API_KEY
 });
 
 console.log('🔥 FIRECRAWL - Automated NHL Data Fetch');
@@ -60,11 +59,13 @@ async function fetchAllData() {
     
     // 1. Fetch Moneyline Odds (with retry logic)
     console.log('📊 Fetching moneyline odds from OddsTrader...');
+    console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
     const moneylineResult = await retryWithBackoff(async () => {
       return await firecrawl.scrape(`https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=${cacheBuster}`, {
         formats: ['markdown'],
         onlyMainContent: false, // Get full page content
-        waitFor: 2000, // Reduced wait time (was 3000ms)
+        waitFor: 2000,
+        timeout: 300000, // 5 minute timeout - Firecrawl experiencing delays
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache'
@@ -85,13 +86,15 @@ async function fetchAllData() {
     
     // 2. Fetch Starting Goalies from MoneyPuck Homepage (with retry logic)
     console.log('🥅 Fetching starting goalies from MoneyPuck...');
+    console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
     
     // Reuse cache-busting timestamp from above
     const moneyPuckResult = await retryWithBackoff(async () => {
       return await firecrawl.scrape(`https://moneypuck.com/index.html?_=${cacheBuster}`, {
         formats: ['markdown', 'html'],
         onlyMainContent: true,
-        waitFor: 2000, // Reduced wait time (was 3000ms)
+        waitFor: 2000,
+        timeout: 300000, // 5 minute timeout - Firecrawl experiencing delays
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache'
