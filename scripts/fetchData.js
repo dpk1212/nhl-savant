@@ -18,10 +18,32 @@ const __dirname = dirname(__filename);
 // Load environment variables
 dotenv.config({ path: join(__dirname, '../.env') });
 
-const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
+const firecrawl = new Firecrawl({ 
+  apiKey: process.env.FIRECRAWL_API_KEY,
+  timeout: 120000 // Increase timeout to 2 minutes
+});
 
 console.log('🔥 FIRECRAWL - Automated NHL Data Fetch');
 console.log('========================================\n');
+
+/**
+ * Retry helper function for flaky API calls
+ */
+async function retryWithBackoff(fn, retries = 3, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isLastAttempt = i === retries - 1;
+      if (isLastAttempt) throw error;
+      
+      console.log(`   ⚠️  Attempt ${i + 1} failed: ${error.message}`);
+      console.log(`   ⏳ Retrying in ${delay / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
+}
 
 async function fetchAllData() {
   const results = {
@@ -36,16 +58,18 @@ async function fetchAllData() {
     // Add cache-busting to get fresh data
     const cacheBuster = Date.now();
     
-    // 1. Fetch Moneyline Odds
+    // 1. Fetch Moneyline Odds (with retry logic)
     console.log('📊 Fetching moneyline odds from OddsTrader...');
-    const moneylineResult = await firecrawl.scrape(`https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=${cacheBuster}`, {
-      formats: ['markdown'],
-      onlyMainContent: false, // Get full page content
-      waitFor: 3000, // Wait for JavaScript to load odds
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
+    const moneylineResult = await retryWithBackoff(async () => {
+      return await firecrawl.scrape(`https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=${cacheBuster}`, {
+        formats: ['markdown'],
+        onlyMainContent: false, // Get full page content
+        waitFor: 2000, // Reduced wait time (was 3000ms)
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
     });
     
     await fs.writeFile(
@@ -59,18 +83,20 @@ async function fetchAllData() {
     console.log(`   - File: public/odds_money.md\n`);
     results.moneyline = true;
     
-    // 2. Fetch Starting Goalies from MoneyPuck Homepage
+    // 2. Fetch Starting Goalies from MoneyPuck Homepage (with retry logic)
     console.log('🥅 Fetching starting goalies from MoneyPuck...');
     
     // Reuse cache-busting timestamp from above
-    const moneyPuckResult = await firecrawl.scrape(`https://moneypuck.com/index.html?_=${cacheBuster}`, {
-      formats: ['markdown', 'html'],
-      onlyMainContent: true,
-      waitFor: 3000,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
+    const moneyPuckResult = await retryWithBackoff(async () => {
+      return await firecrawl.scrape(`https://moneypuck.com/index.html?_=${cacheBuster}`, {
+        formats: ['markdown', 'html'],
+        onlyMainContent: true,
+        waitFor: 2000, // Reduced wait time (was 3000ms)
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
     });
     
     console.log('   - Scraped MoneyPuck homepage');
