@@ -405,7 +405,7 @@ const Account = () => {
             marginBottom: '1.5rem',
             lineHeight: '1.6'
           }}>
-            Need help? Contact us at support@nhlsavant.com
+            Need help? Contact us at Math@NHLSavant.com
           </p>
 
           <button
