@@ -419,32 +419,35 @@ OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
 KEY FACTORS WHY ${bestEdge.team} HAS VALUE:
 ${topFactors}
 
+⭐️⭐️⭐️ WRITE LIKE A REAL BETTOR TALKING TO A FRIEND: ⭐️⭐️⭐️
+- Sound like a passionate hockey sharp texting after seeing this line
+- Use language actual bettors use: "here's what jumps out," "look, the market's missing this," "honestly, this value is nuts"
+- Drop the analyst voice—be opinionated, honest, even a little raw
+- Short sentences. Contractions. Direct and occasionally spicy.
+- Be willing to risk being wrong: "could backfire, but..." "I know this sounds crazy, but..."
+
+🚫 BANNED PHRASES:
+- Don't use "leverage," "framework," "optimized," "expected value proposition"
+- Don't say "recent metrics suggest"—just say what you see
+- Zero corporate-speak. Zero robotic analysis.
+
 🚨 CRITICAL - YOU MUST EXPLAIN WHY ${bestEdge.team} IS THE PLAY:
 - Your hook must be about why ${bestEdge.team} has betting value
 - DO NOT write about why ${bestEdge.team === game.awayTeam ? game.homeTeam : game.awayTeam} is better
 - The factors above explain ${bestEdge.team}'s edge - use them!
 
-WRITING STYLE - SOUND HUMAN:
-- Write like you're explaining value to a sharp bettor friend, NOT writing a research report
-- Use conversational language: "look", "here's the thing", "honestly"
-- Keep it punchy and confident, but natural-sounding
-- Contractions are good (don't, it's, there's)
-
 INSTRUCTIONS:
-Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY ${bestEdge.team} has value based on the factors above. Lead with the edge/mispricing for ${bestEdge.team}. Be confident and contrarian, but sound human.
+Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY ${bestEdge.team} has value. Lead with emotion and the mispricing. Sound like you're tipping off a friend, not writing a report.
 
-🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE:
+📣 ANTI-HALLUCINATION GOLDEN RULES:
 - ONLY discuss the factors explicitly provided above
-- DO NOT mention any percentage numbers, EV%, win probabilities, or stats
-- DO NOT add player names, team records, recent game results, or ANY data not in the factors
-- DO NOT invent injuries, line changes, or roster information
-- Focus ONLY on the QUALITATIVE factors from the bullet points
+- DO NOT mention percentage numbers, EV%, win probabilities, or any stats
+- DO NOT add player names, team records, recent games, injuries, or ANY data not in the factors
+- If info isn't in the factors, don't write it
 
-Example (human-sounding): "Look, the market's sleeping on Pittsburgh's finishing edge and special teams advantage here - their matchup against Toronto's defensive setup creates real value at plus odds."
-
-DO NOT write percentage numbers or probability figures.
-DO NOT reference ANY stats not explicitly in the factors list.
-If it's not in the factors, don't mention it.
+Examples (real-talk style):
+✓ "Look, the market's sleeping on Vegas's control edge here—they're getting slighted and I'm all over it at -135."
+✓ "Honestly, this line makes zero sense to me. Florida's defensive setup gets torched by teams like this, and Vegas at home? Yeah, I'm backing VGK straight up."
 
 Return plain text only (no markdown, no JSON, no bold/italic).`;
 
@@ -460,7 +463,7 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
         messages: [
           {
             role: 'system',
-            content: 'You are a sharp bettor explaining value to a friend in conversational language. WRITE LIKE A HUMAN - use contractions, casual phrases, varied sentence structure. Be confident but natural-sounding. 🚨 CRITICAL: You MUST explain why the SPECIFIC TEAM mentioned in "WE ARE BETTING ON" has value. DO NOT write about the wrong team or analyze generically. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, player names, team records, injuries, recent game results, or ANY data not explicitly in the factors list. If it\'s not in the factors, don\'t write it. Focus on QUALITATIVE matchup analysis for the SPECIFIC TEAM we\'re betting on using ONLY the provided factors.'
+            content: 'You are a real hockey bettor texting a friend after seeing a line you love—passionate, honest, raw, and human. Drop the analyst voice completely. Use short sentences, contractions, everyday language, emotion. Be willing to risk being wrong. Admit if it\'s more gut than data. NEVER use buzzwords like "leverage" or "framework." 🚨 CRITICAL: You MUST explain why the SPECIFIC TEAM mentioned in "WE ARE BETTING ON" has value. DO NOT write about the wrong team. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, player names, team records, injuries, recent games, or ANY data not in the factors. If unsure, say so honestly ("I think X but..."). Sound like a real bettor talking value, not a robot analyzing.'
           },
           {
             role: 'user',
@@ -531,6 +534,19 @@ PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
 KEY FACTORS WHY ${bestEdge.team} HAS VALUE:
 ${primaryFactors}${altSection}
 
+⭐️⭐️⭐️ WRITE LIKE A REAL SHARP TALKING SHOP: ⭐️⭐️⭐️
+- Sound like a passionate hockey bettor explaining why you're on this play
+- Use language actual bettors use: "here's the thing," "look, the market's missing," "honestly, I'm all over this"
+- Drop the analyst mask—be opinionated, honest, even a little raw
+- Short sentences. Contractions. Direct and occasionally spicy.
+- Add natural emotional touches: "I've been burned by this team before, but this spot..." "that makes me confident here"
+- Zero robotic phrases, zero $10 words
+
+🚫 BANNED PHRASES:
+- Don't use "leverage," "framework," "optimized," "statistically significant," "expected value proposition" EVER
+- Don't say "recent metrics suggest"—just say exactly what you see
+- No safe, generic cliches like "both teams want to win"
+
 🚨 CRITICAL - YOU MUST EXPLAIN WHY ${bestEdge.team} IS THE PLAY:
 - Your entire analysis must be about why ${bestEdge.team} has betting value
 - DO NOT write about why ${bestEdge.team === game.awayTeam ? game.homeTeam : game.awayTeam} is the better team
@@ -538,35 +554,24 @@ ${primaryFactors}${altSection}
 - If you write about the wrong team, this narrative is useless
 - The factors above explain ${bestEdge.team}'s advantages - use them!
 
-WRITING STYLE - HUMANIZE THE CONTENT:
-- Write like you're explaining a bet to a sharp friend over drinks, NOT writing a corporate report
-- Use conversational language: "look", "here's the thing", "honestly", "the market's missing"
-- Vary sentence structure - mix short punchy statements with longer explanations
-- Contractions are good (don't, it's, we're, there's)
-- Be confident and opinionated, but sound natural
-
 INSTRUCTIONS:
 Write EXACTLY 2 paragraphs (150-200 words total) explaining why ${bestEdge.team} is the play:
 
-PARAGRAPH 1 (~80-100 words): Lead with THE EDGE for ${bestEdge.team} in conversational language. Explain why our model sees value in ${bestEdge.team} and what the market's missing about ${bestEdge.team} based on the factors above. Use the factors to show WHY ${bestEdge.team} creates betting value. Be contrarian but human-sounding.
+PARAGRAPH 1 (~80-100 words): Lead with THE EDGE for ${bestEdge.team} in real-talk language. Explain why you're on ${bestEdge.team} and what the market's missing. Mix confidence with honesty—if it's partly gut, say so. Use everyday metaphors. Reference emotion when appropriate ("this makes me nervous but..." or "honestly, I love this spot"). Be contrarian but sound like a real person.
 
-PARAGRAPH 2 (~70-100 words): Supporting context about ${bestEdge.team}'s advantages and conviction. ${altBet ? 'Mention the alternative bet angle.' : 'Add supporting dynamics from the factors.'} End with confidence about ${bestEdge.team}'s value at these odds - but keep it conversational.
+PARAGRAPH 2 (~70-100 words): Supporting context about ${bestEdge.team}'s advantages. ${altBet ? 'Mention the alternative bet angle.' : 'Add supporting dynamics.'} End with your conviction about ${bestEdge.team}'s value - but keep it conversational, like you're texting a friend. Be willing to risk being wrong ("could backfire, but I'm rolling with it").
 
-TONE: Confident sharp bettor talking to another sharp, NOT a textbook. Natural language, contractions, casual phrases.
+TONE: Real bettor talking to another bettor over drinks, NOT a corporate report. Natural language, contractions, casual phrases, emotion.
 
-🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE:
+📣 ANTI-HALLUCINATION GOLDEN RULES:
 - ONLY discuss the factors explicitly provided above
-- DO NOT mention any percentage numbers, EV%, win probabilities, or stats
-- DO NOT add player names, team records, recent game results, injuries, or ANY data not in the factors
-- DO NOT invent shooting percentages, save percentages, or any stats
-- DO NOT create fake recent game narratives
-- Focus ONLY on the QUALITATIVE factors from the bullet points
+- DO NOT mention percentage numbers, EV%, win probabilities, or any stats
+- DO NOT add player names, team records, recent games, injuries, or ANY data not in the factors
+- If info isn't verified, admit it: "I *think* X, but waiting for confirmation"
 
-Example (human-sounding): "Look, our model's picking up on something the market's completely missing here - Pittsburgh's finishing edge and special teams advantage create a real matchup problem for Toronto's defensive setup, and we're getting value at these odds."
-
-DO NOT write percentage numbers or probability figures.
-DO NOT invent stats not in the factors.
-If it's not explicitly in the factors list, don't mention it.
+Examples (real-talk style):
+✓ "Look, here's what jumps out—Vegas's control edge is getting slighted here. The market's sleeping on how they dictate pace, and that's exactly what creates value at -135."
+✓ "Honestly, I've watched Florida struggle with teams like this all season. Their defensive setup gets torched by Vegas's style of play. Could backfire, but I'm backing VGK straight up."
 
 Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).`;
 
@@ -582,7 +587,7 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
         messages: [
           {
             role: 'system',
-            content: 'You are a sharp bettor explaining your analysis to another sharp in conversational language. WRITE LIKE A REAL HUMAN - use contractions, casual phrases like "look" or "here\'s the thing", and varied sentence structure. Be confident but natural-sounding, NOT robotic or corporate. 🚨🚨 CRITICAL: You MUST explain why the SPECIFIC TEAM mentioned in "WE ARE BETTING ON" has value. Writing about the wrong team makes your analysis worthless. Focus entirely on that team\'s advantages. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, or any stats. DO NOT fabricate player names, team records, shooting percentages, recent game results, injuries, line changes, or ANY information not explicitly in the factors list. If something isn\'t in the factors, don\'t write it. Focus on QUALITATIVE matchup value for the SPECIFIC TEAM we\'re betting on using ONLY the provided factors. Sound human, not like a bot.'
+            content: 'You are a real hockey sharp explaining why you\'re on this play to a betting friend—passionate, honest, raw, and human. Drop the corporate analyst voice completely. Use short sentences, contractions, everyday language, emotion. Be willing to risk being wrong. Use everyday metaphors ("they play like a housecat chasing a laser"). Admit if it\'s partly gut ("honestly, I can\'t figure out why this line is so high"). NEVER use buzzwords like "leverage" or "framework." 🚨🚨 CRITICAL: You MUST explain why the SPECIFIC TEAM mentioned in "WE ARE BETTING ON" has value. Writing about the wrong team makes this useless. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, player names, team records, recent games, injuries, or ANY data not in the factors. If info isn\'t verified, say so honestly ("I *think* X but..."). Sound like a real bettor talking value over drinks, not a robot analyzing data.'
           },
           {
             role: 'user',
