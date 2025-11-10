@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lu
 import DataStatus from './DataStatus';
 import NHLGalaxy from './dashboard/NHLGalaxy';
 import LeagueHeatmap from './dashboard/LeagueHeatmap';
+import PlayerThreatMatrix from './dashboard/PlayerThreatMatrix';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
   const [opportunities, setOpportunities] = useState([]);
@@ -109,6 +110,9 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
         <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
           <DataStatus dataProcessor={dataProcessor} loading={loading} error={error} />
         </div>
+
+        {/* ELITE PLAYER THREAT MATRIX - Infrared Digital Stat Map */}
+        <PlayerThreatMatrix isMobile={isMobile} />
 
         {/* THE CENTERPIECE: NHL Galaxy - Van Gogh Masterpiece */}
         <NHLGalaxy dataProcessor={dataProcessor} isMobile={isMobile} />
