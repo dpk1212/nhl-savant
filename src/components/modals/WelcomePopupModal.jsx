@@ -335,38 +335,189 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           </p>
         </div>
 
-        {/* TONIGHT'S PICKS - Simplified */}
+        {/* TONIGHT'S PICKS - Teaser with cards */}
         <div style={{
-          background: 'rgba(0, 217, 255, 0.04)',
-          border: '1px solid rgba(0, 217, 255, 0.3)',
-          borderRadius: '12px',
-          padding: isMobile ? '1.5rem' : '1.75rem',
           marginBottom: isMobile ? '2rem' : '2.5rem',
           animation: 'fadeInUp 0.5s ease-out 0.9s both',
           position: 'relative',
-          zIndex: 1,
-          textAlign: 'center'
+          zIndex: 1
         }}>
           <h3 style={{
             fontSize: isMobile ? '1.125rem' : '1.25rem',
             fontWeight: '700',
             color: '#00d9ff',
             marginTop: 0,
-            marginBottom: '1rem',
+            marginBottom: '1.25rem',
+            textAlign: 'center',
             textShadow: '0 0 10px rgba(0, 217, 255, 0.5)',
             letterSpacing: '0.01em'
           }}>
             TONIGHT: {picksToday.length > 0 ? `${picksToday.length} PLAYS IDENTIFIED` : 'PLAYS POST BY 5PM ET'}
           </h3>
-          <p style={{
-            fontSize: isMobile ? '0.938rem' : '1rem',
-            color: 'rgba(255, 255, 255, 0.85)',
-            margin: 0,
-            fontWeight: '500',
-            lineHeight: '1.7'
-          }}>
-            {picksToday.length > 0 ? 'Both with verified +EV.' : 'Get instant access to all picks.'}
-          </p>
+
+          {picksToday.length > 0 ? (
+            <>
+              <p style={{
+                fontSize: isMobile ? '0.875rem' : '0.938rem',
+                color: 'rgba(255, 255, 255, 0.8)',
+                marginBottom: '1.25rem',
+                textAlign: 'center',
+                fontWeight: '500'
+              }}>
+                Both with verified +EV.
+              </p>
+
+              {/* Pick Cards - Match Today's Games styling */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {picksToday.slice(0, 2).map((game, index) => {
+                  const bestEdge = game.bestEdge;
+                  const getEVColor = (ev) => {
+                    if (ev >= 8) return '#10B981';
+                    if (ev >= 5) return '#00d9ff';
+                    if (ev >= 3) return '#8B5CF6';
+                    return '#64748b';
+                  };
+                  
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        background: 'linear-gradient(135deg, #1a2a3a 0%, #101a20 100%)',
+                        border: '1px solid rgba(0, 217, 255, 0.3)',
+                        borderRadius: '12px',
+                        padding: isMobile ? '1rem' : '1.25rem',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {/* Game Info */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '0.75rem',
+                        filter: 'blur(2px)',
+                        opacity: 0.5
+                      }}>
+                        <span style={{
+                          fontSize: isMobile ? '0.875rem' : '0.938rem',
+                          color: 'rgba(255, 255, 255, 0.9)',
+                          fontWeight: '600'
+                        }}>
+                          {game.game?.awayTeam || game.awayTeam} @ {game.game?.homeTeam || game.homeTeam}
+                        </span>
+                        <span style={{
+                          fontSize: '0.813rem',
+                          color: 'rgba(255, 255, 255, 0.6)'
+                        }}>
+                          {game.game?.gameTime || game.gameTime}
+                        </span>
+                      </div>
+
+                      {/* Pick & EV - Match Today's Games cards */}
+                      <div style={{
+                        display: 'flex',
+                        gap: '0.75rem',
+                        alignItems: 'center',
+                        filter: 'blur(2px)',
+                        opacity: 0.5
+                      }}>
+                        <div style={{
+                          background: 'rgba(139, 92, 246, 0.15)',
+                          border: '1px solid rgba(139, 92, 246, 0.3)',
+                          borderRadius: '8px',
+                          padding: '0.5rem 0.75rem',
+                          flex: 1
+                        }}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginBottom: '0.25rem'
+                          }}>
+                            {bestEdge.market || 'ML'}
+                          </div>
+                          <div style={{
+                            fontSize: isMobile ? '0.938rem' : '1rem',
+                            color: '#ffffff',
+                            fontWeight: '700'
+                          }}>
+                            {bestEdge.pick} {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+                          </div>
+                        </div>
+                        <div style={{
+                          background: `rgba(${getEVColor(bestEdge.evPercent) === '#10B981' ? '16, 185, 129' : getEVColor(bestEdge.evPercent) === '#00d9ff' ? '0, 217, 255' : '139, 92, 246'}, 0.15)`,
+                          border: `1px solid ${getEVColor(bestEdge.evPercent)}`,
+                          borderRadius: '8px',
+                          padding: '0.5rem 0.75rem',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{
+                            fontSize: isMobile ? '1rem' : '1.125rem',
+                            color: getEVColor(bestEdge.evPercent),
+                            fontWeight: '800',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            +{bestEdge.evPercent.toFixed(1)}%
+                          </div>
+                          <div style={{
+                            fontSize: '0.688rem',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            marginTop: '0.125rem'
+                          }}>
+                            EV
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Lock Overlay */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.75)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.75rem',
+                        borderRadius: '12px'
+                      }}>
+                        <Lock size={isMobile ? 20 : 24} color="#00d9ff" strokeWidth={2.5} style={{
+                          filter: 'drop-shadow(0 0 8px #00d9ff)',
+                          animation: 'lockPulse 2s ease-in-out infinite'
+                        }} />
+                        <span style={{
+                          color: '#00d9ff',
+                          fontSize: isMobile ? '1rem' : '1.125rem',
+                          fontWeight: '800',
+                          letterSpacing: '0.05em',
+                          textShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
+                        }}>
+                          LOCKED
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <p style={{
+              fontSize: isMobile ? '0.938rem' : '1rem',
+              color: 'rgba(255, 255, 255, 0.8)',
+              textAlign: 'center',
+              fontWeight: '500',
+              lineHeight: '1.7',
+              padding: isMobile ? '1.5rem' : '2rem',
+              background: 'rgba(0, 217, 255, 0.04)',
+              border: '1px solid rgba(0, 217, 255, 0.2)',
+              borderRadius: '12px'
+            }}>
+              Get instant access to all picks.
+            </p>
+          )}
         </div>
 
         {/* CTA */}
