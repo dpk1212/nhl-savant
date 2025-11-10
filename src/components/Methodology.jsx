@@ -449,7 +449,7 @@ const Methodology = () => {
               marginBottom: '0.75rem',
               fontWeight: '600'
             }}>
-              Fractional Kelly (Recommended)
+              Fractional Kelly (Common Approach)
             </h3>
             <p style={{ 
               fontSize: isMobile ? '0.875rem' : '0.938rem', 
@@ -457,7 +457,7 @@ const Methodology = () => {
               lineHeight: '1.6', 
               marginBottom: '0.75rem' 
             }}>
-              Full Kelly can be aggressive and lead to large swings. We recommend <strong>25% Kelly</strong> (Quarter Kelly) for more conservative,
+              Full Kelly can be aggressive and lead to large swings. A common approach is <strong>25% Kelly</strong> (Quarter Kelly) for more conservative,
               sustainable bankroll growth.
             </p>
             <div className="methodology-example" style={{
@@ -471,7 +471,7 @@ const Methodology = () => {
                 color: 'var(--color-text-secondary)', 
                 lineHeight: '1.6' 
               }}>
-                <strong>Example:</strong> If Kelly suggests 8% of bankroll, we recommend betting 2% (8% × 0.25).
+                <strong>Example:</strong> If Kelly suggests 8% of bankroll, Quarter Kelly would be 2% (8% × 0.25).
                 On a $1,000 bankroll, that's $20 instead of $80.
               </p>
             </div>

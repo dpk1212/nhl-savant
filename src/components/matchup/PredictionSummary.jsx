@@ -171,7 +171,7 @@ export default function PredictionSummary({ awayTeam, homeTeam, prediction, game
         </div>
       </div>
 
-      {/* Recommended Bet */}
+      {/* Predicted Edge */}
       {recommendedBet && (
         <div style={{
           display: 'grid',
@@ -194,7 +194,7 @@ export default function PredictionSummary({ awayTeam, homeTeam, prediction, game
               letterSpacing: '0.1em',
               marginBottom: '0.5rem'
             }}>
-              Recommended Bet
+              Predicted Edge
             </div>
             <div style={{
               fontSize: '1.375rem',
