@@ -51,6 +51,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
 import UpgradeModal from './UpgradeModal';
+import ConversionButtons from './ConversionButtons';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 
 // Wrapper for analytics logging
@@ -2962,6 +2963,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           </div>
         ) : null;
       })()}
+
+      {/* Conversion Buttons - "How This Works" & "Try Free" */}
+      <ConversionButtons 
+        user={user}
+        isPremium={isPremium}
+        isMobile={isMobile}
+      />
 
       {/* Deep Analytics Cards for Each Game - Grouped by Time */}
       <div>
