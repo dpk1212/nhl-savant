@@ -52,6 +52,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
 import UpgradeModal from './UpgradeModal';
 import ConversionButtons from './ConversionButtons';
+import WelcomePopupModal from './modals/WelcomePopupModal';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 
 // Wrapper for analytics logging
@@ -2156,11 +2157,40 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [pendingGameExpand, setPendingGameExpand] = useState(null);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   
+  // WELCOME POPUP: State for first-time visitor conversion modal
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  
   // Check if user has previously acknowledged disclaimer
   useEffect(() => {
     const acknowledged = localStorage.getItem('nhl_savant_disclaimer_acknowledged');
     setHasAcknowledged(!!acknowledged);
   }, []);
+  
+  // Auto-show welcome popup for new visitors (3 seconds after page load)
+  useEffect(() => {
+    const hasSeenPopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
+    
+    // Only show for non-premium users who haven't seen it
+    if (!hasSeenPopup && !isPremium && user === null) {
+      const timer = setTimeout(() => {
+        setShowWelcomePopup(true);
+        logEvent('welcome_popup_shown', {
+          user_type: 'new_visitor'
+        });
+      }, 3000); // 3 seconds delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPremium, user]);
+  
+  // Handle welcome popup close
+  const handleWelcomePopupClose = () => {
+    setShowWelcomePopup(false);
+    localStorage.setItem('nhlsavant_welcome_popup_seen', 'true');
+    logEvent('welcome_popup_closed', {
+      action: 'dismissed'
+    });
+  };
   
   // PREMIUM: Load user's usage for today
   useEffect(() => {
@@ -3377,6 +3407,14 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           }
         }}
         user={user}
+      />
+      
+      {/* Welcome Popup Modal - auto-shown to new visitors after 3 seconds */}
+      <WelcomePopupModal 
+        isOpen={showWelcomePopup}
+        onClose={handleWelcomePopupClose}
+        todaysGames={allGamesToDisplay}
+        isMobile={isMobile}
       />
     </div>
   );

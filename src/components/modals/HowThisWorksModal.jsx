@@ -5,13 +5,21 @@
 
 import React from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const HowThisWorksModal = ({ isOpen, onClose, onTryFree, isMobile }) => {
+const HowThisWorksModal = ({ isOpen, onClose, isMobile }) => {
+  const navigate = useNavigate();
+  
   if (!isOpen) return null;
 
   const handleHideForever = () => {
     localStorage.setItem('nhlsavant_hide_how_it_works', 'true');
     onClose();
+  };
+  
+  const handleTryFree = () => {
+    onClose();
+    navigate('/pricing');
   };
 
   return (
@@ -312,7 +320,7 @@ const HowThisWorksModal = ({ isOpen, onClose, onTryFree, isMobile }) => {
           gap: '1rem'
         }}>
           <button
-            onClick={onTryFree}
+            onClick={handleTryFree}
             style={{
               flex: isMobile ? '0' : '1',
               padding: '1rem 1.5rem',
