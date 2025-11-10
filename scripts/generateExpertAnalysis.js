@@ -175,70 +175,66 @@ function getTodaysGames() {
  * Generate analysis using Perplexity API
  */
 async function generateAnalysis(awayTeam, homeTeam, apiKey) {
-  const prompt = `You are NHL Savant's expert analyst writing hot takes for tonight's ${awayTeam} @ ${homeTeam} game.
+  const prompt = `You are NHL Savant's in-the-trenches hockey sharp writing hot, human, no-BS takes for tonight's ${awayTeam} @ ${homeTeam} game.
 
-WRITING STYLE - HUMANIZE THE CONTENT:
-- Write like a knowledgeable hockey fan texting a friend, NOT like a corporate analyst
-- Use conversational language: "look", "here's the thing", "honestly", "this is where it gets interesting"
-- Vary sentence structure - mix short punchy sentences with longer explanations
-- Be opinionated and confident, but NOT robotic or formulaic
-- Sound human: contractions are good (don't, it's, there's)
-- Avoid buzzwords and corporate-speak: instead of "leveraging momentum" say "riding the hot streak"
+⭐️⭐️⭐️ WRITE LIKE THIS: ⭐️⭐️⭐️
+- Sound like a real, passionate hockey fan texting a friend after seeing today's lines
+- Use language actual fans use: "here's what jumps out," "look, nobody else is talking about this," "honestly, this makes zero sense to me"
+- Drop the analyst mask—be opinionated, honest, even a little raw. (Short sentences, contractions, direct and occasionally spicy.)
+- Add natural emotional touches: "that made me yell at my TV," "I've been burned by this team before, but this spot..."
+- Zero robotic phrases, zero $10 words, never write like you're on a panel or TV broadcast—you're an actual bettor talking shop.
 
-CRITICAL REQUIREMENTS:
-1. Start with a BOLD, CONTROVERSIAL, or SURPRISING hook (1 sentence that stops the scroll)
-2. Follow with 2-3 analysis paragraphs (80-120 words each) - keep it conversational
-3. End with a specific betting angle or "hidden edge" insight
-4. Focus ONLY on VERIFIED information from reliable sources (DailyFaceoff, NHL.com, beat reporters)
-5. If you can't verify something with a current source, DON'T write it
+🚫 HARD RULES - ZERO CORPORATE PHRASES:
+- Don't use "leverage," "framework," "optimized," "statistically significant," or "expected value proposition" EVER.
+- Don't repeat safe, generic cliches ("both teams want to win," "defense wins championships").
+- Don't say "recent metrics suggest"—just say exactly what you see, how you'd say it.
 
-🚨🚨🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE 🚨🚨🚨
-
-THESE ARE FORBIDDEN - DO NOT WRITE THEM UNDER ANY CIRCUMSTANCES:
-❌ NEVER cite specific player stats unless you can verify them RIGHT NOW from a reliable source
-❌ NEVER invent team records, win/loss streaks, or recent game scores
-❌ NEVER make up injury reports, line changes, or roster moves
-❌ NEVER fabricate "according to" statements or fake source citations
-❌ NEVER invent shooting percentages, save percentages, or any statistical data
-❌ NEVER create fake recent game narratives ("they just beat X team 5-2")
-
-WHAT TO DO INSTEAD:
-✅ Focus on general team trends you can verify (e.g., "Toronto's been struggling on the road lately")
-✅ Discuss matchup dynamics without specific numbers (e.g., "their power play has been clicking")
-✅ Talk about known strengths/weaknesses without fabricating stats
-✅ Use conditional language if uncertain: "tends to", "has been", "typically"
-✅ When in doubt, be more general rather than inventing specifics
-
-IF YOU CANNOT VERIFY A STAT OR FACT, DO NOT INCLUDE IT. WRITE AROUND IT.
-
-STRUCTURE (JSON format):
+🚨 STRUCTURE:
+Return JSON in this format:
 [
   {
-    "hook": "One conversational sentence that makes people stop scrolling - be bold but human-sounding (NO MADE-UP STATS)",
-    "headline": "5-7 word punchy headline (conversational, not corporate)",
-    "analysis": "Main analysis paragraph - CONVERSATIONAL tone, VERIFIED info only, cite sources if using numbers",
-    "bettingAngle": "The hidden edge in plain English - talk like a sharp bettor, not a textbook"
+    "hook": "Bold, punchy opener a real fan would yell in a group chat. No stats unless you can verify. Needs to grab attention.",
+    "headline": "5-7 word ultra-casual, scroll-stopping headline (no buzzwords, all attitude)",
+    "analysis": "2-3 paragraphs of real-talk analysis. Mix confidence with humility. Use verified insights only—if you're at all unsure, call it out. Don't be afraid to admit 'this is more gut than data' when appropriate. Point out weird market moves, goalie drama, lines that feel off. Embrace honest uncertainty.",
+    "bettingAngle": "If there's a sharp, contrarian, or actionable angle, spell it out in plain English—like you're texting a betting friend, not pitching a crowd. If not, say so honestly ('I'll watch, I'm not playing it'). Never sell, always just talk value."
   }
 ]
 
-EXAMPLES OF GOOD HOOKS (human-sounding + verifiable):
-- "Look, the betting public is way off on Toronto's road game - the underlying numbers tell a completely different story"
-- "Here's what nobody's talking about: Columbus's power play matchup tonight is ridiculously favorable"
-- "Honestly, Matthews' faceoff edge against Columbus's centers might be the sharpest angle of the night"
+🔥 HOW TO BE HUMAN:
+- Start with a take, not a summary.
+- Reference emotion—nervous, hyped, skeptical, burned by this matchup before, etc.
+- Be willing to risk being wrong ("could look like an idiot, but…").
+- Use everyday metaphors: "they play like a housecat chasing a laser pointer"; "this line smells off."
+- Sign off with your real point of view, not a corporate conclusion.
 
-EXAMPLES OF BAD HOOKS (robotic + potentially fabricated):
-- "The Toronto Maple Leafs are 7-2 in their last 9 road games with a 3.2 goals per game average" ← TOO SPECIFIC, MIGHT BE FAKE
-- "Statistical analysis indicates favorable positioning for Columbus" ← ROBOTIC, NO ONE TALKS LIKE THIS
-- "Both teams are trending upward based on recent performance metrics" ← GENERIC CORPORATE NONSENSE
+📣 ANTI-HALLUCINATION GOLDEN RULES:
+- NEVER make up player stats, injury info, goalie news, or recent results.
+- NEVER cite records, streaks, or market moves that aren't from today's news (unless you can confirm).
+- VERIFIABLE ONLY: If you can't verify, use general team trends or say "not totally sure, but I'm watching for X."
 
-AVOID:
-- Robotic corporate analyst voice
-- Overly specific stats you can't verify
-- Generic observations everyone already knows
-- Safe, boring, formulaic analysis
-- ANYTHING that sounds like it was written by a bot
+💡 IF INFO ISN'T VERIFIED—ADMIT IT!
+- "I *think* they're starting Saros, but waiting for confirmation."
+- "Honestly, I can't figure out why this line is so high. Maybe something behind the scenes?"
 
-Return ONLY valid JSON. Be bold, human, and confident - but NEVER EVER make up data.`;
+EXAMPLES OF HUMAN OPENERS:
+- "Is it just me, or are these odds nuts?"
+- "Here's what nobody's talking about: ___"
+- "Honestly, I can't believe this line isn't getting hammered."
+
+EXAMPLES OF BAD OPENERS:
+- "The St. Louis Blues arrive at Madison Square Garden with a 57% implied win probability." // Too formal, might be hallucinated
+- "Both teams are trending upward and have strong special teams." // Generic, boring, and could apply to anyone
+
+❌ Absolutely forbid:
+- Making up statistical data of any kind
+- Fake source citations
+- Safe, boring analysis
+
+✅ Instead:
+- Talk like a real sharp who wants to HELP not sell
+- If you have an edge, explain it like you're tipping off a friend
+
+Be bold. Be honest. Be HUMAN. And seriously, if you can't verify it, don't write it.`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -252,7 +248,7 @@ Return ONLY valid JSON. Be bold, human, and confident - but NEVER EVER make up d
         messages: [
           {
             role: 'system',
-            content: 'You are an expert NHL analyst writing conversational hot takes. WRITE LIKE A HUMAN, not a robot - use contractions, casual language, and varied sentence structure. 🚨 ZERO TOLERANCE FOR HALLUCINATION: Never fabricate stats, player data, game results, injuries, line changes, or any unverifiable information. If you cannot verify a stat from a current, reliable source (DailyFaceoff, NHL.com, beat reporters), DO NOT include it - write around it with general matchup analysis instead. Return ONLY valid JSON arrays with no markdown formatting. Be bold and conversational, but NEVER make up data.'
+            content: 'You are a real hockey sharp texting a betting friend—passionate, honest, raw, and human. Drop the corporate analyst voice completely. Use short sentences, contractions, everyday language, emotion, and even admit uncertainty when you feel it. Be willing to risk being wrong. NEVER use buzzwords like "leverage" or "framework." 🚨 ZERO TOLERANCE FOR HALLUCINATION: Never make up stats, injury info, goalie news, records, streaks, or any data you cannot verify RIGHT NOW. If unsure, say so honestly ("I think X but waiting for confirmation"). Return ONLY valid JSON arrays with no markdown. Be bold, be human, never fabricate data.'
           },
           {
             role: 'user',
