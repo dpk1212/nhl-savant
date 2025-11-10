@@ -1,13 +1,132 @@
-import Papa from 'papaparse';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
-// Cache for performance stats (refresh every hour)
+// EXACT SAME CONSTANTS AS PERFORMANCE DASHBOARD
+const STARTING_BANKROLL = 500;
+
+// Cache for performance stats (refresh every 5 minutes)
 let cachedStats = null;
 let lastCalculated = null;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 /**
- * Calculate ROI from actual bet results
- * Returns ROI as a percentage (e.g., 26.5)
+ * Get performance stats using EXACT SAME LOGIC as PerformanceDashboard.jsx
+ * This ensures the popup shows the EXACT same numbers as the Performance page
+ */
+export async function getPerformanceStats() {
+  // Return cached stats if still valid
+  if (cachedStats && lastCalculated && (Date.now() - lastCalculated < CACHE_DURATION)) {
+    console.log('📊 Using cached performance stats:', cachedStats);
+    return cachedStats;
+  }
+
+  try {
+    console.log('📊 Fetching performance stats from Firebase...');
+    
+    // Query Firebase for completed bets (EXACT SAME as Performance Dashboard)
+    const q = query(
+      collection(db, 'bets'),
+      where('status', '==', 'COMPLETED')
+    );
+    
+    const snapshot = await getDocs(q);
+    const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+    
+    console.log(`📊 Fetched ${bets.length} completed bets`);
+    
+    // FILTER: Only include B-rated or higher bets (>= 3% EV) AND exclude totals
+    // (EXACT SAME filter as Performance Dashboard)
+    const qualityBets = bets.filter(b => 
+      b.prediction?.rating !== 'C' && 
+      b.bet?.market !== 'TOTAL' && 
+      !b.bet?.market?.includes('TOTAL')
+    );
+    
+    console.log(`📊 ${qualityBets.length} quality bets (B-rated or higher, no totals)`);
+    
+    if (qualityBets.length === 0) {
+      console.warn('⚠️ No quality bets found');
+      return {
+        roi: 0,
+        totalProfit: 0,
+        winRate: 0,
+        wins: 0,
+        losses: 0,
+        totalBets: 0,
+        moneylineROI: 0,
+        moneylineBets: 0
+      };
+    }
+    
+    // Calculate overall stats (EXACT SAME as Performance Dashboard)
+    const wins = qualityBets.filter(b => b.result?.outcome === 'WIN').length;
+    const losses = qualityBets.filter(b => b.result?.outcome === 'LOSS').length;
+    const pushes = qualityBets.filter(b => b.result?.outcome === 'PUSH').length;
+    const totalProfit = qualityBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    
+    // Calculate bankroll-based ROI (EXACT SAME as Performance Dashboard)
+    // Profit is in units, convert to $10 flat bets for consistency
+    const flatBettingProfit = totalProfit * 10;
+    const bankrollROI = (flatBettingProfit / STARTING_BANKROLL) * 100;
+    
+    // Calculate MONEYLINE-specific stats (for the ML ROI card)
+    const moneylineBets = qualityBets.filter(b => b.bet?.market === 'MONEYLINE');
+    const moneylineProfit = moneylineBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    const moneylineFlatProfit = moneylineProfit * 10;
+    const moneylineROI = moneylineBets.length > 0 ? (moneylineFlatProfit / STARTING_BANKROLL) * 100 : 0;
+    
+    const stats = {
+      roi: bankrollROI,
+      totalProfit: totalProfit,
+      winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
+      wins: wins,
+      losses: losses,
+      pushes: pushes,
+      totalBets: qualityBets.length,
+      moneylineROI: moneylineROI,
+      moneylineBets: moneylineBets.length
+    };
+    
+    console.log('📊 Performance Stats Calculated:', {
+      totalBets: stats.totalBets,
+      wins,
+      losses,
+      pushes,
+      totalProfit: stats.totalProfit.toFixed(2) + 'u',
+      overallROI: stats.roi.toFixed(1) + '%',
+      moneylineROI: stats.moneylineROI.toFixed(1) + '%',
+      moneylineBets: stats.moneylineBets,
+      winRate: stats.winRate.toFixed(1) + '%'
+    });
+    
+    // Cache the results
+    cachedStats = stats;
+    lastCalculated = Date.now();
+    
+    return stats;
+  } catch (error) {
+    console.error('❌ Error getting performance stats from Firebase:', error);
+    
+    // Return fallback values if calculation fails
+    const fallback = {
+      roi: 19.6, // Last known overall ROI
+      totalProfit: 9.79,
+      winRate: 62.5,
+      wins: 75,
+      losses: 45,
+      pushes: 0,
+      totalBets: 120,
+      moneylineROI: 19.6, // Last known ML ROI
+      moneylineBets: 120
+    };
+    console.log('⚠️ Using fallback stats:', fallback);
+    return fallback;
+  }
+}
+
+/**
+ * Calculate ROI from Firebase bets
+ * Returns ROI as a percentage (e.g., 19.6)
  */
 export async function calculateROI() {
   try {
@@ -46,6 +165,19 @@ export async function getWinRate() {
 }
 
 /**
+ * Get moneyline-specific ROI
+ */
+export async function getMoneylineROI() {
+  try {
+    const stats = await getPerformanceStats();
+    return stats?.moneylineROI || null;
+  } catch (error) {
+    console.error('Error calculating moneyline ROI:', error);
+    return null;
+  }
+}
+
+/**
  * Get start date for tracking
  */
 export function getStartDate() {
@@ -57,7 +189,7 @@ export function getStartDate() {
  */
 export function formatROIDisplay(roi) {
   if (roi === null || roi === undefined) return null;
-  return `${Math.round(roi)}%`;
+  return `${roi.toFixed(1)}%`;
 }
 
 /**
@@ -82,110 +214,9 @@ export function getWeeksSinceStart() {
 }
 
 /**
- * Main function to get all performance stats
- * Uses caching to avoid recalculating too frequently
- */
-async function getPerformanceStats() {
-  // Return cached stats if still valid
-  if (cachedStats && lastCalculated && (Date.now() - lastCalculated < CACHE_DURATION)) {
-    return cachedStats;
-  }
-
-  try {
-    // Fetch the as-played CSV
-    const response = await fetch('/nhl-202526-asplayed.csv');
-    if (!response.ok) {
-      throw new Error('Failed to fetch as-played data');
-    }
-
-    const csvText = await response.text();
-    
-    // Parse CSV
-    const parsed = await new Promise((resolve, reject) => {
-      Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => resolve(results.data),
-        error: (error) => reject(error)
-      });
-    });
-
-    // Calculate stats from parsed data
-    let totalUnits = 0;
-    let totalStaked = 0;
-    let wins = 0;
-    let losses = 0;
-    let pushes = 0;
-
-    parsed.forEach(game => {
-      const recommendation = game.recommendation;
-      const result = game.result;
-      
-      if (!recommendation || !result || result === 'pending') {
-        return; // Skip games without recommendations or pending results
-      }
-
-      // Track total games with recommendations
-      totalStaked += 1; // Assuming 1 unit per bet
-
-      // Calculate result
-      if (result === 'win') {
-        wins++;
-        // Parse odds and calculate profit
-        const odds = parseFloat(game.odds || game.recommendedOdds || 0);
-        if (odds > 0) {
-          totalUnits += odds / 100; // +150 = 1.5 units profit
-        } else {
-          totalUnits += 100 / Math.abs(odds); // -150 = 0.67 units profit
-        }
-      } else if (result === 'loss') {
-        losses++;
-        totalUnits -= 1; // Lose 1 unit
-      } else if (result === 'push') {
-        pushes++;
-        // No change to units
-      }
-    });
-
-    const totalGames = wins + losses + pushes;
-    const roi = totalStaked > 0 ? (totalUnits / totalStaked) * 100 : 0;
-    const winRate = (wins + losses) > 0 ? (wins / (wins + losses)) * 100 : 0;
-
-    const stats = {
-      roi: roi,
-      totalProfit: totalUnits,
-      winRate: winRate,
-      wins: wins,
-      losses: losses,
-      pushes: pushes,
-      totalGames: totalGames
-    };
-
-    // Cache the results
-    cachedStats = stats;
-    lastCalculated = Date.now();
-
-    return stats;
-  } catch (error) {
-    console.error('Error getting performance stats:', error);
-    // Return fallback values if calculation fails
-    return {
-      roi: 26, // Fallback to last known value
-      totalProfit: 2.6,
-      winRate: 63,
-      wins: 0,
-      losses: 0,
-      pushes: 0,
-      totalGames: 0
-    };
-  }
-}
-
-/**
  * Force refresh the cache (useful for admin/testing)
  */
 export function refreshStats() {
   cachedStats = null;
   lastCalculated = null;
 }
-

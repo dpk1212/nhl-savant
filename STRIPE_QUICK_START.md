@@ -134,3 +134,4 @@ firebase emulators:start
 
 **Need help? Check the full guide or Firebase/Stripe logs!**
 
+
