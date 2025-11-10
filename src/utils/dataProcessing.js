@@ -210,7 +210,7 @@ export class NHLDataProcessor {
     // 2025 CALIBRATION: Optimized to 1.436 based on early season accuracy test (Oct 28)
     // Test results (104 games): Previous 1.39 had -0.358 bias, new 1.436 eliminates bias
     // Expected: RMSE 2.209 → 2.0, Bias -0.358 → ~0.0 (+3.3% adjustment)
-    const HISTORICAL_CALIBRATION = 1.436;
+    const HISTORICAL_CALIBRATION = 1.52; // Updated 2025-11-10: Adjusted for 2025-26 season scoring (6.20 goals/game)
     const calibration = HISTORICAL_CALIBRATION;
 
     // Calculate base xGF/60 average
