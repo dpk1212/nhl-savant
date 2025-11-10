@@ -87,7 +87,7 @@ console.log(`  Sample:   ${gameCount_all} games\n`);
 // Historical comparison
 const avg_2024 = 6.07;  // From backtesting docs
 const avg_2023 = 5.99;  // Historical average
-const current_calibration = 1.39;
+const current_calibration = 1.436;  // Current value in dataProcessing.js
 
 console.log('=' .repeat(70));
 console.log('\n📊 HISTORICAL COMPARISON:\n');
@@ -153,8 +153,8 @@ if (gameCount_reg < 50) {
 }
 
 console.log('To update the calibration constant:');
-console.log('  1. Edit: src/utils/dataProcessing.js');
-console.log('  2. Find: const HISTORICAL_CALIBRATION = 1.39');
+console.log('  1. Edit: src/utils/dataProcessing.js (line 213)');
+console.log('  2. Find: const HISTORICAL_CALIBRATION = 1.436');
 console.log(`  3. Change to: const HISTORICAL_CALIBRATION = ${needed_calibration.toFixed(3)}`);
 console.log('  4. Test predictions to verify improvement\n');
 
