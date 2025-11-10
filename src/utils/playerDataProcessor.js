@@ -10,18 +10,32 @@ import Papa from 'papaparse';
  */
 export async function loadPlayerData() {
   try {
+    console.log('🏒 Loading skaters.csv...');
     const response = await fetch('/skaters.csv');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const csvText = await response.text();
+    console.log(`📊 CSV loaded: ${csvText.length} characters`);
     
     const result = Papa.parse(csvText, {
       header: true,
       dynamicTyping: true,
-      skipEmptyLines: true
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim()
     });
+    
+    console.log(`✅ Parsed ${result.data.length} player records`);
+    
+    if (result.errors.length > 0) {
+      console.warn('⚠️ Parse warnings:', result.errors.slice(0, 5));
+    }
     
     return result.data;
   } catch (error) {
-    console.error('Error loading player data:', error);
+    console.error('❌ Error loading player data:', error);
     return [];
   }
 }

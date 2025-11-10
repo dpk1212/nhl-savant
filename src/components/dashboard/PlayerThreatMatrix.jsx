@@ -15,13 +15,27 @@ const PlayerThreatMatrix = ({ isMobile }) => {
     twoway: []
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function loadData() {
-      setLoading(true);
-      const data = await getElitePlayers(8);
-      setPlayers(data);
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getElitePlayers(8);
+        console.log('📊 Elite players loaded:', {
+          offensive: data.offensive.length,
+          defensive: data.defensive.length,
+          powerplay: data.powerplay.length,
+          twoway: data.twoway.length
+        });
+        setPlayers(data);
+      } catch (err) {
+        console.error('❌ Error loading elite players:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -37,7 +51,28 @@ const PlayerThreatMatrix = ({ isMobile }) => {
         color: '#00d9ff',
         border: '1px solid rgba(0, 217, 255, 0.2)'
       }}>
-        <div style={{ fontSize: '0.875rem' }}>SCANNING ELITE PLAYERS...</div>
+        <div style={{ fontSize: '0.875rem', letterSpacing: '0.1em' }}>SCANNING ELITE PLAYERS...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #0a0e1a 0%, #0f1419 100%)',
+        borderRadius: '16px',
+        padding: isMobile ? '2rem 1rem' : '3rem 2rem',
+        marginBottom: isMobile ? '1.5rem' : '2rem',
+        textAlign: 'center',
+        color: '#ff4444',
+        border: '1px solid rgba(255, 68, 68, 0.3)'
+      }}>
+        <div style={{ fontSize: '0.875rem', letterSpacing: '0.05em' }}>
+          ⚠️ PLAYER DATA UNAVAILABLE
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#7aa3b8', marginTop: '0.5rem' }}>
+          {error}
+        </div>
       </div>
     );
   }
