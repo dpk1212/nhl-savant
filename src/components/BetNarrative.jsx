@@ -683,7 +683,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                     </div>
                   </div>
 
-                  {/* Recommended Bet Sizing */}
+                  {/* Kelly Criterion Analysis */}
                   <div style={{ 
                     backgroundColor: 'var(--color-background)', 
                     padding: '0.875rem', 
@@ -701,7 +701,7 @@ const BetNarrative = ({ game, edge, dataProcessor, variant = 'full', expandable 
                       alignItems: 'center',
                       gap: '0.5rem'
                     }}>
-                      <span>💵</span> Recommended Bet Sizing (Kelly)
+                      <span>💵</span> Kelly Criterion Analysis
                     </div>
                     
                     <div style={{ fontSize: '0.813rem', color: 'var(--color-text-secondary)', lineHeight: '1.8' }}>

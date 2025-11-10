@@ -735,7 +735,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
             marginBottom: '0.5rem',
             letterSpacing: '-0.01em'
           }}>
-            No Recommended Bet
+            No Predicted Edge
           </div>
           
           {/* Description */}
