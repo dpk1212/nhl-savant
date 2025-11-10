@@ -20,7 +20,7 @@ const Navigation = () => {
     { path: '/', label: "Today's Games", icon: Target },
     { path: '/my-picks', label: 'My Picks', icon: Bookmark },
     { path: '/matchup-insights', label: 'Hot Takes', icon: LineChart },
-    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { path: '/dashboard', label: 'Analytics Hub', icon: BarChart3 },
     { path: '/performance', label: 'Performance', icon: TrendingUp },
     { path: '/methodology', label: 'Methodology', icon: BookOpen },
     { path: '/inspector', label: 'Data Inspector', icon: Search }
