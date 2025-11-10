@@ -205,3 +205,145 @@ export async function getElitePlayers(limit = 8) {
   };
 }
 
+/**
+ * THERMAL HEXMAP - Normalize value to 0-100 scale
+ */
+function normalize(value, min, max) {
+  if (max === min) return 50; // Avoid division by zero
+  return Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+}
+
+/**
+ * THERMAL HEXMAP - Get top 150 players with lens scores
+ */
+export async function getTop150PlayersWithLensScores() {
+  const allPlayers = await loadPlayerData();
+  
+  if (!allPlayers || allPlayers.length === 0) {
+    return [];
+  }
+
+  // Filter: all situation, min 5 games, min 10 min/game
+  const eligible = allPlayers.filter(p => 
+    p.situation === 'all' && 
+    p.games_played >= 5 &&
+    (p.icetime / p.games_played / 60) >= 10 // Min 10 minutes per game
+  );
+
+  // Sort by total ice time and take top 150
+  const top150 = eligible
+    .sort((a, b) => b.icetime - a.icetime)
+    .slice(0, 150);
+
+  // Find min/max for each metric category for normalization
+  const metrics = {
+    // Offense
+    points: top150.map(p => p.I_F_points || 0),
+    goals: top150.map(p => p.I_F_goals || 0),
+    shots: top150.map(p => p.I_F_shots || 0),
+    xGF: top150.map(p => p.I_F_xGoals || 0),
+    
+    // Defense
+    blocks: top150.map(p => p.shotsBlockedByPlayer || 0),
+    hits: top150.map(p => p.I_F_hits || 0),
+    takeaways: top150.map(p => p.I_F_takeaways || 0),
+    
+    // Special Teams (need to cross-reference 5on4 data)
+    icetime: top150.map(p => p.icetime || 0),
+    
+    // Efficiency
+    pointsPerTOI: top150.map(p => (p.I_F_points || 0) / ((p.icetime / 60) || 1)),
+    shootingPct: top150.map(p => {
+      const shots = p.I_F_shots || 0;
+      const goals = p.I_F_goals || 0;
+      return shots > 0 ? (goals / shots) * 100 : 0;
+    })
+  };
+
+  const ranges = {};
+  for (const [key, values] of Object.entries(metrics)) {
+    ranges[key] = {
+      min: Math.min(...values),
+      max: Math.max(...values)
+    };
+  }
+
+  // Get power play data for cross-reference
+  const ppData = allPlayers.filter(p => p.situation === '5on4');
+  const ppMap = new Map();
+  ppData.forEach(p => {
+    ppMap.set(p.playerId, {
+      ppPoints: p.I_F_points || 0,
+      ppIceTime: p.icetime || 0
+    });
+  });
+
+  // Calculate lens scores for each player
+  const playersWithScores = top150.map(p => {
+    const pp = ppMap.get(p.playerId) || { ppPoints: 0, ppIceTime: 0 };
+    
+    // Normalize individual metrics
+    const normPoints = normalize(p.I_F_points || 0, ranges.points.min, ranges.points.max);
+    const normGoals = normalize(p.I_F_goals || 0, ranges.goals.min, ranges.goals.max);
+    const normShots = normalize(p.I_F_shots || 0, ranges.shots.min, ranges.shots.max);
+    const normXGF = normalize(p.I_F_xGoals || 0, ranges.xGF.min, ranges.xGF.max);
+    
+    const normBlocks = normalize(p.shotsBlockedByPlayer || 0, ranges.blocks.min, ranges.blocks.max);
+    const normHits = normalize(p.I_F_hits || 0, ranges.hits.min, ranges.hits.max);
+    const normTakeaways = normalize(p.I_F_takeaways || 0, ranges.takeaways.min, ranges.takeaways.max);
+    
+    const pointsPerTOI = (p.I_F_points || 0) / ((p.icetime / 60) || 1);
+    const shootingPct = (p.I_F_shots || 0) > 0 ? ((p.I_F_goals || 0) / (p.I_F_shots || 0)) * 100 : 0;
+    const normEfficiency = normalize(pointsPerTOI, ranges.pointsPerTOI.min, ranges.pointsPerTOI.max);
+    const normShootingPct = normalize(shootingPct, ranges.shootingPct.min, ranges.shootingPct.max);
+    
+    // Calculate lens scores
+    const offenseScore = (normPoints * 0.4) + (normGoals * 0.3) + (normShots * 0.15) + (normXGF * 0.15);
+    const defenseScore = (normBlocks * 0.5) + (normHits * 0.3) + (normTakeaways * 0.2);
+    const specialTeamsScore = normalize(pp.ppPoints + (pp.ppIceTime / 60), 0, 
+      Math.max(...top150.map(pl => {
+        const ppd = ppMap.get(pl.playerId) || { ppPoints: 0, ppIceTime: 0 };
+        return ppd.ppPoints + (ppd.ppIceTime / 60);
+      }))
+    );
+    const efficiencyScore = (normEfficiency * 0.6) + (normShootingPct * 0.4);
+    const overallScore = (offenseScore * 0.4) + (defenseScore * 0.3) + (specialTeamsScore * 0.2) + (efficiencyScore * 0.1);
+
+    return {
+      playerId: p.playerId,
+      name: p.name,
+      team: p.team,
+      position: p.position,
+      gamesPlayed: p.games_played,
+      
+      // Raw stats
+      points: p.I_F_points || 0,
+      goals: p.I_F_goals || 0,
+      assists: p.I_F_primaryAssists + p.I_F_secondaryAssists || 0,
+      shots: p.I_F_shots || 0,
+      blocks: p.shotsBlockedByPlayer || 0,
+      hits: p.I_F_hits || 0,
+      takeaways: p.I_F_takeaways || 0,
+      ppPoints: pp.ppPoints,
+      icetime: p.icetime,
+      
+      // Lens scores (0-100)
+      offenseScore: Math.round(offenseScore),
+      defenseScore: Math.round(defenseScore),
+      specialTeamsScore: Math.round(specialTeamsScore),
+      efficiencyScore: Math.round(efficiencyScore),
+      overallScore: Math.round(overallScore)
+    };
+  });
+
+  console.log(`🔥 Thermal Hexmap: Processed ${playersWithScores.length} elite players`);
+  console.log(`📊 Sample scores:`, playersWithScores.slice(0, 3).map(p => ({
+    name: p.name,
+    offense: p.offenseScore,
+    defense: p.defenseScore,
+    overall: p.overallScore
+  })));
+
+  return playersWithScores;
+}
+
