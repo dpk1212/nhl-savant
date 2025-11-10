@@ -202,6 +202,7 @@ const ThermalHexMap = ({ isMobile }) => {
       border: '1px solid rgba(0, 217, 255, 0.3)',
       borderRadius: '12px',
       padding: isMobile ? '1rem' : '1.5rem',
+      marginBottom: isMobile ? '2rem' : '3rem',
       position: 'relative',
       overflow: 'hidden'
     }}>
