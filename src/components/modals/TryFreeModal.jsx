@@ -111,7 +111,7 @@ const TryFreeModal = ({ isOpen, onClose, isMobile }) => {
             },
             {
               num: '2️⃣',
-              title: 'You see today's picks',
+              title: 'You see today\'s picks',
               desc: 'Full breakdowns on why each one has edge. The matchups. The data. Everything.'
             },
             {
@@ -212,7 +212,7 @@ const TryFreeModal = ({ isOpen, onClose, isMobile }) => {
             gap: '0.75rem'
           }}>
             {[
-              'Today's +EV picks (with exact confidence grades)',
+              'Today\'s +EV picks (with exact confidence grades)',
               'Why each pick has edge (in plain English)',
               'How the model found it (the actual data)',
               'Real-time results tracking',
