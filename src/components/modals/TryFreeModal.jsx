@@ -14,7 +14,7 @@ const TryFreeModal = ({ isOpen, onClose, isMobile }) => {
 
   const handleChoosePlan = () => {
     onClose();
-    navigate('/account'); // Navigate to account page where pricing/subscription is handled
+    navigate('/pricing'); // Navigate to pricing page with 3 subscription options
   };
 
   return (
@@ -92,30 +92,35 @@ const TryFreeModal = ({ isOpen, onClose, isMobile }) => {
         </h2>
 
         {/* Intro - What Happens */}
-        <p style={{
-          fontSize: isMobile ? '0.938rem' : '1rem',
-          color: 'rgba(255, 255, 255, 0.9)',
+        <div style={{
+          fontSize: isMobile ? '0.875rem' : '0.938rem',
+          color: 'rgba(255, 255, 255, 0.85)',
           lineHeight: '1.6',
-          marginBottom: '1.5rem'
+          marginBottom: '1.5rem',
+          fontWeight: '600',
+          letterSpacing: '0.02em'
         }}>
           Here's what happens:
-        </p>
+        </div>
 
-        {/* Steps */}
+        {/* Steps - Premium Cards */}
         <div style={{ marginBottom: '2rem' }}>
           {[
             {
               num: '1️⃣',
+              numAlt: '1',
               title: 'You sign up (30 seconds)',
               desc: null
             },
             {
               num: '2️⃣',
+              numAlt: '2',
               title: 'You see today\'s picks',
               desc: 'Full breakdowns on why each one has edge. The matchups. The data. Everything.'
             },
             {
               num: '3️⃣',
+              numAlt: '3',
               title: 'You watch it play out',
               desc: 'Free trial means full access. See the model in real time.'
             }
@@ -123,31 +128,62 @@ const TryFreeModal = ({ isOpen, onClose, isMobile }) => {
             <div
               key={i}
               style={{
+                background: 'rgba(0, 217, 255, 0.04)',
+                border: '1px solid rgba(0, 217, 255, 0.15)',
+                borderRadius: '10px',
+                padding: isMobile ? '1rem' : '1.25rem',
+                marginBottom: '1rem',
                 display: 'flex',
                 gap: '1rem',
-                marginBottom: '1.25rem'
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
-              <span style={{
-                fontSize: '1.5rem',
-                flexShrink: 0
+              {/* Gradient accent line */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                background: 'linear-gradient(180deg, #00d9ff 0%, rgba(0, 217, 255, 0.3) 100%)'
+              }} />
+              
+              {/* Number badge */}
+              <div style={{
+                flexShrink: 0,
+                width: isMobile ? '32px' : '36px',
+                height: isMobile ? '32px' : '36px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(0, 217, 255, 0.05) 100%)',
+                border: '2px solid rgba(0, 217, 255, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '800',
+                color: '#00d9ff',
+                boxShadow: '0 0 15px rgba(0, 217, 255, 0.3)',
+                textShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
               }}>
-                {step.num}
-              </span>
-              <div>
+                {step.numAlt}
+              </div>
+              
+              <div style={{ flex: 1 }}>
                 <div style={{
                   fontSize: isMobile ? '0.938rem' : '1rem',
                   fontWeight: '700',
                   color: '#ffffff',
-                  marginBottom: step.desc ? '0.25rem' : 0
+                  marginBottom: step.desc ? '0.5rem' : 0,
+                  letterSpacing: '-0.01em'
                 }}>
                   {step.title}
                 </div>
                 {step.desc && (
                   <div style={{
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '0.813rem' : '0.875rem',
                     color: 'rgba(255, 255, 255, 0.7)',
-                    lineHeight: '1.5'
+                    lineHeight: '1.6'
                   }}>
                     {step.desc}
                   </div>
