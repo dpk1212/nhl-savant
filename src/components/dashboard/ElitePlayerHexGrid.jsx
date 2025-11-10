@@ -24,12 +24,20 @@ const ElitePlayerHexGrid = ({ isMobile }) => {
         setError(null);
         const data = await getElitePlayers(10); // Get top 10 per category
         
+        // Add rank within category
+        const withRanks = {
+          offensive: data.offensive.map((p, i) => ({ ...p, categoryRank: i + 1 })),
+          defensive: data.defensive.map((p, i) => ({ ...p, categoryRank: i + 1 })),
+          powerplay: data.powerplay.map((p, i) => ({ ...p, categoryRank: i + 1 })),
+          twoway: data.twoway.map((p, i) => ({ ...p, categoryRank: i + 1 }))
+        };
+        
         // Combine all players into one array with category
         const combined = [
-          ...data.offensive,
-          ...data.defensive,
-          ...data.powerplay,
-          ...data.twoway
+          ...withRanks.offensive,
+          ...withRanks.defensive,
+          ...withRanks.powerplay,
+          ...withRanks.twoway
         ];
         
         console.log('🎯 Elite players loaded:', combined.length);
@@ -233,6 +241,11 @@ const ElitePlayerHexGrid = ({ isMobile }) => {
         </div>
       </div>
 
+      {/* Key Insights Panel */}
+      {filteredPlayers.length > 0 && (
+        <InsightsPanel players={filteredPlayers} isMobile={isMobile} />
+      )}
+
       {/* Hexagonal Grid */}
       <div style={{
         display: 'grid',
@@ -266,6 +279,80 @@ const ElitePlayerHexGrid = ({ isMobile }) => {
   );
 };
 
+const InsightsPanel = ({ players, isMobile }) => {
+  // Calculate key insights
+  const byCategory = {
+    offensive: players.filter(p => p.category === 'offensive'),
+    defensive: players.filter(p => p.category === 'defensive'),
+    powerplay: players.filter(p => p.category === 'powerplay'),
+    twoway: players.filter(p => p.category === 'twoway')
+  };
+
+  const byTeam = players.reduce((acc, p) => {
+    acc[p.team] = (acc[p.team] || 0) + 1;
+    return acc;
+  }, {});
+
+  const topTeam = Object.entries(byTeam).sort((a, b) => b[1] - a[1])[0];
+  const topScorer = byCategory.offensive[0];
+  const topDefender = byCategory.defensive[0];
+  const avgPoints = byCategory.offensive.length > 0
+    ? (byCategory.offensive.reduce((sum, p) => sum + (p.points || 0), 0) / byCategory.offensive.length).toFixed(1)
+    : 0;
+
+  const insights = [
+    { icon: '🔥', text: topScorer ? `${topScorer.name} leads all scorers (${topScorer.points} PTS in ${topScorer.gamesPlayed} GP)` : null },
+    { icon: '🛡️', text: topDefender ? `${topDefender.name} defensive anchor (${topDefender.blocks} BLK)` : null },
+    { icon: '🏒', text: topTeam ? `${topTeam[0]} has ${topTeam[1]} elite player${topTeam[1] > 1 ? 's' : ''} (most in league)` : null },
+    { icon: '📊', text: `Average elite scorer: ${avgPoints} points` }
+  ].filter(i => i.text);
+
+  return (
+    <div style={{
+      background: 'rgba(0, 217, 255, 0.05)',
+      border: '1px solid rgba(0, 217, 255, 0.2)',
+      borderRadius: '12px',
+      padding: isMobile ? '1rem' : '1.25rem',
+      marginBottom: '1.5rem',
+      position: 'relative',
+      zIndex: 1
+    }}>
+      <div style={{
+        fontSize: '0.75rem',
+        color: '#00d9ff',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        marginBottom: '0.75rem',
+        textShadow: '0 0 8px rgba(0, 217, 255, 0.6)'
+      }}>
+        ⚡ KEY INSIGHTS
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+        gap: '0.75rem'
+      }}>
+        {insights.map((insight, i) => (
+          <div
+            key={i}
+            style={{
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <span style={{ fontSize: '1.25rem' }}>{insight.icon}</span>
+            <span>{insight.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const PlayerHexagon = ({ player, onClick, isMobile, delay }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -278,6 +365,20 @@ const PlayerHexagon = ({ player, onClick, isMobile, delay }) => {
   };
 
   const colors = categoryColors[player.category] || { primary: '#00d9ff', secondary: '#ffffff' };
+
+  // Determine elite tier based on rank
+  const getEliteTier = () => {
+    if (player.categoryRank === 1) return { label: 'ELITE', badge: '👑', color: '#FFD700' };
+    if (player.categoryRank <= 3) return { label: 'SUPERIOR', badge: '⭐', color: '#C0C0C0' };
+    if (player.categoryRank <= 5) return { label: 'STRONG', badge: '💪', color: '#CD7F32' };
+    return null;
+  };
+
+  const tier = getEliteTier();
+
+  // Scale card for top 3
+  const isTopThree = player.categoryRank <= 3;
+  const cardScale = player.categoryRank === 1 ? 1.05 : isTopThree ? 1.02 : 1;
 
   // Get primary stat based on category
   const getPrimaryStat = () => {
@@ -303,16 +404,16 @@ const PlayerHexagon = ({ player, onClick, isMobile, delay }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        background: `linear-gradient(135deg, ${colors.primary}15 0%, ${colors.primary}08 100%)`,
-        border: `2px solid ${colors.primary}${isHovered ? '88' : '44'}`,
+        background: `linear-gradient(135deg, ${colors.primary}${isTopThree ? '22' : '15'} 0%, ${colors.primary}${isTopThree ? '11' : '08'} 100%)`,
+        border: `${isTopThree ? '3px' : '2px'} solid ${colors.primary}${isHovered ? '88' : isTopThree ? '66' : '44'}`,
         borderRadius: '12px',
         padding: isMobile ? '1rem 0.75rem' : '1.25rem 1rem',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
-        transform: isHovered ? 'translateY(-4px)' : 'none',
+        transform: `scale(${isHovered ? cardScale * 1.02 : cardScale}) ${isHovered ? 'translateY(-4px)' : ''}`,
         boxShadow: isHovered 
-          ? `0 0 30px ${colors.primary}66, 0 8px 16px rgba(0,0,0,0.4)`
-          : `0 0 15px ${colors.primary}22`,
+          ? `0 0 ${isTopThree ? '40px' : '30px'} ${colors.primary}${isTopThree ? '77' : '66'}, 0 8px 16px rgba(0,0,0,0.4)`
+          : `0 0 ${isTopThree ? '25px' : '15px'} ${colors.primary}${isTopThree ? '33' : '22'}`,
         position: 'relative',
         overflow: 'hidden',
         animation: `fadeInUp 0.5s ease ${delay}s both`
@@ -332,13 +433,57 @@ const PlayerHexagon = ({ player, onClick, isMobile, delay }) => {
       }} />
 
       <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        {/* Elite Tier Badge */}
+        {tier && (
+          <div style={{
+            position: 'absolute',
+            top: '-0.5rem',
+            right: '-0.5rem',
+            background: `linear-gradient(135deg, ${tier.color} 0%, ${tier.color}cc 100%)`,
+            borderRadius: '20px',
+            padding: '0.25rem 0.5rem',
+            fontSize: '0.625rem',
+            fontWeight: '800',
+            color: '#0a0e1a',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            boxShadow: `0 0 15px ${tier.color}88`,
+            zIndex: 2
+          }}>
+            <span>{tier.badge}</span>
+            <span>{tier.label}</span>
+          </div>
+        )}
+        
+        {/* Category Rank */}
+        <div style={{
+          position: 'absolute',
+          top: '-0.5rem',
+          left: '-0.5rem',
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '0.75rem',
+          fontWeight: '900',
+          color: '#0a0e1a',
+          boxShadow: `0 0 12px ${colors.primary}88`,
+          zIndex: 2
+        }}>
+          #{player.categoryRank}
+        </div>
+        
         {/* Player Name */}
         <div style={{
           fontSize: isMobile ? '0.875rem' : '0.938rem',
           fontWeight: '800',
           color: '#ffffff',
           marginBottom: '0.375rem',
-          textShadow: `0 0 10px ${colors.primary}88`,
+          textShadow: `0 0 ${isTopThree ? '12px' : '10px'} ${colors.primary}${isTopThree ? '99' : '88'}`,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap'
