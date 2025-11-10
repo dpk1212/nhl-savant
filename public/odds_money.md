@@ -1,5 +1,3 @@
-![](https://d.adroll.com/cm/b/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/bombora/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/experian/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/g/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/index/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/l/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/n/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/o/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/outbrain/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/pubmatic/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/taboola/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/triplelift/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)![](https://d.adroll.com/cm/x/out?adroll_fpc=12479c472b2353667845422375c0d8ee-1762727296376&flg=1&pv=42083677918.44836&arrfrr=https%3A%2F%2Fwww.oddstrader.com%2Fnhl%2F%3Feid%26g%3Dgame%26m%3Dmoney%26_%3D1762727218386&advertisable=KRUJ6REFMRFIHGBKH2CK5X)
-
 GET THE APP
 
 World
@@ -106,7 +104,7 @@ Yesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLSun 11/09
+NHLMon 11/10
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -120,44 +118,22 @@ NHLSun 11/09
 
 [![SugarHouse](https://i.virginia.us-east-1.oddstrader.com/5f9c4af91b15120066401223/original-Sugar-House.png)](https://www.oddstrader.com/betting/)
 
-|     |     |     |     |     |     |     |
-| --- | --- | --- | --- | --- | --- | --- |
+[![FanDuel](https://i.virginia.us-east-1.oddstrader.com/62ffc6558d39c60086589f65/original-Fanduel.png)](https://www.oddstrader.com/betting/reviews/fanduel/)
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:31:42 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>7-7<br>9%<br>+185BetRivers | +200 | +162 | +175 | +170 | +185 | +185 |
-| ![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>8-7<br>91%<br>-195Caesars | -250 | -195 | -210 | -210 | -235 | -235 |
+|     |     |     |     |     |     |     |     |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:31:42 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>9-6<br>23%<br>-105Bet365 | +100 | -110 | -105 | -105 | -113 | -113 |
-| ![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>7-8<br>77%<br>-109BetRivers | -120 | -110 | -115 | -115 | -109 | -109 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>7-8<br>40%<br>+140Caesars | +150 | +140 | +140 | +140 | +135 | +135 | +136 |
+| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>11-4<br>60%<br>-164FanDuel | -185 | -165 | -165 | -165 | -175 | -175 | -164 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:31:42 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN+...<br>![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>10-4<br>63%<br>-126FanDuel | -125 | -130 | -130 | -130 | -136 | -136 |
-| ![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>8-7<br>37%<br>+110Caesars | +105 | +110 | +110 | +105 | +108 | +108 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>5-12<br>-<br>+150BetRivers | +150 | +143 | +145 | +140 | +150 | +150 | +146 |
+| ![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>7-9<br>-<br>-170Caesars | -185 | -170 | -170 | -170 | -190 | -190 | -178 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 11/098:00 PM<br>![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>4-12<br>16%<br>+125Bet365 | +145 | +122 | +125 | +125 | +125 | +125 |
-| ![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>6-10<br>84%<br>-145Caesars | -180 | -145 | -150 | -150 | -157 | -157 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/108:30 PM<br>![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>7-7<br>0%<br>+150Caesars | +154 | +150 | +150 | +145 | +150 | +150 | +146 |
+| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>6-10<br>100%<br>-175BetMGM | -190 | -178 | -180 | -175 | -186 | -186 | -176 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 11/0910:00 PM<br>![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>9-6<br>75%<br>-196FanDuel | -170 | -215 | -205 | -200 | -210 | -210 |
-| ![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>8-8<br>25%<br>+178Caesars | +140 | +178 | +170 | +165 | +165 | +165 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 11/0910:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>9-5<br>48%<br>-140Bet365 | -140 | -145 | -140 | -145 | -141 | -141 |
-| ![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>10-4<br>52%<br>+122Caesars | +115 | +122 | +120 | +120 | +114 | +114 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>7-8<br>-<br>+146FanDuel | +150 | +143 | +145 | +145 | +143 | +143 |
-| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>11-4<br>-<br>-170Caesars | -185 | -170 | -170 | -180 | -180 | -180 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>5-12<br>-<br>+150Caesars | +150 | +150 | +150 | +145 | +150 | +150 |
-| ![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>7-9<br>-<br>-175BetMGM | -185 | -178 | -180 | -175 | -190 | -190 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/108:30 PM<br>![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>7-7<br>-<br>+158Caesars | +154 | +158 | +155 | +150 | +155 | +155 |
-| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>6-10<br>-<br>-182FanDuel | -190 | -190 | -185 | -185 | -200 | -200 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/1010:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>7-8<br>-<br>+122FanDuel | +118 | +118 | +120 | +118 | +120 | +120 |
-| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>7-7<br>-<br>-140Caesars | -145 | -140 | -140 | -145 | -148 | -148 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FINAL<br>![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>8-8<br>5<br>+163BetRivers | +155 | +158 | +155 | +150 | +163 | +155 |
-| ![](https://logos.oddstrader.com/logos-original/52534474-761e-4a71-bdd4-999393f47c56-original.PNG?d=100x100)<br>Detroit<br>9-7<br>1<br>-182FanDuel | -190 | -190 | -185 | -185 | -210 | -195 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FINAL<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>7-9<br>3<br>-155BetRivers | -160 | -175 | -165 | -165 | -155 | -155 |
-| ![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>9-8<br>2<br>+148Caesars | +135 | +148 | +140 | +135 | +125 | +125 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 11/1010:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>7-8<br>0%<br>+128BetRivers | +118 | +122 | +125 | +125 | +128 | +128 | +122 |
+| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>7-7<br>100%<br>-145Caesars | -145 | -145 | -150 | -150 | -159 | -159 | -146 |
 
 ## **Best NHL Betting Odds and Spreads for Tonight’s Games**
 
@@ -207,7 +183,7 @@ Some sportsbooks adjust quickly when injury reports drop or betting volume spike
 
 There’s also a difference in how books weigh public money versus sharp action. Some follow the crowd and shift quickly. Others are more aggressive with pricing to balance risk.
 
-This is why comparing odds across multiple books before placing a bet is so important. You’re not just looking at who has the best number. You’re learning [how each sportsbook](http://Why NHL Odds Vary Based on Where You Bet) behaves and how to time your bet for the most value.
+This is why comparing odds across multiple books before placing a bet is so important. You’re not just looking at who has the best number. You’re learning [how each sportsbook](http://why%20nhl%20odds%20vary%20based%20on%20where%20you%20bet/) behaves and how to time your bet for the most value.
 
 Why do NHL odds differ between sportsbooks? It’s often due to how each book responds to betting action, sharp money, and real-time market changes.
 
@@ -257,6 +233,8 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
+What are the best available NCAAF odds?Generate
+
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
 BetStationThe future of Betting
@@ -286,8 +264,6 @@ Seek help with a gambling addiction at 1-800-Gambler.
 **OddsTrader** uses cookies to help us provide, protect & improve our services. See our[Privacy Policy](https://www.oddstrader.com/privacy-policy/)for more details.
 
 ACCEPT & CLOSE
-
-[iframe](about:blank)
 
 ×Feedback
 
