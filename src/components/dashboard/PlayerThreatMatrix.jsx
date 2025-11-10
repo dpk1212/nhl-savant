@@ -29,6 +29,21 @@ const PlayerThreatMatrix = ({ isMobile }) => {
           powerplay: data.powerplay.length,
           twoway: data.twoway.length
         });
+        
+        // Debug: Log first player from each category
+        if (data.offensive.length > 0) {
+          console.log('🔥 Sample Offensive player:', data.offensive[0]);
+        }
+        if (data.defensive.length > 0) {
+          console.log('🛡️ Sample Defensive player:', data.defensive[0]);
+        }
+        if (data.powerplay.length > 0) {
+          console.log('⚡ Sample PP player:', data.powerplay[0]);
+        }
+        if (data.twoway.length > 0) {
+          console.log('🎯 Sample Two-Way player:', data.twoway[0]);
+        }
+        
         setPlayers(data);
       } catch (err) {
         console.error('❌ Error loading elite players:', err);
@@ -303,8 +318,8 @@ const CategorySection = ({ title, icon: Icon, players, color, secondaryColor, is
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.75rem',
-        maxHeight: isMobile ? '300px' : '400px',
+        gap: '1rem',
+        maxHeight: isMobile ? '400px' : '500px',
         overflowY: 'auto',
         overflowX: 'hidden',
         paddingRight: '0.5rem'
@@ -334,10 +349,10 @@ const PlayerCard = ({ player, rank, color, secondaryColor, isMobile, renderStats
       onMouseLeave={() => setIsHovered(false)}
       style={{
         background: `linear-gradient(135deg, ${color}11 0%, ${color}05 100%)`,
-        borderRadius: '8px',
-        padding: isMobile ? '0.75rem' : '0.875rem',
-        border: `1px solid ${color}${isHovered ? '55' : '22'}`,
-        boxShadow: isHovered ? `0 0 15px ${color}44` : 'none',
+        borderRadius: '10px',
+        padding: isMobile ? '1rem' : '1.125rem',
+        border: `1px solid ${color}${isHovered ? '66' : '33'}`,
+        boxShadow: isHovered ? `0 0 20px ${color}55, 0 0 40px ${color}22` : `0 0 10px ${color}11`,
         transition: 'all 0.3s ease',
         cursor: 'pointer',
         position: 'relative',
@@ -383,31 +398,47 @@ const PlayerCard = ({ player, rank, color, secondaryColor, isMobile, renderStats
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: isMobile ? '0.813rem' : '0.875rem',
-            fontWeight: '700',
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            fontWeight: '800',
             color: '#ffffff',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            textShadow: `0 0 8px ${color}66`
+            textShadow: `0 0 10px ${color}77`,
+            marginBottom: '0.25rem'
           }}>
             {player.name}
           </div>
           <div style={{
-            fontSize: isMobile ? '0.688rem' : '0.75rem',
+            fontSize: isMobile ? '0.75rem' : '0.813rem',
             color: '#7aa3b8',
             display: 'flex',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            alignItems: 'center'
           }}>
             <span style={{ 
               color: color,
-              fontWeight: '600',
-              textShadow: `0 0 6px ${color}44`
+              fontWeight: '700',
+              textShadow: `0 0 8px ${color}55`,
+              letterSpacing: '0.05em'
             }}>
               {player.team}
             </span>
-            <span>•</span>
-            <span>{player.position}</span>
+            <span style={{ color: `${color}66`, fontSize: '0.625rem' }}>●</span>
+            <span style={{ 
+              fontWeight: '600',
+              color: '#9ab8c8',
+              letterSpacing: '0.02em'
+            }}>
+              {player.position}
+            </span>
+            <span style={{ color: `${color}66`, fontSize: '0.625rem' }}>●</span>
+            <span style={{ 
+              fontSize: '0.688rem',
+              color: '#7aa3b8'
+            }}>
+              {player.gamesPlayed}GP
+            </span>
           </div>
         </div>
       </div>
@@ -416,9 +447,10 @@ const PlayerCard = ({ player, rank, color, secondaryColor, isMobile, renderStats
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.375rem',
+        gap: '0.5rem',
         position: 'relative',
-        zIndex: 1
+        zIndex: 1,
+        marginTop: '0.75rem'
       }}>
         {renderStats(player)}
       </div>
@@ -427,8 +459,10 @@ const PlayerCard = ({ player, rank, color, secondaryColor, isMobile, renderStats
 };
 
 const StatBar = ({ label, value, max, color, decimals = 0, suffix = '' }) => {
-  const percentage = Math.min((value / max) * 100, 100);
-  const displayValue = decimals > 0 ? value.toFixed(decimals) : Math.round(value);
+  // Handle undefined/null values
+  const safeValue = value ?? 0;
+  const percentage = Math.min((safeValue / max) * 100, 100);
+  const displayValue = decimals > 0 ? safeValue.toFixed(decimals) : Math.round(safeValue);
 
   return (
     <div style={{
@@ -437,38 +471,39 @@ const StatBar = ({ label, value, max, color, decimals = 0, suffix = '' }) => {
       gap: '0.5rem'
     }}>
       <div style={{
-        minWidth: '45px',
-        fontSize: '0.688rem',
-        color: '#7aa3b8',
-        fontWeight: '600',
-        letterSpacing: '0.02em'
+        minWidth: '50px',
+        fontSize: '0.75rem',
+        color: color,
+        fontWeight: '700',
+        letterSpacing: '0.02em',
+        textShadow: `0 0 6px ${color}44`
       }}>
         {label}
       </div>
       <div style={{
         flex: 1,
-        height: '6px',
-        background: 'rgba(0, 0, 0, 0.4)',
-        borderRadius: '3px',
+        height: '8px',
+        background: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '4px',
         overflow: 'hidden',
         position: 'relative',
-        border: '1px solid rgba(255, 255, 255, 0.05)'
+        border: `1px solid ${color}22`
       }}>
         <div style={{
-          width: `${percentage}%`,
+          width: `${Math.max(percentage, 2)}%`, // Minimum 2% width for visibility
           height: '100%',
-          background: `linear-gradient(90deg, ${color} 0%, ${color}aa 100%)`,
-          boxShadow: `0 0 8px ${color}88`,
+          background: `linear-gradient(90deg, ${color} 0%, ${color}cc 100%)`,
+          boxShadow: `0 0 10px ${color}99`,
           transition: 'width 0.5s ease'
         }} />
       </div>
       <div style={{
-        minWidth: '35px',
-        fontSize: '0.75rem',
-        color: color,
-        fontWeight: '700',
+        minWidth: '45px',
+        fontSize: '0.875rem',
+        color: '#ffffff',
+        fontWeight: '800',
         textAlign: 'right',
-        textShadow: `0 0 6px ${color}66`
+        textShadow: `0 0 8px ${color}88`
       }}>
         {displayValue}{suffix}
       </div>
