@@ -175,47 +175,70 @@ function getTodaysGames() {
  * Generate analysis using Perplexity API
  */
 async function generateAnalysis(awayTeam, homeTeam, apiKey) {
-  const prompt = `You are NHL Savant's expert analyst. Write compelling, shareable matchup analysis for ${awayTeam} @ ${homeTeam}.
+  const prompt = `You are NHL Savant's expert analyst writing hot takes for tonight's ${awayTeam} @ ${homeTeam} game.
+
+WRITING STYLE - HUMANIZE THE CONTENT:
+- Write like a knowledgeable hockey fan texting a friend, NOT like a corporate analyst
+- Use conversational language: "look", "here's the thing", "honestly", "this is where it gets interesting"
+- Vary sentence structure - mix short punchy sentences with longer explanations
+- Be opinionated and confident, but NOT robotic or formulaic
+- Sound human: contractions are good (don't, it's, there's)
+- Avoid buzzwords and corporate-speak: instead of "leveraging momentum" say "riding the hot streak"
 
 CRITICAL REQUIREMENTS:
-1. Start with a BOLD, CONTROVERSIAL, or SURPRISING hook (1 sentence)
-2. Follow with 2-3 analysis paragraphs (80-120 words each)
+1. Start with a BOLD, CONTROVERSIAL, or SURPRISING hook (1 sentence that stops the scroll)
+2. Follow with 2-3 analysis paragraphs (80-120 words each) - keep it conversational
 3. End with a specific betting angle or "hidden edge" insight
-4. Focus on VERIFIED team/player information from reliable sources (DailyFaceoff, NHL.com, team beat reporters)
-5. Write like you're trying to go viral on Twitter - be confident, specific, controversial
+4. Focus ONLY on VERIFIED information from reliable sources (DailyFaceoff, NHL.com, beat reporters)
+5. If you can't verify something with a current source, DON'T write it
 
-🚨 ANTI-HALLUCINATION RULES - STRICTLY ENFORCE:
-- ONLY cite stats you can verify from current, reliable sources
-- If you cannot verify a stat, DO NOT include it
-- Use REAL player names only if they're relevant to tonight's game
-- Cite your source for any specific numbers (e.g., "according to DailyFaceoff...")
-- DO NOT invent player stats, team records, or recent game results
-- DO NOT fabricate injuries, line changes, or roster moves
-- Focus on VERIFIABLE matchup dynamics over made-up numbers
+🚨🚨🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE 🚨🚨🚨
+
+THESE ARE FORBIDDEN - DO NOT WRITE THEM UNDER ANY CIRCUMSTANCES:
+❌ NEVER cite specific player stats unless you can verify them RIGHT NOW from a reliable source
+❌ NEVER invent team records, win/loss streaks, or recent game scores
+❌ NEVER make up injury reports, line changes, or roster moves
+❌ NEVER fabricate "according to" statements or fake source citations
+❌ NEVER invent shooting percentages, save percentages, or any statistical data
+❌ NEVER create fake recent game narratives ("they just beat X team 5-2")
+
+WHAT TO DO INSTEAD:
+✅ Focus on general team trends you can verify (e.g., "Toronto's been struggling on the road lately")
+✅ Discuss matchup dynamics without specific numbers (e.g., "their power play has been clicking")
+✅ Talk about known strengths/weaknesses without fabricating stats
+✅ Use conditional language if uncertain: "tends to", "has been", "typically"
+✅ When in doubt, be more general rather than inventing specifics
+
+IF YOU CANNOT VERIFY A STAT OR FACT, DO NOT INCLUDE IT. WRITE AROUND IT.
 
 STRUCTURE (JSON format):
 [
   {
-    "hook": "One sentence that makes people stop scrolling - controversial, surprising, or bold prediction (NO FABRICATED STATS)",
-    "headline": "5-7 word attention-grabbing headline (not generic)",
-    "analysis": "Main analysis paragraph with VERIFIED information only - cite sources for any numbers",
-    "bettingAngle": "The hidden edge or specific betting insight based on REAL matchup factors"
+    "hook": "One conversational sentence that makes people stop scrolling - be bold but human-sounding (NO MADE-UP STATS)",
+    "headline": "5-7 word punchy headline (conversational, not corporate)",
+    "analysis": "Main analysis paragraph - CONVERSATIONAL tone, VERIFIED info only, cite sources if using numbers",
+    "bettingAngle": "The hidden edge in plain English - talk like a sharp bettor, not a textbook"
   }
 ]
 
-EXAMPLES OF GOOD HOOKS (with verification):
-- "The market is WRONG about Toronto's road defense - their underlying metrics tell a different story"
-- "Columbus's power play matchup creates value tonight based on personnel and recent trends"
-- "Matthews' faceoff dominance vs Columbus's center depth is the edge nobody's discussing"
+EXAMPLES OF GOOD HOOKS (human-sounding + verifiable):
+- "Look, the betting public is way off on Toronto's road game - the underlying numbers tell a completely different story"
+- "Here's what nobody's talking about: Columbus's power play matchup tonight is ridiculously favorable"
+- "Honestly, Matthews' faceoff edge against Columbus's centers might be the sharpest angle of the night"
+
+EXAMPLES OF BAD HOOKS (robotic + potentially fabricated):
+- "The Toronto Maple Leafs are 7-2 in their last 9 road games with a 3.2 goals per game average" ← TOO SPECIFIC, MIGHT BE FAKE
+- "Statistical analysis indicates favorable positioning for Columbus" ← ROBOTIC, NO ONE TALKS LIKE THIS
+- "Both teams are trending upward based on recent performance metrics" ← GENERIC CORPORATE NONSENSE
 
 AVOID:
-- Generic observations everyone knows
-- "Both teams are trending up/down" without verification
-- Safe, boring analysis
-- FABRICATED stats or unverifiable claims
-- Making up player performances or team records
+- Robotic corporate analyst voice
+- Overly specific stats you can't verify
+- Generic observations everyone already knows
+- Safe, boring, formulaic analysis
+- ANYTHING that sounds like it was written by a bot
 
-Return ONLY valid JSON. Be bold and confident, BUT NEVER make up data. If uncertain about a stat, focus on the matchup dynamic instead.`;
+Return ONLY valid JSON. Be bold, human, and confident - but NEVER EVER make up data.`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -229,7 +252,7 @@ Return ONLY valid JSON. Be bold and confident, BUT NEVER make up data. If uncert
         messages: [
           {
             role: 'system',
-            content: 'You are an expert NHL analyst with access to real-time sources. CRITICAL: Never fabricate stats, player data, or game results. Only cite information you can verify from current, reliable sources. Return ONLY valid JSON arrays, no markdown formatting. If you cannot verify a specific stat, focus on general matchup dynamics instead.'
+            content: 'You are an expert NHL analyst writing conversational hot takes. WRITE LIKE A HUMAN, not a robot - use contractions, casual language, and varied sentence structure. 🚨 ZERO TOLERANCE FOR HALLUCINATION: Never fabricate stats, player data, game results, injuries, line changes, or any unverifiable information. If you cannot verify a stat from a current, reliable source (DailyFaceoff, NHL.com, beat reporters), DO NOT include it - write around it with general matchup analysis instead. Return ONLY valid JSON arrays with no markdown formatting. Be bold and conversational, but NEVER make up data.'
           },
           {
             role: 'user',
@@ -398,21 +421,27 @@ OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
 KEY FACTORS FROM OUR MODEL:
 ${topFactors}
 
+WRITING STYLE - SOUND HUMAN:
+- Write like you're explaining value to a sharp bettor friend, NOT writing a research report
+- Use conversational language: "look", "here's the thing", "honestly"
+- Keep it punchy and confident, but natural-sounding
+- Contractions are good (don't, it's, there's)
+
 INSTRUCTIONS:
-Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value based on the factors above. Lead with the edge/mispricing. Use insider language like "the market is undervaluing...", "our model sees...", "this creates an inefficiency...". Be confident and contrarian.
+Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value based on the factors above. Lead with the edge/mispricing. Be confident and contrarian, but sound human.
 
-CRITICAL - DO NOT MENTION ANY NUMBERS:
-- DO NOT mention expected value percentages
-- DO NOT mention win probabilities or percentages
-- DO NOT mention any EV%, model probability %, or market probability %
-- Focus ONLY on the QUALITATIVE factors (the bullet points above)
-- Explain WHY the factors create value, not HOW MUCH value
+🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE:
+- ONLY discuss the factors explicitly provided above
+- DO NOT mention any percentage numbers, EV%, win probabilities, or stats
+- DO NOT add player names, team records, recent game results, or ANY data not in the factors
+- DO NOT invent injuries, line changes, or roster information
+- Focus ONLY on the QUALITATIVE factors from the bullet points
 
-Example: "The market is undervaluing Pittsburgh's finishing efficiency and special teams prowess against Toronto's defensive vulnerabilities, creating a mispricing at plus odds."
+Example (human-sounding): "Look, the market's sleeping on Pittsburgh's finishing edge and special teams advantage here - their matchup against Toronto's defensive setup creates real value at plus odds."
 
-DO NOT write ANY percentage numbers or probability figures.
-DO NOT reference any stats not in the factors (no records, shooting %, player names, recent results).
-Focus on matchup dynamics, not numbers.
+DO NOT write percentage numbers or probability figures.
+DO NOT reference ANY stats not explicitly in the factors list.
+If it's not in the factors, don't mention it.
 
 Return plain text only (no markdown, no JSON, no bold/italic).`;
 
@@ -428,7 +457,7 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor explaining value to serious players. Write with confidence, specificity, and insider language. 🚨 ANTI-HALLUCINATION: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis of the matchup factors. NEVER INVENT STATS—only use what is explicitly provided in the factors list. DO NOT add player names, team records, recent results, or any data not in the provided factors. If a factor is not provided, do not mention it.'
+            content: 'You are a sharp bettor explaining value to a friend in conversational language. WRITE LIKE A HUMAN - use contractions, casual phrases, varied sentence structure. Be confident but natural-sounding. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, player names, team records, injuries, recent game results, or ANY data not explicitly in the factors list. If it\'s not in the factors, don\'t write it. Focus on QUALITATIVE matchup analysis using ONLY the provided factors.'
           },
           {
             role: 'user',
@@ -498,28 +527,35 @@ PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
 KEY FACTORS FROM OUR MODEL:
 ${primaryFactors}${altSection}
 
+WRITING STYLE - HUMANIZE THE CONTENT:
+- Write like you're explaining a bet to a sharp friend over drinks, NOT writing a corporate report
+- Use conversational language: "look", "here's the thing", "honestly", "the market's missing"
+- Vary sentence structure - mix short punchy statements with longer explanations
+- Contractions are good (don't, it's, we're, there's)
+- Be confident and opinionated, but sound natural
+
 INSTRUCTIONS:
-Write EXACTLY 2 paragraphs (150-200 words total) that make readers feel they're getting premium betting service insights:
+Write EXACTLY 2 paragraphs (150-200 words total) that feel like premium insider insights:
 
-PARAGRAPH 1 (~80-100 words): Lead with THE EDGE. Explain why our model identifies value and what mispricing the market has based on the factors above. Use the factors to show WHY this creates betting value. Be contrarian—what is the market missing?
+PARAGRAPH 1 (~80-100 words): Lead with THE EDGE in conversational language. Explain why our model sees value and what the market's missing based on the factors above. Use the factors to show WHY this creates betting value. Be contrarian but human-sounding.
 
-PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Mention the alternative bet opportunity.' : 'Add supporting dynamics from the factors.'} End with conviction about the value at these odds.
+PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Mention the alternative bet angle.' : 'Add supporting dynamics from the factors.'} End with confidence about the value at these odds - but keep it conversational.
 
-TONE: Confident, insider, contrarian—like a top 1% sharp bettor. Use language like "our model sees...", "the market undervalues...", "this creates an inefficiency...". Focus on VALUE, not just analysis.
+TONE: Confident sharp bettor talking to another sharp, NOT a textbook. Natural language, contractions, casual phrases.
 
-CRITICAL - DO NOT MENTION ANY NUMBERS:
-- DO NOT mention expected value percentages
-- DO NOT mention win probabilities or percentages  
-- DO NOT mention any EV%, model probability %, or market probability %
-- Focus ONLY on the QUALITATIVE factors (the bullet points above)
-- Explain WHY the factors create value, not HOW MUCH value
+🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE:
+- ONLY discuss the factors explicitly provided above
+- DO NOT mention any percentage numbers, EV%, win probabilities, or stats
+- DO NOT add player names, team records, recent game results, injuries, or ANY data not in the factors
+- DO NOT invent shooting percentages, save percentages, or any stats
+- DO NOT create fake recent game narratives
+- Focus ONLY on the QUALITATIVE factors from the bullet points
 
-Example: "Our model identifies significant value in Pittsburgh's finishing efficiency and special teams edge against Toronto's defensive metrics, creating a mispricing the market has overlooked."
+Example (human-sounding): "Look, our model's picking up on something the market's completely missing here - Pittsburgh's finishing edge and special teams advantage create a real matchup problem for Toronto's defensive setup, and we're getting value at these odds."
 
-DO NOT write ANY percentage numbers or probability figures.
-DO NOT invent ANY stats: no team records, shooting percentages, recent game results, player stats.
-DO NOT reference specific player names unless they appear in the factors above.
-Focus on matchup dynamics and the factors provided, not numbers.
+DO NOT write percentage numbers or probability figures.
+DO NOT invent stats not in the factors.
+If it's not explicitly in the factors list, don't mention it.
 
 Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).`;
 
@@ -535,7 +571,7 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
         messages: [
           {
             role: 'system',
-            content: 'You are a top 1% sharp sports bettor providing premium analysis to serious players. Write with confidence and insider language. 🚨 ANTI-HALLUCINATION: DO NOT mention any percentage numbers, probabilities, or EV figures. Focus on QUALITATIVE analysis explaining WHY factors create value. NEVER INVENT STATS—only use data explicitly provided in the factors list. DO NOT fabricate player names, team records, shooting percentages, recent game results, injuries, or any information not in the provided factors. Stick strictly to the given data. Focus on VALUE and market inefficiencies based ONLY on provided factors.'
+            content: 'You are a sharp bettor explaining your analysis to another sharp in conversational language. WRITE LIKE A REAL HUMAN - use contractions, casual phrases like "look" or "here\'s the thing", and varied sentence structure. Be confident but natural-sounding, NOT robotic or corporate. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, or any stats. DO NOT fabricate player names, team records, shooting percentages, recent game results, injuries, line changes, or ANY information not explicitly in the factors list. If something isn\'t in the factors, don\'t write it. Focus on QUALITATIVE matchup value using ONLY the provided factors. Sound human, not like a bot.'
           },
           {
             role: 'user',
