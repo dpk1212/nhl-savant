@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown, BarChart3, Activity, Target, Award } from 'lu
 import DataStatus from './DataStatus';
 import NHLGalaxy from './dashboard/NHLGalaxy';
 import LeagueHeatmap from './dashboard/LeagueHeatmap';
-import ElitePlayerHexGrid from './dashboard/ElitePlayerHexGrid';
+import ThermalHexMap from './dashboard/ThermalHexMap';
 
 const Dashboard = ({ dataProcessor, loading, error }) => {
   const [opportunities, setOpportunities] = useState([]);
@@ -111,8 +111,8 @@ const Dashboard = ({ dataProcessor, loading, error }) => {
           <DataStatus dataProcessor={dataProcessor} loading={loading} error={error} />
         </div>
 
-        {/* ELITE PLAYER HEX GRID - Player Discovery Tool */}
-        <ElitePlayerHexGrid isMobile={isMobile} />
+        {/* THERMAL HEX MAP - Sophisticated Player Performance Visualization */}
+        <ThermalHexMap isMobile={isMobile} />
 
         {/* THE CENTERPIECE: NHL Galaxy - Van Gogh Masterpiece */}
         <NHLGalaxy dataProcessor={dataProcessor} isMobile={isMobile} />
