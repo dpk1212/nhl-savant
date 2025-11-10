@@ -101,10 +101,60 @@ const HowThisWorksModal = ({ isOpen, onClose, onTryFree, isMobile }) => {
           Most people have no idea what that means. Here's the truth:
         </p>
 
-        {/* Section 1: The Market Gets It Wrong */}
+        {/* Section 1: How Our Model Works */}
         <div style={{
           background: 'rgba(0, 217, 255, 0.05)',
           border: '1px solid rgba(0, 217, 255, 0.2)',
+          borderRadius: '12px',
+          padding: isMobile ? '1.25rem' : '1.5rem',
+          marginBottom: '1.5rem'
+        }}>
+          <h3 style={{
+            fontSize: isMobile ? '1.125rem' : '1.25rem',
+            fontWeight: '700',
+            color: '#ffffff',
+            marginTop: 0,
+            marginBottom: '0.75rem',
+            letterSpacing: '-0.01em'
+          }}>
+            HOW OUR MODEL FINDS VALUE
+          </h3>
+          <p style={{
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            color: 'rgba(255, 255, 255, 0.85)',
+            lineHeight: '1.7',
+            marginBottom: '1rem'
+          }}>
+            Our model analyzes <strong style={{ color: '#00d9ff' }}>20+ advanced metrics</strong> the public doesn't see:
+          </p>
+          <ul style={{
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            color: 'rgba(255, 255, 255, 0.85)',
+            lineHeight: '1.7',
+            margin: 0,
+            paddingLeft: '1.5rem'
+          }}>
+            <li style={{ marginBottom: '0.5rem' }}>Expected goals (xG) and shot quality</li>
+            <li style={{ marginBottom: '0.5rem' }}>Goalie matchups and recent form</li>
+            <li style={{ marginBottom: '0.5rem' }}>Rest days, travel, and schedule spots</li>
+            <li style={{ marginBottom: '0.5rem' }}>Line combinations and defensive pairings</li>
+            <li style={{ marginBottom: '0.5rem' }}>Special teams efficiency and matchups</li>
+          </ul>
+          <p style={{
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            color: 'rgba(255, 255, 255, 0.85)',
+            lineHeight: '1.7',
+            marginTop: '1rem',
+            marginBottom: 0
+          }}>
+            Then it compares our probability to the market odds. When there's a gap? That's <strong style={{ color: '#10B981' }}>+EV (positive expected value)</strong>.
+          </p>
+        </div>
+
+        {/* Section 2: The Market Gets It Wrong */}
+        <div style={{
+          background: 'rgba(255, 107, 107, 0.05)',
+          border: '1px solid rgba(255, 107, 107, 0.2)',
           borderRadius: '12px',
           padding: isMobile ? '1.25rem' : '1.5rem',
           marginBottom: '1.5rem'
@@ -123,13 +173,30 @@ const HowThisWorksModal = ({ isOpen, onClose, onTryFree, isMobile }) => {
             fontSize: isMobile ? '0.875rem' : '0.938rem',
             color: 'rgba(255, 255, 255, 0.85)',
             lineHeight: '1.7',
-            margin: 0
+            marginBottom: '1rem'
           }}>
-            When the market prices a game, it's often wrong about the actual probability.
-            <br /><br />
-            <strong style={{ color: '#00d9ff' }}>Example:</strong> Everyone thinks NYR has a 60% chance to beat NSH. But when you dig into the actual matchups—rest, goalie stats, defense metrics—NSH is actually 55% to win. That 5% gap? That's where money lives.
-            <br /><br />
-            That gap is what we call <strong style={{ color: '#10B981' }}>+EV (positive expected value)</strong>.
+            The betting public makes predictable mistakes:
+          </p>
+          <ul style={{
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            color: 'rgba(255, 255, 255, 0.85)',
+            lineHeight: '1.7',
+            margin: 0,
+            paddingLeft: '1.5rem'
+          }}>
+            <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#ff6b6b' }}>Hammering overs</strong> because "goals are fun" (ignoring defensive matchups)</li>
+            <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#ff6b6b' }}>Betting heavy favorites</strong> blindly (inflating their odds)</li>
+            <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#ff6b6b' }}>Chasing big names</strong> like McDavid, Matthews (regardless of matchup)</li>
+            <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#ff6b6b' }}>Ignoring goalie matchups</strong> and back-to-back situations</li>
+          </ul>
+          <p style={{
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            color: 'rgba(255, 255, 255, 0.85)',
+            lineHeight: '1.7',
+            marginTop: '1rem',
+            marginBottom: 0
+          }}>
+            <strong style={{ color: '#00d9ff' }}>Example:</strong> Everyone thinks NYR has a 60% chance to beat NSH. But when you dig into rest days, goalie stats, defensive metrics—NSH is actually 55% to win. That 5% gap? <strong style={{ color: '#10B981' }}>That's where money lives.</strong>
           </p>
         </div>
 
