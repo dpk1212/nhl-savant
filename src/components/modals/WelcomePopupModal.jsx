@@ -63,18 +63,10 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const dollarGrowth = calculateDollarGrowth(1000, roi);
   const roiDisplay = `${roi.toFixed(1)}%`;
 
-  // Filter for games with positive EV (evPercent, not ev)
+  // Get picks EXACTLY like TodaysGames does - games with bestEdge
   const picksToday = todaysGames?.filter(game => 
-    game.bestEdge && game.bestEdge.evPercent > 0
+    game.bestEdge && game.bestEdge.evPercent >= 3 // B-rated or higher
   ) || [];
-
-  console.log('🎯 Welcome Popup Debug:', {
-    todaysGamesReceived: todaysGames?.length || 0,
-    gamesWithBestEdge: todaysGames?.filter(g => g.bestEdge)?.length || 0,
-    gamesWithPositiveEV: picksToday.length,
-    sampleGame: todaysGames?.[0],
-    samplePick: picksToday?.[0]
-  });
 
   return (
     <div
@@ -367,16 +359,10 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 Both with verified +EV.
               </p>
 
-              {/* Pick Cards - Match Today's Games styling */}
+              {/* Pick Cards - EXACT copy from TodaysGames with lock overlay */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {picksToday.slice(0, 2).map((game, index) => {
                   const bestEdge = game.bestEdge;
-                  const getEVColor = (ev) => {
-                    if (ev >= 8) return '#10B981';
-                    if (ev >= 5) return '#00d9ff';
-                    if (ev >= 3) return '#8B5CF6';
-                    return '#64748b';
-                  };
                   
                   return (
                     <div
@@ -390,38 +376,35 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         overflow: 'hidden'
                       }}
                     >
-                      {/* Game Info */}
+                      {/* Top row: Teams and Time */}
                       <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: '0.75rem',
-                        filter: 'blur(2px)',
-                        opacity: 0.5
+                        marginBottom: '0.75rem'
                       }}>
                         <span style={{
                           fontSize: isMobile ? '0.875rem' : '0.938rem',
                           color: 'rgba(255, 255, 255, 0.9)',
                           fontWeight: '600'
                         }}>
-                          {game.game?.awayTeam || game.awayTeam} @ {game.game?.homeTeam || game.homeTeam}
+                          {game.awayTeam} @ {game.homeTeam}
                         </span>
                         <span style={{
                           fontSize: '0.813rem',
                           color: 'rgba(255, 255, 255, 0.6)'
                         }}>
-                          {game.game?.gameTime || game.gameTime}
+                          {game.gameTime}
                         </span>
                       </div>
 
-                      {/* Pick & EV - Match Today's Games cards */}
+                      {/* Bottom row: Pick and EV */}
                       <div style={{
                         display: 'flex',
                         gap: '0.75rem',
-                        alignItems: 'center',
-                        filter: 'blur(2px)',
-                        opacity: 0.5
+                        alignItems: 'center'
                       }}>
+                        {/* Pick Box */}
                         <div style={{
                           background: 'rgba(139, 92, 246, 0.15)',
                           border: '1px solid rgba(139, 92, 246, 0.3)',
@@ -434,7 +417,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                             color: 'rgba(255, 255, 255, 0.6)',
                             marginBottom: '0.25rem'
                           }}>
-                            {bestEdge.market || 'ML'}
+                            {bestEdge.market}
                           </div>
                           <div style={{
                             fontSize: isMobile ? '0.938rem' : '1rem',
@@ -444,16 +427,25 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                             {bestEdge.pick} {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
                           </div>
                         </div>
+                        
+                        {/* EV Box */}
                         <div style={{
-                          background: `rgba(${getEVColor(bestEdge.evPercent) === '#10B981' ? '16, 185, 129' : getEVColor(bestEdge.evPercent) === '#00d9ff' ? '0, 217, 255' : '139, 92, 246'}, 0.15)`,
-                          border: `1px solid ${getEVColor(bestEdge.evPercent)}`,
+                          background: bestEdge.evPercent >= 8 ? 'rgba(16, 185, 129, 0.15)' : 
+                                      bestEdge.evPercent >= 5 ? 'rgba(0, 217, 255, 0.15)' : 
+                                      'rgba(139, 92, 246, 0.15)',
+                          border: `1px solid ${bestEdge.evPercent >= 8 ? '#10B981' : 
+                                                bestEdge.evPercent >= 5 ? '#00d9ff' : 
+                                                '#8B5CF6'}`,
                           borderRadius: '8px',
                           padding: '0.5rem 0.75rem',
-                          textAlign: 'center'
+                          textAlign: 'center',
+                          minWidth: '80px'
                         }}>
                           <div style={{
                             fontSize: isMobile ? '1rem' : '1.125rem',
-                            color: getEVColor(bestEdge.evPercent),
+                            color: bestEdge.evPercent >= 8 ? '#10B981' : 
+                                   bestEdge.evPercent >= 5 ? '#00d9ff' : 
+                                   '#8B5CF6',
                             fontWeight: '800',
                             whiteSpace: 'nowrap'
                           }}>
@@ -476,24 +468,24 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.75)',
-                        backdropFilter: 'blur(4px)',
+                        background: 'rgba(0, 0, 0, 0.85)',
+                        backdropFilter: 'blur(6px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.75rem',
                         borderRadius: '12px'
                       }}>
-                        <Lock size={isMobile ? 20 : 24} color="#00d9ff" strokeWidth={2.5} style={{
-                          filter: 'drop-shadow(0 0 8px #00d9ff)',
+                        <Lock size={isMobile ? 22 : 26} color="#00d9ff" strokeWidth={2.5} style={{
+                          filter: 'drop-shadow(0 0 12px #00d9ff)',
                           animation: 'lockPulse 2s ease-in-out infinite'
                         }} />
                         <span style={{
                           color: '#00d9ff',
-                          fontSize: isMobile ? '1rem' : '1.125rem',
+                          fontSize: isMobile ? '1.125rem' : '1.25rem',
                           fontWeight: '800',
                           letterSpacing: '0.05em',
-                          textShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
+                          textShadow: '0 0 15px rgba(0, 217, 255, 0.8)'
                         }}>
                           LOCKED
                         </span>
