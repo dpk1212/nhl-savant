@@ -416,10 +416,17 @@ async function generateBetHook(game, bestEdge, factors, apiKey) {
   console.log(`   📝 Generating qualitative bet hook (no numbers, factors only)`);
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
+
+🎯 WE ARE BETTING ON: ${bestEdge.team} (${bestEdge.team === game.awayTeam ? 'AWAY' : 'HOME'})
 OUR MODEL'S PICK: ${pickDesc} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
 
-KEY FACTORS FROM OUR MODEL:
+KEY FACTORS WHY ${bestEdge.team} HAS VALUE:
 ${topFactors}
+
+🚨 CRITICAL - YOU MUST EXPLAIN WHY ${bestEdge.team} IS THE PLAY:
+- Your hook must be about why ${bestEdge.team} has betting value
+- DO NOT write about why ${bestEdge.team === game.awayTeam ? game.homeTeam : game.awayTeam} is better
+- The factors above explain ${bestEdge.team}'s edge - use them!
 
 WRITING STYLE - SOUND HUMAN:
 - Write like you're explaining value to a sharp bettor friend, NOT writing a research report
@@ -428,7 +435,7 @@ WRITING STYLE - SOUND HUMAN:
 - Contractions are good (don't, it's, there's)
 
 INSTRUCTIONS:
-Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY this bet has value based on the factors above. Lead with the edge/mispricing. Be confident and contrarian, but sound human.
+Write 1-2 compelling sentences (30-50 words) that hook the reader with WHY ${bestEdge.team} has value based on the factors above. Lead with the edge/mispricing for ${bestEdge.team}. Be confident and contrarian, but sound human.
 
 🚨 ANTI-HALLUCINATION RULES - ZERO TOLERANCE:
 - ONLY discuss the factors explicitly provided above
@@ -457,7 +464,7 @@ Return plain text only (no markdown, no JSON, no bold/italic).`;
         messages: [
           {
             role: 'system',
-            content: 'You are a sharp bettor explaining value to a friend in conversational language. WRITE LIKE A HUMAN - use contractions, casual phrases, varied sentence structure. Be confident but natural-sounding. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, player names, team records, injuries, recent game results, or ANY data not explicitly in the factors list. If it\'s not in the factors, don\'t write it. Focus on QUALITATIVE matchup analysis using ONLY the provided factors.'
+            content: 'You are a sharp bettor explaining value to a friend in conversational language. WRITE LIKE A HUMAN - use contractions, casual phrases, varied sentence structure. Be confident but natural-sounding. 🚨 CRITICAL: You MUST explain why the SPECIFIC TEAM mentioned in "WE ARE BETTING ON" has value. DO NOT write about the wrong team or analyze generically. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, player names, team records, injuries, recent game results, or ANY data not explicitly in the factors list. If it\'s not in the factors, don\'t write it. Focus on QUALITATIVE matchup analysis for the SPECIFIC TEAM we\'re betting on using ONLY the provided factors.'
           },
           {
             role: 'user',
@@ -522,10 +529,18 @@ ${altFactorList}`;
 
   const prompt = `GAME: ${game.awayTeam} @ ${game.homeTeam}
 
+🎯 WE ARE BETTING ON: ${bestEdge.team} (${bestEdge.team === game.awayTeam ? 'AWAY' : 'HOME'})
 PRIMARY BET: ${primaryPick} at ${bestEdge.odds > 0 ? '+' : ''}${bestEdge.odds}
 
-KEY FACTORS FROM OUR MODEL:
+KEY FACTORS WHY ${bestEdge.team} HAS VALUE:
 ${primaryFactors}${altSection}
+
+🚨 CRITICAL - YOU MUST EXPLAIN WHY ${bestEdge.team} IS THE PLAY:
+- Your entire analysis must be about why ${bestEdge.team} has betting value
+- DO NOT write about why ${bestEdge.team === game.awayTeam ? game.homeTeam : game.awayTeam} is the better team
+- DO NOT analyze the matchup generically - explain specifically why ${bestEdge.team} creates value
+- If you write about the wrong team, this narrative is useless
+- The factors above explain ${bestEdge.team}'s advantages - use them!
 
 WRITING STYLE - HUMANIZE THE CONTENT:
 - Write like you're explaining a bet to a sharp friend over drinks, NOT writing a corporate report
@@ -535,11 +550,11 @@ WRITING STYLE - HUMANIZE THE CONTENT:
 - Be confident and opinionated, but sound natural
 
 INSTRUCTIONS:
-Write EXACTLY 2 paragraphs (150-200 words total) that feel like premium insider insights:
+Write EXACTLY 2 paragraphs (150-200 words total) explaining why ${bestEdge.team} is the play:
 
-PARAGRAPH 1 (~80-100 words): Lead with THE EDGE in conversational language. Explain why our model sees value and what the market's missing based on the factors above. Use the factors to show WHY this creates betting value. Be contrarian but human-sounding.
+PARAGRAPH 1 (~80-100 words): Lead with THE EDGE for ${bestEdge.team} in conversational language. Explain why our model sees value in ${bestEdge.team} and what the market's missing about ${bestEdge.team} based on the factors above. Use the factors to show WHY ${bestEdge.team} creates betting value. Be contrarian but human-sounding.
 
-PARAGRAPH 2 (~70-100 words): Supporting context and conviction. ${altBet ? 'Mention the alternative bet angle.' : 'Add supporting dynamics from the factors.'} End with confidence about the value at these odds - but keep it conversational.
+PARAGRAPH 2 (~70-100 words): Supporting context about ${bestEdge.team}'s advantages and conviction. ${altBet ? 'Mention the alternative bet angle.' : 'Add supporting dynamics from the factors.'} End with confidence about ${bestEdge.team}'s value at these odds - but keep it conversational.
 
 TONE: Confident sharp bettor talking to another sharp, NOT a textbook. Natural language, contractions, casual phrases.
 
@@ -571,7 +586,7 @@ Return plain text only (no JSON, no markdown, no bold/italic, no **asterisks**).
         messages: [
           {
             role: 'system',
-            content: 'You are a sharp bettor explaining your analysis to another sharp in conversational language. WRITE LIKE A REAL HUMAN - use contractions, casual phrases like "look" or "here\'s the thing", and varied sentence structure. Be confident but natural-sounding, NOT robotic or corporate. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, or any stats. DO NOT fabricate player names, team records, shooting percentages, recent game results, injuries, line changes, or ANY information not explicitly in the factors list. If something isn\'t in the factors, don\'t write it. Focus on QUALITATIVE matchup value using ONLY the provided factors. Sound human, not like a bot.'
+            content: 'You are a sharp bettor explaining your analysis to another sharp in conversational language. WRITE LIKE A REAL HUMAN - use contractions, casual phrases like "look" or "here\'s the thing", and varied sentence structure. Be confident but natural-sounding, NOT robotic or corporate. 🚨🚨 CRITICAL: You MUST explain why the SPECIFIC TEAM mentioned in "WE ARE BETTING ON" has value. Writing about the wrong team makes your analysis worthless. Focus entirely on that team\'s advantages. 🚨 ZERO TOLERANCE FOR HALLUCINATION: ONLY discuss factors explicitly provided. DO NOT mention percentages, probabilities, EV figures, or any stats. DO NOT fabricate player names, team records, shooting percentages, recent game results, injuries, line changes, or ANY information not explicitly in the factors list. If something isn\'t in the factors, don\'t write it. Focus on QUALITATIVE matchup value for the SPECIFIC TEAM we\'re betting on using ONLY the provided factors. Sound human, not like a bot.'
           },
           {
             role: 'user',
