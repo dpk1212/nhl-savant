@@ -24,7 +24,8 @@ import Pricing from './pages/Pricing';
 import Account from './pages/Account';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
-import WelcomeModal from './components/WelcomeModal';
+// DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames)
+// import WelcomeModal from './components/WelcomeModal';
 
 // Lazy load 3D splash screen to reduce initial bundle size
 const SplashScreen = lazy(() => import('./components/SplashScreen'));
@@ -199,7 +200,8 @@ function App() {
           loading={loading}
           error={error}
         />
-        <WelcomeModal />
+        {/* DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames) */}
+        {/* <WelcomeModal /> */}
       </Router>
     </ErrorBoundary>
   );
