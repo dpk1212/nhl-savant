@@ -330,8 +330,27 @@ export class NHLDataProcessor {
     const opp_gamesPlayed = opponent_5v5.gamesPlayed || 82;
     
     // STEP 1: Get score-adjusted xG (best predictor)
-    const team_xGF_raw = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
-    const opp_xGA_raw = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
+    const team_xGF_season = team_5v5.scoreAdj_xGF_per60 || team_5v5.xGF_per60;
+    const opp_xGA_season = opponent_5v5.scoreAdj_xGA_per60 || opponent_5v5.xGA_per60;
+    
+    // STEP 1b: Apply recency weighting (60% L10, 40% season)
+    // Recent games are 3-5x more predictive than season average
+    const team_L10_xGF = team_5v5.L10_xGF_per60 || team_xGF_season; // Fallback if no L10 data
+    const opp_L10_xGA = opponent_5v5.L10_xGA_per60 || opp_xGA_season;
+    
+    // Only apply recency weighting if team has played 10+ games
+    const team_xGF_raw = gamesPlayed >= 10 
+      ? (parseFloat(team_L10_xGF) * 0.60) + (team_xGF_season * 0.40)
+      : team_xGF_season; // Use season stats for early season
+    
+    const opp_xGA_raw = opp_gamesPlayed >= 10
+      ? (parseFloat(opp_L10_xGA) * 0.60) + (opp_xGA_season * 0.40)
+      : opp_xGA_season;
+    
+    // Log recency weighting for debugging
+    if (gamesPlayed >= 10 && team_L10_xGF !== team_xGF_season) {
+      console.log(`  🔄 Recency weighting: ${team} L10=${parseFloat(team_L10_xGF).toFixed(2)} → Weighted=${team_xGF_raw.toFixed(2)} xGF/60`);
+    }
     
     // STEP 2: Apply sample-size based regression (CRITICAL!)
     // Early season: regress heavily to league average
