@@ -139,6 +139,23 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
     return { ...game, bestEdge };
   });
 
+  // Helper function to get rating grade
+  const getRatingGrade = (evPercent) => {
+    if (evPercent >= 10) return 'A+';
+    if (evPercent >= 7) return 'A';
+    if (evPercent >= 5) return 'B+';
+    return 'B';
+  };
+
+  // Count A+ plays (EV >= 10%)
+  const aPlusPlays = gamesWithBestEdge.filter(g => g.bestEdge?.evPercent >= 10);
+  const otherPlays = gamesWithBestEdge.filter(g => g.bestEdge?.evPercent < 10);
+
+  // Calculate total betting value estimate (assuming $100 units)
+  const totalBettingValue = gamesWithBestEdge.reduce((sum, game) => {
+    return sum + (game.bestEdge?.evPercent || 0);
+  }, 0).toFixed(0);
+
   return (
     <div
       style={{
@@ -273,7 +290,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             style={{
               background: 'transparent',
               border: 'none',
-            color: 'rgba(255, 255, 255, 0.7)',
+              color: 'rgba(255, 255, 255, 0.7)',
               fontSize: isMobile ? '0.813rem' : '0.875rem',
               fontWeight: '500',
               cursor: 'pointer',
@@ -288,6 +305,41 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           </button>
         </div>
 
+        {/* A+ PERFORMANCE BADGE */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: isMobile ? '1.25rem' : '1.75rem',
+          animation: 'fadeInUp 0.5s ease-out 0.4s both',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '8px',
+            padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem'
+          }}>
+            <span style={{ fontSize: isMobile ? '1rem' : '1.125rem' }}>🏆</span>
+            <span style={{
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              fontWeight: '700',
+              color: '#10B981'
+            }}>
+              A+ PLAYS: +14.3% ROI
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
+              color: 'rgba(255, 255, 255, 0.6)',
+              fontWeight: '500'
+            }}>
+              (69 bets tracked)
+            </span>
+          </div>
+        </div>
+
         {/* TONIGHT'S PICKS - Teaser with cards */}
         <div style={{
           marginBottom: isMobile ? '1.25rem' : '1.75rem',
@@ -300,18 +352,38 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             fontWeight: '700',
             color: '#D4AF37',
             marginTop: 0,
-            marginBottom: isMobile ? '0.75rem' : '1rem',
+            marginBottom: isMobile ? '0.5rem' : '0.625rem',
             textAlign: 'center',
             textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
             letterSpacing: '0.01em'
           }}>
-            TODAY: {gamesWithBestEdge.length} {gamesWithBestEdge.length === 1 ? 'PLAY' : 'PLAYS'} IDENTIFIED
+            {aPlusPlays.length > 0 ? (
+              <>
+                TODAY: {aPlusPlays.length} A+ {aPlusPlays.length === 1 ? 'PLAY' : 'PLAYS'}
+                {otherPlays.length > 0 && <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}> + {otherPlays.length} MORE</span>}
+              </>
+            ) : (
+              <>TODAY: {gamesWithBestEdge.length} {gamesWithBestEdge.length === 1 ? 'PLAY' : 'PLAYS'} IDENTIFIED</>
+            )}
           </h3>
+
+          {gamesWithBestEdge.length > 0 && (
+            <p style={{
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
+              color: 'rgba(255, 255, 255, 0.6)',
+              textAlign: 'center',
+              marginTop: 0,
+              marginBottom: isMobile ? '0.75rem' : '1rem',
+              fontWeight: '500'
+            }}>
+              Est. betting value: ${totalBettingValue} on $100 units
+            </p>
+          )}
 
           {gamesWithBestEdge.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.75rem' : '1rem' }}>
               {gamesWithBestEdge.slice(0, 2).map((game, index) => {
-                const bestEdge = game.bestEdge;
+                  const bestEdge = game.bestEdge;
                   
                   return (
                     <div
@@ -410,7 +482,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         </div>
                       </div>
 
-                      {/* Lock Overlay */}
+                      {/* Lock Overlay with Grade */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
@@ -418,26 +490,43 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         right: 0,
                         bottom: 0,
                         background: 'rgba(0, 0, 0, 0.85)',
-                      backdropFilter: 'blur(4px)',
+                        backdropFilter: 'blur(4px)',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                      gap: '0.625rem',
-                      borderRadius: '10px'
+                        gap: isMobile ? '0.375rem' : '0.5rem',
+                        borderRadius: '10px'
                       }}>
-                      <Lock size={isMobile ? 20 : 24} color="#D4AF37" strokeWidth={2.5} style={{
-                        filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.6))',
-                          animation: 'lockPulse 2s ease-in-out infinite'
-                        }} />
-                        <span style={{
-                        color: '#D4AF37',
-                        fontSize: isMobile ? '1rem' : '1.125rem',
-                          fontWeight: '800',
-                          letterSpacing: '0.05em',
-                        textShadow: '0 2px 8px rgba(212, 175, 55, 0.5)'
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.625rem'
                         }}>
-                          LOCKED
-                        </span>
+                          <Lock size={isMobile ? 18 : 22} color="#D4AF37" strokeWidth={2.5} style={{
+                            filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.6))',
+                            animation: 'lockPulse 2s ease-in-out infinite'
+                          }} />
+                          <span style={{
+                            color: '#D4AF37',
+                            fontSize: isMobile ? '0.938rem' : '1.063rem',
+                            fontWeight: '800',
+                            letterSpacing: '0.05em',
+                            textShadow: '0 2px 8px rgba(212, 175, 55, 0.5)'
+                          }}>
+                            {getRatingGrade(bestEdge.evPercent)} PLAY LOCKED
+                          </span>
+                        </div>
+                        <div style={{
+                          fontSize: isMobile ? '0.875rem' : '0.938rem',
+                          fontWeight: '700',
+                          color: bestEdge.evPercent >= 10 ? '#10B981' : 
+                                 bestEdge.evPercent >= 7 ? '#3B82F6' : 
+                                 bestEdge.evPercent >= 5 ? '#8B5CF6' : '#D4AF37',
+                          textShadow: '0 2px 6px rgba(0, 0, 0, 0.5)'
+                        }}>
+                          +{bestEdge.evPercent.toFixed(1)}% EV
+                        </div>
                       </div>
                     </div>
                   );
@@ -518,7 +607,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </h4>
               <ul style={{
                 fontSize: isMobile ? '0.813rem' : '0.875rem',
-                color: 'rgba(255, 255, 255, 0.8)',
+              color: 'rgba(255, 255, 255, 0.8)',
                 lineHeight: '1.6',
                 margin: 0,
                 paddingLeft: 0,
@@ -596,7 +685,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           marginBottom: isMobile ? '1rem' : '1.25rem'
         }} />
 
-        {/* WHY WE'RE DIFFERENT - Condensed, After CTA */}
+        {/* WHY WE'RE DIFFERENT - Simplified with Stats */}
         <div style={{
           animation: 'fadeInUp 0.5s ease-out 1.3s both',
           position: 'relative',
@@ -622,12 +711,24 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             textAlign: 'center'
           }}>
             {[
-              "Every bet tracked publicly since Oct 2025",
-              "We show our losses, not just wins",
-              "Model-driven, not gut feelings"
+              { text: "100% transparent", link: "see Performance page" },
+              { text: "Every loss tracked publicly" },
+              { text: "+14.3% ROI on A+ plays", highlight: true }
             ].map((item, i) => (
               <li key={i} style={{ marginBottom: '0.375rem' }}>
-                <span style={{ color: '#D4AF37' }}>→</span> {item}
+                <span style={{ color: '#10B981' }}>✓</span>{' '}
+                {item.highlight ? (
+                  <strong style={{ color: '#10B981' }}>{item.text}</strong>
+                ) : (
+                  <>
+                    {item.text}
+                    {item.link && (
+                      <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                        {' '}({item.link})
+                      </span>
+                    )}
+                  </>
+                )}
               </li>
             ))}
           </ul>
