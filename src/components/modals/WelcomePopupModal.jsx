@@ -147,12 +147,19 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
     return 'B';
   };
 
+  // Sort games by EV (highest first) - prioritize A+, A, B+, B in that order
+  const sortedGames = [...gamesWithBestEdge].sort((a, b) => {
+    const evA = a.bestEdge?.evPercent || 0;
+    const evB = b.bestEdge?.evPercent || 0;
+    return evB - evA; // Descending order (highest EV first)
+  });
+
   // Count A+ plays (EV >= 10%)
-  const aPlusPlays = gamesWithBestEdge.filter(g => g.bestEdge?.evPercent >= 10);
-  const otherPlays = gamesWithBestEdge.filter(g => g.bestEdge?.evPercent < 10);
+  const aPlusPlays = sortedGames.filter(g => g.bestEdge?.evPercent >= 10);
+  const otherPlays = sortedGames.filter(g => g.bestEdge?.evPercent < 10);
 
   // Calculate total betting value estimate (assuming $100 units)
-  const totalBettingValue = gamesWithBestEdge.reduce((sum, game) => {
+  const totalBettingValue = sortedGames.reduce((sum, game) => {
     return sum + (game.bestEdge?.evPercent || 0);
   }, 0).toFixed(0);
 
@@ -363,11 +370,11 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 {otherPlays.length > 0 && <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}> + {otherPlays.length} MORE</span>}
               </>
             ) : (
-              <>TODAY: {gamesWithBestEdge.length} {gamesWithBestEdge.length === 1 ? 'PLAY' : 'PLAYS'} IDENTIFIED</>
+              <>TODAY: {sortedGames.length} {sortedGames.length === 1 ? 'PLAY' : 'PLAYS'} IDENTIFIED</>
             )}
           </h3>
 
-          {gamesWithBestEdge.length > 0 && (
+          {sortedGames.length > 0 && (
             <p style={{
               fontSize: isMobile ? '0.75rem' : '0.813rem',
               color: 'rgba(255, 255, 255, 0.6)',
@@ -380,9 +387,9 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             </p>
           )}
 
-          {gamesWithBestEdge.length > 0 ? (
+          {sortedGames.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.75rem' : '1rem' }}>
-              {gamesWithBestEdge.slice(0, 2).map((game, index) => {
+              {sortedGames.slice(0, 2).map((game, index) => {
                   const bestEdge = game.bestEdge;
                   
                   return (
