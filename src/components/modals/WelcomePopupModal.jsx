@@ -93,15 +93,15 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(135deg, #0a0e1a 0%, #0f1419 100%)',
-          border: '2px solid rgba(0, 217, 255, 0.4)',
+          border: '2px solid rgba(212, 175, 55, 0.35)',
           borderRadius: '16px',
           maxWidth: '600px',
           width: '100%',
           maxHeight: '90vh',
           overflowY: 'auto',
-          padding: isMobile ? '2rem 1.5rem' : '2.5rem 2rem',
+          padding: isMobile ? '1.75rem 1.25rem' : '2.5rem 2rem',
           position: 'relative',
-          boxShadow: '0 0 80px rgba(0, 217, 255, 0.5), inset 0 0 60px rgba(0, 217, 255, 0.03)',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(212, 175, 55, 0.2)',
           color: '#ffffff',
           animation: 'modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both'
         }}
@@ -114,8 +114,8 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           right: 0,
           bottom: 0,
           backgroundImage: `
-            linear-gradient(rgba(0, 217, 255, 0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 217, 255, 0.02) 1px, transparent 1px)
+            linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px)
           `,
           backgroundSize: '30px 30px',
           opacity: 0.5,
@@ -129,9 +129,9 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           left: 0,
           right: 0,
           height: '2px',
-          background: 'linear-gradient(90deg, transparent, #00d9ff, transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent)',
           animation: 'scanline 4s linear infinite',
-          opacity: 0.6
+          opacity: 0.5
         }} />
 
         {/* Close button */}
@@ -144,17 +144,17 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            color: 'rgba(0, 217, 255, 0.6)',
+            color: 'rgba(212, 175, 55, 0.6)',
             transition: 'all 0.3s ease',
             zIndex: 3,
             padding: '0.5rem'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#00d9ff';
+            e.currentTarget.style.color = '#D4AF37';
             e.currentTarget.style.transform = 'rotate(90deg)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'rgba(0, 217, 255, 0.6)';
+            e.currentTarget.style.color = 'rgba(212, 175, 55, 0.6)';
             e.currentTarget.style.transform = 'rotate(0deg)';
           }}
         >
@@ -170,12 +170,12 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           zIndex: 1
         }}>
           <h1 style={{
-            fontSize: isMobile ? '2.25rem' : '2.75rem',
+            fontSize: isMobile ? '2rem' : '2.5rem',
             fontWeight: '800',
-            color: '#00d9ff',
+            color: '#10B981',
             margin: 0,
             marginBottom: '1rem',
-            textShadow: '0 0 30px rgba(0, 217, 255, 0.8)',
+            textShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
             letterSpacing: '-0.03em',
             lineHeight: '1.2'
           }}>
@@ -205,9 +205,9 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
         {/* Divider */}
         <div style={{
           height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.5), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent)',
           marginBottom: isMobile ? '2rem' : '2.5rem',
-          boxShadow: '0 0 15px rgba(0, 217, 255, 0.3)'
+          boxShadow: '0 0 8px rgba(212, 175, 55, 0.2)'
         }} />
 
         {/* PAIN: Why You're Losing */}
@@ -243,7 +243,6 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             {[
               "You're betting the favorites (bad odds)",
               "You're chasing the star players",
-              "You're following Twitter touts (fake records)",
               "You're betting without understanding the edge"
             ].map((item, i) => (
               <li key={i} style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -267,8 +266,8 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
 
         {/* SOLUTION: What We Do */}
         <div style={{
-          background: 'rgba(0, 217, 255, 0.06)',
-          border: '1px solid rgba(0, 217, 255, 0.3)',
+          background: 'rgba(212, 175, 55, 0.06)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
           borderRadius: '12px',
           padding: isMobile ? '1.5rem' : '1.75rem',
           marginBottom: isMobile ? '2rem' : '2.5rem',
@@ -279,10 +278,10 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           <h3 style={{
             fontSize: isMobile ? '1.125rem' : '1.25rem',
             fontWeight: '700',
-            color: '#00d9ff',
+            color: '#D4AF37',
             marginTop: 0,
             marginBottom: '1rem',
-            textShadow: '0 0 10px rgba(0, 217, 255, 0.5)',
+            textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
             letterSpacing: '0.01em'
           }}>
             WE FIND THE +EV THE MARKET MISSES
@@ -307,11 +306,10 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             {[
               "Goalie matchups the line doesn't price in",
               "Rest advantages nobody's talking about",
-              "Where sharp money actually went",
-              "When the public is all wrong"
+              "Where sharp money actually went"
             ].map((item, i) => (
               <li key={i} style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <span style={{ color: '#00d9ff', fontWeight: '700', fontSize: '1rem' }}>→</span>
+                <span style={{ color: '#D4AF37', fontWeight: '700', fontSize: '1rem' }}>→</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -323,7 +321,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             fontWeight: '600',
             lineHeight: '1.6'
           }}>
-            Then we show you the picks <strong style={{ color: '#00d9ff' }}>FIRST</strong>.
+            Then we show you the picks <strong style={{ color: '#D4AF37' }}>FIRST</strong>.
           </p>
         </div>
 
@@ -337,11 +335,11 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           <h3 style={{
             fontSize: isMobile ? '1.125rem' : '1.25rem',
             fontWeight: '700',
-            color: '#00d9ff',
+            color: '#D4AF37',
             marginTop: 0,
             marginBottom: '1.25rem',
             textAlign: 'center',
-            textShadow: '0 0 10px rgba(0, 217, 255, 0.5)',
+            textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
             letterSpacing: '0.01em'
           }}>
             TONIGHT: {picksToday.length > 0 ? `${picksToday.length} PLAYS IDENTIFIED` : 'PLAYS POST BY 5PM ET'}
@@ -369,7 +367,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                       key={index}
                       style={{
                         background: 'linear-gradient(135deg, #1a2a3a 0%, #101a20 100%)',
-                        border: '1px solid rgba(0, 217, 255, 0.3)',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
                         borderRadius: '12px',
                         padding: isMobile ? '1rem' : '1.25rem',
                         position: 'relative',
@@ -469,23 +467,23 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         right: 0,
                         bottom: 0,
                         background: 'rgba(0, 0, 0, 0.85)',
-                        backdropFilter: 'blur(6px)',
+                        backdropFilter: 'blur(4px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.75rem',
                         borderRadius: '12px'
                       }}>
-                        <Lock size={isMobile ? 22 : 26} color="#00d9ff" strokeWidth={2.5} style={{
-                          filter: 'drop-shadow(0 0 12px #00d9ff)',
+                        <Lock size={isMobile ? 22 : 26} color="#D4AF37" strokeWidth={2.5} style={{
+                          filter: 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.6))',
                           animation: 'lockPulse 2s ease-in-out infinite'
                         }} />
                         <span style={{
-                          color: '#00d9ff',
+                          color: '#D4AF37',
                           fontSize: isMobile ? '1.125rem' : '1.25rem',
                           fontWeight: '800',
                           letterSpacing: '0.05em',
-                          textShadow: '0 0 15px rgba(0, 217, 255, 0.8)'
+                          textShadow: '0 2px 8px rgba(212, 175, 55, 0.5)'
                         }}>
                           LOCKED
                         </span>
@@ -503,8 +501,8 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               fontWeight: '500',
               lineHeight: '1.7',
               padding: isMobile ? '1.5rem' : '2rem',
-              background: 'rgba(0, 217, 255, 0.04)',
-              border: '1px solid rgba(0, 217, 255, 0.2)',
+              background: 'rgba(212, 175, 55, 0.04)',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
               borderRadius: '12px'
             }}>
               Get instant access to all picks.
@@ -524,26 +522,26 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             fontSize: isMobile ? '1.125rem' : '1.25rem',
             fontWeight: '800',
             cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            transition: 'all 0.2s ease',
             width: '100%',
-            boxShadow: '0 0 40px rgba(245, 158, 11, 0.7)',
+            boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)',
             textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
             letterSpacing: '0.02em',
             position: 'relative',
             overflow: 'hidden',
-            animation: 'fadeInUp 0.5s ease-out 1.1s both, ctaPulse 2s ease-in-out 1.7s infinite',
+            animation: 'fadeInUp 0.5s ease-out 1.1s both',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.75rem'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 60px rgba(245, 158, 11, 1)';
-            e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 40px rgba(245, 158, 11, 0.7)';
-            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(245, 158, 11, 0.4)';
+            e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
           <ArrowRight size={isMobile ? 20 : 22} strokeWidth={3} />
@@ -566,7 +564,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           textAlign: 'center',
           animation: 'fadeInUp 0.5s ease-out 1.5s both',
           padding: isMobile ? '1rem' : '1.25rem',
-          borderTop: '1px solid rgba(0, 217, 255, 0.2)'
+          borderTop: '1px solid rgba(212, 175, 55, 0.2)'
         }}>
           <p style={{
             fontSize: isMobile ? '0.938rem' : '1rem',
@@ -575,7 +573,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             lineHeight: '1.7',
             fontWeight: '500'
           }}>
-            Real question: <strong style={{ color: '#00d9ff' }}>Are you ready to see what edge actually looks like?</strong>
+            Real question: <strong style={{ color: '#D4AF37' }}>Are you ready to see what edge actually looks like?</strong>
           </p>
           <p style={{
             fontSize: isMobile ? '0.875rem' : '0.938rem',
@@ -625,16 +623,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           
           @keyframes lockPulse {
             0%, 100% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(1.15); opacity: 1; }
-          }
-          
-          @keyframes ctaPulse {
-            0%, 100% {
-              boxShadow: 0 0 40px rgba(245, 158, 11, 0.7);
-            }
-            50% {
-              boxShadow: 0 0 50px rgba(245, 158, 11, 0.9);
-            }
+            50% { transform: scale(1.1); opacity: 1; }
           }
         `}</style>
       </div>
