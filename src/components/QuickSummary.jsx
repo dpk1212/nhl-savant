@@ -17,25 +17,25 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Opportunity Rating System
-  // PROFESSIONAL CLASSIFICATION:
-  // A+ (Elite):    EV > 10%  - Institutional-grade edge
-  // A  (Excellent): EV 7-10% - Strong analytical advantage  
-  // B+ (Strong):    EV 5-7%  - High-confidence opportunity
-  // B  (Good):      EV 3-5%  - Solid value bet
-  // C  (Value):     EV 0-3%  - Marginal edge
+  // UNIFIED GRADING SYSTEM (Ensemble-Calibrated)
+  // Thresholds calibrated for MoneyPuck ensemble (which reduces raw EVs by ~30-40%)
+  // A+ (Elite):    EV ≥ 8%  - Extremely rare, institutional-grade edge
+  // A  (Excellent): EV ≥ 5%  - Highest confidence  
+  // B+ (Strong):    EV ≥ 3%  - Recommended
+  // B  (Good):      EV ≥ 2%  - Acceptable
+  // C  (Value):     EV < 2%  - Filtered out
   const getRating = (evPercent) => {
-    if (evPercent >= 10) return { grade: 'A+', tier: 'ELITE', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981' };
-    if (evPercent >= 7) return { grade: 'A', tier: 'EXCELLENT', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.15)', borderColor: '#059669' };
-    if (evPercent >= 5) return { grade: 'B+', tier: 'STRONG', color: '#0EA5E9', bgColor: 'rgba(14, 165, 233, 0.15)', borderColor: '#0EA5E9' };
-    if (evPercent >= 3) return { grade: 'B', tier: 'GOOD', color: '#8B5CF6', bgColor: 'rgba(139, 92, 246, 0.15)', borderColor: '#8B5CF6' };
+    if (evPercent >= 8) return { grade: 'A+', tier: 'ELITE', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981' };
+    if (evPercent >= 5) return { grade: 'A', tier: 'EXCELLENT', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.15)', borderColor: '#059669' };
+    if (evPercent >= 3) return { grade: 'B+', tier: 'STRONG', color: '#0EA5E9', bgColor: 'rgba(14, 165, 233, 0.15)', borderColor: '#0EA5E9' };
+    if (evPercent >= 2) return { grade: 'B', tier: 'GOOD', color: '#8B5CF6', bgColor: 'rgba(139, 92, 246, 0.15)', borderColor: '#8B5CF6' };
     return { grade: 'C', tier: 'VALUE', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.15)', borderColor: '#64748B' };
   };
 
   // Get best bet for each game
   // STANDARD DEFINITIONS:
   // - Opportunity = Any game with at least one bet having EV > 0%
-  // - High Value (ELITE) = Any game with A-rated bet (EV >= 7%)
+  // - High Value (ELITE) = Any game with A/A+ rated bet (EV >= 5%)
   const opportunities = allEdges.map(game => {
     // Find highest EV bet across all markets
     let bestBet = null;
