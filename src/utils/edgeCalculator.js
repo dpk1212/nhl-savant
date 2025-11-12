@@ -21,7 +21,7 @@ export class EdgeCalculator {
       // Filtering thresholds
       maxAgreement: config.maxAgreement || 0.05,            // 5% max disagreement (legacy)
       minEV: config.minEV || 0.02,                          // 2% minimum market edge
-      minQuality: config.minQuality || 'C',                 // Minimum quality grade
+      minQuality: config.minQuality || 'B',                 // Minimum quality grade (B or higher)
       kellyFraction: config.kellyFraction || 0.25,          // Quarter Kelly sizing
       maxKelly: config.maxKelly || 0.05,                    // 5% max bet
       useEnsemble: config.useEnsemble !== false             // Enable by default
@@ -83,19 +83,23 @@ export class EdgeCalculator {
     // Calculate market edge using ensemble probability
     const marketEdge = ensembleProb - marketProb;
     
-    // ENSEMBLE-OPTIMIZED GRADING (Same thresholds as MoneyPuck calibration)
-    // This fallback uses market ensemble when MoneyPuck data unavailable
+    // Calculate Expected Value (EV%) - matches MoneyPuck calibration logic
+    const expectedValue = (ensembleProb / marketProb) - 1;
+    const evPercent = expectedValue * 100;
+    
+    // ENSEMBLE-OPTIMIZED GRADING (Option B: Aggressive - matches MoneyPuck calibration)
+    // Grade based on EV% to handle underdogs correctly
     let confidence, qualityGrade;
-    if (marketEdge >= 0.045) {
+    if (evPercent >= 5.0) {
       qualityGrade = 'A+';
       confidence = 'VERY_HIGH';
-    } else if (marketEdge >= 0.035) {
+    } else if (evPercent >= 3.5) {
       qualityGrade = 'A';
       confidence = 'HIGH';
-    } else if (marketEdge >= 0.025) {
+    } else if (evPercent >= 2.5) {
       qualityGrade = 'B+';
       confidence = 'HIGH';
-    } else if (marketEdge >= 0.02) {
+    } else if (evPercent >= 2.0) {
       qualityGrade = 'B';
       confidence = 'MEDIUM';
     } else {
@@ -139,21 +143,24 @@ export class EdgeCalculator {
     // Market edge using calibrated prediction
     const marketEdge = calibratedProb - marketProb;
     
-    // ENSEMBLE-OPTIMIZED GRADING (MoneyPuck Calibration - Option B: Aggressive)
-    // Thresholds lowered to account for 70% MoneyPuck + 30% Your Model blend
-    // MoneyPuck naturally reduces raw EVs by ~30-40% (filters false positives)
-    // These thresholds create better grade distribution and inspire confidence
+    // Calculate Expected Value (EV%) - this is what users see in the UI
+    const expectedValue = (calibratedProb / marketProb) - 1;
+    const evPercent = expectedValue * 100;
+    
+    // ENSEMBLE-OPTIMIZED GRADING (Option B: Aggressive for MoneyPuck)
+    // Grade based on EV% (accounts for odds differences correctly)
+    // Lowered from raw model thresholds to account for MoneyPuck compression (~30-40%)
     let qualityGrade;
-    if (marketEdge >= 0.045) {
-      qualityGrade = 'A+';     // ≥4.5% edge → ELITE (top tier finds)
-    } else if (marketEdge >= 0.035) {
-      qualityGrade = 'A';      // ≥3.5% edge → EXCELLENT (strong value)
-    } else if (marketEdge >= 0.025) {
-      qualityGrade = 'B+';     // ≥2.5% edge → STRONG (solid play)
-    } else if (marketEdge >= 0.02) {
-      qualityGrade = 'B';      // ≥2.0% edge → GOOD (minimum threshold)
+    if (evPercent >= 5.0) {
+      qualityGrade = 'A+';     // ≥5% EV → ELITE (top 10-15% of bets)
+    } else if (evPercent >= 3.5) {
+      qualityGrade = 'A';      // ≥3.5% EV → EXCELLENT (top 25-35%)
+    } else if (evPercent >= 2.5) {
+      qualityGrade = 'B+';     // ≥2.5% EV → STRONG (good value)
+    } else if (evPercent >= 2.0) {
+      qualityGrade = 'B';      // ≥2% EV → GOOD (minimum threshold)
     } else {
-      qualityGrade = 'C';      // <2.0% edge → Filtered out (not shown to users)
+      qualityGrade = 'C';      // <2% EV → Filtered out (not shown to users)
     }
     
     // Confidence based on how much correction was needed
