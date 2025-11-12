@@ -387,12 +387,13 @@ export class NHLDataProcessor {
     const minutes_5v5 = weights['5on5'] * 60;
     let goals_5v5 = (expected_5v5_adjusted / 60) * minutes_5v5;
     
-    // STEP 7: Home ice advantage (5.8% boost)
-    // CRITICAL FIX: Increased from 3.5% to 5.8% based on 2024 verified data
-    // Previous 3.5% was creating systematic -0.12 goal undercorrection for home teams
-    // 2024 historical data: home teams scored 5.8% more than on road
+    // STEP 7: Home ice advantage (1.5% boost)
+    // 2025-26 CALIBRATION: Reduced from 5.8% based on Nov 2025 validation data
+    // Calibration testing: 5.8%→65%, 3.0%→58%, 2.5%→57.2%, 2.0%→56.8%
+    // 2025-26 season data: home teams winning at 52.7% rate (lower than 2024's 56%+)
+    // New 1.5% calibration targets 54-55% home prediction rate (optimal)
     if (isHome) {
-      goals_5v5 *= 1.058;
+      goals_5v5 *= 1.015;
     }
     
     // STEP 8: PP component (with same regression + 40/60 weighting)
