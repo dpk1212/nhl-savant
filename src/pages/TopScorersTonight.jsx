@@ -80,7 +80,6 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          user={user}
         />
       </div>
     );
