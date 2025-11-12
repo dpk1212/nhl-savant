@@ -7,12 +7,14 @@ import {
   calculateDollarGrowth,
   getWeeksSinceStart 
 } from '../../utils/performanceStats';
+import DiscountLottery from '../DiscountLottery';
 
 const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [roiCounter, setRoiCounter] = useState(0);
+  const [discountCode, setDiscountCode] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -635,6 +637,11 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           </div>
         </div>
 
+        {/* Discount Lottery - Gamified conversion */}
+        <div style={{ animation: 'fadeInUp 0.5s ease-out 0.8s both' }}>
+          <DiscountLottery onCodeRevealed={(code) => setDiscountCode(code)} />
+        </div>
+
         {/* CTA - MOVED UP */}
         <button
           onClick={handleUnlock}
@@ -671,7 +678,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           }}
         >
           <ArrowRight size={isMobile ? 18 : 20} strokeWidth={3} />
-          <span>Start 3-Day Free Trial</span>
+          <span>{discountCode ? `Claim ${discountCode} Discount` : 'Start 3-Day Free Trial'}</span>
         </button>
 
         <p style={{
