@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, Bookmark, User, LogOut, CreditCard, Crown } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, User, LogOut, CreditCard, Crown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import AuthModal from './AuthModal';
@@ -18,7 +18,6 @@ const Navigation = () => {
   // Premium navigation links with Lucide icons
   const navLinks = [
     { path: '/', label: "Today's Games", icon: Target },
-    { path: '/my-picks', label: 'My Picks', icon: Bookmark },
     { path: '/matchup-insights', label: 'Hot Takes', icon: LineChart },
     { path: '/dashboard', label: 'Analytics Hub', icon: BarChart3 },
     { path: '/performance', label: 'Performance', icon: TrendingUp },

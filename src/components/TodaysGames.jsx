@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, Bookmark, ChevronRight } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -45,8 +45,6 @@ import DisclaimerModal from './DisclaimerModal';
 import CompactPicksBar from './CompactPicksBar';
 import { getRating } from './RatingBadge';
 import ShareButton from './ShareButton';
-import BookmarkButton from './BookmarkButton';
-import { useBookmarks } from '../hooks/useBookmarks';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
@@ -668,7 +666,6 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 
 // Hero Bet Card - Main value proposition
 const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
-  const { toggleBookmark, isBookmarked } = useBookmarks();
   
   if (!bestEdge) {
     // Premium CTA when no bet recommendation
@@ -819,33 +816,6 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   
   const insights = getSupportingInsights();
   
-  // Generate bet ID for bookmarking
-  const betId = `${game.date || new Date().toISOString().split('T')[0]}_${game.awayTeam}_${game.homeTeam}_${bestEdge.market}_${bestEdge.pick.replace(/\s+/g, '_')}`;
-  const bookmarked = isBookmarked(betId);
-  
-  const handleToggleBookmark = () => {
-    // Generate rating from evPercent if not present
-    const rating = bestEdge.rating || getRating(bestEdge.evPercent).grade;
-    
-    toggleBookmark({
-      betId,
-      game: {
-        awayTeam: game.awayTeam,
-        homeTeam: game.homeTeam,
-        gameTime: game.gameTime,
-        gameDate: game.date || new Date().toISOString().split('T')[0]
-      },
-      bet: {
-        market: bestEdge.market,
-        pick: bestEdge.pick,
-        odds: bestEdge.odds,
-        evPercent: bestEdge.evPercent,
-        rating: rating,
-        team: bestEdge.team || null
-      }
-    });
-  };
-  
   return (
     <div style={{ 
       background: GRADIENTS.hero,
@@ -861,20 +831,6 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
       {bestEdge.evPercent > 10 && (
         <div className="shimmer-overlay" />
       )}
-      
-      {/* Bookmark button in top-right corner */}
-      <div style={{
-        position: 'absolute',
-        top: isMobile ? '0.75rem' : '0.875rem',
-        right: isMobile ? '0.75rem' : '0.875rem',
-        zIndex: 2
-      }}>
-        <BookmarkButton
-          isBookmarked={bookmarked}
-          onClick={handleToggleBookmark}
-          size={isMobile ? 'small' : 'medium'}
-        />
-      </div>
       
       {/* Best bet recommendation */}
       <div style={{ 
