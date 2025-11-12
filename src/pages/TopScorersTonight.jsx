@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Target, TrendingUp, Filter } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import PlayerRankingsTable from '../components/PlayerRankingsTable';
@@ -9,8 +9,8 @@ import { getETDate } from '../utils/dateUtils';
 /**
  * Top Scorers Tonight Page
  * 
- * Shows players with the best goal-scoring matchups tonight,
- * combining OddsTrader baseline with sophisticated matchup analysis
+ * Premium feature showing players with the best goal-scoring matchups tonight,
+ * powered by sophisticated matchup analysis and advanced modeling
  */
 function TopScorersTonight({ playerMatchups, dataProcessor }) {
   const { user } = useAuth();
@@ -18,8 +18,73 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
   
   const [selectedGame, setSelectedGame] = useState('all');
   const [positionFilter, setPositionFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('otEV'); // otEV, defense, goalie, shots, pace
+  const [sortBy, setSortBy] = useState('modelEV'); // modelEV, defense, goalie, shots, pace
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Paywall: Entire page is premium-only
+  if (!isPremium) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(to bottom, #0f172a, #1e293b)',
+        padding: '2rem 1rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          maxWidth: '600px',
+          background: 'rgba(30, 41, 59, 0.5)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(100, 116, 139, 0.2)',
+          borderRadius: '1rem',
+          padding: '3rem 2rem',
+          textAlign: 'center'
+        }}>
+          <Target size={64} color="#fbbf24" style={{ margin: '0 auto 1.5rem' }} />
+          <h2 style={{
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: '#f1f5f9',
+            marginBottom: '1rem'
+          }}>
+            Premium Feature
+          </h2>
+          <p style={{
+            fontSize: '1.125rem',
+            color: '#94a3b8',
+            marginBottom: '2rem',
+            lineHeight: '1.6'
+          }}>
+            Top Scoring Matchups is an exclusive feature for Premium subscribers. Get access to advanced player matchup analysis powered by our sophisticated models.
+          </p>
+          <button
+            onClick={() => setShowUpgradeModal(true)}
+            style={{
+              background: 'linear-gradient(to right, #fbbf24, #f59e0b)',
+              color: '#1e293b',
+              fontWeight: '700',
+              padding: '1rem 2rem',
+              borderRadius: '0.5rem',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '1.125rem',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = 0.9}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = 1}
+          >
+            Upgrade to Premium
+          </button>
+        </div>
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          user={user}
+        />
+      </div>
+    );
+  }
 
   // Get unique games for filtering
   const games = useMemo(() => {
@@ -55,7 +120,7 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
     // Sort
     players.sort((a, b) => {
       switch(sortBy) {
-        case 'otEV':
+        case 'modelEV':
           return parseFloat(b.evPercent) - parseFloat(a.evPercent);
         case 'defense':
           // Higher rank = weaker defense = better for scorer
@@ -77,15 +142,8 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
     return players;
   }, [playerMatchups, selectedGame, positionFilter, sortBy]);
 
-  // Apply premium gate - free users see top 10
-  const visiblePlayers = useMemo(() => {
-    if (isPremium) {
-      return filteredPlayers;
-    }
-    return filteredPlayers.slice(0, 10);
-  }, [filteredPlayers, isPremium]);
-
-  const isLimitReached = !isPremium && filteredPlayers.length > 10;
+  // All players visible (page is premium-only)
+  const visiblePlayers = filteredPlayers;
 
   if (!playerMatchups || playerMatchups.length === 0) {
     return (
@@ -156,16 +214,6 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
           }}>
             {getETDate()} • {playerMatchups.length} players analyzed
           </p>
-          {playerMatchups.length === 20 && (
-            <p style={{
-              fontSize: '0.875rem',
-              color: '#64748b',
-              margin: '0.5rem 0 0 0',
-              fontStyle: 'italic'
-            }}>
-              Limited to 20 players (OddsTrader initial page load - "Load More" button requires manual scraping)
-            </p>
-          )}
         </div>
 
         {/* Filter Bar */}
@@ -305,7 +353,7 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
                   cursor: 'pointer'
                 }}
               >
-                <option value="otEV">OddsTrader EV</option>
+                <option value="modelEV">Model EV (Best Value)</option>
                 <option value="defense">Opponent Defense (Weakest First)</option>
                 <option value="goalie">Goalie GSAE (Worst First)</option>
                 <option value="shots">Player SOG (Highest First)</option>
@@ -369,61 +417,7 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
           players={visiblePlayers}
           isPremium={isPremium}
         />
-
-        {/* Premium Gate Message */}
-        {isLimitReached && (
-          <div style={{
-            marginTop: '1.5rem',
-            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            borderRadius: '0.75rem',
-            padding: '2rem',
-            textAlign: 'center'
-          }}>
-            <TrendingUp size={48} color="#fbbf24" style={{ margin: '0 auto 1rem' }} />
-            <h3 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              color: '#f1f5f9',
-              marginBottom: '0.5rem'
-            }}>
-              See All {filteredPlayers.length} Players
-            </h3>
-            <p style={{
-              fontSize: '1rem',
-              color: '#94a3b8',
-              marginBottom: '1.5rem'
-            }}>
-              Upgrade to premium to unlock all player matchups, detailed analysis, and more
-            </p>
-            <button
-              onClick={() => setShowUpgradeModal(true)}
-              style={{
-                padding: '0.75rem 2rem',
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                border: 'none',
-                borderRadius: '0.5rem',
-                color: '#000',
-                fontSize: '1rem',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'transform 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              Upgrade Now
-            </button>
-          </div>
-        )}
       </div>
-
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        user={user}
-      />
     </div>
   );
 }
