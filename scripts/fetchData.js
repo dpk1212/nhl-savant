@@ -48,7 +48,8 @@ async function fetchAllData() {
   const results = {
     moneyline: false,
     goalies: false,
-    moneyPuckGoalies: false
+    moneyPuckGoalies: false,
+    playerProps: false
   };
   
   const fetchTimestamp = new Date().toISOString();
@@ -187,6 +188,61 @@ async function fetchAllData() {
       results.moneyPuckPredictions = true;
     }
     
+    // 4. Fetch Player Props (Player Total Goals) from OddsTrader
+    console.log('🎯 Fetching NHL Player Props from OddsTrader...');
+    console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
+    try {
+      const playerPropsResult = await retryWithBackoff(async () => {
+        return await firecrawl.scrape(`https://www.oddstrader.com/nhl/player-props/?m=1694&_=${cacheBuster}`, {
+          formats: ['markdown'],
+          onlyMainContent: true,
+          timeout: 300000, // 5 minute timeout
+          waitFor: 5000, // Wait 5 seconds for page to fully load
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+      });
+      
+      console.log('   - Scraped player props page');
+      console.log(`   - Size: ${playerPropsResult.markdown?.length || 0} characters`);
+      
+      // Parse player props
+      const playerProps = parsePlayerProps(playerPropsResult.markdown);
+      console.log(`   - Parsed ${playerProps.length} player props`);
+      
+      if (playerProps.length === 0) {
+        console.log('   ⚠️  WARNING: No player props found in scrape');
+        console.log('   ⚠️  Keeping existing player_props.json file');
+        results.playerProps = false;
+      } else {
+        const playerPropsData = {
+          lastUpdated: fetchTimestamp,
+          source: 'OddsTrader',
+          url: 'https://www.oddstrader.com/nhl/player-props/?m=1694',
+          market: 'Player Total Goals',
+          count: playerProps.length,
+          players: playerProps
+        };
+        
+        await fs.writeFile(
+          join(__dirname, '../public/player_props.json'),
+          JSON.stringify(playerPropsData, null, 2),
+          'utf8'
+        );
+        
+        console.log(`✅ Player props saved`);
+        console.log(`   - Players: ${playerProps.length}`);
+        console.log(`   - File: public/player_props.json\n`);
+        results.playerProps = true;
+      }
+    } catch (error) {
+      console.log('   ⚠️  WARNING: Player props fetch failed:', error.message);
+      console.log('   ⚠️  Keeping existing player_props.json file');
+      results.playerProps = false;
+    }
+    
     // Summary
     console.log('========================================');
     console.log('✅ ALL DATA FETCHED SUCCESSFULLY!');
@@ -195,13 +251,20 @@ async function fetchAllData() {
     console.log('  ✓ public/odds_money.md');
     console.log('  ✓ public/starting_goalies.json (from MoneyPuck)');
     console.log('  ✓ public/moneypuck_predictions.json (for calibration)');
+    if (results.playerProps) {
+      console.log('  ✓ public/player_props.json (for Top Scorers page)');
+    }
     console.log(`\nGoalie Status: ${countConfirmedGoalies(startingGoalies)}`);
     console.log(`MoneyPuck Predictions: ${moneyPuckPredictions.length} games`);
+    if (results.playerProps) {
+      const playerPropsFile = JSON.parse(await fs.readFile(join(__dirname, '../public/player_props.json'), 'utf8'));
+      console.log(`Player Props: ${playerPropsFile.count || 0} players`);
+    }
     console.log(`Odds Updated: ${new Date(fetchTimestamp).toLocaleString()}`);
     console.log('\nNext steps:');
     console.log('  1. Review the files to ensure data looks good');
     console.log('  2. git add public/*.md public/*.json');
-    console.log('  3. git commit -m "Auto-update: Odds, goalies, and MoneyPuck predictions"');
+    console.log('  3. git commit -m "Auto-update: Odds, goalies, predictions, and player props"');
     console.log('  4. git push && npm run deploy\n');
     
     return results;
@@ -216,6 +279,90 @@ async function fetchAllData() {
     console.error('\nPartial results:', results);
     throw error;
   }
+}
+
+/**
+ * Parse player props from OddsTrader markdown content
+ */
+function parsePlayerProps(markdown) {
+  const players = [];
+  const lines = markdown.split('\n');
+  let currentGame = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Track current game matchup
+    if (line.includes('@ ') && (line.includes('PM') || line.includes('AM'))) {
+      const gameMatch = line.match(/(\w+\s+\d+\/\d+\s+[\d:]+\s+[AP]M)([A-Z]{2,3})\s+@\s+([A-Z]{2,3})/);
+      if (gameMatch) {
+        currentGame = {
+          time: gameMatch[1],
+          away: gameMatch[2],
+          home: gameMatch[3]
+        };
+      }
+    }
+
+    // Look for "Player Total Goals\\" - player name is attached
+    if (line.includes('Player Total Goals') && line.includes('\\') && !line.startsWith('-')) {
+      const playerName = line.replace('Player Total Goals', '').replace(/\\/g, '').trim();
+
+      if (!playerName || !currentGame || playerName === 'Player Total Goals') {
+        continue;
+      }
+
+      let ev = null;
+      let coverProb = null;
+      let odds = null;
+
+      // Scan next 20 lines for EV, cover probability, and odds
+      for (let j = i + 1; j < Math.min(i + 20, lines.length); j++) {
+        let nextLine = lines[j].trim();
+
+        // Skip empty lines and backslashes
+        if (!nextLine || nextLine === '\\\\' || nextLine === '\\') continue;
+
+        // Remove trailing backslashes
+        nextLine = nextLine.replace(/\\+$/g, '').trim();
+        if (!nextLine) continue;
+
+        // EV percentage (e.g., "+14.9%" or "-3.2%")
+        if (!ev && nextLine.match(/^[+-]\d+\.\d+%$/)) {
+          ev = nextLine;
+        }
+
+        // Cover probability (e.g., "93%")
+        else if (!coverProb && nextLine.match(/^\d{2,3}%$/)) {
+          coverProb = nextLine;
+        }
+
+        // Odds (e.g., "u½(-360)")
+        else if (!odds && nextLine.match(/^u[½\d]+\([^)]+\)$/)) {
+          odds = nextLine;
+          break; // We have everything we need
+        }
+      }
+
+      if (ev && coverProb) {
+        players.push({
+          name: playerName,
+          team: currentGame.away,
+          opponent: currentGame.home,
+          matchup: `${currentGame.away} @ ${currentGame.home}`,
+          gameTime: currentGame.time,
+          market: 'Player Total Goals',
+          evPercent: parseFloat(ev.replace('%', '')),
+          coverProbability: parseInt(coverProb.replace('%', '')),
+          otEV: ev,
+          otCoverProb: parseInt(coverProb.replace('%', '')),
+          odds: odds || 'N/A'
+        });
+      }
+    }
+  }
+
+  return players;
 }
 
 /**
