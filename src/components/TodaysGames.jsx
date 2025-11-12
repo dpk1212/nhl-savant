@@ -28,7 +28,8 @@ import {
   TYPOGRAPHY, 
   MOBILE_SPACING, 
   GRADIENTS, 
-  getEVColorScale, 
+  getEVColorScale,
+  getGradeColorScale,
   getBarColor,
   getConfidenceLevel,
   getStaggerDelay,
@@ -244,8 +245,38 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
             )}
           </div>
           
-          {rating > 0 && (
-            <RatingBadge evPercent={rating} size="small" />
+          {bestEdge && bestEdge.qualityGrade && (
+            <div style={{
+              display: 'inline-flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <div style={{
+                padding: '0.25rem 0.5rem',
+                background: getGradeColorScale(bestEdge.qualityGrade).bgColor,
+                border: `1px solid ${getGradeColorScale(bestEdge.qualityGrade).borderColor}`,
+                borderRadius: '6px',
+                fontWeight: '800',
+                fontSize: '0.75rem',
+                color: getGradeColorScale(bestEdge.qualityGrade).color,
+                letterSpacing: '-0.01em',
+                minWidth: '36px',
+                textAlign: 'center'
+              }}>
+                {bestEdge.qualityGrade}
+              </div>
+              <div style={{
+                fontSize: '0.563rem',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: getGradeColorScale(bestEdge.qualityGrade).color,
+                opacity: 0.8
+              }}>
+                {getGradeColorScale(bestEdge.qualityGrade).tier}
+              </div>
+            </div>
           )}
         </div>
         
@@ -472,7 +503,39 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         }}>
             {awayTeam} <span style={{ color: 'var(--color-text-muted)', fontWeight: '400' }}>@</span> {homeTeam}
         </span>
-          {rating > 0 && <RatingBadge evPercent={rating} size="small" />}
+          {bestEdge && bestEdge.qualityGrade && (
+            <div style={{
+              display: 'inline-flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <div style={{
+                padding: '0.25rem 0.5rem',
+                background: getGradeColorScale(bestEdge.qualityGrade).bgColor,
+                border: `1px solid ${getGradeColorScale(bestEdge.qualityGrade).borderColor}`,
+                borderRadius: '6px',
+                fontWeight: '800',
+                fontSize: '0.75rem',
+                color: getGradeColorScale(bestEdge.qualityGrade).color,
+                letterSpacing: '-0.01em',
+                minWidth: '36px',
+                textAlign: 'center'
+              }}>
+                {bestEdge.qualityGrade}
+              </div>
+              <div style={{
+                fontSize: '0.563rem',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: getGradeColorScale(bestEdge.qualityGrade).color,
+                opacity: 0.8
+              }}>
+                {getGradeColorScale(bestEdge.qualityGrade).tier}
+              </div>
+            </div>
+          )}
       </div>
         
         {/* Win Probabilities as BADGES - promoted */}
@@ -1847,9 +1910,11 @@ const AlternativeBetCard = ({ game, bestEdge, awayTeam, homeTeam, isMobile, fact
 };
 
 // Market Row Component with implied odds and edge in points
-const MarketRow = ({ team, odds, ev, isPositive, isBestBet, modelProb, impliedProb }) => {
+const MarketRow = ({ team, odds, ev, isPositive, isBestBet, modelProb, impliedProb, qualityGrade }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const evColor = getEVColorScale(ev);
+  
+  // Use qualityGrade color if available, otherwise fall back to EV color (legacy)
+  const gradeColor = qualityGrade ? getGradeColorScale(qualityGrade) : getEVColorScale(ev);
   
   // Calculate edge in probability points
   const edgePts = modelProb && impliedProb ? (modelProb - impliedProb) * 100 : null;
@@ -1862,20 +1927,20 @@ const MarketRow = ({ team, odds, ev, isPositive, isBestBet, modelProb, impliedPr
         padding: '0.75rem',
         marginBottom: '0.5rem',
         background: isBestBet 
-          ? evColor.bg
+          ? gradeColor.bg
           : isHovered 
             ? 'rgba(100, 116, 139, 0.08)'
             : 'transparent',
-        border: isBestBet ? `2px solid ${evColor.color}40` : ELEVATION.flat.border,
+        border: isBestBet ? `2px solid ${gradeColor.color}40` : ELEVATION.flat.border,
         borderRadius: '8px',
         transition: TRANSITIONS.normal,
         transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
         cursor: 'pointer',
-        boxShadow: isBestBet && isHovered ? `0 4px 12px ${evColor.color}30` : 'none'
+        boxShadow: isBestBet && isHovered ? `0 4px 12px ${gradeColor.color}30` : 'none'
       }}
       role="button"
       tabIndex={0}
-      aria-label={`${team} ${odds > 0 ? '+' : ''}${odds}, EV ${ev.toFixed(1)}%`}
+      aria-label={`${team} ${odds > 0 ? '+' : ''}${odds}, EV ${ev.toFixed(1)}%${qualityGrade ? `, Grade ${qualityGrade}` : ''}`}
       onKeyPress={(e) => e.key === 'Enter' && console.log('Market selected:', team)}
     >
       {/* Team name and odds */}
@@ -1905,22 +1970,31 @@ const MarketRow = ({ team, odds, ev, isPositive, isBestBet, modelProb, impliedPr
             <span style={{ 
               fontSize: TYPOGRAPHY.label.size, 
               fontWeight: TYPOGRAPHY.heading.weight,
-              color: evColor.color,
+              color: gradeColor.color,
               fontFeatureSettings: "'tnum'"
             }}>
               {isPositive ? '+' : ''}{ev.toFixed(1)}%
             </span>
-            {isBestBet && (
+            {isBestBet && qualityGrade && (
               <span style={{ 
                 fontSize: TYPOGRAPHY.caption.size, 
-                color: evColor.color,
+                color: gradeColor.color,
                 fontWeight: TYPOGRAPHY.body.weight
               }}>
-                {evColor.label}
+                Grade {qualityGrade}
+              </span>
+            )}
+            {isBestBet && !qualityGrade && (
+              <span style={{ 
+                fontSize: TYPOGRAPHY.caption.size, 
+                color: gradeColor.color,
+                fontWeight: TYPOGRAPHY.body.weight
+              }}>
+                {gradeColor.label}
               </span>
             )}
           </div>
-          {isBestBet && <span style={{ fontSize: '1.125rem', color: evColor.color }}>✓</span>}
+          {isBestBet && <span style={{ fontSize: '1.125rem', color: gradeColor.color }}>✓</span>}
         </div>
       </div>
       
@@ -1937,7 +2011,7 @@ const MarketRow = ({ team, odds, ev, isPositive, isBestBet, modelProb, impliedPr
           <span>Book: {(impliedProb * 100).toFixed(0)}%</span>
           <span>Model: {(modelProb * 100).toFixed(0)}%</span>
           {edgePts !== null && (
-            <span style={{ color: edgePts > 0 ? evColor.color : 'var(--color-text-muted)' }}>
+            <span style={{ color: edgePts > 0 ? gradeColor.color : 'var(--color-text-muted)' }}>
               ({edgePts > 0 ? '+' : ''}{edgePts.toFixed(1)}pts)
             </span>
           )}
@@ -2005,6 +2079,7 @@ const MarketsGrid = ({ game, isMobile }) => {
               isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
               modelProb={game.edges.moneyline.away.modelProb}
               impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
+              qualityGrade={game.edges.moneyline.away.qualityGrade}
             />
             
             <MarketRow 
@@ -2015,6 +2090,7 @@ const MarketsGrid = ({ game, isMobile }) => {
               isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
               modelProb={game.edges.moneyline.home.modelProb}
               impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
+              qualityGrade={game.edges.moneyline.home.qualityGrade}
             />
           </div>
         )}
@@ -2050,6 +2126,7 @@ const MarketsGrid = ({ game, isMobile }) => {
               isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
               modelProb={game.edges.total.over.modelProb}
               impliedProb={getImpliedProbability(game.edges.total.over.odds)}
+              qualityGrade={game.edges.total.over.qualityGrade}
             />
             
             <MarketRow 
@@ -2060,6 +2137,7 @@ const MarketsGrid = ({ game, isMobile }) => {
               isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
               modelProb={game.edges.total.under.modelProb}
               impliedProb={getImpliedProbability(game.edges.total.under.odds)}
+              qualityGrade={game.edges.total.under.qualityGrade}
             />
           </div>
         )}
@@ -2104,6 +2182,7 @@ const MarketsGrid = ({ game, isMobile }) => {
             isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
             modelProb={game.edges.moneyline.away.modelProb}
             impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
+            qualityGrade={game.edges.moneyline.away.qualityGrade}
           />
           
           <MarketRow 
@@ -2114,6 +2193,7 @@ const MarketsGrid = ({ game, isMobile }) => {
             isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
             modelProb={game.edges.moneyline.home.modelProb}
             impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
+            qualityGrade={game.edges.moneyline.home.qualityGrade}
           />
         </div>
       )}
@@ -2146,6 +2226,7 @@ const MarketsGrid = ({ game, isMobile }) => {
             isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
             modelProb={game.edges.total.over.modelProb}
             impliedProb={getImpliedProbability(game.edges.total.over.odds)}
+            qualityGrade={game.edges.total.over.qualityGrade}
           />
           
           <MarketRow 
@@ -2156,6 +2237,7 @@ const MarketsGrid = ({ game, isMobile }) => {
             isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
             modelProb={game.edges.total.under.modelProb}
             impliedProb={getImpliedProbability(game.edges.total.under.odds)}
+            qualityGrade={game.edges.total.under.qualityGrade}
           />
         </div>
       )}
@@ -2927,7 +3009,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           betsByGame[gameKey].bets.push({
             pick: bet.bet.pick,
             market: bet.bet.market,
-            grade: bet.prediction.rating,
+            grade: bet.prediction.qualityGrade || bet.prediction.rating || 'B', // Use ensemble quality grade, fallback to legacy rating
             odds: bet.bet.odds,
             edge: `${bet.prediction.evPercent.toFixed(1)}%`
           });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Target, Clock, Zap } from 'lucide-react';
 import { BetTypeBadge, EVDisplay, EdgeIndicator, TimeDisplay, ViewButton } from './PremiumComponents';
+import { getGradeColorScale } from '../utils/designSystem';
 
 const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -17,20 +18,9 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // UNIFIED GRADING SYSTEM (Ensemble-Calibrated)
-  // Thresholds calibrated for MoneyPuck ensemble (which reduces raw EVs by ~30-40%)
-  // A+ (Elite):    EV ≥ 8%  - Extremely rare, institutional-grade edge
-  // A  (Excellent): EV ≥ 5%  - Highest confidence  
-  // B+ (Strong):    EV ≥ 3%  - Recommended
-  // B  (Good):      EV ≥ 2%  - Acceptable
-  // C  (Value):     EV < 2%  - Filtered out
-  const getRating = (evPercent) => {
-    if (evPercent >= 8) return { grade: 'A+', tier: 'ELITE', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981' };
-    if (evPercent >= 5) return { grade: 'A', tier: 'EXCELLENT', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.15)', borderColor: '#059669' };
-    if (evPercent >= 3) return { grade: 'B+', tier: 'STRONG', color: '#0EA5E9', bgColor: 'rgba(14, 165, 233, 0.15)', borderColor: '#0EA5E9' };
-    if (evPercent >= 2) return { grade: 'B', tier: 'GOOD', color: '#8B5CF6', bgColor: 'rgba(139, 92, 246, 0.15)', borderColor: '#8B5CF6' };
-    return { grade: 'C', tier: 'VALUE', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.15)', borderColor: '#64748B' };
-  };
+  // LEGACY: EV-based grading replaced with ensemble qualityGrade system
+  // Now using qualityGrade from edge data (based on model-market agreement)
+  // This ensures consistent grades across all UI components
 
   // Get best bet for each game
   // STANDARD DEFINITIONS:
@@ -345,7 +335,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
           </thead>
           <tbody>
               {opportunities.map((opp, i) => {
-                const rating = getRating(opp.bestBet.evPercent);
+                const rating = opp.bestBet.qualityGrade ? getGradeColorScale(opp.bestBet.qualityGrade) : { grade: 'N/A', tier: 'N/A', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.15)', borderColor: '#64748B' };
                 return (
               <tr 
                 key={i}
@@ -454,7 +444,7 @@ const QuickSummary = ({ allEdges, dataProcessor, onGameClick }) => {
         // Mobile: Premium Cards
         <div style={{ padding: '1.25rem 1rem' }}>
           {opportunities.map((opp, i) => {
-            const rating = getRating(opp.bestBet.evPercent);
+            const rating = opp.bestBet.qualityGrade ? getGradeColorScale(opp.bestBet.qualityGrade) : { grade: 'N/A', tier: 'N/A', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.15)', borderColor: '#64748B' };
             return (
               <div 
                 key={i} 
