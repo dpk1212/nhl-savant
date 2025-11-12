@@ -2,152 +2,85 @@ import { useEffect, useRef } from 'react';
 import { BetTracker } from '../firebase/betTracker';
 import { getETDate } from '../utils/dateUtils';
 
-export function useBetTracking(allEdges, dataProcessor) {
+// ENSEMBLE STRATEGY: Track only bets that pass quality filters and are shown to users
+export function useBetTracking(topEdges, allEdges, dataProcessor) {
   const tracker = useRef(new BetTracker());
   const processingLock = useRef(new Map()); // Prevent concurrent processing of same game
   const processedToday = useRef(new Set()); // Prevent re-processing in same session
   
   useEffect(() => {
-    if (!allEdges || allEdges.length === 0) return;
+    if (!topEdges || topEdges.length === 0 || !allEdges || allEdges.length === 0) return;
     
     // CRITICAL FIX: Get today's date using ET timezone for deduplication
     const today = getETDate();
     
-    // Track all games with at least one B-rated or higher bet (>= 3% EV)
-    const opportunities = allEdges.filter(game => {
-      const bestML = getBestMoneyline(game);
-      const bestTotal = getBestTotal(game);
-      return (bestML && bestML.evPercent >= 3) || (bestTotal && bestTotal.evPercent >= 3);
-    });
+    // topEdges is already ensemble-filtered (Grade A/B only)
+    // This ensures we ONLY track bets that users actually see
+    console.log(`📊 Tracking ${topEdges.length} ensemble-filtered bets (shown to users)`);
     
-    console.log(`📊 Found ${opportunities.length} games to track (ML + Total only)`);
-    
-    // FIXED: Process games sequentially with proper locking
+    // ENSEMBLE STRATEGY: Process each ensemble-filtered bet
+    // topEdges is an array of edge objects (already has all metadata)
+    // allEdges is needed to get prediction data (scores, win probs)
     (async () => {
-      for (const game of opportunities) {
-        const bestML = getBestMoneyline(game);
-        const bestTotal = getBestTotal(game);
+      for (const edge of topEdges) {
+        // Find the corresponding game from allEdges for prediction data
+        const game = allEdges.find(g => g.game === edge.game);
         
-        // Create unique game identifier (no date to match bet ID generation)
-        const gameId = `${game.awayTeam}_${game.homeTeam}`;
+        if (!game) {
+          console.warn(`⚠️ Could not find game data for ${edge.game}`);
+          continue;
+        }
+        
+        // Extract team names from game string (e.g., "NYR @ TBL")
+        const [awayTeam, homeTeam] = edge.game.split(' @ ');
+        const gameId = `${awayTeam}_${homeTeam}`;
+        
+        // Create unique bet identifier including market and pick
+        const betId = `${gameId}_${edge.market}_${edge.pick.replace(/\s+/g, '_')}`;
         
         // Skip if already processed in this session (prevents duplicate triggers)
-        if (processedToday.current.has(gameId)) {
+        if (processedToday.current.has(betId)) {
           continue;
         }
         
         // Skip if currently being processed (prevents race conditions)
-        if (processingLock.current.has(gameId)) {
-          console.log(`⏳ Already processing ${gameId}, skipping...`);
+        if (processingLock.current.has(betId)) {
+          console.log(`⏳ Already processing ${betId}, skipping...`);
           continue;
         }
         
-        // Lock this game for processing
-        processingLock.current.set(gameId, true);
+        // Lock this bet for processing
+        processingLock.current.set(betId, true);
         
         try {
-          // Prediction data (same for both bets)
+          // Build prediction data from game edges
           const predictionData = {
-            awayScore: game.edges.total?.awayScore || 0,
-            homeScore: game.edges.total?.homeScore || 0,
-            totalScore: game.edges.total?.predictedTotal || 0,
+            awayScore: game.edges.moneyline?.away?.predictedScore || 
+                      game.edges.total?.awayScore || 0,
+            homeScore: game.edges.moneyline?.home?.predictedScore || 
+                      game.edges.total?.homeScore || 0,
+            totalScore: (game.edges.total?.predictedTotal || 0),
             awayWinProb: game.edges.moneyline?.away?.modelProb || 0.5,
             homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
           };
           
-          let savedAny = false;
+          // Save/update this ensemble-filtered bet
+          await tracker.current.saveBet(game, edge, predictionData);
+          console.log(`✅ Tracked ${edge.qualityGrade || 'B'}: ${edge.game} - ${edge.pick} (+${edge.evPercent.toFixed(1)}% EV, ${edge.agreement ? (edge.agreement * 100).toFixed(1) + '% agreement' : 'no agreement data'})`);
           
-          // Save/update MONEYLINE bet (if exists and >= 3% EV)
-          if (bestML && bestML.evPercent >= 3) {
-            await tracker.current.saveBet(game, bestML, predictionData);
-            console.log(`✅ Tracked ML: ${game.awayTeam} @ ${game.homeTeam} - ${bestML.pick} (+${bestML.evPercent.toFixed(1)}% EV)`);
-            savedAny = true;
-          }
-          
-          // Save/update TOTAL bet (if exists and >= 3% EV)
-          if (bestTotal && bestTotal.evPercent >= 3) {
-            await tracker.current.saveBet(game, bestTotal, predictionData);
-            console.log(`✅ Tracked Total: ${game.awayTeam} @ ${game.homeTeam} - ${bestTotal.pick} (+${bestTotal.evPercent.toFixed(1)}% EV)`);
-            savedAny = true;
-          }
-          
-          // Mark as processed for this session (only if we saved something)
-          if (savedAny) {
-            processedToday.current.add(gameId);
-          }
+          // Mark as processed for this session
+          processedToday.current.add(betId);
           
         } catch (error) {
-          console.error(`❌ Failed to save bets for ${gameId}:`, error);
+          console.error(`❌ Failed to save bet ${betId}:`, error);
         } finally {
           // Release lock
-          processingLock.current.delete(gameId);
+          processingLock.current.delete(betId);
         }
       }
     })();
     
-  }, [allEdges]);
-  
-  // Get best MONEYLINE bet (home OR away, whichever has higher EV)
-  function getBestMoneyline(game) {
-    const awayML = game.edges.moneyline?.away;
-    const homeML = game.edges.moneyline?.home;
-    
-    if (!awayML && !homeML) return null;
-    
-    // Pick the side with higher EV
-    const awayEV = awayML?.evPercent || -Infinity;
-    const homeEV = homeML?.evPercent || -Infinity;
-    
-    if (awayEV > homeEV && awayML) {
-      return {
-        ...awayML,
-        market: 'MONEYLINE',
-        pick: `${game.awayTeam} ML (AWAY)`,
-        team: game.awayTeam
-      };
-    } else if (homeML) {
-      return {
-        ...homeML,
-        market: 'MONEYLINE',
-        pick: `${game.homeTeam} ML (HOME)`,
-        team: game.homeTeam
-      };
-    }
-    
-    return null;
-  }
-  
-  // Get best TOTAL bet (over OR under, whichever has higher EV)
-  function getBestTotal(game) {
-    const over = game.edges.total?.over;
-    const under = game.edges.total?.under;
-    
-    if (!over && !under) return null;
-    
-    // Pick the side with higher EV
-    const overEV = over?.evPercent || -Infinity;
-    const underEV = under?.evPercent || -Infinity;
-    
-    const line = game.rawOdds?.total?.line || over?.line || under?.line;
-    
-    if (overEV > underEV && over) {
-      return {
-        ...over,
-        market: 'TOTAL',
-        pick: `OVER ${line}`,
-        line: line
-      };
-    } else if (under) {
-      return {
-        ...under,
-        market: 'TOTAL',
-        pick: `UNDER ${line}`,
-        line: line
-      };
-    }
-    
-    return null;
-  }
+  }, [topEdges, allEdges]); // Re-run when ensemble-filtered bets change
   
   return tracker.current;
 }

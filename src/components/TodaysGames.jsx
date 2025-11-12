@@ -2241,8 +2241,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     loadUsage();
   }, [user, isFree, isPremium]);
   
-  // FIREBASE: Auto-track all recommended bets
-  useBetTracking(allEdges, dataProcessor);
+  // FIREBASE: Auto-track ensemble-filtered bets (only bets shown to users)
+  // ENSEMBLE STRATEGY: Pass topEdges to track only Grade A/B quality bets
+  useBetTracking(topEdges, allEdges, dataProcessor);
   
   // Initialize GoalieProcessor when goalies.csv data is available
   useEffect(() => {
