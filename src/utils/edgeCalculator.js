@@ -20,7 +20,7 @@ export class EdgeCalculator {
       
       // Filtering thresholds
       maxAgreement: config.maxAgreement || 0.05,            // 5% max disagreement (legacy)
-      minEV: config.minEV || 0.02,                          // 2% minimum market edge
+      minEV: config.minEV || 0.015,                         // 1.5% minimum EV threshold
       minQuality: config.minQuality || 'B',                 // Minimum quality grade (B or higher)
       kellyFraction: config.kellyFraction || 0.25,          // Quarter Kelly sizing
       maxKelly: config.maxKelly || 0.05,                    // 5% max bet
@@ -99,7 +99,7 @@ export class EdgeCalculator {
     } else if (evPercent >= 2.5) {
       qualityGrade = 'B+';
       confidence = 'HIGH';
-    } else if (evPercent >= 2.0) {
+    } else if (evPercent >= 1.5) {
       qualityGrade = 'B';
       confidence = 'MEDIUM';
     } else {
@@ -157,10 +157,10 @@ export class EdgeCalculator {
       qualityGrade = 'A';      // ≥3.5% EV → EXCELLENT (top 25-35%)
     } else if (evPercent >= 2.5) {
       qualityGrade = 'B+';     // ≥2.5% EV → STRONG (good value)
-    } else if (evPercent >= 2.0) {
-      qualityGrade = 'B';      // ≥2% EV → GOOD (minimum threshold)
+    } else if (evPercent >= 1.5) {
+      qualityGrade = 'B';      // ≥1.5% EV → GOOD (even slightly positive is trackable)
     } else {
-      qualityGrade = 'C';      // <2% EV → Filtered out (not shown to users)
+      qualityGrade = 'C';      // <1.5% EV → Filtered out (not shown to users)
     }
     
     // Confidence based on how much correction was needed
