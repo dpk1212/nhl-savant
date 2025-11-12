@@ -97,17 +97,17 @@ function PlayerRankingsTable({ players, isPremium }) {
                   borderBottom: '1px solid rgba(100, 116, 139, 0.2)'
                 }}>
                   <th style={headerCellStyle}>#</th>
-                  <th style={headerCellStyle}>⭐</th>
-                  <th style={{ ...headerCellStyle, textAlign: 'left', minWidth: '180px' }}>Player</th>
-                  <th style={headerCellStyle}>Matchup</th>
-                  <th style={{ ...headerCellStyle, minWidth: '110px' }}>Prop / Odds</th>
-                  <th style={{ ...headerCellStyle, minWidth: '90px' }}>Opp xGA/60</th>
-                  <th style={{ ...headerCellStyle, minWidth: '100px' }}>Goalie GSAE</th>
-                  <th style={headerCellStyle}>SOG/gm</th>
-                  <th style={headerCellStyle}>Pace</th>
-                  <th style={headerCellStyle}>PP PIM</th>
-                  <th style={headerCellStyle}>OT EV</th>
-                  <th style={headerCellStyle}>Shot%</th>
+                  <th style={headerCellStyle} title="Save your favorites">⭐</th>
+                  <th style={{ ...headerCellStyle, textAlign: 'left', minWidth: '180px' }} title="Player name and position">Player</th>
+                  <th style={headerCellStyle} title="Tonight's matchup">Matchup</th>
+                  <th style={{ ...headerCellStyle, minWidth: '110px' }} title="Betting prop and odds">Prop / Odds</th>
+                  <th style={{ ...headerCellStyle, minWidth: '90px' }} title="Opponent expected goals against per 60 min (higher = weaker defense = better for scorer)">Opp xGA/60</th>
+                  <th style={{ ...headerCellStyle, minWidth: '100px' }} title="Goalie Goals Saved Above Expected (negative = struggling goalie = better for scorer)">Goalie GSAE</th>
+                  <th style={headerCellStyle} title="Player shots on goal per game (higher = more opportunities)">SOG/gm</th>
+                  <th style={headerCellStyle} title="Game pace - shot attempts per 60 min (faster = more scoring chances)">Pace</th>
+                  <th style={headerCellStyle} title="Opponent penalty minutes per game (higher = more power play opportunities)">PP PIM</th>
+                  <th style={headerCellStyle} title="Model's calculated expected value - accounting for all matchup factors">Model EV</th>
+                  <th style={headerCellStyle} title="Player shooting percentage (goals per shot)">Shot%</th>
                 </tr>
               </thead>
 
@@ -491,7 +491,7 @@ function PlayerRankingsTable({ players, isPremium }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>OT EV</span>
+                  <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Model EV</span>
                   <span style={{ color: '#e2e8f0', fontSize: '0.875rem', fontWeight: '600' }}>{player.otEV}</span>
                 </div>
               </div>
