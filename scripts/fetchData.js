@@ -299,38 +299,29 @@ function parseMoneyPuckPredictions(markdown) {
     // Pattern: "### Chance of Winning:<br>## 50.2%"
     if (line.includes('Chance of Winning') && line.includes('##')) {
       try {
-        // Extract away team probability and team code
-        const awayProbMatch = line.match(/Chance of Winning:.*?##\s*(\d+\.\d+)%/);
-        const awayTeamMatch = line.match(/!\[([^\]]+)\].*?logos\/([A-Z]{2,3})\.png/);
+        // Extract ALL team logos using matchAll (same approach as goalie parser)
+        // MoneyPuck format: | AWAY% | AWAY_LOGO | TIME | HOME_LOGO | HOME% |
+        const teamMatches = [...line.matchAll(/logos\/([A-Z]{2,3})\.png/g)];
         
-        if (!awayProbMatch || !awayTeamMatch) continue;
-        
-        const awayProb = parseFloat(awayProbMatch[1]) / 100;
-        const awayTeam = awayTeamMatch[2]; // Team code (e.g., "TOR")
-        
-        // Find home team in same row or next row
-        let homeTeamMatch, homeProbMatch;
-        
-        // Check current line for second team (after first match)
-        const remainingLine = line.substring(line.indexOf(awayProbMatch[0]) + awayProbMatch[0].length);
-        homeTeamMatch = remainingLine.match(/!\[([^\]]+)\].*?logos\/([A-Z]{2,3})\.png/);
-        homeProbMatch = remainingLine.match(/##\s*(\d+\.\d+)%/);
-        
-        // If not found in current line, check next line
-        if ((!homeTeamMatch || !homeProbMatch) && i + 1 < lines.length) {
-          const nextLine = lines[i + 1];
-          if (!homeTeamMatch) {
-            homeTeamMatch = nextLine.match(/!\[([^\]]+)\].*?logos\/([A-Z]{2,3})\.png/);
-          }
-          if (!homeProbMatch) {
-            homeProbMatch = nextLine.match(/##\s*(\d+\.\d+)%/);
-          }
+        // Validate we have exactly 2 teams (away and home)
+        if (teamMatches.length < 2) {
+          console.log(`   ⚠️  Found ${teamMatches.length} teams on line ${i}, expected 2 - skipping`);
+          continue;
         }
         
-        if (!homeTeamMatch || !homeProbMatch) continue;
+        const awayTeam = teamMatches[0][1];  // First logo = away team
+        const homeTeam = teamMatches[1][1];  // Second logo = home team
         
-        const homeProb = parseFloat(homeProbMatch[1]) / 100;
-        const homeTeam = homeTeamMatch[2];
+        // Extract ALL probability percentages
+        const probMatches = [...line.matchAll(/##\s*(\d+(?:\.\d+)?)%/g)];
+        
+        if (probMatches.length < 2) {
+          console.log(`   ⚠️  Found ${probMatches.length} probabilities on line ${i}, expected 2 - skipping`);
+          continue;
+        }
+        
+        const awayProb = parseFloat(probMatches[0][1]) / 100;  // First % = away
+        const homeProb = parseFloat(probMatches[1][1]) / 100;  // Second % = home
         
         // Validate probabilities sum to ~100% (accounting for rounding)
         const totalProb = awayProb + homeProb;
@@ -355,6 +346,9 @@ function parseMoneyPuckPredictions(markdown) {
           source: 'MoneyPuck',
           scrapedAt: Date.now()
         });
+        
+        // Validation logging for debugging
+        console.log(`   🎯 Parsed: ${awayTeam} (${(awayProb * 100).toFixed(1)}%) @ ${homeTeam} (${(homeProb * 100).toFixed(1)}%)`);
         
       } catch (error) {
         console.error(`   ❌ Error parsing prediction at line ${i}:`, error.message);
