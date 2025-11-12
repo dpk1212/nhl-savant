@@ -21,6 +21,65 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
   const [sortBy, setSortBy] = useState('modelEV'); // modelEV, defense, goalie, shots, pace
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+  // Get unique games for filtering
+  const games = useMemo(() => {
+    if (!playerMatchups) return [];
+    const uniqueGames = [...new Set(playerMatchups.map(p => p.matchup))];
+    return uniqueGames;
+  }, [playerMatchups]);
+
+  // Filter and sort players
+  const filteredPlayers = useMemo(() => {
+    if (!playerMatchups) return [];
+    
+    let players = [...playerMatchups];
+    
+    // Filter by game
+    if (selectedGame !== 'all') {
+      players = players.filter(p => p.matchup === selectedGame);
+    }
+    
+    // Filter by position (forwards vs defense)
+    if (positionFilter === 'forwards') {
+      players = players.filter(p => {
+        const pos = p.playerStats?.position || '';
+        return pos === 'C' || pos === 'L' || pos === 'R' || pos === 'F';
+      });
+    } else if (positionFilter === 'defense') {
+      players = players.filter(p => {
+        const pos = p.playerStats?.position || '';
+        return pos === 'D';
+      });
+    }
+    
+    // Sort
+    players.sort((a, b) => {
+      switch(sortBy) {
+        case 'modelEV':
+          return parseFloat(b.evPercent) - parseFloat(a.evPercent);
+        case 'defense':
+          // Higher rank = weaker defense = better for scorer
+          return (b.matchupFactors?.defense?.rank || 0) - (a.matchupFactors?.defense?.rank || 0);
+        case 'goalie':
+          // Lower GSAE = struggling goalie = better for scorer
+          return (a.matchupFactors?.goalie?.gsae || 0) - (b.matchupFactors?.goalie?.gsae || 0);
+        case 'shots':
+          return (b.playerStats?.shotsPerGame || 0) - (a.playerStats?.shotsPerGame || 0);
+        case 'pace':
+          return parseFloat(b.matchupFactors?.pace?.pace || 0) - parseFloat(a.matchupFactors?.pace?.pace || 0);
+        case 'shotPct':
+          return (b.playerStats?.shootingPercentage || 0) - (a.playerStats?.shootingPercentage || 0);
+        default:
+          return 0;
+      }
+    });
+    
+    return players;
+  }, [playerMatchups, selectedGame, positionFilter, sortBy]);
+
+  // All players visible (page is premium-only)
+  const visiblePlayers = filteredPlayers;
+
   // Paywall: Entire page is premium-only
   if (!isPremium) {
     return (
@@ -84,65 +143,6 @@ function TopScorersTonight({ playerMatchups, dataProcessor }) {
       </div>
     );
   }
-
-  // Get unique games for filtering
-  const games = useMemo(() => {
-    if (!playerMatchups) return [];
-    const uniqueGames = [...new Set(playerMatchups.map(p => p.matchup))];
-    return uniqueGames;
-  }, [playerMatchups]);
-
-  // Filter and sort players
-  const filteredPlayers = useMemo(() => {
-    if (!playerMatchups) return [];
-    
-    let players = [...playerMatchups];
-    
-    // Filter by game
-    if (selectedGame !== 'all') {
-      players = players.filter(p => p.matchup === selectedGame);
-    }
-    
-    // Filter by position (forwards vs defense)
-    if (positionFilter === 'forwards') {
-      players = players.filter(p => {
-        const pos = p.playerStats?.position || '';
-        return pos === 'C' || pos === 'L' || pos === 'R' || pos === 'F';
-      });
-    } else if (positionFilter === 'defense') {
-      players = players.filter(p => {
-        const pos = p.playerStats?.position || '';
-        return pos === 'D';
-      });
-    }
-    
-    // Sort
-    players.sort((a, b) => {
-      switch(sortBy) {
-        case 'modelEV':
-          return parseFloat(b.evPercent) - parseFloat(a.evPercent);
-        case 'defense':
-          // Higher rank = weaker defense = better for scorer
-          return (b.matchupFactors?.defense?.rank || 0) - (a.matchupFactors?.defense?.rank || 0);
-        case 'goalie':
-          // Lower GSAE = struggling goalie = better for scorer
-          return (a.matchupFactors?.goalie?.gsae || 0) - (b.matchupFactors?.goalie?.gsae || 0);
-        case 'shots':
-          return (b.playerStats?.shotsPerGame || 0) - (a.playerStats?.shotsPerGame || 0);
-        case 'pace':
-          return parseFloat(b.matchupFactors?.pace?.pace || 0) - parseFloat(a.matchupFactors?.pace?.pace || 0);
-        case 'shotPct':
-          return (b.playerStats?.shootingPercentage || 0) - (a.playerStats?.shootingPercentage || 0);
-        default:
-          return 0;
-      }
-    });
-    
-    return players;
-  }, [playerMatchups, selectedGame, positionFilter, sortBy]);
-
-  // All players visible (page is premium-only)
-  const visiblePlayers = filteredPlayers;
 
   if (!playerMatchups || playerMatchups.length === 0) {
     return (
