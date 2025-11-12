@@ -292,14 +292,14 @@ function parseMoneyPuckPredictions(markdown) {
   
   const lines = markdown.split('\n');
   
+  // Use SAME approach as goalie parser - look for lines with PM ET and team logos
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for game rows with win probabilities
-    // Pattern: "### Chance of Winning:<br>## 50.2%"
-    if (line.includes('Chance of Winning') && line.includes('##')) {
+    // Look for game rows (same as goalie parser)
+    if (line.includes('PM ET') && line.includes('](http://peter-tanner.com/moneypuck/logos/')) {
       try {
-        // Extract ALL team logos using matchAll (same approach as goalie parser)
+        // Extract ALL team logos using matchAll (identical to goalie parser)
         // MoneyPuck format: | AWAY% | AWAY_LOGO | TIME | HOME_LOGO | HOME% |
         const teamMatches = [...line.matchAll(/logos\/([A-Z]{2,3})\.png/g)];
         
@@ -312,11 +312,12 @@ function parseMoneyPuckPredictions(markdown) {
         const awayTeam = teamMatches[0][1];  // First logo = away team
         const homeTeam = teamMatches[1][1];  // Second logo = home team
         
-        // Extract ALL probability percentages
+        // Extract ALL probability percentages (look for ## followed by numbers)
+        // This captures win probabilities displayed as "## 46.2%" or "## 53.8%"
         const probMatches = [...line.matchAll(/##\s*(\d+(?:\.\d+)?)%/g)];
         
         if (probMatches.length < 2) {
-          console.log(`   ⚠️  Found ${probMatches.length} probabilities on line ${i}, expected 2 - skipping`);
+          console.log(`   ⚠️  Found ${probMatches.length} probabilities on line ${i} for ${awayTeam} @ ${homeTeam}, expected 2 - skipping`);
           continue;
         }
         
