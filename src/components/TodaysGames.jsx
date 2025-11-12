@@ -2242,6 +2242,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   const [moneyPuckPredictions, setMoneyPuckPredictions] = useState(null); // MoneyPuck calibration data
+  const [moneyPuckLoading, setMoneyPuckLoading] = useState(true); // Track MoneyPuck loading state
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
@@ -2333,21 +2334,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
   // Load MoneyPuck predictions for model calibration
   useEffect(() => {
+    setMoneyPuckLoading(true);
     fetch('/moneypuck_predictions.json')
       .then(res => res.json())
       .then(data => {
-        setMoneyPuckPredictions(data);
-        console.log(`✅ Loaded ${data.length} MoneyPuck predictions for calibration`);
+        setMoneyPuckPredictions(data || []);
+        setMoneyPuckLoading(false);
+        console.log(`✅ Loaded ${data?.length || 0} MoneyPuck predictions for calibration`);
       })
       .catch(err => {
         console.warn('⚠️ MoneyPuck predictions not available - using fallback ensemble:', err.message);
         setMoneyPuckPredictions([]);  // Empty array (not null) to avoid repeated fetches
+        setMoneyPuckLoading(false);  // Mark complete even on error
       });
   }, []);
 
   // Initialize edge calculator with MoneyPuck calibration
+  // CRITICAL: Wait for MoneyPuck data to load before calculating edges
   useEffect(() => {
-    if (dataProcessor && oddsData) {
+    if (dataProcessor && oddsData && !moneyPuckLoading) {
       // DEBUG: Log MoneyPuck integration status
       console.log('🔍 ==================== MONEYPUCK DEBUG ====================');
       console.log('🔍 MoneyPuck predictions loaded:', moneyPuckPredictions?.length || 0, 'games');
@@ -2382,7 +2387,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const topOpportunities = calculator.getTopEdges(0.015); // 1.5% minimum (B-rated or higher)
       setTopEdges(topOpportunities);
     }
-  }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions]);
+  }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions, moneyPuckLoading]);
   
   // CRITICAL FIX: Merge live/final games that may not have odds into allEdges
   // This ensures games don't disappear when they go live
