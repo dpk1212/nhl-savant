@@ -1042,27 +1042,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
               </div>
             )}
             
-            <div>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.label.size, 
-                color: 'var(--color-text-muted)', 
-                textTransform: TYPOGRAPHY.label.textTransform, 
-                letterSpacing: TYPOGRAPHY.label.letterSpacing, 
-                fontWeight: TYPOGRAPHY.label.weight,
-                marginBottom: '0.25rem'
-              }}>
-                Confidence
-              </div>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.subheading.size, 
-                fontWeight: TYPOGRAPHY.subheading.weight, 
-                color: confidence.color, 
-                lineHeight: TYPOGRAPHY.hero.lineHeight
-              }}>
-                {confidence.level}
-              </div>
-              <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>level</div>
-            </div>
+            {/* CONFIDENCE REMOVED - Using 70% MoneyPuck + 30% Your Model 
+                Agreement metric is more relevant since we're deferring to MoneyPuck */}
+            
             <div>
               <div style={{ 
                 fontSize: TYPOGRAPHY.label.size, 
