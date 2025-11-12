@@ -73,9 +73,10 @@ export const GRADIENTS = {
   accent: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)'
 };
 
-// 5-Tier EV Color Scale
+// 5-Tier EV Color Scale (UNIFIED GRADING SYSTEM)
+// Thresholds calibrated for MoneyPuck ensemble
 export const getEVColorScale = (evPercent) => {
-  if (evPercent >= 10) return { 
+  if (evPercent >= 8) return { 
     color: '#10B981', 
     bg: 'rgba(16, 185, 129, 0.15)',
     label: 'ELITE',
@@ -84,14 +85,20 @@ export const getEVColorScale = (evPercent) => {
   if (evPercent >= 5) return { 
     color: '#059669', 
     bg: 'rgba(5, 150, 105, 0.12)',
-    label: 'STRONG',
+    label: 'EXCELLENT',
     intensity: 4
   };
-  if (evPercent >= 2) return { 
+  if (evPercent >= 3) return { 
     color: '#0EA5E9', 
     bg: 'rgba(14, 165, 233, 0.12)',
-    label: 'GOOD',
+    label: 'STRONG',
     intensity: 3
+  };
+  if (evPercent >= 2) return { 
+    color: '#8B5CF6', 
+    bg: 'rgba(139, 92, 246, 0.12)',
+    label: 'GOOD',
+    intensity: 2
   };
   if (evPercent >= 0) return { 
     color: '#8B5CF6', 

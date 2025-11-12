@@ -1,12 +1,13 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Target, Zap, AlertCircle } from 'lucide-react';
 
-// Get rating for EV percentage
+// Get rating for EV percentage (UNIFIED GRADING SYSTEM)
+// Thresholds calibrated for MoneyPuck ensemble
 const getRating = (evPercent) => {
-  if (evPercent >= 10) return { grade: 'A+', tier: 'ELITE', color: '#10B981' };
-  if (evPercent >= 7) return { grade: 'A', tier: 'EXCELLENT', color: '#059669' };
-  if (evPercent >= 5) return { grade: 'B+', tier: 'STRONG', color: '#0EA5E9' };
-  if (evPercent >= 3) return { grade: 'B', tier: 'GOOD', color: '#8B5CF6' };
+  if (evPercent >= 8) return { grade: 'A+', tier: 'ELITE', color: '#10B981' };
+  if (evPercent >= 5) return { grade: 'A', tier: 'EXCELLENT', color: '#059669' };
+  if (evPercent >= 3) return { grade: 'B+', tier: 'STRONG', color: '#0EA5E9' };
+  if (evPercent >= 2) return { grade: 'B', tier: 'GOOD', color: '#8B5CF6' };
   return { grade: 'C', tier: 'VALUE', color: '#64748B' };
 };
 
