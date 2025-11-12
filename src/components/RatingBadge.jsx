@@ -1,9 +1,10 @@
 import React from 'react';
 import { Award, Star, TrendingUp } from 'lucide-react';
 
-// Get rating for EV percentage
+// Get rating for EV percentage (UNIFIED ENSEMBLE SYSTEM)
+// Thresholds calibrated for MoneyPuck ensemble (which reduces raw EVs by ~30-40%)
 export const getRating = (evPercent) => {
-  if (evPercent >= 10) return { 
+  if (evPercent >= 8) return { 
     grade: 'A+', 
     tier: 'ELITE', 
     color: '#10B981', 
@@ -11,7 +12,7 @@ export const getRating = (evPercent) => {
     borderColor: '#10B981',
     icon: Award
   };
-  if (evPercent >= 7) return { 
+  if (evPercent >= 5) return { 
     grade: 'A', 
     tier: 'EXCELLENT', 
     color: '#059669', 
@@ -19,7 +20,7 @@ export const getRating = (evPercent) => {
     borderColor: '#059669',
     icon: Star
   };
-  if (evPercent >= 5) return { 
+  if (evPercent >= 3) return { 
     grade: 'B+', 
     tier: 'STRONG', 
     color: '#0EA5E9', 
@@ -27,7 +28,7 @@ export const getRating = (evPercent) => {
     borderColor: '#0EA5E9',
     icon: TrendingUp
   };
-  if (evPercent >= 3) return { 
+  if (evPercent >= 2) return { 
     grade: 'B', 
     tier: 'GOOD', 
     color: '#8B5CF6', 

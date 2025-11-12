@@ -907,9 +907,11 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
               fontSize: '0.75rem',
               fontWeight: 700,
               textAlign: 'center',
-              background: bestEdge.qualityGrade === 'A' ? '#10B981' : 
-                         bestEdge.qualityGrade === 'B' ? '#D4AF37' : 
-                         bestEdge.qualityGrade === 'C' ? '#F59E0B' : '#EF4444',
+              background: bestEdge.qualityGrade === 'A+' ? '#10B981' : 
+                         bestEdge.qualityGrade === 'A' ? '#059669' : 
+                         bestEdge.qualityGrade === 'B+' ? '#0EA5E9' : 
+                         bestEdge.qualityGrade === 'B' ? '#8B5CF6' : 
+                         bestEdge.qualityGrade === 'C' ? '#64748B' : '#EF4444',
               color: 'white',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
@@ -2464,8 +2466,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const uniqueGames = new Set(topEdges.map(edge => edge.game));
     const totalOpportunities = uniqueGames.size;
     
-    // ELITE = Bets with Grade A or A+ (high market agreement + strong EV)
-    // Ensemble quality grades: A = ≤3% disagreement, B = 3-5%, C = 5-8%
+    // ELITE = Bets with Grade A or A+ (high market edge after calibration)
+    // Unified grading system: A+ = ≥8% edge, A = ≥5%, B+ = ≥3%, B = ≥2%
     const eliteBets = topEdges.filter(edge => 
       edge.qualityGrade === 'A' || edge.qualityGrade === 'A+'
     );

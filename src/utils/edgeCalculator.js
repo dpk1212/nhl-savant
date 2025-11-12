@@ -138,14 +138,16 @@ export class EdgeCalculator {
     
     // Quality grade based ONLY on market edge (not correction)
     let qualityGrade;
-    if (marketEdge > 0.05) {
-      qualityGrade = 'A';      // >5% market edge
-    } else if (marketEdge > 0.03) {
-      qualityGrade = 'B';      // >3% market edge
-    } else if (marketEdge > 0.02) {
-      qualityGrade = 'C';      // >2% market edge
+    if (marketEdge >= 0.08) {
+      qualityGrade = 'A+';     // ≥8% market edge → ELITE
+    } else if (marketEdge >= 0.05) {
+      qualityGrade = 'A';      // ≥5% market edge → EXCELLENT
+    } else if (marketEdge >= 0.03) {
+      qualityGrade = 'B+';     // ≥3% market edge → STRONG
+    } else if (marketEdge >= 0.02) {
+      qualityGrade = 'B';      // ≥2% market edge → GOOD
     } else {
-      qualityGrade = 'D';      // <2% - filtered
+      qualityGrade = 'C';      // <2% market edge → VALUE (filtered)
     }
     
     // Confidence based on how much correction was needed
