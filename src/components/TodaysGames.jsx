@@ -2366,6 +2366,18 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   // Initialize edge calculator with MoneyPuck calibration
   useEffect(() => {
     if (dataProcessor && oddsData) {
+      // DEBUG: Log MoneyPuck integration status
+      console.log('🔍 ==================== MONEYPUCK DEBUG ====================');
+      console.log('🔍 MoneyPuck predictions loaded:', moneyPuckPredictions?.length || 0, 'games');
+      if (moneyPuckPredictions && moneyPuckPredictions.length > 0) {
+        console.log('🔍 MoneyPuck data:', moneyPuckPredictions);
+        moneyPuckPredictions.forEach(pred => {
+          console.log(`   - ${pred.awayTeam} @ ${pred.homeTeam}: ${(pred.awayProb * 100).toFixed(1)}% / ${(pred.homeProb * 100).toFixed(1)}%`);
+        });
+      } else {
+        console.log('🔍 ⚠️ No MoneyPuck predictions available - will use market ensemble fallback');
+      }
+      
       // Pass MoneyPuck predictions for calibration (falls back to market ensemble if unavailable)
       const calculator = new EdgeCalculator(dataProcessor, oddsData, startingGoalies, moneyPuckPredictions);
       setEdgeCalculator(calculator);
