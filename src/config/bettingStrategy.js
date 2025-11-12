@@ -35,7 +35,7 @@ export const BETTING_STRATEGY = {
   // Only bet when model and market reasonably agree
   
   MAX_AGREEMENT: 0.05,       // 5% - Maximum disagreement with market
-  MIN_EV: 0.04,              // 4% - Minimum expected value (ensemble-based)
+  MIN_EV: 0.02,              // 2% - Minimum expected value (ensemble-based, lower than raw model)
   MIN_QUALITY_GRADE: 'C',    // C or better - Filters out D-grade bets
   
   // QUALITY GRADING SYSTEM:
@@ -105,7 +105,7 @@ export const STRATEGIES = {
     MODEL_WEIGHT: 0.65,
     MARKET_WEIGHT: 0.35,
     MAX_AGREEMENT: 0.05,      // 5% filter
-    MIN_EV: 0.04,             // 4% minimum
+    MIN_EV: 0.02,             // 2% minimum (ensemble EVs are lower than raw)
     MIN_QUALITY_GRADE: 'C',   // C or better
     KELLY_FRACTION: 0.25,     // Quarter Kelly
     MAX_KELLY: 0.05,          // 5% max bet

@@ -2327,8 +2327,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       }).length;
       trackBetsLoaded(edges.length, betsWithEV);
       
-      // Get all opportunities (games with B-rated or higher bets)
-      const topOpportunities = calculator.getTopEdges(3); // 3% = B-rated minimum
+      // Get all opportunities (games with quality-filtered bets)
+      // NOTE: Ensemble EVs are lower than raw model EVs due to market blending
+      // Using 2% threshold since ensemble adjusts EVs downward
+      const topOpportunities = calculator.getTopEdges(0.02); // 2% minimum for ensemble strategy
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData, startingGoalies]);
