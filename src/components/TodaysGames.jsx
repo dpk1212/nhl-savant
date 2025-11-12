@@ -2378,8 +2378,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       
       // Get all opportunities (games with quality-filtered bets)
       // NOTE: Ensemble EVs are lower than raw model EVs due to market blending
-      // Using 2% threshold since ensemble adjusts EVs downward
-      const topOpportunities = calculator.getTopEdges(0.02); // 2% minimum for ensemble strategy
+      // Using 1.5% threshold to capture even slightly positive EV bets
+      const topOpportunities = calculator.getTopEdges(0.015); // 1.5% minimum (B-rated or higher)
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions]);
@@ -2543,7 +2543,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const totalOpportunities = uniqueGames.size;
     
     // ELITE = Bets with Grade A or A+ (high market edge after calibration)
-    // Ensemble-optimized grading: A+ = ≥4.5% edge, A = ≥3.5%, B+ = ≥2.5%, B = ≥2.0%
+    // Ensemble-optimized grading: A+ = ≥5% EV, A = ≥3.5% EV, B+ = ≥2.5% EV, B = ≥1.5% EV
     const eliteBets = topEdges.filter(edge => 
       edge.qualityGrade === 'A' || edge.qualityGrade === 'A+'
     );
