@@ -97,6 +97,10 @@ export class NHLDataProcessor {
     // Shot rates per-60 (for pace factor calculation)
     processed.shotsOnGoalFor_per60 = this.calculatePer60Rate(safeGet(team.shotsOnGoalFor), safeGet(team.iceTime));
     processed.shotsOnGoalAgainst_per60 = this.calculatePer60Rate(safeGet(team.shotsOnGoalAgainst), safeGet(team.iceTime));
+    processed.shotAttempts_per60 = this.calculatePer60Rate(safeGet(team.shotAttemptsFor), safeGet(team.iceTime));
+    processed.shotAttemptsAgainst_per60 = this.calculatePer60Rate(safeGet(team.shotAttemptsAgainst), safeGet(team.iceTime));
+    processed.blockedShotsAgainst = safeGet(team.blockedShotAttemptsAgainst, 0);
+    processed.penalityMinutes = safeGet(team.penalityMinutesFor, 0);
     
     // Special teams per-60 (situational)
     if (team.situation === '5on4') {
