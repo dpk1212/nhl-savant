@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, TrendingUp, Lock, ArrowRight } from 'lucide-react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import { 
   getPerformanceStats,
   getStartDate, 
@@ -15,6 +17,8 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const [loading, setLoading] = useState(true);
   const [roiCounter, setRoiCounter] = useState(0);
   const [discountCode, setDiscountCode] = useState(null);
+  const [aPlusROI, setAPlusROI] = useState(14.3); // Default fallback
+  const [aPlusBetCount, setAPlusBetCount] = useState(69); // Default fallback
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +48,50 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           return () => clearInterval(timer);
         }
       });
+
+      // Fetch A+ rating ROI specifically for paywall
+      const fetchAPlusROI = async () => {
+        try {
+          const q = query(
+            collection(db, 'bets'),
+            where('status', '==', 'COMPLETED')
+          );
+          
+          const snapshot = await getDocs(q);
+          const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+          
+          // Filter for A+ bets (quality bets only, no totals)
+          const aPlusBets = bets.filter(b => 
+            (b.prediction?.rating === 'A+' || b.prediction?.qualityGrade === 'A+') &&
+            b.bet?.market !== 'TOTAL' && 
+            !b.bet?.market?.includes('TOTAL')
+          );
+          
+          if (aPlusBets.length > 0) {
+            const wins = aPlusBets.filter(b => b.result?.outcome === 'WIN').length;
+            const losses = aPlusBets.filter(b => b.result?.outcome === 'LOSS').length;
+            const totalProfit = aPlusBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+            
+            // Calculate ROI same way as Performance page (flat $10 bets)
+            const flatProfit = totalProfit * 10;
+            const roi = (flatProfit / (aPlusBets.length * 10)) * 100;
+            
+            console.log('📊 A+ Stats:', { 
+              bets: aPlusBets.length, 
+              wins, 
+              losses, 
+              roi: roi.toFixed(1) + '%' 
+            });
+            
+            setAPlusROI(roi);
+            setAPlusBetCount(aPlusBets.length);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching A+ ROI:', error);
+        }
+      };
+      
+      fetchAPlusROI();
     } else {
       setRoiCounter(0);
     }
@@ -337,14 +385,14 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               fontWeight: '700',
               color: '#10B981'
             }}>
-              A+ PLAYS: +14.3% ROI
+              A+ PLAYS: +{aPlusROI.toFixed(1)}% ROI
             </span>
             <span style={{
               fontSize: isMobile ? '0.75rem' : '0.813rem',
               color: 'rgba(255, 255, 255, 0.6)',
               fontWeight: '500'
             }}>
-              (69 bets tracked)
+              ({aPlusBetCount} bets tracked)
             </span>
           </div>
         </div>
@@ -727,7 +775,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             {[
               { text: "100% transparent", link: "see Performance page" },
               { text: "Every loss tracked publicly" },
-              { text: "+14.3% ROI on A+ plays", highlight: true }
+              { text: `+${aPlusROI.toFixed(1)}% ROI on A+ plays`, highlight: true }
             ].map((item, i) => (
               <li key={i} style={{ marginBottom: '0.375rem' }}>
                 <span style={{ color: '#10B981' }}>✓</span>{' '}
