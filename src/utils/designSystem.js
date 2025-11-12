@@ -73,7 +73,84 @@ export const GRADIENTS = {
   accent: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)'
 };
 
-// 5-Tier EV Color Scale (UNIFIED GRADING SYSTEM)
+// Grade Color Scale (ENSEMBLE QUALITY GRADING)
+// Maps letter grades (from ensemble agreement system) to colors
+export const getGradeColorScale = (grade) => {
+  switch (grade) {
+    case 'A+':
+      return {
+        color: '#10B981',
+        bg: 'rgba(16, 185, 129, 0.15)',
+        bgColor: 'rgba(16, 185, 129, 0.15)',
+        borderColor: '#10B981',
+        label: 'ELITE',
+        tier: 'ELITE',
+        intensity: 5
+      };
+    case 'A':
+      return {
+        color: '#059669',
+        bg: 'rgba(5, 150, 105, 0.12)',
+        bgColor: 'rgba(5, 150, 105, 0.15)',
+        borderColor: '#059669',
+        label: 'EXCELLENT',
+        tier: 'EXCELLENT',
+        intensity: 4
+      };
+    case 'B+':
+      return {
+        color: '#0EA5E9',
+        bg: 'rgba(14, 165, 233, 0.12)',
+        bgColor: 'rgba(14, 165, 233, 0.15)',
+        borderColor: '#0EA5E9',
+        label: 'STRONG',
+        tier: 'STRONG',
+        intensity: 3
+      };
+    case 'B':
+      return {
+        color: '#8B5CF6',
+        bg: 'rgba(139, 92, 246, 0.12)',
+        bgColor: 'rgba(139, 92, 246, 0.15)',
+        borderColor: '#8B5CF6',
+        label: 'GOOD',
+        tier: 'GOOD',
+        intensity: 2
+      };
+    case 'C':
+      return {
+        color: '#F59E0B',
+        bg: 'rgba(245, 158, 11, 0.12)',
+        bgColor: 'rgba(245, 158, 11, 0.15)',
+        borderColor: '#F59E0B',
+        label: 'VALUE',
+        tier: 'VALUE',
+        intensity: 1
+      };
+    case 'D':
+      return {
+        color: '#EF4444',
+        bg: 'rgba(239, 68, 68, 0.12)',
+        bgColor: 'rgba(239, 68, 68, 0.15)',
+        borderColor: '#EF4444',
+        label: 'RISKY',
+        tier: 'RISKY',
+        intensity: 0
+      };
+    default:
+      return {
+        color: '#64748B',
+        bg: 'rgba(100, 116, 139, 0.08)',
+        bgColor: 'rgba(100, 116, 139, 0.15)',
+        borderColor: '#64748B',
+        label: 'N/A',
+        tier: 'N/A',
+        intensity: 0
+      };
+  }
+};
+
+// 5-Tier EV Color Scale (LEGACY - use getGradeColorScale for new code)
 // Thresholds calibrated for MoneyPuck ensemble
 export const getEVColorScale = (evPercent) => {
   if (evPercent >= 8) return { 
