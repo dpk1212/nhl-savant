@@ -2,9 +2,23 @@
 import { parseBothFiles } from './oddsTraderParser.js';
 
 export class EdgeCalculator {
-  constructor(dataProcessor, oddsFiles, startingGoalies = null) {
+  constructor(dataProcessor, oddsFiles, startingGoalies = null, config = {}) {
     this.dataProcessor = dataProcessor;
     this.startingGoalies = startingGoalies;
+    
+    // MARKET ENSEMBLE CONFIG - November 2025
+    // Blend model predictions with market odds for smarter bet selection
+    this.config = {
+      modelWeight: config.modelWeight || 0.65,        // 65% our model
+      marketWeight: config.marketWeight || 0.35,      // 35% market odds
+      maxAgreement: config.maxAgreement || 0.05,      // 5% max disagreement
+      minEV: config.minEV || 0.04,                    // 4% minimum edge
+      minQuality: config.minQuality || 'C',           // Minimum quality grade
+      kellyFraction: config.kellyFraction || 0.25,    // Quarter Kelly sizing
+      maxKelly: config.maxKelly || 0.05,              // 5% max bet
+      useEnsemble: config.useEnsemble !== false       // Enable by default
+    };
+    
     // TOTALS BETTING REMOVED: Focus on elite 64.7% moneyline performance
     
     // Use parseBothFiles if we have both money and total files
@@ -33,6 +47,99 @@ export class EdgeCalculator {
     }
     
     return null;
+  }
+
+  /**
+   * MARKET ENSEMBLE - Calculate Bayesian-optimal blend of model + market probabilities
+   * 
+   * Goal: Combine our model's prediction with market wisdom to filter out false positives
+   * and improve overall ROI by betting only when we have high-confidence edges.
+   * 
+   * @param {number} modelProb - Our model's win probability (0-1)
+   * @param {number} marketOdds - American odds (e.g., +150, -180)
+   * @returns {object} Ensemble data with quality metrics
+   */
+  calculateEnsembleProbability(modelProb, marketOdds) {
+    // Convert American odds to implied probability
+    const marketProb = this.dataProcessor.oddsToProbability(marketOdds);
+    
+    // Bayesian ensemble: Weighted average
+    // 65% our model (we trust it, but not blindly)
+    // 35% market (sharp bettors move lines, they have info we don't)
+    const ensembleProb = (modelProb * this.config.modelWeight) + 
+                         (marketProb * this.config.marketWeight);
+    
+    // Calculate agreement (how much do we disagree with the market?)
+    const agreement = Math.abs(modelProb - marketProb);
+    
+    // Assign confidence level and quality grade based on agreement
+    let confidence, qualityGrade;
+    if (agreement <= 0.03) {
+      // Model and market strongly agree - HIGH CONFIDENCE
+      confidence = 'VERY_HIGH';
+      qualityGrade = 'A';
+    } else if (agreement <= 0.05) {
+      // Moderate agreement - GOOD CONFIDENCE
+      confidence = 'HIGH';
+      qualityGrade = 'B';
+    } else if (agreement <= 0.08) {
+      // Some disagreement - MODERATE CONFIDENCE
+      confidence = 'MEDIUM';
+      qualityGrade = 'C';
+    } else {
+      // Major disagreement - LOW CONFIDENCE (likely false positive)
+      confidence = 'LOW';
+      qualityGrade = 'D';
+    }
+    
+    return {
+      ensembleProb,      // Blended probability (use for EV calculation)
+      modelProb,         // Our raw prediction
+      marketProb,        // Market's opinion
+      agreement,         // Absolute difference (quality metric)
+      confidence,        // Human-readable confidence
+      qualityGrade       // Letter grade (A-D)
+    };
+  }
+
+  /**
+   * ENHANCED KELLY SIZING - Calculate optimal bet size with safety controls
+   * 
+   * Uses quarter-Kelly (25%) for conservative bankroll management.
+   * 
+   * @param {number} probability - Win probability (0-1)
+   * @param {number} odds - American odds
+   * @returns {object} Kelly sizing recommendations
+   */
+  calculateKellyStake(probability, odds) {
+    // Convert American odds to decimal
+    const decimalOdds = odds < 0 
+      ? (100 / Math.abs(odds)) + 1
+      : (odds / 100) + 1;
+    
+    // Kelly formula: f* = (p * b - q) / b
+    // Where: p = win probability, q = 1-p, b = decimal odds - 1
+    const b = decimalOdds - 1;
+    const p = probability;
+    const q = 1 - p;
+    
+    let fullKelly = (p * b - q) / b;
+    
+    // Apply fractional Kelly (25% for safety - reduces variance)
+    let kelly = fullKelly * this.config.kellyFraction;
+    
+    // Cap at maximum (5% of bankroll per bet)
+    kelly = Math.min(kelly, this.config.maxKelly);
+    
+    // Floor at 0 (never bet negative)
+    kelly = Math.max(kelly, 0);
+    
+    return {
+      fullKelly,                      // Raw Kelly (not recommended - too aggressive)
+      fractionalKelly: kelly,         // Quarter Kelly (recommended)
+      recommendedPercent: kelly * 100, // Display as percentage
+      maxBet: this.config.maxKelly * 100
+    };
   }
 
   // Calculate all edges for today's games
@@ -90,6 +197,7 @@ export class EdgeCalculator {
 
   // Calculate moneyline edge
   // CRITICAL FIX: Use pre-calculated scores instead of recalculating
+  // MARKET ENSEMBLE: Blend model + market probabilities for smarter EV calculation
   calculateMoneylineEdge(game, awayScore, homeScore) {
     if (!game.moneyline.away || !game.moneyline.home) {
       return { away: null, home: null };
@@ -100,29 +208,63 @@ export class EdgeCalculator {
     const homeWinProb = this.dataProcessor.calculatePoissonWinProb(homeScore, awayScore);
     const awayWinProb = this.dataProcessor.calculatePoissonWinProb(awayScore, homeScore);
     
-    // Calculate EV for each side using the model probabilities
-    const awayEV = this.dataProcessor.calculateEV(awayWinProb, game.moneyline.away);
-    const homeEV = this.dataProcessor.calculateEV(homeWinProb, game.moneyline.home);
+    // MARKET ENSEMBLE: Calculate blended probabilities with quality metrics
+    const homeEnsemble = this.config.useEnsemble 
+      ? this.calculateEnsembleProbability(homeWinProb, game.moneyline.home)
+      : { 
+          ensembleProb: homeWinProb, 
+          modelProb: homeWinProb, 
+          marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
+          agreement: Math.abs(homeWinProb - this.dataProcessor.oddsToProbability(game.moneyline.home)),
+          confidence: 'UNKNOWN',
+          qualityGrade: 'N/A'
+        };
     
-    // Calculate Kelly stakes using model probabilities
-    const awayKelly = this.dataProcessor.calculateKellyStake(awayWinProb, game.moneyline.away);
-    const homeKelly = this.dataProcessor.calculateKellyStake(homeWinProb, game.moneyline.home);
+    const awayEnsemble = this.config.useEnsemble
+      ? this.calculateEnsembleProbability(awayWinProb, game.moneyline.away)
+      : { 
+          ensembleProb: awayWinProb, 
+          modelProb: awayWinProb, 
+          marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
+          agreement: Math.abs(awayWinProb - this.dataProcessor.oddsToProbability(game.moneyline.away)),
+          confidence: 'UNKNOWN',
+          qualityGrade: 'N/A'
+        };
+    
+    // Calculate EV using ENSEMBLE probability (blended model + market)
+    // This reduces false positives by incorporating market wisdom
+    const awayEV = this.dataProcessor.calculateEV(awayEnsemble.ensembleProb, game.moneyline.away);
+    const homeEV = this.dataProcessor.calculateEV(homeEnsemble.ensembleProb, game.moneyline.home);
+    
+    // Calculate Kelly stakes using ensemble probabilities
+    const awayKelly = this.calculateKellyStake(awayEnsemble.ensembleProb, game.moneyline.away);
+    const homeKelly = this.calculateKellyStake(homeEnsemble.ensembleProb, game.moneyline.home);
     
     return {
       away: {
         ev: awayEV,
         evPercent: awayEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: awayWinProb,
-        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
+        marketProb: awayEnsemble.marketProb,
+        ensembleProb: awayEnsemble.ensembleProb,      // NEW: Blended probability
+        agreement: awayEnsemble.agreement,             // NEW: Quality metric
+        confidence: awayEnsemble.confidence,           // NEW: Human-readable
+        qualityGrade: awayEnsemble.qualityGrade,       // NEW: A-D grading
         kelly: awayKelly,
+        recommendedUnit: awayKelly.fractionalKelly,    // NEW: Sizing recommendation
         odds: game.moneyline.away
       },
       home: {
         ev: homeEV,
         evPercent: homeEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
         modelProb: homeWinProb,
-        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
+        marketProb: homeEnsemble.marketProb,
+        ensembleProb: homeEnsemble.ensembleProb,      // NEW: Blended probability
+        agreement: homeEnsemble.agreement,             // NEW: Quality metric
+        confidence: homeEnsemble.confidence,           // NEW: Human-readable
+        qualityGrade: homeEnsemble.qualityGrade,       // NEW: A-D grading
         kelly: homeKelly,
+        recommendedUnit: homeKelly.fractionalKelly,    // NEW: Sizing recommendation
         odds: game.moneyline.home
       }
     };
@@ -193,43 +335,92 @@ export class EdgeCalculator {
   // ============================================================================
 
   // Get top edges across all markets
-  getTopEdges(minEV = 0) {
+  // MARKET ENSEMBLE: Apply quality filters to focus on high-confidence bets
+  getTopEdges(minEV = 0, options = {}) {
+    // Allow override of default config for testing
+    const {
+      maxAgreement = this.config.maxAgreement,    // 5% max disagreement
+      minQuality = this.config.minQuality,         // Minimum quality grade
+      useFilters = this.config.useEnsemble         // Enable quality filters
+    } = options;
+    
     const allEdges = this.calculateAllEdges();
     const opportunities = [];
+    const gradeOrder = ['A', 'B', 'C', 'D', 'N/A'];
     
     allEdges.forEach(gameEdges => {
       // Moneyline edges
       if (gameEdges.edges.moneyline.away && gameEdges.edges.moneyline.away.ev > minEV) {
+        const edge = gameEdges.edges.moneyline.away;
+        
+        // QUALITY FILTER 1: Market agreement threshold
+        if (useFilters && edge.agreement > maxAgreement) {
+          console.log(`⚠️ Filtered ${gameEdges.awayTeam} AWAY: Agreement ${(edge.agreement * 100).toFixed(1)}% > ${(maxAgreement * 100).toFixed(0)}%`);
+          return;
+        }
+        
+        // QUALITY FILTER 2: Minimum quality grade
+        if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
+          console.log(`⚠️ Filtered ${gameEdges.awayTeam} AWAY: Grade ${edge.qualityGrade} < ${minQuality}`);
+          return;
+        }
+        
         opportunities.push({
           game: gameEdges.game,
           gameTime: gameEdges.gameTime,
           market: 'MONEYLINE',
           pick: `${gameEdges.awayTeam} (AWAY)`,
           team: gameEdges.awayTeam,
-          odds: gameEdges.edges.moneyline.away.odds,
-          ev: gameEdges.edges.moneyline.away.ev,
-          evPercent: gameEdges.edges.moneyline.away.evPercent,
-          modelProb: gameEdges.edges.moneyline.away.modelProb,
-          kelly: gameEdges.edges.moneyline.away.kelly
+          odds: edge.odds,
+          ev: edge.ev,
+          evPercent: edge.evPercent,
+          modelProb: edge.modelProb,
+          marketProb: edge.marketProb,
+          ensembleProb: edge.ensembleProb,         // NEW
+          agreement: edge.agreement,                // NEW
+          confidence: edge.confidence,              // NEW
+          qualityGrade: edge.qualityGrade,          // NEW
+          kelly: edge.kelly,
+          recommendedUnit: edge.recommendedUnit     // NEW
         });
       }
       
       if (gameEdges.edges.moneyline.home && gameEdges.edges.moneyline.home.ev > minEV) {
+        const edge = gameEdges.edges.moneyline.home;
+        
+        // QUALITY FILTER 1: Market agreement threshold
+        if (useFilters && edge.agreement > maxAgreement) {
+          console.log(`⚠️ Filtered ${gameEdges.homeTeam} HOME: Agreement ${(edge.agreement * 100).toFixed(1)}% > ${(maxAgreement * 100).toFixed(0)}%`);
+          return;
+        }
+        
+        // QUALITY FILTER 2: Minimum quality grade
+        if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
+          console.log(`⚠️ Filtered ${gameEdges.homeTeam} HOME: Grade ${edge.qualityGrade} < ${minQuality}`);
+          return;
+        }
+        
         opportunities.push({
           game: gameEdges.game,
           gameTime: gameEdges.gameTime,
           market: 'MONEYLINE',
           pick: `${gameEdges.homeTeam} (HOME)`,
           team: gameEdges.homeTeam,
-          odds: gameEdges.edges.moneyline.home.odds,
-          ev: gameEdges.edges.moneyline.home.ev,
-          evPercent: gameEdges.edges.moneyline.home.evPercent,
-          modelProb: gameEdges.edges.moneyline.home.modelProb,
-          kelly: gameEdges.edges.moneyline.home.kelly
+          odds: edge.odds,
+          ev: edge.ev,
+          evPercent: edge.evPercent,
+          modelProb: edge.modelProb,
+          marketProb: edge.marketProb,
+          ensembleProb: edge.ensembleProb,         // NEW
+          agreement: edge.agreement,                // NEW
+          confidence: edge.confidence,              // NEW
+          qualityGrade: edge.qualityGrade,          // NEW
+          kelly: edge.kelly,
+          recommendedUnit: edge.recommendedUnit     // NEW
         });
       }
       
-      // Puck line edges
+      // Puck line edges (no ensemble for now - would need separate implementation)
       if (gameEdges.edges.puckLine.away && gameEdges.edges.puckLine.away.ev > minEV) {
         opportunities.push({
           game: gameEdges.game,
@@ -241,7 +432,9 @@ export class EdgeCalculator {
           ev: gameEdges.edges.puckLine.away.ev,
           evPercent: gameEdges.edges.puckLine.away.evPercent,
           modelProb: gameEdges.edges.puckLine.away.modelProb,
-          kelly: null
+          qualityGrade: 'N/A',  // No ensemble grading for puck line yet
+          kelly: null,
+          recommendedUnit: null
         });
       }
       
@@ -256,15 +449,25 @@ export class EdgeCalculator {
           ev: gameEdges.edges.puckLine.home.ev,
           evPercent: gameEdges.edges.puckLine.home.evPercent,
           modelProb: gameEdges.edges.puckLine.home.modelProb,
-          kelly: null
+          qualityGrade: 'N/A',  // No ensemble grading for puck line yet
+          kelly: null,
+          recommendedUnit: null
         });
       }
       
       // TOTALS EDGES REMOVED: Focus on moneyline and puck line only
     });
     
-    // Sort by EV percentage (highest first)
-    return opportunities.sort((a, b) => b.evPercent - a.evPercent);
+    // Sort by quality (A first) then by EV
+    return opportunities.sort((a, b) => {
+      // First sort by quality grade (A > B > C > D)
+      const gradeCompare = gradeOrder.indexOf(a.qualityGrade || 'N/A') - 
+                           gradeOrder.indexOf(b.qualityGrade || 'N/A');
+      if (gradeCompare !== 0) return gradeCompare;
+      
+      // Then sort by EV (highest first)
+      return b.evPercent - a.evPercent;
+    });
   }
 }
 
