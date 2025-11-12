@@ -38,11 +38,12 @@ export const BETTING_STRATEGY = {
   MIN_EV: 0.02,              // 2% - Minimum expected value (ensemble-based, lower than raw model)
   MIN_QUALITY_GRADE: 'C',    // C or better - Filters out D-grade bets
   
-  // QUALITY GRADING SYSTEM:
-  // - A Grade: ≤3% disagreement  (ELITE - highest confidence)
-  // - B Grade: 3-5% disagreement (GOOD - recommended)
-  // - C Grade: 5-8% disagreement (MODERATE - acceptable)
-  // - D Grade: >8% disagreement  (RISKY - likely false positive)
+  // UNIFIED QUALITY GRADING SYSTEM (MoneyPuck Ensemble):
+  // - A+ Grade: ≥8% market edge (ELITE - extremely rare)
+  // - A  Grade: ≥5% market edge (EXCELLENT - highest confidence)
+  // - B+ Grade: ≥3% market edge (STRONG - recommended)
+  // - B  Grade: ≥2% market edge (GOOD - acceptable)
+  // - C  Grade: <2% market edge (VALUE - filtered out)
   
   // ============================================================================
   // KELLY SIZING
@@ -173,15 +174,16 @@ export function loadStrategyPreset(strategyName) {
 
 /**
  * Get quality grade description
- * @param {string} grade - Quality grade (A-D)
+ * @param {string} grade - Quality grade (A+ to C)
  * @returns {string} Human-readable description
  */
 export function getGradeDescription(grade) {
   const descriptions = {
-    'A': 'ELITE - Model and market strongly agree (≤3% difference)',
-    'B': 'GOOD - Moderate agreement (3-5% difference)',
-    'C': 'ACCEPTABLE - Some disagreement (5-8% difference)',
-    'D': 'RISKY - Major disagreement (>8% difference) - Likely false positive'
+    'A+': 'ELITE - ≥8% market edge (extremely rare)',
+    'A': 'EXCELLENT - ≥5% market edge (highest confidence)',
+    'B+': 'STRONG - ≥3% market edge (recommended)',
+    'B': 'GOOD - ≥2% market edge (acceptable)',
+    'C': 'VALUE - <2% market edge (filtered out)'
   };
   return descriptions[grade] || 'Unknown grade';
 }

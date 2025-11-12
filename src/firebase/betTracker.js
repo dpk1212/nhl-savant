@@ -390,20 +390,21 @@ export class BetTracker {
       : 100 / (odds + 100);
   }
   
+  // UNIFIED GRADING SYSTEM (calibrated for MoneyPuck ensemble)
   getRating(evPercent) {
-    if (evPercent >= 10) return 'A+';
-    if (evPercent >= 7) return 'A';
-    if (evPercent >= 5) return 'B+';
-    if (evPercent >= 3) return 'B';
-    return 'C';
+    if (evPercent >= 8) return 'A+';   // ≥8% → ELITE
+    if (evPercent >= 5) return 'A';    // ≥5% → EXCELLENT
+    if (evPercent >= 3) return 'B+';   // ≥3% → STRONG
+    if (evPercent >= 2) return 'B';    // ≥2% → GOOD
+    return 'C';                         // <2% → VALUE
   }
   
   getTier(evPercent) {
-    if (evPercent >= 10) return 'ELITE';
-    if (evPercent >= 7) return 'EXCELLENT';
-    if (evPercent >= 5) return 'STRONG';
-    if (evPercent >= 3) return 'GOOD';
-    return 'VALUE';
+    if (evPercent >= 8) return 'ELITE';       // ≥8%
+    if (evPercent >= 5) return 'EXCELLENT';   // ≥5%
+    if (evPercent >= 3) return 'STRONG';      // ≥3%
+    if (evPercent >= 2) return 'GOOD';        // ≥2%
+    return 'VALUE';                           // <2%
   }
 }
 
