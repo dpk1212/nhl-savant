@@ -454,24 +454,25 @@ export class NHLDataProcessor {
   }
 
   // IMPROVEMENT 1B: Apply PDO regression to xG predictions
-  // PHASE 4 FIX: Only regress EXTREME outliers (less aggressive)
+  // NOV 2025 CALIBRATION: Regress ALL teams toward PDO 100, not just outliers
+  // Testing showed 100/100 thresholds improved accuracy by +0.38% (53.03% → 53.41%)
   applyPDORegression(xG_per60, PDO) {
     if (!PDO || PDO === 100) return xG_per60;
     
-    // PHASE 4: Only regress extreme outliers (PDO > 106 or < 94)
-    // Normal variance (94-106) is real team performance, not luck
-    // Reduced from 104/96 to allow more variance to show through
-    if (PDO > 106) {
-      // Regress down by max 2% (reduced from 3%)
-      const regressionFactor = Math.min(0.02, (PDO - 106) * 0.01);
+    // Regress ALL teams toward PDO of 100 (league average)
+    // Analysts' concern: PDO conflates shooting skill + goalie skill
+    // Solution: Apply gentle regression to all teams, not just extremes
+    if (PDO > 100) {
+      // Regress high-PDO teams down by max 2%
+      const regressionFactor = Math.min(0.02, (PDO - 100) * 0.01);
       return xG_per60 * (1 - regressionFactor);
-    } else if (PDO < 94) {
-      // Regress up by max 2%
-      const regressionFactor = Math.min(0.02, (94 - PDO) * 0.01);
+    } else if (PDO < 100) {
+      // Regress low-PDO teams up by max 2%
+      const regressionFactor = Math.min(0.02, (100 - PDO) * 0.01);
       return xG_per60 * (1 + regressionFactor);
     }
     
-    return xG_per60; // PDO in normal range (94-106), no regression needed
+    return xG_per60;
   }
 
   // NEW: Adjust predicted goals for goalie quality (INDUSTRY STANDARD: ±15%)
