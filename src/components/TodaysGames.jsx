@@ -2436,53 +2436,28 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     return result;
   }, [goalieProcessor, startingGoalies]); // Re-create when goalieProcessor or startingGoalies change
   
-  // Calculate opportunities with consistent logic
-  // STANDARD DEFINITIONS (matches rating system in RatingBadge.jsx):
-  // - +EV = Games with at least one B-rated or higher bet (EV >= 3%)
-  // - ELITE = Games where BEST bet is A-rated or higher (EV >= 7%)
-  // Rating system: A+ = 10%+, A = 7-10%, B+ = 5-7%, B = 3-5%
+  // Calculate opportunities using ensemble-filtered topEdges (consistency fix)
+  // ENSEMBLE STRATEGY: Use quality-filtered picks instead of raw EV thresholds
+  // This ensures counts match what's actually displayed in the UI
   const getOpportunityCounts = () => {
-    // Filter to only games that have at least one B-rated or higher bet (>= 3% EV)
-    const opportunities = allEdges.filter(game => {
-      let hasQualityBet = false;
-      
-      // Check moneyline (only count B-rated or higher)
-      if (game.edges.moneyline?.away?.evPercent >= 3 || game.edges.moneyline?.home?.evPercent >= 3) {
-        hasQualityBet = true;
-      }
-      
-      // Check totals (only count B-rated or higher)
-      if (game.edges.total?.over?.evPercent >= 3 || game.edges.total?.under?.evPercent >= 3) {
-        hasQualityBet = true;
-      }
-      
-      return hasQualityBet;
-    });
+    if (!topEdges || topEdges.length === 0) {
+      return { total: 0, highValue: 0 };
+    }
     
-    // ELITE = GAMES where BEST bet is A-rated or higher (EV >= 7%)
-    // Rating system: A+ = 10%+, A = 7-10%, B+ = 5-7%, B = 3-5%
-    const highValue = opportunities.filter(game => {
-      let bestEV = 0;
-      
-      // Check moneyline
-      if (game.edges.moneyline) {
-        if (game.edges.moneyline.away?.evPercent > bestEV) bestEV = game.edges.moneyline.away.evPercent;
-        if (game.edges.moneyline.home?.evPercent > bestEV) bestEV = game.edges.moneyline.home.evPercent;
-      }
-      
-      // Check totals
-      if (game.edges.total) {
-        if (game.edges.total.over?.evPercent > bestEV) bestEV = game.edges.total.over.evPercent;
-        if (game.edges.total.under?.evPercent > bestEV) bestEV = game.edges.total.under.evPercent;
-      }
-      
-      // ELITE = A-rated or higher (7%+ EV)
-      return bestEV >= 7;
-    }).length;
+    // Count unique games (topEdges may have multiple bets per game)
+    const uniqueGames = new Set(topEdges.map(edge => edge.game));
+    const totalOpportunities = uniqueGames.size;
+    
+    // ELITE = Bets with Grade A or A+ (high market agreement + strong EV)
+    // Ensemble quality grades: A = ≤3% disagreement, B = 3-5%, C = 5-8%
+    const eliteBets = topEdges.filter(edge => 
+      edge.qualityGrade === 'A' || edge.qualityGrade === 'A+'
+    );
+    const eliteGames = new Set(eliteBets.map(edge => edge.game));
     
     return {
-      total: opportunities.length,
-      highValue: highValue
+      total: totalOpportunities,
+      highValue: eliteGames.size
     };
   };
   
@@ -2835,45 +2810,36 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* Compact Picks Bar - Show positive EV opportunities */}
-      {allEdges && allEdges.length > 0 && (() => {
-        // Generate picks bar from allEdges (real-time calculations)
-        // This ensures the bar always shows when there are opportunities
+      {/* Compact Picks Bar - Show quality-filtered ensemble opportunities */}
+      {topEdges && topEdges.length > 0 && (() => {
+        // ENSEMBLE STRATEGY: Use topEdges (quality-filtered) instead of allEdges
+        // This ensures summary bar matches individual game cards (consistency fix)
         const gameGroups = [];
+        const gameMap = new Map(); // Group bets by game
         
-        allEdges.forEach(game => {
-          const bets = [];
+        topEdges.forEach(edge => {
+          const gameKey = edge.game;
           
-          // Check moneyline
-          if (game.edges?.moneyline) {
-            if (game.edges.moneyline.away?.evPercent >= 3) {
-              bets.push({
-                pick: `${game.awayTeam} ML`,
-                market: 'MONEYLINE',
-                grade: getRating(game.edges.moneyline.away.evPercent).grade,
-                odds: game.edges.moneyline.away.odds,
-                edge: `+${game.edges.moneyline.away.evPercent.toFixed(1)}%`
-              });
-            }
-            if (game.edges.moneyline.home?.evPercent >= 3) {
-              bets.push({
-                pick: `${game.homeTeam} ML`,
-                market: 'MONEYLINE',
-                grade: getRating(game.edges.moneyline.home.evPercent).grade,
-                odds: game.edges.moneyline.home.odds,
-                edge: `+${game.edges.moneyline.home.evPercent.toFixed(1)}%`
-              });
-            }
-          }
-          
-          if (bets.length > 0) {
-            gameGroups.push({
-              game: `${game.awayTeam} @ ${game.homeTeam}`,
-              gameTime: game.gameTime,
-              bets
+          if (!gameMap.has(gameKey)) {
+            gameMap.set(gameKey, {
+              game: gameKey,
+              gameTime: edge.gameTime,
+              bets: []
             });
           }
+          
+          // Use ensemble qualityGrade instead of EV-based getRating()
+          gameMap.get(gameKey).bets.push({
+            pick: edge.pick,
+            market: edge.market,
+            grade: edge.qualityGrade || 'B', // Ensemble quality grade (A/B/C/D)
+            odds: edge.odds,
+            edge: `+${edge.evPercent.toFixed(1)}%`
+          });
         });
+        
+        // Convert map to array
+        gameGroups.push(...gameMap.values());
         
         return gameGroups.length > 0 ? (
           <div style={{ marginBottom: '1.5rem' }}>
