@@ -105,9 +105,13 @@ async function fetchAllData() {
     console.log('   - Scraped MoneyPuck homepage');
     console.log(`   - Size: ${moneyPuckResult.markdown?.length || 0} characters`);
     
-    // Parse starting goalies from MoneyPuck homepage
+    // Parse starting goalies AND predictions from MoneyPuck homepage
     const scrapedGoalies = parseMoneyPuckStartingGoalies(moneyPuckResult.markdown);
     console.log(`   - Parsed ${scrapedGoalies.length} games from MoneyPuck scrape`);
+    
+    // Parse MoneyPuck win probability predictions for model calibration
+    const moneyPuckPredictions = parseMoneyPuckPredictions(moneyPuckResult.markdown);
+    console.log(`   - Parsed ${moneyPuckPredictions.length} MoneyPuck predictions`);
     
     // VALIDATE: Filter to only today's scheduled games
     const scheduledGames = getTodaysScheduledGames();
@@ -164,6 +168,25 @@ async function fetchAllData() {
       results.goalies = true;
     }
     
+    // 3. Save MoneyPuck predictions for model calibration
+    console.log('🎯 Saving MoneyPuck predictions for model calibration...');
+    if (moneyPuckPredictions.length === 0) {
+      console.log('   ⚠️  WARNING: No predictions found in MoneyPuck scrape');
+      console.log('   ⚠️  Keeping existing moneypuck_predictions.json file');
+      results.moneyPuckPredictions = false;
+    } else {
+      await fs.writeFile(
+        join(__dirname, '../public/moneypuck_predictions.json'),
+        JSON.stringify(moneyPuckPredictions, null, 2),
+        'utf8'
+      );
+      
+      console.log(`✅ MoneyPuck predictions saved`);
+      console.log(`   - Predictions: ${moneyPuckPredictions.length} games`);
+      console.log(`   - File: public/moneypuck_predictions.json\n`);
+      results.moneyPuckPredictions = true;
+    }
+    
     // Summary
     console.log('========================================');
     console.log('✅ ALL DATA FETCHED SUCCESSFULLY!');
@@ -171,12 +194,14 @@ async function fetchAllData() {
     console.log('\nUpdated files:');
     console.log('  ✓ public/odds_money.md');
     console.log('  ✓ public/starting_goalies.json (from MoneyPuck)');
+    console.log('  ✓ public/moneypuck_predictions.json (for calibration)');
     console.log(`\nGoalie Status: ${countConfirmedGoalies(startingGoalies)}`);
+    console.log(`MoneyPuck Predictions: ${moneyPuckPredictions.length} games`);
     console.log(`Odds Updated: ${new Date(fetchTimestamp).toLocaleString()}`);
     console.log('\nNext steps:');
     console.log('  1. Review the files to ensure data looks good');
     console.log('  2. git add public/*.md public/*.json');
-    console.log('  3. git commit -m "Auto-update: Odds and goalies"');
+    console.log('  3. git commit -m "Auto-update: Odds, goalies, and MoneyPuck predictions"');
     console.log('  4. git push && npm run deploy\n');
     
     return results;
@@ -253,6 +278,93 @@ function getTodaysScheduledGames() {
  * Format from MoneyPuck:
  * | ## 42.6%<br>### **[Starter: Gustavsson** | ![MINNESOTA WILD](logo) | ### 7:00 PM ET | ![NEW JERSEY DEVILS](logo) | ## 57.4%<br>### **[Starter: Daws** |
  */
+/**
+ * Parse MoneyPuck win probability predictions for model calibration
+ * Extracts "Chance of Winning: XX.X%" from MoneyPuck homepage
+ */
+function parseMoneyPuckPredictions(markdown) {
+  const games = [];
+  
+  if (!markdown) {
+    console.log('   ⚠️  Warning: No markdown content from MoneyPuck for predictions');
+    return games;
+  }
+  
+  const lines = markdown.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Look for game rows with win probabilities
+    // Pattern: "### Chance of Winning:<br>## 50.2%"
+    if (line.includes('Chance of Winning') && line.includes('##')) {
+      try {
+        // Extract away team probability and team code
+        const awayProbMatch = line.match(/Chance of Winning:.*?##\s*(\d+\.\d+)%/);
+        const awayTeamMatch = line.match(/!\[([^\]]+)\].*?logos\/([A-Z]{2,3})\.png/);
+        
+        if (!awayProbMatch || !awayTeamMatch) continue;
+        
+        const awayProb = parseFloat(awayProbMatch[1]) / 100;
+        const awayTeam = awayTeamMatch[2]; // Team code (e.g., "TOR")
+        
+        // Find home team in same row or next row
+        let homeTeamMatch, homeProbMatch;
+        
+        // Check current line for second team (after first match)
+        const remainingLine = line.substring(line.indexOf(awayProbMatch[0]) + awayProbMatch[0].length);
+        homeTeamMatch = remainingLine.match(/!\[([^\]]+)\].*?logos\/([A-Z]{2,3})\.png/);
+        homeProbMatch = remainingLine.match(/##\s*(\d+\.\d+)%/);
+        
+        // If not found in current line, check next line
+        if ((!homeTeamMatch || !homeProbMatch) && i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          if (!homeTeamMatch) {
+            homeTeamMatch = nextLine.match(/!\[([^\]]+)\].*?logos\/([A-Z]{2,3})\.png/);
+          }
+          if (!homeProbMatch) {
+            homeProbMatch = nextLine.match(/##\s*(\d+\.\d+)%/);
+          }
+        }
+        
+        if (!homeTeamMatch || !homeProbMatch) continue;
+        
+        const homeProb = parseFloat(homeProbMatch[1]) / 100;
+        const homeTeam = homeTeamMatch[2];
+        
+        // Validate probabilities sum to ~100% (accounting for rounding)
+        const totalProb = awayProb + homeProb;
+        if (totalProb < 0.95 || totalProb > 1.05) {
+          console.log(`   ⚠️ Invalid probabilities for ${awayTeam} @ ${homeTeam}: ${(totalProb * 100).toFixed(1)}%`);
+          continue;
+        }
+        
+        // Skip if we already have this game (prevents duplicates)
+        const isDuplicate = games.some(g => 
+          g.awayTeam === awayTeam && g.homeTeam === homeTeam
+        );
+        if (isDuplicate) {
+          continue;
+        }
+        
+        games.push({
+          awayTeam: awayTeam,
+          homeTeam: homeTeam,
+          awayProb: awayProb,
+          homeProb: homeProb,
+          source: 'MoneyPuck',
+          scrapedAt: Date.now()
+        });
+        
+      } catch (error) {
+        console.error(`   ❌ Error parsing prediction at line ${i}:`, error.message);
+      }
+    }
+  }
+  
+  return games;
+}
+
 function parseMoneyPuckStartingGoalies(markdown) {
   const games = [];
   
