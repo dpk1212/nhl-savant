@@ -941,9 +941,86 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
             +{bestEdge.evPercent.toFixed(1)}%
           </div>
           <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>EV</div>
+          
+          {/* Quality Grade Badge */}
+          {bestEdge.qualityGrade && bestEdge.qualityGrade !== 'N/A' && (
+            <div style={{ 
+              marginTop: '0.5rem',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              textAlign: 'center',
+              background: bestEdge.qualityGrade === 'A' ? '#10B981' : 
+                         bestEdge.qualityGrade === 'B' ? '#D4AF37' : 
+                         bestEdge.qualityGrade === 'C' ? '#F59E0B' : '#EF4444',
+              color: 'white',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              Grade {bestEdge.qualityGrade}
+            </div>
+          )}
         </div>
         {!isMobile && (
           <>
+            {/* Market Agreement Display */}
+            {bestEdge.agreement !== undefined && (
+              <div>
+                <div style={{ 
+                  fontSize: TYPOGRAPHY.label.size, 
+                  color: 'var(--color-text-muted)', 
+                  textTransform: TYPOGRAPHY.label.textTransform, 
+                  letterSpacing: TYPOGRAPHY.label.letterSpacing, 
+                  fontWeight: TYPOGRAPHY.label.weight,
+                  marginBottom: '0.25rem'
+                }}>
+                  Agreement
+                </div>
+                <div style={{ 
+                  fontSize: TYPOGRAPHY.subheading.size, 
+                  fontWeight: TYPOGRAPHY.subheading.weight, 
+                  color: bestEdge.agreement <= 0.03 ? '#10B981' : 
+                         bestEdge.agreement <= 0.05 ? '#D4AF37' : 
+                         bestEdge.agreement <= 0.08 ? '#F59E0B' : '#EF4444',
+                  lineHeight: TYPOGRAPHY.hero.lineHeight
+                }}>
+                  {(bestEdge.agreement * 100).toFixed(1)}%
+                </div>
+                <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
+                  {bestEdge.agreement <= 0.03 ? 'Elite' : 
+                   bestEdge.agreement <= 0.05 ? 'Good' : 
+                   bestEdge.agreement <= 0.08 ? 'Moderate' : 'Risky'}
+                </div>
+              </div>
+            )}
+            
+            {/* Kelly Sizing Recommendation */}
+            {bestEdge.recommendedUnit !== undefined && bestEdge.recommendedUnit > 0 && (
+              <div>
+                <div style={{ 
+                  fontSize: TYPOGRAPHY.label.size, 
+                  color: 'var(--color-text-muted)', 
+                  textTransform: TYPOGRAPHY.label.textTransform, 
+                  letterSpacing: TYPOGRAPHY.label.letterSpacing, 
+                  fontWeight: TYPOGRAPHY.label.weight,
+                  marginBottom: '0.25rem'
+                }}>
+                  Bet Size
+                </div>
+                <div style={{ 
+                  fontSize: TYPOGRAPHY.subheading.size, 
+                  fontWeight: TYPOGRAPHY.subheading.weight, 
+                  color: '#D4AF37', 
+                  lineHeight: TYPOGRAPHY.hero.lineHeight
+                }}>
+                  {(bestEdge.recommendedUnit * 100).toFixed(1)}%
+                </div>
+                <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
+                  Kelly
+                </div>
+              </div>
+            )}
+            
             <div>
               <div style={{ 
                 fontSize: TYPOGRAPHY.label.size, 
