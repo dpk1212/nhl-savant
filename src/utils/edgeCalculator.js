@@ -80,24 +80,27 @@ export class EdgeCalculator {
     // Calculate agreement (how much do we disagree with the market?)
     const agreement = Math.abs(modelProb - marketProb);
     
-    // Assign confidence level and quality grade based on agreement
+    // Calculate market edge using ensemble probability
+    const marketEdge = ensembleProb - marketProb;
+    
+    // ENSEMBLE-OPTIMIZED GRADING (Same thresholds as MoneyPuck calibration)
+    // This fallback uses market ensemble when MoneyPuck data unavailable
     let confidence, qualityGrade;
-    if (agreement <= 0.03) {
-      // Model and market strongly agree - HIGH CONFIDENCE
+    if (marketEdge >= 0.045) {
+      qualityGrade = 'A+';
       confidence = 'VERY_HIGH';
+    } else if (marketEdge >= 0.035) {
       qualityGrade = 'A';
-    } else if (agreement <= 0.05) {
-      // Moderate agreement - GOOD CONFIDENCE
       confidence = 'HIGH';
+    } else if (marketEdge >= 0.025) {
+      qualityGrade = 'B+';
+      confidence = 'HIGH';
+    } else if (marketEdge >= 0.02) {
       qualityGrade = 'B';
-    } else if (agreement <= 0.08) {
-      // Some disagreement - MODERATE CONFIDENCE
       confidence = 'MEDIUM';
-      qualityGrade = 'C';
     } else {
-      // Major disagreement - LOW CONFIDENCE (likely false positive)
+      qualityGrade = 'C';
       confidence = 'LOW';
-      qualityGrade = 'D';
     }
     
     return {
@@ -136,18 +139,21 @@ export class EdgeCalculator {
     // Market edge using calibrated prediction
     const marketEdge = calibratedProb - marketProb;
     
-    // Quality grade based ONLY on market edge (not correction)
+    // ENSEMBLE-OPTIMIZED GRADING (MoneyPuck Calibration - Option B: Aggressive)
+    // Thresholds lowered to account for 70% MoneyPuck + 30% Your Model blend
+    // MoneyPuck naturally reduces raw EVs by ~30-40% (filters false positives)
+    // These thresholds create better grade distribution and inspire confidence
     let qualityGrade;
-    if (marketEdge >= 0.08) {
-      qualityGrade = 'A+';     // ≥8% market edge → ELITE
-    } else if (marketEdge >= 0.05) {
-      qualityGrade = 'A';      // ≥5% market edge → EXCELLENT
-    } else if (marketEdge >= 0.03) {
-      qualityGrade = 'B+';     // ≥3% market edge → STRONG
+    if (marketEdge >= 0.045) {
+      qualityGrade = 'A+';     // ≥4.5% edge → ELITE (top tier finds)
+    } else if (marketEdge >= 0.035) {
+      qualityGrade = 'A';      // ≥3.5% edge → EXCELLENT (strong value)
+    } else if (marketEdge >= 0.025) {
+      qualityGrade = 'B+';     // ≥2.5% edge → STRONG (solid play)
     } else if (marketEdge >= 0.02) {
-      qualityGrade = 'B';      // ≥2% market edge → GOOD
+      qualityGrade = 'B';      // ≥2.0% edge → GOOD (minimum threshold)
     } else {
-      qualityGrade = 'C';      // <2% market edge → VALUE (filtered)
+      qualityGrade = 'C';      // <2.0% edge → Filtered out (not shown to users)
     }
     
     // Confidence based on how much correction was needed

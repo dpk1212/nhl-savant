@@ -2543,7 +2543,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const totalOpportunities = uniqueGames.size;
     
     // ELITE = Bets with Grade A or A+ (high market edge after calibration)
-    // Unified grading system: A+ = ≥8% edge, A = ≥5%, B+ = ≥3%, B = ≥2%
+    // Ensemble-optimized grading: A+ = ≥4.5% edge, A = ≥3.5%, B+ = ≥2.5%, B = ≥2.0%
     const eliteBets = topEdges.filter(edge => 
       edge.qualityGrade === 'A' || edge.qualityGrade === 'A+'
     );
