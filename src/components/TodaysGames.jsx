@@ -2174,7 +2174,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [expandedGame, setExpandedGame] = useState(null);
   const { scores: liveScores } = useLiveScores(); // Real-time live scores from Firestore
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
-  const { bookmarks } = useBookmarks(); // Fetch user bookmarks
   const [goalieProcessor, setGoalieProcessor] = useState(null);
   
   // PREMIUM: Authentication and subscription state
@@ -2519,25 +2518,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     
     return () => unsubscribe();
   }, []);
-  
-  // Calculate bookmark statistics for top bar
-  const bookmarkStats = useMemo(() => {
-    if (!bookmarks || bookmarks.length === 0 || !firebaseBets) {
-      return { count: 0, profit: 0 };
-    }
-    
-    let totalProfit = 0;
-    
-    // Match bookmarks with completed bets to calculate profit
-    bookmarks.forEach(bookmark => {
-      const matchedBet = firebaseBets.find(bet => bet.id === bookmark.betId && bet.status === 'COMPLETED');
-      if (matchedBet?.result) {
-        totalProfit += matchedBet.result.profit || 0;
-      }
-    });
-    
-    return { count: bookmarks.length, profit: totalProfit };
-  }, [bookmarks, firebaseBets]);
 
   // Smooth scroll handler for QuickSummary navigation
   const handleGameClick = (gameName) => {
@@ -2819,36 +2799,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 profit
             </span>
             </div>
-
-            {bookmarkStats.count > 0 && (
-              <>
-                <div style={{ width: '2px', height: '12px', background: 'rgba(148, 163, 184, 0.15)' }} />
-                
-            <div 
-                  onClick={() => navigate('/my-picks')}
-              style={{
-                display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '0.25rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '0.8';
-              }}
-              onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '1';
-                  }}
-                >
-                  <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', fontWeight: '700', color: '#D4AF37' }}>
-                    {bookmarkStats.count}
-              </span>
-                  <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '500' }}>
-                    saved
-              </span>
-                </div>
-              </>
-            )}
           </div>
             </div>
 
