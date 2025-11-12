@@ -2172,9 +2172,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [topEdges, setTopEdges] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedGame, setExpandedGame] = useState(null);
-  const { scores: liveScores } = useLiveScores(); // Real-time live scores from Firestore
+  const { scores: liveScores} = useLiveScores(); // Real-time live scores from Firestore
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
   const [goalieProcessor, setGoalieProcessor] = useState(null);
+  const [moneyPuckPredictions, setMoneyPuckPredictions] = useState(null); // MoneyPuck calibration data
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
@@ -2264,11 +2265,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Initialize edge calculator
+  // Load MoneyPuck predictions for model calibration
+  useEffect(() => {
+    fetch('/moneypuck_predictions.json')
+      .then(res => res.json())
+      .then(data => {
+        setMoneyPuckPredictions(data);
+        console.log(`✅ Loaded ${data.length} MoneyPuck predictions for calibration`);
+      })
+      .catch(err => {
+        console.warn('⚠️ MoneyPuck predictions not available - using fallback ensemble:', err.message);
+        setMoneyPuckPredictions([]);  // Empty array (not null) to avoid repeated fetches
+      });
+  }, []);
+
+  // Initialize edge calculator with MoneyPuck calibration
   useEffect(() => {
     if (dataProcessor && oddsData) {
-      // FIX: Pass starting goalies to EdgeCalculator
-      const calculator = new EdgeCalculator(dataProcessor, oddsData, startingGoalies);
+      // Pass MoneyPuck predictions for calibration (falls back to market ensemble if unavailable)
+      const calculator = new EdgeCalculator(dataProcessor, oddsData, startingGoalies, moneyPuckPredictions);
       setEdgeCalculator(calculator);
       
       const edges = calculator.calculateAllEdges();
@@ -2289,7 +2304,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const topOpportunities = calculator.getTopEdges(0.02); // 2% minimum for ensemble strategy
       setTopEdges(topOpportunities);
     }
-  }, [dataProcessor, oddsData, startingGoalies]);
+  }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions]);
   
   // CRITICAL FIX: Merge live/final games that may not have odds into allEdges
   // This ensures games don't disappear when they go live

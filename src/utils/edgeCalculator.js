@@ -2,21 +2,29 @@
 import { parseBothFiles } from './oddsTraderParser.js';
 
 export class EdgeCalculator {
-  constructor(dataProcessor, oddsFiles, startingGoalies = null, config = {}) {
+  constructor(dataProcessor, oddsFiles, startingGoalies = null, moneyPuckPredictions = null, config = {}) {
     this.dataProcessor = dataProcessor;
     this.startingGoalies = startingGoalies;
+    this.moneyPuckPredictions = moneyPuckPredictions;
     
-    // MARKET ENSEMBLE CONFIG - November 2025
-    // Blend model predictions with market odds for smarter bet selection
+    // MONEYPUCK CALIBRATION CONFIG - November 2025
+    // Use MoneyPuck (established model) to calibrate your predictions
     this.config = {
-      modelWeight: config.modelWeight || 0.65,        // 65% our model
-      marketWeight: config.marketWeight || 0.35,      // 35% market odds
-      maxAgreement: config.maxAgreement || 0.05,      // 5% max disagreement
-      minEV: config.minEV || 0.04,                    // 4% minimum edge
-      minQuality: config.minQuality || 'C',           // Minimum quality grade
-      kellyFraction: config.kellyFraction || 0.25,    // Quarter Kelly sizing
-      maxKelly: config.maxKelly || 0.05,              // 5% max bet
-      useEnsemble: config.useEnsemble !== false       // Enable by default
+      // Calibration weights (when MoneyPuck available)
+      yourModelWeight: config.yourModelWeight || 0.30,      // 30% your model (new, learning)
+      moneyPuckWeight: config.moneyPuckWeight || 0.70,      // 70% MoneyPuck (established, trusted)
+      
+      // Fallback ensemble (when MoneyPuck unavailable)
+      modelWeight: config.modelWeight || 0.65,              // 65% model vs market
+      marketWeight: config.marketWeight || 0.35,            // 35% market
+      
+      // Filtering thresholds
+      maxAgreement: config.maxAgreement || 0.05,            // 5% max disagreement (legacy)
+      minEV: config.minEV || 0.02,                          // 2% minimum market edge
+      minQuality: config.minQuality || 'C',                 // Minimum quality grade
+      kellyFraction: config.kellyFraction || 0.25,          // Quarter Kelly sizing
+      maxKelly: config.maxKelly || 0.05,                    // 5% max bet
+      useEnsemble: config.useEnsemble !== false             // Enable by default
     };
     
     // TOTALS BETTING REMOVED: Focus on elite 64.7% moneyline performance
@@ -100,6 +108,91 @@ export class EdgeCalculator {
       confidence,        // Human-readable confidence
       qualityGrade       // Letter grade (A-D)
     };
+  }
+
+  /**
+   * MONEYPUCK CALIBRATION - Blend your model with MoneyPuck's established predictions
+   * 
+   * Strategy: Use MoneyPuck (proven model with years of data) as a reality check
+   * to calibrate your model's predictions, then find market edges.
+   * 
+   * @param {number} yourModelProb - Your model's win probability (0-1)
+   * @param {number} moneyPuckProb - MoneyPuck's win probability (0-1)
+   * @param {number} marketOdds - American odds (e.g., +150, -180)
+   * @returns {object} Calibrated data with quality metrics
+   */
+  calibrateWithMoneyPuck(yourModelProb, moneyPuckProb, marketOdds) {
+    const marketProb = this.dataProcessor.oddsToProbability(marketOdds);
+    
+    // Calculate how much correction MoneyPuck provides
+    const correction = Math.abs(yourModelProb - moneyPuckProb);
+    
+    // ALWAYS blend - MoneyPuck pulls your model towards reality
+    // 70% MoneyPuck (established, trusted) + 30% your model (new, learning)
+    const calibratedProb = 
+      (yourModelProb * this.config.yourModelWeight) + 
+      (moneyPuckProb * this.config.moneyPuckWeight);
+    
+    // Market edge using calibrated prediction
+    const marketEdge = calibratedProb - marketProb;
+    
+    // Quality grade based ONLY on market edge (not correction)
+    let qualityGrade;
+    if (marketEdge > 0.05) {
+      qualityGrade = 'A';      // >5% market edge
+    } else if (marketEdge > 0.03) {
+      qualityGrade = 'B';      // >3% market edge
+    } else if (marketEdge > 0.02) {
+      qualityGrade = 'C';      // >2% market edge
+    } else {
+      qualityGrade = 'D';      // <2% - filtered
+    }
+    
+    // Confidence based on how much correction was needed
+    let confidence;
+    if (correction < 0.03) {
+      confidence = 'HIGH';     // Models already agreed - your model is calibrated
+    } else if (correction < 0.06) {
+      confidence = 'MEDIUM';   // Moderate correction needed
+    } else {
+      confidence = 'LOW';      // Large correction - your model was significantly off
+    }
+    
+    return {
+      calibratedProb: calibratedProb,      // Use this for EV calculation
+      marketEdge: marketEdge,              // Edge vs market after calibration
+      qualityGrade: qualityGrade,          // A/B/C/D based on market edge
+      confidence: confidence,               // HIGH/MEDIUM/LOW based on correction
+      
+      // For transparency and learning
+      yourModelProb: yourModelProb,        // Your raw prediction
+      moneyPuckProb: moneyPuckProb,        // MoneyPuck's prediction
+      marketProb: marketProb,              // Market's implied probability
+      correction: correction,              // How much MoneyPuck corrected you
+      
+      // Backward compatibility aliases
+      ensembleProb: calibratedProb,        // Alias for UI
+      modelProb: calibratedProb,           // Use calibrated for display
+      agreement: correction                 // "Correction" = "disagreement with MoneyPuck"
+    };
+  }
+
+  /**
+   * Find MoneyPuck prediction for a specific game
+   * 
+   * @param {string} awayTeam - Away team code (e.g., "TOR")
+   * @param {string} homeTeam - Home team code (e.g., "BOS")
+   * @returns {object|null} MoneyPuck prediction or null if not found
+   */
+  findMoneyPuckPrediction(awayTeam, homeTeam) {
+    if (!this.moneyPuckPredictions || this.moneyPuckPredictions.length === 0) {
+      return null;
+    }
+    
+    return this.moneyPuckPredictions.find(pred => 
+      pred.awayTeam === awayTeam && 
+      pred.homeTeam === homeTeam
+    );
   }
 
   /**
@@ -196,40 +289,74 @@ export class EdgeCalculator {
   }
 
   // Calculate moneyline edge
-  // CRITICAL FIX: Use pre-calculated scores instead of recalculating
-  // MARKET ENSEMBLE: Blend model + market probabilities for smarter EV calculation
+  // MONEYPUCK CALIBRATION: Use MoneyPuck to calibrate predictions, then find market edges
   calculateMoneylineEdge(game, awayScore, homeScore) {
     if (!game.moneyline.away || !game.moneyline.home) {
       return { away: null, home: null };
     }
     
     // Use Poisson distribution to calculate exact win probabilities
-    // This is the SAME calculation used for total, ensures consistency
     const homeWinProb = this.dataProcessor.calculatePoissonWinProb(homeScore, awayScore);
     const awayWinProb = this.dataProcessor.calculatePoissonWinProb(awayScore, homeScore);
     
-    // MARKET ENSEMBLE: Calculate blended probabilities with quality metrics
-    const homeEnsemble = this.config.useEnsemble 
-      ? this.calculateEnsembleProbability(homeWinProb, game.moneyline.home)
-      : { 
-          ensembleProb: homeWinProb, 
-          modelProb: homeWinProb, 
-          marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
-          agreement: Math.abs(homeWinProb - this.dataProcessor.oddsToProbability(game.moneyline.home)),
-          confidence: 'UNKNOWN',
-          qualityGrade: 'N/A'
-        };
+    // Find MoneyPuck prediction for this game
+    const moneyPuckPrediction = this.findMoneyPuckPrediction(
+      game.awayTeam, 
+      game.homeTeam
+    );
     
-    const awayEnsemble = this.config.useEnsemble
-      ? this.calculateEnsembleProbability(awayWinProb, game.moneyline.away)
-      : { 
-          ensembleProb: awayWinProb, 
-          modelProb: awayWinProb, 
-          marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
-          agreement: Math.abs(awayWinProb - this.dataProcessor.oddsToProbability(game.moneyline.away)),
-          confidence: 'UNKNOWN',
-          qualityGrade: 'N/A'
-        };
+    // AWAY TEAM: Use MoneyPuck calibration if available
+    let awayEnsemble;
+    if (moneyPuckPrediction && this.config.useEnsemble) {
+      // Use MoneyPuck calibration (blend your model with MoneyPuck)
+      awayEnsemble = this.calibrateWithMoneyPuck(
+        awayWinProb,
+        moneyPuckPrediction.awayProb,
+        game.moneyline.away
+      );
+      console.log(`🎯 ${game.awayTeam}: Your ${(awayWinProb * 100).toFixed(1)}% → MP ${(moneyPuckPrediction.awayProb * 100).toFixed(1)}% → Cal ${(awayEnsemble.calibratedProb * 100).toFixed(1)}%`);
+    } else if (this.config.useEnsemble) {
+      // Fallback: Use market-based ensemble (no MoneyPuck available)
+      awayEnsemble = this.calculateEnsembleProbability(awayWinProb, game.moneyline.away);
+      if (!moneyPuckPrediction) {
+        console.warn(`⚠️ No MoneyPuck prediction for ${game.awayTeam} @ ${game.homeTeam} - using market ensemble`);
+      }
+    } else {
+      // No ensemble - use raw model
+      awayEnsemble = { 
+        ensembleProb: awayWinProb, 
+        modelProb: awayWinProb, 
+        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
+        agreement: Math.abs(awayWinProb - this.dataProcessor.oddsToProbability(game.moneyline.away)),
+        confidence: 'UNKNOWN',
+        qualityGrade: 'N/A'
+      };
+    }
+    
+    // HOME TEAM: Use MoneyPuck calibration if available
+    let homeEnsemble;
+    if (moneyPuckPrediction && this.config.useEnsemble) {
+      // Use MoneyPuck calibration
+      homeEnsemble = this.calibrateWithMoneyPuck(
+        homeWinProb,
+        moneyPuckPrediction.homeProb,
+        game.moneyline.home
+      );
+      console.log(`🏠 ${game.homeTeam}: Your ${(homeWinProb * 100).toFixed(1)}% → MP ${(moneyPuckPrediction.homeProb * 100).toFixed(1)}% → Cal ${(homeEnsemble.calibratedProb * 100).toFixed(1)}%`);
+    } else if (this.config.useEnsemble) {
+      // Fallback: Use market-based ensemble
+      homeEnsemble = this.calculateEnsembleProbability(homeWinProb, game.moneyline.home);
+    } else {
+      // No ensemble - use raw model
+      homeEnsemble = { 
+        ensembleProb: homeWinProb, 
+        modelProb: homeWinProb, 
+        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
+        agreement: Math.abs(homeWinProb - this.dataProcessor.oddsToProbability(game.moneyline.home)),
+        confidence: 'UNKNOWN',
+        qualityGrade: 'N/A'
+      };
+    }
     
     // Calculate EV using ENSEMBLE probability (blended model + market)
     // This reduces false positives by incorporating market wisdom
