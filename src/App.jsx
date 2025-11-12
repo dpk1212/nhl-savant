@@ -8,6 +8,7 @@ import { ScheduleHelper } from './utils/scheduleHelper';
 import { extractGamesListFromOdds, parseBothFiles } from './utils/oddsTraderParser';
 import { AdvancedStatsAnalyzer } from './utils/advancedStatsAnalyzer';
 import { EdgeFactorCalculator } from './utils/edgeFactorCalculator';
+import { PlayerMatchupAnalyzer, loadPlayerProps, loadSkatersData } from './utils/playerMatchupAnalyzer';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import DataInspector from './components/DataInspector';
@@ -22,6 +23,7 @@ import MatchupInsights from './pages/MatchupInsights';
 import MyPicks from './pages/MyPicks';
 import Pricing from './pages/Pricing';
 import Account from './pages/Account';
+import TopScorersTonight from './pages/TopScorersTonight';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 // DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames)
@@ -40,6 +42,8 @@ function App() {
   const [statsAnalyzer, setStatsAnalyzer] = useState(null);
   const [edgeFactorCalc, setEdgeFactorCalc] = useState(null);
   const [scheduleHelper, setScheduleHelper] = useState(null);
+  const [playerMatchups, setPlayerMatchups] = useState(null);
+  const [skatersData, setSkatersData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -132,6 +136,36 @@ function App() {
         
         setOddsData(oddsFiles);
         
+        // Load player props and skaters data for player matchup analysis
+        console.log('🎯 Loading player props and skaters data...');
+        try {
+          const playerProps = await loadPlayerProps();
+          const skaters = await loadSkatersData();
+          setSkatersData(skaters);
+          
+          if (playerProps && playerProps.players && playerProps.players.length > 0) {
+            console.log(`📊 Found ${playerProps.players.length} player props`);
+            
+            // Create player matchup analyzer
+            const matchupAnalyzer = new PlayerMatchupAnalyzer(
+              processor,
+              goaliesCSV,
+              goalieSelections
+            );
+            
+            // Analyze all players
+            const analyzedPlayers = matchupAnalyzer.analyzeAllPlayers(playerProps, skaters);
+            console.log(`✅ Analyzed ${analyzedPlayers.length} player matchups`);
+            
+            setPlayerMatchups(analyzedPlayers);
+          } else {
+            console.warn('⚠️ No player props data available');
+          }
+        } catch (propsErr) {
+          console.warn('⚠️ Could not load player props:', propsErr.message);
+          console.warn('   Player matchup analysis will be unavailable');
+        }
+        
         console.log('✅ All data loaded successfully');
         
       } catch (err) {
@@ -197,6 +231,8 @@ function App() {
           goalieData={goalieData}
           statsAnalyzer={statsAnalyzer}
           edgeFactorCalc={edgeFactorCalc}
+          playerMatchups={playerMatchups}
+          skatersData={skatersData}
           loading={loading}
           error={error}
         />
@@ -208,7 +244,7 @@ function App() {
 }
 
 // Separate component to use useLocation hook
-function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc, loading, error }) {
+function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, statsAnalyzer, edgeFactorCalc, playerMatchups, skatersData, loading, error }) {
   const location = useLocation();
   const pageStartTime = useRef(Date.now());
 
@@ -247,6 +283,10 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 edgeFactorCalc={edgeFactorCalc}
               />} />
               <Route path="/my-picks" element={<MyPicks />} />
+              <Route path="/top-scorers" element={<TopScorersTonight 
+                playerMatchups={playerMatchups}
+                dataProcessor={dataProcessor}
+              />} />
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/matchup-insights" element={<MatchupInsights 
                 dataProcessor={dataProcessor} 

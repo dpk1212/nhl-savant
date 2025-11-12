@@ -14,6 +14,7 @@
     "update-results": "node updateTuesdayResults.js",
     "fetch-data": "node scripts/fetchData.js",
     "fetch-goalies": "node scripts/fetchGoaliesPerplexity.js",
+    "fetch-player-props": "node scripts/fetchPlayerProps.js",
     "update-all": "npm run fetch-data && git add public/odds_money.md public/odds_total.md public/starting_goalies.json",
     "update-scores": "node updateLiveScores.js",
     "update-scores-live": "node updateLiveScores.js --continuous",
