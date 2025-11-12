@@ -488,7 +488,7 @@ export class EdgeCalculator {
     
     const allEdges = this.calculateAllEdges();
     const opportunities = [];
-    const gradeOrder = ['A', 'B', 'C', 'D', 'N/A'];
+    const gradeOrder = ['A+', 'A', 'B+', 'B', 'C', 'D', 'N/A'];  // Fixed: Added A+ and B+
     
     allEdges.forEach(gameEdges => {
       // Moneyline edges
