@@ -15,6 +15,7 @@ export function useSubscription(user) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastCheck, setLastCheck] = useState(null);
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
   // Function to check subscription via Cloud Function (source of truth: Stripe)
   const refreshSubscriptionFromStripe = async () => {
@@ -124,11 +125,22 @@ export function useSubscription(user) {
     };
   }, [user?.uid, user?.email]);
 
+  // Check if user is returning (has visited before)
+  useEffect(() => {
+    const hasVisitedBefore = localStorage.getItem('nhlsavant_has_visited');
+    setIsReturningUser(!!hasVisitedBefore);
+    
+    if (!hasVisitedBefore) {
+      localStorage.setItem('nhlsavant_has_visited', 'true');
+    }
+  }, []);
+
   return {
     ...subscription,
     loading,
     isPremium: subscription?.isActive || false,
     isFree: subscription?.tier === 'free' || !subscription?.isActive,
+    isReturningUser,
     refresh: refreshSubscriptionFromStripe // Expose manual refresh
   };
 }

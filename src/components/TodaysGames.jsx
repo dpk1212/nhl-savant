@@ -52,6 +52,7 @@ import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
 import UpgradeModal from './UpgradeModal';
 import ConversionButtons from './ConversionButtons';
 import WelcomePopupModal from './modals/WelcomePopupModal';
+import DailySpinModal from './modals/DailySpinModal';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 
 // Wrapper for analytics logging
@@ -2270,7 +2271,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
-  const { isPremium, isFree } = useSubscription(user);
+  const { isPremium, isFree, isReturningUser } = useSubscription(user);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [gameCardViewCount, setGameCardViewCount] = useState(0);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
@@ -2283,6 +2284,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   // WELCOME POPUP: State for first-time visitor conversion modal
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  
+  // DAILY SPIN: State for returning user daily spin modal
+  const [showDailySpinModal, setShowDailySpinModal] = useState(false);
+  const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
   
   // Check if user has previously acknowledged disclaimer
   useEffect(() => {
@@ -2313,6 +2318,52 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     localStorage.setItem('nhlsavant_welcome_popup_seen', 'true');
     logEvent('welcome_popup_closed', {
       action: 'dismissed'
+    });
+  };
+  
+  // DAILY SPIN: Auto-show spin modal for returning non-subscribers
+  useEffect(() => {
+    const checkDailySpins = async () => {
+      const hasSeenWelcomePopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
+      
+      // Only show for:
+      // 1. Returning users (has visited before)
+      // 2. Non-premium users
+      // 3. After they've seen the welcome popup (so not first-time visitors)
+      if (isReturningUser && !isPremium && hasSeenWelcomePopup) {
+        const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
+        
+        // Check and reset daily spins if needed
+        checkAndResetDaily();
+        
+        // Get available spins
+        const spinsData = await getDailySpins(user?.uid || null);
+        
+        if (spinsData.remaining > 0) {
+          // Show modal after 2 second delay
+          setTimeout(() => {
+            setDailySpinsRemaining(spinsData.remaining);
+            setShowDailySpinModal(true);
+          }, 2000);
+        }
+      }
+    };
+    
+    checkDailySpins();
+  }, [isReturningUser, isPremium, user]);
+  
+  // Handle daily spin complete
+  const handleDailySpinComplete = async (prizeCode) => {
+    const { recordSpin } = await import('../utils/spinTracker');
+    await recordSpin(user?.uid || null, prizeCode);
+    
+    // Update remaining spins
+    setDailySpinsRemaining(prev => Math.max(0, prev - 1));
+    
+    logEvent('daily_spin_used', {
+      code: prizeCode,
+      spins_remaining: dailySpinsRemaining - 1,
+      user_type: user ? 'authenticated' : 'anonymous'
     });
   };
   
@@ -3490,6 +3541,15 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         onClose={handleWelcomePopupClose}
         todaysGames={allGamesToDisplay}
         isMobile={isMobile}
+      />
+      
+      {/* Daily Spin Modal - shown to returning non-subscribers with available spins */}
+      <DailySpinModal
+        isOpen={showDailySpinModal}
+        onClose={() => setShowDailySpinModal(false)}
+        spinsRemaining={dailySpinsRemaining}
+        onSpinComplete={handleDailySpinComplete}
+        user={user}
       />
     </div>
   );

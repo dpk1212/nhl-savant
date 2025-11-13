@@ -100,6 +100,15 @@ export function useAuth() {
         console.log('👋 User signed in:', user.email);
       }
 
+      // Migrate anonymous spins to authenticated user
+      try {
+        const { migrateAnonymousSpins } = await import('../utils/spinTracker');
+        await migrateAnonymousSpins(user.uid);
+      } catch (err) {
+        console.error('Error migrating anonymous spins:', err);
+        // Don't throw - this is non-critical
+      }
+
       return { user, isNewUser };
     } catch (err) {
       console.error('Error signing in with Google:', err);

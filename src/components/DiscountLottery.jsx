@@ -8,12 +8,17 @@ const PRIZES = [
   { code: 'BANG55', discount: 55, color: '#D4AF37', weight: 5 }
 ];
 
-export default function DiscountLottery({ onCodeRevealed }) {
+export default function DiscountLottery({ 
+  onCodeRevealed, 
+  variant = 'welcome',  // 'welcome' | 'daily-return'
+  spinsRemaining: propSpinsRemaining = null,
+  onSpinComplete = null
+}) {
   const [hasSpun, setHasSpun] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [wonPrize, setWonPrize] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
-  const [spinsRemaining, setSpinsRemaining] = useState(null);
+  const [spinsRemaining, setSpinsRemaining] = useState(propSpinsRemaining);
 
   // Check localStorage on mount
   useEffect(() => {
@@ -32,15 +37,20 @@ export default function DiscountLottery({ onCodeRevealed }) {
       }
     }
 
-    // Mock "spins remaining" (reset daily)
-    const today = new Date().toDateString();
-    const lastReset = localStorage.getItem('nhl_savant_spins_reset');
-    if (lastReset !== today) {
-      localStorage.setItem('nhl_savant_spins_reset', today);
-      localStorage.setItem('nhl_savant_spins_left', '47'); // Start with random number
+    // Set spins remaining from prop or mock data
+    if (propSpinsRemaining !== null) {
+      setSpinsRemaining(propSpinsRemaining);
+    } else {
+      // Mock "spins remaining" (reset daily) for welcome variant
+      const today = new Date().toDateString();
+      const lastReset = localStorage.getItem('nhl_savant_spins_reset');
+      if (lastReset !== today) {
+        localStorage.setItem('nhl_savant_spins_reset', today);
+        localStorage.setItem('nhl_savant_spins_left', '47'); // Start with random number
+      }
+      setSpinsRemaining(localStorage.getItem('nhl_savant_spins_left') || '47');
     }
-    setSpinsRemaining(localStorage.getItem('nhl_savant_spins_left') || '47');
-  }, []);
+  }, [propSpinsRemaining]);
 
   // Countdown timer
   useEffect(() => {
@@ -97,6 +107,11 @@ export default function DiscountLottery({ onCodeRevealed }) {
       // Notify parent component
       if (onCodeRevealed) {
         onCodeRevealed(prize.code);
+      }
+      
+      // Notify spin complete callback
+      if (onSpinComplete) {
+        onSpinComplete(prize.code);
       }
     }, 3000); // 3 second spin
   };
@@ -264,9 +279,39 @@ export default function DiscountLottery({ onCodeRevealed }) {
             textTransform: 'uppercase',
             letterSpacing: '0.05em'
           }}>
-            SPIN FOR YOUR EXCLUSIVE DISCOUNT
+            {variant === 'daily-return' ? 'WELCOME BACK! SPIN FOR A DISCOUNT' : 'SPIN FOR YOUR EXCLUSIVE DISCOUNT'}
           </span>
         </div>
+        
+        {/* Show spins remaining for daily-return variant */}
+        {variant === 'daily-return' && spinsRemaining !== null && (
+          <div style={{
+            fontSize: '14px',
+            color: '#60A5FA',
+            fontWeight: '700',
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
+          }}>
+            <Sparkles size={16} />
+            <span>{spinsRemaining} {spinsRemaining === 1 ? 'Spin' : 'Spins'} Left Today</span>
+          </div>
+        )}
+        
+        {/* Subtitle for daily-return variant */}
+        {variant === 'daily-return' && (
+          <div style={{
+            fontSize: '13px',
+            color: '#94A3B8',
+            marginBottom: '16px',
+            lineHeight: '1.4'
+          }}>
+            Tired of losing bets without a system?<br/>
+            Try Premium Risk-Free!
+          </div>
+        )}
 
         {/* Prize Wheel */}
         <div style={{
