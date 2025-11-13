@@ -495,16 +495,7 @@ export class EdgeCalculator {
       if (gameEdges.edges.moneyline.away && gameEdges.edges.moneyline.away.ev > minEV) {
         const edge = gameEdges.edges.moneyline.away;
         
-        // QUALITY FILTER 1: Market agreement threshold (DISABLED when using MoneyPuck)
-        // When MoneyPuck calibration is active, agreement filter is redundant
-        // Quality grades (A+/A/B+/B) already account for reliability via EV%
-        const hasMoneyPuck = this.moneyPuckPredictions && this.moneyPuckPredictions.length > 0;
-        if (useFilters && !hasMoneyPuck && edge.agreement > maxAgreement) {
-          console.log(`⚠️ Filtered ${gameEdges.awayTeam} AWAY: Agreement ${(edge.agreement * 100).toFixed(1)}% > ${(maxAgreement * 100).toFixed(0)}%`);
-          return;
-        }
-        
-        // QUALITY FILTER 2: Minimum quality grade (PRIMARY FILTER)
+        // QUALITY FILTER: Minimum quality grade (PRIMARY FILTER)
         if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
           console.log(`⚠️ Filtered ${gameEdges.awayTeam} AWAY: Grade ${edge.qualityGrade} < ${minQuality}`);
           return;
@@ -533,16 +524,7 @@ export class EdgeCalculator {
       if (gameEdges.edges.moneyline.home && gameEdges.edges.moneyline.home.ev > minEV) {
         const edge = gameEdges.edges.moneyline.home;
         
-        // QUALITY FILTER 1: Market agreement threshold (DISABLED when using MoneyPuck)
-        // When MoneyPuck calibration is active, agreement filter is redundant
-        // Quality grades (A+/A/B+/B) already account for reliability via EV%
-        const hasMoneyPuck = this.moneyPuckPredictions && this.moneyPuckPredictions.length > 0;
-        if (useFilters && !hasMoneyPuck && edge.agreement > maxAgreement) {
-          console.log(`⚠️ Filtered ${gameEdges.homeTeam} HOME: Agreement ${(edge.agreement * 100).toFixed(1)}% > ${(maxAgreement * 100).toFixed(0)}%`);
-          return;
-        }
-        
-        // QUALITY FILTER 2: Minimum quality grade (PRIMARY FILTER)
+        // QUALITY FILTER: Minimum quality grade (PRIMARY FILTER)
         if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
           console.log(`⚠️ Filtered ${gameEdges.homeTeam} HOME: Grade ${edge.qualityGrade} < ${minQuality}`);
           return;

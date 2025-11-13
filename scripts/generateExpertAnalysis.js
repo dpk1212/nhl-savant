@@ -750,11 +750,11 @@ async function loadOddsAndCalculateEdges(games) {
     console.log('🎯 Loading MoneyPuck predictions...');
     let moneyPuckPredictions = null;
     try {
-      const moneyPuckData = readFileSync(join(__dirname, '../public/moneypuck-predictions.json'), 'utf-8');
+      const moneyPuckData = readFileSync(join(__dirname, '../public/moneypuck_predictions.json'), 'utf-8');
       moneyPuckPredictions = JSON.parse(moneyPuckData);
       console.log(`✅ Loaded ${moneyPuckPredictions.length} MoneyPuck predictions`);
     } catch (error) {
-      console.log('⚠️ MoneyPuck predictions not available - using market ensemble fallback');
+      console.log('⚠️ moneypuck_predictions.json not available - using market ensemble fallback');
     }
     
     // Initialize edge calculator with MoneyPuck predictions (use 'total' not 'puck')
