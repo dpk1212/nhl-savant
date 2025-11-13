@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Gift, Sparkles, Clock } from 'lucide-react';
+import { Gift, Sparkles, Clock, Copy, Check } from 'lucide-react';
 
 const PRIZES = [
   { code: 'Savant15', discount: 15, color: '#8B5CF6', weight: 50 },
@@ -19,6 +19,7 @@ export default function DiscountLottery({
   const [wonPrize, setWonPrize] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [spinsRemaining, setSpinsRemaining] = useState(propSpinsRemaining);
+  const [copied, setCopied] = useState(false);
 
   // Check localStorage on mount
   useEffect(() => {
@@ -122,6 +123,18 @@ export default function DiscountLottery({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleCopyCode = async () => {
+    if (wonPrize?.code) {
+      try {
+        await navigator.clipboard.writeText(wonPrize.code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      } catch (err) {
+        console.error('Failed to copy code:', err);
+      }
+    }
+  };
+
   if (hasSpun && wonPrize && timeLeft > 0) {
     // Show won prize with countdown
     return (
@@ -203,6 +216,37 @@ export default function DiscountLottery({
             }}>
               {wonPrize.code}
             </span>
+            <button
+              onClick={handleCopyCode}
+              style={{
+                background: copied ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                border: copied ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                padding: '6px 8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.2s',
+                color: copied ? '#10b981' : '#94A3B8',
+                fontSize: '11px',
+                fontWeight: '600'
+              }}
+              onMouseEnter={(e) => {
+                if (!copied) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!copied) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                }
+              }}
+              title={copied ? 'Copied!' : 'Copy code'}
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
           </div>
 
           {/* Countdown */}
@@ -226,7 +270,7 @@ export default function DiscountLottery({
             color: '#94A3B8',
             marginBottom: '8px'
           }}>
-            Code will be auto-applied at checkout
+            Enter this code at checkout
           </div>
         </div>
 

@@ -2271,7 +2271,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
-  const { isPremium, isFree, isReturningUser } = useSubscription(user);
+  const { isPremium, isFree, isReturningUser, loading: subscriptionLoading } = useSubscription(user);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [gameCardViewCount, setGameCardViewCount] = useState(0);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
@@ -2327,10 +2327,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const hasSeenWelcomePopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
       
       // Only show for:
-      // 1. Returning users (has visited before)
-      // 2. Non-premium users
-      // 3. After they've seen the welcome popup (so not first-time visitors)
-      if (isReturningUser && !isPremium && hasSeenWelcomePopup) {
+      // 1. Subscription state has finished loading (prevent showing during load)
+      // 2. Returning users (has visited before)
+      // 3. Non-premium users (includes checking both active and trial subscriptions)
+      // 4. After they've seen the welcome popup (so not first-time visitors)
+      if (!subscriptionLoading && isReturningUser && !isPremium && hasSeenWelcomePopup) {
         const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
         
         // Check and reset daily spins if needed
@@ -2350,7 +2351,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     };
     
     checkDailySpins();
-  }, [isReturningUser, isPremium, user]);
+  }, [isReturningUser, isPremium, subscriptionLoading, user]);
   
   // Handle daily spin complete
   const handleDailySpinComplete = async (prizeCode) => {
