@@ -52,8 +52,16 @@ export async function getDailySpins(userId) {
       }
     } catch (error) {
       console.error('Error getting daily spins from Firestore:', error);
-      // Fallback to localStorage
-      return getDailySpinsFromLocalStorage();
+      // For authenticated users, if Firestore fails (e.g., permissions error),
+      // return 0 spins to prevent modal from showing
+      // This is a safety mechanism for premium users
+      return {
+        remaining: 0,
+        used: SPINS_PER_DAY,
+        total: SPINS_PER_DAY,
+        codesWon: [],
+        error: error.message
+      };
     }
   } else {
     // Anonymous user: Check localStorage
