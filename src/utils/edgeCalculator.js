@@ -20,8 +20,8 @@ export class EdgeCalculator {
       
       // Filtering thresholds
       maxAgreement: config.maxAgreement || 0.05,            // 5% max disagreement (legacy)
-      minEV: config.minEV || 0.015,                         // 1.5% minimum EV threshold
-      minQuality: config.minQuality || 'B',                 // Minimum quality grade (B or higher)
+      minEV: config.minEV || 0.025,                         // 2.5% minimum EV threshold  
+      minQuality: config.minQuality || 'B+',                // Minimum quality grade (B+ or higher - B-rated bets excluded)
       kellyFraction: config.kellyFraction || 0.25,          // Quarter Kelly sizing
       maxKelly: config.maxKelly || 0.05,                    // 5% max bet
       useEnsemble: config.useEnsemble !== false             // Enable by default
