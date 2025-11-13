@@ -418,6 +418,28 @@ export default function PerformanceDashboard() {
         </p>
       </div>
       
+      {/* Updated Quality Standards Notice */}
+      <div style={{
+        marginBottom: '2rem',
+        padding: '1rem 1.25rem',
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
+        border: '1px solid rgba(59, 130, 246, 0.3)',
+        borderRadius: '12px',
+        display: 'flex',
+        alignItems: 'start',
+        gap: '0.75rem'
+      }}>
+        <div style={{ fontSize: '1.25rem' }}>📢</div>
+        <div>
+          <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#60A5FA', marginBottom: '0.25rem' }}>
+            Updated Quality Standards
+          </div>
+          <div style={{ fontSize: '0.813rem', color: 'var(--color-text-secondary)', lineHeight: '1.5' }}>
+            <strong>B-rated bets are no longer recommended.</strong> Our minimum threshold is now <strong>2.5% EV (B+ or higher)</strong> for more selective, higher-quality picks. Historical B-rated bets remain in the data but are excluded from all metrics shown here.
+          </div>
+        </div>
+      </div>
+      
       {/* Hero Stats - Lead with Model Accuracy */}
       <div style={{ 
         display: 'grid', 
