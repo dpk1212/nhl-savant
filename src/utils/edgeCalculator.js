@@ -386,7 +386,7 @@ export class EdgeCalculator {
       away: {
         ev: awayEV,
         evPercent: awayEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
-        modelProb: awayWinProb,
+        modelProb: awayEnsemble.calibratedProb || awayEnsemble.ensembleProb || awayWinProb,
         marketProb: awayEnsemble.marketProb,
         ensembleProb: awayEnsemble.ensembleProb,      // NEW: Blended probability
         agreement: awayEnsemble.agreement,             // NEW: Quality metric
@@ -399,7 +399,7 @@ export class EdgeCalculator {
       home: {
         ev: homeEV,
         evPercent: homeEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
-        modelProb: homeWinProb,
+        modelProb: homeEnsemble.calibratedProb || homeEnsemble.ensembleProb || homeWinProb,
         marketProb: homeEnsemble.marketProb,
         ensembleProb: homeEnsemble.ensembleProb,      // NEW: Blended probability
         agreement: homeEnsemble.agreement,             // NEW: Quality metric
