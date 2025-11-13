@@ -2326,56 +2326,61 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const checkDailySpins = async () => {
       const hasSeenWelcomePopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
       
-      // CRITICAL: Wait for subscription to load, then delay 3 seconds for Stripe data to fully populate
-      // Only proceed if user is returning and has seen welcome popup
+      // FIXED: Check immediately when subscription data is loaded from Stripe
+      // Effect will re-run when tier/isPremium/isActive/isTrial update from Stripe
+      // No arbitrary timeout - wait for actual data confirmation
       if (!subscriptionLoading && isReturningUser && hasSeenWelcomePopup) {
         
-        // Wait 3 seconds for Stripe subscription to fully load before checking
-        setTimeout(async () => {
-          // EXPLICIT CHECKS: Must pass ALL of these to show modal
-          // 1. Not premium (isPremium should be false)
-          // 2. Tier must be 'free' (not scout, elite, or pro)
-          // 3. Not active subscription (!isActive)
-          // 4. Not in trial period (!isTrial)
-          const shouldShowModal = !isPremium && 
-                                   tier === 'free' && 
-                                   !isActive && 
-                                   !isTrial;
+        // Safety check: Only proceed if subscription tier is defined (data loaded from Stripe)
+        // This prevents checking with uninitialized/stale data on slow mobile connections
+        if (tier === undefined) {
+          console.log('⏳ Waiting for subscription data to load from Stripe...');
+          return; // Exit early - effect will re-run when tier is set
+        }
+        
+        // EXPLICIT CHECKS: Must pass ALL of these to show modal
+        // 1. Not premium (isPremium should be false)
+        // 2. Tier must be 'free' (not scout, elite, or pro)
+        // 3. Not active subscription (!isActive)
+        // 4. Not in trial period (!isTrial)
+        const shouldShowModal = !isPremium && 
+                                 tier === 'free' && 
+                                 !isActive && 
+                                 !isTrial;
+        
+        if (shouldShowModal) {
+          console.log('✅ DAILY SPIN CHECK PASSED:', {
+            isPremium,
+            tier,
+            isActive,
+            isTrial,
+            reason: 'Free user - showing modal'
+          });
           
-          if (shouldShowModal) {
-            console.log('✅ DAILY SPIN CHECK PASSED:', {
-              isPremium,
-              tier,
-              isActive,
-              isTrial,
-              reason: 'Free user - showing modal'
-            });
-            
-            const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
-            
-            // Check and reset daily spins if needed
-            checkAndResetDaily();
-            
-            // Get available spins
-            const spinsData = await getDailySpins(user?.uid || null);
-            
-            if (spinsData.remaining > 0) {
-              setDailySpinsRemaining(spinsData.remaining);
-              setShowDailySpinModal(true);
-            }
-          } else {
-            console.log('🚫 DAILY SPIN BLOCKED (Premium user):', {
-              isPremium,
-              tier,
-              isActive,
-              isTrial,
-              reason: isPremium ? 'Premium subscription active' : 
-                      isActive ? 'Active subscription' :
-                      isTrial ? 'Trial subscription' :
-                      tier !== 'free' ? `Paid tier: ${tier}` : 'Unknown'
-            });
+          const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
+          
+          // Check and reset daily spins if needed
+          checkAndResetDaily();
+          
+          // Get available spins
+          const spinsData = await getDailySpins(user?.uid || null);
+          
+          if (spinsData.remaining > 0) {
+            setDailySpinsRemaining(spinsData.remaining);
+            setShowDailySpinModal(true);
           }
-        }, 3000); // 3 second delay for subscription to load from Stripe
+        } else {
+          console.log('🚫 DAILY SPIN BLOCKED (Premium user):', {
+            isPremium,
+            tier,
+            isActive,
+            isTrial,
+            reason: isPremium ? 'Premium subscription active' : 
+                    isActive ? 'Active subscription' :
+                    isTrial ? 'Trial subscription' :
+                    tier !== 'free' ? `Paid tier: ${tier}` : 'Unknown'
+          });
+        }
       }
     };
     
