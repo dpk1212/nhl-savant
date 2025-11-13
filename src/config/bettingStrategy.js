@@ -35,14 +35,14 @@ export const BETTING_STRATEGY = {
   // Only bet when model and market reasonably agree
   
   MAX_AGREEMENT: 0.05,       // 5% - Maximum disagreement with market
-  MIN_EV: 0.02,              // 2% - Minimum expected value (ensemble-based, lower than raw model)
-  MIN_QUALITY_GRADE: 'C',    // C or better - Filters out D-grade bets
+  MIN_EV: 0.025,             // 2.5% - Minimum expected value (B+ or higher)
+  MIN_QUALITY_GRADE: 'B+',   // B+ or better - Filters out B and C grade bets
   
   // UNIFIED QUALITY GRADING SYSTEM (MoneyPuck Ensemble):
   // - A+ Grade: ≥8% market edge (ELITE - extremely rare)
   // - A  Grade: ≥5% market edge (EXCELLENT - highest confidence)
   // - B+ Grade: ≥3% market edge (STRONG - recommended)
-  // - B  Grade: ≥2% market edge (GOOD - acceptable)
+  // - B  Grade: ≥2% market edge (GOOD - filtered out)
   // - C  Grade: <2% market edge (VALUE - filtered out)
   
   // ============================================================================
@@ -106,8 +106,8 @@ export const STRATEGIES = {
     MODEL_WEIGHT: 0.65,
     MARKET_WEIGHT: 0.35,
     MAX_AGREEMENT: 0.05,      // 5% filter
-    MIN_EV: 0.02,             // 2% minimum (ensemble EVs are lower than raw)
-    MIN_QUALITY_GRADE: 'C',   // C or better
+    MIN_EV: 0.025,            // 2.5% minimum (B+ or higher)
+    MIN_QUALITY_GRADE: 'B+',  // B+ or better
     KELLY_FRACTION: 0.25,     // Quarter Kelly
     MAX_KELLY: 0.05,          // 5% max bet
     expectedROI: '14-18%',
@@ -121,8 +121,8 @@ export const STRATEGIES = {
     MODEL_WEIGHT: 0.70,
     MARKET_WEIGHT: 0.30,
     MAX_AGREEMENT: 0.06,      // Looser filter
-    MIN_EV: 0.03,             // Standard 3%
-    MIN_QUALITY_GRADE: 'C',   // C or better
+    MIN_EV: 0.025,            // 2.5% minimum (B+ or higher)
+    MIN_QUALITY_GRADE: 'B+',  // B+ or better
     KELLY_FRACTION: 0.30,     // 30% Kelly
     MAX_KELLY: 0.06,          // 6% max bet
     expectedROI: '11-14%',
@@ -136,8 +136,8 @@ export const STRATEGIES = {
     MODEL_WEIGHT: 1.0,
     MARKET_WEIGHT: 0.0,
     MAX_AGREEMENT: 1.0,       // No agreement filter
-    MIN_EV: 0.03,
-    MIN_QUALITY_GRADE: 'D',   // Accept all grades
+    MIN_EV: 0.025,            // 2.5% minimum (B+ or higher)
+    MIN_QUALITY_GRADE: 'B+',  // B+ or better
     KELLY_FRACTION: 0.25,
     MAX_KELLY: 0.05,
     expectedROI: '6-8%',
@@ -182,7 +182,7 @@ export function getGradeDescription(grade) {
     'A+': 'ELITE - ≥8% market edge (extremely rare)',
     'A': 'EXCELLENT - ≥5% market edge (highest confidence)',
     'B+': 'STRONG - ≥3% market edge (recommended)',
-    'B': 'GOOD - ≥2% market edge (acceptable)',
+    'B': 'GOOD - ≥2% market edge (filtered out)',
     'C': 'VALUE - <2% market edge (filtered out)'
   };
   return descriptions[grade] || 'Unknown grade';

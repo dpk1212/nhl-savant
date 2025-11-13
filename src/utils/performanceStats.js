@@ -34,15 +34,16 @@ export async function getPerformanceStats() {
     
     console.log(`📊 Fetched ${bets.length} completed bets`);
     
-    // FILTER: Only include B-rated or higher bets (>= 3% EV) AND exclude totals
+    // FILTER: Only include B+ or higher bets (>= 2.5% EV) AND exclude totals
     // (EXACT SAME filter as Performance Dashboard)
     const qualityBets = bets.filter(b => 
       b.prediction?.rating !== 'C' && 
+      b.prediction?.rating !== 'B' &&
       b.bet?.market !== 'TOTAL' && 
       !b.bet?.market?.includes('TOTAL')
     );
     
-    console.log(`📊 ${qualityBets.length} quality bets (B-rated or higher, no totals)`);
+    console.log(`📊 ${qualityBets.length} quality bets (B+ or higher, no totals)`);
     
     if (qualityBets.length === 0) {
       console.warn('⚠️ No quality bets found');

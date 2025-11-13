@@ -27,7 +27,6 @@ const ProfitTimelineChart = ({ bets }) => {
     let cumulativeAPlus = 0;
     let cumulativeA = 0;
     let cumulativeBPlus = 0;
-    let cumulativeB = 0;
     
     return sortedBets.map((bet, index) => {
       const profit = bet.result?.profit || 0;
@@ -41,7 +40,6 @@ const ProfitTimelineChart = ({ bets }) => {
       if (rating === 'A+') cumulativeAPlus += profit;
       if (rating === 'A') cumulativeA += profit;
       if (rating === 'B+') cumulativeBPlus += profit;
-      if (rating === 'B') cumulativeB += profit;
       
       const date = bet.timestamp?.toDate?.() || new Date(bet.timestamp);
       
@@ -55,7 +53,6 @@ const ProfitTimelineChart = ({ bets }) => {
         aPlus: parseFloat(cumulativeAPlus.toFixed(2)),
         a: parseFloat(cumulativeA.toFixed(2)),
         bPlus: parseFloat(cumulativeBPlus.toFixed(2)),
-        b: parseFloat(cumulativeB.toFixed(2)),
         betDetails: {
           market,
           rating,
@@ -108,7 +105,6 @@ const ProfitTimelineChart = ({ bets }) => {
       if (selectedRatings.includes('A+') && selectedRatings.length === 1) return 'aPlus';
       if (selectedRatings.includes('A') && selectedRatings.length === 1) return 'a';
       if (selectedRatings.includes('B+') && selectedRatings.length === 1) return 'bPlus';
-      if (selectedRatings.includes('B') && selectedRatings.length === 1) return 'b';
     }
     
     // Combined filters or multiple selections
@@ -342,8 +338,7 @@ const ProfitTimelineChart = ({ bets }) => {
               { key: 'ALL', label: 'All Ratings', color: '#64748B' },
               { key: 'A+', label: 'A+', color: '#10B981' },
               { key: 'A', label: 'A', color: '#059669' },
-              { key: 'B+', label: 'B+', color: '#0EA5E9' },
-              { key: 'B', label: 'B', color: '#8B5CF6' }
+              { key: 'B+', label: 'B+', color: '#0EA5E9' }
             ].map(rating => {
               const isActive = selectedRatings.includes(rating.key);
               return (

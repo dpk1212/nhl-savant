@@ -118,17 +118,17 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const dollarGrowth = calculateDollarGrowth(1000, roi);
   const roiDisplay = `${roi.toFixed(1)}%`;
 
-  // Get picks EXACTLY like TodaysGames does - filter games with edges >= 3%
+  // Get picks EXACTLY like TodaysGames does - filter games with edges >= 2.5%
   const picksToday = (todaysGames || []).filter(game => {
     if (!game.edges) return false;
     
     // Check moneyline edges
-    if (game.edges.moneyline?.away?.evPercent >= 3 || game.edges.moneyline?.home?.evPercent >= 3) {
+    if (game.edges.moneyline?.away?.evPercent >= 2.5 || game.edges.moneyline?.home?.evPercent >= 2.5) {
       return true;
     }
     
     // Check total edges
-    if (game.edges.total?.over?.evPercent >= 3 || game.edges.total?.under?.evPercent >= 3) {
+    if (game.edges.total?.over?.evPercent >= 2.5 || game.edges.total?.under?.evPercent >= 2.5) {
       return true;
     }
     

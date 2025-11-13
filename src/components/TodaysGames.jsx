@@ -2384,7 +2384,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       // Get all opportunities (games with quality-filtered bets)
       // NOTE: Ensemble EVs are lower than raw model EVs due to market blending
       // Using 1.5% threshold to capture even slightly positive EV bets
-      const topOpportunities = calculator.getTopEdges(0.015); // 1.5% minimum (B-rated or higher)
+      const topOpportunities = calculator.getTopEdges(0.025); // 2.5% minimum (B+ or higher)
       setTopEdges(topOpportunities);
     }
   }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions, moneyPuckLoading]);
@@ -2576,10 +2576,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allBets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // FILTER: Only include B-rated or higher bets AND exclude TOTAL market
+      // FILTER: Only include B+ or higher bets AND exclude TOTAL market
       // This matches the Performance page filtering logic EXACTLY
       const qualityBets = allBets.filter(bet => 
         bet.prediction?.rating !== 'C' && 
+        bet.prediction?.rating !== 'B' &&
         bet.bet?.market !== 'TOTAL' && 
         !bet.bet?.market?.includes('TOTAL')
       );
