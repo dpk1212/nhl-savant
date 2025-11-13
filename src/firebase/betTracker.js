@@ -245,7 +245,9 @@ export class BetTracker {
     const betRef = doc(db, 'bets', betId);
     
     const outcome = this.calculateOutcome(result, betData.bet);
-    const profit = this.calculateProfit(outcome, betData.bet.odds);
+    // Use Kelly-sized units (quarter Kelly) from saved recommendation
+    const units = betData.prediction?.recommendedUnit || 1;
+    const profit = this.calculateProfit(outcome, betData.bet.odds, units);
     
     await updateDoc(betRef, {
       'result.awayScore': result.awayScore,
@@ -352,16 +354,16 @@ export class BetTracker {
     }
   }
   
-  // Calculate profit in units
-  calculateProfit(outcome, odds) {
+  // Calculate profit in units (using Kelly sizing)
+  calculateProfit(outcome, odds, units = 1) {
     if (outcome === 'PUSH') return 0;
-    if (outcome === 'LOSS') return -1;
+    if (outcome === 'LOSS') return -units; // Use Kelly-sized units
     
-    // WIN
+    // WIN - multiply payout by Kelly units
     if (odds < 0) {
-      return 100 / Math.abs(odds); // e.g., -110 → 0.909 units
+      return (100 / Math.abs(odds)) * units; // e.g., -110 → 0.909 units * Kelly
     } else {
-      return odds / 100; // e.g., +150 → 1.5 units
+      return (odds / 100) * units; // e.g., +150 → 1.5 units * Kelly
     }
   }
   
