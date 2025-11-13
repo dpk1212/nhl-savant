@@ -746,11 +746,24 @@ async function loadOddsAndCalculateEdges(games) {
     const scheduleHelper = new ScheduleHelper(scheduleData);
     const dataProcessor = new NHLDataProcessor(teamsData, goalieProcessor, scheduleHelper);
     
-    // Initialize edge calculator (use 'total' not 'puck')
+    // Load MoneyPuck predictions (same as UI does)
+    console.log('🎯 Loading MoneyPuck predictions...');
+    let moneyPuckPredictions = null;
+    try {
+      const moneyPuckData = readFileSync(join(__dirname, '../public/moneypuck-predictions.json'), 'utf-8');
+      moneyPuckPredictions = JSON.parse(moneyPuckData);
+      console.log(`✅ Loaded ${moneyPuckPredictions.length} MoneyPuck predictions`);
+    } catch (error) {
+      console.log('⚠️ MoneyPuck predictions not available - using market ensemble fallback');
+    }
+    
+    // Initialize edge calculator with MoneyPuck predictions (use 'total' not 'puck')
+    // CRITICAL: 4th parameter enables MoneyPuck calibration and disables agreement filter
     const edgeCalculator = new EdgeCalculator(
       dataProcessor,
       { moneyText: oddsMoneyData, totalText: oddsTotalData },
-      null // Starting goalies (optional)
+      null, // Starting goalies (optional)
+      moneyPuckPredictions // Enable MoneyPuck calibration (matches UI behavior)
     );
 
             const allEdges = edgeCalculator.calculateAllEdges();
