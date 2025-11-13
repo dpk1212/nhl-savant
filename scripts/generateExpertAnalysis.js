@@ -645,8 +645,9 @@ async function cacheBetNarrative(awayTeam, homeTeam, content, type) {
     return false;
   }
 
-  const now = new Date();
-  const cacheKey = `${awayTeam}-${homeTeam}-${now.toISOString().split('T')[0]}-${type}`;
+  // Use ET date to match client-side cache key lookups
+  const etDate = getETDate();
+  const cacheKey = `${awayTeam}-${homeTeam}-${etDate}-${type}`;
   const cacheRef = db.collection('perplexityCache').doc(cacheKey);
 
   try {
