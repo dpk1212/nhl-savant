@@ -2053,27 +2053,33 @@ const MarketsGrid = ({ game, isMobile }) => {
               ⚡ MONEYLINE
             </div>
             
-            <MarketRow 
-              team={game.awayTeam}
-              odds={game.edges.moneyline.away.odds}
-              ev={game.edges.moneyline.away.evPercent}
-              isPositive={game.edges.moneyline.away.evPercent > 0}
-              isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
-              modelProb={game.edges.moneyline.away.modelProb}
-              impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
-              qualityGrade={game.edges.moneyline.away.qualityGrade}
-            />
+            {/* Only show B+ or higher rated bets */}
+            {game.edges.moneyline.away.qualityGrade !== 'B' && game.edges.moneyline.away.qualityGrade !== 'C' && (
+              <MarketRow 
+                team={game.awayTeam}
+                odds={game.edges.moneyline.away.odds}
+                ev={game.edges.moneyline.away.evPercent}
+                isPositive={game.edges.moneyline.away.evPercent > 0}
+                isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
+                modelProb={game.edges.moneyline.away.modelProb}
+                impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
+                qualityGrade={game.edges.moneyline.away.qualityGrade}
+              />
+            )}
             
-            <MarketRow 
-              team={game.homeTeam}
-              odds={game.edges.moneyline.home.odds}
-              ev={game.edges.moneyline.home.evPercent}
-              isPositive={game.edges.moneyline.home.evPercent > 0}
-              isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
-              modelProb={game.edges.moneyline.home.modelProb}
-              impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
-              qualityGrade={game.edges.moneyline.home.qualityGrade}
-            />
+            {/* Only show B+ or higher rated bets */}
+            {game.edges.moneyline.home.qualityGrade !== 'B' && game.edges.moneyline.home.qualityGrade !== 'C' && (
+              <MarketRow 
+                team={game.homeTeam}
+                odds={game.edges.moneyline.home.odds}
+                ev={game.edges.moneyline.home.evPercent}
+                isPositive={game.edges.moneyline.home.evPercent > 0}
+                isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
+                modelProb={game.edges.moneyline.home.modelProb}
+                impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
+                qualityGrade={game.edges.moneyline.home.qualityGrade}
+              />
+            )}
           </div>
         )}
         
@@ -2100,27 +2106,33 @@ const MarketsGrid = ({ game, isMobile }) => {
               🎯 TOTAL
             </div>
             
-            <MarketRow 
-              team={`O ${game.rawOdds.total.line}`}
-              odds={game.edges.total.over.odds}
-              ev={game.edges.total.over.evPercent}
-              isPositive={game.edges.total.over.evPercent > 0}
-              isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
-              modelProb={game.edges.total.over.modelProb}
-              impliedProb={getImpliedProbability(game.edges.total.over.odds)}
-              qualityGrade={game.edges.total.over.qualityGrade}
-            />
+            {/* Only show B+ or higher rated bets */}
+            {game.edges.total.over.qualityGrade !== 'B' && game.edges.total.over.qualityGrade !== 'C' && (
+              <MarketRow 
+                team={`O ${game.rawOdds.total.line}`}
+                odds={game.edges.total.over.odds}
+                ev={game.edges.total.over.evPercent}
+                isPositive={game.edges.total.over.evPercent > 0}
+                isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
+                modelProb={game.edges.total.over.modelProb}
+                impliedProb={getImpliedProbability(game.edges.total.over.odds)}
+                qualityGrade={game.edges.total.over.qualityGrade}
+              />
+            )}
             
-            <MarketRow 
-              team={`U ${game.rawOdds.total.line}`}
-              odds={game.edges.total.under.odds}
-              ev={game.edges.total.under.evPercent}
-              isPositive={game.edges.total.under.evPercent > 0}
-              isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
-              modelProb={game.edges.total.under.modelProb}
-              impliedProb={getImpliedProbability(game.edges.total.under.odds)}
-              qualityGrade={game.edges.total.under.qualityGrade}
-            />
+            {/* Only show B+ or higher rated bets */}
+            {game.edges.total.under.qualityGrade !== 'B' && game.edges.total.under.qualityGrade !== 'C' && (
+              <MarketRow 
+                team={`U ${game.rawOdds.total.line}`}
+                odds={game.edges.total.under.odds}
+                ev={game.edges.total.under.evPercent}
+                isPositive={game.edges.total.under.evPercent > 0}
+                isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
+                modelProb={game.edges.total.under.modelProb}
+                impliedProb={getImpliedProbability(game.edges.total.under.odds)}
+                qualityGrade={game.edges.total.under.qualityGrade}
+              />
+            )}
           </div>
         )}
       </div>
@@ -2156,27 +2168,33 @@ const MarketsGrid = ({ game, isMobile }) => {
             ⚡ MONEYLINE
           </div>
           
-          <MarketRow 
-            team={game.awayTeam}
-            odds={game.edges.moneyline.away.odds}
-            ev={game.edges.moneyline.away.evPercent}
-            isPositive={game.edges.moneyline.away.evPercent > 0}
-            isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
-            modelProb={game.edges.moneyline.away.modelProb}
-            impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
-            qualityGrade={game.edges.moneyline.away.qualityGrade}
-          />
+          {/* Only show B+ or higher rated bets */}
+          {game.edges.moneyline.away.qualityGrade !== 'B' && game.edges.moneyline.away.qualityGrade !== 'C' && (
+            <MarketRow 
+              team={game.awayTeam}
+              odds={game.edges.moneyline.away.odds}
+              ev={game.edges.moneyline.away.evPercent}
+              isPositive={game.edges.moneyline.away.evPercent > 0}
+              isBestBet={game.edges.moneyline.away.evPercent === bestEvValue && game.edges.moneyline.away.evPercent > 5}
+              modelProb={game.edges.moneyline.away.modelProb}
+              impliedProb={getImpliedProbability(game.edges.moneyline.away.odds)}
+              qualityGrade={game.edges.moneyline.away.qualityGrade}
+            />
+          )}
           
-          <MarketRow 
-            team={game.homeTeam}
-            odds={game.edges.moneyline.home.odds}
-            ev={game.edges.moneyline.home.evPercent}
-            isPositive={game.edges.moneyline.home.evPercent > 0}
-            isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
-            modelProb={game.edges.moneyline.home.modelProb}
-            impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
-            qualityGrade={game.edges.moneyline.home.qualityGrade}
-          />
+          {/* Only show B+ or higher rated bets */}
+          {game.edges.moneyline.home.qualityGrade !== 'B' && game.edges.moneyline.home.qualityGrade !== 'C' && (
+            <MarketRow 
+              team={game.homeTeam}
+              odds={game.edges.moneyline.home.odds}
+              ev={game.edges.moneyline.home.evPercent}
+              isPositive={game.edges.moneyline.home.evPercent > 0}
+              isBestBet={game.edges.moneyline.home.evPercent === bestEvValue && game.edges.moneyline.home.evPercent > 5}
+              modelProb={game.edges.moneyline.home.modelProb}
+              impliedProb={getImpliedProbability(game.edges.moneyline.home.odds)}
+              qualityGrade={game.edges.moneyline.home.qualityGrade}
+            />
+          )}
         </div>
       )}
       
@@ -2200,27 +2218,33 @@ const MarketsGrid = ({ game, isMobile }) => {
             🎯 TOTAL
           </div>
           
-          <MarketRow 
-            team={`O ${game.rawOdds.total.line}`}
-            odds={game.edges.total.over.odds}
-            ev={game.edges.total.over.evPercent}
-            isPositive={game.edges.total.over.evPercent > 0}
-            isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
-            modelProb={game.edges.total.over.modelProb}
-            impliedProb={getImpliedProbability(game.edges.total.over.odds)}
-            qualityGrade={game.edges.total.over.qualityGrade}
-          />
+          {/* Only show B+ or higher rated bets */}
+          {game.edges.total.over.qualityGrade !== 'B' && game.edges.total.over.qualityGrade !== 'C' && (
+            <MarketRow 
+              team={`O ${game.rawOdds.total.line}`}
+              odds={game.edges.total.over.odds}
+              ev={game.edges.total.over.evPercent}
+              isPositive={game.edges.total.over.evPercent > 0}
+              isBestBet={game.edges.total.over.evPercent === bestEvValue && game.edges.total.over.evPercent > 5}
+              modelProb={game.edges.total.over.modelProb}
+              impliedProb={getImpliedProbability(game.edges.total.over.odds)}
+              qualityGrade={game.edges.total.over.qualityGrade}
+            />
+          )}
           
-          <MarketRow 
-            team={`U ${game.rawOdds.total.line}`}
-            odds={game.edges.total.under.odds}
-            ev={game.edges.total.under.evPercent}
-            isPositive={game.edges.total.under.evPercent > 0}
-            isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
-            modelProb={game.edges.total.under.modelProb}
-            impliedProb={getImpliedProbability(game.edges.total.under.odds)}
-            qualityGrade={game.edges.total.under.qualityGrade}
-          />
+          {/* Only show B+ or higher rated bets */}
+          {game.edges.total.under.qualityGrade !== 'B' && game.edges.total.under.qualityGrade !== 'C' && (
+            <MarketRow 
+              team={`U ${game.rawOdds.total.line}`}
+              odds={game.edges.total.under.odds}
+              ev={game.edges.total.under.evPercent}
+              isPositive={game.edges.total.under.evPercent > 0}
+              isBestBet={game.edges.total.under.evPercent === bestEvValue && game.edges.total.under.evPercent > 5}
+              modelProb={game.edges.total.under.modelProb}
+              impliedProb={getImpliedProbability(game.edges.total.under.odds)}
+              qualityGrade={game.edges.total.under.qualityGrade}
+            />
+          )}
         </div>
       )}
     </div>
