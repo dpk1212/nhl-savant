@@ -2271,7 +2271,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
-  const { isPremium, isFree, isReturningUser, loading: subscriptionLoading } = useSubscription(user);
+  const { isPremium, isFree, isReturningUser, loading: subscriptionLoading, tier, isActive, isTrial } = useSubscription(user);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [gameCardViewCount, setGameCardViewCount] = useState(0);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
@@ -2326,32 +2326,61 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const checkDailySpins = async () => {
       const hasSeenWelcomePopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
       
-      // Only show for:
-      // 1. Subscription state has finished loading (prevent showing during load)
-      // 2. Returning users (has visited before)
-      // 3. Non-premium users (includes checking both active and trial subscriptions)
-      // 4. After they've seen the welcome popup (so not first-time visitors)
-      if (!subscriptionLoading && isReturningUser && !isPremium && hasSeenWelcomePopup) {
-        const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
+      // CRITICAL: Wait for subscription to load, then delay 3 seconds for Stripe data to fully populate
+      // Only proceed if user is returning and has seen welcome popup
+      if (!subscriptionLoading && isReturningUser && hasSeenWelcomePopup) {
         
-        // Check and reset daily spins if needed
-        checkAndResetDaily();
-        
-        // Get available spins
-        const spinsData = await getDailySpins(user?.uid || null);
-        
-        if (spinsData.remaining > 0) {
-          // Show modal after 2 second delay
-          setTimeout(() => {
-            setDailySpinsRemaining(spinsData.remaining);
-            setShowDailySpinModal(true);
-          }, 2000);
-        }
+        // Wait 3 seconds for Stripe subscription to fully load before checking
+        setTimeout(async () => {
+          // EXPLICIT CHECKS: Must pass ALL of these to show modal
+          // 1. Not premium (isPremium should be false)
+          // 2. Tier must be 'free' (not scout, elite, or pro)
+          // 3. Not active subscription (!isActive)
+          // 4. Not in trial period (!isTrial)
+          const shouldShowModal = !isPremium && 
+                                   tier === 'free' && 
+                                   !isActive && 
+                                   !isTrial;
+          
+          if (shouldShowModal) {
+            console.log('✅ DAILY SPIN CHECK PASSED:', {
+              isPremium,
+              tier,
+              isActive,
+              isTrial,
+              reason: 'Free user - showing modal'
+            });
+            
+            const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
+            
+            // Check and reset daily spins if needed
+            checkAndResetDaily();
+            
+            // Get available spins
+            const spinsData = await getDailySpins(user?.uid || null);
+            
+            if (spinsData.remaining > 0) {
+              setDailySpinsRemaining(spinsData.remaining);
+              setShowDailySpinModal(true);
+            }
+          } else {
+            console.log('🚫 DAILY SPIN BLOCKED (Premium user):', {
+              isPremium,
+              tier,
+              isActive,
+              isTrial,
+              reason: isPremium ? 'Premium subscription active' : 
+                      isActive ? 'Active subscription' :
+                      isTrial ? 'Trial subscription' :
+                      tier !== 'free' ? `Paid tier: ${tier}` : 'Unknown'
+            });
+          }
+        }, 3000); // 3 second delay for subscription to load from Stripe
       }
     };
     
     checkDailySpins();
-  }, [isReturningUser, isPremium, subscriptionLoading, user]);
+  }, [isReturningUser, isPremium, subscriptionLoading, tier, isActive, isTrial, user]);
   
   // Handle daily spin complete
   const handleDailySpinComplete = async (prizeCode) => {

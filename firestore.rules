@@ -53,11 +53,9 @@ service cloud.firestore {
     // User daily spins - users can manage their own spin data
     match /user_spins/{spinDoc} {
       // Spin docs are formatted as {userId}_{date}
-      // Extract userId from the document ID
-      allow read: if request.auth != null && 
-                     spinDoc.matches('^' + request.auth.uid + '_.*$');
-      allow write: if request.auth != null && 
-                      spinDoc.matches('^' + request.auth.uid + '_.*$');
+      // Simplified rule: check if document starts with user's UID
+      allow read, write: if request.auth != null && 
+                            spinDoc.split('_')[0] == request.auth.uid;
     }
   }
 }
