@@ -213,7 +213,7 @@ export default function DailySpinModal({
               textAlign: 'center',
               lineHeight: '1.5'
             }}>
-              Join 1,000+ winning bettors with proven 64.7% win rate
+              Try our proven system risk-free
             </div>
             <div style={{
               display: 'grid',
