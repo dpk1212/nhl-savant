@@ -133,10 +133,11 @@ export default function PerformanceDashboard() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       
-      // FILTER: Only include B-rated or higher bets (>= 3% EV) AND exclude totals
+      // FILTER: Only include B+ or higher bets (>= 2.5% EV) AND exclude totals
       // Totals betting disabled Oct 31, 2025 - not profitable with public data
       const qualityBets = bets.filter(b => 
         b.prediction?.rating !== 'C' && 
+        b.prediction?.rating !== 'B' &&
         b.bet?.market !== 'TOTAL' && 
         !b.bet?.market?.includes('TOTAL')
       );
