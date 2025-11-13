@@ -2289,6 +2289,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
   const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
   
+  // Track page load time for Stripe check timing
+  useEffect(() => {
+    if (!window.pageLoadTime) {
+      window.pageLoadTime = Date.now();
+    }
+  }, []);
+  
   // Check if user has previously acknowledged disclaimer
   useEffect(() => {
     const acknowledged = localStorage.getItem('nhl_savant_disclaimer_acknowledged');
@@ -2326,16 +2333,26 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const checkDailySpins = async () => {
       const hasSeenWelcomePopup = localStorage.getItem('nhlsavant_welcome_popup_seen');
       
-      // FIXED: Check immediately when subscription data is loaded from Stripe
-      // Effect will re-run when tier/isPremium/isActive/isTrial update from Stripe
-      // No arbitrary timeout - wait for actual data confirmation
+      // CRITICAL FIX: Wait for BOTH Firestore AND Stripe to load before checking
+      // Firestore is fast (100ms) but may have stale 'free' tier
+      // Stripe is slow (2-6s) but has accurate subscription status
       if (!subscriptionLoading && isReturningUser && hasSeenWelcomePopup) {
         
-        // Safety check: Only proceed if subscription tier is defined (data loaded from Stripe)
-        // This prevents checking with uninitialized/stale data on slow mobile connections
+        // SAFETY CHECK 1: Don't check until tier is defined
         if (tier === undefined) {
-          console.log('⏳ Waiting for subscription data to load from Stripe...');
-          return; // Exit early - effect will re-run when tier is set
+          console.log('⏳ Waiting for subscription data to load...');
+          return;
+        }
+        
+        // SAFETY CHECK 2: For logged-in users, wait minimum 2 seconds for Stripe to respond
+        // This prevents checking Firestore's stale 'free' tier before Stripe updates it
+        if (user) {
+          const timeSinceLoad = Date.now() - (window.pageLoadTime || Date.now());
+          if (timeSinceLoad < 2000) {
+            console.log('⏳ Waiting for Stripe subscription check to complete...');
+            setTimeout(checkDailySpins, 2000 - timeSinceLoad); // Check again after 2s total
+            return;
+          }
         }
         
         // EXPLICIT CHECKS: Must pass ALL of these to show modal
