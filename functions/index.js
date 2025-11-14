@@ -210,7 +210,9 @@ exports.updateBetResults = onSchedule({
 
       // Calculate outcome
       const outcome = calculateOutcome(matchingGame, bet.bet);
-      const profit = calculateProfit(outcome, bet.bet.odds);
+      // Use Kelly-sized units from bet recommendation
+      const units = bet.prediction?.recommendedUnit || 1;
+      const profit = calculateProfit(outcome, bet.bet.odds, units);
 
       // Update bet in Firestore
       await admin.firestore()
@@ -306,16 +308,16 @@ function calculateOutcome(game, bet) {
 }
 
 /**
- * Helper: Calculate profit in units (assumes 1 unit flat bet)
+ * Helper: Calculate profit in units (Kelly-sized)
  */
-function calculateProfit(outcome, odds) {
+function calculateProfit(outcome, odds, units = 1) {
   if (outcome === "PUSH") return 0;
-  if (outcome === "LOSS") return -1;
+  if (outcome === "LOSS") return -units; // Kelly-sized loss
 
-  // WIN
+  // WIN - multiply payout by Kelly units
   if (odds < 0) {
-    return 100 / Math.abs(odds); // e.g., -110 → 0.909 units
+    return (100 / Math.abs(odds)) * units; // e.g., -110 with 2u → 1.82 units
   } else {
-    return odds / 100; // e.g., +150 → 1.5 units
+    return (odds / 100) * units; // e.g., +150 with 3u → 4.5 units
   }
 }
