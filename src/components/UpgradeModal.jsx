@@ -24,11 +24,12 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       price: '$7.99',
       period: 'week',
       trial: '5-day free trial',
+      priceAnchor: '< 1 Starbucks/day',
+      pricePerDay: '$1.14/day',
       features: [
-        'All +EV picks with Expected Value',
-        'AI-powered matchup breakdowns',
-        'Real-time profit tracking',
-        'Elite predictive model access'
+        'Full access to all features',
+        'Week-to-week flexibility',
+        'Cancel anytime'
       ]
     },
     {
@@ -38,12 +39,13 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       period: 'month',
       trial: '7-day free trial',
       popular: true,
+      priceAnchor: '< 1 coffee/day',
+      pricePerDay: '87¢/day',
+      savings: 'Save $9/mo',
       features: [
-        'Unlimited daily +EV opportunities',
-        'Full model performance metrics',
-        'Advanced analytics & hot takes',
-        'Priority model updates',
-        'Best monthly value'
+        'Full access to all features',
+        'Best monthly value',
+        'Cancel anytime'
       ]
     },
     {
@@ -52,12 +54,14 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       price: '$150',
       period: 'year',
       trial: '10-day free trial',
-      savings: 'Save 50%',
+      priceAnchor: '< 1 pizza/month',
+      pricePerDay: '41¢/day',
+      savings: 'Save $161.88/year',
+      badge: '$12.50/month',
       features: [
-        'Everything in Elite',
-        'Season-long ROI tracking',
-        'Exclusive annual insights',
-        'Maximum savings (only $12.50/mo)'
+        'Full access to all features',
+        'Season-long commitment',
+        'Best value - only $12.50/mo'
       ]
     }
   ];
@@ -278,10 +282,42 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
                 fontSize: window.innerWidth < 640 ? '0.8125rem' : '0.875rem',
                 color: '#10B981',
                 fontWeight: '600',
-                marginBottom: '0.875rem'
+                marginBottom: '0.5rem'
               }}>
                 {tier.trial}
               </div>
+
+              {/* Price Anchor */}
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'rgba(241, 245, 249, 0.5)',
+                fontStyle: 'italic',
+                marginBottom: '0.5rem'
+              }}>
+                💭 {tier.priceAnchor}
+              </div>
+
+              {/* Price Per Day */}
+              <div style={{
+                fontSize: window.innerWidth < 640 ? '0.9375rem' : '1rem',
+                color: tier.popular ? '#D4AF37' : '#60A5FA',
+                fontWeight: '700',
+                marginBottom: tier.badge ? '0.5rem' : '0.875rem'
+              }}>
+                {tier.pricePerDay}
+              </div>
+
+              {/* Badge (for Pro) */}
+              {tier.badge && (
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#10B981',
+                  fontWeight: '600',
+                  marginBottom: '0.875rem'
+                }}>
+                  {tier.badge}
+                </div>
+              )}
 
               {/* Features */}
               <div style={{

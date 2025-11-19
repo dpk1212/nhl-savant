@@ -35,6 +35,42 @@ const Pricing = () => {
     redirectToCheckout(tier, user);
   };
 
+  // Universal features - same for all tiers
+  const universalFeatures = [
+    {
+      title: 'Never miss a +EV opportunity',
+      description: 'Daily picks delivered with clear quality grades'
+    },
+    {
+      title: 'Bet with confidence, not guesses',
+      description: 'Advanced ensemble model beats basic odds'
+    },
+    {
+      title: 'Understand the \'why\' behind every pick',
+      description: 'Expert analysis breaks down each opportunity'
+    },
+    {
+      title: 'Track your edge in real-time',
+      description: 'Live probability updates as games progress'
+    },
+    {
+      title: 'Prove your profits (or learn from losses)',
+      description: 'Complete performance tracking & analytics'
+    },
+    {
+      title: 'Spot player value before the market',
+      description: 'Top scorers & player trend analysis'
+    },
+    {
+      title: 'Get answers when you need them',
+      description: 'Direct email access to the model creator'
+    },
+    {
+      title: 'Learn while you earn',
+      description: 'Full transparency into prediction methodology'
+    }
+  ];
+
   const tiers = [
     {
       id: 'scout',
@@ -44,14 +80,13 @@ const Pricing = () => {
       period: 'week',
       trial: '5-day free trial',
       description: 'Test Drive +EV Betting',
-      features: [
-        'All daily +EV picks',
-        'Performance tracking',
-        'Expert analysis & insights',
-        'Complete model transparency',
-        'Win/loss profit tracking'
-      ],
-      cta: 'Start 5-Day Trial'
+      priceAnchor: 'Less than 1 Starbucks per day',
+      pricePerDay: '$1.14/day',
+      cta: 'Start 5-Day Trial',
+      valueProps: [
+        'Week-to-week flexibility',
+        'Cancel anytime'
+      ]
     },
     {
       id: 'elite',
@@ -60,17 +95,16 @@ const Pricing = () => {
       price: '$25.99',
       period: 'month',
       trial: '7-day free trial',
-      description: 'Serious +EV Hunter',
+      description: 'Best Monthly Value',
       popular: true,
-      features: [
-        'Everything in Scout',
-        'Priority email support',
-        'Advanced performance analytics',
-        'Bet tracking & notifications',
-        'Detailed matchup breakdowns',
-        'Access to historical data'
-      ],
-      cta: 'Start 7-Day Trial'
+      priceAnchor: 'Less than 1 coffee per day',
+      pricePerDay: '87¢/day',
+      savings: 'Save $9/month vs weekly',
+      cta: 'Start 7-Day Trial',
+      valueProps: [
+        'Perfect for serious bettors',
+        'Best monthly value'
+      ]
     },
     {
       id: 'pro',
@@ -79,17 +113,16 @@ const Pricing = () => {
       price: '$150',
       period: 'year',
       trial: '10-day free trial',
-      description: 'Professional Edge Seeker',
-      savings: 'Save 50% vs Monthly',
-      features: [
-        'Everything in Elite',
-        'Annual performance reports',
-        'Priority support (24h response)',
-        'Custom bet filters & alerts',
-        'API access (coming soon)',
-        'Best value - $12.50/month'
-      ],
-      cta: 'Start 10-Day Trial'
+      description: 'Maximum Savings',
+      priceAnchor: 'Less than 1 pizza per month',
+      pricePerDay: '41¢/day',
+      savings: 'Save $161.88/year',
+      badge: 'Just $12.50/month',
+      cta: 'Start 10-Day Trial',
+      valueProps: [
+        'Season-long winning edge',
+        'Best value - only $12.50/mo'
+      ]
     }
   ];
 
@@ -152,6 +185,100 @@ const Pricing = () => {
               <span style={{ color: '#60A5FA', fontWeight: '600', fontSize: '0.938rem' }}>Free Trial Included</span>
             </div>
           </div>
+        </div>
+
+        {/* Universal Features Section */}
+        <div style={{
+          maxWidth: '900px',
+          margin: '0 auto 5rem auto',
+          background: 'rgba(30, 41, 59, 0.4)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(148, 163, 184, 0.2)',
+          borderRadius: '20px',
+          padding: '3rem 2.5rem'
+        }}>
+          <h2 style={{
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: '#F1F5F9',
+            textAlign: 'center',
+            marginBottom: '0.5rem'
+          }}>
+            Every Plan Includes Everything
+          </h2>
+          <p style={{
+            fontSize: '1rem',
+            color: 'rgba(241, 245, 249, 0.6)',
+            textAlign: 'center',
+            marginBottom: '3rem'
+          }}>
+            No hidden tiers. No gated features. Just pick your commitment level.
+          </p>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+            gap: '2rem'
+          }}>
+            {universalFeatures.map((feature, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem'
+              }}>
+                <div style={{
+                  minWidth: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '2px'
+                }}>
+                  <Check size={14} color="#0A0E27" strokeWidth={3} />
+                </div>
+                <div>
+                  <div style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#F1F5F9',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {feature.title}
+                  </div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: 'rgba(241, 245, 249, 0.6)',
+                    lineHeight: '1.5'
+                  }}>
+                    {feature.description}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pricing Section Header */}
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <h2 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            color: '#F1F5F9',
+            marginBottom: '0.75rem'
+          }}>
+            Choose Your Commitment Level
+          </h2>
+          <p style={{
+            fontSize: '1.125rem',
+            color: 'rgba(241, 245, 249, 0.7)',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            All plans get full access. Save more with longer commitments.
+          </p>
         </div>
 
         {/* Tier Cards */}
@@ -307,30 +434,72 @@ const Pricing = () => {
                   fontSize: '0.938rem',
                   color: '#10B981',
                   fontWeight: '600',
-                  marginBottom: '2rem'
+                  marginBottom: '1rem'
                 }}>
                   ✨ {tierInfo.trial}
                 </div>
 
-                {/* Features */}
+                {/* Price Anchor */}
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: 'rgba(241, 245, 249, 0.6)',
+                  fontStyle: 'italic',
+                  marginBottom: '0.5rem'
+                }}>
+                  💭 {tierInfo.priceAnchor}
+                </div>
+                
+                {/* Price Per Day */}
+                <div style={{
+                  fontSize: '1.125rem',
+                  color: tierInfo.popular ? '#D4AF37' : '#60A5FA',
+                  fontWeight: '700',
+                  marginBottom: tierInfo.badge ? '0.5rem' : '2rem'
+                }}>
+                  {tierInfo.pricePerDay}
+                  {tierInfo.savings && (
+                    <span style={{
+                      fontSize: '0.813rem',
+                      color: '#10B981',
+                      marginLeft: '0.5rem',
+                      fontWeight: '600'
+                    }}>
+                      • {tierInfo.savings}
+                    </span>
+                  )}
+                </div>
+
+                {/* Badge (for Pro tier) */}
+                {tierInfo.badge && (
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: '#10B981',
+                    fontWeight: '600',
+                    marginBottom: '2rem'
+                  }}>
+                    {tierInfo.badge}
+                  </div>
+                )}
+
+                {/* Value Props */}
                 <div style={{
                   marginBottom: '2rem',
-                  minHeight: '200px'
+                  minHeight: '80px'
                 }}>
-                  {tierInfo.features.map((feature, idx) => (
+                  {tierInfo.valueProps.map((prop, idx) => (
                     <div key={idx} style={{
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '0.75rem',
-                      marginBottom: '0.875rem'
+                      marginBottom: '0.75rem'
                     }}>
                       <Check size={18} color={tierInfo.popular ? '#D4AF37' : '#60A5FA'} strokeWidth={3} style={{ flexShrink: 0, marginTop: '2px' }} />
                       <span style={{
-                        fontSize: '0.938rem',
-                        color: 'rgba(241, 245, 249, 0.9)',
+                        fontSize: '0.875rem',
+                        color: 'rgba(241, 245, 249, 0.8)',
                         lineHeight: '1.5'
                       }}>
-                        {feature}
+                        {prop}
                       </span>
                     </div>
                   ))}
