@@ -25,8 +25,6 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const [loading, setLoading] = useState(true);
   const [roiCounter, setRoiCounter] = useState(0);
   const [discountCode, setDiscountCode] = useState(null);
-  const [aPlusROI, setAPlusROI] = useState(14.3);
-  const [aPlusBetCount, setAPlusBetCount] = useState(69);
   
   // Loading animation state
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -77,9 +75,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   // Fetch stats on mount (copied from old modal)
   useEffect(() => {
     if (isOpen) {
-      // Fetch ALL performance stats (same as Performance Dashboard)
+      // Fetch ALL performance stats (EXACT SAME as Performance Dashboard)
       getPerformanceStats().then(perfStats => {
-        console.log('📊 Quiz Funnel - Performance Stats:', perfStats);
+        console.log('📊 Quiz Funnel - Using Dashboard Stats:', perfStats);
         setStats(perfStats);
         setLoading(false);
         
@@ -103,48 +101,6 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           return () => clearInterval(timer);
         }
       });
-
-      // Fetch A+ rating ROI specifically for paywall
-      const fetchAPlusROI = async () => {
-        try {
-          const q = query(
-            collection(db, 'bets'),
-            where('status', '==', 'COMPLETED')
-          );
-          
-          const snapshot = await getDocs(q);
-          const bets = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-          
-          // Filter for A+ bets (quality bets only, no totals)
-          const aPlusBets = bets.filter(b => 
-            (b.prediction?.rating === 'A+' || b.prediction?.qualityGrade === 'A+') &&
-            b.bet?.market !== 'TOTAL' && 
-            !b.bet?.market?.includes('TOTAL')
-          );
-          
-          if (aPlusBets.length > 0) {
-            const totalProfit = aPlusBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
-            
-            // Calculate ROI EXACTLY like Performance Dashboard (divide by starting bankroll)
-            const STARTING_BANKROLL = 500;
-            const flatProfit = totalProfit * 10;
-            const roi = (flatProfit / STARTING_BANKROLL) * 100;
-            
-            console.log('📊 A+ Stats:', { 
-              bets: aPlusBets.length, 
-              roi: roi.toFixed(1) + '%',
-              profit: flatProfit.toFixed(2)
-            });
-            
-            setAPlusROI(roi);
-            setAPlusBetCount(aPlusBets.length);
-          }
-        } catch (error) {
-          console.error('❌ Error fetching A+ ROI:', error);
-        }
-      };
-      
-      fetchAPlusROI();
     } else {
       setRoiCounter(0);
     }
@@ -938,7 +894,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   color: 'rgba(241, 245, 249, 0.75)',
                   marginTop: isMobile ? '0.25rem' : '0.375rem'
                 }}>
-                  ROI since Oct 2025 • {aPlusBetCount} bets
+                  ROI since Oct 2025 • {stats?.moneylineBets || 0} bets
                 </div>
               </div>
             </div>
