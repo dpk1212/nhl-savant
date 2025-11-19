@@ -275,11 +275,10 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           border: '2px solid rgba(212, 175, 55, 0.3)',
           borderRadius: isMobile ? '16px' : '24px',
-          padding: isMobile ? '1.5rem' : '2.5rem',
+          padding: 0,
           maxWidth: '620px',
           width: '100%',
           maxHeight: '95vh',
-          overflowY: 'auto',
           position: 'relative',
           boxShadow: `
             0 25px 50px -12px rgba(0, 0, 0, 0.5),
@@ -288,7 +287,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             inset 0 1px 0 rgba(255, 255, 255, 0.1)
           `,
           animation: 'modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -325,40 +326,20 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           zIndex: 0
         }} />
         
-        {/* Content wrapper with z-index */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Close Button */}
-        <button
-          onClick={handleClose}
-          style={{
-            position: 'absolute',
-            top: isMobile ? '0.75rem' : '1rem',
-            right: isMobile ? '0.75rem' : '1rem',
-            background: 'none',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.6)',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'color 0.2s ease',
-            zIndex: 10
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 1)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'}
-        >
-          <X size={24} strokeWidth={2} />
-        </button>
-
-        {/* Back Button (visible on screens 2-4) */}
-        {currentScreen > 1 && currentScreen !== 3 && (
+        {/* Fixed Header with Buttons */}
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          padding: isMobile ? '1rem 1rem 0.5rem' : '1.25rem 1.5rem 0.75rem',
+          flexShrink: 0
+        }}>
+          {/* Close Button */}
           <button
-            onClick={() => setCurrentScreen(currentScreen === 4 ? 2 : currentScreen - 1)}
+            onClick={handleClose}
             style={{
               position: 'absolute',
               top: isMobile ? '0.75rem' : '1rem',
-              left: isMobile ? '0.75rem' : '1rem',
+              right: isMobile ? '0.75rem' : '1rem',
               background: 'none',
               border: 'none',
               color: 'rgba(255, 255, 255, 0.6)',
@@ -366,18 +347,55 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               padding: '0.5rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
-              fontSize: '0.875rem',
+              justifyContent: 'center',
               transition: 'color 0.2s ease',
               zIndex: 10
             }}
             onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 1)'}
             onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'}
           >
-            <ChevronLeft size={20} />
-            Back
+            <X size={24} strokeWidth={2} />
           </button>
-        )}
+
+          {/* Back Button (visible on screens 2-4) */}
+          {currentScreen > 1 && currentScreen !== 3 && (
+            <button
+              onClick={() => setCurrentScreen(currentScreen === 4 ? 2 : currentScreen - 1)}
+              style={{
+                position: 'absolute',
+                top: isMobile ? '0.75rem' : '1rem',
+                left: isMobile ? '0.75rem' : '1rem',
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.6)',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.875rem',
+                transition: 'color 0.2s ease',
+                zIndex: 10
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 1)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'}
+            >
+              <ChevronLeft size={20} />
+              Back
+            </button>
+          )}
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div style={{
+          position: 'relative',
+          zIndex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1,
+          padding: isMobile ? '0 1.5rem 1.5rem' : '0 2.5rem 2.5rem',
+          WebkitOverflowScrolling: 'touch'
+        }}>
 
         {/* Screen 1: Pain Point Selection */}
         {currentScreen === 1 && (
