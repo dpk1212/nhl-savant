@@ -261,13 +261,13 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   // Commitment details
   const commitmentDetails = {
     YES: {
-      message: `Perfect. At ${betSize} units, today's picks = $29 expected value`
+      message: "Smart. Our data-driven approach finds consistent +EV opportunities the market misses"
     },
     MAYBE: {
-      message: "Smart. Here's our 31% ROI tracked since Oct 2025"
+      message: `Good call. Our ${roiCounter}% ROI since Oct 2025 speaks for itself - every bet tracked publicly`
     },
     NO: {
-      message: `No problem. Even at ${betSize} units, +EV compounds fast. Start small, scale up.`
+      message: "No pressure. Take your time to see how our model beats the closing lines consistently"
     }
   };
 
@@ -493,7 +493,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 margin: '0 0 1rem 0',
                 lineHeight: '1.2'
               }}>
-                What's costing you the most money in NHL betting?
+                What's costing you the most money in sports betting?
               </h2>
             </div>
 
@@ -649,7 +649,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 marginLeft: 'auto',
                 marginRight: 'auto'
               }}>
-                <li style={{ marginBottom: '0.5rem' }}>✓ Has 31% ROI since Oct 2025</li>
+                <li style={{ marginBottom: '0.5rem' }}>✓ Has {roiCounter}% ROI since Oct 2025</li>
                 <li style={{ marginBottom: '0.5rem' }}>✓ Beats closing lines consistently</li>
                 <li style={{ marginBottom: '0.5rem' }}>✓ Finds +EV the books miss</li>
                 <li style={{ marginBottom: '0.5rem' }}>✓ Tracks EVERY bet publicly (no BS)</li>
@@ -660,7 +660,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 fontWeight: '600',
                 margin: 0
               }}>
-                Would you bet $100/game on it TODAY?
+                What are you looking for?
               </p>
             </div>
 
@@ -689,9 +689,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {[
-                { key: 'YES', text: 'YES - Show me the picks', betSize: '$100', color: 'green', badge: 'Recommended' },
-                { key: 'MAYBE', text: 'MAYBE - I need to see proof', betSize: '$100', color: 'blue', badge: null },
-                { key: 'NO', text: 'NO - I only bet $10-25/game', betSize: '$10-25', color: 'gray', badge: null }
+                { key: 'YES', text: 'Show me how it works', betSize: 'smart', color: 'green', badge: 'Recommended' },
+                { key: 'MAYBE', text: 'I need to see the proof first', betSize: 'proof', color: 'blue', badge: null },
+                { key: 'NO', text: 'Just exploring for now', betSize: 'exploring', color: 'gray', badge: null }
               ].map((option, idx) => {
                 const colorStyles = {
                   green: {
@@ -877,11 +877,11 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             {/* Header */}
             <div style={{
               textAlign: 'center',
-              marginBottom: isMobile ? '1.5rem' : '2rem',
-              marginTop: '1.5rem'
+              marginBottom: isMobile ? '0.875rem' : '1.5rem',
+              marginTop: isMobile ? '0.875rem' : '1.5rem'
             }}>
               <p style={{
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontSize: isMobile ? '0.688rem' : '0.813rem',
                 color: 'rgba(212, 175, 55, 0.8)',
                 marginBottom: '0.5rem',
                 textTransform: 'uppercase',
@@ -896,13 +896,13 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             <div style={{
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(212, 175, 55, 0.15))',
               border: '2px solid rgba(212, 175, 55, 0.4)',
-              borderRadius: '16px',
-              padding: '1.5rem',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '1rem' : '1.5rem',
               textAlign: 'center',
               position: 'relative',
               overflow: 'hidden',
               boxShadow: '0 8px 32px rgba(212, 175, 55, 0.2)',
-              marginBottom: '1.25rem'
+              marginBottom: isMobile ? '0.875rem' : '1.25rem'
             }}>
               {/* Animated background pattern */}
               <div style={{
@@ -918,7 +918,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
-                  fontSize: '3rem',
+                  fontSize: isMobile ? '2.25rem' : '3rem',
                   fontWeight: '700',
                   color: '#10B981',
                   textShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
@@ -927,9 +927,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   +{roiCounter}%
                 </div>
                 <div style={{
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   color: 'rgba(241, 245, 249, 0.8)',
-                  marginTop: '0.5rem'
+                  marginTop: '0.375rem'
                 }}>
                   ROI since Oct 2025 • {aPlusBetCount} bets tracked
                 </div>
@@ -941,15 +941,15 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               borderLeft: '4px solid #EF4444',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              fontSize: '0.875rem',
-              marginBottom: '1.25rem'
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '0.875rem' : '1.25rem',
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              marginBottom: isMobile ? '0.875rem' : '1.25rem'
             }}>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>❌</div>
+                <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', flexShrink: 0 }}>❌</div>
                 <div style={{ color: 'rgba(241, 245, 249, 0.9)', lineHeight: '1.6' }}>
-                  <strong>You're like 1,247 others losing to:</strong>
+                  <strong>You're like thousands of bettors losing to:</strong>
                   <br />"{painPointDetails[painPoint]?.issue}"
                   <div style={{ marginTop: '0.5rem', color: 'rgba(241, 245, 249, 0.7)' }}>
                     {painPointDetails[painPoint]?.message}
@@ -960,12 +960,12 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
 
             {/* Today's Picks Preview (if available) */}
             {gamesWithEdges.length > 0 && (
-              <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>
                 <h3 style={{
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   fontWeight: '700',
                   color: '#F1F5F9',
-                  marginBottom: '0.75rem',
+                  marginBottom: isMobile ? '0.5rem' : '0.75rem',
                   textAlign: 'center',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
@@ -981,11 +981,11 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                       style={{
                         background: 'rgba(30, 41, 59, 0.6)',
                         border: '1px solid rgba(212, 175, 55, 0.25)',
-                        borderRadius: '10px',
-                        padding: isMobile ? '0.75rem' : '0.875rem',
+                        borderRadius: isMobile ? '8px' : '10px',
+                        padding: isMobile ? '0.625rem' : '0.75rem',
                         position: 'relative',
                         overflow: 'hidden',
-                        marginBottom: '0.625rem'
+                        marginBottom: isMobile ? '0.5rem' : '0.625rem'
                       }}
                     >
                       {/* Game Info */}
@@ -1047,16 +1047,16 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             <div style={{
               background: 'rgba(30, 41, 59, 0.6)',
               border: '1px solid rgba(212, 175, 55, 0.2)',
-              borderRadius: '12px',
-              padding: '1.25rem',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '0.875rem' : '1.25rem',
               textAlign: 'center',
-              marginBottom: '1.25rem'
+              marginBottom: isMobile ? '0.75rem' : '1.25rem'
             }}>
               <h4 style={{
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#D4AF37',
-                marginBottom: '1rem',
+                marginBottom: isMobile ? '0.75rem' : '1rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
@@ -1070,8 +1070,8 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               onClick={handleUnlock}
               style={{
                 width: '100%',
-                padding: '1.25rem 2rem',
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                padding: isMobile ? '1rem 1.5rem' : '1.25rem 2rem',
+                fontSize: isMobile ? '1rem' : '1.25rem',
                 fontWeight: '800',
                 background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
                 backgroundSize: '200% 100%',
@@ -1119,10 +1119,10 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             </button>
 
             <p style={{
-              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
               color: 'rgba(255, 255, 255, 0.5)',
               textAlign: 'center',
-              marginTop: isMobile ? '0.75rem' : '1rem',
+              marginTop: isMobile ? '0.5rem' : '0.75rem',
               marginBottom: 0
             }}>
               Less than 1 coffee/day (87¢/day) • 7-day free trial • Cancel anytime
