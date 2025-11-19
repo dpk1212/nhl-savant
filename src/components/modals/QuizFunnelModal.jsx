@@ -195,11 +195,11 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
     setDiscountCode(code);
     logEvent('quiz_discount_revealed', { code, painPoint, commitmentLevel });
     
-    // Wait 2 seconds to show the code, then navigate
+    // Wait 4 seconds to show the code, then navigate
     setTimeout(() => {
       onClose();
       navigate('/pricing');
-    }, 2000);
+    }, 4000);
   };
 
   // Pain point details
