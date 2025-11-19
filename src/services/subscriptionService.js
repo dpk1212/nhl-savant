@@ -6,9 +6,9 @@ import { db } from '../firebase/config';
  * These match the payment links provided
  */
 export const STRIPE_PRICES = {
-  scout: 'price_1QRu1eIRTqv9BYnSm3prmj02',  // $7.99/week, 2-day trial
-  elite: 'price_1QRu1eIRTqv9BYnSm3prmj03',  // $25.99/month, 3-day trial
-  pro: 'price_1QRu1eIRTqv9BYnSm3prmj00'    // $150/year, 5-day trial
+  scout: 'price_1QRu1eIRTqv9BYnSm3prmj02',  // $7.99/week, 5-day trial
+  elite: 'price_1QRu1eIRTqv9BYnSm3prmj03',  // $25.99/month, 7-day trial
+  pro: 'price_1QRu1eIRTqv9BYnSm3prmj00'    // $150/year, 10-day trial
 };
 
 /**
@@ -19,7 +19,7 @@ export const TIER_INFO = {
     name: 'Scout',
     price: '$7.99',
     period: 'week',
-    trial: '2-day',
+    trial: '5-day',
     description: 'Test Drive +EV Betting',
     features: [
       'All daily picks',
@@ -32,7 +32,7 @@ export const TIER_INFO = {
     name: 'Elite',
     price: '$25.99',
     period: 'month',
-    trial: '3-day',
+    trial: '7-day',
     description: 'Serious +EV Hunter',
     popular: true,
     features: [
@@ -47,7 +47,7 @@ export const TIER_INFO = {
     name: 'SAVANT PRO',
     price: '$150',
     period: 'year',
-    trial: '5-day',
+    trial: '10-day',
     description: 'Professional Edge Seeker',
     savings: 'Save 50% vs monthly',
     features: [

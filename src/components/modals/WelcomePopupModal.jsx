@@ -726,7 +726,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           }}
         >
           <ArrowRight size={isMobile ? 18 : 20} strokeWidth={3} />
-          <span>{discountCode ? `Claim ${discountCode} Discount` : 'Start 3-Day Free Trial'}</span>
+          <span>{discountCode ? `Claim ${discountCode} Discount` : 'Start 7-Day Free Trial'}</span>
         </button>
 
         <p style={{
@@ -737,7 +737,7 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           marginBottom: isMobile ? '1rem' : '1.25rem',
           animation: 'fadeInUp 0.5s ease-out 1.1s both'
         }}>
-          3-day free trial • Cancel anytime
+          7-day free trial • Cancel anytime
         </p>
 
         {/* Divider */}

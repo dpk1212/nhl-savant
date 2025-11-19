@@ -26,9 +26,9 @@ export const getStripe = () => {
  * 1. Go to: https://dashboard.stripe.com/test/payment-links
  * 2. Click "New" to create a payment link for each tier
  * 3. Configure:
- *    - Scout: $7.99/week with 2-day trial
- *    - Elite: $25.99/month with 3-day trial  
- *    - Pro: $150/year with 5-day trial
+ *    - Scout: $7.99/week with 5-day trial
+ *    - Elite: $25.99/month with 7-day trial  
+ *    - Pro: $150/year with 10-day trial
  * 4. In "After payment" settings, set success URL to: https://yourdomain.com/?checkout=success
  * 5. Copy the payment link URL (starts with https://buy.stripe.com/...)
  * 6. Paste it below
@@ -76,14 +76,14 @@ export const PRICING = {
     price: 7.99,
     currency: 'USD',
     interval: 'week',
-    trialDays: 2
+    trialDays: 5
   },
   elite: {
     name: 'Elite',
     price: 25.99,
     currency: 'USD',
     interval: 'month',
-    trialDays: 3,
+    trialDays: 7,
     popular: true
   },
   pro: {
@@ -91,7 +91,7 @@ export const PRICING = {
     price: 150.00,
     currency: 'USD',
     interval: 'year',
-    trialDays: 5,
+    trialDays: 10,
     savings: 'Save 50%'
   }
 };

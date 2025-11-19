@@ -23,7 +23,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       name: 'Scout',
       price: '$7.99',
       period: 'week',
-      trial: '2-day free trial',
+      trial: '5-day free trial',
       features: [
         'All +EV picks with Expected Value',
         'AI-powered matchup breakdowns',
@@ -36,7 +36,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       name: 'Elite',
       price: '$25.99',
       period: 'month',
-      trial: '3-day free trial',
+      trial: '7-day free trial',
       popular: true,
       features: [
         'Unlimited daily +EV opportunities',
@@ -51,7 +51,7 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
       name: 'SAVANT PRO',
       price: '$150',
       period: 'year',
-      trial: '5-day free trial',
+      trial: '10-day free trial',
       savings: 'Save 50%',
       features: [
         'Everything in Elite',
