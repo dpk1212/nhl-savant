@@ -42,7 +42,7 @@ const Pricing = () => {
       icon: Target,
       price: '$7.99',
       period: 'week',
-      trial: '2-day free trial',
+      trial: '5-day free trial',
       description: 'Test Drive +EV Betting',
       features: [
         'All daily +EV picks',
@@ -51,7 +51,7 @@ const Pricing = () => {
         'Complete model transparency',
         'Win/loss profit tracking'
       ],
-      cta: 'Start 2-Day Trial'
+      cta: 'Start 5-Day Trial'
     },
     {
       id: 'elite',
@@ -59,7 +59,7 @@ const Pricing = () => {
       icon: Zap,
       price: '$25.99',
       period: 'month',
-      trial: '3-day free trial',
+      trial: '7-day free trial',
       description: 'Serious +EV Hunter',
       popular: true,
       features: [
@@ -70,7 +70,7 @@ const Pricing = () => {
         'Detailed matchup breakdowns',
         'Access to historical data'
       ],
-      cta: 'Start 3-Day Trial'
+      cta: 'Start 7-Day Trial'
     },
     {
       id: 'pro',
@@ -78,7 +78,7 @@ const Pricing = () => {
       icon: Crown,
       price: '$150',
       period: 'year',
-      trial: '5-day free trial',
+      trial: '10-day free trial',
       description: 'Professional Edge Seeker',
       savings: 'Save 50% vs Monthly',
       features: [
@@ -89,7 +89,7 @@ const Pricing = () => {
         'API access (coming soon)',
         'Best value - $12.50/month'
       ],
-      cta: 'Start 5-Day Trial'
+      cta: 'Start 10-Day Trial'
     }
   ];
 
