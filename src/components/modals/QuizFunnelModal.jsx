@@ -874,7 +874,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(212, 175, 55, 0.15), rgba(16, 185, 129, 0.08))',
               backdropFilter: 'blur(24px) saturate(200%)',
               WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-              border: '2px solid transparent',
+              border: '3px solid transparent',
               backgroundImage: `
                 linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)),
                 linear-gradient(135deg, #D4AF37, #10B981, #D4AF37)
@@ -1337,7 +1337,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   fontWeight: '500'
                 }}>
                   {[
-                    { icon: '📊', text: '70% MoneyPuck + 30% our model' },
+                    { icon: '📊', text: 'Advanced analytics + market calibration' },
                     { icon: '🎯', text: 'Quality filter (B+ minimum EV)' },
                     { icon: '💎', text: 'Calculate edge vs market odds' },
                     { icon: '⭐', text: 'Grade A+ through C by confidence' }
