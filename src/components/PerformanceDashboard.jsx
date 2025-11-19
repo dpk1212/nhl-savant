@@ -686,18 +686,6 @@ export default function PerformanceDashboard() {
                   gap: '0.5rem'
                 }}>
                   <span>📊 This Week</span>
-                  {timeStats.week.profit < 0 && (
-                    <span style={{
-                      background: 'rgba(239, 68, 68, 0.2)',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '6px',
-                      fontSize: '0.65rem',
-                      color: '#EF4444',
-                      fontWeight: '800'
-                    }}>
-                      REFUND ELIGIBLE
-                    </span>
-                  )}
                 </div>
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
@@ -791,29 +779,6 @@ export default function PerformanceDashboard() {
               )}
             </div>
             
-            {/* Refund Policy Note */}
-            {timeStats.week.profit < 0 && (
-              <div style={{
-                marginTop: '1.5rem',
-                padding: '1rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'start',
-                gap: '0.75rem'
-              }}>
-                <div style={{ fontSize: '1.25rem' }}>💡</div>
-                <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#EF4444', marginBottom: '0.25rem' }}>
-                    Negative Week - Refund Policy Active
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', lineHeight: '1.5' }}>
-                    When NHL Savant has a negative profit week, premium subscribers are eligible for a full refund. We're committed to delivering value.
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
