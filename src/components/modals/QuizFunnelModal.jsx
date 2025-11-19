@@ -32,10 +32,45 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
 
+  // Swipe gesture state
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+
   // Analytics helper
   const logEvent = (eventName, params = {}) => {
     if (analytics) {
       firebaseLogEvent(analytics, eventName, params);
+    }
+  };
+
+  // Haptic feedback helper
+  const triggerHaptic = () => {
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  };
+
+  // Handle swipe gestures
+  const handleSwipe = () => {
+    if (touchStart - touchEnd > 50) {
+      // Swiped left = advance
+      if (currentScreen === 1 && painPoint) {
+        triggerHaptic();
+        setCurrentScreen(2);
+      } else if (currentScreen === 2 && commitmentLevel) {
+        triggerHaptic();
+        setCurrentScreen(3);
+      }
+    }
+    if (touchEnd - touchStart > 50) {
+      // Swiped right = go back
+      if (currentScreen === 2) {
+        triggerHaptic();
+        setCurrentScreen(1);
+      } else if (currentScreen === 4) {
+        triggerHaptic();
+        setCurrentScreen(2);
+      }
     }
   };
 
@@ -52,7 +87,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
         if (perfStats?.moneylineROI) {
           let start = 0;
           const end = Math.round(perfStats.moneylineROI);
-          const duration = 1000;
+          const duration = 1500;
           const increment = end / (duration / 16);
           
           const timer = setInterval(() => {
@@ -190,6 +225,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   // CTA button handler
   const handleUnlock = () => {
     logEvent('quiz_cta_click', { painPoint, commitmentLevel, discountCode });
+    triggerHaptic();
     onClose(); // This sets localStorage and logs close event
     navigate('/pricing');
   };
@@ -246,6 +282,35 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
     .sort((a, b) => b.bestEdge.evPercent - a.bestEdge.evPercent)
     .slice(0, 3) || [];
 
+  // Visual breadcrumb progress indicator
+  const ProgressDots = () => (
+    <div style={{
+      display: 'flex',
+      gap: '0.5rem',
+      justifyContent: 'center',
+      marginTop: '2rem',
+      marginBottom: '0.5rem'
+    }}>
+      {[1, 2, 3].map(screen => (
+        <div
+          key={screen}
+          style={{
+            width: screen === currentScreen ? '32px' : '8px',
+            height: '8px',
+            borderRadius: '4px',
+            background: screen <= currentScreen 
+              ? 'linear-gradient(90deg, #D4AF37, #FFD700)'
+              : 'rgba(148, 163, 184, 0.3)',
+            transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            boxShadow: screen === currentScreen 
+              ? '0 0 12px rgba(212, 175, 55, 0.6)'
+              : 'none'
+          }}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div 
       style={{
@@ -267,6 +332,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
+      onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientX)}
+      onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
+      onTouchEnd={handleSwipe}
     >
       <div 
         style={{
@@ -360,7 +428,10 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           {/* Back Button (visible on screens 2-4) */}
           {currentScreen > 1 && currentScreen !== 3 && (
             <button
-              onClick={() => setCurrentScreen(currentScreen === 4 ? 2 : currentScreen - 1)}
+              onClick={() => {
+                triggerHaptic();
+                setCurrentScreen(currentScreen === 4 ? 2 : currentScreen - 1);
+              }}
               style={{
                 position: 'absolute',
                 top: isMobile ? '0.75rem' : '1rem',
@@ -432,12 +503,13 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 { key: 'cappers', title: 'Twitter cappers who ghost', subtitle: '(4-0 picks posted, 0-3 buried)', emoji: '🎭' },
                 { key: 'hype', title: 'Betting on hype & favorites', subtitle: '(-180 \'locks\' that cost more)', emoji: '🔥' },
                 { key: 'vibes', title: 'No strategy - just vibes', subtitle: '(Gut feelings, no edge)', emoji: '🤷' }
-              ].map((option) => (
+              ].map((option, idx) => (
                 <button
                   key={option.key}
                   onClick={() => {
                     setPainPoint(option.key);
                     logEvent('quiz_screen_1_complete', { painPoint: option.key });
+                    triggerHaptic();
                     setCurrentScreen(2);
                   }}
                   style={{
@@ -455,22 +527,55 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                     gap: '1rem',
                     position: 'relative',
                     overflow: 'hidden',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                    animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.6)';
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(212, 175, 55, 0.25), 0 0 32px rgba(212, 175, 55, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+                    e.currentTarget.style.boxShadow = '0 12px 28px rgba(212, 175, 55, 0.3), 0 0 32px rgba(212, 175, 55, 0.1)';
                     e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.85) 100%)';
+                    const icon = e.currentTarget.querySelector('.option-icon');
+                    if (icon) {
+                      icon.style.transform = 'scale(1.15) rotate(5deg)';
+                      icon.style.filter = 'brightness(1.2)';
+                    }
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
                     e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
                     e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)';
+                    const icon = e.currentTarget.querySelector('.option-icon');
+                    if (icon) {
+                      icon.style.transform = 'scale(1) rotate(0deg)';
+                      icon.style.filter = 'brightness(1)';
+                    }
                   }}
                 >
-                  <span style={{ fontSize: '2rem' }}>{option.emoji}</span>
+                  {/* Shimmer effect */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '-100%',
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent)',
+                    animation: 'shimmer 3s infinite',
+                    pointerEvents: 'none'
+                  }} />
+                  
+                  <span 
+                    className="option-icon"
+                    style={{ 
+                      fontSize: '2.5rem',
+                      display: 'inline-block',
+                      transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      filter: 'brightness(1)'
+                    }}
+                  >
+                    {option.emoji}
+                  </span>
                   <div style={{ flex: 1 }}>
                     <div style={{
                       fontSize: isMobile ? '1rem' : '1.125rem',
@@ -493,14 +598,17 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               ))}
             </div>
 
-            {/* Progress */}
+            <ProgressDots />
+            
+            {/* Tap hint */}
             <div style={{
               textAlign: 'center',
-              marginTop: '1.5rem',
+              marginTop: '0.75rem',
+              opacity: 0.4,
               fontSize: '0.75rem',
-              color: 'rgba(241, 245, 249, 0.4)'
+              animation: 'pulse 2s infinite'
             }}>
-              1 of 3
+              👆 Tap any card to continue
             </div>
           </div>
         )}
@@ -556,135 +664,210 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {[
-                { key: 'YES', text: 'YES - Show me the picks', betSize: '$100' },
-                { key: 'MAYBE', text: 'MAYBE - I need to see proof', betSize: '$100' },
-                { key: 'NO', text: 'NO - I only bet $10-25/game', betSize: '$10-25' }
-              ].map((option) => (
-                <button
-                  key={option.key}
-                  onClick={() => {
-                    setCommitmentLevel(option.key);
-                    setBetSize(option.betSize);
-                    logEvent('quiz_screen_2_complete', { painPoint, commitmentLevel: option.key });
-                    setCurrentScreen(3);
-                  }}
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)',
-                    backdropFilter: 'blur(12px)',
-                    border: '2px solid rgba(212, 175, 55, 0.25)',
-                    borderRadius: '14px',
-                    padding: '1.125rem 1.5rem',
-                    minHeight: '64px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    fontSize: isMobile ? '1rem' : '1.125rem',
-                    fontWeight: '700',
-                    color: '#F1F5F9',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
-                    letterSpacing: '0.01em'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.6)';
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(212, 175, 55, 0.25), 0 0 32px rgba(212, 175, 55, 0.1)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.85) 100%)';
-                    e.currentTarget.style.color = '#D4AF37';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.25)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
-                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)';
-                    e.currentTarget.style.color = '#F1F5F9';
-                  }}
-                >
-                  {option.text}
-                </button>
-              ))}
+            {/* Confidence meter */}
+            <div style={{
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '0.5rem',
+                fontSize: '0.75rem',
+                opacity: 0.6
+              }}>
+                <span>🐌 Cautious</span>
+                <span>🚀 Confident</span>
+              </div>
+              <div style={{
+                height: '4px',
+                background: 'linear-gradient(90deg, #EF4444, #F59E0B, #10B981)',
+                borderRadius: '2px',
+                opacity: 0.3
+              }} />
             </div>
 
-            {/* Progress */}
-            <div style={{
-              textAlign: 'center',
-              marginTop: '1.5rem',
-              fontSize: '0.75rem',
-              color: 'rgba(241, 245, 249, 0.4)'
-            }}>
-              2 of 3
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {[
+                { key: 'YES', text: 'YES - Show me the picks', betSize: '$100', color: 'green', badge: 'Recommended' },
+                { key: 'MAYBE', text: 'MAYBE - I need to see proof', betSize: '$100', color: 'blue', badge: null },
+                { key: 'NO', text: 'NO - I only bet $10-25/game', betSize: '$10-25', color: 'gray', badge: null }
+              ].map((option, idx) => {
+                const colorStyles = {
+                  green: {
+                    border: '2px solid rgba(16, 185, 129, 0.5)',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08))',
+                    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.25)',
+                    hoverBorder: 'rgba(16, 185, 129, 0.7)',
+                    hoverShadow: '0 12px 28px rgba(16, 185, 129, 0.35)'
+                  },
+                  blue: {
+                    border: '2px solid rgba(59, 130, 246, 0.4)',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)',
+                    hoverBorder: 'rgba(59, 130, 246, 0.6)',
+                    hoverShadow: '0 12px 24px rgba(59, 130, 246, 0.3)'
+                  },
+                  gray: {
+                    border: '1px solid rgba(148, 163, 184, 0.25)',
+                    background: 'rgba(30, 41, 59, 0.5)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                    hoverBorder: 'rgba(212, 175, 55, 0.4)',
+                    hoverShadow: '0 12px 24px rgba(212, 175, 55, 0.2)',
+                    opacity: 0.85
+                  }
+                };
+                
+                const style = colorStyles[option.color];
+                
+                return (
+                  <button
+                    key={option.key}
+                    onClick={() => {
+                      setCommitmentLevel(option.key);
+                      setBetSize(option.betSize);
+                      logEvent('quiz_screen_2_complete', { painPoint, commitmentLevel: option.key });
+                      triggerHaptic();
+                      setCurrentScreen(3);
+                    }}
+                    style={{
+                      background: style.background,
+                      backdropFilter: 'blur(12px)',
+                      border: style.border,
+                      borderRadius: '14px',
+                      padding: '1.125rem 1.5rem',
+                      minHeight: '64px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontSize: isMobile ? '1rem' : '1.125rem',
+                      fontWeight: '700',
+                      color: '#F1F5F9',
+                      boxShadow: style.boxShadow,
+                      letterSpacing: '0.01em',
+                      position: 'relative',
+                      opacity: style.opacity || 1,
+                      animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = style.hoverBorder;
+                      e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+                      e.currentTarget.style.boxShadow = style.hoverShadow;
+                      e.currentTarget.style.opacity = '1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = style.border.split('solid ')[1];
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.boxShadow = style.boxShadow;
+                      e.currentTarget.style.opacity = style.opacity || '1';
+                    }}
+                  >
+                    {option.badge && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '12px',
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        color: 'white',
+                        fontSize: '0.625rem',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {option.badge}
+                      </div>
+                    )}
+                    {option.text}
+                  </button>
+                );
+              })}
             </div>
+
+            <ProgressDots />
           </div>
         )}
 
         {/* Screen 3: Loading Animation */}
         {currentScreen === 3 && (
           <div style={{ animation: 'fadeInUp 0.5s ease-out', textAlign: 'center', padding: '3rem 0' }}>
+            {/* Animated rotating icon */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 2rem',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #D4AF37, #FFD700)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'pulse 1.5s infinite, rotate 3s linear infinite',
+              boxShadow: '0 0 40px rgba(212, 175, 55, 0.6)'
+            }}>
+              <TrendingUp size={40} color="rgba(15, 23, 42, 0.9)" strokeWidth={3} />
+            </div>
+
             <h2 style={{
               fontSize: isMobile ? '1.5rem' : '1.75rem',
               fontWeight: '700',
               color: '#F1F5F9',
-              margin: '0 0 2rem 0'
+              margin: '0 0 0.5rem 0'
             }}>
-              Analyzing your profile...
+              {loadingMessage}
             </h2>
 
-            {/* Progress Bar */}
-            <div style={{
-              width: '100%',
-              height: '6px',
-              background: 'rgba(148, 163, 184, 0.2)',
-              borderRadius: '100px',
-              overflow: 'hidden',
-              marginBottom: '2rem'
-            }}>
-              <div style={{
-                width: `${loadingProgress}%`,
-                height: '100%',
-                background: 'linear-gradient(90deg, #D4AF37, #FFD700)',
-                transition: 'width 0.7s ease',
-                borderRadius: '100px'
-              }} />
-            </div>
-
-            {/* Loading Messages */}
-            <div style={{
-              minHeight: '120px',
+            {/* Checkmarks for completed steps */}
+            <div style={{ 
+              minHeight: '80px',
+              fontSize: '0.875rem', 
+              color: 'rgba(241, 245, 249, 0.7)',
+              marginBottom: '2rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.75rem',
-              alignItems: 'flex-start',
-              maxWidth: '400px',
-              margin: '0 auto'
+              gap: '0.5rem',
+              alignItems: 'center'
+            }}>
+              {loadingProgress >= 25 && <div style={{ animation: 'fadeInUp 0.3s ease-out' }}>✓ Games scanned</div>}
+              {loadingProgress >= 50 && <div style={{ animation: 'fadeInUp 0.3s ease-out' }}>✓ +EV calculated</div>}
+              {loadingProgress >= 75 && <div style={{ animation: 'fadeInUp 0.3s ease-out' }}>✓ Profile matched</div>}
+              {loadingProgress === 100 && <div style={{ animation: 'fadeInUp 0.3s ease-out' }}>✓ Dashboard ready</div>}
+            </div>
+
+            {/* Multi-segment progress bar */}
+            <div style={{
+              width: '100%',
+              height: '8px',
+              background: 'rgba(148, 163, 184, 0.2)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              position: 'relative'
             }}>
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                fontSize: isMobile ? '0.938rem' : '1rem',
-                color: '#F1F5F9',
-                fontWeight: '500'
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                height: '100%',
+                width: `${loadingProgress}%`,
+                background: 'linear-gradient(90deg, #10B981 0%, #D4AF37 50%, #FFD700 100%)',
+                borderRadius: '4px',
+                transition: 'width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                boxShadow: loadingProgress > 75 ? '0 0 20px rgba(212, 175, 55, 0.6)' : '0 0 20px rgba(16, 185, 129, 0.4)'
               }}>
-                <span style={{
-                  color: '#D4AF37',
-                  fontSize: '1.25rem',
-                  animation: 'pulse 1s ease-in-out infinite'
-                }}>
-                  ⚡
-                </span>
-                {loadingMessage}
+                {/* Shimmer effect that moves across */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+                  animation: 'shimmerMove 1.5s infinite'
+                }} />
               </div>
             </div>
 
-            {/* Progress */}
-            <div style={{
-              textAlign: 'center',
-              marginTop: '3rem',
-              fontSize: '0.75rem',
-              color: 'rgba(241, 245, 249, 0.4)'
-            }}>
-              3 of 3
-            </div>
+            <ProgressDots />
           </div>
         )}
 
@@ -707,94 +890,102 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               }}>
                 Your Personalized Betting Profile
               </p>
-              <h2 style={{
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
-                fontWeight: '700',
-                color: '#F1F5F9',
-                margin: '0 0 1.5rem 0',
-                lineHeight: '1.3'
-              }}>
-                You're like 1,247 other bettors who:
-              </h2>
-              
-              {/* Profile Summary */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(239, 68, 68, 0.08) 100%)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 107, 107, 0.35)',
-                borderRadius: '12px',
-                padding: '1.125rem',
-                marginBottom: '1rem',
-                textAlign: 'left',
-                boxShadow: '0 4px 12px rgba(255, 107, 107, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
-                  color: 'rgba(241, 245, 249, 0.9)',
-                  lineHeight: '1.6'
-                }}>
-                  <div style={{ marginBottom: '0.5rem' }}>❌ Lose money to <strong>{painPointDetails[painPoint]?.issue.toLowerCase()}</strong></div>
-                  <div style={{ marginBottom: '0.5rem' }}>💰 Want to bet <strong>{betSize}/game</strong></div>
-                  <div>📈 Need a <strong>proven, trackable system</strong></div>
-                </div>
-              </div>
+            </div>
 
-              {/* Personalized Message */}
+            {/* LAYER 1: Hero Stats - Eye-catching ROI */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(212, 175, 55, 0.15))',
+              border: '2px solid rgba(212, 175, 55, 0.4)',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.2)',
+              marginBottom: '1.25rem'
+            }}>
+              {/* Animated background pattern */}
               <div style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.08) 100%)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
-                borderRadius: '12px',
-                padding: '1.125rem',
-                textAlign: 'left',
-                marginBottom: '1.5rem',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-              }}>
-                <p style={{
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `
+                  radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 50%)
+                `,
+                animation: 'pulse 4s infinite',
+                pointerEvents: 'none'
+              }} />
+              
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{
+                  fontSize: '3rem',
+                  fontWeight: '700',
                   color: '#10B981',
-                  margin: '0 0 0.5rem 0',
-                  fontWeight: '600'
+                  textShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+                  animation: 'countUp 2s ease-out'
                 }}>
-                  {painPointDetails[painPoint]?.message}
-                </p>
-                <p style={{
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  +{roiCounter}%
+                </div>
+                <div style={{
+                  fontSize: '0.875rem',
                   color: 'rgba(241, 245, 249, 0.8)',
-                  margin: 0
+                  marginTop: '0.5rem'
                 }}>
-                  {commitmentDetails[commitmentLevel]?.message}
-                </p>
+                  ROI since Oct 2025 • {aPlusBetCount} bets tracked
+                </div>
               </div>
             </div>
 
-            {/* Today's Picks Preview */}
+            {/* LAYER 2: Personalized Profile (Colored box) */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderLeft: '4px solid #EF4444',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              fontSize: '0.875rem',
+              marginBottom: '1.25rem'
+            }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>❌</div>
+                <div style={{ color: 'rgba(241, 245, 249, 0.9)', lineHeight: '1.6' }}>
+                  <strong>You're like 1,247 others losing to:</strong>
+                  <br />"{painPointDetails[painPoint]?.issue}"
+                  <div style={{ marginTop: '0.5rem', color: 'rgba(241, 245, 249, 0.7)' }}>
+                    {painPointDetails[painPoint]?.message}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Today's Picks Preview (if available) */}
             {gamesWithEdges.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: '1.25rem' }}>
                 <h3 style={{
-                  fontSize: isMobile ? '1rem' : '1.125rem',
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
                   fontWeight: '700',
                   color: '#F1F5F9',
-                  marginBottom: '1rem',
-                  textAlign: 'center'
+                  marginBottom: '0.75rem',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
                 }}>
-                  HERE'S WHAT YOU GET TODAY:
+                  🔒 Today's Top Picks Locked
                 </h3>
-                {gamesWithEdges.map((game, idx) => {
+                {gamesWithEdges.slice(0, 2).map((game, idx) => {
                   const bestEdge = game.bestEdge;
-                  const isTopPick = idx === 0;
                   
                   return (
                     <div
                       key={idx}
                       style={{
                         background: 'rgba(30, 41, 59, 0.6)',
-                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        border: '1px solid rgba(212, 175, 55, 0.25)',
                         borderRadius: '10px',
-                        padding: isMobile ? '0.875rem' : '1rem',
+                        padding: isMobile ? '0.75rem' : '0.875rem',
                         position: 'relative',
                         overflow: 'hidden',
-                        marginBottom: '0.75rem'
+                        marginBottom: '0.625rem'
                       }}
                     >
                       {/* Game Info */}
@@ -802,26 +993,17 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: '0.625rem'
+                        marginBottom: '0.5rem',
+                        position: 'relative',
+                        zIndex: 1
                       }}>
                         <span style={{
-                          fontSize: isMobile ? '0.813rem' : '0.875rem',
-                          color: 'rgba(255, 255, 255, 0.9)',
+                          fontSize: isMobile ? '0.75rem' : '0.813rem',
+                          color: 'rgba(255, 255, 255, 0.7)',
                           fontWeight: '600'
                         }}>
                           {game.awayTeam} @ {game.homeTeam}
                         </span>
-                        {isTopPick && (
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: '#D4AF37',
-                            fontWeight: '700',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                          }}>
-                            🏆 A+ PLAY
-                          </span>
-                        )}
                       </div>
 
                       {/* Lock Overlay */}
@@ -837,18 +1019,18 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem'
+                        gap: '0.375rem'
                       }}>
-                        <Lock size={isMobile ? 28 : 32} color="#D4AF37" style={{ animation: 'lockPulse 2s ease-in-out infinite' }} />
+                        <Lock size={isMobile ? 24 : 28} color="#D4AF37" style={{ animation: 'lockPulse 2s ease-in-out infinite' }} />
                         <div style={{
-                          fontSize: isMobile ? '0.813rem' : '0.875rem',
+                          fontSize: isMobile ? '0.75rem' : '0.813rem',
                           color: '#D4AF37',
                           fontWeight: '700'
                         }}>
-                          {isTopPick ? 'A+ PLAY LOCKED' : 'A PLAY LOCKED'}
+                          {idx === 0 ? 'A+ PLAY' : 'A PLAY'}
                         </div>
                         <div style={{
-                          fontSize: isMobile ? '1rem' : '1.125rem',
+                          fontSize: isMobile ? '0.938rem' : '1rem',
                           color: '#10B981',
                           fontWeight: '800'
                         }}>
@@ -861,87 +1043,79 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             )}
 
-            {/* Track Record */}
+            {/* LAYER 3: Spin Wheel (Contained card) */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
+              background: 'rgba(30, 41, 59, 0.6)',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
               borderRadius: '12px',
-              padding: '1.125rem',
-              marginBottom: '1.5rem',
+              padding: '1.25rem',
               textAlign: 'center',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              marginBottom: '1.25rem'
             }}>
-              <div style={{
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
-                color: 'rgba(241, 245, 249, 0.6)',
-                marginBottom: '0.5rem',
+              <h4 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#D4AF37',
+                marginBottom: '1rem',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontWeight: '600'
+                letterSpacing: '0.05em'
               }}>
-                TRACK RECORD FOR BETTORS LIKE YOU:
-              </div>
-              <div style={{ fontSize: isMobile ? '0.875rem' : '0.938rem', color: 'rgba(241, 245, 249, 0.9)', lineHeight: '1.6' }}>
-                <div style={{ marginBottom: '0.375rem' }}>📊 A+ Plays: <strong style={{ color: '#10B981' }}>+{aPlusROI.toFixed(1)}% ROI</strong> ({aPlusBetCount} tracked)</div>
-                <div>💸 Overall: <strong style={{ color: '#10B981' }}>{roiCounter}% ROI</strong> since {startDate}</div>
-              </div>
-            </div>
-
-            {/* Discount Lottery */}
-            <div style={{ marginBottom: '1.5rem' }}>
+                🎁 Spin for Your Discount
+              </h4>
               <DiscountLottery onCodeRevealed={(code) => setDiscountCode(code)} />
             </div>
 
-            {/* CTA Button */}
+            {/* LAYER 4: CTA (Massive, impossible to miss) */}
             <button
               onClick={handleUnlock}
               style={{
-                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
-                border: '2px solid rgba(212, 175, 55, 0.8)',
-                borderRadius: '14px',
-                padding: isMobile ? '1.125rem 1.75rem' : '1.25rem 2rem',
-                color: '#0a0e1a',
-                fontSize: isMobile ? '1.0625rem' : '1.1875rem',
-                fontWeight: '800',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 width: '100%',
+                padding: '1.25rem 2rem',
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
+                backgroundSize: '200% 100%',
+                border: '3px solid rgba(212, 175, 55, 0.8)',
+                borderRadius: '16px',
+                color: 'rgba(15, 23, 42, 0.95)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden',
                 boxShadow: `
                   0 8px 24px rgba(212, 175, 55, 0.4),
                   0 0 0 1px rgba(212, 175, 55, 0.2),
                   inset 0 1px 0 rgba(255, 255, 255, 0.3)
                 `,
+                animation: 'glow 2s infinite',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.75rem',
-                minHeight: '56px',
-                position: 'relative',
-                overflow: 'hidden',
-                letterSpacing: '0.02em',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                letterSpacing: '0.02em'
               }}
               onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
                 e.currentTarget.style.boxShadow = `
-                  0 12px 36px rgba(212, 175, 55, 0.5),
-                  0 0 48px rgba(212, 175, 55, 0.3),
-                  0 0 0 1px rgba(212, 175, 55, 0.4),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.4)
+                  0 12px 32px rgba(212, 175, 55, 0.6),
+                  0 0 40px rgba(212, 175, 55, 0.3)
                 `;
-                e.currentTarget.style.transform = 'translateY(-3px) scale(1.01)';
+                e.currentTarget.style.backgroundPosition = '100% 0';
               }}
               onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
                 e.currentTarget.style.boxShadow = `
                   0 8px 24px rgba(212, 175, 55, 0.4),
                   0 0 0 1px rgba(212, 175, 55, 0.2),
                   inset 0 1px 0 rgba(255, 255, 255, 0.3)
                 `;
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.backgroundPosition = '0% 0';
               }}
             >
-              <ArrowRight size={isMobile ? 18 : 20} strokeWidth={3} />
-              <span>{discountCode ? `Claim ${discountCode} Discount` : 'Start 7-Day Free Trial'}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {discountCode ? `Claim ${discountCode} Discount` : 'Start 7-Day Free Trial'}
+                <ArrowRight size={isMobile ? 20 : 24} strokeWidth={3} style={{ animation: 'slideRight 1s infinite' }} />
+              </span>
             </button>
 
             <p style={{
@@ -1014,12 +1188,38 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           }
         }
         
+        @keyframes shimmerMove {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        
+        @keyframes rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        @keyframes slideRight {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(4px); }
+        }
+        
         @keyframes glow {
           0%, 100% {
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
           }
           50% {
-            box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
+          }
+        }
+        
+        @keyframes countUp {
+          from { 
+            opacity: 0; 
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0);
           }
         }
       `}</style>
@@ -1028,4 +1228,3 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
 };
 
 export default QuizFunnelModal;
-
