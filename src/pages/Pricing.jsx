@@ -35,40 +35,16 @@ const Pricing = () => {
     redirectToCheckout(tier, user);
   };
 
-  // Universal features - same for all tiers
+  // All tiers get the same features - only commitment level differs
   const universalFeatures = [
-    {
-      title: 'Never miss a +EV opportunity',
-      description: 'Daily picks delivered with clear quality grades'
-    },
-    {
-      title: 'Bet with confidence, not guesses',
-      description: 'Advanced ensemble model beats basic odds'
-    },
-    {
-      title: 'Understand the \'why\' behind every pick',
-      description: 'Expert analysis breaks down each opportunity'
-    },
-    {
-      title: 'Track your edge in real-time',
-      description: 'Live probability updates as games progress'
-    },
-    {
-      title: 'Prove your profits (or learn from losses)',
-      description: 'Complete performance tracking & analytics'
-    },
-    {
-      title: 'Spot player value before the market',
-      description: 'Top scorers & player trend analysis'
-    },
-    {
-      title: 'Get answers when you need them',
-      description: 'Direct email access to the model creator'
-    },
-    {
-      title: 'Learn while you earn',
-      description: 'Full transparency into prediction methodology'
-    }
+    'All daily +EV picks with quality grades',
+    'Advanced ensemble prediction model',
+    'Live win probability tracking',
+    'Expert AI analysis & insights',
+    'Complete performance & ROI dashboard',
+    'Top scorers & player trends',
+    'Direct email support',
+    'Full model transparency'
   ];
 
   const tiers = [
@@ -79,14 +55,11 @@ const Pricing = () => {
       price: '$7.99',
       period: 'week',
       trial: '5-day free trial',
-      description: 'Test Drive +EV Betting',
-      priceAnchor: 'Less than 1 Starbucks per day',
+      description: 'Test drive, no commitment',
+      priceAnchor: 'Less than 1 Starbucks/day',
       pricePerDay: '$1.14/day',
       cta: 'Start 5-Day Trial',
-      valueProps: [
-        'Week-to-week flexibility',
-        'Cancel anytime'
-      ]
+      highlight: 'Week-to-week flexibility'
     },
     {
       id: 'elite',
@@ -95,16 +68,13 @@ const Pricing = () => {
       price: '$25.99',
       period: 'month',
       trial: '7-day free trial',
-      description: 'Best Monthly Value',
+      description: 'Best value for monthly',
       popular: true,
-      priceAnchor: 'Less than 1 coffee per day',
+      priceAnchor: 'Less than 1 coffee/day',
       pricePerDay: '87¢/day',
       savings: 'Save $9/month vs weekly',
       cta: 'Start 7-Day Trial',
-      valueProps: [
-        'Perfect for serious bettors',
-        'Best monthly value'
-      ]
+      highlight: 'Perfect for serious bettors'
     },
     {
       id: 'pro',
@@ -113,16 +83,13 @@ const Pricing = () => {
       price: '$150',
       period: 'year',
       trial: '10-day free trial',
-      description: 'Maximum Savings',
-      priceAnchor: 'Less than 1 pizza per month',
+      description: 'Maximum savings',
+      priceAnchor: 'Less than 1 pizza/month',
       pricePerDay: '41¢/day',
       savings: 'Save $161.88/year',
       badge: 'Just $12.50/month',
       cta: 'Start 10-Day Trial',
-      valueProps: [
-        'Season-long winning edge',
-        'Best value - only $12.50/mo'
-      ]
+      highlight: 'Season-long edge'
     }
   ];
 
@@ -130,17 +97,17 @@ const Pricing = () => {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0A0E27 0%, #1A1F3A 50%, #0A0E27 100%)',
-      padding: '4rem 1.5rem',
-      paddingTop: '2rem'
+      padding: window.innerWidth < 640 ? '2rem 1rem' : '4rem 1.5rem',
+      paddingTop: window.innerWidth < 640 ? '1.5rem' : '2rem'
     }}>
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: window.innerWidth < 640 ? '3rem' : '4rem' }}>
           <h1 style={{
-            fontSize: '3rem',
+            fontSize: window.innerWidth < 640 ? '1.875rem' : '3rem',
             fontWeight: '800',
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
             WebkitBackgroundClip: 'text',
@@ -154,11 +121,12 @@ const Pricing = () => {
             Start Betting With Real Edge.
           </h1>
           <p style={{
-            fontSize: '1.25rem',
+            fontSize: window.innerWidth < 640 ? '1rem' : '1.25rem',
             color: 'rgba(241, 245, 249, 0.8)',
             maxWidth: '700px',
             margin: '0 auto 2rem auto',
-            lineHeight: '1.6'
+            lineHeight: '1.6',
+            padding: window.innerWidth < 640 ? '0 0.5rem' : '0'
           }}>
             Premium tools to find +EV, avoid -EV, and hold cappers accountable.
             <br />Cancel anytime.
@@ -169,102 +137,47 @@ const Pricing = () => {
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'center',
-            gap: '2rem',
-            marginTop: '2rem'
+            gap: window.innerWidth < 640 ? '1rem' : '2rem',
+            marginTop: '2rem',
+            padding: window.innerWidth < 640 ? '0 0.5rem' : '0'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <TrendingUp size={20} color="#10B981" />
-              <span style={{ color: '#10B981', fontWeight: '600', fontSize: '0.938rem' }}>26% ROI (38% Kelly) as of Nov 6</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Target size={20} color="#D4AF37" />
-              <span style={{ color: '#D4AF37', fontWeight: '600', fontSize: '0.938rem' }}>Tracked Since Oct 2025</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Shield size={20} color="#60A5FA" />
-              <span style={{ color: '#60A5FA', fontWeight: '600', fontSize: '0.938rem' }}>Free Trial Included</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Universal Features Section */}
-        <div style={{
-          maxWidth: '900px',
-          margin: '0 auto 5rem auto',
-          background: 'rgba(30, 41, 59, 0.4)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(148, 163, 184, 0.2)',
-          borderRadius: '20px',
-          padding: '3rem 2.5rem'
-        }}>
-          <h2 style={{
-            fontSize: '2rem',
-            fontWeight: '700',
-            color: '#F1F5F9',
-            textAlign: 'center',
-            marginBottom: '0.5rem'
-          }}>
-            Every Plan Includes Everything
-          </h2>
-          <p style={{
-            fontSize: '1rem',
-            color: 'rgba(241, 245, 249, 0.6)',
-            textAlign: 'center',
-            marginBottom: '3rem'
-          }}>
-            No hidden tiers. No gated features. Just pick your commitment level.
-          </p>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-            gap: '2rem'
-          }}>
-            {universalFeatures.map((feature, idx) => (
-              <div key={idx} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '1rem'
+              <TrendingUp size={window.innerWidth < 640 ? 18 : 20} color="#10B981" />
+              <span style={{ 
+                color: '#10B981', 
+                fontWeight: '600', 
+                fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem' 
               }}>
-                <div style={{
-                  minWidth: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  marginTop: '2px'
-                }}>
-                  <Check size={14} color="#0A0E27" strokeWidth={3} />
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    color: '#F1F5F9',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {feature.title}
-                  </div>
-                  <div style={{
-                    fontSize: '0.875rem',
-                    color: 'rgba(241, 245, 249, 0.6)',
-                    lineHeight: '1.5'
-                  }}>
-                    {feature.description}
-                  </div>
-                </div>
-              </div>
-            ))}
+                26% ROI (38% Kelly) as of Nov 6
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Target size={window.innerWidth < 640 ? 18 : 20} color="#D4AF37" />
+              <span style={{ 
+                color: '#D4AF37', 
+                fontWeight: '600', 
+                fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem' 
+              }}>
+                Tracked Since Oct 2025
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Shield size={window.innerWidth < 640 ? 18 : 20} color="#60A5FA" />
+              <span style={{ 
+                color: '#60A5FA', 
+                fontWeight: '600', 
+                fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem' 
+              }}>
+                Free Trial Included
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Pricing Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h2 style={{
-            fontSize: '2.5rem',
+            fontSize: window.innerWidth < 640 ? '2rem' : '2.5rem',
             fontWeight: '700',
             color: '#F1F5F9',
             marginBottom: '0.75rem'
@@ -272,21 +185,43 @@ const Pricing = () => {
             Choose Your Commitment Level
           </h2>
           <p style={{
-            fontSize: '1.125rem',
+            fontSize: window.innerWidth < 640 ? '1rem' : '1.125rem',
             color: 'rgba(241, 245, 249, 0.7)',
             maxWidth: '600px',
-            margin: '0 auto'
+            margin: '0 auto 0.5rem auto',
+            lineHeight: '1.6'
           }}>
-            All plans get full access. Save more with longer commitments.
+            Every plan includes everything. Save more with longer commitments.
           </p>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(212, 175, 55, 0.1)',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            borderRadius: '100px',
+            padding: '0.5rem 1rem',
+            fontSize: window.innerWidth < 640 ? '0.813rem' : '0.875rem',
+            color: '#D4AF37',
+            fontWeight: '600'
+          }}>
+            <Shield size={16} />
+            Cancel anytime • No hidden fees • Instant access
+          </div>
         </div>
 
         {/* Tier Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '2rem',
-          marginBottom: '4rem'
+          gridTemplateColumns: window.innerWidth < 640 
+            ? '1fr' 
+            : window.innerWidth < 1024 
+              ? 'repeat(auto-fit, minmax(280px, 1fr))' 
+              : 'repeat(3, 1fr)',
+          gap: window.innerWidth < 640 ? '1.5rem' : '2rem',
+          marginBottom: '4rem',
+          maxWidth: window.innerWidth < 640 ? '480px' : 'none',
+          margin: window.innerWidth < 640 ? '0 auto 4rem auto' : '0 0 4rem 0'
         }}>
           {tiers.map((tierInfo) => {
             const Icon = tierInfo.icon;
@@ -303,19 +238,25 @@ const Pricing = () => {
                   border: tierInfo.popular 
                     ? '2px solid rgba(212, 175, 55, 0.5)'
                     : '1px solid rgba(148, 163, 184, 0.2)',
-                  borderRadius: '20px',
-                  padding: '2.5rem',
+                  borderRadius: window.innerWidth < 640 ? '16px' : '20px',
+                  padding: window.innerWidth < 640 ? '1.75rem' : '2.5rem',
                   position: 'relative',
                   transition: 'all 0.3s ease',
-                  transform: tierInfo.popular ? 'scale(1.05)' : 'scale(1)'
+                  transform: window.innerWidth < 640 
+                    ? 'scale(1)' 
+                    : tierInfo.popular ? 'scale(1.05)' : 'scale(1)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = tierInfo.popular ? 'scale(1.08)' : 'scale(1.03)';
-                  e.currentTarget.style.borderColor = tierInfo.popular ? 'rgba(212, 175, 55, 0.7)' : 'rgba(148, 163, 184, 0.4)';
+                  if (window.innerWidth >= 640) {
+                    e.currentTarget.style.transform = tierInfo.popular ? 'scale(1.08)' : 'scale(1.03)';
+                    e.currentTarget.style.borderColor = tierInfo.popular ? 'rgba(212, 175, 55, 0.7)' : 'rgba(148, 163, 184, 0.4)';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = tierInfo.popular ? 'scale(1.05)' : 'scale(1)';
-                  e.currentTarget.style.borderColor = tierInfo.popular ? 'rgba(212, 175, 55, 0.5)' : 'rgba(148, 163, 184, 0.2)';
+                  if (window.innerWidth >= 640) {
+                    e.currentTarget.style.transform = tierInfo.popular ? 'scale(1.05)' : 'scale(1)';
+                    e.currentTarget.style.borderColor = tierInfo.popular ? 'rgba(212, 175, 55, 0.5)' : 'rgba(148, 163, 184, 0.2)';
+                  }
                 }}
               >
                 {/* Popular Badge */}
@@ -475,31 +416,66 @@ const Pricing = () => {
                     fontSize: '0.875rem',
                     color: '#10B981',
                     fontWeight: '600',
-                    marginBottom: '2rem'
+                    marginBottom: '1.5rem'
                   }}>
                     {tierInfo.badge}
                   </div>
                 )}
 
-                {/* Value Props */}
+                {/* Highlight */}
                 <div style={{
-                  marginBottom: '2rem',
-                  minHeight: '80px'
+                  background: tierInfo.popular 
+                    ? 'rgba(212, 175, 55, 0.1)' 
+                    : 'rgba(59, 130, 246, 0.08)',
+                  border: `1px solid ${tierInfo.popular ? 'rgba(212, 175, 55, 0.3)' : 'rgba(59, 130, 246, 0.2)'}`,
+                  borderRadius: '8px',
+                  padding: '0.75rem',
+                  marginBottom: '1.5rem',
+                  textAlign: 'center'
                 }}>
-                  {tierInfo.valueProps.map((prop, idx) => (
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: tierInfo.popular ? '#D4AF37' : '#60A5FA',
+                    fontWeight: '600'
+                  }}>
+                    ⚡ {tierInfo.highlight}
+                  </div>
+                </div>
+
+                {/* Features - All Plans Include */}
+                <div style={{
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'rgba(241, 245, 249, 0.5)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: '600',
+                    marginBottom: '0.75rem',
+                    textAlign: 'center'
+                  }}>
+                    Everything Included:
+                  </div>
+                  {universalFeatures.map((feature, idx) => (
                     <div key={idx} style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      marginBottom: '0.75rem'
+                      gap: '0.625rem',
+                      marginBottom: '0.625rem'
                     }}>
-                      <Check size={18} color={tierInfo.popular ? '#D4AF37' : '#60A5FA'} strokeWidth={3} style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <Check 
+                        size={16} 
+                        color={tierInfo.popular ? '#D4AF37' : '#60A5FA'} 
+                        strokeWidth={3} 
+                        style={{ flexShrink: 0, marginTop: '2px' }} 
+                      />
                       <span style={{
-                        fontSize: '0.875rem',
-                        color: 'rgba(241, 245, 249, 0.8)',
-                        lineHeight: '1.5'
+                        fontSize: window.innerWidth < 640 ? '0.813rem' : '0.875rem',
+                        color: 'rgba(241, 245, 249, 0.85)',
+                        lineHeight: '1.4'
                       }}>
-                        {prop}
+                        {feature}
                       </span>
                     </div>
                   ))}
