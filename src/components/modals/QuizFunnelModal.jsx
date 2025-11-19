@@ -125,13 +125,15 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
           if (aPlusBets.length > 0) {
             const totalProfit = aPlusBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
             
-            // Calculate ROI same way as Performance page (flat $10 bets)
+            // Calculate ROI EXACTLY like Performance Dashboard (divide by starting bankroll)
+            const STARTING_BANKROLL = 500;
             const flatProfit = totalProfit * 10;
-            const roi = (flatProfit / (aPlusBets.length * 10)) * 100;
+            const roi = (flatProfit / STARTING_BANKROLL) * 100;
             
             console.log('📊 A+ Stats:', { 
               bets: aPlusBets.length, 
-              roi: roi.toFixed(1) + '%' 
+              roi: roi.toFixed(1) + '%',
+              profit: flatProfit.toFixed(2)
             });
             
             setAPlusROI(roi);
@@ -874,43 +876,47 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
         {/* Screen 4: Personalized Paywall */}
         {currentScreen === 4 && (
           <div style={{ animation: 'fadeInUp 0.5s ease-out' }}>
-            {/* Header */}
+            {/* Header - Ultra Compact */}
             <div style={{
               textAlign: 'center',
-              marginBottom: isMobile ? '0.875rem' : '1.5rem',
-              marginTop: isMobile ? '0.875rem' : '1.5rem'
+              marginBottom: isMobile ? '0.625rem' : '1.5rem',
+              marginTop: isMobile ? '0.5rem' : '1.5rem'
             }}>
               <p style={{
-                fontSize: isMobile ? '0.688rem' : '0.813rem',
+                fontSize: isMobile ? '0.625rem' : '0.813rem',
                 color: 'rgba(212, 175, 55, 0.8)',
-                marginBottom: '0.5rem',
+                marginBottom: isMobile ? '0.25rem' : '0.5rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
                 fontWeight: '700'
               }}>
-                Your Personalized Betting Profile
+                Your Personalized Profile
               </p>
             </div>
 
-            {/* LAYER 1: Hero Stats - Eye-catching ROI */}
+            {/* LAYER 1: Hero Stats - Premium Glassmorphism */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(212, 175, 55, 0.15))',
-              border: '2px solid rgba(212, 175, 55, 0.4)',
-              borderRadius: isMobile ? '12px' : '16px',
-              padding: isMobile ? '1rem' : '1.5rem',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(212, 175, 55, 0.12))',
+              backdropFilter: 'blur(16px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: isMobile ? '10px' : '16px',
+              padding: isMobile ? '0.75rem' : '1.5rem',
               textAlign: 'center',
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.2)',
-              marginBottom: isMobile ? '0.875rem' : '1.25rem'
+              boxShadow: isMobile 
+                ? '0 4px 16px rgba(212, 175, 55, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                : '0 8px 32px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+              marginBottom: isMobile ? '0.625rem' : '1.25rem'
             }}>
               {/* Animated background pattern */}
               <div style={{
                 position: 'absolute',
                 inset: 0,
                 backgroundImage: `
-                  radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 50%)
+                  radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%)
                 `,
                 animation: 'pulse 4s infinite',
                 pointerEvents: 'none'
@@ -918,54 +924,63 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
-                  fontSize: isMobile ? '2.25rem' : '3rem',
+                  fontSize: isMobile ? '2rem' : '3rem',
                   fontWeight: '700',
                   color: '#10B981',
                   textShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
-                  animation: 'countUp 2s ease-out'
+                  animation: 'countUp 2s ease-out',
+                  lineHeight: 1
                 }}>
                   +{roiCounter}%
                 </div>
                 <div style={{
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  color: 'rgba(241, 245, 249, 0.8)',
-                  marginTop: '0.375rem'
+                  fontSize: isMobile ? '0.688rem' : '0.875rem',
+                  color: 'rgba(241, 245, 249, 0.75)',
+                  marginTop: isMobile ? '0.25rem' : '0.375rem'
                 }}>
-                  ROI since Oct 2025 • {aPlusBetCount} bets tracked
+                  ROI since Oct 2025 • {aPlusBetCount} bets
                 </div>
               </div>
             </div>
 
-            {/* LAYER 2: Personalized Profile (Colored box) */}
+            {/* LAYER 2: Personalized Profile - Premium Glassmorphism */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05))',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderLeft: '4px solid #EF4444',
-              borderRadius: isMobile ? '10px' : '12px',
-              padding: isMobile ? '0.875rem' : '1.25rem',
-              fontSize: isMobile ? '0.813rem' : '0.875rem',
-              marginBottom: isMobile ? '0.875rem' : '1.25rem'
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(220, 38, 38, 0.04))',
+              backdropFilter: 'blur(12px) saturate(160%)',
+              WebkitBackdropFilter: 'blur(12px) saturate(160%)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderLeft: '3px solid rgba(239, 68, 68, 0.6)',
+              borderRadius: isMobile ? '8px' : '12px',
+              padding: isMobile ? '0.625rem' : '1.25rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              marginBottom: isMobile ? '0.5rem' : '1.25rem',
+              boxShadow: isMobile 
+                ? '0 2px 8px rgba(239, 68, 68, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                : '0 4px 12px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
             }}>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', flexShrink: 0 }}>❌</div>
-                <div style={{ color: 'rgba(241, 245, 249, 0.9)', lineHeight: '1.6' }}>
-                  <strong>You're like thousands of bettors losing to:</strong>
-                  <br />"{painPointDetails[painPoint]?.issue}"
-                  <div style={{ marginTop: '0.5rem', color: 'rgba(241, 245, 249, 0.7)' }}>
+              <div style={{ display: 'flex', gap: isMobile ? '0.5rem' : '0.75rem', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: isMobile ? '1rem' : '1.5rem', flexShrink: 0, lineHeight: 1 }}>❌</div>
+                <div style={{ color: 'rgba(241, 245, 249, 0.9)', lineHeight: isMobile ? 1.4 : 1.6 }}>
+                  <strong>Losing to:</strong> "{painPointDetails[painPoint]?.issue}"
+                  <div style={{ 
+                    marginTop: isMobile ? '0.25rem' : '0.5rem', 
+                    color: 'rgba(241, 245, 249, 0.7)',
+                    fontSize: isMobile ? '0.688rem' : '0.813rem'
+                  }}>
                     {painPointDetails[painPoint]?.message}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Today's Picks Preview (if available) */}
-            {gamesWithEdges.length > 0 && (
-              <div style={{ marginBottom: isMobile ? '0.75rem' : '1.25rem' }}>
+            {/* Today's Picks Preview - HIDE ON MOBILE to save space */}
+            {!isMobile && gamesWithEdges.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
                 <h3 style={{
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  fontSize: '0.875rem',
                   fontWeight: '700',
                   color: '#F1F5F9',
-                  marginBottom: isMobile ? '0.5rem' : '0.75rem',
+                  marginBottom: '0.75rem',
                   textAlign: 'center',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
@@ -980,12 +995,14 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                       key={idx}
                       style={{
                         background: 'rgba(30, 41, 59, 0.6)',
+                        backdropFilter: 'blur(8px)',
                         border: '1px solid rgba(212, 175, 55, 0.25)',
-                        borderRadius: isMobile ? '8px' : '10px',
-                        padding: isMobile ? '0.625rem' : '0.75rem',
+                        borderRadius: '10px',
+                        padding: '0.75rem',
                         position: 'relative',
                         overflow: 'hidden',
-                        marginBottom: isMobile ? '0.5rem' : '0.625rem'
+                        marginBottom: '0.625rem',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                       }}
                     >
                       {/* Game Info */}
@@ -998,7 +1015,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         zIndex: 1
                       }}>
                         <span style={{
-                          fontSize: isMobile ? '0.75rem' : '0.813rem',
+                          fontSize: '0.813rem',
                           color: 'rgba(255, 255, 255, 0.7)',
                           fontWeight: '600'
                         }}>
@@ -1021,16 +1038,16 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         justifyContent: 'center',
                         gap: '0.375rem'
                       }}>
-                        <Lock size={isMobile ? 24 : 28} color="#D4AF37" style={{ animation: 'lockPulse 2s ease-in-out infinite' }} />
+                        <Lock size={28} color="#D4AF37" style={{ animation: 'lockPulse 2s ease-in-out infinite' }} />
                         <div style={{
-                          fontSize: isMobile ? '0.75rem' : '0.813rem',
+                          fontSize: '0.813rem',
                           color: '#D4AF37',
                           fontWeight: '700'
                         }}>
                           {idx === 0 ? 'A+ PLAY' : 'A PLAY'}
                         </div>
                         <div style={{
-                          fontSize: isMobile ? '0.938rem' : '1rem',
+                          fontSize: '1rem',
                           color: '#10B981',
                           fontWeight: '800'
                         }}>
@@ -1043,55 +1060,58 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             )}
 
-            {/* LAYER 3: Spin Wheel (Contained card) */}
+            {/* LAYER 3: Spin Wheel - Premium Glassmorphism */}
             <div style={{
-              background: 'rgba(30, 41, 59, 0.6)',
+              background: 'rgba(30, 41, 59, 0.5)',
+              backdropFilter: 'blur(12px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(12px) saturate(150%)',
               border: '1px solid rgba(212, 175, 55, 0.2)',
-              borderRadius: isMobile ? '10px' : '12px',
-              padding: isMobile ? '0.875rem' : '1.25rem',
+              borderRadius: isMobile ? '8px' : '12px',
+              padding: isMobile ? '0.625rem' : '1.25rem',
               textAlign: 'center',
-              marginBottom: isMobile ? '0.75rem' : '1.25rem'
+              marginBottom: isMobile ? '0.5rem' : '1.25rem',
+              boxShadow: isMobile 
+                ? '0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                : '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
             }}>
               <h4 style={{
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                fontSize: isMobile ? '0.688rem' : '0.875rem',
                 fontWeight: '600',
                 color: '#D4AF37',
-                marginBottom: isMobile ? '0.75rem' : '1rem',
+                marginBottom: isMobile ? '0.5rem' : '1rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                🎁 Spin for Your Discount
+                🎁 Spin for Discount
               </h4>
               <DiscountLottery onCodeRevealed={(code) => setDiscountCode(code)} />
             </div>
 
-            {/* LAYER 4: CTA (Massive, impossible to miss) */}
+            {/* LAYER 4: CTA - Premium Gradient */}
             <button
               onClick={handleUnlock}
               style={{
                 width: '100%',
-                padding: isMobile ? '1rem 1.5rem' : '1.25rem 2rem',
-                fontSize: isMobile ? '1rem' : '1.25rem',
+                padding: isMobile ? '0.875rem 1.25rem' : '1.25rem 2rem',
+                fontSize: isMobile ? '0.938rem' : '1.25rem',
                 fontWeight: '800',
                 background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
                 backgroundSize: '200% 100%',
-                border: '3px solid rgba(212, 175, 55, 0.8)',
-                borderRadius: '16px',
+                border: isMobile ? '2px solid rgba(212, 175, 55, 0.8)' : '3px solid rgba(212, 175, 55, 0.8)',
+                borderRadius: isMobile ? '12px' : '16px',
                 color: 'rgba(15, 23, 42, 0.95)',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: `
-                  0 8px 24px rgba(212, 175, 55, 0.4),
-                  0 0 0 1px rgba(212, 175, 55, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
-                `,
+                boxShadow: isMobile
+                  ? `0 4px 16px rgba(212, 175, 55, 0.35), 0 0 0 1px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)`
+                  : `0 8px 24px rgba(212, 175, 55, 0.4), 0 0 0 1px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)`,
                 animation: 'glow 2s infinite',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.75rem',
+                gap: isMobile ? '0.5rem' : '0.75rem',
                 letterSpacing: '0.02em'
               }}
               onMouseEnter={(e) => {
@@ -1104,28 +1124,30 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = `
-                  0 8px 24px rgba(212, 175, 55, 0.4),
-                  0 0 0 1px rgba(212, 175, 55, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
-                `;
+                e.currentTarget.style.boxShadow = isMobile
+                  ? `0 4px 16px rgba(212, 175, 55, 0.35), 0 0 0 1px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)`
+                  : `0 8px 24px rgba(212, 175, 55, 0.4), 0 0 0 1px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)`;
                 e.currentTarget.style.backgroundPosition = '0% 0';
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 {discountCode ? `Claim ${discountCode} Discount` : 'Start 7-Day Free Trial'}
-                <ArrowRight size={isMobile ? 20 : 24} strokeWidth={3} style={{ animation: 'slideRight 1s infinite' }} />
+                <ArrowRight size={isMobile ? 18 : 24} strokeWidth={3} style={{ animation: 'slideRight 1s infinite' }} />
               </span>
             </button>
 
             <p style={{
-              fontSize: isMobile ? '0.75rem' : '0.813rem',
+              fontSize: isMobile ? '0.688rem' : '0.813rem',
               color: 'rgba(255, 255, 255, 0.5)',
               textAlign: 'center',
-              marginTop: isMobile ? '0.5rem' : '0.75rem',
-              marginBottom: 0
+              marginTop: isMobile ? '0.375rem' : '0.75rem',
+              marginBottom: 0,
+              lineHeight: isMobile ? 1.3 : 1.5
             }}>
-              Less than 1 coffee/day (87¢/day) • 7-day free trial • Cancel anytime
+              {isMobile 
+                ? '87¢/day • 7-day trial • Cancel anytime'
+                : 'Less than 1 coffee/day (87¢/day) • 7-day free trial • Cancel anytime'
+              }
             </p>
           </div>
         )}
