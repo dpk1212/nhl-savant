@@ -270,21 +270,63 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
     >
       <div 
         style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
-          borderRadius: isMobile ? '14px' : '20px',
-          padding: isMobile ? '1.25rem' : '2rem',
-          maxWidth: '580px',
+          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          border: '2px solid rgba(212, 175, 55, 0.3)',
+          borderRadius: isMobile ? '16px' : '24px',
+          padding: isMobile ? '1.5rem' : '2.5rem',
+          maxWidth: '620px',
           width: '100%',
           maxHeight: '95vh',
           overflowY: 'auto',
           position: 'relative',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          animation: 'modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both'
+          boxShadow: `
+            0 25px 50px -12px rgba(0, 0, 0, 0.5),
+            0 0 0 1px rgba(212, 175, 55, 0.1),
+            0 8px 32px rgba(212, 175, 55, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1)
+          `,
+          animation: 'modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
+          overflow: 'hidden'
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Premium Decorative Background */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            linear-gradient(135deg, transparent 0%, rgba(212, 175, 55, 0.03) 50%, transparent 100%),
+            radial-gradient(ellipse at top right, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+            radial-gradient(ellipse at bottom left, rgba(59, 130, 246, 0.05) 0%, transparent 40%)
+          `,
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+        
+        {/* Grid Pattern Overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `
+            linear-gradient(rgba(100, 116, 139, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(100, 116, 139, 0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+          pointerEvents: 'none',
+          opacity: 0.3,
+          zIndex: 0
+        }} />
+        
+        {/* Content wrapper with z-index */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -381,27 +423,33 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                     setCurrentScreen(2);
                   }}
                   style={{
-                    background: 'rgba(30, 41, 59, 0.6)',
-                    border: '1px solid rgba(148, 163, 184, 0.2)',
-                    borderRadius: '12px',
-                    padding: '1rem 1.25rem',
-                    minHeight: '72px',
+                    background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(212, 175, 55, 0.2)',
+                    borderRadius: '14px',
+                    padding: '1.125rem 1.5rem',
+                    minHeight: '76px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     textAlign: 'left',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem'
+                    gap: '1rem',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.6)';
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(212, 175, 55, 0.25), 0 0 32px rgba(212, 175, 55, 0.1)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.85) 100%)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.2)';
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)';
                   }}
                 >
                   <span style={{ fontSize: '2rem' }}>{option.emoji}</span>
@@ -505,26 +553,33 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                     setCurrentScreen(3);
                   }}
                   style={{
-                    background: 'rgba(30, 41, 59, 0.6)',
-                    border: '1px solid rgba(148, 163, 184, 0.2)',
-                    borderRadius: '12px',
-                    padding: '1rem 1.25rem',
-                    minHeight: '56px',
+                    background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    border: '2px solid rgba(212, 175, 55, 0.25)',
+                    borderRadius: '14px',
+                    padding: '1.125rem 1.5rem',
+                    minHeight: '64px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontSize: isMobile ? '1rem' : '1.125rem',
-                    fontWeight: '600',
-                    color: '#F1F5F9'
+                    fontWeight: '700',
+                    color: '#F1F5F9',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                    letterSpacing: '0.01em'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.6)';
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(212, 175, 55, 0.25), 0 0 32px rgba(212, 175, 55, 0.1)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.85) 100%)';
+                    e.currentTarget.style.color = '#D4AF37';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.25)';
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)';
+                    e.currentTarget.style.color = '#F1F5F9';
                   }}
                 >
                   {option.text}
@@ -646,12 +701,14 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               {/* Profile Summary */}
               <div style={{
-                background: 'rgba(255, 107, 107, 0.1)',
-                border: '1px solid rgba(255, 107, 107, 0.3)',
-                borderRadius: '10px',
-                padding: '1rem',
+                background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(239, 68, 68, 0.08) 100%)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 107, 107, 0.35)',
+                borderRadius: '12px',
+                padding: '1.125rem',
                 marginBottom: '1rem',
-                textAlign: 'left'
+                textAlign: 'left',
+                boxShadow: '0 4px 12px rgba(255, 107, 107, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
               }}>
                 <div style={{
                   fontSize: isMobile ? '0.875rem' : '0.938rem',
@@ -666,12 +723,14 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
 
               {/* Personalized Message */}
               <div style={{
-                background: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '10px',
-                padding: '1rem',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.08) 100%)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '12px',
+                padding: '1.125rem',
                 textAlign: 'left',
-                marginBottom: '1.5rem'
+                marginBottom: '1.5rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
               }}>
                 <p style={{
                   fontSize: isMobile ? '0.875rem' : '0.938rem',
@@ -786,12 +845,14 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
 
             {/* Track Record */}
             <div style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '10px',
-              padding: '1rem',
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              borderRadius: '12px',
+              padding: '1.125rem',
               marginBottom: '1.5rem',
-              textAlign: 'center'
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
             }}>
               <div style={{
                 fontSize: isMobile ? '0.75rem' : '0.813rem',
@@ -818,30 +879,47 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             <button
               onClick={handleUnlock}
               style={{
-                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-                border: '2px solid #F59E0B',
-                borderRadius: '12px',
-                padding: isMobile ? '1rem 1.5rem' : '1.125rem 1.75rem',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
+                border: '2px solid rgba(212, 175, 55, 0.8)',
+                borderRadius: '14px',
+                padding: isMobile ? '1.125rem 1.75rem' : '1.25rem 2rem',
                 color: '#0a0e1a',
-                fontSize: isMobile ? '1rem' : '1.125rem',
+                fontSize: isMobile ? '1.0625rem' : '1.1875rem',
                 fontWeight: '800',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 width: '100%',
-                boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)',
+                boxShadow: `
+                  0 8px 24px rgba(212, 175, 55, 0.4),
+                  0 0 0 1px rgba(212, 175, 55, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
+                `,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.625rem',
-                minHeight: '48px'
+                gap: '0.75rem',
+                minHeight: '56px',
+                position: 'relative',
+                overflow: 'hidden',
+                letterSpacing: '0.02em',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = `
+                  0 12px 36px rgba(212, 175, 55, 0.5),
+                  0 0 48px rgba(212, 175, 55, 0.3),
+                  0 0 0 1px rgba(212, 175, 55, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.4)
+                `;
+                e.currentTarget.style.transform = 'translateY(-3px) scale(1.01)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(245, 158, 11, 0.4)';
-                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = `
+                  0 8px 24px rgba(212, 175, 55, 0.4),
+                  0 0 0 1px rgba(212, 175, 55, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
+                `;
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
               }}
             >
               <ArrowRight size={isMobile ? 18 : 20} strokeWidth={3} />
@@ -859,6 +937,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Keyframes */}
@@ -891,13 +970,39 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
         }
         
         @keyframes lockPulse {
-          0%, 100% { transform: scale(1); opacity: 0.6; }
-          50% { transform: scale(1.1); opacity: 1; }
+          0%, 100% { 
+            transform: scale(1); 
+            opacity: 0.6;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+          }
+          50% { 
+            transform: scale(1.1); 
+            opacity: 1;
+            filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6));
+          }
         }
         
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(200%);
+          }
+        }
+        
+        @keyframes glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
+          }
         }
       `}</style>
     </div>
