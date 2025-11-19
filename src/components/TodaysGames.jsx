@@ -51,7 +51,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import { trackGameCardView, getUsageForToday } from '../utils/usageTracker';
 import UpgradeModal from './UpgradeModal';
 import ConversionButtons from './ConversionButtons';
-import WelcomePopupModal from './modals/WelcomePopupModal';
+import QuizFunnelModal from './modals/QuizFunnelModal';
 import DailySpinModal from './modals/DailySpinModal';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 
@@ -3587,8 +3587,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         user={user}
       />
       
-      {/* Welcome Popup Modal - auto-shown to new visitors after 3 seconds */}
-      <WelcomePopupModal 
+      {/* Quiz Funnel Modal - qualifies leads with 4-screen flow before paywall */}
+      <QuizFunnelModal 
         isOpen={showWelcomePopup}
         onClose={handleWelcomePopupClose}
         todaysGames={allGamesToDisplay}
