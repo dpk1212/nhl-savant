@@ -14,7 +14,7 @@ A fully automated data fetching system using **Firecrawl** to scrape NHL odds an
 
 2. **Environment Configuration**
    - Added `FIRECRAWL_API_KEY` to `.env`
-   - API Key: `fc-a1a19d33dc894462889b67bb555834c9`
+   - API Key: (stored in `.env` - see AUTOMATION_GUIDE.md for setup)
 
 3. **NPM Scripts** (`package.json`)
    ```json
