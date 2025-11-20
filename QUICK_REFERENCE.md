@@ -56,7 +56,7 @@ npm run deploy
 ## Firecrawl Info
 
 - **Dashboard**: https://firecrawl.dev/account
-- **API Key**: `fc-a1a19d33dc894462889b67bb555834c9`
+- **API Key**: (stored in `.env` file)
 - **Monthly Credits**: 500 (free tier)
 - **Daily Usage**: ~68 credits (if run 2x/day)
 

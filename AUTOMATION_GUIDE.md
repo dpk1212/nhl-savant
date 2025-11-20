@@ -92,8 +92,10 @@ If automated extraction fails or finds 0 games, you can:
 Located in `.env`:
 
 ```bash
-FIRECRAWL_API_KEY=fc-a1a19d33dc894462889b67bb555834c9
+FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 ```
+
+⚠️ **SECURITY NOTE**: Never commit API keys to git. The `.env` file is gitignored for this reason. Always use placeholder values in documentation.
 
 ### Scripts (package.json)
 ```json
