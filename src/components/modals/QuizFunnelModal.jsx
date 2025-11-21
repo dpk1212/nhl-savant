@@ -868,7 +868,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </p>
             </div>
 
-            {/* LAYER 1: Hero Stats - ULTRA PREMIUM */}
+            {/* LAYER 1: Hero Stats - ULTRA PREMIUM (COMPRESSED) */}
             <div style={{
               position: 'relative',
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(212, 175, 55, 0.15), rgba(16, 185, 129, 0.08))',
@@ -881,8 +881,8 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               `,
               backgroundOrigin: 'border-box',
               backgroundClip: 'padding-box, border-box',
-              borderRadius: isMobile ? '16px' : '20px',
-              padding: isMobile ? '1rem' : '1.75rem',
+              borderRadius: isMobile ? '14px' : '18px',
+              padding: isMobile ? '0.75rem' : '1.375rem',
               textAlign: 'center',
               overflow: 'hidden',
               boxShadow: `
@@ -892,7 +892,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 inset 0 1px 0 rgba(255, 255, 255, 0.15),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.2)
               `,
-              marginBottom: isMobile ? '0.75rem' : '1.25rem'
+              marginBottom: isMobile ? '0.625rem' : '1rem'
             }}>
               {/* Animated shimmer overlay */}
               <div style={{
@@ -926,7 +926,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
-                  fontSize: isMobile ? '2.5rem' : '3.5rem',
+                  fontSize: isMobile ? '2.125rem' : '3rem',
                   fontWeight: '800',
                   background: 'linear-gradient(135deg, #10B981 0%, #34D399 50%, #10B981 100%)',
                   WebkitBackgroundClip: 'text',
@@ -940,9 +940,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   +{roiCounter}%
                 </div>
                 <div style={{
-                  fontSize: isMobile ? '0.75rem' : '0.938rem',
+                  fontSize: isMobile ? '0.688rem' : '0.813rem',
                   color: 'rgba(241, 245, 249, 0.85)',
-                  marginTop: isMobile ? '0.375rem' : '0.5rem',
+                  marginTop: isMobile ? '0.313rem' : '0.438rem',
                   fontWeight: '600',
                   letterSpacing: '0.02em'
                 }}>
@@ -951,7 +951,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             </div>
 
-            {/* LAYER 2: Personalized Profile - PREMIUM RED */}
+            {/* LAYER 2: Personalized Profile - PREMIUM RED (COMPRESSED) */}
             <div style={{
               position: 'relative',
               background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08), rgba(239, 68, 68, 0.06))',
@@ -959,10 +959,10 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               borderLeft: '4px solid #EF4444',
-              borderRadius: isMobile ? '12px' : '14px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              fontSize: isMobile ? '0.813rem' : '0.938rem',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '0.625rem' : '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              marginBottom: isMobile ? '0.625rem' : '0.875rem',
               boxShadow: `
                 0 4px 20px rgba(239, 68, 68, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -980,36 +980,36 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               <div style={{ 
                 display: 'flex', 
-                gap: isMobile ? '0.625rem' : '0.875rem', 
+                gap: isMobile ? '0.5rem' : '0.75rem', 
                 alignItems: 'flex-start',
                 position: 'relative',
                 zIndex: 1
               }}>
                 <div style={{ 
-                  fontSize: isMobile ? '1.5rem' : '2rem', 
+                  fontSize: isMobile ? '1.25rem' : '1.625rem', 
                   flexShrink: 0, 
                   lineHeight: 1,
                   filter: 'drop-shadow(0 2px 8px rgba(239, 68, 68, 0.4))'
                 }}>❌</div>
-                <div style={{ color: 'rgba(241, 245, 249, 0.95)', lineHeight: isMobile ? 1.5 : 1.7 }}>
+                <div style={{ color: 'rgba(241, 245, 249, 0.95)', lineHeight: isMobile ? 1.4 : 1.6 }}>
                   <strong style={{ 
-                    fontSize: isMobile ? '0.875rem' : '1rem',
+                    fontSize: isMobile ? '0.813rem' : '0.938rem',
                     color: '#FCA5A5',
                     display: 'block',
-                    marginBottom: '0.25rem'
+                    marginBottom: '0.188rem'
                   }}>
                     Losing to:
                   </strong>
                   <div style={{ 
-                    fontSize: isMobile ? '0.813rem' : '0.938rem',
+                    fontSize: isMobile ? '0.75rem' : '0.875rem',
                     color: 'rgba(241, 245, 249, 0.9)'
                   }}>
                     "{painPointDetails[painPoint]?.issue}"
                   </div>
                   <div style={{ 
-                    marginTop: isMobile ? '0.375rem' : '0.5rem', 
+                    marginTop: isMobile ? '0.313rem' : '0.438rem', 
                     color: 'rgba(241, 245, 249, 0.7)',
-                    fontSize: isMobile ? '0.75rem' : '0.875rem',
+                    fontSize: isMobile ? '0.688rem' : '0.813rem',
                     fontStyle: 'italic'
                   }}>
                     {painPointDetails[painPoint]?.message}
@@ -1018,7 +1018,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             </div>
 
-            {/* PRESCRIPTION: Why they lose + How we fix it - PREMIUM GREEN */}
+            {/* PRESCRIPTION: Why they lose + How we fix it - PREMIUM GREEN (COMPRESSED) */}
             <div style={{
               position: 'relative',
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08), rgba(16, 185, 129, 0.06))',
@@ -1026,10 +1026,10 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
               border: '1px solid rgba(16, 185, 129, 0.35)',
               borderLeft: '4px solid #10B981',
-              borderRadius: isMobile ? '12px' : '14px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              fontSize: isMobile ? '0.813rem' : '0.938rem',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '0.625rem' : '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              marginBottom: isMobile ? '0.625rem' : '0.875rem',
               boxShadow: `
                 0 4px 20px rgba(16, 185, 129, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -1047,18 +1047,19 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{ 
-                  marginBottom: isMobile ? '0.5rem' : '0.625rem',
+                  marginBottom: isMobile ? '0.438rem' : '0.563rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.625rem'
+                  gap: '0.5rem'
                 }}>
                   <span style={{ 
-                    fontSize: isMobile ? '1.5rem' : '1.75rem',
-                    filter: 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.4))'
+                    fontSize: isMobile ? '1.25rem' : '1.5rem',
+                    filter: 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.4))',
+                    lineHeight: 1
                   }}>✅</span>
                   <strong style={{ 
                     color: '#34D399', 
-                    fontSize: isMobile ? '0.938rem' : '1.063rem',
+                    fontSize: isMobile ? '0.813rem' : '0.938rem',
                     fontWeight: '700',
                     letterSpacing: '0.01em'
                   }}>
@@ -1069,29 +1070,30 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 <div style={{ 
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: isMobile ? '0.5rem' : '0.625rem'
+                  gap: isMobile ? '0.438rem' : '0.563rem'
                 }}>
                   {/* Problem Box */}
                   <div style={{
-                    padding: isMobile ? '0.625rem' : '0.75rem',
+                    padding: isMobile ? '0.5rem' : '0.625rem',
                     background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.08))',
                     borderLeft: '3px solid #EF4444',
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '0.625rem'
+                    gap: '0.5rem'
                   }}>
                     <span style={{ 
-                      fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                      fontSize: isMobile ? '1.063rem' : '1.25rem', 
                       flexShrink: 0,
-                      filter: 'drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3))'
+                      filter: 'drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3))',
+                      lineHeight: 1
                     }}>❌</span>
                     <div style={{ flex: 1 }}>
                       <strong style={{ 
                         color: '#FCA5A5',
-                        fontSize: isMobile ? '0.813rem' : '0.938rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         display: 'block',
-                        marginBottom: '0.25rem'
+                        marginBottom: '0.188rem'
                       }}>
                         {painPoint === 'parlays' && 'Parlay trap'}
                         {painPoint === 'cappers' && 'Fake cappers'}
@@ -1099,9 +1101,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         {painPoint === 'vibes' && 'Gut feelings'}
                       </strong>
                       <span style={{ 
-                        fontSize: isMobile ? '0.75rem' : '0.875rem',
+                        fontSize: isMobile ? '0.688rem' : '0.813rem',
                         color: 'rgba(241, 245, 249, 0.8)',
-                        lineHeight: 1.5
+                        lineHeight: 1.4
                       }}>
                         {painPoint === 'parlays' && '6-leg @ -110 each = 1.5% win, -18% EV'}
                         {painPoint === 'cappers' && 'Post 4-0, hide 0-3 = Cherry-picked BS'}
@@ -1113,25 +1115,26 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   
                   {/* Solution Box */}
                   <div style={{
-                    padding: isMobile ? '0.625rem' : '0.75rem',
+                    padding: isMobile ? '0.5rem' : '0.625rem',
                     background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08))',
                     borderLeft: '3px solid #10B981',
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '0.625rem'
+                    gap: '0.5rem'
                   }}>
                     <span style={{ 
-                      fontSize: isMobile ? '1.25rem' : '1.5rem', 
+                      fontSize: isMobile ? '1.063rem' : '1.25rem', 
                       flexShrink: 0,
-                      filter: 'drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3))'
+                      filter: 'drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3))',
+                      lineHeight: 1
                     }}>✅</span>
                     <div style={{ flex: 1 }}>
                       <strong style={{ 
                         color: '#34D399',
-                        fontSize: isMobile ? '0.813rem' : '0.938rem',
+                        fontSize: isMobile ? '0.75rem' : '0.875rem',
                         display: 'block',
-                        marginBottom: '0.25rem'
+                        marginBottom: '0.188rem'
                       }}>
                         {painPoint === 'parlays' && 'Smart singles'}
                         {painPoint === 'cappers' && 'Full transparency'}
@@ -1139,9 +1142,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         {painPoint === 'vibes' && 'Data-driven edge'}
                       </strong>
                       <span style={{ 
-                        fontSize: isMobile ? '0.75rem' : '0.875rem',
+                        fontSize: isMobile ? '0.688rem' : '0.813rem',
                         color: 'rgba(241, 245, 249, 0.8)',
-                        lineHeight: 1.5
+                        lineHeight: 1.4
                       }}>
                         {painPoint === 'parlays' && 'Single +4-6% EV bets = Consistent profit'}
                         {painPoint === 'cappers' && `All ${stats?.totalBets || 153} bets tracked publicly`}
@@ -1154,17 +1157,120 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             </div>
 
-            {/* TODAY'S REAL VALUE - ULTRA PREMIUM GOLD */}
+            {/* URGENCY LINE - If games available */}
+            {gamesWithEdges.length > 0 && (
+              <div style={{
+                textAlign: 'center',
+                fontSize: isMobile ? '0.813rem' : '0.938rem',
+                color: '#D4AF37',
+                fontWeight: '600',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}>
+                <span style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}>🏒</span>
+                Tonight's picks are ready — unlock to see
+              </div>
+            )}
+
+            {/* CTA - MEGA PREMIUM GOLD (MOVED UP) */}
+            <button
+              onClick={handleUnlock}
+              style={{
+                width: '100%',
+                padding: isMobile ? '0.75rem 1.25rem' : '1rem 1.75rem',
+                fontSize: isMobile ? '0.938rem' : '1.188rem',
+                fontWeight: '900',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 25%, #FFF4B0 50%, #FFD700 75%, #D4AF37 100%)',
+                backgroundSize: '300% 100%',
+                border: '3px solid rgba(212, 175, 55, 0.8)',
+                borderRadius: isMobile ? '12px' : '16px',
+                color: 'rgba(15, 23, 42, 1)',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: `
+                  0 6px 24px rgba(212, 175, 55, 0.4),
+                  0 0 0 1px rgba(212, 175, 55, 0.2),
+                  inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                  inset 0 -2px 0 rgba(0, 0, 0, 0.1)
+                `,
+                animation: 'glow 2s ease-in-out infinite',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '0.5rem' : '0.75rem',
+                letterSpacing: '0.02em',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                marginBottom: isMobile ? '0.75rem' : '1rem'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = `
+                  0 12px 40px rgba(212, 175, 55, 0.6),
+                  0 0 0 1px rgba(212, 175, 55, 0.3),
+                  inset 0 2px 0 rgba(255, 255, 255, 0.5),
+                  inset 0 -2px 0 rgba(0, 0, 0, 0.1)
+                `;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = `
+                  0 6px 24px rgba(212, 175, 55, 0.4),
+                  0 0 0 1px rgba(212, 175, 55, 0.2),
+                  inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                  inset 0 -2px 0 rgba(0, 0, 0, 0.1)
+                `;
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmerMove 3s linear infinite'
+              }} />
+              <span style={{ position: 'relative', zIndex: 1 }}>
+                Start 7-Day Free Trial
+              </span>
+              <span style={{ 
+                position: 'relative', 
+                zIndex: 1,
+                fontSize: isMobile ? '1.125rem' : '1.375rem',
+                animation: 'bounce 2s infinite'
+              }}>→</span>
+            </button>
+
+            {/* Pricing Anchor */}
+            <div style={{
+              textAlign: 'center',
+              fontSize: isMobile ? '0.688rem' : '0.813rem',
+              color: 'rgba(212, 175, 55, 0.75)',
+              marginBottom: isMobile ? '0.75rem' : '1rem',
+              fontWeight: '600',
+              lineHeight: 1.5
+            }}>
+              {isMobile ? (
+                <>Less than 1 coffee/day (87¢/day) • Cancel anytime</>
+              ) : (
+                <>Less than 1 coffee/day (87¢/day) • 7-day free trial • Cancel anytime</>
+              )}
+            </div>
+
+            {/* TODAY'S REAL VALUE - ULTRA PREMIUM GOLD (COMPRESSED) */}
             {gamesWithEdges.length > 0 && (
               <div style={{
                 position: 'relative',
-                marginBottom: isMobile ? '0.75rem' : '1rem',
+                marginBottom: isMobile ? '0.625rem' : '0.875rem',
                 background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(255, 215, 0, 0.06), rgba(212, 175, 55, 0.04))',
                 backdropFilter: 'blur(20px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                 border: '1px solid rgba(212, 175, 55, 0.35)',
-                borderRadius: isMobile ? '12px' : '14px',
-                padding: isMobile ? '0.75rem' : '1rem',
+                borderRadius: isMobile ? '10px' : '12px',
+                padding: isMobile ? '0.625rem' : '0.875rem',
                 boxShadow: `
                   0 4px 24px rgba(212, 175, 55, 0.2),
                   inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -1188,20 +1294,20 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                 
                 <div style={{ position: 'relative', zIndex: 1 }}>
                   <h3 style={{
-                    fontSize: isMobile ? '0.813rem' : '0.938rem',
+                    fontSize: isMobile ? '0.75rem' : '0.875rem',
                     fontWeight: '800',
                     background: 'linear-gradient(135deg, #D4AF37, #FFD700, #D4AF37)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    marginBottom: isMobile ? '0.625rem' : '0.75rem',
+                    marginBottom: isMobile ? '0.5rem' : '0.625rem',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.438rem'
                   }}>
-                    <span style={{ filter: 'grayscale(0)' }}>📊</span> Today's Available Plays
+                    <span style={{ filter: 'grayscale(0)', fontSize: isMobile ? '1rem' : '1.125rem' }}>📊</span> Today's Available Plays
                   </h3>
                   
                   {gamesWithEdges.slice(0, isMobile ? 2 : 3).map((game, idx) => {
@@ -1209,8 +1315,8 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                     const isAPLus = edge.qualityGrade === 'A+';
                     return (
                       <div key={idx} style={{
-                        padding: isMobile ? '0.625rem' : '0.75rem',
-                        marginBottom: idx < (isMobile ? 1 : 2) ? (isMobile ? '0.5rem' : '0.625rem') : 0,
+                        padding: isMobile ? '0.5rem' : '0.625rem',
+                        marginBottom: idx < (isMobile ? 1 : 2) ? (isMobile ? '0.438rem' : '0.563rem') : 0,
                         background: isAPLus 
                           ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.08))'
                           : 'linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(255, 215, 0, 0.08))',
@@ -1224,10 +1330,10 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          marginBottom: '0.375rem'
+                          marginBottom: '0.313rem'
                         }}>
                           <span style={{
-                            fontSize: isMobile ? '0.813rem' : '0.938rem',
+                            fontSize: isMobile ? '0.75rem' : '0.875rem',
                             fontWeight: '700',
                             color: '#F1F5F9',
                             letterSpacing: '0.01em'
@@ -1235,7 +1341,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                             {game.awayTeam} @ {game.homeTeam}
                           </span>
                           <span style={{
-                            fontSize: isMobile ? '0.688rem' : '0.813rem',
+                            fontSize: isMobile ? '0.625rem' : '0.75rem',
                             padding: '0.25rem 0.5rem',
                             background: isAPLus 
                               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.2))'
@@ -1255,9 +1361,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
-                          fontSize: isMobile ? '0.688rem' : '0.813rem',
+                          fontSize: isMobile ? '0.625rem' : '0.75rem',
                           color: 'rgba(241, 245, 249, 0.75)',
-                          gap: '0.625rem',
+                          gap: '0.5rem',
                           fontWeight: '500'
                         }}>
                           <span>Model: <strong style={{ color: 'rgba(241, 245, 249, 0.95)' }}>{edge.modelProb ? (edge.modelProb * 100).toFixed(1) : '--'}%</strong></span>
@@ -1275,9 +1381,9 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   })}
                   
                   <p style={{
-                    fontSize: isMobile ? '0.688rem' : '0.75rem',
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
                     color: 'rgba(212, 175, 55, 0.7)',
-                    marginTop: isMobile ? '0.5rem' : '0.625rem',
+                    marginTop: isMobile ? '0.438rem' : '0.563rem',
                     marginBottom: 0,
                     textAlign: 'center',
                     fontStyle: 'italic',
@@ -1289,16 +1395,16 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             )}
 
-            {/* METHODOLOGY - PREMIUM BLUE */}
+            {/* METHODOLOGY - PREMIUM BLUE (COMPRESSED) */}
             <div style={{
               position: 'relative',
               background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.06))',
               backdropFilter: 'blur(20px) saturate(180%)',
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
               border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: isMobile ? '12px' : '14px',
-              padding: isMobile ? '0.75rem' : '1rem',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
+              borderRadius: isMobile ? '10px' : '12px',
+              padding: isMobile ? '0.625rem' : '0.875rem',
+              marginBottom: isMobile ? '0.625rem' : '0.875rem',
               boxShadow: `
                 0 4px 20px rgba(59, 130, 246, 0.15),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -1316,7 +1422,7 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <h4 style={{
-                  fontSize: isMobile ? '0.813rem' : '0.938rem',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   fontWeight: '800',
                   color: '#60A5FA',
                   marginBottom: isMobile ? '0.5rem' : '0.625rem',
@@ -1324,34 +1430,33 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
                   letterSpacing: '0.08em',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.625rem'
+                  gap: '0.5rem'
                 }}>
-                  <span style={{ fontSize: isMobile ? '1.25rem' : '1.5rem' }}>🔬</span> How We Find Edge
+                  <span style={{ fontSize: isMobile ? '1.125rem' : '1.25rem' }}>🔬</span> How We Find Edge
                 </h4>
                 <div style={{
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  fontSize: isMobile ? '0.688rem' : '0.813rem',
                   color: 'rgba(241, 245, 249, 0.85)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: isMobile ? '0.375rem' : '0.5rem',
+                  gap: isMobile ? '0.313rem' : '0.438rem',
                   fontWeight: '500'
                 }}>
                   {[
-                    { icon: '📊', text: 'Advanced analytics + market calibration' },
-                    { icon: '🎯', text: 'Quality filter (B+ minimum EV)' },
-                    { icon: '💎', text: 'Calculate edge vs market odds' },
-                    { icon: '⭐', text: 'Grade A+ through C by confidence' }
+                    { icon: '📊', text: 'Ensemble model finds 2.5%+ edge minimum' },
+                    { icon: '💎', text: 'Quality grades A+ through C by confidence' },
+                    { icon: '⭐', text: 'Average pick: +6.2% EV vs market' }
                   ].map((item, idx) => (
                     <div key={idx} style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: '0.625rem',
-                      padding: '0.375rem 0.5rem',
+                      gap: '0.5rem',
+                      padding: isMobile ? '0.313rem 0.438rem' : '0.375rem 0.5rem',
                       background: 'rgba(59, 130, 246, 0.08)',
                       borderRadius: '6px',
                       borderLeft: '2px solid rgba(96, 165, 250, 0.4)'
                     }}>
-                      <span style={{ fontSize: isMobile ? '1rem' : '1.125rem' }}>{item.icon}</span>
+                      <span style={{ fontSize: isMobile ? '0.938rem' : '1rem' }}>{item.icon}</span>
                       <span>{item.text}</span>
                     </div>
                   ))}
@@ -1359,22 +1464,22 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               </div>
             </div>
 
-            {/* HONEST RISK DISCLOSURE - PREMIUM AMBER */}
+            {/* HONEST RISK DISCLOSURE - PREMIUM AMBER (COMPRESSED) */}
             <div style={{
               position: 'relative',
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.08))',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               border: '2px solid rgba(245, 158, 11, 0.4)',
-              borderRadius: isMobile ? '10px' : '12px',
-              padding: isMobile ? '0.75rem' : '0.875rem',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              borderRadius: isMobile ? '8px' : '10px',
+              padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
+              marginBottom: 0,
+              fontSize: isMobile ? '0.688rem' : '0.813rem',
               color: 'rgba(241, 245, 249, 0.9)',
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               display: 'flex',
-              alignItems: 'flex-start',
-              gap: '0.75rem',
+              alignItems: 'center',
+              gap: '0.625rem',
               boxShadow: `
                 0 4px 20px rgba(245, 158, 11, 0.25),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1)
@@ -1391,109 +1496,29 @@ const QuizFunnelModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
               }} />
               
               <span style={{ 
-                fontSize: isMobile ? '1.75rem' : '2rem',
+                fontSize: isMobile ? '1.375rem' : '1.625rem',
                 flexShrink: 0,
                 filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.5))',
-                animation: 'pulse 2s ease-in-out infinite',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                lineHeight: 1
               }}>
                 ⚠️
               </span>
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <strong style={{ 
                   color: '#FDE047', 
-                  display: 'block', 
-                  marginBottom: '0.375rem',
-                  fontSize: isMobile ? '0.813rem' : '0.938rem',
+                  marginRight: '0.25rem',
+                  fontSize: 'inherit',
                   fontWeight: '700'
                 }}>
                   You can still lose.
                 </strong>
                 <span style={{ fontWeight: '500' }}>
-                  Even with +{roiCounter}% ROI, losing streaks happen. We give you an edge, not guarantees. Test it for 7 days.
+                  Even with +{roiCounter}% ROI, streaks happen. Test it 7 days.
                 </span>
               </div>
             </div>
-
-            {/* CTA - MEGA PREMIUM GOLD */}
-            <button
-              onClick={handleUnlock}
-              style={{
-                width: '100%',
-                padding: isMobile ? '0.875rem 1.5rem' : '1.25rem 2rem',
-                fontSize: isMobile ? '1.063rem' : '1.375rem',
-                fontWeight: '900',
-                background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 25%, #FFF4B0 50%, #FFD700 75%, #D4AF37 100%)',
-                backgroundSize: '300% 100%',
-                border: '3px solid rgba(212, 175, 55, 0.8)',
-                borderRadius: isMobile ? '14px' : '18px',
-                color: 'rgba(15, 23, 42, 1)',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: `
-                  0 8px 32px rgba(212, 175, 55, 0.45),
-                  0 0 0 1px rgba(212, 175, 55, 0.2),
-                  inset 0 2px 0 rgba(255, 255, 255, 0.4),
-                  inset 0 -2px 0 rgba(0, 0, 0, 0.1)
-                `,
-                animation: 'glow 2s ease-in-out infinite',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: isMobile ? '0.625rem' : '0.875rem',
-                letterSpacing: '0.02em',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
-                e.currentTarget.style.boxShadow = `
-                  0 16px 48px rgba(212, 175, 55, 0.65),
-                  0 0 60px rgba(212, 175, 55, 0.4),
-                  inset 0 2px 0 rgba(255, 255, 255, 0.5)
-                `;
-                e.currentTarget.style.backgroundPosition = '100% 0';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = `
-                  0 8px 32px rgba(212, 175, 55, 0.45),
-                  0 0 0 1px rgba(212, 175, 55, 0.2),
-                  inset 0 2px 0 rgba(255, 255, 255, 0.4),
-                  inset 0 -2px 0 rgba(0, 0, 0, 0.1)
-                `;
-                e.currentTarget.style.backgroundPosition = '0% 0';
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                {discountCode ? `Claim ${discountCode} Discount` : 'Start 7-Day Free Trial'}
-                <ArrowRight 
-                  size={isMobile ? 20 : 26} 
-                  strokeWidth={3.5} 
-                  style={{ 
-                    animation: 'slideRight 1s ease-in-out infinite',
-                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
-                  }} 
-                />
-              </span>
-            </button>
-
-            <p style={{
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              color: 'rgba(212, 175, 55, 0.7)',
-              textAlign: 'center',
-              marginTop: isMobile ? '0.5rem' : '0.75rem',
-              marginBottom: 0,
-              lineHeight: isMobile ? 1.4 : 1.6,
-              fontWeight: '600'
-            }}>
-              {isMobile 
-                ? '87¢/day • 7-day trial • Cancel anytime'
-                : 'Less than 1 coffee/day (87¢/day) • 7-day free trial • Cancel anytime'
-              }
-            </p>
           </div>
         )}
         </div>
