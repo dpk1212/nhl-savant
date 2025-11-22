@@ -4,8 +4,6 @@ on:
   schedule:
     # Morning scrape: 10:00 AM ET (2:00 PM UTC)
     - cron: '0 14 * * *'
-    # Afternoon scrape: 4:00 PM ET (8:00 PM UTC)
-    - cron: '0 20 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
