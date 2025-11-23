@@ -2438,7 +2438,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   // FIREBASE: Auto-track ensemble-filtered bets (only bets shown to users)
   // ENSEMBLE STRATEGY: Pass topEdges to track only Grade A/B quality bets
-  useBetTracking(topEdges, allEdges, dataProcessor);
+  // 🎯 CRITICAL: Filter out preliminary picks - only track MoneyPuck-calibrated bets
+  const confirmedEdges = topEdges.filter(edge => !edge.isPreliminary);
+  useBetTracking(confirmedEdges, allEdges, dataProcessor);
   
   // Initialize GoalieProcessor when goalies.csv data is available
   useEffect(() => {
@@ -3103,10 +3105,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 lineHeight: '1.5',
                 fontWeight: '400'
               }}>
-                Our model updates at <strong style={{ 
+                In our pursuit of higher-quality picks, we've identified that early analysis performs significantly worse without proper data inputs. Our model updates at <strong style={{ 
                   color: '#10b981', 
                   fontWeight: '600' 
-                }}>11:00 AM ET</strong> with confirmed starting goalies and advanced statistical calibration. These picks represent preliminary market analysis.
+                }}>11:00 AM ET</strong> when confirmed starting goalies and advanced analytics become available.
               </div>
             </div>
           </div>
