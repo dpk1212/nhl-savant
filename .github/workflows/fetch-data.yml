@@ -2,8 +2,8 @@ name: Fetch NHL Data
 
 on:
   schedule:
-    # Morning scrape: 10:00 AM ET (2:00 PM UTC)
-    - cron: '0 14 * * *'
+    # Morning scrape: 11:01 AM ET (3:01 PM UTC) - after MoneyPuck updates at 11 AM
+    - cron: '1 15 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
