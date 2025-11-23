@@ -499,13 +499,6 @@ export class EdgeCalculator {
       if (gameEdges.edges.moneyline.away && gameEdges.edges.moneyline.away.ev > minEV) {
         const edge = gameEdges.edges.moneyline.away;
         
-        // 🎯 CRITICAL QUALITY GATE: Only show bets with MoneyPuck calibration
-        // MoneyPuck data becomes available at 11 AM ET
-        if (!edge.moneyPuckProb && !edge.calibratedProb) {
-          console.log(`⏳ Skipping ${gameEdges.awayTeam} AWAY: Waiting for MoneyPuck data (available at 11 AM ET)`);
-          return;
-        }
-        
         // QUALITY FILTER: Minimum quality grade (PRIMARY FILTER)
         if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
           console.log(`⚠️ Filtered ${gameEdges.awayTeam} AWAY: Grade ${edge.qualityGrade} < ${minQuality}`);
@@ -523,24 +516,18 @@ export class EdgeCalculator {
           evPercent: edge.evPercent,
           modelProb: edge.modelProb,
           marketProb: edge.marketProb,
-          ensembleProb: edge.ensembleProb,         // NEW
-          agreement: edge.agreement,                // NEW
-          confidence: edge.confidence,              // NEW
-          qualityGrade: edge.qualityGrade,          // NEW
+          ensembleProb: edge.ensembleProb,
+          agreement: edge.agreement,
+          confidence: edge.confidence,
+          qualityGrade: edge.qualityGrade,
           kelly: edge.kelly,
-          recommendedUnit: edge.recommendedUnit     // NEW
+          recommendedUnit: edge.recommendedUnit,
+          isPreliminary: !edge.moneyPuckProb       // 🆕 FLAG for UI display
         });
       }
       
       if (gameEdges.edges.moneyline.home && gameEdges.edges.moneyline.home.ev > minEV) {
         const edge = gameEdges.edges.moneyline.home;
-        
-        // 🎯 CRITICAL QUALITY GATE: Only show bets with MoneyPuck calibration
-        // MoneyPuck data becomes available at 11 AM ET
-        if (!edge.moneyPuckProb && !edge.calibratedProb) {
-          console.log(`⏳ Skipping ${gameEdges.homeTeam} HOME: Waiting for MoneyPuck data (available at 11 AM ET)`);
-          return;
-        }
         
         // QUALITY FILTER: Minimum quality grade (PRIMARY FILTER)
         if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
@@ -559,12 +546,13 @@ export class EdgeCalculator {
           evPercent: edge.evPercent,
           modelProb: edge.modelProb,
           marketProb: edge.marketProb,
-          ensembleProb: edge.ensembleProb,         // NEW
-          agreement: edge.agreement,                // NEW
-          confidence: edge.confidence,              // NEW
-          qualityGrade: edge.qualityGrade,          // NEW
+          ensembleProb: edge.ensembleProb,
+          agreement: edge.agreement,
+          confidence: edge.confidence,
+          qualityGrade: edge.qualityGrade,
           kelly: edge.kelly,
-          recommendedUnit: edge.recommendedUnit     // NEW
+          recommendedUnit: edge.recommendedUnit,
+          isPreliminary: !edge.moneyPuckProb       // 🆕 FLAG for UI display
         });
       }
       
