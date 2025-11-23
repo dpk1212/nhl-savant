@@ -64,12 +64,19 @@ export function useBetTracking(topEdges, allEdges, dataProcessor) {
             homeWinProb: game.edges.moneyline?.home?.modelProb || 0.5
           };
           
-          // Save/update this ensemble-filtered bet
-          await tracker.current.saveBet(game, edge, predictionData);
-          console.log(`✅ Tracked ${edge.qualityGrade || 'B'}: ${edge.game} - ${edge.pick} (+${edge.evPercent.toFixed(1)}% EV, ${edge.agreement ? (edge.agreement * 100).toFixed(1) + '% agreement' : 'no agreement data'})`);
+          // 🎯 QUALITY GATE: saveBet returns null if MoneyPuck data unavailable
+          const savedBet = await tracker.current.saveBet(game, edge, predictionData);
           
-          // Mark as processed for this session
-          processedToday.current.add(betId);
+          if (savedBet) {
+            // Bet was saved successfully (has MoneyPuck calibration)
+            console.log(`✅ Tracked ${edge.qualityGrade || 'B'}: ${edge.game} - ${edge.pick} (+${edge.evPercent.toFixed(1)}% EV)`);
+            // Mark as processed for this session
+            processedToday.current.add(betId);
+          } else {
+            // Bet was skipped (waiting for MoneyPuck data)
+            // Note: betTracker already logged why it was skipped
+            // Don't mark as processed so it can be retried when MoneyPuck loads
+          }
           
         } catch (error) {
           console.error(`❌ Failed to save bet ${betId}:`, error);
