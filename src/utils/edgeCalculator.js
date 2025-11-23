@@ -181,7 +181,7 @@ export class EdgeCalculator {
       
       // For transparency and learning
       yourModelProb: yourModelProb,        // Your raw prediction
-      moneyPuckProb: moneyPuckProb,        // MoneyPuck's prediction
+      moneyPuckProb: moneyPuckProb,        // MoneyPuck's prediction (QUALITY GATE FLAG)
       marketProb: marketProb,              // Market's implied probability
       correction: correction,              // How much MoneyPuck corrected you
       
@@ -394,6 +394,8 @@ export class EdgeCalculator {
         qualityGrade: awayEnsemble.qualityGrade,       // NEW: A-D grading
         kelly: awayKelly,
         recommendedUnit: awayKelly.fractionalKelly,    // NEW: Sizing recommendation
+        moneyPuckProb: awayEnsemble.moneyPuckProb || null,  // QUALITY GATE: Flag for bet saving
+        calibratedProb: awayEnsemble.calibratedProb || null, // QUALITY GATE: Alternative flag
         odds: game.moneyline.away
       },
       home: {
@@ -407,6 +409,8 @@ export class EdgeCalculator {
         qualityGrade: homeEnsemble.qualityGrade,       // NEW: A-D grading
         kelly: homeKelly,
         recommendedUnit: homeKelly.fractionalKelly,    // NEW: Sizing recommendation
+        moneyPuckProb: homeEnsemble.moneyPuckProb || null,  // QUALITY GATE: Flag for bet saving
+        calibratedProb: homeEnsemble.calibratedProb || null, // QUALITY GATE: Alternative flag
         odds: game.moneyline.home
       }
     };
