@@ -3105,7 +3105,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 lineHeight: '1.5',
                 fontWeight: '400'
               }}>
-                In our pursuit of higher-quality picks, we've identified that early analysis performs significantly worse without proper data inputs. For the highest-quality picks, we wait until <strong style={{ 
+                Our data proves picks with complete inputs deliver superior results. For the highest-quality picks, we wait until <strong style={{ 
                   color: '#10b981', 
                   fontWeight: '600' 
                 }}>11:00 AM ET</strong> when starting goalie confirmations begin and our predictive models incorporate essential data inputs.
