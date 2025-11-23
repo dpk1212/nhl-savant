@@ -3040,36 +3040,73 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       {/* 🆕 PRELIMINARY PICKS BANNER */}
       {topEdges && topEdges.length > 0 && topEdges.some(edge => edge.isPreliminary) && (
         <div style={{
-          margin: '0 auto 20px',
+          margin: '0 auto 24px',
           maxWidth: '900px',
-          padding: '14px 18px',
-          borderRadius: '10px',
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          padding: '16px 20px',
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.06) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.2)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.05)'
         }}>
           <div style={{
             display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
+            alignItems: 'flex-start',
+            gap: '14px'
           }}>
-            <div style={{ fontSize: '20px' }}>📊</div>
+            {/* Icon */}
+            <div style={{
+              marginTop: '2px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px',
+              flexShrink: 0
+            }}>
+              ⏱️
+            </div>
+            
+            {/* Content */}
             <div style={{ flex: 1 }}>
               <div style={{
                 fontSize: '14px',
-                fontWeight: '600',
-                color: '#60a5fa',
-                marginBottom: '3px',
-                letterSpacing: '0.3px'
+                fontWeight: '700',
+                color: '#10b981',
+                marginBottom: '6px',
+                letterSpacing: '0.3px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}>
-                Leaning Towards (Preliminary Analysis)
+                <span>Early Analysis Available</span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Preliminary
+                </span>
               </div>
               <div style={{
                 fontSize: '13px',
-                color: 'rgba(255,255,255,0.7)',
-                lineHeight: '1.4'
+                color: 'rgba(255,255,255,0.75)',
+                lineHeight: '1.5',
+                fontWeight: '400'
               }}>
-                Official picks will be published at <strong style={{ color: '#93c5fd' }}>11:00 AM ET</strong> when starting goalie confirmations and advanced analytics become available.
+                Our model updates at <strong style={{ 
+                  color: '#10b981', 
+                  fontWeight: '600' 
+                }}>11:00 AM ET</strong> with confirmed starting goalies and advanced statistical calibration. These picks represent preliminary market analysis.
               </div>
             </div>
           </div>
