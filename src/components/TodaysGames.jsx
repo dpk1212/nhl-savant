@@ -3037,6 +3037,45 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
+      {/* 🆕 PRELIMINARY PICKS BANNER */}
+      {topEdges && topEdges.length > 0 && topEdges.some(edge => edge.isPreliminary) && (
+        <div style={{
+          margin: '0 auto 20px',
+          maxWidth: '900px',
+          padding: '14px 18px',
+          borderRadius: '10px',
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%)',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <div style={{ fontSize: '20px' }}>📊</div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#60a5fa',
+                marginBottom: '3px',
+                letterSpacing: '0.3px'
+              }}>
+                Leaning Towards (Preliminary Analysis)
+              </div>
+              <div style={{
+                fontSize: '13px',
+                color: 'rgba(255,255,255,0.7)',
+                lineHeight: '1.4'
+              }}>
+                Official picks will be published at <strong style={{ color: '#93c5fd' }}>11:00 AM ET</strong> when starting goalie confirmations and advanced analytics become available.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Compact Picks Bar - Show quality-filtered ensemble opportunities */}
       {topEdges && topEdges.length > 0 && (() => {
         // ENSEMBLE STRATEGY: Use topEdges (quality-filtered) instead of allEdges
