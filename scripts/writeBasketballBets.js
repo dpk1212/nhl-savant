@@ -175,21 +175,22 @@ async function writeBasketballBets() {
       return { ...game, prediction };
     });
     
-    // 5. Filter for quality bets (2%+ EV, no errors)
+    // 5. Filter for valid predictions (pick-to-win strategy)
     const qualityBets = gamesWithPredictions.filter(game => 
-      game.prediction && !game.prediction.error && game.prediction.bestEV >= 2.0
+      game.prediction && !game.prediction.error
     );
     
-    console.log(`\n🎯 Found ${qualityBets.length} quality bets (2%+ EV):`);
+    console.log(`\n🎯 Found ${qualityBets.length} picks (pick-to-win strategy):`);
     qualityBets.forEach((game, i) => {
       const pred = game.prediction;
+      const winProb = (pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100;
       console.log(`   ${i + 1}. ${game.awayTeam} @ ${game.homeTeam}`);
       console.log(`      Pick: ${pred.bestTeam} ${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds}`);
-      console.log(`      Edge: +${pred.bestEV.toFixed(1)}% | Grade: ${pred.grade} | ${pred.confidence}`);
+      console.log(`      ${winProb.toFixed(1)}% to win (${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% edge) | Grade: ${pred.grade} | ${pred.confidence}`);
     });
     
     if (qualityBets.length === 0) {
-      console.log('\n⚠️  No quality bets found today. Nothing to write to Firebase.');
+      console.log('\n⚠️  No valid picks found today. Nothing to write to Firebase.');
       console.log('================================\n');
       return 0;
     }
