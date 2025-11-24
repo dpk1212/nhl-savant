@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { parseBasketballOdds } from '../utils/basketballOddsParser';
 import { parseHaslametrics } from '../utils/haslametricsParser';
 import { parseDRatings } from '../utils/dratingsParser';
-import { matchGames } from '../utils/gameMatching';
+import { matchGamesWithCSV, filterByQuality } from '../utils/gameMatchingCSV';
 import { BasketballEdgeCalculator } from '../utils/basketballEdgeCalculator';
 
 const Basketball = () => {
@@ -23,22 +23,27 @@ const Basketball = () => {
       const oddsResponse = await fetch('/basketball_odds.md');
       const haslaResponse = await fetch('/haslametrics.md');
       const drateResponse = await fetch('/dratings.md');
+      const csvResponse = await fetch('/basketball_teams.csv');
       
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();
       const drateMarkdown = await drateResponse.text();
+      const csvContent = await csvResponse.text();
       
       // Parse data
       const oddsGames = parseBasketballOdds(oddsMarkdown);
-      const haslaTeams = parseHaslametrics(haslaMarkdown);
+      const haslaData = parseHaslametrics(haslaMarkdown);
       const dratePreds = parseDRatings(drateMarkdown);
       
-      // Match games
-      const matchedGames = matchGames(oddsGames, haslaTeams, dratePreds);
+      // Match games using CSV mappings (OddsTrader as base)
+      const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
+      
+      // Filter to HIGH quality only (all 3 sources)
+      const highQualityGames = filterByQuality(matchedGames, 'HIGH');
       
       // Calculate predictions
       const calculator = new BasketballEdgeCalculator();
-      const gamesWithPredictions = calculator.processGames(matchedGames);
+      const gamesWithPredictions = calculator.processGames(highQualityGames);
       
       // Filter to quality recommendations
       const recs = calculator.filterRecommendations(gamesWithPredictions, 'B+');
@@ -47,6 +52,7 @@ const Basketball = () => {
       setStats({
         totalGames: oddsGames.length,
         matchedGames: matchedGames.length,
+        highQualityGames: highQualityGames.length,
         recommendations: recs.length
       });
       
