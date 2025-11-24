@@ -41,13 +41,13 @@ async function testBasketballPipeline() {
     // Step 2: Parse each source
     console.log('📊 Step 2: Parsing data sources...');
     const oddsGames = parseBasketballOdds(oddsMarkdown);
-    const haslaTeams = parseHaslametrics(haslaMarkdown);
+    const haslaData = parseHaslametrics(haslaMarkdown); // Returns { games, teams }
     const dratePreds = parseDRatings(drateMarkdown);
     console.log('');
     
-    // Step 3: Match games
-    console.log('🔗 Step 3: Matching games across sources...');
-    const matchedGames = matchGames(oddsGames, haslaTeams, dratePreds);
+    // Step 3: Match games (Haslametrics as base)
+    console.log('🔗 Step 3: Matching games across sources (Haslametrics as base)...');
+    const matchedGames = matchGames(oddsGames, haslaData, dratePreds);
     console.log('');
     
     // Step 4: Calculate edges and predictions
@@ -123,7 +123,7 @@ async function testBasketballPipeline() {
     console.log('=====================================\n');
     
     const validationResults = {
-      parsersWork: oddsGames.length > 0 && Object.keys(haslaTeams).length > 0 && dratePreds.length > 0,
+      parsersWork: oddsGames.length > 0 && Object.keys(haslaData.teams).length > 0 && dratePreds.length > 0,
       matchingWorks: matchedGames.length > 0,
       ensembleWorks: gamesWithPredictions.filter(g => g.prediction && !g.prediction.error).length > 0,
       gradesAssigned: gamesWithPredictions.filter(g => g.prediction?.grade && g.prediction.grade !== 'N/A').length > 0,

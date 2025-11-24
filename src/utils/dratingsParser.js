@@ -2,7 +2,7 @@
  * D-Ratings Parser  
  * Parses D-Ratings game predictions (PRIMARY 60% SOURCE)
  * 
- * Extracts: win probabilities, predicted scores, spreads
+ * Format: [Rhode Island Rams](link)(4-1)<br>[Towson Tigers](link)(3-2) | 55.0%<br>45.0% | ... | 72.9<br>70.9
  */
 
 import { normalizeTeamName } from './teamNameNormalizer.js';
@@ -24,74 +24,131 @@ export function parseDRatings(markdown) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // Look for game rows in the table
-    // Format: | [11/24/2025...] | [Team1](link)(4-1)<br>[Team2](link)(3-2) | 55.0%<br>45.0% | ... | 72.9<br>70.9 | ...
-    if (line.startsWith('|') && line.includes('[11/24/2025') && line.includes('%<br>')) {
+    // Look for game rows: starts with |, contains date/time AND team links AND probabilities
+    // Format: | [11/24/2025\<br>\<br>11:00 AM](...) | [Rhode Island Rams](...)(4-1)<br>[Towson Tigers](...)(3-2) | 55.0%<br>45.0% | ...
+    // Skip header rows (contain | --- | or no date)
+    if (line.startsWith('|') && line.includes('/2025') && line.includes('%<br>')) {
       const cells = line.split('|').map(c => c.trim()).filter(c => c);
       
-      if (cells.length < 5) continue;
+      // Must have at least: time, teams, win%, odds, spread, points
+      if (cells.length < 6) continue;
       
-      // Extract game time
-      const timeMatch = cells[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/);
-      const gameTime = timeMatch ? timeMatch[1] : null;
-      
-      // Extract teams from cells[1]
-      // Format: [Team1](link)(4-1)<br>[Team2](link)(3-2)
-      const teamMatches = [...cells[1].matchAll(/\[([^\]]+)\]/g)];
-      if (teamMatches.length < 2) continue;
-      
-      const awayTeam = teamMatches[0][1];
-      const homeTeam = teamMatches[1][1];
-      
-      // Extract win probabilities from cells[2]
-      // Format: 55.0%<br>45.0%
-      const probMatches = cells[2].match(/(\d+\.?\d*)%.*?(\d+\.?\d*)%/);
-      if (!probMatches) continue;
-      
-      const awayWinProb = parseFloat(probMatches[1]) / 100;
-      const homeWinProb = parseFloat(probMatches[2]) / 100;
-      
-      // Extract predicted scores from cells[5] (Points column)
-      // Format: 72.9<br>70.9
-      let awayScore = null;
-      let homeScore = null;
-      
-      if (cells[5]) {
-        const scoreMatches = cells[5].match(/(\d+\.?\d*)<br>(\d+\.?\d*)/);
-        if (scoreMatches) {
-          awayScore = parseFloat(scoreMatches[1]);
-          homeScore = parseFloat(scoreMatches[2]);
+      try {
+        // Extract game time from first cell
+        const timeMatch = cells[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+        const gameTime = timeMatch ? timeMatch[1] : null;
+        
+        // Extract teams from second cell
+        // Format: [Rhode Island Rams](...)(4-1)<br>[Towson Tigers](...)(3-2)
+        const teamsCell = cells[1];
+        
+        // Find all team name links
+        const teamMatches = [...teamsCell.matchAll(/\[([^\]]+)\]\([^\)]+\)/g)];
+        if (teamMatches.length < 2) continue;
+        
+        let awayTeamFull = teamMatches[0][1];
+        let homeTeamFull = teamMatches[1][1];
+        
+        // Remove mascot to get school name
+        const awayTeam = extractSchoolName(awayTeamFull);
+        const homeTeam = extractSchoolName(homeTeamFull);
+        
+        // Extract win probabilities from third cell
+        // Format: 55.0%<br>45.0%
+        const probCell = cells[2];
+        const probMatch = probCell.match(/([\d.]+)%/g);
+        
+        if (!probMatch || probMatch.length < 2) continue;
+        
+        const awayWinProb = parseFloat(probMatch[0].replace('%', '')) / 100;
+        const homeWinProb = parseFloat(probMatch[1].replace('%', '')) / 100;
+        
+        // Validate probabilities
+        const probSum = awayWinProb + homeWinProb;
+        if (probSum < 0.95 || probSum > 1.05) {
+          console.warn(`⚠️  Invalid probabilities for ${awayTeam} @ ${homeTeam}: ${awayWinProb} + ${homeWinProb} = ${probSum}`);
+          continue;
         }
-      }
-      
-      // Extract spread from cells[4] if available
-      let spread = null;
-      if (cells[4]) {
-        const spreadMatch = cells[4].match(/([+-]?\d+\.?\d*)/);
-        if (spreadMatch) {
-          spread = parseFloat(spreadMatch[1]);
+        
+        // Extract predicted scores from "Points" column (index 5)
+        // Format: 72.9<br>70.9
+        let awayScore = null;
+        let homeScore = null;
+        
+        if (cells[5]) {
+          const scoreMatches = cells[5].match(/([\d.]+)/g);
+          if (scoreMatches && scoreMatches.length >= 2) {
+            awayScore = parseFloat(scoreMatches[0]);
+            homeScore = parseFloat(scoreMatches[1]);
+          }
         }
+        
+        predictions.push({
+          awayTeam: normalizeTeamName(awayTeam),
+          awayTeamRaw: awayTeamFull,
+          homeTeam: normalizeTeamName(homeTeam),
+          homeTeamRaw: homeTeamFull,
+          awayWinProb: awayWinProb,
+          homeWinProb: homeWinProb,
+          awayScore: awayScore,
+          homeScore: homeScore,
+          gameTime: gameTime,
+          source: 'D-Ratings',
+          matchup: `${normalizeTeamName(awayTeam)} @ ${normalizeTeamName(homeTeam)}`
+        });
+        
+      } catch (error) {
+        console.error(`Error parsing D-Ratings line ${i}:`, error.message);
       }
-      
-      predictions.push({
-        awayTeam: normalizeTeamName(awayTeam),
-        awayTeamRaw: awayTeam,
-        homeTeam: normalizeTeamName(homeTeam),
-        homeTeamRaw: homeTeam,
-        awayWinProb: awayWinProb,
-        homeWinProb: homeWinProb,
-        awayScore: awayScore,
-        homeScore: homeScore,
-        spread: spread,
-        gameTime: gameTime,
-        source: 'D-Ratings',
-        matchup: `${normalizeTeamName(awayTeam)} @ ${normalizeTeamName(homeTeam)}`
-      });
     }
   }
   
   console.log(`✅ Parsed ${predictions.length} predictions from D-Ratings`);
+  
+  // Log any suspicious probabilities
+  const suspicious = predictions.filter(p => p.awayWinProb > 0.98 || p.homeWinProb > 0.98);
+  if (suspicious.length > 0) {
+    console.warn(`⚠️  ${suspicious.length} games have >98% win probability (possible blowouts)`);
+  }
+  
   return predictions;
+}
+
+/**
+ * Extract school name from full team name
+ * "Rhode Island Rams" -> "Rhode Island"
+ * "Towson Tigers" -> "Towson"
+ * "St. John's Red Storm" -> "St. John's"
+ */
+function extractSchoolName(fullName) {
+  // Common mascot patterns
+  const mascots = [
+    'Rams', 'Tigers', 'Eagles', 'Wildcats', 'Bears', 'Bulldogs', 'Cardinals',
+    'Warriors', 'Panthers', 'Lions', 'Cougars', 'Huskies', 'Knights', 'Falcons',
+    'Hawks', 'Trojans', 'Spartans', 'Bruins', 'Aggies', 'Rebels', 'Commodores',
+    'Volunteers', 'Jayhawks', 'Terrapins', 'Hoosiers', 'Buckeyes', 'Wolverines',
+    'Badgers', 'Hawkeyes', 'Boilermakers', 'Illini', 'Cornhuskers', 'Scarlet Knights',
+    'Nittany Lions', 'Gophers', 'Mountaineers', 'Cyclones', 'Sooners', 'Longhorns',
+    'Red Raiders', 'Razorbacks', 'Gamecocks', 'Crimson Tide', 'Tar Heels', 'Blue Devils',
+    'Demon Deacons', 'Yellow Jackets', 'Seminoles', 'Hurricanes', 'Cavaliers', 'Hokies',
+    'Orange', 'Orangemen', 'Fighting Irish', 'Musketeers', 'Friars', 'Bluejays', 'Gaels',
+    'Flyers', 'Explorers', 'Billikens', 'Bonnies', 'Dukes', 'Bison', 'Greyhounds',
+    'Seawolves', 'Rockets', 'Zips', 'Bulls', 'Owls', 'Miners', 'Blazers', 'Dolphins',
+    'Phoenix', 'Peacocks', 'Grizzlies', 'Bearcats', 'Shockers', 'Salukis', 'Redbirds',
+    'Sycamores', 'Penguins', 'Colonials', 'Minutemen', 'Spiders', 'Highlanders',
+    'Retrievers', 'Catamounts', 'River Hawks', 'Statesmen', 'Kangaroos', 'Leathernecks',
+    'Flames', 'Warhawks', 'Jaguars', 'Hatters', 'Privateers', 'Roadrunners'
+  ];
+  
+  // Try to remove mascot from end
+  for (const mascot of mascots) {
+    if (fullName.endsWith(` ${mascot}`)) {
+      return fullName.substring(0, fullName.length - mascot.length - 1).trim();
+    }
+  }
+  
+  // If no mascot found, return as-is (might already be just school name)
+  return fullName.trim();
 }
 
 /**
