@@ -249,6 +249,29 @@ const BasketballGameCard = ({ game, rank }) => {
         </div>
       </div>
 
+      {/* Debug: Component Predictions */}
+      <div style={{
+        background: 'rgba(0,0,0,0.3)',
+        padding: '12px',
+        borderRadius: '8px',
+        marginBottom: '15px',
+        fontSize: '13px',
+        color: 'rgba(255,255,255,0.7)'
+      }}>
+        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#ff8c42' }}>Model Sources:</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div>
+            🎯 D-Ratings: {pred.dratingsProb ? `${(pred.dratingsProb * 100).toFixed(1)}%` : 'N/A'}
+          </div>
+          <div>
+            📊 Haslametrics: {pred.haslametricsProb ? `${(pred.haslametricsProb * 100).toFixed(1)}%` : 'N/A'}
+          </div>
+        </div>
+        <div style={{ marginTop: '5px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+          Ensemble (60/40): {(pred.ensembleProb * 100).toFixed(1)}% | Market: {(pred.marketProb * 100).toFixed(1)}%
+        </div>
+      </div>
+
       {/* Matchup */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ color: 'white', fontSize: '20px', fontWeight: '600', marginBottom: '5px' }}>
