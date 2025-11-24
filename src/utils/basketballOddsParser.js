@@ -28,8 +28,9 @@ export function parseBasketballOdds(markdown) {
     if (!line || !line.startsWith('|')) continue;
     
     // Look for AWAY team line (has ![bell] and time marker)
+    // ONLY parse today's games (Monday 11/24)
     if (line.includes('![bell]') && 
-        (line.includes('MON 11/24') || line.includes('TUE 11/25') || line.includes('WED 11/26') || line.includes('STARTS IN'))) {
+        (line.includes('MON 11/24') || line.includes('STARTS IN'))) {
       
       // Extract time (handle both "1:00 PM" and "11:00 PM" with or without space after date)
       const timeMatch = line.match(/(?:MON|TUE|WED|STARTS\s+IN)\s+[^\d]*(\d{1,2}:\d{2}\s*(?:AM|PM))/);
