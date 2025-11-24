@@ -3,6 +3,7 @@
  * 
  * Loads basketball_results.json and grades pending bets CLIENT-SIDE
  * Uses existing Firebase Client SDK (already working!)
+ * Uses CSV mapping for robust team name matching
  * 
  * Usage: Call from Basketball page to auto-grade bets
  */
@@ -25,7 +26,26 @@ export function useBasketballResultsGrader() {
     try {
       setGrading(true);
       
-      // 1. Load results from JSON file
+      // 1. Load CSV mapping for team names
+      const csvResponse = await fetch('/basketball_teams.csv');
+      const csvText = await csvResponse.text();
+      const csvLines = csvText.trim().split('\n');
+      const teamMap = {};
+      
+      for (let i = 1; i < csvLines.length; i++) {
+        const line = csvLines[i];
+        if (!line) continue;
+        const [oddsTrader, haslametrics, dratings] = line.split(',').map(t => t.trim());
+        if (oddsTrader) {
+          // Map OddsTrader name to itself (normalized)
+          const normalized = oddsTrader.toLowerCase().replace(/[^a-z0-9]/g, '');
+          teamMap[normalized] = oddsTrader;
+        }
+      }
+      
+      console.log(`📋 Loaded ${Object.keys(teamMap).length} team mappings`);
+      
+      // 2. Load results from JSON file
       const resultsResponse = await fetch('/basketball_results.json');
       if (!resultsResponse.ok) {
         console.log('No results file found yet');
@@ -42,7 +62,7 @@ export function useBasketballResultsGrader() {
       
       console.log(`📊 Found ${results.length} completed games`);
       
-      // 2. Fetch pending bets from Firebase (CLIENT SDK - already works!)
+      // 3. Fetch pending bets from Firebase (CLIENT SDK - already works!)
       const gameDate = getETGameDate();
       const betsQuery = query(
         collection(db, 'basketball_bets'),
@@ -51,30 +71,34 @@ export function useBasketballResultsGrader() {
       );
       
       const betsSnapshot = await getDocs(betsQuery);
-      console.log(`📊 Found ${betsSnapshot.size} pending bets`);
+      console.log(`📊 Found ${betsSnapshot.size} pending bets for ${gameDate}`);
       
       if (betsSnapshot.empty) {
         return;
       }
       
-      // 3. Grade bets
+      // 4. Grade bets using CSV-normalized matching
       let graded = 0;
+      const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
       
       for (const betDoc of betsSnapshot.docs) {
         const bet = betDoc.data();
         const betId = betDoc.id;
         
-        // Normalize team names for fuzzy matching
-        const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        console.log(`🔍 Grading bet: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
         
-        // Find matching result
+        // Find matching result using normalized team names
         const matchingResult = results.find(result => {
-          const awayMatch = normalizeTeam(result.awayTeam) === normalizeTeam(bet.game.awayTeam);
-          const homeMatch = normalizeTeam(result.homeTeam) === normalizeTeam(bet.game.homeTeam);
-          return awayMatch && homeMatch;
+          const normalizedResultAway = normalizeTeam(result.awayTeam);
+          const normalizedResultHome = normalizeTeam(result.homeTeam);
+          const normalizedBetAway = normalizeTeam(bet.game.awayTeam);
+          const normalizedBetHome = normalizeTeam(bet.game.homeTeam);
+          
+          return normalizedResultAway === normalizedBetAway && normalizedResultHome === normalizedBetHome;
         });
         
         if (!matchingResult) {
+          console.log(`   ⏭️  No result found yet`);
           continue;
         }
         
@@ -93,6 +117,7 @@ export function useBasketballResultsGrader() {
         await updateDoc(doc(db, 'basketball_bets', betId), {
           'result.winner': matchingResult.winner,
           'result.winnerTeam': matchingResult.winnerTeam,
+          'result.loserTeam': matchingResult.loserTeam,
           'result.outcome': outcome,
           'result.profit': profit,
           'result.fetched': true,
@@ -102,11 +127,16 @@ export function useBasketballResultsGrader() {
         });
         
         graded++;
-        console.log(`✅ ${outcome}: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+        const emoji = outcome === 'WIN' ? '✅' : '❌';
+        const profitStr = profit > 0 ? `+${profit.toFixed(2)}u` : `${profit.toFixed(2)}u`;
+        console.log(`   ${emoji} ${outcome}: Pick ${betTeam} (${bet.bet.odds}) → Winner: ${matchingResult.winnerTeam} → ${profitStr}`);
       }
       
       setGradedCount(graded);
-      console.log(`✅ Graded ${graded} bets`);
+      console.log(`\n🎉 Graded ${graded}/${betsSnapshot.size} bets`);
+      if (graded > 0) {
+        console.log('   Refresh page to see updated results!');
+      }
       
     } catch (err) {
       console.error('Error grading bets:', err);
