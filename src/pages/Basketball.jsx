@@ -68,12 +68,28 @@ const Basketball = () => {
         }
       });
       
-      // Sort by game time (chronological)
-      const sortedGames = gamesWithPredictions.sort((a, b) => {
+      // Filter to ONLY show games with 2%+ positive EV (quality picks only)
+      const qualityGames = gamesWithPredictions.filter(game => 
+        game.prediction && 
+        !game.prediction.error && 
+        game.prediction.bestEV >= 2.0
+      );
+      
+      // Sort by grade (best picks first), then by game time
+      const sortedGames = qualityGames.sort((a, b) => {
+        // Grade order: A+, A, B+, B
+        const gradeOrder = { 'A+': 4, 'A': 3, 'B+': 2, 'B': 1 };
+        const gradeA = gradeOrder[a.prediction?.grade] || 0;
+        const gradeB = gradeOrder[b.prediction?.grade] || 0;
+        
+        if (gradeA !== gradeB) {
+          return gradeB - gradeA; // Higher grade first
+        }
+        
+        // If same grade, sort by time
         const timeA = a.odds?.gameTime || '';
         const timeB = b.odds?.gameTime || '';
         
-        // Parse times (format: "11:30pm ET" or "TBD")
         if (timeA === 'TBD') return 1;
         if (timeB === 'TBD') return -1;
         if (!timeA || !timeB) return 0;
@@ -95,10 +111,14 @@ const Basketball = () => {
       setRecommendations(sortedGames);
       setStats({
         totalGames: oddsGames.length,
+        qualityPicks: sortedGames.length,
         displayedGames: sortedGames.length,
         gamesWithDRatings: allGames.filter(g => g.hasDRatings).length,
         gamesWithHasla: allGames.filter(g => g.hasHaslametrics).length,
-        missingDRatings: allGames.filter(g => !g.hasDRatings).length
+        missingDRatings: allGames.filter(g => !g.hasDRatings).length,
+        avgEV: sortedGames.length > 0 
+          ? (sortedGames.reduce((sum, g) => sum + (g.prediction?.bestEV || 0), 0) / sortedGames.length).toFixed(1)
+          : '0.0'
       });
       
       setLoading(false);
@@ -149,15 +169,30 @@ const Basketball = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto', marginBottom: '30px' }}>
         <h1 style={{
           color: '#ff8c42',
-          fontSize: '36px',
-          fontWeight: '800',
-          marginBottom: '10px',
-          textAlign: 'center'
+          fontSize: '42px',
+          fontWeight: '900',
+          marginBottom: '12px',
+          textAlign: 'center',
+          letterSpacing: '-0.02em'
         }}>
-          🏀 College Basketball
+          🏀 College Basketball Picks
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', fontSize: '14px' }}>
-          Development Preview - Not visible to users
+        <p style={{ 
+          color: 'rgba(255,255,255,0.8)', 
+          textAlign: 'center', 
+          fontSize: '16px',
+          fontWeight: '500',
+          marginBottom: '6px'
+        }}>
+          Premium picks with 2%+ Expected Value
+        </p>
+        <p style={{ 
+          color: 'rgba(255,255,255,0.5)', 
+          textAlign: 'center', 
+          fontSize: '13px',
+          fontStyle: 'italic'
+        }}>
+          60% D-Ratings · 40% Haslametrics · Market Ensemble
         </p>
         
         {/* Stats Bar */}
@@ -165,27 +200,39 @@ const Basketball = () => {
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '30px',
-            marginTop: '20px',
-            padding: '15px',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '10px'
+            gap: '40px',
+            marginTop: '24px',
+            padding: '20px 32px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
+            borderRadius: '16px',
+            border: '1px solid rgba(16, 185, 129, 0.15)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
           }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#ff8c42', fontSize: '24px', fontWeight: '700' }}>{stats.totalGames}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>OddsTrader Games</div>
+              <div style={{ color: '#10b981', fontSize: '32px', fontWeight: '900', letterSpacing: '-0.02em' }}>
+                {stats.qualityPicks}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Quality Picks
+              </div>
             </div>
+            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#4ecdc4', fontSize: '24px', fontWeight: '700' }}>{stats.displayedGames}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Displayed</div>
+              <div style={{ color: '#3b82f6', fontSize: '32px', fontWeight: '900', letterSpacing: '-0.02em' }}>
+                +{stats.avgEV}%
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Avg EV
+              </div>
             </div>
+            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
             <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#00ff88', fontSize: '24px', fontWeight: '700' }}>{stats.gamesWithDRatings}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>✅ D-Ratings Matched</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#ff6464', fontSize: '24px', fontWeight: '700' }}>{stats.missingDRatings}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>❌ D-Ratings Missing</div>
+              <div style={{ color: '#ff8c42', fontSize: '32px', fontWeight: '900', letterSpacing: '-0.02em' }}>
+                {stats.totalGames}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Games Today
+              </div>
             </div>
           </div>
         )}
@@ -266,21 +313,48 @@ const BasketballGameCard = ({ game, rank }) => {
   const gradeColors = getGradeColor(pred?.grade);
 
   return (
-    <div style={{
-      background: 'var(--color-card-bg, rgba(30, 41, 59, 0.4))',
-      borderRadius: '12px',
-      padding: '20px',
-      border: '1px solid rgba(255,255,255,0.1)',
-      transition: 'all 0.2s ease'
-    }}>
-      {/* HEADER - Compact teams, time, grade */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+    <div 
+      style={{
+        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
+        borderRadius: '16px',
+        padding: '24px',
+        border: `2px solid ${gradeColors.border}`,
+        boxShadow: `0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px ${gradeColors.border}`,
+        transition: 'all 0.3s ease',
+        cursor: 'pointer'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = `0 12px 40px rgba(0,0,0,0.3), 0 0 0 2px ${gradeColors.border}`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = `0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px ${gradeColors.border}`;
+      }}
+    >
+      {/* HEADER - Premium teams, time, grade */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ color: 'white', fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>
+          <div style={{ 
+            color: 'white', 
+            fontSize: '22px', 
+            fontWeight: '800',
+            letterSpacing: '-0.01em',
+            marginBottom: '8px',
+            lineHeight: '1.2'
+          }}>
             {game.awayTeam} @ {game.homeTeam}
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
-            🕐 {odds?.gameTime || 'TBD'}
+          <div style={{ 
+            color: 'rgba(255,255,255,0.6)', 
+            fontSize: '14px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span style={{ fontSize: '16px' }}>🕐</span>
+            {odds?.gameTime || 'TBD'}
           </div>
         </div>
         
@@ -289,127 +363,205 @@ const BasketballGameCard = ({ game, rank }) => {
           <div style={{
             background: gradeColors.bg,
             color: gradeColors.text,
-            border: `1px solid ${gradeColors.border}`,
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontWeight: '800',
-            fontSize: '18px',
-            minWidth: '56px',
-            textAlign: 'center'
+            border: `2px solid ${gradeColors.border}`,
+            padding: '12px 20px',
+            borderRadius: '12px',
+            fontWeight: '900',
+            fontSize: '24px',
+            minWidth: '72px',
+            textAlign: 'center',
+            letterSpacing: '-0.02em',
+            boxShadow: `0 4px 16px ${gradeColors.border}40`
           }}>
             {pred.grade}
           </div>
         )}
       </div>
 
-      {/* THE PICK - Most Important Info First (NHL Pattern) */}
+      {/* THE PICK - HERO SECTION */}
       {hasPrediction && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '16px'
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+          border: '2px solid rgba(16, 185, 129, 0.4)',
+          borderRadius: '16px',
+          padding: '28px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(16, 185, 129, 0.15)',
+          transition: 'all 0.3s ease'
         }}>
-          <div style={{
-            fontSize: '11px',
-            color: 'rgba(255,255,255,0.6)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            fontWeight: '700',
-            marginBottom: '12px'
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'flex-start',
+            marginBottom: '20px'
           }}>
-            💰 RECOMMENDED BET
-          </div>
-          
-          {/* Main Recommendation */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            {/* Market Type */}
-            <div>
-              <div style={{
-                fontSize: '11px',
-                color: 'rgba(255,255,255,0.5)',
-                marginBottom: '6px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                Market
-              </div>
-              <div style={{ color: 'white', fontSize: '15px', fontWeight: '700' }}>
-                Moneyline
-              </div>
+            <div style={{
+              fontSize: '12px',
+              color: 'rgba(16, 185, 129, 0.9)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              fontWeight: '800'
+            }}>
+              💰 RECOMMENDED BET
             </div>
             
-            {/* The Pick */}
-            <div>
+            {/* Confidence Badge */}
+            {pred.confidence === 'HIGH' && (
               <div style={{
+                background: 'rgba(16, 185, 129, 0.25)',
+                padding: '6px 14px',
+                borderRadius: '20px',
                 fontSize: '11px',
-                color: 'rgba(255,255,255,0.5)',
-                marginBottom: '6px',
+                fontWeight: '800',
+                color: '#10b981',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.05em',
+                border: '1px solid rgba(16, 185, 129, 0.4)'
               }}>
-                Pick
+                ⚡ HIGH CONFIDENCE
               </div>
-              <div style={{ color: gradeColors.text, fontSize: '16px', fontWeight: '800' }}>
-                {pred.bestTeam}
+            )}
+          </div>
+          
+          {/* HERO Pick Display */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '24px'
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontSize: '28px', 
+                fontWeight: '900',
+                color: 'white',
+                letterSpacing: '-0.02em',
+                marginBottom: '8px'
+              }}>
+                {pred.bestTeam} ML
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginTop: '2px' }}>
+              <div style={{ 
+                color: 'rgba(255,255,255,0.7)', 
+                fontSize: '18px',
+                fontWeight: '700'
+              }}>
                 {pred.bestOdds > 0 ? '+' : ''}{pred.bestOdds}
               </div>
             </div>
             
-            {/* Expected Value */}
-            <div>
-              <div style={{
-                fontSize: '11px',
-                color: 'rgba(255,255,255,0.5)',
-                marginBottom: '6px',
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ 
+                color: 'rgba(255,255,255,0.6)', 
+                fontSize: '13px',
+                fontWeight: '600',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.05em',
+                marginBottom: '6px'
               }}>
                 Expected Value
               </div>
-              <div style={{ color: '#10b981', fontSize: '18px', fontWeight: '800' }}>
+              <div style={{ 
+                fontSize: '36px',
+                fontWeight: '900',
+                color: '#10b981',
+                letterSpacing: '-0.03em'
+              }}>
                 +{pred.bestEV.toFixed(1)}%
+              </div>
+              <div style={{ 
+                fontSize: '13px',
+                color: 'rgba(255,255,255,0.5)',
+                marginTop: '4px'
+              }}>
+                Model: {(pred.ensembleAwayProb * 100).toFixed(1)}% · Market: {(pred.marketAwayProb * 100).toFixed(1)}%
               </div>
             </div>
           </div>
           
-          {/* Quick Stats - Ensemble Prediction */}
+          {/* Premium Score Prediction */}
           {pred.ensembleTotal && (
             <div style={{
-              background: 'rgba(0,0,0,0.2)',
-              borderRadius: '8px',
-              padding: '12px',
-              display: 'flex',
-              justifyContent: 'space-around',
+              background: 'rgba(0,0,0,0.25)',
+              borderRadius: '12px',
+              padding: '20px',
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr auto 1fr',
+              gap: '20px',
               alignItems: 'center'
             }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>
+                <div style={{ 
+                  color: 'rgba(255,255,255,0.6)', 
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '8px'
+                }}>
                   {game.awayTeam}
                 </div>
-                <div style={{ color: 'white', fontSize: '20px', fontWeight: '800' }}>
+                <div style={{ 
+                  color: 'white', 
+                  fontSize: '28px', 
+                  fontWeight: '900',
+                  letterSpacing: '-0.02em'
+                }}>
                   {pred.ensembleAwayScore}
                 </div>
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '20px', fontWeight: '300' }}>
+              
+              <div style={{ 
+                color: 'rgba(255,255,255,0.3)', 
+                fontSize: '24px', 
+                fontWeight: '300'
+              }}>
                 @
               </div>
+              
               <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>
+                <div style={{ 
+                  color: 'rgba(255,255,255,0.6)', 
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '8px'
+                }}>
                   {game.homeTeam}
                 </div>
-                <div style={{ color: 'white', fontSize: '20px', fontWeight: '800' }}>
+                <div style={{ 
+                  color: 'white', 
+                  fontSize: '28px', 
+                  fontWeight: '900',
+                  letterSpacing: '-0.02em'
+                }}>
                   {pred.ensembleHomeScore}
                 </div>
               </div>
-              <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>
+              
+              <div style={{ 
+                width: '2px', 
+                height: '50px',
+                background: 'linear-gradient(180deg, transparent 0%, rgba(255,140,66,0.3) 50%, transparent 100%)'
+              }} />
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  color: 'rgba(255,140,66,0.8)', 
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '8px'
+                }}>
                   Total
                 </div>
-                <div style={{ color: '#ff8c42', fontSize: '20px', fontWeight: '800' }}>
+                <div style={{ 
+                  color: '#ff8c42', 
+                  fontSize: '28px', 
+                  fontWeight: '900',
+                  letterSpacing: '-0.02em'
+                }}>
                   {pred.ensembleTotal}
                 </div>
               </div>
