@@ -5,7 +5,8 @@
  * Runs every 15 minutes to check for completed games
  */
 
-const { onSchedule, onRequest } = require("firebase-functions/v2/scheduler");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 
