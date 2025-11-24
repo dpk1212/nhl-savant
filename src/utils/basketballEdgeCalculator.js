@@ -1,0 +1,233 @@
+/**
+ * Basketball Edge Calculator
+ * Implements 60/40 ensemble model: D-Ratings (60%) + Haslametrics (40%)
+ * 
+ * Calculates betting edges and assigns quality grades
+ */
+
+/**
+ * Basketball Edge Calculator Class
+ */
+export class BasketballEdgeCalculator {
+  constructor() {
+    // Ensemble weights (Phase 2 - Initial)
+    this.weights = {
+      dratings: 0.60,    // Primary predictions
+      haslametrics: 0.40  // Tempo-free validation
+    };
+    
+    // Grading thresholds (EV%)
+    this.grades = {
+      'A+': 5.0,
+      'A': 3.5,
+      'B+': 2.5,
+      'B': 1.5,
+      'C': 0
+    };
+  }
+  
+  /**
+   * Calculate ensemble prediction for a game
+   * @param {object} matchedGame - Game with all data sources
+   * @returns {object} - Ensemble prediction with edge calculation
+   */
+  calculateEnsemblePrediction(matchedGame) {
+    const { dratings, haslametrics, odds } = matchedGame;
+    
+    // Ensure we have necessary data
+    if (!odds || !odds.awayOdds || !odds.homeOdds) {
+      return { error: 'Missing odds data', grade: 'N/A' };
+    }
+    
+    // Calculate ensemble win probability for away team
+    let ensembleAwayProb = null;
+    let ensembleHomeProb = null;
+    let confidence = 'LOW';
+    
+    // CASE 1: Full data (D-Ratings + Haslametrics) - BEST
+    if (dratings && dratings.awayWinProb && haslametrics) {
+      ensembleAwayProb = 
+        (dratings.awayWinProb * this.weights.dratings) +
+        (this.estimateHaslaProbability(matchedGame, 'away') * this.weights.haslametrics);
+      
+      ensembleHomeProb = 1 - ensembleAwayProb;
+      confidence = 'HIGH';
+    }
+    // CASE 2: D-Ratings only (no Haslametrics) - GOOD
+    else if (dratings && dratings.awayWinProb) {
+      ensembleAwayProb = dratings.awayWinProb;
+      ensembleHomeProb = dratings.homeWinProb;
+      confidence = 'MEDIUM';
+    }
+    // CASE 3: Haslametrics only (no D-Ratings) - FAIR
+    else if (haslametrics) {
+      ensembleAwayProb = this.estimateHaslaProbability(matchedGame, 'away');
+      ensembleHomeProb = 1 - ensembleAwayProb;
+      confidence = 'MEDIUM';
+    }
+    // CASE 4: No prediction data - SKIP
+    else {
+      return { error: 'Insufficient prediction data', grade: 'N/A' };
+    }
+    
+    // Calculate market probability from odds
+    const marketAwayProb = this.oddsToProb(odds.awayOdds);
+    const marketHomeProb = this.oddsToProb(odds.homeOdds);
+    
+    // Calculate edge
+    const awayEdge = ensembleAwayProb - marketAwayProb;
+    const homeEdge = ensembleHomeProb - marketHomeProb;
+    
+    // Calculate EV% (Expected Value percentage)
+    const awayEV = (awayEdge / marketAwayProb) * 100;
+    const homeEV = (homeEdge / marketHomeProb) * 100;
+    
+    // Determine best bet (higher EV%)
+    const bestBet = Math.abs(awayEV) > Math.abs(homeEV) ? 'away' : 'home';
+    const bestEV = bestBet === 'away' ? awayEV : homeEV;
+    const bestEdge = bestBet === 'away' ? awayEdge : homeEdge;
+    
+    // Assign grade
+    const grade = this.getGrade(bestEV);
+    
+    return {
+      // Ensemble probabilities
+      ensembleAwayProb: Math.round(ensembleAwayProb * 1000) / 1000,
+      ensembleHomeProb: Math.round(ensembleHomeProb * 1000) / 1000,
+      
+      // Market probabilities
+      marketAwayProb: Math.round(marketAwayProb * 1000) / 1000,
+      marketHomeProb: Math.round(marketHomeProb * 1000) / 1000,
+      
+      // Edges
+      awayEdge: Math.round(awayEdge * 1000) / 1000,
+      homeEdge: Math.round(homeEdge * 1000) / 1000,
+      
+      // Expected Value
+      awayEV: Math.round(awayEV * 10) / 10,
+      homeEV: Math.round(homeEV * 10) / 10,
+      
+      // Best bet
+      bestBet: bestBet,
+      bestTeam: bestBet === 'away' ? matchedGame.awayTeam : matchedGame.homeTeam,
+      bestEV: Math.round(bestEV * 10) / 10,
+      bestEdge: Math.round(bestEdge * 1000) / 1000,
+      bestOdds: bestBet === 'away' ? odds.awayOdds : odds.homeOdds,
+      
+      // Grading
+      grade: grade,
+      confidence: confidence,
+      
+      // Transparency: Show component predictions
+      dratingsAwayProb: dratings?.awayWinProb || null,
+      dratingsHomeProb: dratings?.homeWinProb || null,
+      haslametricsEstimate: haslametrics ? 'estimated' : null,
+      
+      // Metadata
+      dataQuality: matchedGame.dataQuality
+    };
+  }
+  
+  /**
+   * Estimate Haslametrics probability using efficiency ratings
+   * This is a simplified model - in practice would use full tempo-free calculations
+   * @param {object} game - Matched game
+   * @param {string} team - 'away' or 'home'
+   * @returns {number} - Estimated win probability
+   */
+  estimateHaslaProbability(game, team) {
+    const { haslametrics } = game;
+    
+    if (!haslametrics || !haslametrics.awayOffEff || !haslametrics.homeOffEff) {
+      return 0.5; // Default to 50/50 if no data
+    }
+    
+    // Simple model: efficiency differential with home court advantage
+    const homeAdvantage = 3; // ~3 points home advantage
+    const awayEffAdj = haslametrics.awayOffEff;
+    const homeEffAdj = haslametrics.homeOffEff + homeAdvantage;
+    
+    const diff = homeEffAdj - awayEffAdj;
+    
+    // Logistic function to convert differential to probability
+    const homeProb = 1 / (1 + Math.exp(-diff / 10));
+    
+    return team === 'away' ? (1 - homeProb) : homeProb;
+  }
+  
+  /**
+   * Convert moneyline odds to implied probability
+   * @param {number} odds - Moneyline odds
+   * @returns {number} - Probability (0-1)
+   */
+  oddsToProb(odds) {
+    if (!odds) return 0.5;
+    
+    if (odds > 0) {
+      // Positive odds (underdog)
+      return 100 / (odds + 100);
+    } else {
+      // Negative odds (favorite)
+      return Math.abs(odds) / (Math.abs(odds) + 100);
+    }
+  }
+  
+  /**
+   * Assign quality grade based on EV%
+   * @param {number} evPercent - Expected value percentage
+   * @returns {string} - Grade (A+, A, B+, B, C)
+   */
+  getGrade(evPercent) {
+    const absEV = Math.abs(evPercent);
+    
+    if (absEV >= this.grades['A+']) return 'A+';
+    if (absEV >= this.grades['A']) return 'A';
+    if (absEV >= this.grades['B+']) return 'B+';
+    if (absEV >= this.grades['B']) return 'B';
+    return 'C';
+  }
+  
+  /**
+   * Filter recommendations to only quality bets
+   * @param {array} games - Array of games with predictions
+   * @param {string} minGrade - Minimum grade ('A+', 'A', 'B+', 'B', 'C')
+   * @returns {array} - Filtered recommendations
+   */
+  filterRecommendations(games, minGrade = 'B+') {
+    const gradeOrder = ['A+', 'A', 'B+', 'B', 'C'];
+    const minIndex = gradeOrder.indexOf(minGrade);
+    
+    return games
+      .filter(game => {
+        const gradeIndex = gradeOrder.indexOf(game.prediction?.grade);
+        return gradeIndex >= 0 && gradeIndex <= minIndex;
+      })
+      .sort((a, b) => {
+        // Sort by grade first, then by EV%
+        const gradeA = gradeOrder.indexOf(a.prediction.grade);
+        const gradeB = gradeOrder.indexOf(b.prediction.grade);
+        
+        if (gradeA !== gradeB) {
+          return gradeA - gradeB; // Better grades first
+        }
+        
+        return b.prediction.bestEV - a.prediction.bestEV; // Higher EV first
+      });
+  }
+  
+  /**
+   * Process all games and add predictions
+   * @param {array} matchedGames - Array of matched games
+   * @returns {array} - Games with predictions
+   */
+  processGames(matchedGames) {
+    return matchedGames.map(game => ({
+      ...game,
+      prediction: this.calculateEnsemblePrediction(game)
+    }));
+  }
+}
+
+// Export singleton instance
+export const basketballEdgeCalculator = new BasketballEdgeCalculator();
+

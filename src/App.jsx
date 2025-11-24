@@ -24,6 +24,7 @@ import MyPicks from './pages/MyPicks';
 import Pricing from './pages/Pricing';
 import Account from './pages/Account';
 import TopScorersTonight from './pages/TopScorersTonight';
+import Basketball from './pages/Basketball';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 // DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames)
@@ -287,6 +288,10 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 playerMatchups={playerMatchups}
                 dataProcessor={dataProcessor}
               />} />
+              
+              {/* Basketball - Hidden from navigation */}
+              <Route path="/basketball" element={<Basketball />} />
+              
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/matchup-insights" element={<MatchupInsights 
                 dataProcessor={dataProcessor} 
