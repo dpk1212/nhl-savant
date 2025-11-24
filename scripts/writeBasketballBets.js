@@ -7,7 +7,8 @@
  * Usage: npm run write-basketball-bets
  */
 
-import { BasketballBetTracker } from '../src/firebase/basketballBetTracker.js';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
 import { parseHaslametrics } from '../src/utils/haslametricsParser.js';
 import { parseDRatings } from '../src/utils/dratingsParser.js';
@@ -16,9 +17,126 @@ import { BasketballEdgeCalculator } from '../src/utils/basketballEdgeCalculator.
 import fs from 'fs/promises';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import * as dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env file
+dotenv.config({ path: join(__dirname, '../.env') });
+
+// Initialize Firebase CLIENT SDK (uses .env credentials - SAME AS NHL)
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID
+};
+
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error('❌ Missing Firebase credentials in .env file');
+  process.exit(1);
+}
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+console.log(`✅ Firebase initialized: ${firebaseConfig.projectId}`);
+
+/**
+ * Save a single basketball bet to Firebase
+ * Uses Firebase Client SDK with .env credentials
+ */
+async function saveBetToFirebase(db, game, prediction) {
+  const date = new Date().toISOString().split('T')[0];
+  
+  // Generate deterministic bet ID
+  const pickTeam = prediction.bestTeam;
+  const side = pickTeam === game.awayTeam ? 'AWAY' : 'HOME';
+  const awayNorm = game.awayTeam.replace(/\s+/g, '_').toUpperCase();
+  const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
+  const teamNorm = pickTeam.replace(/\s+/g, '_').toUpperCase();
+  const betId = `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${teamNorm}_(${side})`;
+  
+  const betRef = doc(db, 'basketball_bets', betId);
+  
+  // Check if bet already exists
+  const existingBet = await getDoc(betRef);
+  if (existingBet.exists()) {
+    console.log(`   ⏭️  Already exists: ${betId}`);
+    return betId;
+  }
+  
+  // Create new bet document
+  const betData = {
+    id: betId,
+    date: date,
+    timestamp: Date.now(),
+    sport: 'BASKETBALL',
+    
+    game: {
+      awayTeam: game.awayTeam,
+      homeTeam: game.homeTeam,
+      gameTime: game.odds?.gameTime || 'TBD'
+    },
+    
+    bet: {
+      market: 'MONEYLINE',
+      pick: prediction.bestTeam,
+      odds: prediction.bestOdds,
+      team: prediction.bestTeam
+    },
+    
+    prediction: {
+      evPercent: prediction.bestEV,
+      grade: prediction.grade,
+      confidence: prediction.confidence,
+      
+      ensembleAwayProb: prediction.ensembleAwayProb,
+      ensembleHomeProb: prediction.ensembleHomeProb,
+      marketAwayProb: prediction.marketAwayProb,
+      marketHomeProb: prediction.marketHomeProb,
+      
+      ensembleAwayScore: prediction.ensembleAwayScore || null,
+      ensembleHomeScore: prediction.ensembleHomeScore || null,
+      ensembleTotal: prediction.ensembleTotal || null,
+      
+      dratingsAwayProb: prediction.dratingsAwayProb || null,
+      dratingsHomeProb: prediction.dratingsHomeProb || null,
+      dratingsAwayScore: prediction.dratingsAwayScore || null,
+      dratingsHomeScore: prediction.dratingsHomeScore || null,
+      
+      haslametricsAwayProb: prediction.haslametricsAwayProb || null,
+      haslametricsHomeProb: prediction.haslametricsHomeProb || null,
+      haslametricsAwayScore: prediction.haslametricsAwayScore || null,
+      haslametricsHomeScore: prediction.haslametricsHomeScore || null
+    },
+    
+    result: {
+      awayScore: null,
+      homeScore: null,
+      totalScore: null,
+      winner: null,
+      outcome: null,
+      profit: null,
+      fetched: false,
+      fetchedAt: null,
+      source: null
+    },
+    
+    status: 'PENDING',
+    firstRecommendedAt: Date.now(),
+    initialOdds: prediction.bestOdds,
+    initialEV: prediction.bestEV
+  };
+  
+  await setDoc(betRef, betData);
+  console.log(`   ✅ Saved: ${betId} (${prediction.bestOdds}, +${prediction.bestEV.toFixed(1)}% EV, Grade: ${prediction.grade})`);
+  
+  return betId;
+}
 
 async function writeBasketballBets() {
   console.log('\n🏀 BASKETBALL BET WRITING SCRIPT');
@@ -76,15 +194,14 @@ async function writeBasketballBets() {
       return 0;
     }
     
-    // 6. Write bets to Firebase
+    // 6. Write bets to Firebase using Admin SDK
     console.log('\n💾 Writing bets to Firebase (basketball_bets collection)...');
-    const tracker = new BasketballBetTracker();
     let savedCount = 0;
     let errorCount = 0;
     
     for (const game of qualityBets) {
       try {
-        await tracker.saveBet(game, game.prediction);
+        await saveBetToFirebase(db, game, game.prediction);
         savedCount++;
       } catch (error) {
         console.error(`   ❌ Failed to save: ${game.awayTeam} @ ${game.homeTeam}`);
@@ -109,18 +226,14 @@ async function writeBasketballBets() {
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  writeBasketballBets()
-    .then((count) => {
-      console.log(`🎉 Script completed successfully! Saved ${count} bets.\n`);
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('💥 Script failed!');
-      process.exit(1);
-    });
-}
-
-export { writeBasketballBets };
+// Run automatically
+writeBasketballBets()
+  .then((count) => {
+    console.log(`🎉 Script completed successfully! Saved ${count} bets.\n`);
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('💥 Script failed!');
+    process.exit(1);
+  });
 

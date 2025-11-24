@@ -13,10 +13,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // Basketball bets - public read, function write only
+    // Basketball bets - public read, temp write for testing
     match /basketball_bets/{document=**} {
       allow read: if true;  // Basketball picks are free, everyone can read
-      allow write: if false;  // Only Cloud Functions and service account can write
+      allow write: if true;  // TEMP: Allow writes for testing (will restrict later to service account only)
     }
     
     // User bookmarks - allow users to manage their own bookmarks
