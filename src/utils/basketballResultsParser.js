@@ -1,7 +1,7 @@
 /**
  * Basketball Results Parser
- * Extracts final scores from OddsTrader using 100%/0% markers
- * ONLY parses COMPLETED games (with win percentage indicators)
+ * Parses ALL games from OddsTrader, then filters for completed ones (100%/0% markers)
+ * Uses same parsing logic as basketballOddsParser.js
  */
 
 /**
@@ -18,59 +18,77 @@ export function parseBasketballResults(markdown) {
   const results = [];
   const lines = markdown.split('\n');
   
+  // Parse ALL games using same logic as basketballOddsParser
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // Skip non-table lines
+    // Skip empty lines
     if (!line || !line.startsWith('|')) continue;
     
-    // Look for AWAY team line with WIN/LOSS indicator
-    // Pattern: <br>100%<br> or <br>0%<br>
-    if (line.includes('![bell]') && 
-        (line.includes('MON 11/24') || line.includes('TUE 11/25') || line.includes('WED 11/26') || 
-         line.includes('THU 11/27') || line.includes('FRI 11/28') || line.includes('SAT 11/29') || 
-         line.includes('SUN 11/30') || line.includes('STARTS IN')) &&
-        (line.includes('<br>100%<br>') || line.includes('<br>0%<br>'))) {
+    // Look for lines with team logos (indicates a game row)
+    // Match both upcoming games (with ![bell]) and completed games (without ![bell])
+    if (line.includes('logos.oddstrader.com') && 
+        line.includes('<br>') &&
+        (line.includes('![bell]') || line.includes('%<br>'))) {
       
-      // Extract away team
-      const awayTeamMatch = line.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>/);
-      if (!awayTeamMatch) continue;
+      // Extract away team info
+      const parts = line.split('![](https://logos.oddstrader.com/');
+      if (parts.length < 2) continue;
       
-      let awayTeam = awayTeamMatch[1].trim().replace(/^#\d+/, '').trim();
+      const teamSection = parts[1];
       
-      // Extract away team win percentage
+      // Team name is between logo and record: <br>TeamName<br>
+      const teamMatch = teamSection.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>/);
+      if (!teamMatch) continue;
+      
+      let awayTeamName = teamMatch[1].trim().replace(/^#\d+/, '').trim();
+      
+      // Check if this game is completed (has 100% or 0% marker)
       const awayWinMatch = line.match(/<br>(\d+)%<br>/);
-      const awayWon = awayWinMatch && awayWinMatch[1] === '100';
+      if (!awayWinMatch) continue; // Not a completed game
+      
+      const awayWinPct = parseInt(awayWinMatch[1]);
+      if (awayWinPct !== 100 && awayWinPct !== 0) continue; // Not a completed game
+      
+      const awayWon = awayWinPct === 100;
       
       // Get HOME team from next line
       const nextLine = lines[i + 1];
       if (!nextLine || !nextLine.trim().startsWith('|')) continue;
       
-      const homeTeamMatch = nextLine.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>/);
+      const homeSection = nextLine.split('![](https://logos.oddstrader.com/')[1];
+      if (!homeSection) continue;
+      
+      // Extract home team info
+      const homeTeamMatch = homeSection.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>/);
       if (!homeTeamMatch) continue;
       
-      let homeTeam = homeTeamMatch[1].trim().replace(/^#\d+/, '').trim();
+      let homeTeamName = homeTeamMatch[1].trim().replace(/^#\d+/, '').trim();
       
-      // Extract home team win percentage
+      // Verify home team also has completion marker
       const homeWinMatch = nextLine.match(/<br>(\d+)%<br>/);
-      const homeWon = homeWinMatch && homeWinMatch[1] === '100';
+      if (!homeWinMatch) continue;
       
-      // Only include games with a winner (100%/0% pattern)
-      if (awayWon || homeWon) {
-        results.push({
-          awayTeam: awayTeam,
-          homeTeam: homeTeam,
-          winner: awayWon ? 'AWAY' : 'HOME',
-          winnerTeam: awayWon ? awayTeam : homeTeam,
-          loserTeam: awayWon ? homeTeam : awayTeam,
-          source: 'OddsTrader',
-          scrapedAt: Date.now()
-        });
-        
-        console.log(`✅ Found result: ${awayTeam} ${awayWon ? 'WON' : 'LOST'} @ ${homeTeam}`);
-      }
+      const homeWinPct = parseInt(homeWinMatch[1]);
+      const homeWon = homeWinPct === 100;
       
-      i++; // Skip home team line
+      // Add completed game result
+      results.push({
+        awayTeam: awayTeamName,
+        homeTeam: homeTeamName,
+        winner: awayWon ? 'AWAY' : 'HOME',
+        winnerTeam: awayWon ? awayTeamName : homeTeamName,
+        loserTeam: awayWon ? homeTeamName : awayTeamName,
+        awayWinPct: awayWinPct,
+        homeWinPct: homeWinPct,
+        source: 'OddsTrader',
+        scrapedAt: Date.now()
+      });
+      
+      console.log(`✅ Found result: ${awayTeamName} ${awayWon ? 'WON' : 'LOST'} @ ${homeTeamName}`);
+      
+      // Skip home team line
+      i++;
     }
   }
   
