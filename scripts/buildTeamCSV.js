@@ -98,42 +98,56 @@ async function buildTeamCSV() {
     }
   });
   
-  // Process D-Ratings teams
+  // Process D-Ratings teams  
   console.log('🟠 Processing D-Ratings teams...');
   dratePreds.forEach(pred => {
-    // Away team
-    if (teamMap.has(pred.awayTeam)) {
-      const entry = teamMap.get(pred.awayTeam);
-      entry.dratings = pred.awayTeamRaw;
-      entry.dratingsRaw.push(pred.awayTeamRaw);
-    } else {
-      // Team in D-Ratings but not OddsTrader
+    // Away team - try to match to existing OddsTrader team first
+    let matched = false;
+    for (const [key, entry] of teamMap) {
+      if (entry.oddstrader && pred.awayTeam.includes(entry.oddstrader)) {
+        // USE PARSED NAME (mascot removed) for CSV, not raw name
+        entry.dratings = pred.awayTeam;  // <- Changed from pred.awayTeamRaw
+        entry.dratingsRaw.push(pred.awayTeamRaw);
+        matched = true;
+        break;
+      }
+    }
+    
+    if (!matched) {
+      // Team in D-Ratings but not matched to OddsTrader
       teamMap.set(pred.awayTeam, {
         normalized: pred.awayTeam,
         oddstrader: null,
         oddstraderRaw: null,
         haslametrics: null,
         haslametricsRaw: [],
-        dratings: pred.awayTeamRaw,
+        dratings: pred.awayTeam,  // <- Changed from pred.awayTeamRaw
         dratingsRaw: [pred.awayTeamRaw],
         conference: 'TBD',
         source: 'dratings'
       });
     }
     
-    // Home team
-    if (teamMap.has(pred.homeTeam)) {
-      const entry = teamMap.get(pred.homeTeam);
-      entry.dratings = pred.homeTeamRaw;
-      entry.dratingsRaw.push(pred.homeTeamRaw);
-    } else {
+    // Home team - try to match to existing OddsTrader team first
+    matched = false;
+    for (const [key, entry] of teamMap) {
+      if (entry.oddstrader && pred.homeTeam.includes(entry.oddstrader)) {
+        // USE PARSED NAME (mascot removed) for CSV, not raw name
+        entry.dratings = pred.homeTeam;  // <- Changed from pred.homeTeamRaw
+        entry.dratingsRaw.push(pred.homeTeamRaw);
+        matched = true;
+        break;
+      }
+    }
+    
+    if (!matched) {
       teamMap.set(pred.homeTeam, {
         normalized: pred.homeTeam,
         oddstrader: null,
         oddstraderRaw: null,
         haslametrics: null,
         haslametricsRaw: [],
-        dratings: pred.homeTeamRaw,
+        dratings: pred.homeTeam,  // <- Changed from pred.homeTeamRaw
         dratingsRaw: [pred.homeTeamRaw],
         conference: 'TBD',
         source: 'dratings'
