@@ -8,33 +8,24 @@ import fs from 'fs/promises';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize Firebase Admin SDK (same pattern as updateBookmarkResults.js)
-const serviceAccountPath = join(__dirname, '../service-account.json');
-let serviceAccount;
-
-// Check if service-account.json exists (GitHub Actions)
-try {
-  const serviceAccountJson = await fs.readFile(serviceAccountPath, 'utf8');
-  serviceAccount = JSON.parse(serviceAccountJson);
-  console.log('✅ Using service-account.json from GitHub Actions');
-} catch (error) {
-  // Fallback to environment variables (local development)
-  serviceAccount = {
-    project_id: process.env.VITE_FIREBASE_PROJECT_ID,
-    client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-  };
-  console.log('✅ Using environment variables for Firebase credentials');
-}
+// Initialize Firebase Admin SDK (EXACT pattern as updateBookmarkResults.js)
+const serviceAccount = {
+  project_id: process.env.VITE_FIREBASE_PROJECT_ID,
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+};
 
 // Validate credentials
-if (!serviceAccount.project_id) {
+if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
   console.error('❌ Missing Firebase credentials');
-  console.error('   Required: service-account.json OR VITE_FIREBASE_PROJECT_ID env var');
+  console.error('Required environment variables:');
+  console.error('  - VITE_FIREBASE_PROJECT_ID');
+  console.error('  - FIREBASE_CLIENT_EMAIL');
+  console.error('  - FIREBASE_PRIVATE_KEY');
   process.exit(1);
 }
 
-console.log(`✅ Service account loaded: ${serviceAccount.client_email || serviceAccount.project_id}`);
+console.log(`✅ Service account loaded: ${serviceAccount.client_email}`);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)

@@ -31,6 +31,9 @@ jobs:
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
       run: |
         echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+        export VITE_FIREBASE_PROJECT_ID=$(jq -r '.project_id' service-account.json)
+        export FIREBASE_CLIENT_EMAIL=$(jq -r '.client_email' service-account.json)
+        export FIREBASE_PRIVATE_KEY=$(jq -r '.private_key' service-account.json)
         npm run grade-basketball-bets
         rm service-account.json
 
