@@ -33,6 +33,10 @@ async function findUnmatchedOdds() {
   console.log(`   - Haslametrics: ${haslaData.games.length} games`);
   console.log(`   - D-Ratings: ${dratePreds.length} predictions\n`);
   
+  // Use the proper game matching logic (handles reversed matchups)
+  const { matchGames } = await import('../src/utils/gameMatching.js');
+  const matchedGames = matchGames(oddsGames, haslaData, dratePreds);
+  
   // Check each OddsTrader game
   let fullMatches = 0;
   let haslaOnly = 0;
@@ -42,25 +46,24 @@ async function findUnmatchedOdds() {
   const unmatchedGames = [];
   
   oddsGames.forEach((oddsGame, index) => {
-    // Try to find in Haslametrics
-    const haslaMatch = haslaData.games.find(h =>
-      h.awayTeam === oddsGame.awayTeam && h.homeTeam === oddsGame.homeTeam
+    // Find this game in matched results
+    const matched = matchedGames.find(m =>
+      (m.awayTeam === oddsGame.awayTeam && m.homeTeam === oddsGame.homeTeam) ||
+      (m.awayTeam === oddsGame.homeTeam && m.homeTeam === oddsGame.awayTeam)
     );
     
-    // Try to find in D-Ratings
-    const drateMatch = dratePreds.find(d =>
-      d.awayTeam === oddsGame.awayTeam && d.homeTeam === oddsGame.homeTeam
-    );
+    const haslaMatch = matched && matched.sources.includes('haslametrics');
+    const drateMatch = matched && matched.sources.includes('dratings');
     
     const matchStatus = {
       gameNum: index + 1,
       awayTeam: oddsGame.awayTeam,
       homeTeam: oddsGame.homeTeam,
       gameTime: oddsGame.gameTime,
-      hasHasla: !!haslaMatch,
-      hasDRate: !!drateMatch,
-      haslaRaw: haslaMatch ? `${haslaMatch.awayTeamRaw} @ ${haslaMatch.homeTeamRaw}` : null,
-      drateRaw: drateMatch ? `${drateMatch.awayTeamRaw} @ ${drateMatch.homeTeamRaw}` : null
+      hasHasla: haslaMatch,
+      hasDRate: drateMatch,
+      haslaRaw: matched && matched.haslametrics ? `Found (${matched._reversed ? 'reversed' : 'direct'})` : null,
+      drateRaw: matched && matched.dratings ? `Found (${matched._reversed ? 'reversed' : 'direct'})` : null
     };
     
     if (haslaMatch && drateMatch) {

@@ -21,77 +21,82 @@ export function parseBasketballOdds(markdown) {
   const games = [];
   const lines = markdown.split('\n');
   
-  let currentAwayTeam = null;
-  let currentAwayRecord = null;
-  let currentAwayOdds = null;
-  let currentGameTime = null;
-  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
     // Skip empty lines
-    if (!line) continue;
+    if (!line || !line.startsWith('|')) continue;
     
-    // Look for game time (e.g., "MON 11/24 1:00 PM" or "STARTS IN 00:28:57")
-    if (line.includes('MON 11/24') || line.includes('STARTS IN')) {
-      const timeMatch = line.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/);
-      if (timeMatch) {
-        currentGameTime = timeMatch[1];
-      }
-    }
-    
-    // Look for away team lines (first team in matchup)
-    // Format: Team name followed by record like "3-2" and odds like "+140"
-    if (line.includes('![](https://logos.oddstrader.com/') && !line.includes('#') && line.includes('-')) {
-      // Extract team name
-      const teamMatch = line.match(/!\[]\([^)]+\)<br>([^<\n]+)/);
+    // Look for AWAY team line (has ![bell] and time marker)
+    if (line.includes('![bell]') && 
+        (line.includes('MON 11/24') || line.includes('TUE 11/25') || line.includes('WED 11/26') || line.includes('STARTS IN'))) {
+      
+      // Extract time (handle both "1:00 PM" and "11:00 PM" with or without space after date)
+      const timeMatch = line.match(/(?:MON|TUE|WED|STARTS\s+IN)\s+[^\d]*(\d{1,2}:\d{2}\s*(?:AM|PM))/);
+      const gameTime = timeMatch ? timeMatch[1] : null;
+      
+      // Extract away team info - line contains BOTH bell and team logo
+      // Split on 'logos.oddstrader.com' to find the team logo
+      const parts = line.split('![](https://logos.oddstrader.com/');
+      if (parts.length < 2) continue;
+      
+      const teamSection = parts[1];
+      
+      // Team name is between logo and record: <br>TeamName<br>
+      // Handle both .png and .PNG (case insensitive)
+      const teamMatch = teamSection.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>/);
       if (!teamMatch) continue;
       
-      const teamName = teamMatch[1].trim();
+      let awayTeamName = teamMatch[1].trim();
       
-      // Extract record (e.g., "3-2")
-      const recordMatch = line.match(/(\d+-\d+)/);
-      const record = recordMatch ? recordMatch[1] : null;
+      // Remove rank prefix if present (e.g., "#20Tennessee" -> "Tennessee")
+      awayTeamName = awayTeamName.replace(/^#\d+/, '').trim();
       
-      // Extract moneyline odds (e.g., "+140", "-185")
-      const oddsMatch = line.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel)/);
-      const odds = oddsMatch ? parseInt(oddsMatch[1]) : null;
+      // Extract record
+      const recordMatch = teamSection.match(/<br>(\d+-\d+)<br>/);
+      const awayRecord = recordMatch ? recordMatch[1] : null;
       
-      // Check if this is away or home team
-      // Away team is typically first (100% indicator sometimes present)
-      // Home team is second (0% indicator sometimes present)
-      if (line.includes('100%') || !currentAwayTeam) {
-        // This is an away team
-        currentAwayTeam = teamName;
-        currentAwayRecord = record;
-        currentAwayOdds = odds;
-      } else if (currentAwayTeam && !line.includes('100%')) {
-        // This is a home team - complete the game
-        const homeTeam = teamName;
-        const homeRecord = record;
-        const homeOdds = odds;
-        
-        if (currentAwayTeam && homeTeam) {
-          games.push({
-            awayTeam: normalizeTeamName(currentAwayTeam),
-            awayTeamRaw: currentAwayTeam,
-            awayRecord: currentAwayRecord,
-            awayOdds: currentAwayOdds,
-            homeTeam: normalizeTeamName(homeTeam),
-            homeTeamRaw: homeTeam,
-            homeRecord: homeRecord,
-            homeOdds: homeOdds,
-            gameTime: currentGameTime,
-            source: 'OddsTrader',
-            matchup: `${normalizeTeamName(currentAwayTeam)} @ ${normalizeTeamName(homeTeam)}`
-          });
-        }
-        
-        // Reset for next game
-        currentAwayTeam = null;
-        currentAwayRecord = null;
-        currentAwayOdds = null;
-      }
+      // Extract odds (look for +/- number before sportsbook name)
+      const oddsMatch = teamSection.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel)/);
+      const awayOdds = oddsMatch ? parseInt(oddsMatch[1]) : null;
+      
+      // Now look at NEXT line for HOME team
+      const nextLine = lines[i + 1];
+      if (!nextLine || !nextLine.trim().startsWith('|')) continue;
+      
+      const homeSection = nextLine.split('![](https://logos.oddstrader.com/')[1];
+      if (!homeSection) continue;
+      
+      // Extract home team info
+      const homeTeamMatch = homeSection.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>/);
+      if (!homeTeamMatch) continue;
+      
+      let homeTeamName = homeTeamMatch[1].trim();
+      homeTeamName = homeTeamName.replace(/^#\d+/, '').trim();
+      
+      const homeRecordMatch = homeSection.match(/<br>(\d+-\d+)<br>/);
+      const homeRecord = homeRecordMatch ? homeRecordMatch[1] : null;
+      
+      const homeOddsMatch = homeSection.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel)/);
+      const homeOdds = homeOddsMatch ? parseInt(homeOddsMatch[1]) : null;
+      
+      // Create game object
+      games.push({
+        awayTeam: normalizeTeamName(awayTeamName),
+        awayTeamRaw: awayTeamName,
+        awayRecord: awayRecord,
+        awayOdds: awayOdds,
+        homeTeam: normalizeTeamName(homeTeamName),
+        homeTeamRaw: homeTeamName,
+        homeRecord: homeRecord,
+        homeOdds: homeOdds,
+        gameTime: gameTime,
+        source: 'OddsTrader',
+        matchup: `${normalizeTeamName(awayTeamName)} @ ${normalizeTeamName(homeTeamName)}`
+      });
+      
+      // Skip the home team line we just processed
+      i++;
     }
   }
   
