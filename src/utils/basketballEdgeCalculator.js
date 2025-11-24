@@ -100,10 +100,20 @@ export class BasketballEdgeCalculator {
     const awayEV = (awayEdge / marketAwayProb) * 100;
     const homeEV = (homeEdge / marketHomeProb) * 100;
     
-    // Determine best bet (higher EV%)
-    const bestBet = Math.abs(awayEV) > Math.abs(homeEV) ? 'away' : 'home';
+    // Determine best bet (MOST POSITIVE EV, not absolute value)
+    const bestBet = awayEV > homeEV ? 'away' : 'home';
     const bestEV = bestBet === 'away' ? awayEV : homeEV;
     const bestEdge = bestBet === 'away' ? awayEdge : homeEdge;
+    
+    // Only return valid prediction if positive EV exists
+    if (bestEV <= 0) {
+      return { 
+        error: 'No positive EV found', 
+        grade: 'N/A',
+        awayEV: Math.round(awayEV * 10) / 10,
+        homeEV: Math.round(homeEV * 10) / 10
+      };
+    }
     
     // Assign grade
     const grade = this.getGrade(bestEV);
