@@ -1,8 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import admin from 'firebase-admin';
 import { parseBasketballResults } from '../src/utils/basketballResultsParser.js';
 import { getETGameDate } from '../src/utils/dateUtils.js';
-import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
@@ -10,26 +8,39 @@ import fs from 'fs/promises';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config({ path: join(__dirname, '../.env') });
+// Initialize Firebase Admin SDK (same pattern as updateBookmarkResults.js)
+const serviceAccountPath = join(__dirname, '../service-account.json');
+let serviceAccount;
 
-// Firebase Client SDK config
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID
-};
+// Check if service-account.json exists (GitHub Actions)
+try {
+  const serviceAccountJson = await fs.readFile(serviceAccountPath, 'utf8');
+  serviceAccount = JSON.parse(serviceAccountJson);
+  console.log('✅ Using service-account.json from GitHub Actions');
+} catch (error) {
+  // Fallback to environment variables (local development)
+  serviceAccount = {
+    project_id: process.env.VITE_FIREBASE_PROJECT_ID,
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  };
+  console.log('✅ Using environment variables for Firebase credentials');
+}
 
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error('❌ Missing Firebase credentials in .env file');
+// Validate credentials
+if (!serviceAccount.project_id) {
+  console.error('❌ Missing Firebase credentials');
+  console.error('   Required: service-account.json OR VITE_FIREBASE_PROJECT_ID env var');
   process.exit(1);
 }
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-console.log(`✅ Firebase initialized: ${firebaseConfig.projectId}`);
+console.log(`✅ Service account loaded: ${serviceAccount.client_email || serviceAccount.project_id}`);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
 
 async function gradeBasketballBets() {
   console.log('\n🏀 BASKETBALL BET GRADING SCRIPT');
