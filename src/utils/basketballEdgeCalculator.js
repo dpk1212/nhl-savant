@@ -1,6 +1,6 @@
 /**
  * Basketball Edge Calculator
- * Implements 60/40 ensemble model: D-Ratings (60%) + Haslametrics (40%)
+ * Implements 80/20 ensemble model: D-Ratings (80%) + Haslametrics (20%)
  * 
  * Calculates betting edges and assigns quality grades
  */
@@ -10,10 +10,10 @@
  */
 export class BasketballEdgeCalculator {
   constructor() {
-    // Ensemble weights (Phase 2 - Initial)
+    // Ensemble weights (Updated weighting)
     this.weights = {
-      dratings: 0.60,    // Primary predictions
-      haslametrics: 0.40  // Tempo-free validation
+      dratings: 0.80,    // Primary predictions (increased weight)
+      haslametrics: 0.20  // Tempo-free validation
     };
     
     // Grading thresholds (EV%)
@@ -58,7 +58,7 @@ export class BasketballEdgeCalculator {
       ensembleHomeProb = 1 - ensembleAwayProb;
       confidence = 'HIGH';
       
-      // Calculate ensemble predicted scores (60/40 blend)
+      // Calculate ensemble predicted scores (80/20 blend)
       if (dratings.awayScore && dratings.homeScore && haslametrics.awayScore && haslametrics.homeScore) {
         ensembleAwayScore = 
           (dratings.awayScore * this.weights.dratings) +
