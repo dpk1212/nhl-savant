@@ -423,7 +423,7 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
             </div>
           </div>
           
-          {/* Market Odds */}
+          {/* Market Implied Probability */}
           <div>
             <div style={{ 
               fontSize: TYPOGRAPHY.label.size,
@@ -440,6 +440,13 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
               fontWeight: TYPOGRAPHY.hero.weight,
               color: 'var(--color-text-secondary)',
               lineHeight: TYPOGRAPHY.hero.lineHeight
+            }}>
+              {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}%
+            </div>
+            <div style={{ 
+              fontSize: TYPOGRAPHY.caption.size,
+              color: 'var(--color-text-muted)',
+              marginTop: '0.25rem'
             }}>
               {pred.bestOdds > 0 ? '+' : ''}{pred.bestOdds}
             </div>
