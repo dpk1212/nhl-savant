@@ -175,7 +175,7 @@ const Navigation = () => {
               }
             }}
           >
-            🏀 <span style={{ display: window.innerWidth < 640 ? 'none' : 'inline' }}>CBB Picks</span>
+            🏀 CBB Picks
           </Link>
           
           {/* Upgrade Button (Free Users Only) */}
