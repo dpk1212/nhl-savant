@@ -424,12 +424,12 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
         </>
       )}
       
-      {/* HEADER - Enhanced with Rank Badge */}
+      {/* HEADER - Compact with Rank Badge */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem 2rem',
+        padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
         borderBottom: ELEVATION.flat.border,
         background: 'rgba(0,0,0,0.2)',
         position: 'relative',
@@ -500,38 +500,39 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
         </div>
       </div>
 
-      {/* HERO BET CARD - Exact NHL Pattern */}
+      {/* Compact Bet Card */}
       <div style={{ 
         background: GRADIENTS.hero,
-        padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem',
+        padding: isMobile ? '1rem' : '1.25rem',
         position: 'relative',
         overflow: 'hidden'
       }}>
         {/* Best Value Heading */}
         <div style={{ 
-          fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.25rem',
-          fontWeight: TYPOGRAPHY.heading.weight,
-          marginBottom: '1rem',
+          fontSize: isMobile ? '1rem' : '1.125rem',
+          fontWeight: '700',
+          marginBottom: '0.75rem',
           color: 'var(--color-text-primary)',
-          letterSpacing: TYPOGRAPHY.heading.letterSpacing
+          letterSpacing: '-0.01em'
         }}>
           💰 BEST VALUE: {pred.bestTeam} ML
         </div>
         
-        {/* Ultra-Premium Stats Grid with micro-animations */}
+        {/* Compact Stats Grid - Remove Redundancy */}
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '1rem' : '1.5rem',
-          marginBottom: '1.5rem',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: isMobile ? '0.75rem' : '1rem',
+          marginBottom: '1rem',
           position: 'relative',
           zIndex: 2
         }}>
           {[
             { 
-              label: 'MODEL', 
-              value: `${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}%`, 
-              color: gradeColors.color, 
+              label: 'OUR PICK', 
+              value: `${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}% to win`, 
+              subValue: `${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% edge`,
+              color: '#10B981', 
               primary: true 
             },
             { 
@@ -541,24 +542,15 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
               color: 'rgba(255,255,255,0.7)' 
             },
             { 
-              label: 'OUR PICK', 
-              value: `${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}% to win`, 
-              subValue: `(${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% edge)`,
-              color: '#10B981', 
-              primary: true 
-            },
-            { 
               label: 'QUALITY', 
               value: gradeColors.tier, 
-              color: gradeColors.color, 
-              hideOnMobile: true 
+              color: gradeColors.color
             }
-          ].map((stat, i) => 
-            !isMobile || !stat.hideOnMobile ? (
+          ].map((stat, i) => (
               <div key={i} style={{
                 background: stat.primary ? 'rgba(255,255,255,0.05)' : 'transparent',
-                borderRadius: '10px',
-                padding: stat.primary ? '1rem' : '0.5rem',
+                borderRadius: '8px',
+                padding: stat.primary ? '0.75rem' : '0.5rem',
                 border: stat.primary ? '1px solid rgba(255,255,255,0.1)' : 'none',
                 transition: 'all 0.3s ease',
                 cursor: 'default'
@@ -577,28 +569,28 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
               }}
               >
                 <div style={{ 
-                  fontSize: TYPOGRAPHY.label.size,
+                  fontSize: TYPOGRAPHY.caption.size,
                   color: 'rgba(255,255,255,0.5)',
                   textTransform: TYPOGRAPHY.label.textTransform,
                   letterSpacing: '0.08em',
                   fontWeight: '700',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.375rem'
                 }}>
                   {stat.label}
                 </div>
                 <div style={{ 
-                  fontSize: isMobile ? '1.25rem' : TYPOGRAPHY.hero.size,
-                  fontWeight: '900',
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
+                  fontWeight: '800',
                   color: stat.color,
                   lineHeight: 1.1,
-                  letterSpacing: '-0.02em'
+                  letterSpacing: '-0.01em'
                 }}>
                   {stat.value}
                 </div>
                 {stat.subValue && (
                   <div style={{ 
                     fontSize: TYPOGRAPHY.caption.size,
-                    color: 'rgba(255,255,255,0.4)',
+                    color: 'rgba(255,255,255,0.5)',
                     marginTop: '0.25rem',
                     fontWeight: '600'
                   }}>
@@ -606,7 +598,7 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
                   </div>
                 )}
               </div>
-            ) : null
+            )
           )}
         </div>
         
