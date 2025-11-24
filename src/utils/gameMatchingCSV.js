@@ -163,7 +163,8 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
         homeOdds: oddsGame.homeOdds,
         awayProb: oddsToProb(oddsGame.awayOdds),
         homeProb: oddsToProb(oddsGame.homeOdds),
-        gameTime: oddsGame.gameTime
+        // PRIORITIZE Haslametrics time (more reliable format), fallback to OddsTrader
+        gameTime: haslaGame?.gameTime || oddsGame.gameTime || 'TBD'
       },
       
       // Metadata
