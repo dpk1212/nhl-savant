@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { parseBasketballOdds } from '../utils/basketballOddsParser';
 import { parseHaslametrics } from '../utils/haslametricsParser';
 import { parseDRatings } from '../utils/dratingsParser';
@@ -184,6 +185,39 @@ const Basketball = () => {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: isMobile ? '1rem' : '20px' }}>
       {/* Header - NHL Standard */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', marginBottom: isMobile ? '1.5rem' : '2rem', padding: isMobile ? '1rem' : '0' }}>
+        {/* Back to NHL Button */}
+        <Link
+          to="/"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.625rem 1rem',
+            marginBottom: '1.5rem',
+            borderRadius: '10px',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            textDecoration: 'none',
+            color: 'rgba(212, 175, 55, 0.9)',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateX(-4px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.3)';
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 100%)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateX(0)';
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)';
+          }}
+        >
+          <span style={{ fontSize: '1.125rem' }}>←</span>
+          <span>🏒 NHL Today's Games</span>
+        </Link>
+        
         <h1 style={{
           fontSize: isMobile ? TYPOGRAPHY.hero.size : '2rem',
           fontWeight: TYPOGRAPHY.hero.weight,
