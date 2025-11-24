@@ -1,31 +1,34 @@
 /**
- * Game Matching Algorithm
- * Matches games across OddsTrader, Haslametrics, and D-Ratings
- * 
- * Uses normalized team names and time windows for matching
+ * Game Matching Algorithm  
+ * Uses HASLAMETRICS as the base - it shows ALL games for the day
+ * Then matches D-Ratings and OddsTrader to each Hasla game
  */
 
 import { isSameTeam, normalizeTeamName } from './teamNameNormalizer.js';
 
 /**
- * Match games from all three sources
+ * Match games from all three sources - HASLAMETRICS AS BASE
  * @param {array} oddsGames - Parsed odds from OddsTrader
- * @param {object} haslametricsTeams - Team database from Haslametrics
+ * @param {object} haslametricsData - { games: [], teams: {} } from Haslametrics
  * @param {array} dratePredictions - Predictions from D-Ratings
  * @returns {array} - Matched games with all data
  */
-export function matchGames(oddsGames, haslametricsTeams, dratePredictions) {
+export function matchGames(oddsGames, haslametricsData, dratePredictions) {
   const matchedGames = [];
   
-  console.log('\n🔗 Matching games across sources...');
-  console.log(`   - OddsTrader games: ${oddsGames.length}`);
-  console.log(`   - Haslametrics teams: ${Object.keys(haslametricsTeams).length}`);
-  console.log(`   - D-Ratings predictions: ${dratePredictions.length}`);
+  // Extract games and teams from Haslametrics data
+  const haslaGames = haslametricsData.games || [];
+  const haslaTeams = haslametricsData.teams || {};
   
-  // Iterate through odds games (our base)
-  for (const oddsGame of oddsGames) {
-    const awayNorm = oddsGame.awayTeam;
-    const homeNorm = oddsGame.homeTeam;
+  console.log('\n🔗 Matching games across sources (Haslametrics as base)...');
+  console.log(`   - Haslametrics games: ${haslaGames.length}`);
+  console.log(`   - D-Ratings predictions: ${dratePredictions.length}`);
+  console.log(`   - OddsTrader games: ${oddsGames.length}`);
+  
+  // Iterate through Haslametrics games (our base - shows ALL games)
+  for (const haslaGame of haslaGames) {
+    const awayNorm = haslaGame.awayTeam;
+    const homeNorm = haslaGame.homeTeam;
     
     // Find matching D-Ratings prediction
     const dratePred = dratePredictions.find(pred =>
@@ -33,58 +36,86 @@ export function matchGames(oddsGames, haslametricsTeams, dratePredictions) {
       isSameTeam(pred.homeTeam, homeNorm)
     );
     
-    // Find matching Haslametrics data
-    const awayHasla = haslametricsTeams[awayNorm];
-    const homeHasla = haslametricsTeams[homeNorm];
+    // Find matching OddsTrader odds
+    const oddsGame = oddsGames.find(odds =>
+      isSameTeam(odds.awayTeam, awayNorm) && 
+      isSameTeam(odds.homeTeam, homeNorm)
+    );
     
-    // Track which sources we have data from
-    const sources = ['odds'];
+    // Get team efficiency ratings
+    const awayTeamData = haslaTeams[awayNorm];
+    const homeTeamData = haslaTeams[homeNorm];
+    
+    // Track which sources we have
+    const sources = ['haslametrics']; // Always have Hasla (it's our base)
     if (dratePred) sources.push('dratings');
-    if (awayHasla && homeHasla) sources.push('haslametrics');
+    if (oddsGame) sources.push('odds');
     
-    // Only include games where we have at least odds + one prediction source
-    if (sources.length >= 2) {
-      matchedGames.push({
-        // Teams
-        awayTeam: awayNorm,
-        homeTeam: homeNorm,
-        matchup: `${awayNorm} @ ${homeNorm}`,
-        
-        // Odds data
-        odds: {
-          awayOdds: oddsGame.awayOdds,
-          homeOdds: oddsGame.homeOdds,
-          awayProb: oddsToProb(oddsGame.awayOdds),
-          homeProb: oddsToProb(oddsGame.homeOdds),
-          gameTime: oddsGame.gameTime
-        },
-        
-        // D-Ratings data (60% weight)
-        dratings: dratePred ? {
-          awayWinProb: dratePred.awayWinProb,
-          homeWinProb: dratePred.homeWinProb,
-          awayScore: dratePred.awayScore,
-          homeScore: dratePred.homeScore,
-          spread: dratePred.spread
-        } : null,
-        
-        // Haslametrics data (40% weight)
-        haslametrics: {
-          awayOffEff: awayHasla?.offensiveEff || null,
-          homeOffEff: homeHasla?.offensiveEff || null
-        },
-        
-        // Metadata
-        sources: sources,
-        dataQuality: calculateDataQuality(sources),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Build matched game object
+    const matchedGame = {
+      // Teams
+      awayTeam: awayNorm,
+      homeTeam: homeNorm,
+      matchup: `${awayNorm} @ ${homeNorm}`,
+      
+      // Haslametrics data (BASE + 40% weight in ensemble)
+      haslametrics: {
+        gameTime: haslaGame.gameTime,
+        awayRating: haslaGame.awayRating,
+        homeRating: haslaGame.homeRating,
+        awayRank: haslaGame.awayRank,
+        homeRank: haslaGame.homeRank,
+        awayOffEff: awayTeamData?.offensiveEff || null,
+        homeOffEff: homeTeamData?.offensiveEff || null
+      },
+      
+      // D-Ratings data (60% weight - PRIMARY)
+      dratings: dratePred ? {
+        awayWinProb: dratePred.awayWinProb,
+        homeWinProb: dratePred.homeWinProb,
+        awayScore: dratePred.awayScore,
+        homeScore: dratePred.homeScore,
+        gameTime: dratePred.gameTime
+      } : null,
+      
+      // Odds data (for edge calculation)
+      odds: oddsGame ? {
+        awayOdds: oddsGame.awayOdds,
+        homeOdds: oddsGame.homeOdds,
+        awayProb: oddsToProb(oddsGame.awayOdds),
+        homeProb: oddsToProb(oddsGame.homeOdds),
+        gameTime: oddsGame.gameTime
+      } : null,
+      
+      // Metadata
+      sources: sources,
+      dataQuality: calculateDataQuality(sources),
+      timestamp: new Date().toISOString()
+    };
+    
+    matchedGames.push(matchedGame);
   }
   
-  console.log(`✅ Matched ${matchedGames.length} games with sufficient data`);
-  console.log(`   - Full data (3 sources): ${matchedGames.filter(g => g.sources.length === 3).length}`);
-  console.log(`   - Partial data (2 sources): ${matchedGames.filter(g => g.sources.length === 2).length}`);
+  console.log(`✅ Matched ${matchedGames.length} games`);
+  console.log(`   - Full data (all 3 sources): ${matchedGames.filter(g => g.sources.length === 3).length}`);
+  console.log(`   - With predictions (Hasla + DRatings): ${matchedGames.filter(g => g.sources.includes('dratings')).length}`);
+  console.log(`   - With odds (Hasla + Odds): ${matchedGames.filter(g => g.sources.includes('odds')).length}`);
+  console.log(`   - Hasla only: ${matchedGames.filter(g => g.sources.length === 1).length}`);
+  
+  // Log unmatched games for debugging
+  const unmatchedInDRatings = dratePredictions.filter(pred => {
+    return !haslaGames.some(hasla => 
+      isSameTeam(hasla.awayTeam, pred.awayTeam) && 
+      isSameTeam(hasla.homeTeam, pred.homeTeam)
+    );
+  });
+  
+  if (unmatchedInDRatings.length > 0) {
+    console.warn(`⚠️  ${unmatchedInDRatings.length} D-Ratings games not found in Haslametrics:`);
+    unmatchedInDRatings.slice(0, 5).forEach(pred => {
+      console.warn(`     - ${pred.matchup}`);
+    });
+  }
   
   return matchedGames;
 }
@@ -105,7 +136,7 @@ function oddsToProb(odds) {
 }
 
 /**
- * Calculate data quality score based on available sources
+ * Calculate data quality score
  * @param {array} sources - Array of source names
  * @returns {string} - Quality rating
  */
@@ -139,7 +170,7 @@ export function getIncompleteGames(games) {
   return games.filter(game => game.sources.length < 3).map(game => ({
     matchup: game.matchup,
     sources: game.sources,
-    missing: ['odds', 'dratings', 'haslametrics'].filter(s => !game.sources.includes(s))
+    missing: ['haslametrics', 'dratings', 'odds'].filter(s => !game.sources.includes(s))
   }));
 }
 
