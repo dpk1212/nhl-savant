@@ -287,13 +287,39 @@ const Basketball = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {recommendations.length === 0 ? (
           <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            padding: isMobile ? '2rem 1rem' : '40px',
-            borderRadius: '15px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
+            border: '2px dashed rgba(139, 92, 246, 0.3)',
+            borderRadius: '20px',
+            padding: isMobile ? '3rem 1.5rem' : '4rem 2rem',
             textAlign: 'center',
-            color: 'rgba(255,255,255,0.7)'
+            maxWidth: '600px',
+            margin: '0 auto'
           }}>
-            No quality recommendations found for today.
+            <div style={{
+              fontSize: isMobile ? '3rem' : '4rem',
+              marginBottom: '1.5rem',
+              opacity: 0.8
+            }}>
+              🏀
+            </div>
+            <div style={{
+              fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.5rem',
+              fontWeight: '800',
+              color: 'white',
+              marginBottom: '0.75rem',
+              letterSpacing: '-0.01em'
+            }}>
+              No Quality Picks Today
+            </div>
+            <div style={{
+              fontSize: TYPOGRAPHY.body.size,
+              color: 'rgba(255,255,255,0.6)',
+              lineHeight: '1.6',
+              maxWidth: '400px',
+              margin: '0 auto'
+            }}>
+              Our model hasn't found any games with 2%+ expected value today. Check back later for updated odds.
+            </div>
           </div>
         ) : (
           <div style={{ display: 'grid', gap: isMobile ? '1rem' : '1.5rem' }}>
@@ -317,60 +343,121 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
   if (!pred || pred.error) return null;
   
   const gradeColors = getGradeColorScale(pred.grade);
+  
+  // Format game time (remove "ET" suffix for cleaner look)
+  const formatGameTime = (time) => {
+    if (!time || time === 'TBD') return 'TBD';
+    return time.replace(/\s+ET$/i, '').trim();
+  };
 
   return (
     <div style={{
-      background: 'rgba(15, 23, 42, 0.6)',
-      borderRadius: isMobile ? MOBILE_SPACING.borderRadius : '16px',
-      border: ELEVATION.elevated.border,
-      boxShadow: ELEVATION.elevated.shadow,
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+      borderRadius: isMobile ? MOBILE_SPACING.borderRadius : '20px',
+      border: pred.grade === 'A+' 
+        ? `2px solid ${gradeColors.borderColor}` 
+        : ELEVATION.elevated.border,
+      boxShadow: pred.grade === 'A+' 
+        ? `0 8px 32px ${gradeColors.borderColor}40, 0 0 60px ${gradeColors.borderColor}15`
+        : ELEVATION.elevated.shadow,
       overflow: 'hidden',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      position: 'relative'
     }}>
-      {/* HEADER - Compact NHL Style */}
+      {/* Animated gradient overlay for A+ picks */}
+      {pred.grade === 'A+' && (
+        <>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: '-100%',
+            width: '200%',
+            height: '100%',
+            background: `linear-gradient(90deg, transparent, ${gradeColors.borderColor}15, transparent)`,
+            animation: 'shimmer 3s infinite',
+            pointerEvents: 'none',
+            zIndex: 1
+          }} />
+          <style>{`
+            @keyframes shimmer {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(50%); }
+            }
+          `}</style>
+        </>
+      )}
+      
+      {/* HEADER - Enhanced with Rank Badge */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem',
-        borderBottom: ELEVATION.flat.border
+        padding: isMobile ? MOBILE_SPACING.cardPadding : '1.5rem 2rem',
+        borderBottom: ELEVATION.flat.border,
+        background: 'rgba(0,0,0,0.2)',
+        position: 'relative',
+        zIndex: 2
       }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ 
-            fontSize: isMobile ? TYPOGRAPHY.body.size : TYPOGRAPHY.heading.size,
-            fontWeight: TYPOGRAPHY.heading.weight,
-            color: 'var(--color-text-primary)',
-            marginBottom: '0.375rem',
-            letterSpacing: TYPOGRAPHY.heading.letterSpacing,
-            lineHeight: TYPOGRAPHY.heading.lineHeight
-          }}>
-            {game.awayTeam} @ {game.homeTeam}
-          </div>
-          <div style={{ 
-            fontSize: TYPOGRAPHY.caption.size,
-            fontWeight: TYPOGRAPHY.caption.weight,
-            color: 'var(--color-text-muted)',
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Rank Badge */}
+          <div style={{
+            width: isMobile ? '32px' : '40px',
+            height: isMobile ? '32px' : '40px',
+            borderRadius: '50%',
+            background: `linear-gradient(135deg, ${gradeColors.borderColor}30 0%, ${gradeColors.borderColor}15 100%)`,
+            border: `2px solid ${gradeColors.borderColor}50`,
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            justifyContent: 'center',
+            fontSize: TYPOGRAPHY.body.size,
+            fontWeight: TYPOGRAPHY.hero.weight,
+            color: gradeColors.color,
+            flexShrink: 0
           }}>
-            🕐 {odds?.gameTime || 'TBD'}
+            {rank}
+          </div>
+          
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ 
+              fontSize: isMobile ? TYPOGRAPHY.body.size : TYPOGRAPHY.heading.size,
+              fontWeight: TYPOGRAPHY.hero.weight,
+              color: 'white',
+              marginBottom: '0.375rem',
+              letterSpacing: '-0.015em',
+              lineHeight: 1.2,
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap'
+            }}>
+              {game.awayTeam} @ {game.homeTeam}
+            </div>
+            <div style={{ 
+              fontSize: TYPOGRAPHY.caption.size,
+              fontWeight: TYPOGRAPHY.body.weight,
+              color: 'rgba(255,255,255,0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ color: gradeColors.color }}>●</span> {formatGameTime(odds?.gameTime)}
+            </div>
           </div>
         </div>
         
-        {/* Grade Badge - NHL Style */}
+        {/* Grade Badge - floating with glow */}
         <div style={{
-          background: gradeColors.bg,
+          background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}20 100%)`,
           color: gradeColors.color,
           border: `2px solid ${gradeColors.borderColor}`,
-          padding: isMobile ? '0.5rem 0.875rem' : '0.625rem 1rem',
-          borderRadius: '10px',
-          fontWeight: TYPOGRAPHY.hero.weight,
-          fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.375rem',
+          padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem',
+          borderRadius: '12px',
+          fontWeight: '900',
+          fontSize: isMobile ? '1.125rem' : '1.5rem',
           letterSpacing: '-0.02em',
-          boxShadow: `0 4px 16px ${gradeColors.borderColor}30`,
-          minWidth: isMobile ? '56px' : '64px',
-          textAlign: 'center'
+          boxShadow: `0 4px 20px ${gradeColors.borderColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
+          minWidth: isMobile ? '60px' : '72px',
+          textAlign: 'center',
+          textShadow: `0 0 10px ${gradeColors.borderColor}60`
         }}>
           {pred.grade}
         </div>
@@ -394,190 +481,197 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
           💰 BEST VALUE: {pred.bestTeam} ML
         </div>
         
-        {/* Stats Grid - NHL Standard */}
+        {/* Ultra-Premium Stats Grid with micro-animations */}
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: isMobile ? '0.75rem' : '1rem',
-          marginBottom: '1rem'
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: isMobile ? '1rem' : '1.5rem',
+          marginBottom: '1.5rem',
+          position: 'relative',
+          zIndex: 2
         }}>
-          {/* Model Win Prob */}
-          <div>
-            <div style={{ 
-              fontSize: TYPOGRAPHY.label.size,
-              color: 'var(--color-text-muted)',
-              textTransform: TYPOGRAPHY.label.textTransform,
-              letterSpacing: TYPOGRAPHY.label.letterSpacing,
-              fontWeight: TYPOGRAPHY.label.weight,
-              marginBottom: '0.25rem'
-            }}>
-              Model
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? TYPOGRAPHY.heading.size : TYPOGRAPHY.hero.size,
-              fontWeight: TYPOGRAPHY.hero.weight,
-              color: gradeColors.color,
-              lineHeight: TYPOGRAPHY.hero.lineHeight
-            }}>
-              {((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}%
-            </div>
-          </div>
-          
-          {/* Market Implied Probability */}
-          <div>
-            <div style={{ 
-              fontSize: TYPOGRAPHY.label.size,
-              color: 'var(--color-text-muted)',
-              textTransform: TYPOGRAPHY.label.textTransform,
-              letterSpacing: TYPOGRAPHY.label.letterSpacing,
-              fontWeight: TYPOGRAPHY.label.weight,
-              marginBottom: '0.25rem'
-            }}>
-              Market
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? TYPOGRAPHY.heading.size : TYPOGRAPHY.hero.size,
-              fontWeight: TYPOGRAPHY.hero.weight,
-              color: 'var(--color-text-secondary)',
-              lineHeight: TYPOGRAPHY.hero.lineHeight
-            }}>
-              {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}%
-            </div>
-            <div style={{ 
-              fontSize: TYPOGRAPHY.caption.size,
-              color: 'var(--color-text-muted)',
-              marginTop: '0.25rem'
-            }}>
-              {pred.bestOdds > 0 ? '+' : ''}{pred.bestOdds}
-            </div>
-          </div>
-          
-          {/* Our Edge */}
-          <div>
-            <div style={{ 
-              fontSize: TYPOGRAPHY.label.size,
-              color: 'var(--color-text-muted)',
-              textTransform: TYPOGRAPHY.label.textTransform,
-              letterSpacing: TYPOGRAPHY.label.letterSpacing,
-              fontWeight: TYPOGRAPHY.label.weight,
-              marginBottom: '0.25rem'
-            }}>
-              Our Edge
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? TYPOGRAPHY.heading.size : TYPOGRAPHY.hero.size,
-              fontWeight: TYPOGRAPHY.hero.weight,
-              color: '#10B981',
-              lineHeight: TYPOGRAPHY.hero.lineHeight
-            }}>
-              +{pred.bestEV.toFixed(1)}%
-            </div>
-          </div>
-          
-          {/* Quality */}
-          {!isMobile && (
-            <div>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.label.size,
-                color: 'var(--color-text-muted)',
-                textTransform: TYPOGRAPHY.label.textTransform,
-                letterSpacing: TYPOGRAPHY.label.letterSpacing,
-                fontWeight: TYPOGRAPHY.label.weight,
-                marginBottom: '0.25rem'
-              }}>
-                Quality
+          {[
+            { 
+              label: 'MODEL', 
+              value: `${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}%`, 
+              color: gradeColors.color, 
+              primary: true 
+            },
+            { 
+              label: 'MARKET', 
+              value: `${((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}%`, 
+              subValue: `${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds}`, 
+              color: 'rgba(255,255,255,0.7)' 
+            },
+            { 
+              label: 'OUR EDGE', 
+              value: `+${pred.bestEV.toFixed(1)}%`, 
+              color: '#10B981', 
+              primary: true 
+            },
+            { 
+              label: 'QUALITY', 
+              value: gradeColors.tier, 
+              color: gradeColors.color, 
+              hideOnMobile: true 
+            }
+          ].map((stat, i) => 
+            !isMobile || !stat.hideOnMobile ? (
+              <div key={i} style={{
+                background: stat.primary ? 'rgba(255,255,255,0.05)' : 'transparent',
+                borderRadius: '10px',
+                padding: stat.primary ? '1rem' : '0.5rem',
+                border: stat.primary ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                transition: 'all 0.3s ease',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => {
+                if (stat.primary) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (stat.primary) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+              >
+                <div style={{ 
+                  fontSize: TYPOGRAPHY.label.size,
+                  color: 'rgba(255,255,255,0.5)',
+                  textTransform: TYPOGRAPHY.label.textTransform,
+                  letterSpacing: '0.08em',
+                  fontWeight: '700',
+                  marginBottom: '0.5rem'
+                }}>
+                  {stat.label}
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '1.25rem' : TYPOGRAPHY.hero.size,
+                  fontWeight: '900',
+                  color: stat.color,
+                  lineHeight: 1.1,
+                  letterSpacing: '-0.02em'
+                }}>
+                  {stat.value}
+                </div>
+                {stat.subValue && (
+                  <div style={{ 
+                    fontSize: TYPOGRAPHY.caption.size,
+                    color: 'rgba(255,255,255,0.4)',
+                    marginTop: '0.25rem',
+                    fontWeight: '600'
+                  }}>
+                    {stat.subValue}
+                  </div>
+                )}
               </div>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.heading.size,
-                fontWeight: TYPOGRAPHY.heading.weight,
-                color: gradeColors.color,
-                lineHeight: TYPOGRAPHY.heading.lineHeight
-              }}>
-                {gradeColors.tier}
-              </div>
-            </div>
+            ) : null
           )}
         </div>
         
-        {/* Score Prediction - Cleaner */}
+        {/* Premium Score Prediction with Glass Morphism */}
         {pred.ensembleTotal && (
           <div style={{
-            background: 'rgba(0,0,0,0.25)',
-            borderRadius: '10px',
-            padding: isMobile ? '0.875rem' : '1rem',
+            background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '14px',
+            padding: isMobile ? '1.25rem' : '1.5rem',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr auto 1fr' : '1fr auto 1fr auto auto',
-            gap: isMobile ? '0.75rem' : '1rem',
-            alignItems: 'center'
+            gridTemplateColumns: isMobile ? '1fr auto 1fr' : '1fr auto 1fr auto 1fr',
+            gap: isMobile ? '1rem' : '1.5rem',
+            alignItems: 'center',
+            position: 'relative',
+            zIndex: 2
           }}>
+            {/* Away Team */}
             <div style={{ textAlign: 'center' }}>
               <div style={{ 
                 fontSize: TYPOGRAPHY.caption.size,
-                color: 'var(--color-text-muted)',
-                fontWeight: TYPOGRAPHY.caption.weight,
-                marginBottom: '0.375rem'
+                color: 'rgba(255,255,255,0.5)',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '0.625rem'
               }}>
                 {game.awayTeam}
               </div>
               <div style={{ 
-                fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.375rem',
-                fontWeight: TYPOGRAPHY.hero.weight,
-                color: 'var(--color-text-primary)',
-                lineHeight: TYPOGRAPHY.hero.lineHeight
+                fontSize: isMobile ? '1.75rem' : '2rem',
+                fontWeight: '900',
+                color: 'white',
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
+                textShadow: '0 2px 8px rgba(0,0,0,0.3)'
               }}>
                 {pred.ensembleAwayScore}
               </div>
             </div>
             
+            {/* @ Symbol */}
             <div style={{ 
-              color: 'var(--color-text-muted)', 
-              fontSize: TYPOGRAPHY.heading.size
+              color: 'rgba(255,255,255,0.3)', 
+              fontSize: isMobile ? '1.25rem' : '1.5rem',
+              fontWeight: '300'
             }}>
               @
             </div>
             
+            {/* Home Team */}
             <div style={{ textAlign: 'center' }}>
               <div style={{ 
                 fontSize: TYPOGRAPHY.caption.size,
-                color: 'var(--color-text-muted)',
-                fontWeight: TYPOGRAPHY.caption.weight,
-                marginBottom: '0.375rem'
+                color: 'rgba(255,255,255,0.5)',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '0.625rem'
               }}>
                 {game.homeTeam}
               </div>
               <div style={{ 
-                fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.375rem',
-                fontWeight: TYPOGRAPHY.hero.weight,
-                color: 'var(--color-text-primary)',
-                lineHeight: TYPOGRAPHY.hero.lineHeight
+                fontSize: isMobile ? '1.75rem' : '2rem',
+                fontWeight: '900',
+                color: 'white',
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
+                textShadow: '0 2px 8px rgba(0,0,0,0.3)'
               }}>
                 {pred.ensembleHomeScore}
               </div>
             </div>
             
+            {/* Total (hide on mobile) */}
             {!isMobile && (
               <>
                 <div style={{ 
-                  width: '1px', 
-                  height: '40px',
-                  background: 'rgba(255,255,255,0.15)'
+                  width: '2px', 
+                  height: '60px',
+                  background: 'linear-gradient(180deg, transparent 0%, rgba(255,140,66,0.4) 50%, transparent 100%)'
                 }} />
                 
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ 
                     fontSize: TYPOGRAPHY.caption.size,
-                    color: '#FF8C42',
-                    fontWeight: TYPOGRAPHY.caption.weight,
-                    marginBottom: '0.375rem',
-                    textTransform: TYPOGRAPHY.label.textTransform
+                    color: 'rgba(255,140,66,0.7)',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.625rem'
                   }}>
-                    Total
+                    TOTAL
                   </div>
                   <div style={{ 
-                    fontSize: '1.375rem',
-                    fontWeight: TYPOGRAPHY.hero.weight,
+                    fontSize: '2rem',
+                    fontWeight: '900',
                     color: '#FF8C42',
-                    lineHeight: TYPOGRAPHY.hero.lineHeight
+                    lineHeight: 1,
+                    letterSpacing: '-0.03em',
+                    textShadow: '0 2px 8px rgba(255,140,66,0.3)'
                   }}>
                     {pred.ensembleTotal}
                   </div>
