@@ -138,12 +138,14 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       // Haslametrics data (40% weight in ensemble)
       haslametrics: haslaGame ? {
         gameTime: haslaGame.gameTime,
-        awayRating: haslaGame.awayRating,
-        homeRating: haslaGame.homeRating,
+        awayRating: haslaGame.awayRating,  // This IS the predicted score
+        homeRating: haslaGame.homeRating,  // This IS the predicted score
         awayRank: haslaGame.awayRank,
         homeRank: haslaGame.homeRank,
         awayOffEff: awayTeamData?.offensiveEff || null,
-        homeOffEff: homeTeamData?.offensiveEff || null
+        homeOffEff: homeTeamData?.offensiveEff || null,
+        awayScore: haslaGame.awayRating,  // Alias rating as score
+        homeScore: haslaGame.homeRating   // Alias rating as score
       } : null,
       
       // D-Ratings data (60% weight - PRIMARY)

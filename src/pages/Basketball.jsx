@@ -68,14 +68,28 @@ const Basketball = () => {
         }
       });
       
-      // Sort: matched D-Ratings first, then by away team name
+      // Sort by game time (chronological)
       const sortedGames = gamesWithPredictions.sort((a, b) => {
-        // Show matched D-Ratings games first
-        if (a.hasDRatings && !b.hasDRatings) return -1;
-        if (!a.hasDRatings && b.hasDRatings) return 1;
+        const timeA = a.odds?.gameTime || '';
+        const timeB = b.odds?.gameTime || '';
         
-        // Then sort alphabetically by away team
-        return a.awayTeam.localeCompare(b.awayTeam);
+        // Parse times (format: "11:30pm ET" or "TBD")
+        if (timeA === 'TBD') return 1;
+        if (timeB === 'TBD') return -1;
+        if (!timeA || !timeB) return 0;
+        
+        const parseTime = (timeStr) => {
+          const match = timeStr.match(/(\d+):(\d+)(am|pm)/i);
+          if (!match) return 0;
+          let [_, hours, mins, period] = match;
+          hours = parseInt(hours);
+          mins = parseInt(mins);
+          if (period.toLowerCase() === 'pm' && hours !== 12) hours += 12;
+          if (period.toLowerCase() === 'am' && hours === 12) hours = 0;
+          return hours * 60 + mins;
+        };
+        
+        return parseTime(timeA) - parseTime(timeB);
       });
       
       setRecommendations(sortedGames);
@@ -343,6 +357,66 @@ const BasketballGameCard = ({ game, rank }) => {
           </div>
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
             This game needs manual CSV mapping
+          </div>
+        </div>
+      )}
+
+      {/* ENSEMBLE PREDICTION */}
+      {pred?.ensembleTotal && (
+        <div style={{
+          background: 'rgba(255,140,66,0.15)',
+          border: '2px solid rgba(255,140,66,0.4)',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '15px'
+        }}>
+          <div style={{ color: '#ff8c42', fontSize: '14px', fontWeight: '700', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🎯</span>
+            <span>ENSEMBLE MODEL (60% D-Ratings + 40% Haslametrics)</span>
+          </div>
+          
+          {/* Score Predictions Side by Side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+            <div style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              padding: '12px', 
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginBottom: '5px' }}>
+                {game.awayTeam}
+              </div>
+              <div style={{ color: 'white', fontSize: '24px', fontWeight: '800' }}>
+                {pred.ensembleAwayScore}
+              </div>
+            </div>
+            <div style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              padding: '12px', 
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginBottom: '5px' }}>
+                {game.homeTeam}
+              </div>
+              <div style={{ color: 'white', fontSize: '24px', fontWeight: '800' }}>
+                {pred.ensembleHomeScore}
+              </div>
+            </div>
+          </div>
+
+          {/* Projected Total */}
+          <div style={{ 
+            textAlign: 'center', 
+            paddingTop: '15px', 
+            borderTop: '1px solid rgba(255,255,255,0.1)' 
+          }}>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginBottom: '5px' }}>
+              Projected Total
+            </div>
+            <div style={{ color: '#ff8c42', fontSize: '28px', fontWeight: '800' }}>
+              {pred.ensembleTotal}
+            </div>
           </div>
         </div>
       )}
