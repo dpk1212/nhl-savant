@@ -426,22 +426,23 @@ export function normalizeTeamName(teamName) {
     .replace(/\([^)]*\)/g, '') // Remove parentheses and contents like "(5-0)"
     .trim();
   
-  // Direct lookup
+  // Direct exact lookup (PRIORITY 1)
   if (TEAM_MAP[cleaned]) {
     return TEAM_MAP[cleaned].normalized;
   }
   
-  // Try partial matches (e.g., "Kansas" matches "Kansas Jayhawks")
-  for (const [key, value] of Object.entries(TEAM_MAP)) {
-    if (key.includes(cleaned) || cleaned.includes(key)) {
-      return value.normalized;
-    }
-  }
+  // REMOVED DANGEROUS SUBSTRING MATCHING - was causing:
+  //   "Eastern Michigan" → "Michigan" (WRONG!)
+  //   "Texas Rio Grande Valley" → "Texas" (WRONG!)
+  //   "Northern Kentucky" → "Kentucky" (WRONG!)
   
-  // If no match found, return titlecased version
+  // If no exact match found, return titlecased version AS-IS
+  // This preserves multi-word names like "Eastern Michigan"
   return teamName
     .trim()
     .replace(/\s+/g, ' ')
+    .replace(/^#\d+/, '') // Remove rank prefix
+    .trim()
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
