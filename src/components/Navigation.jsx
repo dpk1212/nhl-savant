@@ -702,6 +702,47 @@ const Navigation = () => {
             );
           })}
           
+          {/* CBB Picks Button */}
+          <Link
+            to="/basketball"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              padding: '0.625rem 0.75rem',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              color: location.pathname === '/basketball' ? '#FF8C42' : 'rgba(255, 140, 66, 0.9)',
+              background: location.pathname === '/basketball' 
+                ? 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(255, 140, 66, 0.08) 100%)'
+                : 'transparent',
+              border: location.pathname === '/basketball' 
+                ? '1px solid rgba(255, 140, 66, 0.3)'
+                : '1px solid rgba(255, 140, 66, 0.2)',
+              boxShadow: location.pathname === '/basketball' 
+                ? '0 2px 8px rgba(255, 140, 66, 0.2)'
+                : 'none',
+              marginBottom: '0.25rem',
+              transition: 'all 0.2s ease',
+              animation: `slideIn 0.3s ease-out ${navLinks.length * 0.03}s both`
+            }}
+          >
+            🏀 CBB Picks
+            {location.pathname === '/basketball' && (
+              <div style={{
+                marginLeft: 'auto',
+                width: '5px',
+                height: '5px',
+                borderRadius: '50%',
+                background: '#FF8C42',
+                boxShadow: '0 0 6px rgba(255, 140, 66, 0.6)'
+              }} />
+            )}
+          </Link>
+          
           {/* User Actions (if logged in) */}
           {user && (
             <div style={{
