@@ -5,6 +5,7 @@ import { parseHaslametrics } from '../utils/haslametricsParser';
 import { parseDRatings } from '../utils/dratingsParser';
 import { matchGamesWithCSV, filterByQuality } from '../utils/gameMatchingCSV';
 import { BasketballEdgeCalculator } from '../utils/basketballEdgeCalculator';
+import { useBasketballResultsGrader } from '../hooks/useBasketballResultsGrader';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -19,6 +20,9 @@ const Basketball = () => {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Auto-grade bets when results are available (CLIENT-SIDE!)
+  const { grading, gradedCount } = useBasketballResultsGrader();
 
   useEffect(() => {
     loadBasketballData();
