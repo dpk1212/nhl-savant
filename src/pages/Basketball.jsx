@@ -38,8 +38,8 @@ const Basketball = () => {
       // Match games using CSV mappings (OddsTrader as base)
       const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
       
-      // Show ALL games - don't filter by quality for verification
-      // User needs to see D-Ratings data for all 55 games
+      // CRITICAL: Show ALL 55 OddsTrader games - NO FILTERING!
+      // User needs to verify D-Ratings matching for every game
       const allGames = matchedGames.map(game => ({
         ...game,
         // Add verification fields
@@ -49,25 +49,42 @@ const Basketball = () => {
         verificationStatus: game.dratings ? 'MATCHED' : 'MISSING'
       }));
       
-      // Calculate predictions for games with D-Ratings
+      // Calculate predictions for ALL games (even if they fail, we still show the game)
       const calculator = new BasketballEdgeCalculator();
-      const gamesWithDRatings = allGames.filter(g => g.dratings);
-      const gamesWithPredictions = calculator.processGames(gamesWithDRatings);
+      const gamesWithPredictions = allGames.map(game => {
+        // Try to calculate prediction, but keep game even if it fails
+        try {
+          const prediction = calculator.calculateEnsemblePrediction(game);
+          return { ...game, prediction };
+        } catch (err) {
+          // Keep the game, just mark prediction as failed
+          return { 
+            ...game, 
+            prediction: { 
+              error: 'Prediction failed',
+              grade: 'N/A' 
+            } 
+          };
+        }
+      });
       
-      // Sort by D-Ratings confidence (highest away win prob first)
+      // Sort: matched D-Ratings first, then by away team name
       const sortedGames = gamesWithPredictions.sort((a, b) => {
-        const aProb = Math.max(a.dratings?.awayWinProb || 0, a.dratings?.homeWinProb || 0);
-        const bProb = Math.max(b.dratings?.awayWinProb || 0, b.dratings?.homeWinProb || 0);
-        return bProb - aProb;
+        // Show matched D-Ratings games first
+        if (a.hasDRatings && !b.hasDRatings) return -1;
+        if (!a.hasDRatings && b.hasDRatings) return 1;
+        
+        // Then sort alphabetically by away team
+        return a.awayTeam.localeCompare(b.awayTeam);
       });
       
       setRecommendations(sortedGames);
       setStats({
         totalGames: oddsGames.length,
-        matchedGames: matchedGames.length,
-        gamesWithDRatings: gamesWithDRatings.length,
-        gamesWithHasla: allGames.filter(g => g.haslametrics).length,
-        fullMatches: allGames.filter(g => g.dratings && g.haslametrics).length
+        displayedGames: sortedGames.length,
+        gamesWithDRatings: allGames.filter(g => g.hasDRatings).length,
+        gamesWithHasla: allGames.filter(g => g.hasHaslametrics).length,
+        missingDRatings: allGames.filter(g => !g.hasDRatings).length
       });
       
       setLoading(false);
@@ -142,19 +159,19 @@ const Basketball = () => {
           }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: '#ff8c42', fontSize: '24px', fontWeight: '700' }}>{stats.totalGames}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Games Today</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>OddsTrader Games</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#4ecdc4', fontSize: '24px', fontWeight: '700' }}>{stats.displayedGames}</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Displayed</div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: '#00ff88', fontSize: '24px', fontWeight: '700' }}>{stats.gamesWithDRatings}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>With D-Ratings</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>✅ D-Ratings Matched</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#95e1d3', fontSize: '24px', fontWeight: '700' }}>{stats.gamesWithHasla}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>With Haslametrics</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#4ecdc4', fontSize: '24px', fontWeight: '700' }}>{stats.fullMatches}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Full Matches</div>
+              <div style={{ color: '#ff6464', fontSize: '24px', fontWeight: '700' }}>{stats.missingDRatings}</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>❌ D-Ratings Missing</div>
             </div>
           </div>
         )}
