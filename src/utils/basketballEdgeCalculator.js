@@ -118,6 +118,9 @@ export class BasketballEdgeCalculator {
     // Assign grade
     const grade = this.getGrade(bestEV);
     
+    // Cap EV display at 25% for realistic presentation (extreme outliers skew perception)
+    const cappedBestEV = Math.min(bestEV, 25);
+    
     return {
       // Ensemble probabilities
       ensembleAwayProb: Math.round(ensembleAwayProb * 1000) / 1000,
@@ -143,7 +146,8 @@ export class BasketballEdgeCalculator {
       // Best bet
       bestBet: bestBet,
       bestTeam: bestBet === 'away' ? matchedGame.awayTeam : matchedGame.homeTeam,
-      bestEV: Math.round(bestEV * 10) / 10,
+      bestEV: Math.round(cappedBestEV * 10) / 10,
+      rawEV: Math.round(bestEV * 10) / 10, // Keep uncapped for internal tracking
       bestEdge: Math.round(bestEdge * 1000) / 1000,
       bestOdds: bestBet === 'away' ? odds.awayOdds : odds.homeOdds,
       
