@@ -131,7 +131,7 @@ export function findHaslametricsGame(games, awayHaslaName, homeHaslaName) {
   if (!awayHaslaName || !homeHaslaName) return null;
   
   return games.find(game =>
-    game.awayTeam === awayHaslaName && game.homeTeam === homeHaslaName
+    game.awayTeamRaw === awayHaslaName && game.homeTeamRaw === homeHaslaName
   );
 }
 
