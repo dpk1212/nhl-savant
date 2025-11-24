@@ -248,272 +248,288 @@ const BasketballGameCard = ({ game, rank }) => {
   const dratings = game.dratings;
   const hasla = game.haslametrics;
   const odds = game.odds;
+  const [showDetails, setShowDetails] = useState(false);
   
   // For verification: show ALL games, even without predictions
   const hasPrediction = pred && !pred.error;
+  
+  // Get grade color
+  const getGradeColor = (grade) => {
+    if (!grade) return { bg: 'rgba(128,128,128,0.2)', text: '#808080', border: 'rgba(128,128,128,0.3)' };
+    if (grade === 'A+') return { bg: 'rgba(0,255,136,0.2)', text: '#00ff88', border: 'rgba(0,255,136,0.4)' };
+    if (grade === 'A') return { bg: 'rgba(16,185,129,0.2)', text: '#10b981', border: 'rgba(16,185,129,0.4)' };
+    if (grade === 'B+') return { bg: 'rgba(251,191,36,0.2)', text: '#fbbf24', border: 'rgba(251,191,36,0.4)' };
+    if (grade === 'B') return { bg: 'rgba(249,115,22,0.2)', text: '#f97316', border: 'rgba(249,115,22,0.4)' };
+    return { bg: 'rgba(128,128,128,0.2)', text: '#808080', border: 'rgba(128,128,128,0.3)' };
+  };
+  
+  const gradeColors = getGradeColor(pred?.grade);
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(255,140,66,0.1) 0%, rgba(78,205,196,0.1) 100%)',
-      borderRadius: '15px',
-      padding: '25px',
-      border: dratings ? '2px solid rgba(78,205,196,0.3)' : '2px solid rgba(255,100,100,0.3)',
-      transition: 'all 0.3s ease'
+      background: 'var(--color-card-bg, rgba(30, 41, 59, 0.4))',
+      borderRadius: '12px',
+      padding: '20px',
+      border: '1px solid rgba(255,255,255,0.1)',
+      transition: 'all 0.2s ease'
     }}>
-      {/* Header with Game Number */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', fontWeight: '600' }}>
-          GAME #{rank}
-        </div>
-        <div style={{
-          background: dratings ? 'rgba(0,255,136,0.2)' : 'rgba(255,100,100,0.2)',
-          color: dratings ? '#00ff88' : '#ff6464',
-          padding: '6px 12px',
-          borderRadius: '6px',
-          fontSize: '12px',
-          fontWeight: '700'
-        }}>
-          {dratings ? '✅ D-RATINGS MATCHED' : '❌ D-RATINGS MISSING'}
-        </div>
-      </div>
-
-      {/* Matchup */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ color: 'white', fontSize: '22px', fontWeight: '700', marginBottom: '5px' }}>
-          {game.awayTeam} @ {game.homeTeam}
-        </div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>
-          {odds?.gameTime || 'TBD'}
-        </div>
-      </div>
-
-      {/* D-RATINGS DATA - PROMINENT DISPLAY */}
-      {dratings ? (
-        <div style={{
-          background: 'rgba(0,255,136,0.1)',
-          border: '2px solid rgba(0,255,136,0.3)',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '15px'
-        }}>
-          <div style={{ color: '#00ff88', fontSize: '14px', fontWeight: '700', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🎯</span>
-            <span>D-RATINGS PREDICTION</span>
-          </div>
-          
-          {/* Away Team */}
-          <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>
-                {game.awayTeam} (Away)
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#00ff88', fontSize: '24px', fontWeight: '800' }}>
-                  {(dratings.awayWinProb * 100).toFixed(1)}%
-                </div>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                  Score: {dratings.awayScore}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Home Team */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>
-                {game.homeTeam} (Home)
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#00ff88', fontSize: '24px', fontWeight: '800' }}>
-                  {(dratings.homeWinProb * 100).toFixed(1)}%
-                </div>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                  Score: {dratings.homeScore}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Predicted Total */}
-          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>Predicted Total: </span>
-            <span style={{ color: '#ff8c42', fontSize: '16px', fontWeight: '700' }}>
-              {(dratings.awayScore + dratings.homeScore).toFixed(1)}
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div style={{
-          background: 'rgba(255,100,100,0.1)',
-          border: '2px solid rgba(255,100,100,0.3)',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '15px',
-          textAlign: 'center'
-        }}>
-          <div style={{ color: '#ff6464', fontSize: '16px', fontWeight: '700', marginBottom: '8px' }}>
-            ❌ D-Ratings Data Not Found
+      {/* HEADER - Compact teams, time, grade */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: 'white', fontSize: '18px', fontWeight: '700', marginBottom: '4px' }}>
+            {game.awayTeam} @ {game.homeTeam}
           </div>
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
-            This game needs manual CSV mapping
+            🕐 {odds?.gameTime || 'TBD'}
           </div>
         </div>
-      )}
+        
+        {/* Grade Badge */}
+        {pred?.grade && (
+          <div style={{
+            background: gradeColors.bg,
+            color: gradeColors.text,
+            border: `1px solid ${gradeColors.border}`,
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontWeight: '800',
+            fontSize: '18px',
+            minWidth: '56px',
+            textAlign: 'center'
+          }}>
+            {pred.grade}
+          </div>
+        )}
+      </div>
 
-      {/* ENSEMBLE PREDICTION */}
-      {pred?.ensembleTotal && (
+      {/* THE PICK - Most Important Info First (NHL Pattern) */}
+      {hasPrediction && (
         <div style={{
-          background: 'rgba(255,140,66,0.15)',
-          border: '2px solid rgba(255,140,66,0.4)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
           borderRadius: '12px',
           padding: '20px',
-          marginBottom: '15px'
+          marginBottom: '16px'
         }}>
-          <div style={{ color: '#ff8c42', fontSize: '14px', fontWeight: '700', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🎯</span>
-            <span>ENSEMBLE MODEL (60% D-Ratings + 40% Haslametrics)</span>
+          <div style={{
+            fontSize: '11px',
+            color: 'rgba(255,255,255,0.6)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            fontWeight: '700',
+            marginBottom: '12px'
+          }}>
+            💰 RECOMMENDED BET
           </div>
           
-          {/* Score Predictions Side by Side */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <div style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              padding: '12px', 
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginBottom: '5px' }}>
-                {game.awayTeam}
-              </div>
-              <div style={{ color: 'white', fontSize: '24px', fontWeight: '800' }}>
-                {pred.ensembleAwayScore}
-              </div>
-            </div>
-            <div style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              padding: '12px', 
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginBottom: '5px' }}>
-                {game.homeTeam}
-              </div>
-              <div style={{ color: 'white', fontSize: '24px', fontWeight: '800' }}>
-                {pred.ensembleHomeScore}
-              </div>
-            </div>
-          </div>
-
-          {/* Projected Total */}
-          <div style={{ 
-            textAlign: 'center', 
-            paddingTop: '15px', 
-            borderTop: '1px solid rgba(255,255,255,0.1)' 
-          }}>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginBottom: '5px' }}>
-              Projected Total
-            </div>
-            <div style={{ color: '#ff8c42', fontSize: '28px', fontWeight: '800' }}>
-              {pred.ensembleTotal}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* HASLAMETRICS DATA */}
-      {hasla && (
-        <div style={{
-          background: 'rgba(149,225,211,0.1)',
-          border: '1px solid rgba(149,225,211,0.2)',
-          borderRadius: '10px',
-          padding: '15px',
-          marginBottom: '15px'
-        }}>
-          <div style={{ color: '#95e1d3', fontSize: '13px', fontWeight: '700', marginBottom: '10px' }}>
-            📊 HASLAMETRICS
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+          {/* Main Recommendation */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            {/* Market Type */}
             <div>
-              <div style={{ color: 'rgba(255,255,255,0.6)' }}>{game.awayTeam}</div>
-              <div style={{ color: '#95e1d3', fontWeight: '600' }}>Rating: {hasla.awayRating || 'N/A'}</div>
-            </div>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.6)' }}>{game.homeTeam}</div>
-              <div style={{ color: '#95e1d3', fontWeight: '600' }}>Rating: {hasla.homeRating || 'N/A'}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ODDS DATA */}
-      {odds && (
-        <div style={{
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: '10px',
-          padding: '15px'
-        }}>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '700', marginBottom: '10px' }}>
-            💰 MARKET ODDS
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '3px' }}>{game.awayTeam}</div>
-              <div style={{ color: '#ff8c42', fontWeight: '700', fontSize: '16px' }}>
-                {odds.awayOdds > 0 ? '+' : ''}{odds.awayOdds}
+              <div style={{
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.5)',
+                marginBottom: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Market
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
-                ({(odds.awayProb * 100).toFixed(1)}%)
+              <div style={{ color: 'white', fontSize: '15px', fontWeight: '700' }}>
+                Moneyline
               </div>
             </div>
+            
+            {/* The Pick */}
             <div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '3px' }}>{game.homeTeam}</div>
-              <div style={{ color: '#ff8c42', fontWeight: '700', fontSize: '16px' }}>
-                {odds.homeOdds > 0 ? '+' : ''}{odds.homeOdds}
+              <div style={{
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.5)',
+                marginBottom: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Pick
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
-                ({(odds.homeProb * 100).toFixed(1)}%)
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ENSEMBLE PREDICTION (if available) */}
-      {hasPrediction && pred.grade && (
-        <div style={{
-          marginTop: '15px',
-          background: 'rgba(255,140,66,0.15)',
-          border: '1px solid rgba(255,140,66,0.3)',
-          borderRadius: '10px',
-          padding: '15px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}>
-                ENSEMBLE PICK
-              </div>
-              <div style={{ color: 'white', fontSize: '16px', fontWeight: '700' }}>
+              <div style={{ color: gradeColors.text, fontSize: '16px', fontWeight: '800' }}>
                 {pred.bestTeam}
               </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{
-                background: '#00ff88',
-                color: '#1a1a2e',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontWeight: '800',
-                fontSize: '16px',
-                marginBottom: '4px'
-              }}>
-                {pred.grade}
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginTop: '2px' }}>
+                {pred.bestOdds > 0 ? '+' : ''}{pred.bestOdds}
               </div>
-              <div style={{ color: '#ff8c42', fontSize: '14px', fontWeight: '700' }}>
-                +{pred.bestEV.toFixed(1)}% EV
+            </div>
+            
+            {/* Expected Value */}
+            <div>
+              <div style={{
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.5)',
+                marginBottom: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Expected Value
+              </div>
+              <div style={{ color: '#10b981', fontSize: '18px', fontWeight: '800' }}>
+                +{pred.bestEV.toFixed(1)}%
               </div>
             </div>
           </div>
+          
+          {/* Quick Stats - Ensemble Prediction */}
+          {pred.ensembleTotal && (
+            <div style={{
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: '8px',
+              padding: '12px',
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>
+                  {game.awayTeam}
+                </div>
+                <div style={{ color: 'white', fontSize: '20px', fontWeight: '800' }}>
+                  {pred.ensembleAwayScore}
+                </div>
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '20px', fontWeight: '300' }}>
+                @
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>
+                  {game.homeTeam}
+                </div>
+                <div style={{ color: 'white', fontSize: '20px', fontWeight: '800' }}>
+                  {pred.ensembleHomeScore}
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '4px' }}>
+                  Total
+                </div>
+                <div style={{ color: '#ff8c42', fontSize: '20px', fontWeight: '800' }}>
+                  {pred.ensembleTotal}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Collapsible Model Breakdown */}
+      <button
+        onClick={() => setShowDetails(!showDetails)}
+        style={{
+          width: '100%',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '8px',
+          padding: '12px',
+          color: 'rgba(255,255,255,0.7)',
+          fontSize: '13px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+      >
+        <span>{showDetails ? '▼' : '▶'} Model Breakdown</span>
+        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+          60% D-Ratings + 40% Haslametrics
+        </span>
+      </button>
+      
+      {showDetails && (
+        <div style={{ marginTop: '12px', display: 'grid', gap: '12px' }}>
+          {/* D-Ratings Detail */}
+          {dratings && (
+            <div style={{
+              background: 'rgba(0,255,136,0.05)',
+              border: '1px solid rgba(0,255,136,0.2)',
+              borderRadius: '8px',
+              padding: '16px'
+            }}>
+              <div style={{ color: '#00ff88', fontSize: '12px', fontWeight: '700', marginBottom: '10px' }}>
+                🎯 D-RATINGS (60% weight)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)' }}>{game.awayTeam}</div>
+                  <div style={{ color: 'white', fontWeight: '700', marginTop: '4px' }}>
+                    {(dratings.awayWinProb * 100).toFixed(1)}% • {dratings.awayScore} pts
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)' }}>{game.homeTeam}</div>
+                  <div style={{ color: 'white', fontWeight: '700', marginTop: '4px' }}>
+                    {(dratings.homeWinProb * 100).toFixed(1)}% • {dratings.homeScore} pts
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Haslametrics Detail */}
+          {hasla && (
+            <div style={{
+              background: 'rgba(149,225,211,0.05)',
+              border: '1px solid rgba(149,225,211,0.2)',
+              borderRadius: '8px',
+              padding: '16px'
+            }}>
+              <div style={{ color: '#95e1d3', fontSize: '12px', fontWeight: '700', marginBottom: '10px' }}>
+                📊 HASLAMETRICS (40% weight)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)' }}>{game.awayTeam}</div>
+                  <div style={{ color: 'white', fontWeight: '700', marginTop: '4px' }}>
+                    {hasla.awayScore} pts
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)' }}>{game.homeTeam}</div>
+                  <div style={{ color: 'white', fontWeight: '700', marginTop: '4px' }}>
+                    {hasla.homeScore} pts
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Market Odds */}
+          {odds && (
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              padding: '16px'
+            }}>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: '700', marginBottom: '10px' }}>
+                💰 MARKET ODDS
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)' }}>{game.awayTeam}</div>
+                  <div style={{ color: '#ff8c42', fontWeight: '700', marginTop: '4px' }}>
+                    {odds.awayOdds > 0 ? '+' : ''}{odds.awayOdds} ({(odds.awayProb * 100).toFixed(1)}%)
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)' }}>{game.homeTeam}</div>
+                  <div style={{ color: '#ff8c42', fontWeight: '700', marginTop: '4px' }}>
+                    {odds.homeOdds > 0 ? '+' : ''}{odds.homeOdds} ({(odds.homeProb * 100).toFixed(1)}%)
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
