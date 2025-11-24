@@ -30,17 +30,58 @@ export function matchGames(oddsGames, haslametricsData, dratePredictions) {
     const awayNorm = haslaGame.awayTeam;
     const homeNorm = haslaGame.homeTeam;
     
-    // Find matching D-Ratings prediction
-    const dratePred = dratePredictions.find(pred =>
+    // Find matching D-Ratings prediction (check both home/away and reversed)
+    let dratePred = dratePredictions.find(pred =>
       isSameTeam(pred.awayTeam, awayNorm) && 
       isSameTeam(pred.homeTeam, homeNorm)
     );
     
-    // Find matching OddsTrader odds
-    const oddsGame = oddsGames.find(odds =>
+    // If not found, try reversed matchup
+    if (!dratePred) {
+      dratePred = dratePredictions.find(pred =>
+        isSameTeam(pred.awayTeam, homeNorm) && 
+        isSameTeam(pred.homeTeam, awayNorm)
+      );
+      if (dratePred) {
+        // Flip the teams to match our base
+        dratePred = {
+          ...dratePred,
+          awayTeam: awayNorm,
+          homeTeam: homeNorm,
+          awayWinProb: dratePred.homeWinProb,
+          homeWinProb: dratePred.awayWinProb,
+          awayScore: dratePred.homeScore,
+          homeScore: dratePred.awayScore,
+          matchup: `${awayNorm} @ ${homeNorm}`,
+          _reversed: true
+        };
+      }
+    }
+    
+    // Find matching OddsTrader odds (check both home/away and reversed)
+    let oddsGame = oddsGames.find(odds =>
       isSameTeam(odds.awayTeam, awayNorm) && 
       isSameTeam(odds.homeTeam, homeNorm)
     );
+    
+    // If not found, try reversed matchup
+    if (!oddsGame) {
+      oddsGame = oddsGames.find(odds =>
+        isSameTeam(odds.awayTeam, homeNorm) && 
+        isSameTeam(odds.homeTeam, awayNorm)
+      );
+      if (oddsGame) {
+        // Flip the odds to match our base
+        oddsGame = {
+          ...oddsGame,
+          awayTeam: awayNorm,
+          homeTeam: homeNorm,
+          awayOdds: oddsGame.homeOdds,
+          homeOdds: oddsGame.awayOdds,
+          _reversed: true
+        };
+      }
+    }
     
     // Get team efficiency ratings
     const awayTeamData = haslaTeams[awayNorm];
