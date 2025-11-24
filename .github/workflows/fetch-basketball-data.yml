@@ -27,6 +27,14 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: npm run fetch-basketball
       
+      - name: Write basketball bets to Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+          npm run write-basketball-bets
+          rm service-account.json
+      
       - name: Commit and push if changed
         run: |
           git config user.name "GitHub Actions"

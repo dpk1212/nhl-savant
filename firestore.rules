@@ -13,6 +13,12 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // Basketball bets - public read, function write only
+    match /basketball_bets/{document=**} {
+      allow read: if true;  // Basketball picks are free, everyone can read
+      allow write: if false;  // Only Cloud Functions and service account can write
+    }
+    
     // User bookmarks - allow users to manage their own bookmarks
     match /user_bookmarks/{document=**} {
       allow read, write: if true; // Anonymous users can manage their bookmarks
