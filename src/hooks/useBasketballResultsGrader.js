@@ -62,20 +62,28 @@ export function useBasketballResultsGrader() {
       
       console.log(`📊 Found ${results.length} completed games`);
       
-      // 3. Fetch pending bets from Firebase (CLIENT SDK - already works!)
-      const gameDate = getETGameDate();
+      // 3. Fetch ALL pending bets (don't filter by date - grade any completed game)
       const betsQuery = query(
         collection(db, 'basketball_bets'),
-        where('status', '==', 'PENDING'),
-        where('date', '==', gameDate)
+        where('status', '==', 'PENDING')
       );
       
       const betsSnapshot = await getDocs(betsQuery);
-      console.log(`📊 Found ${betsSnapshot.size} pending bets for ${gameDate}`);
+      console.log(`📊 Found ${betsSnapshot.size} pending bets (all dates)`);
       
       if (betsSnapshot.empty) {
         return;
       }
+      
+      //  Log all bet dates to understand what we're working with
+      const betDates = {};
+      betsSnapshot.docs.forEach(doc => {
+        const betDate = doc.data().date;
+        betDates[betDate] = (betDates[betDate] || 0) + 1;
+      });
+      console.log(`📅 Bet dates: ${JSON.stringify(betDates)}`);
+      console.log(`🏀 Results available: ${results.length} games`);
+      results.forEach(r => console.log(`   - ${r.awayTeam} @ ${r.homeTeam}`));
       
       // 4. Grade bets using CSV-normalized matching
       let graded = 0;
@@ -85,7 +93,7 @@ export function useBasketballResultsGrader() {
         const bet = betDoc.data();
         const betId = betDoc.id;
         
-        console.log(`🔍 Grading bet: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+        console.log(`🔍 [${bet.date}] Grading bet: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
         
         // Find matching result using normalized team names
         const matchingResult = results.find(result => {
