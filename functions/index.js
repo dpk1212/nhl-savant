@@ -319,3 +319,15 @@ function calculateProfit(outcome, odds) {
     return odds / 100; // e.g., +150 → 1.5 units
   }
 }
+
+/**
+ * Basketball Bet Grading Functions
+ * Import from separate module for organization
+ */
+const {
+  updateBasketballBetResults,
+  triggerBasketballBetGrading,
+} = require("./src/basketballBetGrading");
+
+exports.updateBasketballBetResults = updateBasketballBetResults;
+exports.triggerBasketballBetGrading = triggerBasketballBetGrading;
