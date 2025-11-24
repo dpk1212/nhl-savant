@@ -44,6 +44,11 @@ export class BasketballEdgeCalculator {
     let ensembleHomeProb = null;
     let confidence = 'LOW';
     
+    // Calculate ensemble predicted scores
+    let ensembleAwayScore = null;
+    let ensembleHomeScore = null;
+    let ensembleTotal = null;
+    
     // CASE 1: Full data (D-Ratings + Haslametrics) - BEST
     if (dratings && dratings.awayWinProb && haslametrics) {
       ensembleAwayProb = 
@@ -52,6 +57,19 @@ export class BasketballEdgeCalculator {
       
       ensembleHomeProb = 1 - ensembleAwayProb;
       confidence = 'HIGH';
+      
+      // Calculate ensemble predicted scores (60/40 blend)
+      if (dratings.awayScore && dratings.homeScore && haslametrics.awayScore && haslametrics.homeScore) {
+        ensembleAwayScore = 
+          (dratings.awayScore * this.weights.dratings) +
+          (haslametrics.awayScore * this.weights.haslametrics);
+        
+        ensembleHomeScore = 
+          (dratings.homeScore * this.weights.dratings) +
+          (haslametrics.homeScore * this.weights.haslametrics);
+        
+        ensembleTotal = ensembleAwayScore + ensembleHomeScore;
+      }
     }
     // CASE 2: D-Ratings only (no Haslametrics) - GOOD
     else if (dratings && dratings.awayWinProb) {
@@ -94,6 +112,11 @@ export class BasketballEdgeCalculator {
       // Ensemble probabilities
       ensembleAwayProb: Math.round(ensembleAwayProb * 1000) / 1000,
       ensembleHomeProb: Math.round(ensembleHomeProb * 1000) / 1000,
+      
+      // Ensemble predicted scores
+      ensembleAwayScore: ensembleAwayScore ? Math.round(ensembleAwayScore * 10) / 10 : null,
+      ensembleHomeScore: ensembleHomeScore ? Math.round(ensembleHomeScore * 10) / 10 : null,
+      ensembleTotal: ensembleTotal ? Math.round(ensembleTotal * 10) / 10 : null,
       
       // Market probabilities
       marketAwayProb: Math.round(marketAwayProb * 1000) / 1000,
