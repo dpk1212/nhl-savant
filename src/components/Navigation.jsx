@@ -133,6 +133,51 @@ const Navigation = () => {
             );
           })}
           
+          {/* Basketball Navigation - Subtle Premium Link */}
+          <Link
+            to="/basketball"
+            style={{
+              padding: '0.625rem 1.125rem',
+              borderRadius: '10px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              color: location.pathname === '/basketball' ? '#FF8C42' : 'rgba(255, 140, 66, 0.8)',
+              background: location.pathname === '/basketball'
+                ? 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(255, 140, 66, 0.08) 100%)'
+                : 'transparent',
+              border: location.pathname === '/basketball'
+                ? '1px solid rgba(255, 140, 66, 0.3)'
+                : '1px solid rgba(255, 140, 66, 0.2)',
+              boxShadow: location.pathname === '/basketball'
+                ? '0 4px 12px rgba(255, 140, 66, 0.2)'
+                : 'none',
+              transition: 'all 0.3s ease',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginLeft: '0.5rem'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 140, 66, 0.3)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 140, 66, 0.12) 0%, rgba(255, 140, 66, 0.05) 100%)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              if (location.pathname === '/basketball') {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 140, 66, 0.2)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(255, 140, 66, 0.08) 100%)';
+              } else {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.background = 'transparent';
+              }
+            }}
+          >
+            🏀 <span style={{ display: window.innerWidth < 640 ? 'none' : 'inline' }}>CBB Picks</span>
+          </Link>
+          
           {/* Upgrade Button (Free Users Only) */}
           {user && !isPremium && !authLoading && !subscriptionLoading && (
             <Link
