@@ -121,6 +121,9 @@ const TEAM_MAP = {
   // Pac-12 / West Coast
   'arizona': { normalized: 'Arizona', fullName: 'Arizona Wildcats', conference: 'Big 12' },
   'arizona wildcats': { normalized: 'Arizona', fullName: 'Arizona Wildcats', conference: 'Big 12' },
+  'arizona state': { normalized: 'Arizona State', fullName: 'Arizona State Sun Devils', conference: 'Big 12' },
+  'arizona state sun devils': { normalized: 'Arizona State', fullName: 'Arizona State Sun Devils', conference: 'Big 12' },
+  'asu': { normalized: 'Arizona State', fullName: 'Arizona State Sun Devils', conference: 'Big 12' },
   'ucla': { normalized: 'UCLA', fullName: 'UCLA Bruins', conference: 'Big Ten' },
   'ucla bruins': { normalized: 'UCLA', fullName: 'UCLA Bruins', conference: 'Big Ten' },
   'usc': { normalized: 'USC', fullName: 'USC Trojans', conference: 'Big Ten' },
