@@ -36,8 +36,8 @@ async function gradeBasketballBets() {
   console.log('==================================\n');
   
   try {
-    // 1. Load OddsTrader data from local file
-    console.log('📂 Loading OddsTrader data...');
+    // 1. Load OddsTrader data from file system (not HTTP - works in GitHub Actions)
+    console.log('📂 Loading OddsTrader data from filesystem...');
     const oddsPath = join(__dirname, '../public/basketball_odds.md');
     const oddsMarkdown = await fs.readFile(oddsPath, 'utf8');
     console.log('✅ Loaded basketball_odds.md\n');
