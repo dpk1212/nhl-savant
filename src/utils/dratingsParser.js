@@ -119,28 +119,68 @@ export function parseDRatings(markdown) {
  * "Rhode Island Rams" -> "Rhode Island"
  * "Towson Tigers" -> "Towson"
  * "St. John's Red Storm" -> "St. John's"
+ * "Florida Gulf Coast Eagles" -> "Florida Gulf Coast" (NOT "Florida")
  */
 function extractSchoolName(fullName) {
-  // Common mascot patterns
+  // Special cases - multi-word schools that end with common words
+  // These must be checked BEFORE mascot removal
+  const specialCases = {
+    'Central Connecticut Blue Devils': 'Central Connecticut',
+    'Florida Gulf Coast Eagles': 'Florida Gulf Coast',
+    'Missouri State Bears': 'Missouri State',
+    'Arkansas State Red Wolves': 'Arkansas State',
+    'Georgia Southern Eagles': 'Georgia Southern',
+    'Northern Arizona Lumberjacks': 'Northern Arizona',
+    'McNeese State Cowboys': 'McNeese',
+    'Bradley University Braves': 'Bradley',
+    'Appalachian State Mountaineers': 'Appalachian State',
+    'Evansville Purple Aces': 'Evansville',
+    'Holy Cross Crusaders': 'Holy Cross',
+    'FIU Golden Panthers': 'FIU',
+    'Florida Atlantic Owls': 'Florida Atlantic',
+    'George Washington Colonials': 'George Washington',
+    'Kennesaw State Owls': 'Kennesaw State',
+    'Bowling Green Falcons': 'Bowling Green',
+    'Stony Brook Seawolves': 'Stony Brook',
+    'Wisconsin Green Bay Phoenix': 'Wisconsin Green Bay',
+    'UC San Diego Tritons': 'UC San Diego',
+    'UC Riverside Highlanders': 'UC Riverside',
+    'Bethune Cookman Wildcats': 'Bethune Cookman',
+    'Fairleigh Dickinson Knights': 'Fairleigh Dickinson',
+    'Texas A&M Commerce Lions': 'Texas A&M Commerce',
+    'St. Francis Red Flash': 'St. Francis',
+    'Oral Roberts Golden Eagles': 'Oral Roberts',
+    'Oakland Golden Grizzlies': 'Oakland',
+    'William & Mary Tribe': 'William & Mary',
+    'George Mason Patriots': 'George Mason'
+  };
+  
+  // Check special cases first
+  if (specialCases[fullName]) {
+    return specialCases[fullName];
+  }
+  
+  // Common mascot patterns (single word)
   const mascots = [
     'Rams', 'Tigers', 'Eagles', 'Wildcats', 'Bears', 'Bulldogs', 'Cardinals',
     'Warriors', 'Panthers', 'Lions', 'Cougars', 'Huskies', 'Knights', 'Falcons',
     'Hawks', 'Trojans', 'Spartans', 'Bruins', 'Aggies', 'Rebels', 'Commodores',
     'Volunteers', 'Jayhawks', 'Terrapins', 'Hoosiers', 'Buckeyes', 'Wolverines',
-    'Badgers', 'Hawkeyes', 'Boilermakers', 'Illini', 'Cornhuskers', 'Scarlet Knights',
-    'Nittany Lions', 'Gophers', 'Mountaineers', 'Cyclones', 'Sooners', 'Longhorns',
-    'Red Raiders', 'Razorbacks', 'Gamecocks', 'Crimson Tide', 'Tar Heels', 'Blue Devils',
-    'Demon Deacons', 'Yellow Jackets', 'Seminoles', 'Hurricanes', 'Cavaliers', 'Hokies',
-    'Orange', 'Orangemen', 'Fighting Irish', 'Musketeers', 'Friars', 'Bluejays', 'Gaels',
+    'Badgers', 'Hawkeyes', 'Boilermakers', 'Illini', 'Cornhuskers',
+    'Gophers', 'Mountaineers', 'Cyclones', 'Sooners', 'Longhorns',
+    'Razorbacks', 'Gamecocks', 'Seminoles', 'Hurricanes', 'Cavaliers', 'Hokies',
+    'Orange', 'Orangemen', 'Musketeers', 'Friars', 'Bluejays', 'Gaels',
     'Flyers', 'Explorers', 'Billikens', 'Bonnies', 'Dukes', 'Bison', 'Greyhounds',
     'Seawolves', 'Rockets', 'Zips', 'Bulls', 'Owls', 'Miners', 'Blazers', 'Dolphins',
     'Phoenix', 'Peacocks', 'Grizzlies', 'Bearcats', 'Shockers', 'Salukis', 'Redbirds',
     'Sycamores', 'Penguins', 'Colonials', 'Minutemen', 'Spiders', 'Highlanders',
-    'Retrievers', 'Catamounts', 'River Hawks', 'Statesmen', 'Kangaroos', 'Leathernecks',
-    'Flames', 'Warhawks', 'Jaguars', 'Hatters', 'Privateers', 'Roadrunners'
+    'Retrievers', 'Catamounts', 'Statesmen', 'Kangaroos', 'Leathernecks',
+    'Flames', 'Warhawks', 'Jaguars', 'Hatters', 'Privateers', 'Roadrunners',
+    'Saints', 'Buffaloes', 'Mustangs', 'Vaqueros', 'Sharks', 'Paladins', 'Aztecs',
+    'Tritons', 'Keydets', 'Racers', 'Cowboys', 'Lumberjacks'
   ];
   
-  // Try to remove mascot from end
+  // Try to remove mascot from end (single word only)
   for (const mascot of mascots) {
     if (fullName.endsWith(` ${mascot}`)) {
       return fullName.substring(0, fullName.length - mascot.length - 1).trim();
