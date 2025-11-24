@@ -102,11 +102,10 @@ const Basketball = () => {
         return awayProb >= 0.15 && homeProb >= 0.15;
       });
       
-      // SECOND: Filter to ONLY show games with 2%+ positive EV from realistic games
+      // SECOND: Filter to ONLY show games where we have a prediction
       const qualityGames = realisticGames.filter(game => 
         game.prediction && 
-        !game.prediction.error && 
-        game.prediction.bestEV >= 2.0
+        !game.prediction.error
       );
       
       // Sort by grade (best picks first), then by game time
@@ -538,8 +537,9 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
               color: 'rgba(255,255,255,0.7)' 
             },
             { 
-              label: 'OUR EDGE', 
-              value: `+${pred.bestEV.toFixed(1)}%`, 
+              label: 'OUR PICK', 
+              value: `${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}% to win`, 
+              subValue: `(${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% edge)`,
               color: '#10B981', 
               primary: true 
             },
