@@ -118,10 +118,11 @@ export class BasketballEdgeCalculator {
       grade: grade,
       confidence: confidence,
       
-      // Transparency: Show component predictions
-      dratingsAwayProb: dratings?.awayWinProb || null,
-      dratingsHomeProb: dratings?.homeWinProb || null,
-      haslametricsEstimate: haslametrics ? 'estimated' : null,
+      // Transparency: Show component predictions for best bet
+      dratingsProb: bestBet === 'away' ? dratings?.awayWinProb : dratings?.homeWinProb,
+      haslametricsProb: haslametrics ? (bestBet === 'away' ? this.estimateHaslaProbability(matchedGame, 'away') : this.estimateHaslaProbability(matchedGame, 'home')) : null,
+      ensembleProb: bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb,
+      marketProb: bestBet === 'away' ? marketAwayProb : marketHomeProb,
       
       // Metadata
       dataQuality: matchedGame.dataQuality
