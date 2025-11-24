@@ -387,6 +387,23 @@ const TEAM_MAP = {
   'unc greensboro': { normalized: 'UNC Greensboro', fullName: 'UNC Greensboro Spartans', conference: 'SoCon' },
   'unc greensboro spartans': { normalized: 'UNC Greensboro', fullName: 'UNC Greensboro Spartans', conference: 'SoCon' },
   'uncg': { normalized: 'UNC Greensboro', fullName: 'UNC Greensboro Spartans', conference: 'SoCon' },
+  
+  // Haslametrics abbreviated forms - CRITICAL FOR MATCHING
+  's. illinois': { normalized: 'Southern Illinois', fullName: 'Southern Illinois Salukis', conference: 'MVC' },
+  'n. arizona': { normalized: 'Northern Arizona', fullName: 'Northern Arizona Lumberjacks', conference: 'Big Sky' },
+  'jacksonville st.': { normalized: 'Jacksonville State', fullName: 'Jacksonville State Gamecocks', conference: 'CUSA' },
+  'jmu': { normalized: 'James Madison', fullName: 'James Madison Dukes', conference: 'Sun Belt' },
+  'cent. conn. st.': { normalized: 'Central Connecticut', fullName: 'Central Connecticut Blue Devils', conference: 'NEC' },
+  'ill. state': { normalized: 'Illinois State', fullName: 'Illinois State Redbirds', conference: 'MVC' },
+  
+  // Jacksonville vs Jacksonville State - DIFFERENT SCHOOLS!
+  'jacksonville': { normalized: 'Jacksonville', fullName: 'Jacksonville Dolphins', conference: 'ASUN' },
+  'jacksonville dolphins': { normalized: 'Jacksonville', fullName: 'Jacksonville Dolphins', conference: 'ASUN' },
+  
+  // Teams that appear in D-Ratings but not in today's Haslametrics games
+  'connecticut': { normalized: 'UConn', fullName: 'Connecticut Huskies', conference: 'Big East' },
+  'connecticut huskies': { normalized: 'UConn', fullName: 'Connecticut Huskies', conference: 'Big East' },
+  'st. francis': { normalized: 'St. Francis', fullName: 'St. Francis Red Flash', conference: 'NEC' },
 };
 
 /**
