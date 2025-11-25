@@ -29,6 +29,23 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
   console.log(`   - Haslametrics games: ${haslaGames.length}`);
   console.log(`   - D-Ratings predictions: ${dratePredictions.length}`);
   
+  // Track unmapped teams for diagnostics
+  const unmappedOddsTeams = new Set();
+  const unmatchedHaslaGames = new Set();
+  const unmatchedDrateGames = new Set();
+  
+  // DIAGNOSTIC: Show all OddsTrader team names (normalized)
+  console.log('\n📊 ALL ODDSTRADER TEAMS (normalized):');
+  console.log('=====================================');
+  const oddsTeamNames = new Set();
+  oddsGames.forEach(g => {
+    oddsTeamNames.add(g.awayTeam);
+    oddsTeamNames.add(g.homeTeam);
+  });
+  Array.from(oddsTeamNames).sort().forEach(team => {
+    console.log(`   - "${team}"`);
+  });
+  
   let fullMatches = 0;
   let haslaOnly = 0;
   let drateOnly = 0;
@@ -45,6 +62,8 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     
     if (!awayMapping || !homeMapping) {
       console.warn(`⚠️  No CSV mapping for: ${awayTeam} @ ${homeTeam}`);
+      if (!awayMapping) unmappedOddsTeams.add(awayTeam);
+      if (!homeMapping) unmappedOddsTeams.add(homeTeam);
       noMatches++;
       continue;
     }
@@ -79,6 +98,11 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
           };
         }
       }
+      
+      // Track if not found
+      if (!haslaGame) {
+        unmatchedHaslaGames.add(`${awayMapping.haslametrics} @ ${homeMapping.haslametrics}`);
+      }
     }
     
     // Find in D-Ratings using CSV mapping
@@ -110,6 +134,11 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
             _reversed: true
           };
         }
+      }
+      
+      // Track if not found
+      if (!dratePred) {
+        unmatchedDrateGames.add(`${awayMapping.dratings} @ ${homeMapping.dratings}`);
       }
     }
     
@@ -185,6 +214,101 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
   console.log(`   - With Haslametrics only: ${haslaOnly}`);
   console.log(`   - With D-Ratings only: ${drateOnly}`);
   console.log(`   - No model data: ${noMatches}`);
+  
+  // DIAGNOSTIC: Show unmapped OddsTrader teams
+  if (unmappedOddsTeams.size > 0) {
+    console.log('\n❌ ODDSTRADER TEAMS WITH NO CSV MAPPING:');
+    console.log('=====================================');
+    Array.from(unmappedOddsTeams).sort().forEach(team => {
+      console.log(`   - "${team}"`);
+    });
+  }
+  
+  // DIAGNOSTIC: Show all available Haslametrics teams
+  console.log('\n📊 AVAILABLE HASLAMETRICS TEAMS (raw names):');
+  console.log('=====================================');
+  const haslaTeamNames = new Set();
+  haslaGames.forEach(g => {
+    haslaTeamNames.add(g.awayTeamRaw);
+    haslaTeamNames.add(g.homeTeamRaw);
+  });
+  Array.from(haslaTeamNames).sort().forEach(team => {
+    console.log(`   - "${team}"`);
+  });
+  
+  // DIAGNOSTIC: Show all available D-Ratings teams
+  console.log('\n📊 AVAILABLE D-RATINGS TEAMS (school names):');
+  console.log('=====================================');
+  const drateTeamNames = new Set();
+  dratePredictions.forEach(p => {
+    drateTeamNames.add(p.awayTeam);
+    drateTeamNames.add(p.homeTeam);
+  });
+  Array.from(drateTeamNames).sort().forEach(team => {
+    console.log(`   - "${team}"`);
+  });
+  
+  // DIAGNOSTIC: Show unmatched Haslametrics games
+  if (unmatchedHaslaGames.size > 0) {
+    console.log('\n⚠️  HASLAMETRICS GAMES NOT MATCHED:');
+    console.log('=====================================');
+    Array.from(unmatchedHaslaGames).forEach(game => {
+      console.log(`   - ${game}`);
+    });
+  }
+  
+  // DIAGNOSTIC: Show unmatched D-Ratings games
+  if (unmatchedDrateGames.size > 0) {
+    console.log('\n⚠️  D-RATINGS GAMES NOT MATCHED:');
+    console.log('=====================================');
+    Array.from(unmatchedDrateGames).forEach(game => {
+      console.log(`   - ${game}`);
+    });
+  }
+  
+  // DETAILED MISSING DATA REPORT
+  if (haslaOnly > 0 || drateOnly > 0 || noMatches > 0) {
+    console.log('\n🔍 DETAILED MISSING DATA REPORT');
+    console.log('=====================================');
+    
+    // Games with Haslametrics only (missing D-Ratings)
+    if (haslaOnly > 0) {
+      console.log(`\n⚠️  MISSING D-RATINGS (${haslaOnly} games):`);
+      matchedGames
+        .filter(g => g.haslametrics && !g.dratings)
+        .forEach((g, i) => {
+          console.log(`   ${i + 1}. ${g.matchup}`);
+          console.log(`      ✅ Has Haslametrics`);
+          console.log(`      ❌ Missing D-Ratings`);
+        });
+    }
+    
+    // Games with D-Ratings only (missing Haslametrics)
+    if (drateOnly > 0) {
+      console.log(`\n⚠️  MISSING HASLAMETRICS (${drateOnly} games):`);
+      matchedGames
+        .filter(g => !g.haslametrics && g.dratings)
+        .forEach((g, i) => {
+          console.log(`   ${i + 1}. ${g.matchup}`);
+          console.log(`      ❌ Missing Haslametrics`);
+          console.log(`      ✅ Has D-Ratings`);
+        });
+    }
+    
+    // Games with no model data
+    if (noMatches > 0) {
+      console.log(`\n❌ NO MODEL DATA (${noMatches} games):`);
+      matchedGames
+        .filter(g => !g.haslametrics && !g.dratings)
+        .forEach((g, i) => {
+          console.log(`   ${i + 1}. ${g.matchup}`);
+          console.log(`      ❌ Missing Haslametrics`);
+          console.log(`      ❌ Missing D-Ratings`);
+        });
+    }
+    
+    console.log('\n=====================================\n');
+  }
   
   return matchedGames;
 }
