@@ -33,7 +33,9 @@ exports.ncaaProxy = onRequest({
 
     logger.info(`Proxying NCAA API request for date: ${date}`);
 
-    const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${date}`;
+    // Convert YYYYMMDD to YYYY/MM/DD format for NCAA API
+    const formattedDate = date.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
+    const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${formattedDate}`;
     const ncaaResponse = await fetch(url);
 
     if (!ncaaResponse.ok) {
@@ -56,4 +58,5 @@ exports.ncaaProxy = onRequest({
     response.status(500).json({ error: "Internal server error" });
   }
 });
+
 
