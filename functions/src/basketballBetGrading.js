@@ -47,7 +47,7 @@ async function fetchNCAAGames(dateStr) {
     
     logger.info(`Fetched ${games.length} games from NCAA API`);
     
-    return games.map(g => ({
+    const parsedGames = games.map(g => ({
       awayTeam: g.game.away.names.short,
       homeTeam: g.game.home.names.short,
       awayScore: parseInt(g.game.away.score) || 0,
@@ -55,6 +55,14 @@ async function fetchNCAAGames(dateStr) {
       gameState: g.game.gameState,
       isFinal: g.game.gameState === 'final',
     }));
+    
+    const finalCount = parsedGames.filter(g => g.isFinal).length;
+    logger.info(`Parsed ${parsedGames.length} games, ${finalCount} are final`);
+    if (finalCount > 0) {
+      logger.info(`Sample final games: ${parsedGames.filter(g => g.isFinal).slice(0, 3).map(g => `${g.awayTeam} @ ${g.homeTeam} (${g.awayScore}-${g.homeScore})`).join(', ')}`);
+    }
+    
+    return parsedGames;
   } catch (error) {
     logger.error("Error fetching NCAA games:", error);
     return [];
@@ -161,6 +169,8 @@ exports.updateBasketballBetResults = onSchedule({
         if (!matchingGame) {
           notFoundCount++;
           logger.info(`No final game found for: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+          logger.info(`  Normalized bet: ${normalizeTeamName(bet.game.awayTeam)} @ ${normalizeTeamName(bet.game.homeTeam)}`);
+          logger.info(`  Available final games (${finalGames.length}): ${finalGames.slice(0, 5).map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', ')}`);
           continue;
         }
 
@@ -245,9 +255,10 @@ function calculateOutcome(game, bet) {
   
   // Determine actual winner based on score
   const awayWon = game.awayScore > game.homeScore;
+  const homeWon = game.homeScore > game.awayScore;
   
   // If we bet on away team and away won, OR we bet on home team and home won -> WIN
-  if ((isAway && awayWon) || (isHome && !awayWon)) {
+  if ((isAway && awayWon) || (isHome && homeWon)) {
     return "WIN";
   } else {
     return "LOSS";
