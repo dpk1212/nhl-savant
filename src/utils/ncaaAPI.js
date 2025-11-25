@@ -4,7 +4,8 @@
  */
 
 // Use Firebase Cloud Function proxy to avoid CORS
-const NCAA_PROXY_URL = 'https://us-central1-nhl-savant.cloudfunctions.net/ncaaProxy';
+// v2 functions use Cloud Run URLs
+const NCAA_PROXY_URL = 'https://ncaaproxy-lviwud3q2q-uc.a.run.app';
 
 /**
  * Fetch today's D1 Men's Basketball games
@@ -42,40 +43,42 @@ export async function fetchTodaysGames(date = null) {
 
 /**
  * Parse NCAA game object to our format
- * @param {object} game - Raw NCAA API game object
+ * @param {object} game - Raw NCAA API game object (wrapper with game.game nested structure)
  * @returns {object} - Parsed game object
  */
 function parseNCAAgame(game) {
-  const homeTeam = game.home || {};
-  const awayTeam = game.away || {};
+  // NCAA API returns nested structure: { game: { home: {...}, away: {...}, ... } }
+  const gameData = game.game || {};
+  const homeTeam = gameData.home || {};
+  const awayTeam = gameData.away || {};
   
   return {
-    id: game.id,
-    status: game.gameState, // 'pre', 'live', 'final'
-    startTime: game.startTime,
-    startTimeEpoch: game.startTimeEpoch,
+    id: gameData.gameID || game.id,
+    status: gameData.gameState, // 'pre', 'live', 'final'
+    startTime: gameData.startTime,
+    startTimeEpoch: gameData.startTimeEpoch,
     
     // Teams
     awayTeam: awayTeam.names?.short || awayTeam.names?.full || '',
     awayTeamFull: awayTeam.names?.full || '',
-    awayScore: awayTeam.score || 0,
+    awayScore: parseInt(awayTeam.score) || 0,
     awayRank: awayTeam.rank || null,
     
     homeTeam: homeTeam.names?.short || homeTeam.names?.full || '',
     homeTeamFull: homeTeam.names?.full || '',
-    homeScore: homeTeam.score || 0,
+    homeScore: parseInt(homeTeam.score) || 0,
     homeRank: homeTeam.rank || null,
     
     // Game state
-    period: game.currentPeriod || null,
-    clock: game.contestClock || null,
+    period: gameData.currentPeriod || null,
+    clock: gameData.contestClock || null,
     
     // TV/Network
-    network: game.network || null,
+    network: gameData.network || null,
     
     // Metadata
-    venue: game.venue || null,
-    neutral: game.neutralSite || false,
+    venue: gameData.venue || null,
+    neutral: gameData.neutralSite || false,
     
     // Raw data (for debugging)
     _raw: game
