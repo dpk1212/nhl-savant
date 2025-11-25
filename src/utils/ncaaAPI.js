@@ -97,28 +97,40 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
   const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
   const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
   
-  if (!ourAwayMapping || !ourHomeMapping) {
-    return false;
+  // Strategy 1: Use CSV mappings (most reliable)
+  if (ourAwayMapping && ourHomeMapping && ourAwayMapping.ncaa_name && ourHomeMapping.ncaa_name) {
+    const expectedAwayNCAA = ourAwayMapping.ncaa_name;
+    const expectedHomeNCAA = ourHomeMapping.ncaa_name;
+    
+    // Check if teams match (try both normal and reversed)
+    const normalMatch = 
+      teamNamesMatch(ncaaGame.awayTeam, expectedAwayNCAA) &&
+      teamNamesMatch(ncaaGame.homeTeam, expectedHomeNCAA);
+    
+    const reversedMatch = 
+      teamNamesMatch(ncaaGame.awayTeam, expectedHomeNCAA) &&
+      teamNamesMatch(ncaaGame.homeTeam, expectedAwayNCAA);
+    
+    if (normalMatch || reversedMatch) {
+      return true;
+    }
   }
   
-  // Get NCAA names from mappings
-  const expectedAwayNCAA = ourAwayMapping.ncaa_name;
-  const expectedHomeNCAA = ourHomeMapping.ncaa_name;
+  // Strategy 2: Direct fuzzy matching as fallback (for teams not in CSV or missing ncaa_name)
+  const directNormalMatch = 
+    teamNamesMatch(ncaaGame.awayTeam, ourGame.awayTeam) &&
+    teamNamesMatch(ncaaGame.homeTeam, ourGame.homeTeam);
   
-  if (!expectedAwayNCAA || !expectedHomeNCAA) {
-    return false;
+  const directReversedMatch = 
+    teamNamesMatch(ncaaGame.awayTeam, ourGame.homeTeam) &&
+    teamNamesMatch(ncaaGame.homeTeam, ourGame.awayTeam);
+  
+  if (directNormalMatch || directReversedMatch) {
+    console.log(`✅ Fuzzy matched: ${ourGame.awayTeam} @ ${ourGame.homeTeam} ↔ ${ncaaGame.awayTeam} @ ${ncaaGame.homeTeam}`);
+    return true;
   }
   
-  // Check if teams match (try both normal and reversed)
-  const normalMatch = 
-    teamNamesMatch(ncaaGame.awayTeam, expectedAwayNCAA) &&
-    teamNamesMatch(ncaaGame.homeTeam, expectedHomeNCAA);
-  
-  const reversedMatch = 
-    teamNamesMatch(ncaaGame.awayTeam, expectedHomeNCAA) &&
-    teamNamesMatch(ncaaGame.homeTeam, expectedAwayNCAA);
-  
-  return normalMatch || reversedMatch;
+  return false;
 }
 
 /**
@@ -130,8 +142,27 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
 function teamNamesMatch(name1, name2) {
   if (!name1 || !name2) return false;
   
-  const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return normalize(name1) === normalize(name2);
+  const normalize = (str) => str
+    .toLowerCase()
+    .replace(/\bstate\b/g, 'st')       // "State" → "st"
+    .replace(/\bst\b/g, 'st')          // Normalize "St."
+    .replace(/\bsaint\b/g, 'st')       // "Saint" → "st"
+    .replace(/\buniversity\b/g, '')    // Remove "University"
+    .replace(/\bcollege\b/g, '')       // Remove "College"
+    .replace(/[^a-z0-9]/g, '');        // Remove special chars
+  
+  const norm1 = normalize(name1);
+  const norm2 = normalize(name2);
+  
+  // Exact match
+  if (norm1 === norm2) return true;
+  
+  // One contains the other (for cases like "North Carolina" vs "UNC")
+  if (norm1.length >= 4 && norm2.length >= 4) {
+    if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
+  }
+  
+  return false;
 }
 
 /**
@@ -163,11 +194,21 @@ function findTeamInMappings(mappings, teamName, source) {
 export async function getLiveScores(ourGames, teamMappings) {
   const ncaaGames = await fetchTodaysGames();
   
+  console.log(`🔍 Matching ${ourGames.length} our games against ${ncaaGames.length} NCAA games`);
+  
+  // Log first few NCAA games for debugging
+  if (ncaaGames.length > 0) {
+    console.log('📋 Sample NCAA games:', ncaaGames.slice(0, 3).map(g => 
+      `${g.awayTeam} @ ${g.homeTeam} (${g.status})`
+    ));
+  }
+  
   const enrichedGames = ourGames.map(ourGame => {
     // Find matching NCAA game
     const ncaaGame = ncaaGames.find(ng => matchGames(ng, ourGame, teamMappings));
     
     if (ncaaGame) {
+      console.log(`✅ Match: ${ourGame.awayTeam} @ ${ourGame.homeTeam} → ${ncaaGame.awayScore}-${ncaaGame.homeScore} (${ncaaGame.status})`);
       return {
         ...ourGame,
         liveScore: {
@@ -180,6 +221,8 @@ export async function getLiveScores(ourGames, teamMappings) {
           lastUpdated: new Date().toISOString()
         }
       };
+    } else {
+      console.log(`❌ No match: ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
     }
     
     return ourGame;
