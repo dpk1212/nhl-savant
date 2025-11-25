@@ -10,8 +10,10 @@ import { loadTeamMappings } from '../utils/teamCSVLoader';
 import { startScorePolling } from '../utils/ncaaAPI';
 import { gradePrediction, calculateGradingStats } from '../utils/basketballGrading';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
-import { GradeBadge, GradeStats } from '../components/GradeBadge';
+import { GradeStats } from '../components/GradeBadge';
 import { BasketballBetStats } from '../components/BasketballBetStats';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -33,6 +35,9 @@ const Basketball = () => {
   const [teamMappings, setTeamMappings] = useState(null);
   const [gradingStats, setGradingStats] = useState(null);
   
+  // Bet outcomes state
+  const [betsMap, setBetsMap] = useState(new Map());
+  
   // Auto-grade bets when results are available (CLIENT-SIDE!)
   const { grading, gradedCount } = useBasketballResultsGrader();
 
@@ -41,10 +46,39 @@ const Basketball = () => {
   }, []);
   
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize() => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
+  // Fetch bet outcomes from Firebase
+  useEffect(() => {
+    async function fetchBets() {
+      try {
+        const betsSnapshot = await getDocs(collection(db, 'basketball_bets'));
+        const betsData = new Map();
+        
+        betsSnapshot.forEach((doc) => {
+          const bet = doc.data();
+          // Create a normalized key for matching: awayTeam_homeTeam
+          const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const key = `${normalizeTeam(bet.game.awayTeam)}_${normalizeTeam(bet.game.homeTeam)}`;
+          betsData.set(key, bet);
+        });
+        
+        console.log(`📊 Loaded ${betsData.size} bets from Firebase`);
+        setBetsMap(betsData);
+      } catch (err) {
+        console.error('Error fetching bets:', err);
+      }
+    }
+    
+    fetchBets();
+    
+    // Refresh bets every 60 seconds to catch newly graded bets
+    const interval = setInterval(fetchBets, 60000);
+    return () => clearInterval(interval);
+  }, [gradedCount]); // Re-fetch when bets are graded
   
   // Start live score polling when we have games and mappings
   useEffect(() => {
@@ -58,19 +92,34 @@ const Basketball = () => {
       recommendations,
       teamMappings,
       (updatedGames) => {
-        // Add grades for completed games
-        const gamesWithGrades = updatedGames.map(game => {
+        // Add grades and bet outcomes for completed games
+        const gamesWithGradesAndBets = updatedGames.map(game => {
+          const gameData = { ...game };
+          
+          // Add prediction grade if game is final
           if (game.liveScore && game.liveScore.status === 'final') {
-            const grade = gradePrediction(game, game.liveScore);
-            return { ...game, grade };
+            gameData.grade = gradePrediction(game, game.liveScore);
           }
-          return game;
+          
+          // Match and attach bet outcome from Firebase
+          const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const betKey = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
+          const bet = betsMap.get(betKey);
+          
+          if (bet && bet.result?.outcome) {
+            gameData.betOutcome = {
+              outcome: bet.result.outcome,
+              profit: bet.result.profit
+            };
+          }
+          
+          return gameData;
         });
         
-        setGamesWithLiveScores(gamesWithGrades);
+        setGamesWithLiveScores(gamesWithGradesAndBets);
         
         // Calculate grading stats
-        const stats = calculateGradingStats(gamesWithGrades);
+        const stats = calculateGradingStats(gamesWithGradesAndBets);
         setGradingStats(stats);
       },
       60000 // Poll every 60 seconds
@@ -582,9 +631,25 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         
         {/* Grade Badge - floating with glow */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* Actual Result Grade (if game is final) */}
-          {grade && (
-            <GradeBadge grade={grade.grade} size="normal" />
+          {/* Bet Outcome (WIN/LOSS) - if bet is graded */}
+          {game.betOutcome && (
+            <div style={{
+              background: game.betOutcome.outcome === 'WIN' 
+                ? 'linear-gradient(135deg, #10B981, #059669)'
+                : 'linear-gradient(135deg, #EF4444, #DC2626)',
+              color: 'white',
+              border: `2px solid ${game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444'}`,
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              fontWeight: '800',
+              fontSize: '0.875rem',
+              boxShadow: `0 4px 12px ${game.betOutcome.outcome === 'WIN' ? '#10B98140' : '#EF444440'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              {game.betOutcome.outcome === 'WIN' ? '✓ WIN' : '✗ LOSS'}
+            </div>
           )}
           
           {/* Prediction Quality Grade */}

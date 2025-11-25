@@ -52,21 +52,32 @@ function parseNCAAgame(game) {
   const homeTeam = gameData.home || {};
   const awayTeam = gameData.away || {};
   
+  const awayTeamName = awayTeam.names?.short || awayTeam.names?.full || '';
+  const homeTeamName = homeTeam.names?.short || homeTeam.names?.full || '';
+  const awayScore = parseInt(awayTeam.score) || 0;
+  const homeScore = parseInt(homeTeam.score) || 0;
+  const status = gameData.gameState;
+  
+  // VERIFICATION LOGGING: Confirm score mapping is correct
+  if (status === 'final' || status === 'live') {
+    console.log(`✅ NCAA Score: ${awayTeamName} (away) ${awayScore} @ ${homeTeamName} (home) ${homeScore} [${status}]`);
+  }
+  
   return {
     id: gameData.gameID || game.id,
-    status: gameData.gameState, // 'pre', 'live', 'final'
+    status: status, // 'pre', 'live', 'final'
     startTime: gameData.startTime,
     startTimeEpoch: gameData.startTimeEpoch,
     
     // Teams
-    awayTeam: awayTeam.names?.short || awayTeam.names?.full || '',
+    awayTeam: awayTeamName,
     awayTeamFull: awayTeam.names?.full || '',
-    awayScore: parseInt(awayTeam.score) || 0,
+    awayScore: awayScore,
     awayRank: awayTeam.rank || null,
     
-    homeTeam: homeTeam.names?.short || homeTeam.names?.full || '',
+    homeTeam: homeTeamName,
     homeTeamFull: homeTeam.names?.full || '',
-    homeScore: parseInt(homeTeam.score) || 0,
+    homeScore: homeScore,
     homeRank: homeTeam.rank || null,
     
     // Game state
