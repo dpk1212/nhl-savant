@@ -28,76 +28,146 @@ export function BasketballBetStats() {
   const { wins, losses, pending, winRate, unitsWon, roi, gradedBets } = stats;
 
   return (
-    <div className="bg-gradient-to-r from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6 shadow-xl">
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+      border: '1px solid rgba(16, 185, 129, 0.2)',
+      borderRadius: '16px',
+      padding: '1.25rem',
+      marginBottom: '1.5rem',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3), 0 0 40px rgba(16, 185, 129, 0.1)'
+    }}>
       {/* Header */}
-      <div className="flex items-center mb-4">
-        <div className="w-2 h-8 bg-gradient-to-b from-teal-400 to-cyan-500 rounded-full mr-3"></div>
-        <h2 className="text-xl font-bold text-white">
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        marginBottom: '1rem',
+        gap: '0.75rem'
+      }}>
+        <div style={{
+          width: '4px',
+          height: '32px',
+          background: 'linear-gradient(to bottom, #10B981, #059669)',
+          borderRadius: '4px'
+        }}></div>
+        <h2 style={{
+          fontSize: '1.25rem',
+          fontWeight: '900',
+          color: 'white',
+          letterSpacing: '-0.02em'
+        }}>
           🏀 Basketball Bet Performance
         </h2>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: window.innerWidth < 768 ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+        gap: '1rem'
+      }}>
         {/* Total Bets */}
-        <div className="text-center">
-          <div className="text-2xl font-bold text-white">
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: '1.75rem',
+            fontWeight: '900',
+            color: 'white',
+            fontFeatureSettings: "'tnum'"
+          }}>
             {gradedBets}
           </div>
-          <div className="text-sm text-slate-400 mt-1">
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            marginTop: '0.25rem',
+            fontWeight: '600'
+          }}>
             Graded Bets
           </div>
         </div>
 
         {/* Record */}
-        <div className="text-center">
-          <div className="text-2xl font-bold text-white">
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: '1.75rem',
+            fontWeight: '900',
+            color: 'white',
+            fontFeatureSettings: "'tnum'"
+          }}>
             {wins}-{losses}
           </div>
-          <div className="text-sm text-slate-400 mt-1">
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            marginTop: '0.25rem',
+            fontWeight: '600'
+          }}>
             Win-Loss Record
           </div>
         </div>
 
         {/* Win Rate */}
-        <div className="text-center">
-          <div className={`text-2xl font-bold ${
-            winRate >= 60 ? 'text-green-400' :
-            winRate >= 55 ? 'text-teal-400' :
-            winRate >= 50 ? 'text-yellow-400' :
-            'text-red-400'
-          }`}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: '1.75rem',
+            fontWeight: '900',
+            color: winRate >= 60 ? '#10B981' :
+                   winRate >= 55 ? '#14B8A6' :
+                   winRate >= 50 ? '#F59E0B' :
+                   '#EF4444',
+            fontFeatureSettings: "'tnum'"
+          }}>
             {winRate.toFixed(1)}%
           </div>
-          <div className="text-sm text-slate-400 mt-1">
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            marginTop: '0.25rem',
+            fontWeight: '600'
+          }}>
             Win Rate
           </div>
         </div>
 
         {/* Units Won */}
-        <div className="text-center">
-          <div className={`text-2xl font-bold ${
-            unitsWon > 0 ? 'text-green-400' : 
-            unitsWon < 0 ? 'text-red-400' : 
-            'text-slate-400'
-          }`}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: '1.75rem',
+            fontWeight: '900',
+            color: unitsWon > 0 ? '#10B981' : 
+                   unitsWon < 0 ? '#EF4444' : 
+                   '#94a3b8',
+            fontFeatureSettings: "'tnum'"
+          }}>
             {unitsWon > 0 ? '+' : ''}{unitsWon.toFixed(2)}u
           </div>
-          <div className="text-sm text-slate-400 mt-1">
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            marginTop: '0.25rem',
+            fontWeight: '600'
+          }}>
             Units Won
           </div>
         </div>
 
         {/* ROI */}
-        <div className="text-center">
-          <div className={`text-2xl font-bold ${
-            roi > 0 ? 'text-green-400' : 
-            roi < 0 ? 'text-red-400' : 
-            'text-slate-400'
-          }`}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: '1.75rem',
+            fontWeight: '900',
+            color: roi > 0 ? '#10B981' : 
+                   roi < 0 ? '#EF4444' : 
+                   '#94a3b8',
+            fontFeatureSettings: "'tnum'"
+          }}>
             {roi > 0 ? '+' : ''}{roi.toFixed(1)}%
           </div>
-          <div className="text-sm text-slate-400 mt-1">
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            marginTop: '0.25rem',
+            fontWeight: '600'
+          }}>
             ROI
           </div>
         </div>
@@ -105,9 +175,26 @@ export function BasketballBetStats() {
 
       {/* Pending Bets Indicator */}
       {pending > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-700/50">
-          <div className="flex items-center justify-center text-sm text-slate-400">
-            <div className="animate-pulse w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+        <div style={{
+          marginTop: '1rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid rgba(71, 85, 105, 0.3)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.875rem',
+            color: '#94a3b8'
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              backgroundColor: '#F59E0B',
+              borderRadius: '50%',
+              marginRight: '8px',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}></div>
             {pending} pending bet{pending !== 1 ? 's' : ''} awaiting results
           </div>
         </div>
@@ -115,16 +202,24 @@ export function BasketballBetStats() {
 
       {/* Performance Indicator */}
       {gradedBets >= 10 && (
-        <div className="mt-4 pt-4 border-t border-slate-700/50">
-          <div className="text-center text-sm">
+        <div style={{
+          marginTop: '1rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid rgba(71, 85, 105, 0.3)'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            fontSize: '0.875rem',
+            fontWeight: '700'
+          }}>
             {winRate >= 60 ? (
-              <span className="text-green-400 font-semibold">🔥 Elite Performance!</span>
+              <span style={{ color: '#10B981' }}>🔥 Elite Performance!</span>
             ) : winRate >= 55 ? (
-              <span className="text-teal-400 font-semibold">⭐ Strong Performance</span>
+              <span style={{ color: '#14B8A6' }}>⭐ Strong Performance</span>
             ) : winRate >= 50 ? (
-              <span className="text-yellow-400 font-semibold">📈 Building Momentum</span>
+              <span style={{ color: '#F59E0B' }}>📈 Building Momentum</span>
             ) : (
-              <span className="text-slate-400">Keep grinding! Sample size: {gradedBets}</span>
+              <span style={{ color: '#94a3b8' }}>Keep grinding! Sample size: {gradedBets}</span>
             )}
           </div>
         </div>
@@ -132,4 +227,5 @@ export function BasketballBetStats() {
     </div>
   );
 }
+
 
