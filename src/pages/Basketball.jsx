@@ -6,6 +6,11 @@ import { parseDRatings } from '../utils/dratingsParser';
 import { matchGamesWithCSV, filterByQuality } from '../utils/gameMatchingCSV';
 import { BasketballEdgeCalculator } from '../utils/basketballEdgeCalculator';
 import { useBasketballResultsGrader } from '../hooks/useBasketballResultsGrader';
+import { loadTeamMappings } from '../utils/teamCSVLoader';
+import { startScorePolling } from '../utils/ncaaAPI';
+import { gradePrediction, calculateGradingStats } from '../utils/basketballGrading';
+import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
+import { GradeBadge, GradeStats } from '../components/GradeBadge';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -21,6 +26,12 @@ const Basketball = () => {
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
+  // Live scoring state
+  const [gamesWithLiveScores, setGamesWithLiveScores] = useState([]);
+  const [gameStatusFilter, setGameStatusFilter] = useState('all');
+  const [teamMappings, setTeamMappings] = useState(null);
+  const [gradingStats, setGradingStats] = useState(null);
+  
   // Auto-grade bets when results are available (CLIENT-SIDE!)
   const { grading, gradedCount } = useBasketballResultsGrader();
 
@@ -33,6 +44,39 @@ const Basketball = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
+  // Start live score polling when we have games and mappings
+  useEffect(() => {
+    if (!recommendations || recommendations.length === 0 || !teamMappings) {
+      return;
+    }
+    
+    console.log('🔄 Starting live score polling...');
+    
+    const stopPolling = startScorePolling(
+      recommendations,
+      teamMappings,
+      (updatedGames) => {
+        // Add grades for completed games
+        const gamesWithGrades = updatedGames.map(game => {
+          if (game.liveScore && game.liveScore.status === 'final') {
+            const grade = gradePrediction(game, game.liveScore);
+            return { ...game, grade };
+          }
+          return game;
+        });
+        
+        setGamesWithLiveScores(gamesWithGrades);
+        
+        // Calculate grading stats
+        const stats = calculateGradingStats(gamesWithGrades);
+        setGradingStats(stats);
+      },
+      60000 // Poll every 60 seconds
+    );
+    
+    return stopPolling;
+  }, [recommendations, teamMappings]);
 
   async function loadBasketballData() {
     try {
@@ -53,6 +97,10 @@ const Basketball = () => {
       const oddsGames = parseBasketballOdds(oddsMarkdown);
       const haslaData = parseHaslametrics(haslaMarkdown);
       const dratePreds = parseDRatings(drateMarkdown);
+      
+      // Load team mappings for live score matching
+      const mappings = loadTeamMappings(csvContent);
+      setTeamMappings(mappings);
       
       // Match games using CSV mappings (OddsTrader as base)
       const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
@@ -320,6 +368,29 @@ const Basketball = () => {
         )}
       </div>
 
+      {/* Grading Stats (only show if we have graded games) */}
+      {gradingStats && gradingStats.totalGames > 0 && (
+        <div style={{ maxWidth: '1200px', margin: '0 auto 2rem auto' }}>
+          <GradeStats stats={gradingStats} />
+        </div>
+      )}
+      
+      {/* Game Status Filter */}
+      {gamesWithLiveScores.length > 0 && (
+        <div style={{ maxWidth: '1200px', margin: '0 auto 1rem auto' }}>
+          <GameStatusFilter
+            currentFilter={gameStatusFilter}
+            onFilterChange={setGameStatusFilter}
+            counts={{
+              all: gamesWithLiveScores.length,
+              pre: gamesWithLiveScores.filter(g => !g.liveScore || g.liveScore.status === 'pre').length,
+              live: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'live').length,
+              final: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'final').length
+            }}
+          />
+        </div>
+      )}
+      
       {/* Game Cards */}
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {recommendations.length === 0 ? (
@@ -360,9 +431,27 @@ const Basketball = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: isMobile ? '1rem' : '1.5rem' }}>
-            {recommendations.map((game, index) => (
-              <BasketballGameCard key={index} game={game} rank={index + 1} isMobile={isMobile} />
-            ))}
+            {(() => {
+              // Use gamesWithLiveScores if available, otherwise use recommendations
+              const gamesToShow = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
+              
+              // Apply status filter
+              const filteredGames = gamesToShow.filter(game => {
+                if (gameStatusFilter === 'all') return true;
+                if (!game.liveScore) return gameStatusFilter === 'pre';
+                return game.liveScore.status === gameStatusFilter;
+              });
+              
+              return filteredGames.map((game, index) => (
+                <BasketballGameCard 
+                  key={index} 
+                  game={game} 
+                  rank={index + 1} 
+                  isMobile={isMobile}
+                  hasLiveScore={!!game.liveScore}
+                />
+              ));
+            })()}
           </div>
         )}
       </div>
@@ -372,10 +461,12 @@ const Basketball = () => {
 
 // Helper Components
 
-const BasketballGameCard = ({ game, rank, isMobile }) => {
+const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
   const [showDetails, setShowDetails] = useState(false);
   const pred = game.prediction;
   const odds = game.odds;
+  const liveScore = game.liveScore;
+  const grade = game.grade;
   
   if (!pred || pred.error) return null;
   
@@ -482,23 +573,38 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
         </div>
         
         {/* Grade Badge - floating with glow */}
-        <div style={{
-          background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}20 100%)`,
-          color: gradeColors.color,
-          border: `2px solid ${gradeColors.borderColor}`,
-          padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem',
-          borderRadius: '12px',
-          fontWeight: '900',
-          fontSize: isMobile ? '1.125rem' : '1.5rem',
-          letterSpacing: '-0.02em',
-          boxShadow: `0 4px 20px ${gradeColors.borderColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
-          minWidth: isMobile ? '60px' : '72px',
-          textAlign: 'center',
-          textShadow: `0 0 10px ${gradeColors.borderColor}60`
-        }}>
-          {pred.grade}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Actual Result Grade (if game is final) */}
+          {grade && (
+            <GradeBadge grade={grade.grade} size="normal" />
+          )}
+          
+          {/* Prediction Quality Grade */}
+          <div style={{
+            background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}20 100%)`,
+            color: gradeColors.color,
+            border: `2px solid ${gradeColors.borderColor}`,
+            padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem',
+            borderRadius: '12px',
+            fontWeight: '900',
+            fontSize: isMobile ? '1.125rem' : '1.5rem',
+            letterSpacing: '-0.02em',
+            boxShadow: `0 4px 20px ${gradeColors.borderColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
+            minWidth: isMobile ? '60px' : '72px',
+            textAlign: 'center',
+            textShadow: `0 0 10px ${gradeColors.borderColor}60`
+          }}>
+            {pred.grade}
+          </div>
         </div>
       </div>
+      
+      {/* Live Score Display */}
+      {liveScore && (
+        <div style={{ padding: isMobile ? '0 1rem' : '0 1.25rem' }}>
+          <BasketballLiveScore liveScore={liveScore} prediction={pred} />
+        </div>
+      )}
 
       {/* Compact Bet Card */}
       <div style={{ 
