@@ -30,8 +30,8 @@ async function loadTeamMappings() {
  */
 async function fetchNCAAGames(dateStr) {
   try {
-    // Format: YYYYMMDD
-    const formattedDate = dateStr.replace(/-/g, '');
+    // Format: YYYY/MM/DD
+    const formattedDate = dateStr.replace(/-/g, '/');
     const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${formattedDate}`;
     
     logger.info(`Fetching NCAA games for ${formattedDate}`);
