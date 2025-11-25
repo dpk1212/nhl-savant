@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { parseBasketballOdds } from '../utils/basketballOddsParser';
 import { parseHaslametrics } from '../utils/haslametricsParser';
@@ -6,6 +6,8 @@ import { parseDRatings } from '../utils/dratingsParser';
 import { matchGamesWithCSV, filterByQuality } from '../utils/gameMatchingCSV';
 import { BasketballEdgeCalculator } from '../utils/basketballEdgeCalculator';
 import { useBasketballResultsGrader } from '../hooks/useBasketballResultsGrader';
+import { loadTeamMappings } from '../utils/teamCSVLoader';
+import { getETGameDate } from '../utils/dateUtils';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -14,12 +16,19 @@ import {
   getGradeColorScale
 } from '../utils/designSystem';
 
+const NCAA_SCOREBOARD_BASE_URL = 'https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1';
+const SCOREBOARD_POLL_INTERVAL_MS = 60000;
+
 const Basketball = () => {
   const [loading, setLoading] = useState(true);
   const [recommendations, setRecommendations] = useState([]);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [teamAliasLookup, setTeamAliasLookup] = useState(null);
+  const [scoreboardGames, setScoreboardGames] = useState([]);
+  const [scoreboardError, setScoreboardError] = useState(null);
+  const [scoreboardLastUpdated, setScoreboardLastUpdated] = useState(null);
   
   // Auto-grade bets when results are available (CLIENT-SIDE!)
   const { grading, gradedCount } = useBasketballResultsGrader();
@@ -33,6 +42,61 @@ const Basketball = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchScoreboard = async () => {
+      try {
+        const gameDate = getETGameDate();
+        const [year, month, day] = gameDate.split('-');
+        const url = `${NCAA_SCOREBOARD_BASE_URL}/${year}/${month}/${day}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Scoreboard HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (!isMounted) return;
+        
+        const processedGames = (data.games || []).map(({ game }) => transformScoreboardGame(game));
+        setScoreboardGames(processedGames);
+        setScoreboardLastUpdated(new Date().toISOString());
+        setScoreboardError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        console.error('Error fetching NCAA scoreboard:', err);
+        setScoreboardError(err.message);
+      }
+    };
+    
+    fetchScoreboard();
+    const intervalId = setInterval(fetchScoreboard, SCOREBOARD_POLL_INTERVAL_MS);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const scoreboardMatchups = useMemo(() => {
+    if (!teamAliasLookup || scoreboardGames.length === 0) return new Map();
+    const aliasEntries = Array.from(teamAliasLookup.entries());
+    const matchupMap = new Map();
+    
+    scoreboardGames.forEach(game => {
+      const awayCanonical = resolveCanonicalTeam(game.awayNames, teamAliasLookup, aliasEntries);
+      const homeCanonical = resolveCanonicalTeam(game.homeNames, teamAliasLookup, aliasEntries);
+      if (!awayCanonical || !homeCanonical) {
+        return;
+      }
+      const matchupKey = createMatchupKey(awayCanonical, homeCanonical, teamAliasLookup);
+      matchupMap.set(matchupKey, { ...game, canonicalAway: awayCanonical, canonicalHome: homeCanonical });
+    });
+    
+    return matchupMap;
+  }, [teamAliasLookup, scoreboardGames]);
 
   async function loadBasketballData() {
     try {
@@ -48,6 +112,8 @@ const Basketball = () => {
       const haslaMarkdown = await haslaResponse.text();
       const drateMarkdown = await drateResponse.text();
       const csvContent = await csvResponse.text();
+      const aliasLookup = buildAliasLookupFromCSV(csvContent, loadTeamMappings);
+      setTeamAliasLookup(aliasLookup);
       
       // Parse data
       const oddsGames = parseBasketballOdds(oddsMarkdown);
@@ -318,6 +384,29 @@ const Basketball = () => {
             </div>
           </div>
         )}
+
+        <div style={{
+          marginTop: '1rem',
+          padding: isMobile ? '0.75rem' : '1rem',
+          borderRadius: '12px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(15,23,42,0.4)',
+          color: scoreboardError ? '#F87171' : 'rgba(255,255,255,0.75)',
+          fontSize: TYPOGRAPHY.caption.size,
+          lineHeight: 1.5,
+          textAlign: 'center'
+        }}>
+          {scoreboardError ? (
+            <>NCAA live scoreboard unavailable ({scoreboardError}). Showing static picks only.</>
+          ) : (
+            <>
+              NCAA live scores auto-refresh every 60s.
+              {scoreboardLastUpdated && (
+                <> Last update: {formatETTimestamp(scoreboardLastUpdated)} ET.</>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Game Cards */}
@@ -360,9 +449,20 @@ const Basketball = () => {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: isMobile ? '1rem' : '1.5rem' }}>
-            {recommendations.map((game, index) => (
-              <BasketballGameCard key={index} game={game} rank={index + 1} isMobile={isMobile} />
-            ))}
+            {recommendations.map((game, index) => {
+              const matchupKey = teamAliasLookup ? createMatchupKey(game.awayTeam, game.homeTeam, teamAliasLookup) : null;
+              const scoreboardData = matchupKey ? scoreboardMatchups.get(matchupKey) : null;
+              
+              return (
+                <BasketballGameCard
+                  key={`${game.matchup || `${game.awayTeam}-${game.homeTeam}`}-${index}`}
+                  game={game}
+                  rank={index + 1}
+                  isMobile={isMobile}
+                  scoreboard={scoreboardData}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -372,10 +472,11 @@ const Basketball = () => {
 
 // Helper Components
 
-const BasketballGameCard = ({ game, rank, isMobile }) => {
+const BasketballGameCard = ({ game, rank, isMobile, scoreboard }) => {
   const [showDetails, setShowDetails] = useState(false);
   const pred = game.prediction;
   const odds = game.odds;
+  const scoreboardSummary = scoreboard ? buildScoreboardSummary(scoreboard) : null;
   
   if (!pred || pred.error) return null;
   
@@ -478,6 +579,32 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
             }}>
               <span style={{ color: gradeColors.color }}>●</span> {formatGameTime(odds?.gameTime)}
             </div>
+            {scoreboardSummary && (
+              <div style={{
+                marginTop: '0.35rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.35rem 0.9rem',
+                borderRadius: '999px',
+                background: scoreboardSummary.bg,
+                color: scoreboardSummary.color,
+                fontSize: TYPOGRAPHY.caption.size,
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                <span>{scoreboardSummary.icon} {scoreboardSummary.label}</span>
+                {scoreboardSummary.primaryText && (
+                  <span style={{ color: '#FFFFFF', fontWeight: '800' }}>{scoreboardSummary.primaryText}</span>
+                )}
+                {scoreboardSummary.secondaryText && (
+                  <span style={{ color: 'rgba(255,255,255,0.8)', fontWeight: '600', textTransform: 'none' }}>
+                    {scoreboardSummary.secondaryText}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
@@ -789,4 +916,247 @@ const BasketballGameCard = ({ game, rank, isMobile }) => {
 };
 
 export default Basketball;
+
+const WORD_NORMALIZATIONS = {
+  st: 'saint',
+  ste: 'saint',
+  saint: 'saint',
+  mt: 'mount',
+  mnt: 'mount',
+  n: 'north',
+  no: 'north',
+  north: 'north',
+  s: 'south',
+  so: 'south',
+  south: 'south',
+  e: 'east',
+  ea: 'east',
+  east: 'east',
+  w: 'west',
+  west: 'west',
+  wv: 'westvirginia',
+  wva: 'westvirginia',
+  ga: 'georgia',
+  geor: 'georgia',
+  ala: 'alabama',
+  al: 'alabama',
+  ariz: 'arizona',
+  ark: 'arkansas',
+  cal: 'california',
+  colo: 'colorado',
+  col: 'colorado',
+  fla: 'florida',
+  flor: 'florida',
+  ill: 'illinois',
+  ind: 'indiana',
+  kan: 'kansas',
+  ken: 'kentucky',
+  ky: 'kentucky',
+  la: 'louisiana',
+  lou: 'louisville',
+  mass: 'massachusetts',
+  minn: 'minnesota',
+  miss: 'mississippi',
+  mis: 'mississippi',
+  mo: 'missouri',
+  neb: 'nebraska',
+  nev: 'nevada',
+  okla: 'oklahoma',
+  ore: 'oregon',
+  pen: 'pennsylvania',
+  penn: 'pennsylvania',
+  ten: 'tennessee',
+  tenn: 'tennessee',
+  tex: 'texas',
+  uta: 'utah',
+  ut: 'utah',
+  wash: 'washington',
+  wisc: 'wisconsin',
+  wis: 'wisconsin',
+  virg: 'virginia',
+  va: 'virginia',
+  car: 'carolina',
+  caro: 'carolina',
+  dak: 'dakota',
+  nd: 'northdakota',
+  sd: 'southdakota'
+};
+
+function buildAliasLookupFromCSV(csvContent, loader = loadTeamMappings) {
+  try {
+    const mappingMap = loader(csvContent);
+    const aliasMap = new Map();
+    
+    mappingMap.forEach(mapping => {
+      if (!mapping) return;
+      const canonical = mapping.oddstrader || mapping.normalized;
+      const aliases = new Set([
+        mapping.normalized,
+        mapping.oddstrader,
+        mapping.haslametrics,
+        mapping.dratings
+      ]);
+      
+      aliases.forEach(name => {
+        const key = normalizeTeamKey(name);
+        if (key) {
+          aliasMap.set(key, canonical);
+        }
+      });
+    });
+    
+    return aliasMap;
+  } catch (err) {
+    console.warn('Unable to build basketball team alias lookup:', err);
+    return new Map();
+  }
+}
+
+function normalizeTeamKey(name) {
+  if (!name || typeof name !== 'string') return '';
+  const cleaned = name
+    .replace(/&amp;/gi, 'and')
+    .replace(/&/g, ' and ')
+    .replace(/[-–/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  if (!cleaned) return '';
+  
+  const normalizedWords = cleaned.split(' ').map(word => {
+    const stripped = word.replace(/[^a-z0-9]/gi, '').toLowerCase();
+    if (!stripped) return '';
+    return WORD_NORMALIZATIONS[stripped] || stripped;
+  }).filter(Boolean);
+  
+  return normalizedWords.join('');
+}
+
+function extractScoreboardNames(names = {}) {
+  const candidates = [
+    names.short,
+    names.full,
+    names.description,
+    names.seo ? names.seo.replace(/-/g, ' ') : '',
+    names.char6
+  ].filter(Boolean);
+  
+  return Array.from(new Set(candidates));
+}
+
+function resolveCanonicalTeam(candidates = [], aliasLookup, aliasEntries = []) {
+  if (!aliasLookup) return null;
+  
+  for (const name of candidates) {
+    const key = normalizeTeamKey(name);
+    if (key && aliasLookup.has(key)) {
+      return aliasLookup.get(key);
+    }
+  }
+  
+  for (const name of candidates) {
+    const candidateKey = normalizeTeamKey(name);
+    if (!candidateKey) continue;
+    for (const [aliasKey, canonical] of aliasEntries) {
+      if (!aliasKey) continue;
+      if (aliasKey.includes(candidateKey) || candidateKey.includes(aliasKey)) {
+        return canonical;
+      }
+    }
+  }
+  
+  return null;
+}
+
+function createMatchupKey(awayName, homeName, aliasLookup) {
+  if (!awayName || !homeName) return null;
+  const awayKey = normalizeTeamKey(awayName);
+  const homeKey = normalizeTeamKey(homeName);
+  const canonicalAway = aliasLookup?.get(awayKey) || awayName;
+  const canonicalHome = aliasLookup?.get(homeKey) || homeName;
+  return `${canonicalAway}|${canonicalHome}`;
+}
+
+function formatETTimestamp(isoString) {
+  if (!isoString) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'America/New_York'
+    }).format(new Date(isoString));
+  } catch (err) {
+    return '';
+  }
+}
+
+function transformScoreboardGame(game) {
+  const toNumber = (value) => {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  
+  return {
+    id: game?.gameID,
+    state: (game?.gameState || '').toLowerCase(),
+    startTime: game?.startTime || '',
+    startDate: game?.startDate || '',
+    finalMessage: game?.finalMessage || '',
+    clock: game?.contestClock || '',
+    period: game?.currentPeriod || '',
+    url: game?.url || '',
+    awayScore: toNumber(game?.away?.score),
+    homeScore: toNumber(game?.home?.score),
+    awayWinner: Boolean(game?.away?.winner),
+    homeWinner: Boolean(game?.home?.winner),
+    awayNames: extractScoreboardNames(game?.away?.names || {}),
+    homeNames: extractScoreboardNames(game?.home?.names || {})
+  };
+}
+
+function buildScoreboardSummary(scoreboard) {
+  if (!scoreboard) return null;
+  const hasScores = Number.isFinite(scoreboard.awayScore) && Number.isFinite(scoreboard.homeScore);
+  const scoreText = hasScores ? `${scoreboard.awayScore}-${scoreboard.homeScore}` : null;
+  const state = scoreboard.state;
+  
+  if (state === 'final') {
+    return {
+      label: (scoreboard.finalMessage || 'FINAL').toUpperCase(),
+      icon: '🏁',
+      color: '#10B981',
+      bg: 'rgba(16,185,129,0.18)',
+      primaryText: scoreText,
+      secondaryText: null
+    };
+  }
+  
+  if (state === 'live') {
+    const detailParts = [];
+    if (scoreboard.period && scoreboard.period !== 'FINAL') {
+      detailParts.push(scoreboard.period);
+    }
+    if (scoreboard.clock && scoreboard.clock !== '0:00') {
+      detailParts.push(scoreboard.clock);
+    }
+    
+    return {
+      label: 'LIVE',
+      icon: '🔴',
+      color: '#FACC15',
+      bg: 'rgba(250,204,21,0.2)',
+      primaryText: scoreText,
+      secondaryText: detailParts.join(' • ') || 'In progress'
+    };
+  }
+  
+  return {
+    label: 'UPCOMING',
+    icon: '⏱️',
+    color: '#60A5FA',
+    bg: 'rgba(96,165,250,0.2)',
+    primaryText: scoreboard.startTime ? scoreboard.startTime.replace(/\s*ET$/i, '') : null,
+    secondaryText: 'Auto-updates via NCAA'
+  };
+}
 
