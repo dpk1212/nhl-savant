@@ -4,7 +4,7 @@ import { formatGameStatus } from '../utils/basketballGrading';
  * Basketball Live Score Component
  * Displays live score, game status, and clock
  */
-export function BasketballLiveScore({ liveScore, prediction }) {
+export function BasketballLiveScore({ liveScore, prediction, awayTeam, homeTeam }) {
   if (!liveScore) {
     return null;
   }
@@ -19,9 +19,9 @@ export function BasketballLiveScore({ liveScore, prediction }) {
         ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15))'
         : 'rgba(15, 23, 42, 0.5)',
       border: isLive ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(71, 85, 105, 0.3)',
-      borderRadius: '12px',
-      padding: '16px',
-      marginTop: '12px'
+      borderRadius: '10px',
+      padding: '12px',
+      marginTop: '8px'
     }}>
       {/* Status Badge */}
       <div style={{ 
@@ -61,38 +61,60 @@ export function BasketballLiveScore({ liveScore, prediction }) {
         )}
       </div>
       
-      {/* Score Display */}
+      {/* Score Display - Show team names explicitly */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
-        gap: '16px',
-        alignItems: 'center'
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '12px',
+        fontSize: '20px',
+        fontWeight: 'bold'
       }}>
-        {/* Away Team */}
-        <TeamScore
-          team="away"
-          score={liveScore.awayScore}
-          predicted={prediction.dratings?.awayScore || prediction.haslametrics?.awayScore}
-          isWinning={liveScore.awayScore > liveScore.homeScore}
-        />
-        
-        {/* VS */}
+        {/* Away Team Name & Score */}
         <div style={{
-          fontSize: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : '#f1f5f9'
+        }}>
+          <span style={{ fontSize: '14px', fontWeight: '600' }}>{awayTeam}</span>
+          <span style={{ fontSize: '28px', fontWeight: '900' }}>{liveScore.awayScore}</span>
+        </div>
+        
+        {/* Separator */}
+        <div style={{
+          fontSize: '18px',
           fontWeight: 'bold',
           color: '#64748b'
         }}>
-          @
+          -
         </div>
         
-        {/* Home Team */}
-        <TeamScore
-          team="home"
-          score={liveScore.homeScore}
-          predicted={prediction.dratings?.homeScore || prediction.haslametrics?.homeScore}
-          isWinning={liveScore.homeScore > liveScore.awayScore}
-        />
+        {/* Home Team Score & Name */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : '#f1f5f9'
+        }}>
+          <span style={{ fontSize: '28px', fontWeight: '900' }}>{liveScore.homeScore}</span>
+          <span style={{ fontSize: '14px', fontWeight: '600' }}>{homeTeam}</span>
+        </div>
       </div>
+      
+      {/* Predicted Scores (smaller, below) */}
+      {(prediction.dratings?.awayScore || prediction.haslametrics?.awayScore) && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '12px',
+          marginTop: '8px',
+          fontSize: '12px',
+          color: '#94a3b8'
+        }}>
+          <span>Predicted: {awayTeam} {(prediction.dratings?.awayScore || prediction.haslametrics?.awayScore).toFixed(1)} - {homeTeam} {(prediction.dratings?.homeScore || prediction.haslametrics?.homeScore).toFixed(1)}</span>
+        </div>
+      )}
       
       {/* Network/TV */}
       {liveScore.network && (
@@ -244,4 +266,5 @@ export function GameStatusFilter({ currentFilter, onFilterChange, counts }) {
     </div>
   );
 }
+
 

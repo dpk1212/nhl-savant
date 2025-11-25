@@ -75,8 +75,8 @@ const Basketball = () => {
     
     fetchBets();
     
-    // Refresh bets every 60 seconds to catch newly graded bets
-    const interval = setInterval(fetchBets, 60000);
+    // Refresh bets every 15 seconds to catch newly graded bets
+    const interval = setInterval(fetchBets, 15000);
     return () => clearInterval(interval);
   }, [gradedCount]); // Re-fetch when bets are graded
   
@@ -122,7 +122,7 @@ const Basketball = () => {
         const stats = calculateGradingStats(gamesWithGradesAndBets);
         setGradingStats(stats);
       },
-      60000 // Poll every 60 seconds
+      15000 // Poll every 15 seconds
     );
     
     return stopPolling;
@@ -577,7 +577,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
+        padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1rem',
         borderBottom: ELEVATION.flat.border,
         background: 'rgba(0,0,0,0.2)',
         position: 'relative',
@@ -638,17 +638,21 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 ? 'linear-gradient(135deg, #10B981, #059669)'
                 : 'linear-gradient(135deg, #EF4444, #DC2626)',
               color: 'white',
-              border: `2px solid ${game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444'}`,
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              fontWeight: '800',
-              fontSize: '0.875rem',
-              boxShadow: `0 4px 12px ${game.betOutcome.outcome === 'WIN' ? '#10B98140' : '#EF444440'}`,
+              border: `3px solid ${game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444'}`,
+              padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.25rem',
+              borderRadius: '10px',
+              fontWeight: '900',
+              fontSize: isMobile ? '1rem' : '1.125rem',
+              boxShadow: `0 6px 20px ${game.betOutcome.outcome === 'WIN' ? '#10B98160' : '#EF444460'}, 0 0 30px ${game.betOutcome.outcome === 'WIN' ? '#10B98130' : '#EF444430'}`,
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem'
+              gap: '0.375rem',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
             }}>
-              {game.betOutcome.outcome === 'WIN' ? '✓ WIN' : '✗ LOSS'}
+              <span style={{ fontSize: '1.25rem' }}>
+                {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
+              </span>
+              {game.betOutcome.outcome === 'WIN' ? 'WIN' : 'LOSS'}
             </div>
           )}
           
@@ -674,23 +678,28 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
       
       {/* Live Score Display */}
       {liveScore && (
-        <div style={{ padding: isMobile ? '0 1rem' : '0 1.25rem' }}>
-          <BasketballLiveScore liveScore={liveScore} prediction={pred} />
+        <div style={{ padding: isMobile ? '0 0.875rem' : '0 1rem' }}>
+          <BasketballLiveScore 
+            liveScore={liveScore} 
+            prediction={pred}
+            awayTeam={game.awayTeam}
+            homeTeam={game.homeTeam}
+          />
         </div>
       )}
 
       {/* Compact Bet Card */}
       <div style={{ 
         background: GRADIENTS.hero,
-        padding: isMobile ? '1rem' : '1.25rem',
+        padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1rem',
         position: 'relative',
         overflow: 'hidden'
       }}>
         {/* Best Value Heading */}
         <div style={{ 
-          fontSize: isMobile ? '1rem' : '1.125rem',
+          fontSize: isMobile ? '0.875rem' : '1rem',
           fontWeight: '700',
-          marginBottom: '0.75rem',
+          marginBottom: '0.5rem',
           color: 'var(--color-text-primary)',
           letterSpacing: '-0.01em'
         }}>
@@ -701,8 +710,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         <div style={{ 
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-          gap: isMobile ? '0.75rem' : '1rem',
-          marginBottom: '1rem',
+          gap: isMobile ? '0.5rem' : '0.75rem',
+          marginBottom: '0.75rem',
           position: 'relative',
           zIndex: 2
         }}>
