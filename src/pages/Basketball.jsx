@@ -11,6 +11,7 @@ import { startScorePolling } from '../utils/ncaaAPI';
 import { gradePrediction, calculateGradingStats } from '../utils/basketballGrading';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { GradeBadge, GradeStats } from '../components/GradeBadge';
+import { BasketballBetStats } from '../components/BasketballBetStats';
 import { 
   ELEVATION, 
   TYPOGRAPHY, 
@@ -289,7 +290,14 @@ const Basketball = () => {
         }}>
           Value-driven recommendations with 2%+ expected edge
         </p>
-        
+      </div>
+
+      {/* Betting Performance Stats */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '0 1rem' : '0' }}>
+        <BasketballBetStats />
+      </div>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '0 1rem' : '0' }}>
         {/* Stats Bar - NHL Standard */}
         {stats && (
           <div style={{

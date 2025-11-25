@@ -1,8 +1,8 @@
 /**
  * Basketball Bet Grading - Firebase Cloud Functions
  * 
- * Automatically grades basketball bets using ESPN's unofficial API
- * Runs every 15 minutes to check for completed games
+ * Automatically grades basketball bets using NCAA API
+ * Runs every 4 hours to check for completed games
  */
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -11,11 +11,73 @@ const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 
 /**
- * Scheduled function: Grade basketball bets every 15 minutes
- * Checks ESPN API for completed games and updates Firebase
+ * Load CSV team mappings from Firebase Storage
+ * Returns a map of normalized team names to their NCAA names
+ */
+async function loadTeamMappings() {
+  try {
+    // For Cloud Functions, we'll need to load from a known URL or Storage
+    // For now, return a simplified mapping function
+    return null;
+  } catch (error) {
+    logger.error("Error loading team mappings:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch NCAA games for a specific date
+ */
+async function fetchNCAAGames(dateStr) {
+  try {
+    // Format: YYYYMMDD
+    const formattedDate = dateStr.replace(/-/g, '');
+    const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${formattedDate}`;
+    
+    logger.info(`Fetching NCAA games for ${formattedDate}`);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      logger.error(`NCAA API error: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    const games = data.games || [];
+    
+    logger.info(`Fetched ${games.length} games from NCAA API`);
+    
+    return games.map(g => ({
+      awayTeam: g.game.away.names.short,
+      homeTeam: g.game.home.names.short,
+      awayScore: parseInt(g.game.away.score) || 0,
+      homeScore: parseInt(g.game.home.score) || 0,
+      gameState: g.game.gameState,
+      isFinal: g.game.gameState === 'final',
+    }));
+  } catch (error) {
+    logger.error("Error fetching NCAA games:", error);
+    return [];
+  }
+}
+
+/**
+ * Normalize team name for matching
+ */
+function normalizeTeamName(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/state$/i, 'st')
+    .replace(/university$/i, '');
+}
+
+/**
+ * Scheduled function: Grade basketball bets every 4 hours
+ * Checks NCAA API for completed games and updates Firebase
  */
 exports.updateBasketballBetResults = onSchedule({
-  schedule: "*/15 * * * *", // Every 15 minutes
+  schedule: "0 */4 * * *", // Every 4 hours
   timeZone: "America/New_York",
   memory: "256MiB",
   timeoutSeconds: 120,
@@ -26,107 +88,102 @@ exports.updateBasketballBetResults = onSchedule({
     // 1. Fetch pending basketball bets from Firestore
     const betsSnapshot = await admin.firestore()
       .collection("basketball_bets")
-      .where("status", "==", "PENDING")
-      .get();
+      .get(); // Get all bets, filter for pending/ungraded
 
     if (betsSnapshot.empty) {
-      logger.info("No pending basketball bets");
+      logger.info("No basketball bets found");
       return null;
     }
 
-    logger.info(`Found ${betsSnapshot.size} pending basketball bets`);
+    logger.info(`Found ${betsSnapshot.size} total basketball bets`);
 
-    // 2. Fetch live scores from ESPN API (unofficial but free)
-    logger.info("Fetching scores from ESPN API...");
-    const espnResponse = await fetch(
-      "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard"
-    );
-    
-    if (!espnResponse.ok) {
-      logger.error(`ESPN API error: ${espnResponse.status} ${espnResponse.statusText}`);
-      return null;
-    }
-    
-    const espnData = await espnResponse.json();
+    // Filter for ungraded bets (no result.outcome field or status PENDING)
+    const ungradedBets = betsSnapshot.docs.filter(doc => {
+      const bet = doc.data();
+      return !bet.result?.outcome || bet.status === 'PENDING';
+    });
 
-    // 3. Parse final games only (status.type.state === 'post')
-    const finalGames = espnData.events
-      ?.filter((event) => event.status.type.state === "post")
-      .map((event) => {
-        const competitors = event.competitions[0].competitors;
-        const awayTeam = competitors.find((c) => c.homeAway === "away");
-        const homeTeam = competitors.find((c) => c.homeAway === "home");
-
-        return {
-          awayTeam: awayTeam.team.displayName,
-          homeTeam: homeTeam.team.displayName,
-          awayScore: parseInt(awayTeam.score || 0),
-          homeScore: parseInt(homeTeam.score || 0),
-          totalScore: parseInt(awayTeam.score || 0) + parseInt(homeTeam.score || 0),
-        };
-      }) || [];
-
-    if (finalGames.length === 0) {
-      logger.info("No final basketball games found on ESPN");
+    if (ungradedBets.length === 0) {
+      logger.info("No ungraded basketball bets");
       return null;
     }
 
-    logger.info(`Found ${finalGames.length} final basketball games`);
+    logger.info(`Found ${ungradedBets.length} ungraded basketball bets`);
+
+    // 2. Group bets by date to minimize API calls
+    const betsByDate = {};
+    ungradedBets.forEach(betDoc => {
+      const bet = betDoc.data();
+      const date = bet.date;
+      if (!betsByDate[date]) {
+        betsByDate[date] = [];
+      }
+      betsByDate[date].push({ id: betDoc.id, ...bet });
+    });
+
+    logger.info(`Bets span ${Object.keys(betsByDate).length} dates`);
 
     let updatedCount = 0;
     let notFoundCount = 0;
 
-    // 4. Match bets to final games and grade them
-    for (const betDoc of betsSnapshot.docs) {
-      const bet = betDoc.data();
-      const betId = betDoc.id;
+    // 3. Process each date
+    for (const [date, bets] of Object.entries(betsByDate)) {
+      logger.info(`Processing ${bets.length} bets for ${date}`);
+      
+      const ncaaGames = await fetchNCAAGames(date);
+      const finalGames = ncaaGames.filter(g => g.isFinal);
+      
+      logger.info(`Found ${finalGames.length} final games for ${date}`);
 
-      // Find matching game (with fuzzy matching for team names)
-      // ESPN team names may differ slightly from our data sources
-      const matchingGame = finalGames.find((g) => {
-        const awayMatch = 
-          g.awayTeam.toLowerCase().includes(bet.game.awayTeam.toLowerCase()) ||
-          bet.game.awayTeam.toLowerCase().includes(g.awayTeam.toLowerCase());
-        const homeMatch = 
-          g.homeTeam.toLowerCase().includes(bet.game.homeTeam.toLowerCase()) ||
-          bet.game.homeTeam.toLowerCase().includes(g.homeTeam.toLowerCase());
-        return awayMatch && homeMatch;
-      });
-
-      if (!matchingGame) {
-        notFoundCount++;
-        continue; // Game not final yet or not found
-      }
-
-      logger.info(
-        `Grading bet ${betId}: ${bet.bet.pick} for ${matchingGame.awayTeam} @ ${matchingGame.homeTeam} (${matchingGame.awayScore}-${matchingGame.homeScore})`
-      );
-
-      // Calculate outcome (WIN/LOSS)
-      const outcome = calculateOutcome(matchingGame, bet.bet);
-      const profit = calculateProfit(outcome, bet.bet.odds);
-
-      // Update bet in Firestore
-      await admin.firestore()
-        .collection("basketball_bets")
-        .doc(betId)
-        .update({
-          "result.awayScore": matchingGame.awayScore,
-          "result.homeScore": matchingGame.homeScore,
-          "result.totalScore": matchingGame.totalScore,
-          "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "AWAY" : "HOME",
-          "result.outcome": outcome,
-          "result.profit": profit,
-          "result.fetched": true,
-          "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
-          "result.source": "ESPN_API",
-          "status": "COMPLETED",
+      // 4. Match and grade each bet
+      for (const bet of bets) {
+        // Find matching game using fuzzy team name matching
+        const matchingGame = finalGames.find((g) => {
+          const awayMatch = 
+            normalizeTeamName(g.awayTeam).includes(normalizeTeamName(bet.game.awayTeam)) ||
+            normalizeTeamName(bet.game.awayTeam).includes(normalizeTeamName(g.awayTeam));
+          const homeMatch = 
+            normalizeTeamName(g.homeTeam).includes(normalizeTeamName(bet.game.homeTeam)) ||
+            normalizeTeamName(bet.game.homeTeam).includes(normalizeTeamName(g.homeTeam));
+          return awayMatch && homeMatch;
         });
 
-      updatedCount++;
-      logger.info(
-        `✅ Graded ${betId}: ${outcome} → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`
-      );
+        if (!matchingGame) {
+          notFoundCount++;
+          logger.info(`No final game found for: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+          continue;
+        }
+
+        logger.info(
+          `Grading bet ${bet.id}: ${bet.bet.pick} for ${matchingGame.awayTeam} @ ${matchingGame.homeTeam} (${matchingGame.awayScore}-${matchingGame.homeScore})`
+        );
+
+        // Calculate outcome (WIN/LOSS)
+        const outcome = calculateOutcome(matchingGame, bet.bet);
+        const profit = calculateProfit(outcome, bet.bet.odds);
+
+        // Update bet in Firestore
+        await admin.firestore()
+          .collection("basketball_bets")
+          .doc(bet.id)
+          .update({
+            "result.awayScore": matchingGame.awayScore,
+            "result.homeScore": matchingGame.homeScore,
+            "result.totalScore": matchingGame.awayScore + matchingGame.homeScore,
+            "result.winner": matchingGame.awayScore > matchingGame.homeScore ? bet.game.awayTeam : bet.game.homeTeam,
+            "result.outcome": outcome,
+            "result.profit": profit,
+            "result.fetched": true,
+            "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
+            "result.source": "NCAA_API",
+            "status": "COMPLETED",
+          });
+
+        updatedCount++;
+        logger.info(
+          `✅ Graded ${bet.id}: ${outcome} → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`
+        );
+      }
     }
 
     logger.info(`Finished: Graded ${updatedCount} bets, ${notFoundCount} games not final yet`);
