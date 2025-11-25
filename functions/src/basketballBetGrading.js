@@ -138,14 +138,24 @@ exports.updateBasketballBetResults = onSchedule({
       // 4. Match and grade each bet
       for (const bet of bets) {
         // Find matching game using fuzzy team name matching
+        // IMPORTANT: Handle BOTH normal and REVERSED home/away matchups!
         const matchingGame = finalGames.find((g) => {
-          const awayMatch = 
-            normalizeTeamName(g.awayTeam).includes(normalizeTeamName(bet.game.awayTeam)) ||
-            normalizeTeamName(bet.game.awayTeam).includes(normalizeTeamName(g.awayTeam));
-          const homeMatch = 
-            normalizeTeamName(g.homeTeam).includes(normalizeTeamName(bet.game.homeTeam)) ||
-            normalizeTeamName(bet.game.homeTeam).includes(normalizeTeamName(g.homeTeam));
-          return awayMatch && homeMatch;
+          const normBetAway = normalizeTeamName(bet.game.awayTeam);
+          const normBetHome = normalizeTeamName(bet.game.homeTeam);
+          const normGameAway = normalizeTeamName(g.awayTeam);
+          const normGameHome = normalizeTeamName(g.homeTeam);
+          
+          // Strategy 1: Normal match (away->away, home->home)
+          const normalMatch = 
+            (normGameAway.includes(normBetAway) || normBetAway.includes(normGameAway)) &&
+            (normGameHome.includes(normBetHome) || normBetHome.includes(normGameHome));
+          
+          // Strategy 2: Reversed match (away->home, home->away)
+          const reversedMatch = 
+            (normGameAway.includes(normBetHome) || normBetHome.includes(normGameAway)) &&
+            (normGameHome.includes(normBetAway) || normBetAway.includes(normGameHome));
+          
+          return normalMatch || reversedMatch;
         });
 
         if (!matchingGame) {
@@ -218,17 +228,30 @@ exports.triggerBasketballBetGrading = onRequest(async (request, response) => {
  * @returns {string} - 'WIN' or 'LOSS'
  */
 function calculateOutcome(game, bet) {
-  // Determine if we bet on away or home team
+  // Determine which team we bet on
   const betTeam = bet.team || bet.pick;
-  const isAway = 
-    betTeam.toLowerCase().includes(game.awayTeam.toLowerCase()) ||
-    game.awayTeam.toLowerCase().includes(betTeam.toLowerCase());
+  const normBetTeam = normalizeTeamName(betTeam);
+  const normAwayTeam = normalizeTeamName(game.awayTeam);
+  const normHomeTeam = normalizeTeamName(game.homeTeam);
   
-  // Determine actual winner
-  const actualWinner = game.awayScore > game.homeScore ? "AWAY" : "HOME";
-  const predictedWinner = isAway ? "AWAY" : "HOME";
-
-  return actualWinner === predictedWinner ? "WIN" : "LOSS";
+  // Check if our bet team matches away or home (using fuzzy matching)
+  const isAway = normBetTeam.includes(normAwayTeam) || normAwayTeam.includes(normBetTeam);
+  const isHome = normBetTeam.includes(normHomeTeam) || normHomeTeam.includes(normBetTeam);
+  
+  if (!isAway && !isHome) {
+    logger.warn(`Cannot determine which team was bet on: ${betTeam} vs ${game.awayTeam} @ ${game.homeTeam}`);
+    return "LOSS"; // Default to LOSS if we can't match
+  }
+  
+  // Determine actual winner based on score
+  const awayWon = game.awayScore > game.homeScore;
+  
+  // If we bet on away team and away won, OR we bet on home team and home won -> WIN
+  if ((isAway && awayWon) || (isHome && !awayWon)) {
+    return "WIN";
+  } else {
+    return "LOSS";
+  }
 }
 
 /**
