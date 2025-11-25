@@ -28,13 +28,17 @@ export function parseBasketballOdds(markdown) {
     if (!line || !line.startsWith('|')) continue;
     
     // Look for AWAY team line (has ![bell] and time marker)
-    // ONLY parse today's games (Monday 11/24)
+    // Parse games for TODAY (any date format: MON, TUE, WED, THU, FRI, SAT, SUN or STARTS IN)
     if (line.includes('![bell]') && 
-        (line.includes('MON 11/24') || line.includes('STARTS IN'))) {
+        (line.match(/(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+\d{1,2}\/\d{1,2}/) || 
+         line.includes('STARTS IN') ||
+         line.includes('LIVE'))) {
       
-      // Extract time (handle both "1:00 PM" and "11:00 PM" with or without space after date)
-      const timeMatch = line.match(/(?:MON|TUE|WED|STARTS\s+IN)\s+[^\d]*(\d{1,2}:\d{2}\s*(?:AM|PM))/);
-      const gameTime = timeMatch ? timeMatch[1] : null;
+      // Extract time (handle all date formats and live games)
+      const timeMatch = line.match(/(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+\d{1,2}\/\d{1,2}(\d{1,2}:\d{2}\s*(?:AM|PM))/);
+      const startsInMatch = line.match(/STARTS\s+IN[^\d]*(\d{1,2}:\d{2}\s*(?:AM|PM))/);
+      const liveMatch = line.match(/LIVE/);
+      const gameTime = timeMatch ? timeMatch[1] : startsInMatch ? startsInMatch[1] : liveMatch ? 'LIVE' : 'TBD';
       
       // Extract away team info - line contains BOTH bell and team logo
       // Split on 'logos.oddstrader.com' to find the team logo
