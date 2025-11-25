@@ -1,9 +1,10 @@
 /**
  * NCAA API Integration
- * Fetches live scores and game data from https://ncaa-api.henrygd.me
+ * Fetches live scores and game data via Firebase Cloud Function proxy (avoids CORS)
  */
 
-const NCAA_API_BASE = 'https://ncaa-api.henrygd.me';
+// Use Firebase Cloud Function proxy to avoid CORS
+const NCAA_PROXY_URL = 'https://us-central1-nhl-savant.cloudfunctions.net/ncaaProxy';
 
 /**
  * Fetch today's D1 Men's Basketball games
@@ -18,10 +19,11 @@ export async function fetchTodaysGames(date = null) {
   }
   
   try {
-    const response = await fetch(`${NCAA_API_BASE}/scoreboard/basketball-men/d1/${date}`);
+    // Use Firebase Cloud Function proxy to avoid CORS
+    const response = await fetch(`${NCAA_PROXY_URL}?date=${date}`);
     
     if (!response.ok) {
-      throw new Error(`NCAA API error: ${response.status}`);
+      throw new Error(`NCAA Proxy error: ${response.status}`);
     }
     
     const data = await response.json();
@@ -29,7 +31,7 @@ export async function fetchTodaysGames(date = null) {
     // Parse the games from the response
     const games = data.games || [];
     
-    console.log(`📊 NCAA API: Fetched ${games.length} games for ${date}`);
+    console.log(`📊 NCAA API (via proxy): Fetched ${games.length} games for ${date}`);
     
     return games.map(game => parseNCAAgame(game));
   } catch (error) {

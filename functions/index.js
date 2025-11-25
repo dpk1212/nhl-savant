@@ -331,3 +331,10 @@ const {
 
 exports.updateBasketballBetResults = updateBasketballBetResults;
 exports.triggerBasketballBetGrading = triggerBasketballBetGrading;
+
+/**
+ * NCAA API Proxy
+ * Proxies NCAA API requests to avoid CORS issues
+ */
+const { ncaaProxy } = require("./src/ncaaProxy");
+exports.ncaaProxy = ncaaProxy;
