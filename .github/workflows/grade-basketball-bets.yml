@@ -34,6 +34,13 @@ jobs:
     - name: Extract results to JSON
       run: npm run extract-basketball-results
     
+    - name: Grade basketball bets in Firebase
+      env:
+        VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+        FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      run: npm run grade-basketball-bets
+    
     - name: Commit and push results
       run: |
         git config user.name "GitHub Actions"

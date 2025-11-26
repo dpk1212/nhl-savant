@@ -54,15 +54,13 @@ async function gradeBasketballBets() {
       return 0;
     }
     
-    // 3. Fetch pending basketball bets from Firebase
+    // 3. Fetch pending basketball bets from Firebase (using Admin SDK)
     console.log('📊 Fetching pending bets from Firebase...');
     const gameDate = getETGameDate();
-    const betsQuery = query(
-      collection(db, 'basketball_bets'),
-      where('status', '==', 'PENDING'),
-      where('date', '==', gameDate)
-    );
-    const betsSnapshot = await getDocs(betsQuery);
+    const betsSnapshot = await db.collection('basketball_bets')
+      .where('status', '==', 'PENDING')
+      .where('date', '==', gameDate)
+      .get();
     console.log(`✅ Found ${betsSnapshot.size} pending bets for ${gameDate}\n`);
     
     if (betsSnapshot.empty) {
@@ -104,8 +102,8 @@ async function gradeBasketballBets() {
         ? (bet.bet.odds < 0 ? 100 / Math.abs(bet.bet.odds) : bet.bet.odds / 100)
         : -1;
       
-      // Update bet in Firebase
-      await updateDoc(doc(db, 'basketball_bets', betId), {
+      // Update bet in Firebase (using Admin SDK)
+      await db.collection('basketball_bets').doc(betId).update({
         'result.winner': matchingResult.winner,
         'result.winnerTeam': matchingResult.winnerTeam,
         'result.outcome': outcome,
