@@ -22,6 +22,7 @@ export async function fetchTodaysGames(date = null) {
     date = `${year}${month}${day}`;
     
     console.log(`📅 Fetching NCAA games for LOCAL date: ${year}-${month}-${day}`);
+  }
   
   try {
     // Use Firebase Cloud Function proxy to avoid CORS
