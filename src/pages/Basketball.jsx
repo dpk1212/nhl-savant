@@ -878,36 +878,31 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               alignItems: 'center',
               gap: isMobile ? '0.5rem' : '0.625rem'
             }}>
-              <div style={{ fontSize: isMobile ? '1.125rem' : '1.5rem', lineHeight: 1, flexShrink: 0 }}>
+              <div style={{ fontSize: '1.5rem', lineHeight: 1, flexShrink: 0 }}>
                 {isUpsetTerritory ? '🎯' : isPositiveEV ? '💡' : '⚠️'}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1 }}>
                 <div style={{ 
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  fontWeight: '700',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                  fontWeight: '800',
                   color: isPositiveEV ? '#10B981' : '#EF4444',
-                  marginBottom: isMobile ? 0 : '0.125rem',
-                  letterSpacing: '-0.01em',
-                  whiteSpace: isMobile ? 'nowrap' : 'normal',
-                  overflow: isMobile ? 'hidden' : 'visible',
-                  textOverflow: isMobile ? 'ellipsis' : 'clip'
+                  marginBottom: '0.25rem',
+                  letterSpacing: '-0.01em'
                 }}>
-                  {pred.bestTeam} ML {isUpsetTerritory && '• 🎯'}
+                  {pred.bestTeam} Moneyline {isUpsetTerritory && '• Upset Alert'}
                 </div>
-                {!isMobile && (
-                  <div style={{ 
-                    fontSize: '0.75rem',
-                    color: 'rgba(255,255,255,0.7)',
-                    lineHeight: 1.3
-                  }}>
-                    {isUpsetTerritory 
-                      ? `Close game with ${Math.abs(pred.bestEV).toFixed(1)}% ${isPositiveEV ? 'edge' : 'disadvantage'} vs market`
-                      : isPositiveEV
-                        ? `Our model sees ${pred.bestEV.toFixed(1)}% more value than the market`
-                        : `Market favors this ${Math.abs(pred.bestEV).toFixed(1)}% more than our model`
-                    }
-                  </div>
-                )}
+                <div style={{ 
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.7)',
+                  lineHeight: 1.4
+                }}>
+                  {isUpsetTerritory 
+                    ? `${Math.abs(pred.bestEV).toFixed(1)}% edge • Close game (45-65% probability)`
+                    : isPositiveEV
+                      ? `${pred.bestEV.toFixed(1)}% more value than market • ${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}% win probability`
+                      : `${Math.abs(pred.bestEV).toFixed(1)}% disadvantage vs market`
+                  }
+                </div>
               </div>
             </div>
           );
