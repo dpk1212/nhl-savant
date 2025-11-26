@@ -14,8 +14,20 @@ export function gradePrediction(prediction, liveScore) {
     return null; // Can only grade completed games
   }
   
+  // ROBUSTNESS: Validate scores
   const awayScore = liveScore.awayScore;
   const homeScore = liveScore.homeScore;
+  
+  if (typeof awayScore !== 'number' || typeof homeScore !== 'number') {
+    console.error(`❌ Invalid scores in gradePrediction: away=${awayScore}, home=${homeScore}`);
+    return null;
+  }
+  
+  if (awayScore < 0 || homeScore < 0) {
+    console.error(`❌ Negative scores in gradePrediction: away=${awayScore}, home=${homeScore}`);
+    return null;
+  }
+  
   const actualWinner = awayScore > homeScore ? 'away' : 'home';
   const actualMargin = Math.abs(awayScore - homeScore);
   
@@ -25,6 +37,8 @@ export function gradePrediction(prediction, liveScore) {
   const predictedWinner = predictedAwayScore > predictedHomeScore ? 'away' : 'home';
   const predictedTotal = predictedAwayScore + predictedHomeScore;
   const actualTotal = awayScore + homeScore;
+  
+  console.log(`📊 GRADING PREDICTION: Predicted ${predictedAwayScore}-${predictedHomeScore} (${predictedWinner}), Actual ${awayScore}-${homeScore} (${actualWinner})`);
   
   // Calculate errors
   const winnerCorrect = predictedWinner === actualWinner;
@@ -151,4 +165,5 @@ export function formatGameStatus(status) {
   
   return statusMap[status] || statusMap['pre'];
 }
+
 

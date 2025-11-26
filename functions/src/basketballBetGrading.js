@@ -47,19 +47,38 @@ async function fetchNCAAGames(dateStr) {
     
     logger.info(`Fetched ${games.length} games from NCAA API`);
     
-    const parsedGames = games.map(g => ({
-      awayTeam: g.game.away.names.short,
-      homeTeam: g.game.home.names.short,
-      awayScore: parseInt(g.game.away.score) || 0,
-      homeScore: parseInt(g.game.home.score) || 0,
-      gameState: g.game.gameState,
-      isFinal: g.game.gameState === 'final',
-    }));
+    const parsedGames = games.map(g => {
+      // ROBUSTNESS: Validate game structure
+      if (!g.game || !g.game.away || !g.game.home) {
+        logger.warn(`⚠️ Invalid game structure:`, g);
+        return null;
+      }
+      
+      const awayScore = parseInt(g.game.away.score);
+      const homeScore = parseInt(g.game.home.score);
+      
+      // Validate scores
+      if (isNaN(awayScore) || isNaN(homeScore)) {
+        logger.warn(`⚠️ Invalid scores: ${g.game.away.names?.short} (${g.game.away.score}) @ ${g.game.home.names?.short} (${g.game.home.score})`);
+      }
+      
+      return {
+        awayTeam: g.game.away.names.short,
+        homeTeam: g.game.home.names.short,
+        awayScore: awayScore || 0,
+        homeScore: homeScore || 0,
+        gameState: g.game.gameState,
+        isFinal: g.game.gameState === 'final',
+      };
+    }).filter(g => g !== null); // Remove invalid games
     
     const finalCount = parsedGames.filter(g => g.isFinal).length;
     logger.info(`Parsed ${parsedGames.length} games, ${finalCount} are final`);
     if (finalCount > 0) {
-      logger.info(`Sample final games: ${parsedGames.filter(g => g.isFinal).slice(0, 3).map(g => `${g.awayTeam} @ ${g.homeTeam} (${g.awayScore}-${g.homeScore})`).join(', ')}`);
+      logger.info(`Sample final games with VERIFIED score mapping:`);
+      parsedGames.filter(g => g.isFinal).slice(0, 3).forEach(g => {
+        logger.info(`   ${g.awayTeam} (AWAY) ${g.awayScore} @ ${g.homeTeam} (HOME) ${g.homeScore}`);
+      });
     }
     
     return parsedGames;
@@ -147,7 +166,16 @@ exports.updateBasketballBetResults = onSchedule({
       for (const bet of bets) {
         // Find matching game using fuzzy team name matching
         // IMPORTANT: Handle BOTH normal and REVERSED home/away matchups!
-        const matchingGame = finalGames.find((g) => {
+        let matchingGame = null;
+        let isReversed = false;
+        
+        for (const g of finalGames) {
+          // ROBUSTNESS: Validate game has required fields
+          if (!g.awayTeam || !g.homeTeam || g.awayScore === undefined || g.homeScore === undefined) {
+            logger.warn(`⚠️ NCAA game missing required fields:`, g);
+            continue;
+          }
+          
           const normBetAway = normalizeTeamName(bet.game.awayTeam);
           const normBetHome = normalizeTeamName(bet.game.homeTeam);
           const normGameAway = normalizeTeamName(g.awayTeam);
@@ -163,39 +191,73 @@ exports.updateBasketballBetResults = onSchedule({
             (normGameAway.includes(normBetHome) || normBetHome.includes(normGameAway)) &&
             (normGameHome.includes(normBetAway) || normBetAway.includes(normGameHome));
           
-          return normalMatch || reversedMatch;
-        });
+          if (normalMatch) {
+            matchingGame = g;
+            isReversed = false;
+            logger.info(`✅ MATCH (NORMAL): Bet "${bet.game.awayTeam} @ ${bet.game.homeTeam}" ↔ NCAA "${g.awayTeam} @ ${g.homeTeam}"`);
+            break;
+          } else if (reversedMatch) {
+            matchingGame = g;
+            isReversed = true;
+            logger.warn(`⚠️ MATCH (REVERSED): Bet "${bet.game.awayTeam} @ ${bet.game.homeTeam}" ↔ NCAA "${g.awayTeam} @ ${g.homeTeam}"`);
+            logger.warn(`   Home/away are SWAPPED between our bet and NCAA API!`);
+            break;
+          }
+        }
 
         if (!matchingGame) {
           notFoundCount++;
-          logger.info(`No final game found for: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
-          logger.info(`  Normalized bet: ${normalizeTeamName(bet.game.awayTeam)} @ ${normalizeTeamName(bet.game.homeTeam)}`);
-          logger.info(`  Available final games (${finalGames.length}): ${finalGames.slice(0, 5).map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', ')}`);
+          logger.info(`❌ No final game found for: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+          logger.info(`   Normalized bet: ${normalizeTeamName(bet.game.awayTeam)} @ ${normalizeTeamName(bet.game.homeTeam)}`);
+          logger.info(`   Available final games (${finalGames.length}): ${finalGames.slice(0, 5).map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', ')}`);
           continue;
         }
 
+        // CRITICAL: If reversed, we need to swap the scores when storing to bet
+        let betAwayScore, betHomeScore;
+        if (isReversed) {
+          // NCAA has them backwards from our bet
+          betAwayScore = matchingGame.homeScore; // NCAA home = our away
+          betHomeScore = matchingGame.awayScore; // NCAA away = our home
+          logger.warn(`   REVERSING SCORES: NCAA(${matchingGame.awayScore}-${matchingGame.homeScore}) → Bet(${betAwayScore}-${betHomeScore})`);
+        } else {
+          betAwayScore = matchingGame.awayScore;
+          betHomeScore = matchingGame.homeScore;
+        }
+
         logger.info(
-          `Grading bet ${bet.id}: ${bet.bet.pick} for ${matchingGame.awayTeam} @ ${matchingGame.homeTeam} (${matchingGame.awayScore}-${matchingGame.homeScore})`
+          `📊 Grading bet ${bet.id}: ${bet.bet.pick} for ${bet.game.awayTeam} @ ${bet.game.homeTeam}`
+        );
+        logger.info(
+          `   NCAA Game: ${matchingGame.awayTeam}(${matchingGame.awayScore}) @ ${matchingGame.homeTeam}(${matchingGame.homeScore})${isReversed ? ' [REVERSED]' : ''}`
+        );
+        logger.info(
+          `   Bet Scores: ${bet.game.awayTeam}(${betAwayScore}) @ ${bet.game.homeTeam}(${betHomeScore})`
         );
 
-        // Calculate outcome (WIN/LOSS)
-        const outcome = calculateOutcome(matchingGame, bet.bet);
+        // Calculate outcome (WIN/LOSS) using the CORRECTED scores
+        const outcome = calculateOutcome(bet.game, betAwayScore, betHomeScore, bet.bet);
         const profit = calculateProfit(outcome, bet.bet.odds);
 
-        // Update bet in Firestore
+        logger.info(
+          `   RESULT: ${bet.bet.pick} → ${outcome} (${profit > 0 ? "+" : ""}${profit.toFixed(2)}u)`
+        );
+
+        // Update bet in Firestore with CORRECTED scores
         await admin.firestore()
           .collection("basketball_bets")
           .doc(bet.id)
           .update({
-            "result.awayScore": matchingGame.awayScore,
-            "result.homeScore": matchingGame.homeScore,
-            "result.totalScore": matchingGame.awayScore + matchingGame.homeScore,
-            "result.winner": matchingGame.awayScore > matchingGame.homeScore ? bet.game.awayTeam : bet.game.homeTeam,
+            "result.awayScore": betAwayScore, // CORRECTED for reversal
+            "result.homeScore": betHomeScore, // CORRECTED for reversal
+            "result.totalScore": betAwayScore + betHomeScore,
+            "result.winner": betAwayScore > betHomeScore ? bet.game.awayTeam : bet.game.homeTeam,
             "result.outcome": outcome,
             "result.profit": profit,
             "result.fetched": true,
             "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
             "result.source": "NCAA_API",
+            "result.isReversed": isReversed, // Track if reversal occurred
             "status": "COMPLETED",
           });
 
@@ -233,34 +295,59 @@ exports.triggerBasketballBetGrading = onRequest(async (request, response) => {
 /**
  * Helper: Calculate outcome (WIN/LOSS)
  * 
- * @param {object} game - Final game with awayScore, homeScore, awayTeam, homeTeam
+ * @param {object} betGameInfo - Bet game info with awayTeam, homeTeam
+ * @param {number} awayScore - Final away score (CORRECTED for reversal)
+ * @param {number} homeScore - Final home score (CORRECTED for reversal)
  * @param {object} bet - Bet object with pick and team
  * @returns {string} - 'WIN' or 'LOSS'
  */
-function calculateOutcome(game, bet) {
+function calculateOutcome(betGameInfo, awayScore, homeScore, bet) {
+  // ROBUSTNESS: Validate scores
+  if (typeof awayScore !== 'number' || typeof homeScore !== 'number') {
+    logger.error(`❌ Invalid scores in calculateOutcome: away=${awayScore}, home=${homeScore}`);
+    return "LOSS";
+  }
+  
   // Determine which team we bet on
   const betTeam = bet.team || bet.pick;
   const normBetTeam = normalizeTeamName(betTeam);
-  const normAwayTeam = normalizeTeamName(game.awayTeam);
-  const normHomeTeam = normalizeTeamName(game.homeTeam);
+  const normAwayTeam = normalizeTeamName(betGameInfo.awayTeam);
+  const normHomeTeam = normalizeTeamName(betGameInfo.homeTeam);
+  
+  logger.info(`   🎯 OUTCOME CALCULATION:`);
+  logger.info(`      Bet on: "${betTeam}" (normalized: "${normBetTeam}")`);
+  logger.info(`      Away: "${betGameInfo.awayTeam}" (${awayScore}, normalized: "${normAwayTeam}")`);
+  logger.info(`      Home: "${betGameInfo.homeTeam}" (${homeScore}, normalized: "${normHomeTeam}")`);
   
   // Check if our bet team matches away or home (using fuzzy matching)
   const isAway = normBetTeam.includes(normAwayTeam) || normAwayTeam.includes(normBetTeam);
   const isHome = normBetTeam.includes(normHomeTeam) || normHomeTeam.includes(normBetTeam);
   
   if (!isAway && !isHome) {
-    logger.warn(`Cannot determine which team was bet on: ${betTeam} vs ${game.awayTeam} @ ${game.homeTeam}`);
+    logger.error(`❌ Cannot determine which team was bet on: ${betTeam} vs ${betGameInfo.awayTeam} @ ${betGameInfo.homeTeam}`);
     return "LOSS"; // Default to LOSS if we can't match
   }
   
+  logger.info(`      Bet matched to: ${isAway ? 'AWAY' : 'HOME'} team`);
+  
   // Determine actual winner based on score
-  const awayWon = game.awayScore > game.homeScore;
-  const homeWon = game.homeScore > game.awayScore;
+  const awayWon = awayScore > homeScore;
+  const homeWon = homeScore > awayScore;
+  const tie = awayScore === homeScore;
+  
+  if (tie) {
+    logger.warn(`⚠️ Game ended in a tie: ${awayScore}-${homeScore}`);
+    return "PUSH";
+  }
+  
+  logger.info(`      Actual winner: ${awayWon ? 'AWAY' : 'HOME'} (${awayScore}-${homeScore})`);
   
   // If we bet on away team and away won, OR we bet on home team and home won -> WIN
   if ((isAway && awayWon) || (isHome && homeWon)) {
+    logger.info(`      ✅ BET WON: Our team (${betTeam}) won!`);
     return "WIN";
   } else {
+    logger.info(`      ❌ BET LOST: Our team (${betTeam}) lost`);
     return "LOSS";
   }
 }
@@ -273,6 +360,12 @@ function calculateOutcome(game, bet) {
  * @returns {number} - Profit in units
  */
 function calculateProfit(outcome, odds) {
+  // ROBUSTNESS: Validate inputs
+  if (!outcome || typeof odds !== 'number') {
+    logger.error(`❌ Invalid profit calculation: outcome="${outcome}", odds=${odds}`);
+    return -1;
+  }
+  
   if (outcome === "LOSS") return -1;
   if (outcome === "PUSH") return 0;
 
@@ -281,10 +374,13 @@ function calculateProfit(outcome, odds) {
     // Negative odds: Risk |odds| to win 100
     // Profit = 100 / |odds|
     return 100 / Math.abs(odds);
-  } else {
+  } else if (odds > 0) {
     // Positive odds: Risk 100 to win odds
     // Profit = odds / 100
     return odds / 100;
+  } else {
+    logger.error(`❌ Invalid odds: ${odds}`);
+    return -1;
   }
 }
 

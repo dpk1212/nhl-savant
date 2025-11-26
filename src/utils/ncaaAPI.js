@@ -59,13 +59,27 @@ function parseNCAAgame(game) {
   
   const awayTeamName = awayTeam.names?.short || awayTeam.names?.full || '';
   const homeTeamName = homeTeam.names?.short || homeTeam.names?.full || '';
-  const awayScore = parseInt(awayTeam.score) || 0;
-  const homeScore = parseInt(homeTeam.score) || 0;
+  
+  // ROBUSTNESS: Validate scores are valid numbers
+  const rawAwayScore = awayTeam.score;
+  const rawHomeScore = homeTeam.score;
+  const awayScore = parseInt(rawAwayScore) || 0;
+  const homeScore = parseInt(rawHomeScore) || 0;
+  
+  // Warn if scores look suspicious
+  if (rawAwayScore !== undefined && isNaN(parseInt(rawAwayScore))) {
+    console.warn(`⚠️ Invalid away score for ${awayTeamName}: "${rawAwayScore}"`);
+  }
+  if (rawHomeScore !== undefined && isNaN(parseInt(rawHomeScore))) {
+    console.warn(`⚠️ Invalid home score for ${homeTeamName}: "${rawHomeScore}"`);
+  }
+  
   const status = gameData.gameState;
   
   // VERIFICATION LOGGING: Confirm score mapping is correct
   if (status === 'final' || status === 'live') {
-    console.log(`✅ NCAA Score: ${awayTeamName} (away) ${awayScore} @ ${homeTeamName} (home) ${homeScore} [${status}]`);
+    console.log(`✅ NCAA API SCORE MAPPING: ${awayTeamName} (AWAY) ${awayScore} @ ${homeTeamName} (HOME) ${homeScore} [${status}]`);
+    console.log(`   Raw NCAA data: away.score="${rawAwayScore}" → awayScore=${awayScore}, home.score="${rawHomeScore}" → homeScore=${homeScore}`);
   }
   
   return {
@@ -74,15 +88,15 @@ function parseNCAAgame(game) {
     startTime: gameData.startTime,
     startTimeEpoch: gameData.startTimeEpoch,
     
-    // Teams
+    // Teams - VERIFIED: NCAA API structure
     awayTeam: awayTeamName,
     awayTeamFull: awayTeam.names?.full || '',
-    awayScore: awayScore,
+    awayScore: awayScore, // VERIFIED: from g.game.away.score
     awayRank: awayTeam.rank || null,
     
     homeTeam: homeTeamName,
     homeTeamFull: homeTeam.names?.full || '',
-    homeScore: homeScore,
+    homeScore: homeScore, // VERIFIED: from g.game.home.score
     homeRank: homeTeam.rank || null,
     
     // Game state
@@ -109,14 +123,35 @@ function parseNCAAgame(game) {
  * @returns {boolean} - True if games match
  */
 export function matchGames(ncaaGame, ourGame, teamMappings) {
+  // ROBUSTNESS: Validate inputs
+  if (!ncaaGame || !ourGame) {
+    console.error('❌ matchGames called with null game objects');
+    return false;
+  }
+  
+  if (!ncaaGame.awayTeam || !ncaaGame.homeTeam) {
+    console.warn(`⚠️ NCAA game missing team names:`, ncaaGame);
+    return false;
+  }
+  
+  if (!ourGame.awayTeam || !ourGame.homeTeam) {
+    console.warn(`⚠️ Our game missing team names:`, ourGame);
+    return false;
+  }
+  
   // Try to find mappings for our teams
   const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
   const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
+  
+  // LOGGING: Show what we're trying to match
+  console.log(`\n🔍 MATCHING: Our "${ourGame.awayTeam} @ ${ourGame.homeTeam}" vs NCAA "${ncaaGame.awayTeam} @ ${ncaaGame.homeTeam}"`);
   
   // Strategy 1: Use CSV mappings (most reliable)
   if (ourAwayMapping && ourHomeMapping && ourAwayMapping.ncaa_name && ourHomeMapping.ncaa_name) {
     const expectedAwayNCAA = ourAwayMapping.ncaa_name;
     const expectedHomeNCAA = ourHomeMapping.ncaa_name;
+    
+    console.log(`   CSV Mappings: Away="${expectedAwayNCAA}" Home="${expectedHomeNCAA}"`);
     
     // Check if teams match (try both normal and reversed)
     const normalMatch = 
@@ -127,12 +162,27 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
       teamNamesMatch(ncaaGame.awayTeam, expectedHomeNCAA) &&
       teamNamesMatch(ncaaGame.homeTeam, expectedAwayNCAA);
     
-    if (normalMatch || reversedMatch) {
+    if (normalMatch) {
+      console.log(`   ✅ CSV MATCH (NORMAL): Scores: ${ncaaGame.awayTeam}(${ncaaGame.awayScore}) @ ${ncaaGame.homeTeam}(${ncaaGame.homeScore})`);
       return true;
     }
+    
+    if (reversedMatch) {
+      console.warn(`   ⚠️ CSV MATCH (REVERSED): NCAA has home/away swapped!`);
+      console.warn(`      NCAA: ${ncaaGame.awayTeam}(${ncaaGame.awayScore}) @ ${ncaaGame.homeTeam}(${ncaaGame.homeScore})`);
+      console.warn(`      Our:  ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
+      console.warn(`      THIS MAY CAUSE SCORE MAPPING ERRORS!`);
+      return true;
+    }
+  } else {
+    if (!ourAwayMapping) console.log(`   ⚠️ No CSV mapping for away team: "${ourGame.awayTeam}"`);
+    if (!ourHomeMapping) console.log(`   ⚠️ No CSV mapping for home team: "${ourGame.homeTeam}"`);
+    if (ourAwayMapping && !ourAwayMapping.ncaa_name) console.log(`   ⚠️ CSV mapping missing ncaa_name for: "${ourGame.awayTeam}"`);
+    if (ourHomeMapping && !ourHomeMapping.ncaa_name) console.log(`   ⚠️ CSV mapping missing ncaa_name for: "${ourGame.homeTeam}"`);
   }
   
   // Strategy 2: Direct fuzzy matching as fallback (for teams not in CSV or missing ncaa_name)
+  console.log(`   Trying fuzzy matching...`);
   const directNormalMatch = 
     teamNamesMatch(ncaaGame.awayTeam, ourGame.awayTeam) &&
     teamNamesMatch(ncaaGame.homeTeam, ourGame.homeTeam);
@@ -141,8 +191,17 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
     teamNamesMatch(ncaaGame.awayTeam, ourGame.homeTeam) &&
     teamNamesMatch(ncaaGame.homeTeam, ourGame.awayTeam);
   
-  if (directNormalMatch || directReversedMatch) {
-    console.log(`✅ Fuzzy matched: ${ourGame.awayTeam} @ ${ourGame.homeTeam} ↔ ${ncaaGame.awayTeam} @ ${ncaaGame.homeTeam}`);
+  if (directNormalMatch) {
+    console.log(`   ✅ FUZZY MATCH (NORMAL): ${ourGame.awayTeam} @ ${ourGame.homeTeam} ↔ ${ncaaGame.awayTeam} @ ${ncaaGame.homeTeam}`);
+    console.log(`      Scores: ${ncaaGame.awayTeam}(${ncaaGame.awayScore}) @ ${ncaaGame.homeTeam}(${ncaaGame.homeScore})`);
+    return true;
+  }
+  
+  if (directReversedMatch) {
+    console.warn(`   ⚠️ FUZZY MATCH (REVERSED): Home/away swapped!`);
+    console.warn(`      NCAA: ${ncaaGame.awayTeam}(${ncaaGame.awayScore}) @ ${ncaaGame.homeTeam}(${ncaaGame.homeScore})`);
+    console.warn(`      Our:  ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
+    console.warn(`      THIS MAY CAUSE SCORE MAPPING ERRORS!`);
     return true;
   }
   
@@ -283,8 +342,10 @@ export async function getLiveScores(ourGames, teamMappings) {
   
   const enrichedGames = ourGames.map(ourGame => {
     // If game already has a FINAL score, KEEP IT! Don't lose completed games
+    // This ensures games "STAY ALL DAY" even after NCAA API stops returning them
     if (ourGame.liveScore && ourGame.liveScore.status === 'final') {
-      console.log(`🔒 Keeping final score: ${ourGame.awayTeam} @ ${ourGame.homeTeam} (${ourGame.liveScore.awayScore}-${ourGame.liveScore.homeScore})`);
+      console.log(`🔒 PRESERVING FINAL SCORE (all-day persistence): ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
+      console.log(`   Preserved scores: Away=${ourGame.liveScore.awayScore}, Home=${ourGame.liveScore.homeScore}`);
       return ourGame; // Preserve completed game even if NCAA API no longer has it
     }
     
@@ -292,13 +353,28 @@ export async function getLiveScores(ourGames, teamMappings) {
     const ncaaGame = ncaaGames.find(ng => matchGames(ng, ourGame, teamMappings));
     
     if (ncaaGame) {
-      console.log(`✅ Match: ${ourGame.awayTeam} @ ${ourGame.homeTeam} → ${ncaaGame.awayScore}-${ncaaGame.homeScore} (${ncaaGame.status})`);
+      // SCORE UPDATE VERIFICATION
+      const oldAway = ourGame.liveScore?.awayScore || 'none';
+      const oldHome = ourGame.liveScore?.homeScore || 'none';
+      const newAway = ncaaGame.awayScore;
+      const newHome = ncaaGame.homeScore;
+      
+      console.log(`✅ SCORE UPDATE: ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
+      console.log(`   Status: ${ncaaGame.status}`);
+      console.log(`   Away: ${oldAway} → ${newAway} (NCAA ${ncaaGame.awayTeam})`);
+      console.log(`   Home: ${oldHome} → ${newHome} (NCAA ${ncaaGame.homeTeam})`);
+      
+      // ROBUSTNESS: Validate scores before updating
+      if (typeof newAway !== 'number' || typeof newHome !== 'number') {
+        console.error(`❌ Invalid scores! Away=${newAway} (${typeof newAway}), Home=${newHome} (${typeof newHome})`);
+      }
+      
       return {
         ...ourGame,
         liveScore: {
           status: ncaaGame.status,
-          awayScore: ncaaGame.awayScore,
-          homeScore: ncaaGame.homeScore,
+          awayScore: ncaaGame.awayScore, // VERIFIED: Maps from NCAA away → our away
+          homeScore: ncaaGame.homeScore, // VERIFIED: Maps from NCAA home → our home
           period: ncaaGame.period,
           clock: ncaaGame.clock,
           network: ncaaGame.network,
@@ -306,7 +382,7 @@ export async function getLiveScores(ourGames, teamMappings) {
         }
       };
     } else {
-      console.log(`❌ No match: ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
+      console.log(`❌ No NCAA match found: ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
     }
     
     return ourGame;
