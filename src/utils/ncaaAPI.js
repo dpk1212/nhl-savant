@@ -104,6 +104,29 @@ function parseNCAAgame(game) {
  * @returns {boolean} - True if games match
  */
 export function matchGames(ncaaGame, ourGame, teamMappings) {
+  // DEBUG LOGGING
+  const normalize = (str) => {
+    let normalized = str
+      .toLowerCase()
+      .trim()
+      .replace(/\butsa\b/g, 'texassanantonio')
+      .replace(/\butep\b/g, 'texaselpaso')
+      .replace(/\bole miss\b/g, 'mississippi')
+      .replace(/\bga\./g, 'georgia')
+      .replace(/\bfla\./g, 'florida')
+      .replace(/\bill\./g, 'illinois')
+      .replace(/\bark\./g, 'arkansas')
+      .replace(/\bmo\./g, 'missouri')
+      .replace(/\bst\./g, 'st')
+      .replace(/\bst\b/g, 'st')
+      .replace(/\bstate\b/g, 'st')
+      .replace(/[^a-z0-9]/g, '');
+    return normalized;
+  };
+  
+  console.log(`🔍 Trying to match: "${ourGame.awayTeam}" @ "${ourGame.homeTeam}" vs NCAA: "${ncaaGame.awayTeam}" @ "${ncaaGame.homeTeam}"`);
+  console.log(`   Normalized: "${normalize(ourGame.awayTeam)}" @ "${normalize(ourGame.homeTeam)}" vs "${normalize(ncaaGame.awayTeam)}" @ "${normalize(ncaaGame.homeTeam)}"`);
+  
   // Try to find mappings for our teams
   const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
   const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
@@ -123,6 +146,7 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
       teamNamesMatch(ncaaGame.homeTeam, expectedAwayNCAA);
     
     if (normalMatch || reversedMatch) {
+      console.log(`   ✅ CSV Match!`);
       return true;
     }
   }
@@ -136,11 +160,17 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
     teamNamesMatch(ncaaGame.awayTeam, ourGame.homeTeam) &&
     teamNamesMatch(ncaaGame.homeTeam, ourGame.awayTeam);
   
-  if (directNormalMatch || directReversedMatch) {
-    console.log(`✅ Fuzzy matched: ${ourGame.awayTeam} @ ${ourGame.homeTeam} ↔ ${ncaaGame.awayTeam} @ ${ncaaGame.homeTeam}`);
+  if (directNormalMatch) {
+    console.log(`   ✅ Direct Normal Match!`);
     return true;
   }
   
+  if (directReversedMatch) {
+    console.log(`   ✅ Direct Reversed Match!`);
+    return true;
+  }
+  
+  console.log(`   ❌ No match found`);
   return false;
 }
 
