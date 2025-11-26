@@ -99,9 +99,19 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
         }
       }
       
-      // Track if not found
+      // Track if not found - WITH DETAILED LOGGING
       if (!haslaGame) {
         unmatchedHaslaGames.add(`${awayMapping.haslametrics} @ ${homeMapping.haslametrics}`);
+        console.log(`   ❌ Haslametrics: CSV says "${awayMapping.haslametrics} @ ${homeMapping.haslametrics}" but NO GAME FOUND in today's data`);
+        console.log(`      This game is NOT in Haslametrics today (legitimately not covered)`);
+      }
+    } else {
+      if (!awayMapping.haslametrics && !homeMapping.haslametrics) {
+        console.log(`   ⚠️  ${awayTeam} @ ${homeTeam}: CSV has NO haslametrics_name for either team`);
+      } else if (!awayMapping.haslametrics) {
+        console.log(`   ⚠️  ${awayTeam}: CSV has NO haslametrics_name (needs to be added)`);
+      } else if (!homeMapping.haslametrics) {
+        console.log(`   ⚠️  ${homeTeam}: CSV has NO haslametrics_name (needs to be added)`);
       }
     }
     
