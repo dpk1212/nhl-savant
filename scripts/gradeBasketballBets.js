@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import { parseBasketballResults } from '../src/utils/basketballResultsParser.js';
 import { getETGameDate } from '../src/utils/dateUtils.js';
+import { getUnitSize, calculateUnitProfit } from '../src/utils/staggeredUnits.js';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
@@ -97,10 +98,10 @@ async function gradeBasketballBets() {
       const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
       const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
       
-      // Calculate profit (1 unit flat bet)
-      const profit = outcome === 'WIN' 
-        ? (bet.bet.odds < 0 ? 100 / Math.abs(bet.bet.odds) : bet.bet.odds / 100)
-        : -1;
+      // Calculate profit using staggered units based on grade
+      const grade = bet.prediction?.grade || 'B'; // Default to B if no grade
+      const units = getUnitSize(grade);
+      const profit = calculateUnitProfit(grade, bet.bet.odds, outcome === 'WIN');
       
       // Update bet in Firebase (using Admin SDK)
       await db.collection('basketball_bets').doc(betId).update({
@@ -117,6 +118,7 @@ async function gradeBasketballBets() {
       gradedCount++;
       console.log(`✅ ${outcome}: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
       console.log(`   Pick: ${betTeam} (${bet.bet.odds > 0 ? '+' : ''}${bet.bet.odds})`);
+      console.log(`   Grade: ${grade} → ${units}u risked`);
       console.log(`   Winner: ${matchingResult.winnerTeam}`);
       console.log(`   Profit: ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u\n`);
     }

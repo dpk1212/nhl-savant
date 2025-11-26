@@ -7,6 +7,7 @@
 
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { getUnitSize, calculateUnitProfit } from './staggeredUnits';
 
 /**
  * Grade a basketball bet instantly when game goes final
@@ -76,11 +77,11 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore) {
     const winnerNorm = normalizeTeam(winnerTeam);
     const outcome = betTeamNorm === winnerNorm ? 'WIN' : 'LOSS';
     
-    // Calculate profit (1 unit flat bet)
+    // Calculate profit using staggered units based on grade
+    const grade = gradedBet.prediction?.grade || 'B'; // Default to B if no grade
+    const units = getUnitSize(grade);
     const odds = gradedBet.bet.odds;
-    const profit = outcome === 'WIN' 
-      ? (odds < 0 ? 100 / Math.abs(odds) : odds / 100)
-      : -1;
+    const profit = calculateUnitProfit(grade, odds, outcome === 'WIN');
     
     // Update bet in Firebase
     const betRef = doc(db, 'basketball_bets', betId);
@@ -99,6 +100,7 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore) {
     
     console.log(`✅ ${outcome}: ${awayTeam} @ ${homeTeam}`);
     console.log(`   Pick: ${gradedBet.bet.team} (${odds > 0 ? '+' : ''}${odds})`);
+    console.log(`   Grade: ${grade} → ${units}u risked`);
     console.log(`   Score: ${awayScore}-${homeScore}`);
     console.log(`   Profit: ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u`);
     

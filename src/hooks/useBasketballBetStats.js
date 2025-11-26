@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { getUnitSize } from '../utils/staggeredUnits';
 
 export function useBasketballBetStats() {
   const [stats, setStats] = useState({
@@ -50,8 +51,12 @@ export function useBasketballBetStats() {
 
         // Calculate ROI (return on investment)
         // ROI = (total profit / total risked) * 100
-        // Assuming 1 unit risked per bet
-        const totalRisked = gradedBets.length;
+        // Use ACTUAL units risked based on grade (staggered betting)
+        const totalRisked = gradedBets.reduce((sum, bet) => {
+          const grade = bet.prediction?.grade || 'B';
+          const units = getUnitSize(grade);
+          return sum + units;
+        }, 0);
         const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
 
         const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
