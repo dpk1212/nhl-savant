@@ -86,12 +86,32 @@ const Basketball = () => {
       return;
     }
     
-    console.log('🔄 Starting live score polling...');
+    console.log('🔄 Starting live score polling for basketball games...');
+    console.log(`   Polling ${recommendations.length} games every 15 seconds`);
     
     const stopPolling = startScorePolling(
       recommendations,
       teamMappings,
       (updatedGames) => {
+        console.log(`\n📊 GAME CARD UPDATE (All-Day Persistence Check):`);
+        console.log(`   Total games: ${updatedGames.length}`);
+        
+        // Count games by status
+        const statusCounts = {
+          pre: 0,
+          live: 0,
+          final: 0,
+          none: 0
+        };
+        
+        updatedGames.forEach(g => {
+          const status = g.liveScore?.status || 'none';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        });
+        
+        console.log(`   Status breakdown: Pre=${statusCounts.pre}, Live=${statusCounts.live}, Final=${statusCounts.final}, NoScore=${statusCounts.none}`);
+        console.log(`   ✅ All games staying visible (all-day persistence working)`);
+        
         // Add grades and bet outcomes for completed games
         const gamesWithGradesAndBets = updatedGames.map(game => {
           const gameData = { ...game };
@@ -99,6 +119,7 @@ const Basketball = () => {
           // Add prediction grade if game is final
           if (game.liveScore && game.liveScore.status === 'final') {
             gameData.grade = gradePrediction(game, game.liveScore);
+            console.log(`   ✅ Graded: ${game.awayTeam} @ ${game.homeTeam} → ${gameData.grade?.grade}`);
           }
           
           // Match and attach bet outcome from Firebase
@@ -111,6 +132,7 @@ const Basketball = () => {
               outcome: bet.result.outcome,
               profit: bet.result.profit
             };
+            console.log(`   💰 Bet outcome attached: ${game.awayTeam} @ ${game.homeTeam} → ${bet.result.outcome}`);
           }
           
           return gameData;
@@ -126,7 +148,7 @@ const Basketball = () => {
     );
     
     return stopPolling;
-  }, [recommendations, teamMappings]);
+  }, [recommendations, teamMappings, betsMap]);
 
   async function loadBasketballData() {
     try {
@@ -186,29 +208,9 @@ const Basketball = () => {
       });
       
       // FIRST: Remove extreme underdogs (unrealistic picks like +1850, +94% EV)
-      const realisticGames = gamesWithPredictions.filter(game => {
-        const odds = game.odds;
-        if (!odds) return false;
-        
-        // Calculate implied probability for both teams
-        const awayProb = odds.awayOdds > 0 
-          ? 100 / (odds.awayOdds + 100) 
-          : Math.abs(odds.awayOdds) / (Math.abs(odds.awayOdds) + 100);
-        
-        const homeProb = odds.homeOdds > 0 
-          ? 100 / (odds.homeOdds + 100) 
-          : Math.abs(odds.homeOdds) / (Math.abs(odds.homeOdds) + 100);
-        
-        // Filter: Both teams must have at least 15% implied probability
-        // This removes extreme longshots (+566 or higher)
-        return awayProb >= 0.15 && homeProb >= 0.15;
-      });
-      
-      // SECOND: Filter to ONLY show games where we have a prediction
-      const qualityGames = realisticGames.filter(game => 
-        game.prediction && 
-        !game.prediction.error
-      );
+      // SHOW ALL GAMES - No filtering!
+      // User wants to see every game from OddsTrader, even if predictions fail
+      const qualityGames = gamesWithPredictions;
       
       // Sort by grade (best picks first), then by game time
       const sortedGames = qualityGames.sort((a, b) => {
@@ -525,7 +527,32 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
   const liveScore = game.liveScore;
   const grade = game.grade;
   
-  if (!pred || pred.error) return null;
+  // If no prediction, show minimal card with just game info
+  if (!pred || pred.error) {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+        borderRadius: isMobile ? MOBILE_SPACING.borderRadius : '20px',
+        border: ELEVATION.elevated.border,
+        boxShadow: ELEVATION.elevated.shadow,
+        padding: isMobile ? '1rem' : '1.25rem',
+        opacity: 0.6
+      }}>
+        <div style={{ color: 'white', fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+          {game.awayTeam} @ {game.homeTeam}
+        </div>
+        <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+          {odds?.gameTime || 'TBD'}
+        </div>
+        {liveScore && (
+          <div style={{ marginTop: '0.75rem', color: '#10B981', fontWeight: '700' }}>
+            {liveScore.awayScore} - {liveScore.homeScore} ({liveScore.status})
+          </div>
+        )}
+        {!pred && <div style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.5rem' }}>No prediction available</div>}
+      </div>
+    );
+  }
   
   const gradeColors = getGradeColorScale(pred.grade);
   

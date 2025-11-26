@@ -27,12 +27,14 @@ export function loadTeamMappings(csvContent) {
       haslametrics: values[2],
       dratings: values[3],
       conference: values[4] || '',
-      notes: values[5] || ''
+      ncaa_name: values[5] || '', // FIXED: Column 5 is NCAA name, not notes
+      notes: values[6] || '' // FIXED: Column 6 is notes
     };
     
     mappings.set(mapping.normalized, mapping);
   }
   
+  console.log(`✅ Loaded ${mappings.size} team mappings with NCAA names`);
   return mappings;
 }
 
