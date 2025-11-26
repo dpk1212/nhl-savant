@@ -687,94 +687,89 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           </div>
         </div>
         
-        {/* Result Summary Bar - Full Width (FINAL GAMES) */}
+        {/* Premium Result Bar - FINAL GAMES */}
         {game.betOutcome && (
           <div style={{
             marginTop: '0.75rem',
             background: game.betOutcome.outcome === 'WIN'
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%)'
-              : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)',
-            border: `1.5px solid ${game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-            borderRadius: '12px',
-            padding: isMobile ? '0.75rem' : '0.875rem',
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)'
+              : 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.06) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: `1.5px solid ${game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+            borderRadius: '10px',
+            padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 0.875rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '0.75rem',
             boxShadow: game.betOutcome.outcome === 'WIN'
-              ? '0 4px 20px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.08)'
-              : '0 4px 20px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255,255,255,0.08)'
+              ? '0 4px 16px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.06)'
+              : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255,255,255,0.06)'
           }}>
-            {/* Left: Grade + Units */}
+            {/* Left: Grade + Units (compact) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {/* Grade */}
               <div style={{
-                background: gradeColors.borderColor,
-                padding: '1.5px',
-                borderRadius: '8px',
-                boxShadow: `0 2px 10px ${gradeColors.borderColor}30`
+                background: `linear-gradient(135deg, ${gradeColors.borderColor}20 0%, ${gradeColors.borderColor}10 100%)`,
+                border: `1.5px solid ${gradeColors.borderColor}`,
+                color: gradeColors.color,
+                padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+                borderRadius: '7px',
+                fontWeight: '900',
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                letterSpacing: '-0.01em',
+                boxShadow: `0 2px 8px ${gradeColors.borderColor}20`
               }}>
-                <div style={{
-                  background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}10 100%)`,
-                  color: gradeColors.color,
-                  padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
-                  borderRadius: '7px',
-                  fontWeight: '900',
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
-                  letterSpacing: '-0.01em',
-                  textShadow: `0 1px 4px ${gradeColors.borderColor}40`
-                }}>
-                  {pred.grade}
-                </div>
+                {pred.grade}
               </div>
               
+              {/* Units */}
               <div style={{
-                background: getUnitColor(pred.grade),
-                padding: '1.5px',
-                borderRadius: '8px',
-                boxShadow: `0 2px 10px ${getUnitColor(pred.grade)}30`
+                background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
+                border: `1.5px solid ${getUnitColor(pred.grade)}`,
+                color: getUnitColor(pred.grade),
+                padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+                borderRadius: '7px',
+                fontWeight: '900',
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                letterSpacing: '0.01em',
+                fontFeatureSettings: "'tnum'",
+                boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}20`
               }}>
-                <div style={{
-                  background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
-                  color: getUnitColor(pred.grade),
-                  padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
-                  borderRadius: '7px',
-                  fontWeight: '900',
-                  fontSize: isMobile ? '0.813rem' : '0.875rem',
-                  letterSpacing: '0.01em',
-                  fontFeatureSettings: "'tnum'",
-                  textShadow: `0 1px 4px ${getUnitColor(pred.grade)}40`
-                }}>
-                  {getUnitDisplay(pred.grade)}
-                </div>
+                {getUnitDisplay(pred.grade)}
               </div>
             </div>
             
-            {/* Right: Profit */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {/* Right: Profit (hero element) */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem',
+              padding: isMobile ? '0.25rem 0.5rem' : '0.313rem 0.625rem',
+              background: game.betOutcome.outcome === 'WIN'
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+              borderRadius: '8px',
+              border: `1px solid ${game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+            }}>
               <div style={{
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 lineHeight: 1,
                 filter: game.betOutcome.outcome === 'WIN'
-                  ? 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))'
-                  : 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.5))'
+                  ? 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.4))'
+                  : 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.4))'
               }}>
                 {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
               </div>
               <div style={{
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontSize: isMobile ? '1.063rem' : '1.188rem',
                 fontWeight: '900',
-                background: game.betOutcome.outcome === 'WIN'
-                  ? 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)'
-                  : 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444',
                 letterSpacing: '-0.02em',
                 fontFeatureSettings: "'tnum'",
                 textShadow: game.betOutcome.outcome === 'WIN'
-                  ? '0 2px 12px rgba(16, 185, 129, 0.4)'
-                  : '0 2px 12px rgba(239, 68, 68, 0.4)',
-                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
+                  ? '0 2px 10px rgba(16, 185, 129, 0.3)'
+                  : '0 2px 10px rgba(239, 68, 68, 0.3)'
               }}>
                 {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
               </div>
@@ -784,48 +779,41 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         
         {/* Grade + Units for PENDING games */}
         {!game.betOutcome && (
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.75rem' }}>
-            {/* Grade Badge */}
+          <div style={{ 
+            marginTop: '0.75rem',
+            display: 'flex', 
+            gap: '0.5rem', 
+            alignItems: 'center'
+          }}>
+            {/* Grade */}
             <div style={{
-              background: gradeColors.borderColor,
-              padding: '1.5px',
-              borderRadius: '8px',
-              boxShadow: `0 2px 10px ${gradeColors.borderColor}30`
+              background: `linear-gradient(135deg, ${gradeColors.borderColor}20 0%, ${gradeColors.borderColor}10 100%)`,
+              border: `1.5px solid ${gradeColors.borderColor}`,
+              color: gradeColors.color,
+              padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+              borderRadius: '7px',
+              fontWeight: '900',
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              letterSpacing: '-0.01em',
+              boxShadow: `0 2px 8px ${gradeColors.borderColor}20`
             }}>
-              <div style={{
-                background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}10 100%)`,
-                color: gradeColors.color,
-                padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
-                borderRadius: '7px',
-                fontWeight: '900',
-                fontSize: isMobile ? '0.875rem' : '0.938rem',
-                letterSpacing: '-0.01em',
-                textShadow: `0 1px 4px ${gradeColors.borderColor}40`
-              }}>
-                {pred.grade}
-              </div>
+              {pred.grade}
             </div>
             
-            {/* Unit Size Badge */}
+            {/* Units */}
             <div style={{
-              background: getUnitColor(pred.grade),
-              padding: '1.5px',
-              borderRadius: '8px',
-              boxShadow: `0 2px 10px ${getUnitColor(pred.grade)}30`
+              background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
+              border: `1.5px solid ${getUnitColor(pred.grade)}`,
+              color: getUnitColor(pred.grade),
+              padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+              borderRadius: '7px',
+              fontWeight: '900',
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
+              letterSpacing: '0.01em',
+              fontFeatureSettings: "'tnum'",
+              boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}20`
             }}>
-              <div style={{
-                background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
-                color: getUnitColor(pred.grade),
-                padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
-                borderRadius: '7px',
-                fontWeight: '900',
-                fontSize: isMobile ? '0.813rem' : '0.875rem',
-                letterSpacing: '0.01em',
-                fontFeatureSettings: "'tnum'",
-                textShadow: `0 1px 4px ${getUnitColor(pred.grade)}40`
-              }}>
-                {getUnitDisplay(pred.grade)}
-              </div>
+              {getUnitDisplay(pred.grade)}
             </div>
           </div>
         )}
