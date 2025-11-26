@@ -100,8 +100,8 @@ const Basketball = () => {
           if (game.liveScore && game.liveScore.status === 'final') {
             gameData.grade = gradePrediction(game, game.liveScore);
             
-            // 🎯 INSTANT BET GRADING: Grade bet in Firebase using live NCAA API data
-            gradeBasketballBet(game.awayTeam, game.homeTeam, game.liveScore)
+            // 🎯 INSTANT BET GRADING: Grade bet in Firebase using CURRENT prediction
+            gradeBasketballBet(game.awayTeam, game.homeTeam, game.liveScore, game.prediction)
               .then(wasGraded => {
                 if (wasGraded) {
                   console.log(`🏀 Auto-graded bet: ${game.awayTeam} @ ${game.homeTeam}`);
