@@ -183,10 +183,20 @@ const Basketball = () => {
         }
       });
       
-      // FIRST: Remove extreme underdogs (unrealistic picks like +1850, +94% EV)
-      // SHOW ALL GAMES - No filtering!
-      // User wants to see every game from OddsTrader, even if predictions fail
-      const qualityGames = gamesWithPredictions;
+      // CRITICAL FILTER: Only show games with BOTH Haslametrics AND D-Ratings
+      // This ensures high-quality ensemble predictions (confidence === 'HIGH')
+      const qualityGames = gamesWithPredictions.filter(game => {
+        // Must have a valid prediction (no error)
+        if (game.prediction?.error) return false;
+        
+        // Must have HIGH confidence (only happens with BOTH sources)
+        if (game.prediction?.confidence !== 'HIGH') return false;
+        
+        // Must have a grade
+        if (!game.prediction?.grade || game.prediction.grade === 'N/A') return false;
+        
+        return true;
+      });
       
       // Sort by grade (best picks first), then by game time
       const sortedGames = qualityGames.sort((a, b) => {
