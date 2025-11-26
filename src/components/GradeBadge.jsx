@@ -97,36 +97,6 @@ export function GradeStats({ stats }) {
           icon="📏"
         />
       </div>
-      
-      {stats.gradeDistribution && Object.keys(stats.gradeDistribution).length > 0 && (
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ fontSize: '14px', color: '#cbd5e1', marginBottom: '8px' }}>
-            Grade Distribution:
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {Object.entries(stats.gradeDistribution)
-              .sort(([a], [b]) => {
-                const order = ['A+', 'A', 'B+', 'B', 'C', 'D', 'F'];
-                return order.indexOf(a) - order.indexOf(b);
-              })
-              .map(([grade, count]) => (
-                <div
-                  key={grade}
-                  style={{
-                    background: getGradeColor(grade).bg,
-                    color: '#ffffff',
-                    padding: '4px 12px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: '600'
-                  }}
-                >
-                  {grade}: {count}
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
