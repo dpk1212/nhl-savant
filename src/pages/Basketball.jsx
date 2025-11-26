@@ -752,84 +752,164 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Best Value Heading - Smaller */}
+        {/* Value Proposition Banner */}
         <div style={{ 
-          fontSize: isMobile ? '0.75rem' : '0.875rem',
-          fontWeight: '700',
-          marginBottom: '0.375rem',
-          color: 'var(--color-text-primary)',
-          letterSpacing: '-0.01em'
+          background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.25)',
+          borderRadius: '8px',
+          padding: isMobile ? '0.5rem' : '0.625rem',
+          marginBottom: isMobile ? '0.625rem' : '0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          💰 {pred.bestTeam} ML
+          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', lineHeight: 1 }}>💡</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ 
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              fontWeight: '700',
+              color: '#10B981',
+              marginBottom: '0.125rem',
+              letterSpacing: '-0.01em'
+            }}>
+              {pred.bestTeam} Moneyline
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.7)',
+              lineHeight: 1.3
+            }}>
+              Our model sees {pred.bestEV.toFixed(1)}% more value than the market
+            </div>
+          </div>
         </div>
         
-        {/* Ultra Compact Stats Grid */}
+        {/* Clearer Stats Grid with Helper Text */}
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)',
-          gap: isMobile ? '0.375rem' : '0.5rem',
-          marginBottom: isMobile ? '0.5rem' : '0.625rem',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)',
+          gap: isMobile ? '0.5rem' : '0.625rem',
+          marginBottom: isMobile ? '0.625rem' : '0.75rem',
           position: 'relative',
           zIndex: 2
         }}>
-          {[
-            { 
-              label: 'PICK', 
-              value: `${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}%`, 
-              subValue: `${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}%`,
-              color: '#10B981', 
-              primary: true 
-            },
-            { 
-              label: 'MARKET', 
-              value: pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds, 
-              subValue: `${((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}%`, 
-              color: 'rgba(255,255,255,0.7)' 
-            },
-            { 
-              label: 'QUALITY', 
-              value: gradeColors.tier.split(' ')[0], // Just first word (RISKY, SOLID, etc)
-              color: gradeColors.color
-            }
-          ].map((stat, i) => (
-              <div key={i} style={{
-                background: stat.primary ? 'rgba(255,255,255,0.05)' : 'transparent',
-                borderRadius: '6px',
-                padding: isMobile ? '0.375rem 0.25rem' : '0.5rem',
-                border: stat.primary ? '1px solid rgba(255,255,255,0.1)' : 'none'
-              }}>
-                <div style={{ 
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  fontWeight: '700',
-                  marginBottom: '0.25rem'
-                }}>
-                  {stat.label}
-                </div>
-                <div style={{ 
-                  fontSize: isMobile ? '0.875rem' : '1rem',
-                  fontWeight: '800',
-                  color: stat.color,
-                  lineHeight: 1.1,
-                  letterSpacing: '-0.01em'
-                }}>
-                  {stat.value}
-                </div>
-                {stat.subValue && (
-                  <div style={{ 
-                    fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.5)',
-                    marginTop: '0.125rem',
-                    fontWeight: '600'
-                  }}>
-                    {stat.subValue}
-                  </div>
-                )}
-              </div>
-            )
-          )}
+          {/* OUR MODEL */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+            borderRadius: '8px',
+            padding: isMobile ? '0.5rem' : '0.625rem',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            gridColumn: isMobile ? 'span 2' : 'span 1'
+          }}>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(16, 185, 129, 0.8)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontWeight: '700',
+              marginBottom: '0.375rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <span>📊</span> OUR MODEL
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '1.25rem' : '1.375rem',
+              fontWeight: '900',
+              color: '#10B981',
+              lineHeight: 1.1,
+              letterSpacing: '-0.02em',
+              marginBottom: '0.25rem'
+            }}>
+              {((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}%
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255,255,255,0.6)',
+              lineHeight: 1.2
+            }}>
+              Win probability • <span style={{ color: '#10B981', fontWeight: '700' }}>{pred.bestEV > 0 ? '+' : ''}{pred.bestEV.toFixed(1)}% edge</span>
+            </div>
+          </div>
+
+          {/* MARKET ODDS */}
+          <div style={{
+            background: 'rgba(255,255,255,0.03)',
+            borderRadius: '8px',
+            padding: isMobile ? '0.5rem' : '0.625rem',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255,255,255,0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontWeight: '700',
+              marginBottom: '0.375rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <span>💵</span> MARKET
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '900',
+              color: 'rgba(255,255,255,0.9)',
+              lineHeight: 1.1,
+              letterSpacing: '-0.01em',
+              marginBottom: '0.25rem'
+            }}>
+              {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255,255,255,0.5)',
+              lineHeight: 1.2
+            }}>
+              {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
+            </div>
+          </div>
+
+          {/* CONFIDENCE */}
+          <div style={{
+            background: `linear-gradient(135deg, ${gradeColors.borderColor}15 0%, ${gradeColors.borderColor}08 100%)`,
+            borderRadius: '8px',
+            padding: isMobile ? '0.5rem' : '0.625rem',
+            border: `1px solid ${gradeColors.borderColor}30`
+          }}>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: `${gradeColors.color}cc`,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontWeight: '700',
+              marginBottom: '0.375rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <span>⭐</span> GRADE
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '900',
+              color: gradeColors.color,
+              lineHeight: 1.1,
+              letterSpacing: '-0.01em',
+              marginBottom: '0.25rem'
+            }}>
+              {pred.grade}
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255,255,255,0.5)',
+              lineHeight: 1.2
+            }}>
+              {gradeColors.tier.split(' ')[0]}
+            </div>
+          </div>
         </div>
         
         {/* Compact Score Prediction */}
@@ -904,9 +984,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         )}
       </div>
       
-      {/* Collapsible Details - Simplified */}
+      {/* Collapsible Details - Micro */}
       <div style={{
-        padding: isMobile ? MOBILE_SPACING.cardPadding : '1rem 1.5rem',
+        padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
         borderTop: ELEVATION.flat.border
       }}>
         <button
@@ -915,21 +995,22 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             width: '100%',
             background: 'transparent',
             border: 'none',
-            padding: '0.75rem 0',
-            color: 'var(--color-text-muted)',
-            fontSize: TYPOGRAPHY.body.size,
-            fontWeight: TYPOGRAPHY.body.weight,
+            padding: isMobile ? '0.375rem 0' : '0.5rem 0',
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: isMobile ? '0.688rem' : '0.75rem',
+            fontWeight: '600',
             cursor: 'pointer',
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'center',
+            gap: '0.375rem',
             transition: 'color 0.2s ease'
           }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.8)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
         >
-          <span>{showDetails ? '▼' : '▶'} View Details</span>
-          <span style={{ fontSize: TYPOGRAPHY.caption.size }}>
-            Model Breakdown
-          </span>
+          <span style={{ fontSize: '0.625rem' }}>{showDetails ? '▼' : '▶'}</span>
+          <span>Model Breakdown</span>
         </button>
         
         {showDetails && (
