@@ -86,32 +86,10 @@ const Basketball = () => {
       return;
     }
     
-    console.log('🔄 Starting live score polling for basketball games...');
-    console.log(`   Polling ${recommendations.length} games every 15 seconds`);
-    
     const stopPolling = startScorePolling(
       recommendations,
       teamMappings,
       (updatedGames) => {
-        console.log(`\n📊 GAME CARD UPDATE (All-Day Persistence Check):`);
-        console.log(`   Total games: ${updatedGames.length}`);
-        
-        // Count games by status
-        const statusCounts = {
-          pre: 0,
-          live: 0,
-          final: 0,
-          none: 0
-        };
-        
-        updatedGames.forEach(g => {
-          const status = g.liveScore?.status || 'none';
-          statusCounts[status] = (statusCounts[status] || 0) + 1;
-        });
-        
-        console.log(`   Status breakdown: Pre=${statusCounts.pre}, Live=${statusCounts.live}, Final=${statusCounts.final}, NoScore=${statusCounts.none}`);
-        console.log(`   ✅ All games staying visible (all-day persistence working)`);
-        
         // Add grades and bet outcomes for completed games
         const gamesWithGradesAndBets = updatedGames.map(game => {
           const gameData = { ...game };
@@ -119,7 +97,6 @@ const Basketball = () => {
           // Add prediction grade if game is final
           if (game.liveScore && game.liveScore.status === 'final') {
             gameData.grade = gradePrediction(game, game.liveScore);
-            console.log(`   ✅ Graded: ${game.awayTeam} @ ${game.homeTeam} → ${gameData.grade?.grade}`);
           }
           
           // Match and attach bet outcome from Firebase
@@ -132,7 +109,6 @@ const Basketball = () => {
               outcome: bet.result.outcome,
               profit: bet.result.profit
             };
-            console.log(`   💰 Bet outcome attached: ${game.awayTeam} @ ${game.homeTeam} → ${bet.result.outcome}`);
           }
           
           return gameData;
