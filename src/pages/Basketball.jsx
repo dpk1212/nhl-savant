@@ -440,7 +440,7 @@ const Basketball = () => {
             onFilterChange={setGameStatusFilter}
             counts={{
               all: gamesWithLiveScores.length,
-              pre: gamesWithLiveScores.filter(g => !g.liveScore || g.liveScore.status === 'pre').length,
+              scheduled: gamesWithLiveScores.filter(g => !g.liveScore || g.liveScore.status === 'pre').length,
               live: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'live').length,
               final: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'final').length
             }}
