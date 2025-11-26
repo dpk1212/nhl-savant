@@ -13,6 +13,7 @@ import { gradeBasketballBet } from '../utils/basketballBetGrader';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { GradeStats } from '../components/GradeBadge';
 import { BasketballBetStats } from '../components/BasketballBetStats';
+import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -377,187 +378,81 @@ const Basketball = () => {
         </p>
       </div>
 
-      {/* Betting Performance Stats */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '0 1rem' : '0' }}>
+      {/* Clean Stats Section - NHL Style */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto 2rem auto', padding: isMobile ? '0 1rem' : '0' }}>
         <BasketballBetStats />
-      </div>
-
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '0 1rem' : '0' }}>
-        {/* Stats Bar - Premium Design */}
+        
         {stats && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)',
-            gap: isMobile ? '0.75rem' : '1rem',
-            marginTop: '1.5rem'
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+            gap: isMobile ? '1rem' : '1.5rem',
+            marginTop: '1.5rem',
+            padding: isMobile ? '1.5rem' : '2rem',
+            background: GRADIENTS.hero,
+            borderRadius: isMobile ? MOBILE_SPACING.borderRadius : '16px',
+            border: ELEVATION.elevated.border,
+            boxShadow: ELEVATION.elevated.shadow
           }}>
-            {/* Quality Picks */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '18px',
-              padding: isMobile ? '1.25rem 1rem' : '1.75rem 1.5rem',
-              textAlign: 'center',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              cursor: 'default'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.4), 0 0 80px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)';
-            }}
-            >
-              <div style={{
-                fontSize: isMobile ? '2.5rem' : '3rem',
-                marginBottom: '0.5rem',
-                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))'
-              }}>
-                🎯
-              </div>
+            <div style={{ textAlign: 'center' }}>
               <div style={{ 
-                fontSize: isMobile ? '2rem' : '3rem',
-                fontWeight: '900',
-                background: 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                lineHeight: 1.1,
-                marginBottom: '0.625rem',
-                fontFeatureSettings: "'tnum'",
-                letterSpacing: '-0.04em',
-                textShadow: '0 4px 24px rgba(16, 185, 129, 0.5)'
+                fontSize: isMobile ? '1.5rem' : TYPOGRAPHY.hero.size,
+                fontWeight: TYPOGRAPHY.hero.weight,
+                color: '#10B981',
+                lineHeight: TYPOGRAPHY.hero.lineHeight
               }}>
                 {stats.qualityPicks}
               </div>
               <div style={{ 
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
-                fontWeight: '800',
-                color: 'rgba(16, 185, 129, 0.9)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em'
+                fontSize: TYPOGRAPHY.label.size,
+                fontWeight: TYPOGRAPHY.label.weight,
+                color: 'rgba(255,255,255,0.7)',
+                textTransform: TYPOGRAPHY.label.textTransform,
+                letterSpacing: TYPOGRAPHY.label.letterSpacing
               }}>
-                Quality Picks
+                QUALITY PICKS
               </div>
             </div>
             
-            {/* Avg Edge - Desktop Only */}
             {!isMobile && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.08) 100%)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(59, 130, 246, 0.4)',
-                borderRadius: '18px',
-                padding: '1.75rem 1.5rem',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: 'default'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.4), 0 0 80px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)';
-              }}
-              >
-                <div style={{
-                  fontSize: '2.5rem',
-                  marginBottom: '0.5rem',
-                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))'
-                }}>
-                  ⚡
-                </div>
+              <div style={{ textAlign: 'center' }}>
                 <div style={{ 
-                  fontSize: '3rem',
-                  fontWeight: '900',
-                  background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  lineHeight: 1.1,
-                  marginBottom: '0.625rem',
-                  fontFeatureSettings: "'tnum'",
-                  letterSpacing: '-0.04em',
-                  textShadow: '0 4px 24px rgba(59, 130, 246, 0.5)'
+                  fontSize: TYPOGRAPHY.hero.size,
+                  fontWeight: TYPOGRAPHY.hero.weight,
+                  color: '#3B82F6',
+                  lineHeight: TYPOGRAPHY.hero.lineHeight
                 }}>
                   +{stats.avgEV}%
                 </div>
                 <div style={{ 
-                  fontSize: '0.813rem',
-                  fontWeight: '800',
-                  color: 'rgba(59, 130, 246, 0.9)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.12em'
+                  fontSize: TYPOGRAPHY.label.size,
+                  fontWeight: TYPOGRAPHY.label.weight,
+                  color: 'rgba(255,255,255,0.7)',
+                  textTransform: TYPOGRAPHY.label.textTransform,
+                  letterSpacing: TYPOGRAPHY.label.letterSpacing
                 }}>
-                  Avg Edge
+                  AVG EDGE
                 </div>
               </div>
             )}
             
-            {/* Games Today */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(251, 113, 133, 0.08) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 140, 66, 0.4)',
-              borderRadius: '18px',
-              padding: isMobile ? '1.25rem 1rem' : '1.75rem 1.5rem',
-              textAlign: 'center',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(255, 140, 66, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              cursor: 'default'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.4), 0 0 80px rgba(255, 140, 66, 0.25), inset 0 1px 0 rgba(255,255,255,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(255, 140, 66, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)';
-            }}
-            >
-              <div style={{
-                fontSize: isMobile ? '2.5rem' : '3rem',
-                marginBottom: '0.5rem',
-                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))'
-              }}>
-                🏀
-              </div>
+            <div style={{ textAlign: 'center' }}>
               <div style={{ 
-                fontSize: isMobile ? '2rem' : '3rem',
-                fontWeight: '900',
-                background: 'linear-gradient(135deg, #FF8C42 0%, #FB7185 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                lineHeight: 1.1,
-                marginBottom: '0.625rem',
-                fontFeatureSettings: "'tnum'",
-                letterSpacing: '-0.04em',
-                textShadow: '0 4px 24px rgba(255, 140, 66, 0.5)'
+                fontSize: isMobile ? '1.5rem' : TYPOGRAPHY.hero.size,
+                fontWeight: TYPOGRAPHY.hero.weight,
+                color: '#FF8C42',
+                lineHeight: TYPOGRAPHY.hero.lineHeight
               }}>
                 {stats.totalGames}
               </div>
               <div style={{ 
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
-                fontWeight: '800',
-                color: 'rgba(255, 140, 66, 0.9)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em'
+                fontSize: TYPOGRAPHY.label.size,
+                fontWeight: TYPOGRAPHY.label.weight,
+                color: 'rgba(255,255,255,0.7)',
+                textTransform: TYPOGRAPHY.label.textTransform,
+                letterSpacing: TYPOGRAPHY.label.letterSpacing
               }}>
-                Games Today
+                GAMES TODAY
               </div>
             </div>
           </div>
@@ -817,21 +712,43 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             </div>
           )}
           
-          {/* Prediction Quality Grade - Compact */}
+          {/* Prediction Quality Grade with Unit Sizing */}
           <div style={{
-            background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}20 100%)`,
-            color: gradeColors.color,
-            border: `2px solid ${gradeColors.borderColor}`,
-            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
-            borderRadius: '8px',
-            fontWeight: '800',
-            fontSize: isMobile ? '0.875rem' : '1rem',
-            letterSpacing: '-0.01em',
-            boxShadow: `0 2px 12px ${gradeColors.borderColor}30`,
-            minWidth: isMobile ? '42px' : '52px',
-            textAlign: 'center'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            {pred.grade}
+            <div style={{
+              background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}20 100%)`,
+              color: gradeColors.color,
+              border: `2px solid ${gradeColors.borderColor}`,
+              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
+              borderRadius: '8px',
+              fontWeight: '800',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              letterSpacing: '-0.01em',
+              boxShadow: `0 2px 12px ${gradeColors.borderColor}30`,
+              minWidth: isMobile ? '42px' : '52px',
+              textAlign: 'center'
+            }}>
+              {pred.grade}
+            </div>
+            
+            {/* Unit Size Display */}
+            <div style={{
+              background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}20 0%, ${getUnitColor(pred.grade)}10 100%)`,
+              color: getUnitColor(pred.grade),
+              border: `1.5px solid ${getUnitColor(pred.grade)}`,
+              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+              borderRadius: '8px',
+              fontWeight: '900',
+              fontSize: isMobile ? '0.813rem' : '0.938rem',
+              letterSpacing: '0.02em',
+              boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}25`,
+              fontFeatureSettings: "'tnum'"
+            }}>
+              {getUnitDisplay(pred.grade)}
+            </div>
           </div>
         </div>
       </div>
@@ -992,7 +909,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             </div>
           </div>
 
-          {/* CONFIDENCE */}
+          {/* CONFIDENCE & UNIT SIZING */}
           <div style={{
             background: `linear-gradient(135deg, ${gradeColors.borderColor}15 0%, ${gradeColors.borderColor}08 100%)`,
             borderRadius: '8px',
@@ -1010,24 +927,40 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               alignItems: 'center',
               gap: '0.25rem'
             }}>
-              <span>⭐</span> GRADE
+              <span>⭐</span> GRADE / BET SIZE
             </div>
             <div style={{ 
-              fontSize: isMobile ? '1.125rem' : '1.25rem',
-              fontWeight: '900',
-              color: gradeColors.color,
-              lineHeight: 1.1,
-              letterSpacing: '-0.01em',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '0.5rem',
               marginBottom: '0.25rem'
             }}>
-              {pred.grade}
+              <div style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '900',
+                color: gradeColors.color,
+                lineHeight: 1.1,
+                letterSpacing: '-0.01em'
+              }}>
+                {pred.grade}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.938rem' : '1rem',
+                fontWeight: '900',
+                color: getUnitColor(pred.grade),
+                fontFeatureSettings: "'tnum'"
+              }}>
+                → {getUnitDisplay(pred.grade)}
+              </div>
             </div>
             <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               color: 'rgba(255,255,255,0.5)',
-              lineHeight: 1.2
+              lineHeight: 1.3
             }}>
-              {gradeColors.tier.split(' ')[0]}
+              {gradeColors.tier.split(' ')[0]} • {getUnitSize(pred.grade) > 0 
+                ? `Risk ${getUnitSize(pred.grade)} unit${getUnitSize(pred.grade) !== 1 ? 's' : ''}`
+                : 'Below betting threshold'}
             </div>
           </div>
         </div>
