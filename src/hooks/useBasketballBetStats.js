@@ -18,6 +18,7 @@ export function useBasketballBetStats() {
     roi: 0,
     loading: true,
   });
+  const [dailyStats, setDailyStats] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +56,29 @@ export function useBasketballBetStats() {
 
         const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
 
+        // Calculate daily stats for calendar
+        const dailyStatsMap = {};
+        gradedBets.forEach(bet => {
+          const date = bet.date || bet.id.split('_')[0]; // Extract date from bet
+          if (!dailyStatsMap[date]) {
+            dailyStatsMap[date] = {
+              wins: 0,
+              losses: 0,
+              unitsWon: 0,
+              bets: []
+            };
+          }
+          
+          if (bet.result.outcome === 'WIN') {
+            dailyStatsMap[date].wins++;
+          } else if (bet.result.outcome === 'LOSS') {
+            dailyStatsMap[date].losses++;
+          }
+          
+          dailyStatsMap[date].unitsWon += (bet.result.profit || 0);
+          dailyStatsMap[date].bets.push(bet);
+        });
+
         setStats({
           totalBets: bets.length,
           gradedBets: gradedBets.length,
@@ -66,7 +90,8 @@ export function useBasketballBetStats() {
           roi,
           loading: false,
         });
-
+        
+        setDailyStats(dailyStatsMap);
         setLoading(false);
 
         console.log(`✅ Basketball stats: ${wins}-${losses} (${winRate.toFixed(1)}%), ${unitsWon > 0 ? '+' : ''}${unitsWon.toFixed(2)}u, ROI: ${roi.toFixed(1)}%`);
@@ -80,7 +105,7 @@ export function useBasketballBetStats() {
     return () => unsubscribe();
   }, []);
 
-  return { stats, loading };
+  return { stats, loading, dailyStats };
 }
 
 

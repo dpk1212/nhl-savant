@@ -45,78 +45,143 @@ export function GradeBadge({ grade, size = 'normal', showDetails = false, gradeD
 
 /**
  * Grade Stats Summary Component
- * Shows overall grading statistics
+ * Premium collapsible grading statistics
  */
+import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
 export function GradeStats({ stats }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   if (!stats || stats.totalGames === 0) {
     return null;
   }
   
+  const isMobile = window.innerWidth < 768;
+  
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.7))',
-      border: '1px solid rgba(71, 85, 105, 0.3)',
-      borderRadius: '12px',
-      padding: '20px',
-      marginBottom: '24px'
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+      border: '1px solid rgba(139, 92, 246, 0.2)',
+      borderRadius: '16px',
+      padding: isMobile ? '1rem' : '1.25rem',
+      marginBottom: '1.5rem',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3), 0 0 40px rgba(139, 92, 246, 0.08)',
+      overflow: 'hidden'
     }}>
-      <h3 style={{ 
-        margin: '0 0 16px 0', 
-        fontSize: '18px', 
-        color: '#f1f5f9',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        📊 Today's Grading Summary
-      </h3>
+      {/* Header - Collapsible */}
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{ 
+          width: '100%',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          marginBottom: isExpanded ? '1rem' : '0',
+          gap: '0.75rem',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            width: '4px',
+            height: '32px',
+            background: 'linear-gradient(to bottom, #8B5CF6, #7C3AED)',
+            borderRadius: '4px'
+          }}></div>
+          <h3 style={{ 
+            margin: 0, 
+            fontSize: isMobile ? '1.125rem' : '1.25rem', 
+            fontWeight: '900',
+            color: '#f1f5f9',
+            letterSpacing: '-0.02em'
+          }}>
+            📊 Today's Grading Summary
+          </h3>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Quick Preview when collapsed */}
+          {!isExpanded && (
+            <div style={{ 
+              fontSize: isMobile ? '0.813rem' : '0.875rem',
+              fontWeight: '700',
+              color: stats.winnerAccuracy >= 70 ? '#10B981' : '#8B5CF6'
+            }}>
+              {stats.totalGames} graded • {stats.winnerAccuracy}% accurate
+            </div>
+          )}
+          {isExpanded ? <ChevronUp size={20} color="#94a3b8" /> : <ChevronDown size={20} color="#94a3b8" />}
+        </div>
+      </button>
       
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: '16px'
-      }}>
-        <StatBox
-          label="Total Graded"
-          value={stats.totalGames}
-          icon="🎯"
-        />
-        <StatBox
-          label="Avg Grade"
-          value={stats.avgGrade.toFixed(2)}
-          icon="📈"
-        />
-        <StatBox
-          label="Winner Accuracy"
-          value={`${stats.winnerAccuracy}%`}
-          icon="✅"
-        />
-        <StatBox
-          label="Avg Error"
-          value={`±${stats.avgScoreError} pts`}
-          icon="📏"
-        />
-      </div>
+      {/* Expanded Stats Grid */}
+      {isExpanded && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+          gap: isMobile ? '0.75rem' : '1rem'
+        }}>
+          <StatBox
+            label="Total Graded"
+            value={stats.totalGames}
+            icon="🎯"
+          />
+          <StatBox
+            label="Winner Accuracy"
+            value={`${stats.winnerAccuracy}%`}
+            icon="✅"
+          />
+          <StatBox
+            label="Avg Error"
+            value={`±${stats.avgScoreError} pts`}
+            icon="📏"
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 function StatBox({ label, value, icon }) {
+  const isMobile = window.innerWidth < 768;
+  
   return (
     <div style={{
-      background: 'rgba(15, 23, 42, 0.5)',
-      border: '1px solid rgba(71, 85, 105, 0.2)',
-      borderRadius: '8px',
-      padding: '12px',
-      textAlign: 'center'
+      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%)',
+      border: '1px solid rgba(139, 92, 246, 0.2)',
+      borderRadius: '12px',
+      padding: isMobile ? '0.75rem' : '1rem',
+      textAlign: 'center',
+      transition: 'all 0.2s ease',
+      cursor: 'default'
     }}>
-      <div style={{ fontSize: '24px', marginBottom: '4px' }}>
+      <div style={{ 
+        fontSize: isMobile ? '1.5rem' : '1.75rem', 
+        marginBottom: '0.375rem',
+        filter: 'grayscale(0.2)'
+      }}>
         {icon}
       </div>
-      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '4px' }}>
+      <div style={{ 
+        fontSize: isMobile ? '1.375rem' : '1.5rem', 
+        fontWeight: '900', 
+        color: '#f1f5f9', 
+        marginBottom: '0.25rem',
+        fontFeatureSettings: "'tnum'",
+        letterSpacing: '-0.02em'
+      }}>
         {value}
       </div>
-      <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+      <div style={{ 
+        fontSize: isMobile ? '0.688rem' : '0.75rem', 
+        color: '#8B5CF6',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em'
+      }}>
         {label}
       </div>
     </div>
