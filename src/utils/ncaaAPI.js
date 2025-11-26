@@ -14,10 +14,14 @@ const NCAA_PROXY_URL = 'https://ncaaproxy-lviwud3q2q-uc.a.run.app';
  */
 export async function fetchTodaysGames(date = null) {
   if (!date) {
-    // Format today's date as YYYYMMDD
+    // Format today's date as YYYYMMDD - USE LOCAL TIMEZONE!
     const today = new Date();
-    date = today.toISOString().split('T')[0].replace(/-/g, '');
-  }
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    date = `${year}${month}${day}`;
+    
+    console.log(`📅 Fetching NCAA games for LOCAL date: ${year}-${month}-${day}`);
   
   try {
     // Use Firebase Cloud Function proxy to avoid CORS
@@ -216,6 +220,7 @@ function teamNamesMatch(name1, name2) {
       .replace(/\bvmi\b/g, 'virginiamelitaryinstitute')
       .replace(/\bniu\b/g, 'northernillinois')
       .replace(/\bunlv\b/g, 'nevadaelasvegas')
+      .replace(/\bn\.?c\.?\b/g, 'northcarolina')
       .replace(/\bunc\b/g, 'northcarolina')
       .replace(/\busc\b/g, 'southerncalifornia')
       .replace(/\blmu\b/g, 'loyolamarymount')
