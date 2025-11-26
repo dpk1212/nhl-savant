@@ -198,10 +198,34 @@ const Basketball = () => {
         return true;
       });
       
-      // Sort by grade (best picks first), then by game time
+      // SORT BY VALUE: Prioritize games where our model is MORE CONFIDENT than market
+      // This ensures we recommend teams we believe in more than the market does
       const sortedGames = qualityGames.sort((a, b) => {
-        // Grade order: A+, A, B+, B
-        const gradeOrder = { 'A+': 4, 'A': 3, 'B+': 2, 'B': 1 };
+        // Calculate "model advantage" - how much more confident we are than market
+        const getModelAdvantage = (game) => {
+          const pred = game.prediction;
+          if (!pred) return 0;
+          
+          // Get the probabilities for the team we're picking
+          const modelProb = pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb;
+          const marketProb = pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb;
+          
+          return modelProb - marketProb; // Positive = we're more confident than market
+        };
+        
+        const advantageA = getModelAdvantage(a);
+        const advantageB = getModelAdvantage(b);
+        
+        // PRIORITY 1: Sort by whether we're MORE confident than market
+        const aHasAdvantage = advantageA > 0;
+        const bHasAdvantage = advantageB > 0;
+        
+        if (aHasAdvantage !== bHasAdvantage) {
+          return bHasAdvantage ? 1 : -1; // Games with advantage first
+        }
+        
+        // PRIORITY 2: Among similar advantage types, sort by grade
+        const gradeOrder = { 'A+': 4, 'A': 3, 'B+': 2, 'B': 1, 'C': 0 };
         const gradeA = gradeOrder[a.prediction?.grade] || 0;
         const gradeB = gradeOrder[b.prediction?.grade] || 0;
         
@@ -209,7 +233,12 @@ const Basketball = () => {
           return gradeB - gradeA; // Higher grade first
         }
         
-        // If same grade, sort by time
+        // PRIORITY 3: Among same grade, sort by size of advantage
+        if (Math.abs(advantageA - advantageB) > 0.001) {
+          return advantageB - advantageA; // Bigger advantage first
+        }
+        
+        // PRIORITY 4: Finally sort by time
         const timeA = a.odds?.gameTime || '';
         const timeB = b.odds?.gameTime || '';
         
