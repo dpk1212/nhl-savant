@@ -823,48 +823,53 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 : 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
               border: `1px solid ${isPositiveEV ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
               borderRadius: '8px',
-              padding: isMobile ? '0.5rem' : '0.625rem',
-              marginBottom: isMobile ? '0.625rem' : '0.75rem',
+              padding: isMobile ? '0.5rem 0.625rem' : '0.625rem',
+              marginBottom: isMobile ? '0.5rem' : '0.75rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: isMobile ? '0.5rem' : '0.625rem'
             }}>
-              <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', lineHeight: 1 }}>
+              <div style={{ fontSize: isMobile ? '1.125rem' : '1.5rem', lineHeight: 1, flexShrink: 0 }}>
                 {isUpsetTerritory ? '🎯' : isPositiveEV ? '💡' : '⚠️'}
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ 
-                  fontSize: isMobile ? '0.813rem' : '0.875rem',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   fontWeight: '700',
                   color: isPositiveEV ? '#10B981' : '#EF4444',
-                  marginBottom: '0.125rem',
-                  letterSpacing: '-0.01em'
+                  marginBottom: isMobile ? 0 : '0.125rem',
+                  letterSpacing: '-0.01em',
+                  whiteSpace: isMobile ? 'nowrap' : 'normal',
+                  overflow: isMobile ? 'hidden' : 'visible',
+                  textOverflow: isMobile ? 'ellipsis' : 'clip'
                 }}>
-                  {pred.bestTeam} Moneyline {isUpsetTerritory && '• Upset Alert'}
+                  {pred.bestTeam} ML {isUpsetTerritory && '• 🎯'}
                 </div>
-                <div style={{ 
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: 'rgba(255,255,255,0.7)',
-                  lineHeight: 1.3
-                }}>
-                  {isUpsetTerritory 
-                    ? `Close game with ${Math.abs(pred.bestEV).toFixed(1)}% ${isPositiveEV ? 'edge' : 'disadvantage'} vs market`
-                    : isPositiveEV
-                      ? `Our model sees ${pred.bestEV.toFixed(1)}% more value than the market`
-                      : `Market favors this ${Math.abs(pred.bestEV).toFixed(1)}% more than our model`
-                  }
-                </div>
+                {!isMobile && (
+                  <div style={{ 
+                    fontSize: '0.75rem',
+                    color: 'rgba(255,255,255,0.7)',
+                    lineHeight: 1.3
+                  }}>
+                    {isUpsetTerritory 
+                      ? `Close game with ${Math.abs(pred.bestEV).toFixed(1)}% ${isPositiveEV ? 'edge' : 'disadvantage'} vs market`
+                      : isPositiveEV
+                        ? `Our model sees ${pred.bestEV.toFixed(1)}% more value than the market`
+                        : `Market favors this ${Math.abs(pred.bestEV).toFixed(1)}% more than our model`
+                    }
+                  </div>
+                )}
               </div>
             </div>
           );
         })()}
         
-        {/* Clearer Stats Grid with Helper Text */}
+        {/* Compact Stats Grid - Mobile Optimized */}
         <div style={{ 
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)',
           gap: isMobile ? '0.5rem' : '0.625rem',
-          marginBottom: isMobile ? '0.625rem' : '0.75rem',
+          marginBottom: isMobile ? '0.5rem' : '0.75rem',
           position: 'relative',
           zIndex: 2
         }}>
@@ -873,8 +878,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
             borderRadius: '8px',
             padding: isMobile ? '0.5rem' : '0.625rem',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            gridColumn: isMobile ? 'span 2' : 'span 1'
+            border: '1px solid rgba(16, 185, 129, 0.2)'
           }}>
             <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
@@ -1003,31 +1007,32 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           </div>
         </div>
         
-        {/* Predicted Score with Label */}
+        {/* Predicted Score - Compact Mobile */}
         {pred.ensembleTotal && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
-            borderRadius: '10px',
-            padding: isMobile ? '0.625rem' : '0.875rem',
+            borderRadius: '8px',
+            padding: isMobile ? '0.5rem 0.625rem' : '0.75rem',
             border: '1px solid rgba(255,255,255,0.08)',
             position: 'relative',
             zIndex: 2
           }}>
-            {/* Label */}
+            {/* Label - Inline on Mobile */}
             <div style={{
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               color: 'rgba(255,255,255,0.5)',
               fontWeight: '700',
               textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: isMobile ? '0.375rem' : '0.5rem',
+              letterSpacing: '0.06em',
+              marginBottom: isMobile ? '0.25rem' : '0.375rem',
               textAlign: 'center',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.375rem'
+              gap: '0.25rem'
             }}>
-              <span>🔮</span> Predicted Final Score
+              <span style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>🔮</span>
+              {isMobile ? 'Prediction' : 'Predicted Final Score'}
             </div>
             
             {/* Score Grid */}
@@ -1044,13 +1049,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                   color: 'rgba(255,255,255,0.4)',
                   fontWeight: '700',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: isMobile ? '0.25rem' : '0.375rem'
+                  letterSpacing: '0.03em',
+                  marginBottom: isMobile ? '0.125rem' : '0.25rem'
                 }}>
-                  {game.awayTeam.length > 12 ? game.awayTeam.substring(0, 10) + '...' : game.awayTeam}
+                  {isMobile && game.awayTeam.length > 8 ? game.awayTeam.substring(0, 7) + '...' : game.awayTeam.substring(0, 12)}
                 </div>
                 <div style={{ 
-                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontSize: isMobile ? '1.125rem' : '1.5rem',
                   fontWeight: '900',
                   color: 'white',
                   lineHeight: 1,
@@ -1063,7 +1068,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               {/* Separator */}
               <div style={{ 
                 color: 'rgba(255,255,255,0.25)', 
-                fontSize: isMobile ? '0.875rem' : '1rem',
+                fontSize: isMobile ? '0.75rem' : '1rem',
                 fontWeight: '700'
               }}>
                 -
@@ -1076,13 +1081,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                   color: 'rgba(255,255,255,0.4)',
                   fontWeight: '700',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: isMobile ? '0.25rem' : '0.375rem'
+                  letterSpacing: '0.03em',
+                  marginBottom: isMobile ? '0.125rem' : '0.25rem'
                 }}>
-                  {game.homeTeam.length > 12 ? game.homeTeam.substring(0, 10) + '...' : game.homeTeam}
+                  {isMobile && game.homeTeam.length > 8 ? game.homeTeam.substring(0, 7) + '...' : game.homeTeam.substring(0, 12)}
                 </div>
                 <div style={{ 
-                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontSize: isMobile ? '1.125rem' : '1.5rem',
                   fontWeight: '900',
                   color: 'white',
                   lineHeight: 1,
