@@ -13,132 +13,94 @@ export function BasketballLiveScore({ liveScore, prediction, awayTeam, homeTeam 
   const isLive = liveScore.status === 'live';
   const isFinal = liveScore.status === 'final';
   
+  const isMobile = window.innerWidth < 768;
+  
   return (
     <div style={{
       background: isLive 
-        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15))'
-        : 'rgba(15, 23, 42, 0.5)',
-      border: isLive ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(71, 85, 105, 0.3)',
-      borderRadius: '10px',
-      padding: '12px',
-      marginTop: '8px'
+        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.12))'
+        : 'rgba(15, 23, 42, 0.4)',
+      border: isLive ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(71, 85, 105, 0.25)',
+      borderRadius: '8px',
+      padding: isMobile ? '6px 8px' : '8px',
+      marginTop: '6px'
     }}>
-      {/* Status Badge */}
+      {/* Compact Single Line: Status + Score + Clock */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        marginBottom: '12px'
+        gap: '8px'
       }}>
+        {/* Left: Status Badge */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: status.color
+          gap: '4px',
+          fontSize: isMobile ? '11px' : '12px',
+          fontWeight: '700',
+          color: status.color,
+          flexShrink: 0
         }}>
-          <span style={{ fontSize: '16px' }}>{status.icon}</span>
+          <span style={{ fontSize: isMobile ? '12px' : '14px' }}>{status.icon}</span>
           {status.text}
-          {isLive && liveScore.period && (
-            <span style={{ color: '#94a3b8', marginLeft: '8px' }}>
-              {formatPeriod(liveScore.period)}
-            </span>
-          )}
         </div>
         
-        {isLive && liveScore.clock && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.2)',
-            color: '#ef4444',
-            padding: '4px 12px',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: 'bold'
+        {/* Center: Compact Score */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobile ? '6px' : '8px',
+          fontSize: isMobile ? '16px' : '18px',
+          fontWeight: '900',
+          flex: 1,
+          justifyContent: 'center'
+        }}>
+          <span style={{ 
+            fontSize: isMobile ? '11px' : '12px',
+            color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : 'rgba(255,255,255,0.7)',
+            fontWeight: '600'
           }}>
-            {liveScore.clock}
+            {awayTeam.length > 12 ? awayTeam.substring(0, 10) + '...' : awayTeam}
+          </span>
+          <span style={{ color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : '#f1f5f9' }}>
+            {liveScore.awayScore}
+          </span>
+          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>-</span>
+          <span style={{ color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : '#f1f5f9' }}>
+            {liveScore.homeScore}
+          </span>
+          <span style={{ 
+            fontSize: isMobile ? '11px' : '12px',
+            color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : 'rgba(255,255,255,0.7)',
+            fontWeight: '600'
+          }}>
+            {homeTeam.length > 12 ? homeTeam.substring(0, 10) + '...' : homeTeam}
+          </span>
+        </div>
+        
+        {/* Right: Clock + Period */}
+        {isLive && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: isMobile ? '10px' : '11px',
+            fontWeight: '700',
+            color: '#ef4444',
+            flexShrink: 0
+          }}>
+            {liveScore.period && (
+              <span style={{ color: '#94a3b8' }}>
+                {formatPeriod(liveScore.period)}
+              </span>
+            )}
+            {liveScore.clock && (
+              <span>{liveScore.clock}</span>
+            )}
           </div>
         )}
       </div>
-      
-      {/* Score Display - Show team names explicitly */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '12px',
-        fontSize: '20px',
-        fontWeight: 'bold'
-      }}>
-        {/* Away Team Name & Score */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : '#f1f5f9'
-        }}>
-          <span style={{ fontSize: '14px', fontWeight: '600' }}>{awayTeam}</span>
-          <span style={{ fontSize: '28px', fontWeight: '900' }}>{liveScore.awayScore}</span>
-        </div>
-        
-        {/* Separator */}
-        <div style={{
-          fontSize: '18px',
-          fontWeight: 'bold',
-          color: '#64748b'
-        }}>
-          -
-        </div>
-        
-        {/* Home Team Score & Name */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : '#f1f5f9'
-        }}>
-          <span style={{ fontSize: '28px', fontWeight: '900' }}>{liveScore.homeScore}</span>
-          <span style={{ fontSize: '14px', fontWeight: '600' }}>{homeTeam}</span>
-        </div>
-      </div>
-      
-      {/* Predicted Scores (smaller, below) */}
-      {(prediction.dratings?.awayScore || prediction.haslametrics?.awayScore) && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '12px',
-          marginTop: '8px',
-          fontSize: '12px',
-          color: '#94a3b8'
-        }}>
-          <span>Predicted: {awayTeam} {(prediction.dratings?.awayScore || prediction.haslametrics?.awayScore).toFixed(1)} - {homeTeam} {(prediction.dratings?.homeScore || prediction.haslametrics?.homeScore).toFixed(1)}</span>
-        </div>
-      )}
-      
-      {/* Network/TV */}
-      {liveScore.network && (
-        <div style={{
-          marginTop: '12px',
-          fontSize: '12px',
-          color: '#94a3b8',
-          textAlign: 'center'
-        }}>
-          📺 {liveScore.network}
-        </div>
-      )}
-      
-      {/* Last Updated */}
-      {liveScore.lastUpdated && (
-        <div style={{
-          marginTop: '8px',
-          fontSize: '11px',
-          color: '#64748b',
-          textAlign: 'center'
-        }}>
-          Updated {new Date(liveScore.lastUpdated).toLocaleTimeString()}
-        </div>
-      )}
     </div>
   );
 }
