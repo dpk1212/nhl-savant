@@ -66,11 +66,11 @@ function parseNCAAgame(game) {
   const awayScore = parseInt(rawAwayScore) || 0;
   const homeScore = parseInt(rawHomeScore) || 0;
   
-  // Warn if scores look suspicious
-  if (rawAwayScore !== undefined && isNaN(parseInt(rawAwayScore))) {
+  // Warn if scores look suspicious (but ignore empty scores for scheduled games)
+  if (rawAwayScore !== undefined && rawAwayScore !== "" && isNaN(parseInt(rawAwayScore))) {
     console.warn(`⚠️ Invalid away score for ${awayTeamName}: "${rawAwayScore}"`);
   }
-  if (rawHomeScore !== undefined && isNaN(parseInt(rawHomeScore))) {
+  if (rawHomeScore !== undefined && rawHomeScore !== "" && isNaN(parseInt(rawHomeScore))) {
     console.warn(`⚠️ Invalid home score for ${homeTeamName}: "${rawHomeScore}"`);
   }
   
