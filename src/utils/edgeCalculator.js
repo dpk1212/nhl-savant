@@ -522,6 +522,8 @@ export class EdgeCalculator {
           qualityGrade: edge.qualityGrade,
           kelly: edge.kelly,
           recommendedUnit: edge.recommendedUnit,
+          moneyPuckProb: edge.moneyPuckProb,       // QUALITY GATE: Flag for bet saving
+          calibratedProb: edge.calibratedProb,     // QUALITY GATE: Alternative flag
           isPreliminary: !edge.moneyPuckProb       // 🆕 FLAG for UI display
         });
       }
@@ -552,6 +554,8 @@ export class EdgeCalculator {
           qualityGrade: edge.qualityGrade,
           kelly: edge.kelly,
           recommendedUnit: edge.recommendedUnit,
+          moneyPuckProb: edge.moneyPuckProb,       // QUALITY GATE: Flag for bet saving
+          calibratedProb: edge.calibratedProb,     // QUALITY GATE: Alternative flag
           isPreliminary: !edge.moneyPuckProb       // 🆕 FLAG for UI display
         });
       }
