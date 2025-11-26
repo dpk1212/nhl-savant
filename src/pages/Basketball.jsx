@@ -184,7 +184,8 @@ const Basketball = () => {
       });
       
       // CRITICAL FILTER: Only show games with BOTH Haslametrics AND D-Ratings
-      // This ensures high-quality ensemble predictions (confidence === 'HIGH')
+      // Include ALL games where our model predicts a WIN (>50% win probability)
+      // Grading reflects whether we're MORE confident than market (positive EV = good grades)
       const qualityGames = gamesWithPredictions.filter(game => {
         // Must have a valid prediction (no error)
         if (game.prediction?.error) return false;
@@ -194,6 +195,14 @@ const Basketball = () => {
         
         // Must have a grade
         if (!game.prediction?.grade || game.prediction.grade === 'N/A') return false;
+        
+        // INCLUDE if our model predicts this team will WIN (>50%)
+        // This includes BOTH:
+        // - Positive EV picks (we're MORE confident than market) → A+, A, B+, B, C grades
+        // - Negative EV picks (market MORE confident than us) → D, F grades
+        // Sorting will prioritize positive EV picks at the top
+        const modelProb = game.prediction?.ensembleProb || 0;
+        if (modelProb <= 0.5) return false;  // Skip if model doesn't predict a win
         
         return true;
       });
