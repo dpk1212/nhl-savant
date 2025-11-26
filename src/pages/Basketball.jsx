@@ -690,8 +690,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         
         {/* Grade Badge - Compact */}
         <div style={{ display: 'flex', gap: isMobile ? '0.375rem' : '0.5rem', alignItems: 'center' }}>
-          {/* Bet Outcome - Only show profit if we actually bet (unit size > 0) */}
-          {game.betOutcome && getUnitSize(pred.grade) > 0 && (
+          {/* Bet Outcome - Show profit for all bets */}
+          {game.betOutcome && (
             <div style={{
               background: game.betOutcome.outcome === 'WIN' 
                 ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)'
@@ -744,56 +744,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                     letterSpacing: '0.05em'
                   }}>
                     {game.betOutcome.outcome === 'WIN' ? 'Profit' : 'Loss'}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Tracking Badge for No-Bet picks (D/F grades) */}
-          {game.betOutcome && getUnitSize(pred.grade) === 0 && (
-            <div style={{
-              background: game.betOutcome.outcome === 'WIN'
-                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.1) 100%)'
-                : 'linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(100, 116, 139, 0.1) 100%)',
-              border: game.betOutcome.outcome === 'WIN'
-                ? '2px solid rgba(59, 130, 246, 0.5)'
-                : '2px solid rgba(148, 163, 184, 0.5)',
-              padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 1rem',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.2)'
-            }}>
-              <div style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                lineHeight: 1
-              }}>
-                {game.betOutcome.outcome === 'WIN' ? '✓' : '✗'}
-              </div>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.125rem'
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
-                  fontWeight: '800',
-                  color: game.betOutcome.outcome === 'WIN' ? '#3B82F6' : '#94A3B8',
-                  letterSpacing: '-0.01em'
-                }}>
-                  {game.betOutcome.outcome === 'WIN' ? 'Correct' : 'Wrong'}
-                </div>
-                {!isMobile && (
-                  <div style={{
-                    fontSize: '0.625rem',
-                    color: 'rgba(148, 163, 184, 0.8)',
-                    fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    Tracked Only
                   </div>
                 )}
               </div>

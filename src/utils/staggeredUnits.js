@@ -6,17 +6,17 @@
  */
 
 export const UNIT_ALLOCATION = {
-  'A+': 3.0,  // Elite picks - 3 units
-  'A': 2.5,   // Excellent picks - 2.5 units
-  'A-': 2.0,  // Great picks - 2 units
-  'B+': 1.5,  // Good picks - 1.5 units
-  'B': 1.0,   // Solid picks - 1 unit
-  'B-': 0.75, // Average picks - 0.75 units
-  'C+': 0.5,  // Below average - 0.5 units
-  'C': 0.25,  // Poor picks - 0.25 units
-  'C-': 0,    // Very poor - no bet
-  'D': 0,     // Bad - no bet
-  'F': 0      // Terrible - no bet
+  'A+': 5.0,  // Elite picks - MAX ALLOCATION
+  'A': 4.0,   // Excellent picks - heavy sizing
+  'A-': 3.0,  // Great picks - aggressive
+  'B+': 2.0,  // Good picks - above standard
+  'B': 1.5,   // Solid picks - standard+
+  'B-': 1.0,  // Average picks - baseline
+  'C+': 0.5,  // Below average - small bet
+  'C': 0.5,   // Poor picks - small bet
+  'C-': 0.5,  // Very poor - small bet
+  'D': 0.5,   // Bad - small bet (track for learning)
+  'F': 0.5    // Terrible - small bet (track for learning)
 };
 
 /**
@@ -46,12 +46,14 @@ export function getUnitDisplay(grade) {
 export function getUnitColor(grade) {
   const units = getUnitSize(grade);
   
-  if (units >= 2.5) return '#10B981'; // Green - elite
-  if (units >= 2.0) return '#14B8A6'; // Teal - great
-  if (units >= 1.5) return '#3B82F6'; // Blue - good
-  if (units >= 1.0) return '#F59E0B'; // Amber - solid
-  if (units > 0) return '#94A3B8';    // Gray - small bet
-  return '#EF4444';                    // Red - no bet
+  if (units >= 5.0) return '#10B981'; // Green - ELITE MAX
+  if (units >= 4.0) return '#14B8A6'; // Teal - excellent
+  if (units >= 3.0) return '#3B82F6'; // Blue - great
+  if (units >= 2.0) return '#8B5CF6'; // Purple - good
+  if (units >= 1.5) return '#F59E0B'; // Amber - solid
+  if (units >= 1.0) return '#FB923C'; // Orange - average
+  if (units >= 0.5) return '#94A3B8'; // Gray - small bet
+  return '#EF4444';                    // Red - no bet (shouldn't happen)
 }
 
 /**
@@ -77,11 +79,13 @@ export function calculateUnitProfit(grade, odds, isWin) {
 export function getUnitRationale(grade) {
   const units = getUnitSize(grade);
   
-  if (units >= 2.5) return 'Elite confidence - max allocation';
-  if (units >= 2.0) return 'High confidence - aggressive sizing';
-  if (units >= 1.5) return 'Good opportunity - above standard';
-  if (units >= 1.0) return 'Standard bet sizing';
-  if (units > 0) return 'Small edge - conservative sizing';
-  return 'Edge insufficient for bet';
+  if (units >= 5.0) return 'Elite confidence - MAX ALLOCATION';
+  if (units >= 4.0) return 'Excellent - heavy sizing';
+  if (units >= 3.0) return 'High confidence - aggressive sizing';
+  if (units >= 2.0) return 'Good opportunity - above standard';
+  if (units >= 1.5) return 'Solid pick - standard+';
+  if (units >= 1.0) return 'Average - baseline sizing';
+  if (units > 0) return 'Small bet - tracking for learning';
+  return 'No bet';
 }
 
