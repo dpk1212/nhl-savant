@@ -92,6 +92,7 @@ export function useBasketballBetStats() {
           pending,
           winRate,
           unitsWon,
+          totalRisked,
           roi,
           loading: false,
         });
