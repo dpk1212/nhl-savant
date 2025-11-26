@@ -99,7 +99,7 @@ export function BasketballBetStats() {
     return null;
   }
 
-  const { wins, losses, pending, winRate, unitsWon, roi, gradedBets } = stats;
+  const { wins, losses, pending, winRate, unitsWon, totalRisked, roi, gradedBets } = stats;
   const isMobile = window.innerWidth < 768;
 
   return (
@@ -201,7 +201,7 @@ export function BasketballBetStats() {
         <>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
         gap: isMobile ? '0.75rem' : '1rem'
       }}>
         {/* Total Bets */}
@@ -234,10 +234,19 @@ export function BasketballBetStats() {
           isMobile={isMobile}
         />
 
+        {/* Units Risked */}
+        <PremiumStatBox
+          value={`${totalRisked ? totalRisked.toFixed(2) : '0.00'}u`}
+          label="Units Risked"
+          icon="🎲"
+          color="#3B82F6"
+          isMobile={isMobile}
+        />
+
         {/* Units Won */}
         <PremiumStatBox
           value={`${unitsWon > 0 ? '+' : ''}${unitsWon.toFixed(2)}u`}
-          label="Units"
+          label="Units Won"
           icon="💰"
           color={unitsWon > 0 ? '#10B981' : 
                  unitsWon < 0 ? '#EF4444' : 
