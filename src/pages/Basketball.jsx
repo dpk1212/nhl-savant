@@ -693,99 +693,148 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           {/* Bet Outcome - Show profit for all bets */}
           {game.betOutcome && (
             <div style={{
-              background: game.betOutcome.outcome === 'WIN' 
-                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)'
-                : 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
-              backdropFilter: 'blur(10px)',
-              border: game.betOutcome.outcome === 'WIN'
-                ? '2px solid rgba(16, 185, 129, 0.6)'
-                : '2px solid rgba(239, 68, 68, 0.6)',
-              padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 1rem',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
+              background: game.betOutcome.outcome === 'WIN'
+                ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              padding: '2px',
+              borderRadius: '12px',
               boxShadow: game.betOutcome.outcome === 'WIN'
-                ? '0 4px 20px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
-                : '0 4px 20px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                ? '0 8px 32px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.2)'
+                : '0 8px 32px rgba(239, 68, 68, 0.4), 0 0 60px rgba(239, 68, 68, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              {/* Outcome Icon */}
+              {/* Shimmer effect */}
               <div style={{
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
-                lineHeight: 1
-              }}>
-                {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
-              </div>
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
+                width: '200%',
+                height: '100%',
+                background: game.betOutcome.outcome === 'WIN'
+                  ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)'
+                  : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                animation: 'shimmer 3s infinite',
+                pointerEvents: 'none'
+              }} />
               
-              {/* Profit Amount */}
+              {/* Inner card */}
               <div style={{
+                background: game.betOutcome.outcome === 'WIN'
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.25rem',
+                borderRadius: '10px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '0.125rem'
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '0.625rem' : '0.75rem',
+                position: 'relative'
               }}>
+                {/* Icon with glow */}
                 <div style={{
-                  fontSize: isMobile ? '1rem' : '1.125rem',
-                  fontWeight: '900',
-                  color: game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444',
-                  letterSpacing: '-0.02em',
-                  fontFeatureSettings: "'tnum'",
-                  textShadow: game.betOutcome.outcome === 'WIN'
-                    ? '0 2px 8px rgba(16, 185, 129, 0.4)'
-                    : '0 2px 8px rgba(239, 68, 68, 0.4)'
+                  fontSize: isMobile ? '1.5rem' : '1.75rem',
+                  lineHeight: 1,
+                  filter: game.betOutcome.outcome === 'WIN'
+                    ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))'
+                    : 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))'
                 }}>
-                  {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
+                  {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
                 </div>
-                {!isMobile && (
+                
+                {/* Profit display */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.125rem'
+                }}>
                   <div style={{
-                    fontSize: '0.625rem',
-                    color: game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
-                    fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    fontSize: isMobile ? '1.25rem' : '1.5rem',
+                    fontWeight: '900',
+                    background: game.betOutcome.outcome === 'WIN'
+                      ? 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)'
+                      : 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    letterSpacing: '-0.03em',
+                    fontFeatureSettings: "'tnum'",
+                    textShadow: game.betOutcome.outcome === 'WIN'
+                      ? '0 4px 20px rgba(16, 185, 129, 0.5)'
+                      : '0 4px 20px rgba(239, 68, 68, 0.5)',
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
                   }}>
-                    {game.betOutcome.outcome === 'WIN' ? 'Profit' : 'Loss'}
+                    {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
                   </div>
-                )}
+                  <div style={{
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
+                    color: 'rgba(255,255,255,0.9)',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                  }}>
+                    {game.betOutcome.outcome === 'WIN' ? '🎉 Profit' : '📊 Loss'}
+                  </div>
+                </div>
               </div>
             </div>
           )}
           
-          {/* Prediction Quality Grade with Unit Sizing */}
+          {/* Premium Grade & Unit Badge */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: isMobile ? '0.5rem' : '0.625rem'
           }}>
+            {/* Grade Badge */}
             <div style={{
-              background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}20 100%)`,
-              color: gradeColors.color,
-              border: `2px solid ${gradeColors.borderColor}`,
-              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
-              borderRadius: '8px',
-              fontWeight: '800',
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              letterSpacing: '-0.01em',
-              boxShadow: `0 2px 12px ${gradeColors.borderColor}30`,
-              minWidth: isMobile ? '42px' : '52px',
-              textAlign: 'center'
+              background: gradeColors.borderColor,
+              padding: '2px',
+              borderRadius: '10px',
+              boxShadow: `0 4px 20px ${gradeColors.borderColor}40, 0 0 40px ${gradeColors.borderColor}20`
             }}>
-              {pred.grade}
+              <div style={{
+                background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}15 100%)`,
+                backdropFilter: 'blur(10px)',
+                color: gradeColors.color,
+                padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 1rem',
+                borderRadius: '8px',
+                fontWeight: '900',
+                fontSize: isMobile ? '1rem' : '1.125rem',
+                letterSpacing: '-0.02em',
+                textShadow: `0 2px 8px ${gradeColors.borderColor}60`,
+                minWidth: isMobile ? '48px' : '60px',
+                textAlign: 'center'
+              }}>
+                {pred.grade}
+              </div>
             </div>
             
-            {/* Unit Size Display */}
+            {/* Unit Size Badge */}
             <div style={{
-              background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}20 0%, ${getUnitColor(pred.grade)}10 100%)`,
-              color: getUnitColor(pred.grade),
-              border: `1.5px solid ${getUnitColor(pred.grade)}`,
-              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-              borderRadius: '8px',
-              fontWeight: '900',
-              fontSize: isMobile ? '0.813rem' : '0.938rem',
-              letterSpacing: '0.02em',
-              boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}25`,
-              fontFeatureSettings: "'tnum'"
+              background: getUnitColor(pred.grade),
+              padding: '2px',
+              borderRadius: '10px',
+              boxShadow: `0 4px 20px ${getUnitColor(pred.grade)}40, 0 0 40px ${getUnitColor(pred.grade)}20`
             }}>
-              {getUnitDisplay(pred.grade)}
+              <div style={{
+                background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}20 0%, ${getUnitColor(pred.grade)}10 100%)`,
+                backdropFilter: 'blur(10px)',
+                color: getUnitColor(pred.grade),
+                padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 0.875rem',
+                borderRadius: '8px',
+                fontWeight: '900',
+                fontSize: isMobile ? '0.938rem' : '1.063rem',
+                letterSpacing: '-0.01em',
+                fontFeatureSettings: "'tnum'",
+                textShadow: `0 2px 8px ${getUnitColor(pred.grade)}60`
+              }}>
+                {getUnitDisplay(pred.grade)}
+              </div>
             </div>
           </div>
         </div>
