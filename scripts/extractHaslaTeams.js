@@ -101,3 +101,4 @@ extractHaslaTeams()
     process.exit(1);
   });
 
+

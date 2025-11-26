@@ -90,7 +90,7 @@ async function fetchBasketballData() {
     console.log('   ⏳ Timeout set to 5 minutes');
     const haslametricsResult = await retryWithBackoff(async () => {
       return await firecrawl.scrape(
-        `https://haslametrics.com/?_=${cacheBuster}`,
+        `https://haslametrics.com/games.php?_=${cacheBuster}`,
         {
           formats: ['markdown'],
           onlyMainContent: true,
@@ -186,4 +186,5 @@ fetchBasketballData()
     console.error('Please check the error above and try again.\n');
     process.exit(1);
   });
+
 
