@@ -41,32 +41,25 @@ export function useBasketballBetStats() {
         // Calculate stats
         const gradedBets = bets.filter(bet => bet.result?.outcome);
         
-        // Separate actual bets (C+ and higher) from tracked picks (D/F)
-        const actualBets = gradedBets.filter(bet => {
-          const grade = bet.prediction?.grade || 'B';
-          return getUnitSize(grade) > 0; // Only count bets with actual units
-        });
-        
-        const wins = actualBets.filter(bet => bet.result.outcome === 'WIN').length;
-        const losses = actualBets.filter(bet => bet.result.outcome === 'LOSS').length;
+        // ALL graded bets count for everything (F grades now have 0.5u)
+        const wins = gradedBets.filter(bet => bet.result.outcome === 'WIN').length;
+        const losses = gradedBets.filter(bet => bet.result.outcome === 'LOSS').length;
         const pending = bets.filter(bet => !bet.result?.outcome || bet.status === 'PENDING').length;
+        const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
         
-        // Calculate units won/lost (only from actual bets, not tracked picks)
-        const unitsWon = actualBets.reduce((sum, bet) => {
+        // Calculate units won/lost from ALL bets
+        const unitsWon = gradedBets.reduce((sum, bet) => {
           return sum + (bet.result.profit || 0);
         }, 0);
 
-        // Calculate ROI (return on investment)
+        // Calculate ROI from ALL bets
         // ROI = (total profit / total risked) * 100
-        // Use ACTUAL units risked based on grade (staggered betting)
-        const totalRisked = actualBets.reduce((sum, bet) => {
+        const totalRisked = gradedBets.reduce((sum, bet) => {
           const grade = bet.prediction?.grade || 'B';
           const units = getUnitSize(grade);
           return sum + units;
         }, 0);
         const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
-
-        const winRate = actualBets.length > 0 ? (wins / actualBets.length) * 100 : 0;
 
         // Calculate daily stats for calendar
         const dailyStatsMap = {};
@@ -93,8 +86,7 @@ export function useBasketballBetStats() {
 
         setStats({
           totalBets: bets.length,
-          gradedBets: actualBets.length, // Only show actual bets (with units) in stats
-          trackedPicks: gradedBets.length - actualBets.length, // D/F grades tracked for accuracy
+          gradedBets: gradedBets.length,
           wins,
           losses,
           pending,
