@@ -195,13 +195,18 @@ export class BasketballEdgeCalculator {
    * @returns {string} - Grade (A+, A, B+, B, C)
    */
   getGrade(evPercent) {
-    const absEV = Math.abs(evPercent);
+    // CRITICAL: Only give good grades when EV is POSITIVE (we're more confident than market)
+    // Negative EV = market is more confident than us = BAD BET
     
-    if (absEV >= this.grades['A+']) return 'A+';
-    if (absEV >= this.grades['A']) return 'A';
-    if (absEV >= this.grades['B+']) return 'B+';
-    if (absEV >= this.grades['B']) return 'B';
-    return 'C';
+    if (evPercent >= this.grades['A+']) return 'A+';  // ≥5% positive edge
+    if (evPercent >= this.grades['A']) return 'A';    // ≥3.5% positive edge
+    if (evPercent >= this.grades['B+']) return 'B+';  // ≥2.5% positive edge
+    if (evPercent >= this.grades['B']) return 'B';    // ≥1.5% positive edge
+    if (evPercent >= this.grades['C']) return 'C';    // ≥0% (any positive)
+    
+    // Negative EV = market more confident = FADE THESE
+    if (evPercent >= -2.5) return 'D';  // Small negative edge
+    return 'F';  // Large negative edge (≤-2.5%)
   }
   
   /**
