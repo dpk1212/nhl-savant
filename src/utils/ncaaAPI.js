@@ -153,14 +153,48 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
 function teamNamesMatch(name1, name2) {
   if (!name1 || !name2) return false;
   
-  const normalize = (str) => str
-    .toLowerCase()
-    .replace(/\bstate\b/g, 'st')       // "State" → "st"
-    .replace(/\bst\b/g, 'st')          // Normalize "St."
-    .replace(/\bsaint\b/g, 'st')       // "Saint" → "st"
-    .replace(/\buniversity\b/g, '')    // Remove "University"
-    .replace(/\bcollege\b/g, '')       // Remove "College"
-    .replace(/[^a-z0-9]/g, '');        // Remove special chars
+  const normalize = (str) => {
+    let normalized = str
+      .toLowerCase()
+      .trim()
+      // Common NCAA abbreviations
+      .replace(/\butsa\b/g, 'texassanantonio')
+      .replace(/\butep\b/g, 'texaselpaso')
+      .replace(/\butrgv\b/g, 'texasriograndevalley')
+      .replace(/\bole miss\b/g, 'mississippi')
+      .replace(/\bcal baptist\b/g, 'californiabaptist')
+      .replace(/\bcal poly\b/g, 'californiapoly')
+      .replace(/\buc\b/g, 'california')
+      .replace(/\bucsb\b/g, 'californiasantabarbara')
+      .replace(/\bucsd\b/g, 'californiasandiego')
+      .replace(/\buci\b/g, 'californiairvine')
+      .replace(/\bucd\b/g, 'californiadavis')
+      .replace(/\bucr\b/g, 'californiariverside')
+      .replace(/\bfiu\b/g, 'floridainternational')
+      .replace(/\bfau\b/g, 'floridaatlantic')
+      .replace(/\bfgcu\b/g, 'floridagulfcoast')
+      .replace(/\bliu\b/g, 'longisland')
+      .replace(/\bsmu\b/g, 'southernmethodist')
+      .replace(/\btcu\b/g, 'texaschristian')
+      .replace(/\buab\b/g, 'alabamabirmingham')
+      .replace(/\bumbc\b/g, 'marylandbaltimore')
+      .replace(/\bvmi\b/g, 'virginiamelitaryinstitute')
+      .replace(/\bniu\b/g, 'northernillinois')
+      .replace(/\bunlv\b/g, 'nevadaelasvegas')
+      // State abbreviations
+      .replace(/\bst\b/g, 'st')
+      .replace(/\bstate\b/g, 'st')
+      .replace(/\bsaint\b/g, 'st')
+      // Remove common words
+      .replace(/\buniversity\b/g, '')
+      .replace(/\bcollege\b/g, '')
+      .replace(/\bof\b/g, '')
+      .replace(/\bthe\b/g, '')
+      // Clean up
+      .replace(/[^a-z0-9]/g, '');
+    
+    return normalized;
+  };
   
   const norm1 = normalize(name1);
   const norm2 = normalize(name2);
