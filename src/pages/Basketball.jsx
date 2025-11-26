@@ -9,6 +9,7 @@ import { useBasketballResultsGrader } from '../hooks/useBasketballResultsGrader'
 import { loadTeamMappings } from '../utils/teamCSVLoader';
 import { startScorePolling } from '../utils/ncaaAPI';
 import { gradePrediction, calculateGradingStats } from '../utils/basketballGrading';
+import { gradeBasketballBet } from '../utils/basketballBetGrader';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { GradeStats } from '../components/GradeBadge';
 import { BasketballBetStats } from '../components/BasketballBetStats';
@@ -97,6 +98,15 @@ const Basketball = () => {
           // Add prediction grade if game is final
           if (game.liveScore && game.liveScore.status === 'final') {
             gameData.grade = gradePrediction(game, game.liveScore);
+            
+            // 🎯 INSTANT BET GRADING: Grade bet in Firebase using live NCAA API data
+            gradeBasketballBet(game.awayTeam, game.homeTeam, game.liveScore)
+              .then(wasGraded => {
+                if (wasGraded) {
+                  console.log(`🏀 Auto-graded bet: ${game.awayTeam} @ ${game.homeTeam}`);
+                }
+              })
+              .catch(err => console.error('Error auto-grading bet:', err));
           }
           
           // Match and attach bet outcome from Firebase
