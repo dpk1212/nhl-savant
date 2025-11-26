@@ -46,36 +46,36 @@ export function BasketballLiveScore({ liveScore, prediction, awayTeam, homeTeam 
           {status.text}
         </div>
         
-        {/* Center: Compact Score */}
+        {/* Center: Better-sized Score */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: isMobile ? '6px' : '8px',
-          fontSize: isMobile ? '16px' : '18px',
+          gap: isMobile ? '8px' : '10px',
+          fontSize: isMobile ? '20px' : '22px',
           fontWeight: '900',
           flex: 1,
           justifyContent: 'center'
         }}>
           <span style={{ 
-            fontSize: isMobile ? '11px' : '12px',
-            color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : 'rgba(255,255,255,0.7)',
-            fontWeight: '600'
+            fontSize: isMobile ? '12px' : '13px',
+            color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : 'rgba(255,255,255,0.75)',
+            fontWeight: '700'
           }}>
-            {awayTeam.length > 12 ? awayTeam.substring(0, 10) + '...' : awayTeam}
+            {awayTeam.length > 15 ? awayTeam.substring(0, 12) + '...' : awayTeam}
           </span>
           <span style={{ color: liveScore.awayScore > liveScore.homeScore ? '#10b981' : '#f1f5f9' }}>
             {liveScore.awayScore}
           </span>
-          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '700' }}>-</span>
+          <span style={{ fontSize: '16px', color: '#64748b', fontWeight: '700' }}>-</span>
           <span style={{ color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : '#f1f5f9' }}>
             {liveScore.homeScore}
           </span>
           <span style={{ 
-            fontSize: isMobile ? '11px' : '12px',
-            color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : 'rgba(255,255,255,0.7)',
-            fontWeight: '600'
+            fontSize: isMobile ? '12px' : '13px',
+            color: liveScore.homeScore > liveScore.awayScore ? '#10b981' : 'rgba(255,255,255,0.75)',
+            fontWeight: '700'
           }}>
-            {homeTeam.length > 12 ? homeTeam.substring(0, 10) + '...' : homeTeam}
+            {homeTeam.length > 15 ? homeTeam.substring(0, 12) + '...' : homeTeam}
           </span>
         </div>
         
