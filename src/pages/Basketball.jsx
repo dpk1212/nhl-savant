@@ -694,21 +694,59 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           {game.betOutcome && (
             <div style={{
               background: game.betOutcome.outcome === 'WIN' 
-                ? 'linear-gradient(135deg, #10B981, #059669)'
-                : 'linear-gradient(135deg, #EF4444, #DC2626)',
-              color: 'white',
-              border: `2px solid ${game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444'}`,
-              padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
-              borderRadius: '8px',
-              fontWeight: '800',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              boxShadow: `0 4px 12px ${game.betOutcome.outcome === 'WIN' ? '#10B98140' : '#EF444440'}`,
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)'
+                : 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.15) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: game.betOutcome.outcome === 'WIN'
+                ? '2px solid rgba(16, 185, 129, 0.6)'
+                : '2px solid rgba(239, 68, 68, 0.6)',
+              padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 1rem',
+              borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem'
+              gap: '0.5rem',
+              boxShadow: game.betOutcome.outcome === 'WIN'
+                ? '0 4px 20px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                : '0 4px 20px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
             }}>
-              {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
-              {!isMobile && (game.betOutcome.outcome === 'WIN' ? 'WIN' : 'LOSS')}
+              {/* Outcome Icon */}
+              <div style={{
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                lineHeight: 1
+              }}>
+                {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
+              </div>
+              
+              {/* Profit Amount */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.125rem'
+              }}>
+                <div style={{
+                  fontSize: isMobile ? '1rem' : '1.125rem',
+                  fontWeight: '900',
+                  color: game.betOutcome.outcome === 'WIN' ? '#10B981' : '#EF4444',
+                  letterSpacing: '-0.02em',
+                  fontFeatureSettings: "'tnum'",
+                  textShadow: game.betOutcome.outcome === 'WIN'
+                    ? '0 2px 8px rgba(16, 185, 129, 0.4)'
+                    : '0 2px 8px rgba(239, 68, 68, 0.4)'
+                }}>
+                  {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
+                </div>
+                {!isMobile && (
+                  <div style={{
+                    fontSize: '0.625rem',
+                    color: game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {game.betOutcome.outcome === 'WIN' ? 'Profit' : 'Loss'}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
