@@ -15,9 +15,10 @@ import { getUnitSize, calculateUnitProfit } from './staggeredUnits';
  * @param {string} awayTeam - Away team name from our prediction
  * @param {string} homeTeam - Home team name from our prediction
  * @param {object} liveScore - NCAA API live score object
+ * @param {object} currentPrediction - CURRENT prediction with updated grade
  * @returns {Promise<boolean>} - True if bet was graded, false if not found/already graded
  */
-export async function gradeBasketballBet(awayTeam, homeTeam, liveScore) {
+export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentPrediction) {
   // Only grade if game is final
   if (liveScore.status !== 'final') {
     return false;
@@ -77,13 +78,12 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore) {
     const winnerNorm = normalizeTeam(winnerTeam);
     const outcome = betTeamNorm === winnerNorm ? 'WIN' : 'LOSS';
     
-    // Calculate profit using staggered units based on grade
-    const grade = gradedBet.prediction?.grade || 'B'; // Default to B if no grade
-    const units = getUnitSize(grade);
+    // ✅ USE CURRENT GRADE (not old saved grade)
+    const currentGrade = currentPrediction?.grade || gradedBet.prediction?.grade || 'B';
     const odds = gradedBet.bet.odds;
-    const profit = calculateUnitProfit(grade, odds, outcome === 'WIN');
+    const profit = calculateUnitProfit(currentGrade, odds, outcome === 'WIN');
     
-    // Update bet in Firebase
+    // Update bet in Firebase with CURRENT grade and calculated profit
     const betRef = doc(db, 'basketball_bets', betId);
     await updateDoc(betRef, {
       'result.awayScore': awayScore,
@@ -95,12 +95,14 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore) {
       'result.fetched': true,
       'result.fetchedAt': Date.now(),
       'result.source': 'NCAA_API_LIVE',
+      'prediction.grade': currentGrade, // ✅ Update grade to current
       'status': 'COMPLETED'
     });
     
+    const units = getUnitSize(currentGrade);
     console.log(`✅ ${outcome}: ${awayTeam} @ ${homeTeam}`);
     console.log(`   Pick: ${gradedBet.bet.team} (${odds > 0 ? '+' : ''}${odds})`);
-    console.log(`   Grade: ${grade} → ${units}u risked`);
+    console.log(`   Grade: ${currentGrade} → ${units}u risked`);
     console.log(`   Score: ${awayScore}-${homeScore}`);
     console.log(`   Profit: ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u`);
     
