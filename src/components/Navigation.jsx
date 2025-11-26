@@ -67,6 +67,60 @@ const Navigation = () => {
           🏒 <span style={{ display: window.innerWidth < 400 ? 'none' : 'inline' }}>NHL Savant</span>
         </Link>
 
+        {/* 🏀 College Basketball Button - Mobile & Desktop */}
+        <Link
+          to="/basketball"
+          className="basketball-nav-btn"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 0.875rem',
+            background: location.pathname === '/basketball'
+              ? 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)'
+              : 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.1) 100%)',
+            border: location.pathname === '/basketball'
+              ? '1px solid rgba(255, 107, 53, 0.4)'
+              : '1px solid rgba(255, 107, 53, 0.25)',
+            borderRadius: '10px',
+            color: location.pathname === '/basketball' ? '#FFFFFF' : '#FF6B35',
+            textDecoration: 'none',
+            fontSize: '0.813rem',
+            fontWeight: '700',
+            letterSpacing: '-0.01em',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            boxShadow: location.pathname === '/basketball'
+              ? '0 4px 12px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+              : '0 2px 8px rgba(255, 107, 53, 0.1)',
+            marginLeft: 'auto',
+            marginRight: '0.5rem'
+          }}
+          onMouseEnter={(e) => {
+            if (location.pathname !== '/basketball') {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 107, 53, 0.25) 0%, rgba(247, 147, 30, 0.15) 100%)';
+              e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.4)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (location.pathname !== '/basketball') {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.1) 100%)';
+              e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.25)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }
+          }}
+        >
+          <span style={{ fontSize: '1rem', lineHeight: 1 }}>🏀</span>
+          <span style={{ 
+            display: window.innerWidth < 640 ? 'none' : 'inline',
+            whiteSpace: 'nowrap'
+          }}>
+            College BB
+          </span>
+        </Link>
+
         {/* Premium Desktop Navigation */}
         <div className="desktop-nav" style={{
           display: 'none',
@@ -833,8 +887,18 @@ const Navigation = () => {
           .desktop-nav { display: none !important; }
           .mobile-auth { display: flex !important; }
         }
+        @media (max-width: 640px) {
+          .basketball-nav-btn {
+            padding: 0.45rem 0.625rem !important;
+            font-size: 0.75rem !important;
+          }
+        }
         @media (max-width: 400px) {
           .sign-in-text { display: none !important; }
+          .basketball-nav-btn {
+            padding: 0.4rem 0.5rem !important;
+            min-width: 36px;
+          }
         }
         
         /* Premium Animations */
