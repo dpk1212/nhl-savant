@@ -753,36 +753,53 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         overflow: 'hidden'
       }}>
         {/* Value Proposition Banner */}
-        <div style={{ 
-          background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.25)',
-          borderRadius: '8px',
-          padding: isMobile ? '0.5rem' : '0.625rem',
-          marginBottom: isMobile ? '0.625rem' : '0.75rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', lineHeight: 1 }}>💡</div>
-          <div style={{ flex: 1 }}>
+        {(() => {
+          const isPositiveEV = pred.bestEV > 0;
+          const modelProb = (pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100;
+          const isUpsetTerritory = modelProb >= 45 && modelProb <= 65 && Math.abs(pred.bestEV) >= 2;
+          
+          return (
             <div style={{ 
-              fontSize: isMobile ? '0.813rem' : '0.875rem',
-              fontWeight: '700',
-              color: '#10B981',
-              marginBottom: '0.125rem',
-              letterSpacing: '-0.01em'
+              background: isPositiveEV 
+                ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+                : 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+              border: `1px solid ${isPositiveEV ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+              borderRadius: '8px',
+              padding: isMobile ? '0.5rem' : '0.625rem',
+              marginBottom: isMobile ? '0.625rem' : '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              {pred.bestTeam} Moneyline
+              <div style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', lineHeight: 1 }}>
+                {isUpsetTerritory ? '🎯' : isPositiveEV ? '💡' : '⚠️'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ 
+                  fontSize: isMobile ? '0.813rem' : '0.875rem',
+                  fontWeight: '700',
+                  color: isPositiveEV ? '#10B981' : '#EF4444',
+                  marginBottom: '0.125rem',
+                  letterSpacing: '-0.01em'
+                }}>
+                  {pred.bestTeam} Moneyline {isUpsetTerritory && '• Upset Alert'}
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.7)',
+                  lineHeight: 1.3
+                }}>
+                  {isUpsetTerritory 
+                    ? `Close game with ${Math.abs(pred.bestEV).toFixed(1)}% ${isPositiveEV ? 'edge' : 'disadvantage'} vs market`
+                    : isPositiveEV
+                      ? `Our model sees ${pred.bestEV.toFixed(1)}% more value than the market`
+                      : `Market favors this ${Math.abs(pred.bestEV).toFixed(1)}% more than our model`
+                  }
+                </div>
+              </div>
             </div>
-            <div style={{ 
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'rgba(255,255,255,0.7)',
-              lineHeight: 1.3
-            }}>
-              Our model sees {pred.bestEV.toFixed(1)}% more value than the market
-            </div>
-          </div>
-        </div>
+          );
+        })()}
         
         {/* Clearer Stats Grid with Helper Text */}
         <div style={{ 
@@ -912,72 +929,93 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           </div>
         </div>
         
-        {/* Compact Score Prediction */}
+        {/* Predicted Score with Label */}
         {pred.ensembleTotal && (
           <div style={{
             background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
             borderRadius: '10px',
             padding: isMobile ? '0.625rem' : '0.875rem',
             border: '1px solid rgba(255,255,255,0.08)',
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            gap: isMobile ? '0.5rem' : '0.75rem',
-            alignItems: 'center',
             position: 'relative',
             zIndex: 2
           }}>
-            {/* Away Team */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
-                color: 'rgba(255,255,255,0.4)',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: isMobile ? '0.25rem' : '0.375rem'
-              }}>
-                {game.awayTeam.length > 12 ? game.awayTeam.substring(0, 10) + '...' : game.awayTeam}
-              </div>
-              <div style={{ 
-                fontSize: isMobile ? '1.25rem' : '1.5rem',
-                fontWeight: '900',
-                color: 'white',
-                lineHeight: 1,
-                letterSpacing: '-0.02em'
-              }}>
-                {pred.ensembleAwayScore}
-              </div>
-            </div>
-            
-            {/* Separator */}
-            <div style={{ 
-              color: 'rgba(255,255,255,0.25)', 
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              fontWeight: '700'
+            {/* Label */}
+            <div style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255,255,255,0.5)',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: isMobile ? '0.375rem' : '0.5rem',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.375rem'
             }}>
-              -
+              <span>🔮</span> Predicted Final Score
             </div>
             
-            {/* Home Team */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
-                color: 'rgba(255,255,255,0.4)',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: isMobile ? '0.25rem' : '0.375rem'
-              }}>
-                {game.homeTeam.length > 12 ? game.homeTeam.substring(0, 10) + '...' : game.homeTeam}
+            {/* Score Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: isMobile ? '0.5rem' : '0.75rem',
+              alignItems: 'center'
+            }}>
+              {/* Away Team */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.4)',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: isMobile ? '0.25rem' : '0.375rem'
+                }}>
+                  {game.awayTeam.length > 12 ? game.awayTeam.substring(0, 10) + '...' : game.awayTeam}
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontWeight: '900',
+                  color: 'white',
+                  lineHeight: 1,
+                  letterSpacing: '-0.02em'
+                }}>
+                  {pred.ensembleAwayScore}
+                </div>
               </div>
+              
+              {/* Separator */}
               <div style={{ 
-                fontSize: isMobile ? '1.25rem' : '1.5rem',
-                fontWeight: '900',
-                color: 'white',
-                lineHeight: 1,
-                letterSpacing: '-0.02em'
+                color: 'rgba(255,255,255,0.25)', 
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                fontWeight: '700'
               }}>
-                {pred.ensembleHomeScore}
+                -
+              </div>
+              
+              {/* Home Team */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.4)',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: isMobile ? '0.25rem' : '0.375rem'
+                }}>
+                  {game.homeTeam.length > 12 ? game.homeTeam.substring(0, 10) + '...' : game.homeTeam}
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontWeight: '900',
+                  color: 'white',
+                  lineHeight: 1,
+                  letterSpacing: '-0.02em'
+                }}>
+                  {pred.ensembleHomeScore}
+                </div>
               </div>
             </div>
           </div>
