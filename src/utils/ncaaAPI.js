@@ -282,6 +282,12 @@ export async function getLiveScores(ourGames, teamMappings) {
   }
   
   const enrichedGames = ourGames.map(ourGame => {
+    // If game already has a FINAL score, KEEP IT! Don't lose completed games
+    if (ourGame.liveScore && ourGame.liveScore.status === 'final') {
+      console.log(`🔒 Keeping final score: ${ourGame.awayTeam} @ ${ourGame.homeTeam} (${ourGame.liveScore.awayScore}-${ourGame.liveScore.homeScore})`);
+      return ourGame; // Preserve completed game even if NCAA API no longer has it
+    }
+    
     // Find matching NCAA game
     const ncaaGame = ncaaGames.find(ng => matchGames(ng, ourGame, teamMappings));
     
