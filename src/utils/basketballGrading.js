@@ -38,7 +38,7 @@ export function gradePrediction(prediction, liveScore) {
   const predictedTotal = predictedAwayScore + predictedHomeScore;
   const actualTotal = awayScore + homeScore;
   
-  console.log(`📊 GRADING PREDICTION: Predicted ${predictedAwayScore}-${predictedHomeScore} (${predictedWinner}), Actual ${awayScore}-${homeScore} (${actualWinner})`);
+  // Removed verbose logging - grade silently
   
   // Calculate errors
   const winnerCorrect = predictedWinner === actualWinner;
