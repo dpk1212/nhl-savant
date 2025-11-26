@@ -64,3 +64,4 @@ console.log('2. Compare NCAA team names to our CSV');
 console.log('3. Update CSV with exact NCAA names');
 console.log('\nRun: node scripts/fetchNCAAnamesFromAPI.js');
 
+

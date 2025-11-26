@@ -321,20 +321,187 @@ function calculateProfit(outcome, odds) {
 }
 
 /**
- * Basketball Bet Grading Functions
- * Import from separate module for organization
+ * TEST - Simple test function to verify Firebase detection
  */
-const {
-  updateBasketballBetResults,
-  triggerBasketballBetGrading,
-} = require("./src/basketballBetGrading");
-
-exports.updateBasketballBetResults = updateBasketballBetResults;
-exports.triggerBasketballBetGrading = triggerBasketballBetGrading;
+exports.testBasketballDeploy = onRequest(async (request, response) => {
+  response.send("Basketball functions are deploying!");
+});
 
 /**
- * NCAA API Proxy
- * Proxies NCAA API requests to avoid CORS issues
+ * NCAA API Proxy - Avoid CORS errors from frontend
+ * GET /ncaaProxy?date=YYYYMMDD
  */
-const { ncaaProxy } = require("./src/ncaaProxy");
-exports.ncaaProxy = ncaaProxy;
+exports.ncaaProxy = onRequest({
+  cors: true,
+  memory: "256MiB",
+  timeoutSeconds: 30,
+}, async (request, response) => {
+  try {
+    const date = request.query.date;
+    
+    if (!date) {
+      response.status(400).json({ error: "Missing date parameter (format: YYYYMMDD)" });
+      return;
+    }
+
+    if (!/^\d{8}$/.test(date)) {
+      response.status(400).json({ error: "Invalid date format. Use YYYYMMDD" });
+      return;
+    }
+
+    logger.info(`Proxying NCAA API request for date: ${date}`);
+
+    const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${date}`;
+    const ncaaResponse = await fetch(url);
+
+    if (!ncaaResponse.ok) {
+      logger.error(`NCAA API error: ${ncaaResponse.status}`);
+      response.status(ncaaResponse.status).json({ error: "NCAA API error" });
+      return;
+    }
+
+    const data = await ncaaResponse.json();
+    logger.info(`Successfully fetched ${data.games?.length || 0} games for ${date}`);
+    response.json(data);
+  } catch (error) {
+    logger.error("Error in NCAA proxy:", error);
+    response.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * Basketball Bet Grading - Scheduled every 4 hours
+ * Grades all ungraded basketball bets using NCAA API
+ */
+exports.updateBasketballBetResults = onSchedule({
+  schedule: "0 */4 * * *",
+  timeZone: "America/New_York",
+  memory: "256MiB",
+  timeoutSeconds: 120,
+}, async () => {
+  logger.info("Starting basketball bet grading...");
+
+  try {
+    const betsSnapshot = await admin.firestore().collection("basketball_bets").get();
+
+    if (betsSnapshot.empty) {
+      logger.info("No basketball bets found");
+      return null;
+    }
+
+    logger.info(`Found ${betsSnapshot.size} total basketball bets`);
+
+    const ungradedBets = betsSnapshot.docs.filter(doc => {
+      const bet = doc.data();
+      return !bet.result?.outcome || bet.status === 'PENDING';
+    });
+
+    if (ungradedBets.length === 0) {
+      logger.info("No ungraded basketball bets");
+      return null;
+    }
+
+    logger.info(`Found ${ungradedBets.length} ungraded basketball bets`);
+
+    const betsByDate = {};
+    ungradedBets.forEach(betDoc => {
+      const bet = betDoc.data();
+      const date = bet.date;
+      if (!betsByDate[date]) betsByDate[date] = [];
+      betsByDate[date].push({ id: betDoc.id, ...bet });
+    });
+
+    logger.info(`Bets span ${Object.keys(betsByDate).length} dates`);
+
+    let updatedCount = 0;
+    let notFoundCount = 0;
+
+    for (const [date, bets] of Object.entries(betsByDate)) {
+      logger.info(`Processing ${bets.length} bets for ${date}`);
+      
+      const formattedDate = date.replace(/-/g, '');
+      const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${formattedDate}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        logger.error(`NCAA API error for ${date}: ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json();
+      const games = data.games || [];
+      const finalGames = games.filter(g => g.game.gameState === 'final').map(g => ({
+        awayTeam: g.game.away.names.short,
+        homeTeam: g.game.home.names.short,
+        awayScore: parseInt(g.game.away.score) || 0,
+        homeScore: parseInt(g.game.home.score) || 0,
+      }));
+      
+      logger.info(`Found ${finalGames.length} final games for ${date}`);
+
+      for (const bet of bets) {
+        const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/state$/i, 'st');
+        
+        const matchingGame = finalGames.find((g) => {
+          const awayMatch = normalizeTeam(g.awayTeam).includes(normalizeTeam(bet.game.awayTeam)) ||
+                          normalizeTeam(bet.game.awayTeam).includes(normalizeTeam(g.awayTeam));
+          const homeMatch = normalizeTeam(g.homeTeam).includes(normalizeTeam(bet.game.homeTeam)) ||
+                          normalizeTeam(bet.game.homeTeam).includes(normalizeTeam(g.homeTeam));
+          return awayMatch && homeMatch;
+        });
+
+        if (!matchingGame) {
+          notFoundCount++;
+          continue;
+        }
+
+        const betTeam = bet.bet.team || bet.bet.pick;
+        const isAway = normalizeTeam(betTeam).includes(normalizeTeam(matchingGame.awayTeam)) ||
+                      normalizeTeam(matchingGame.awayTeam).includes(normalizeTeam(betTeam));
+        const actualWinner = matchingGame.awayScore > matchingGame.homeScore ? "AWAY" : "HOME";
+        const predictedWinner = isAway ? "AWAY" : "HOME";
+        const outcome = actualWinner === predictedWinner ? "WIN" : "LOSS";
+        
+        const odds = bet.bet.odds;
+        const profit = outcome === "LOSS" ? -1 : (odds < 0 ? 100 / Math.abs(odds) : odds / 100);
+
+        await admin.firestore().collection("basketball_bets").doc(bet.id).update({
+          "result.awayScore": matchingGame.awayScore,
+          "result.homeScore": matchingGame.homeScore,
+          "result.totalScore": matchingGame.awayScore + matchingGame.homeScore,
+          "result.winner": matchingGame.awayScore > matchingGame.homeScore ? bet.game.awayTeam : bet.game.homeTeam,
+          "result.outcome": outcome,
+          "result.profit": profit,
+          "result.fetched": true,
+          "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
+          "result.source": "NCAA_API",
+          "status": "COMPLETED",
+        });
+
+        updatedCount++;
+        logger.info(`✅ Graded ${bet.id}: ${outcome} → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`);
+      }
+    }
+
+    logger.info(`Finished: Graded ${updatedCount} bets, ${notFoundCount} games not final yet`);
+    return null;
+  } catch (error) {
+    logger.error("Error grading basketball bets:", error);
+    return null;
+  }
+});
+
+/**
+ * Manual Basketball Bet Grading Trigger
+ * URL: https://us-central1-nhl-savant.cloudfunctions.net/triggerBasketballBetGrading
+ */
+exports.triggerBasketballBetGrading = onRequest(async (request, response) => {
+  logger.info("Manual basketball bet grading triggered");
+  try {
+    await exports.updateBasketballBetResults.run({});
+    response.send("Basketball bets graded successfully!");
+  } catch (error) {
+    logger.error("Error in manual trigger:", error);
+    response.status(500).send("Error grading basketball bets");
+  }
+});

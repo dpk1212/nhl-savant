@@ -270,3 +270,4 @@ C  Ryan Donato             ← No badge
 
 **Philosophy**: "Show, don't tell. The stats tell the story through color and position."
 
+
