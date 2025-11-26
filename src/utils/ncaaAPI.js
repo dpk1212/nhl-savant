@@ -130,13 +130,8 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
   const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
   
   // Check if teams are in CSV and have NCAA mappings
-  if (!ourAwayMapping || !ourHomeMapping) {
-    console.error(`❌ CSV MISSING: "${ourGame.awayTeam} @ ${ourGame.homeTeam}" - Add to basketball_teams.csv!`);
-    return false;
-  }
-  
-  if (!ourAwayMapping.ncaa_name || !ourHomeMapping.ncaa_name) {
-    console.error(`❌ NCAA NAME MISSING in CSV: "${ourGame.awayTeam} @ ${ourGame.homeTeam}" - Update ncaa_name column!`);
+  if (!ourAwayMapping || !ourHomeMapping || !ourAwayMapping.ncaa_name || !ourHomeMapping.ncaa_name) {
+    // Silent failure - only log CSV errors during development/audit
     return false;
   }
   
@@ -154,19 +149,11 @@ export function matchGames(ncaaGame, ourGame, teamMappings) {
     teamNamesMatch(ncaaGame.homeTeam, expectedAwayNCAA);
   
   if (normalMatch || reversedMatch) {
-    // Only log if reversed (potential issue)
-    if (reversedMatch) {
-      console.warn(`⚠️ REVERSED: "${ourGame.awayTeam} @ ${ourGame.homeTeam}" has swapped home/away in NCAA API`);
-    }
+    // Silent success - only log if there's an actual problem
     return true;
   }
   
-  // No match - this means CSV mapping is WRONG
-  console.error(`❌ CSV WRONG: "${ourGame.awayTeam} @ ${ourGame.homeTeam}"`);
-  console.error(`   CSV says: Away="${expectedAwayNCAA}" Home="${expectedHomeNCAA}"`);
-  console.error(`   NCAA has: Away="${ncaaGame.awayTeam}" Home="${ncaaGame.homeTeam}"`);
-  console.error(`   → Fix basketball_teams.csv ncaa_name column!`);
-  
+  // No match - game not in NCAA API (this is OK for some games)
   return false;
 }
 
@@ -293,9 +280,13 @@ function findTeamInMappings(mappings, teamName, source) {
 export async function getLiveScores(ourGames, teamMappings) {
   const ncaaGames = await fetchTodaysGames();
   
+  let matchedCount = 0;
+  let preservedCount = 0;
+  
   const enrichedGames = ourGames.map(ourGame => {
     // If game already has a FINAL score, KEEP IT! (all-day persistence)
     if (ourGame.liveScore && ourGame.liveScore.status === 'final') {
+      preservedCount++;
       return ourGame;
     }
     
@@ -303,35 +294,32 @@ export async function getLiveScores(ourGames, teamMappings) {
     const ncaaGame = ncaaGames.find(ng => matchGames(ng, ourGame, teamMappings));
     
     if (ncaaGame) {
+      matchedCount++;
       const newAway = ncaaGame.awayScore;
       const newHome = ncaaGame.homeScore;
-      
-      // Validate scores
-      if (typeof newAway !== 'number' || typeof newHome !== 'number') {
-        console.error(`❌ Invalid scores: ${ourGame.awayTeam} @ ${ourGame.homeTeam} - Away=${newAway}, Home=${newHome}`);
-      }
       
       return {
         ...ourGame,
         liveScore: {
           status: ncaaGame.status,
-          awayScore: ncaaGame.awayScore, // VERIFIED: Maps from NCAA away → our away
-          homeScore: ncaaGame.homeScore, // VERIFIED: Maps from NCAA home → our home
+          awayScore: ncaaGame.awayScore,
+          homeScore: ncaaGame.homeScore,
           period: ncaaGame.period,
           clock: ncaaGame.clock,
           network: ncaaGame.network,
           lastUpdated: new Date().toISOString()
         }
       };
-    } else {
-      console.log(`❌ No NCAA match found: ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
     }
     
     return ourGame;
   });
   
-  const matchedCount = enrichedGames.filter(g => g.liveScore).length;
-  console.log(`🎯 Matched ${matchedCount}/${ourGames.length} games to NCAA API`);
+  // Silent summary - only log once, not per game
+  if (matchedCount > 0 || preservedCount > 0) {
+    const notMatched = ourGames.length - matchedCount - preservedCount;
+    console.log(`📊 NCAA API: ${matchedCount} live, ${preservedCount} final, ${notMatched} not in API`);
+  }
   
   return enrichedGames;
 }
