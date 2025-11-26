@@ -632,21 +632,19 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
       )}
       
       {/* HEADER - Ultra Compact */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: isMobile ? '0.625rem 0.75rem' : '0.875rem 1rem',
+      <div style={{
+        padding: isMobile ? '0.875rem' : '1rem',
         borderBottom: ELEVATION.flat.border,
         background: 'rgba(0,0,0,0.2)',
         position: 'relative',
         zIndex: 2
       }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem' }}>
-          {/* Rank Badge - Smaller */}
+        {/* Top Row: Rank + Teams + Time */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem' }}>
+          {/* Rank Badge */}
           <div style={{
-            width: isMobile ? '26px' : '32px',
-            height: isMobile ? '26px' : '32px',
+            width: isMobile ? '28px' : '32px',
+            height: isMobile ? '28px' : '32px',
             borderRadius: '50%',
             background: `linear-gradient(135deg, ${gradeColors.borderColor}30 0%, ${gradeColors.borderColor}15 100%)`,
             border: `1.5px solid ${gradeColors.borderColor}50`,
@@ -661,13 +659,14 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             {rank}
           </div>
           
+          {/* Teams + Time */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ 
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              fontWeight: '700',
+              fontSize: isMobile ? '0.938rem' : '1.063rem',
+              fontWeight: '800',
               color: 'white',
-              marginBottom: '0.125rem',
-              letterSpacing: '-0.01em',
+              marginBottom: '0.188rem',
+              letterSpacing: '-0.02em',
               lineHeight: 1.2,
               textOverflow: 'ellipsis',
               overflow: 'hidden',
@@ -676,9 +675,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               {game.awayTeam} @ {game.homeTeam}
             </div>
             <div style={{ 
-              fontSize: '0.688rem',
+              fontSize: '0.75rem',
               fontWeight: '600',
-              color: 'rgba(255,255,255,0.5)',
+              color: 'rgba(255,255,255,0.6)',
               display: 'flex',
               alignItems: 'center',
               gap: '0.375rem'
@@ -688,127 +687,120 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           </div>
         </div>
         
-        {/* Grade Badge - Compact */}
-        <div style={{ display: 'flex', gap: isMobile ? '0.375rem' : '0.5rem', alignItems: 'center' }}>
-          {/* Bet Outcome - Show profit for all bets */}
-          {game.betOutcome && (
-            <div style={{
-              background: game.betOutcome.outcome === 'WIN'
-                ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-              padding: '2px',
-              borderRadius: '12px',
-              boxShadow: game.betOutcome.outcome === 'WIN'
-                ? '0 8px 32px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.2)'
-                : '0 8px 32px rgba(239, 68, 68, 0.4), 0 0 60px rgba(239, 68, 68, 0.2)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              {/* Shimmer effect */}
+        {/* Result Summary Bar - Full Width (FINAL GAMES) */}
+        {game.betOutcome && (
+          <div style={{
+            marginTop: '0.75rem',
+            background: game.betOutcome.outcome === 'WIN'
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%)'
+              : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)',
+            border: `1.5px solid ${game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+            borderRadius: '12px',
+            padding: isMobile ? '0.75rem' : '0.875rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            boxShadow: game.betOutcome.outcome === 'WIN'
+              ? '0 4px 20px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255,255,255,0.08)'
+              : '0 4px 20px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255,255,255,0.08)'
+          }}>
+            {/* Left: Grade + Units */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{
-                position: 'absolute',
-                top: 0,
-                left: '-100%',
-                width: '200%',
-                height: '100%',
-                background: game.betOutcome.outcome === 'WIN'
-                  ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)'
-                  : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
-                animation: 'shimmer 3s infinite',
-                pointerEvents: 'none'
-              }} />
-              
-              {/* Inner card */}
-              <div style={{
-                background: game.betOutcome.outcome === 'WIN'
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)'
-                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                padding: isMobile ? '0.75rem 1rem' : '0.875rem 1.25rem',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: isMobile ? '0.625rem' : '0.75rem',
-                position: 'relative'
+                background: gradeColors.borderColor,
+                padding: '1.5px',
+                borderRadius: '8px',
+                boxShadow: `0 2px 10px ${gradeColors.borderColor}30`
               }}>
-                {/* Icon with glow */}
                 <div style={{
-                  fontSize: isMobile ? '1.5rem' : '1.75rem',
-                  lineHeight: 1,
-                  filter: game.betOutcome.outcome === 'WIN'
-                    ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))'
-                    : 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))'
+                  background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}10 100%)`,
+                  color: gradeColors.color,
+                  padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
+                  borderRadius: '7px',
+                  fontWeight: '900',
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  letterSpacing: '-0.01em',
+                  textShadow: `0 1px 4px ${gradeColors.borderColor}40`
                 }}>
-                  {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
+                  {pred.grade}
                 </div>
-                
-                {/* Profit display */}
+              </div>
+              
+              <div style={{
+                background: getUnitColor(pred.grade),
+                padding: '1.5px',
+                borderRadius: '8px',
+                boxShadow: `0 2px 10px ${getUnitColor(pred.grade)}30`
+              }}>
                 <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.125rem'
+                  background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
+                  color: getUnitColor(pred.grade),
+                  padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
+                  borderRadius: '7px',
+                  fontWeight: '900',
+                  fontSize: isMobile ? '0.813rem' : '0.875rem',
+                  letterSpacing: '0.01em',
+                  fontFeatureSettings: "'tnum'",
+                  textShadow: `0 1px 4px ${getUnitColor(pred.grade)}40`
                 }}>
-                  <div style={{
-                    fontSize: isMobile ? '1.25rem' : '1.5rem',
-                    fontWeight: '900',
-                    background: game.betOutcome.outcome === 'WIN'
-                      ? 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)'
-                      : 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    letterSpacing: '-0.03em',
-                    fontFeatureSettings: "'tnum'",
-                    textShadow: game.betOutcome.outcome === 'WIN'
-                      ? '0 4px 20px rgba(16, 185, 129, 0.5)'
-                      : '0 4px 20px rgba(239, 68, 68, 0.5)',
-                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                  }}>
-                    {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
-                  </div>
-                  <div style={{
-                    fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.9)',
-                    fontWeight: '800',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                  }}>
-                    {game.betOutcome.outcome === 'WIN' ? '🎉 Profit' : '📊 Loss'}
-                  </div>
+                  {getUnitDisplay(pred.grade)}
                 </div>
               </div>
             </div>
-          )}
-          
-          {/* Premium Grade & Unit Badge */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: isMobile ? '0.5rem' : '0.625rem'
-          }}>
+            
+            {/* Right: Profit */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                lineHeight: 1,
+                filter: game.betOutcome.outcome === 'WIN'
+                  ? 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))'
+                  : 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.5))'
+              }}>
+                {game.betOutcome.outcome === 'WIN' ? '✅' : '❌'}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '900',
+                background: game.betOutcome.outcome === 'WIN'
+                  ? 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)'
+                  : 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                letterSpacing: '-0.02em',
+                fontFeatureSettings: "'tnum'",
+                textShadow: game.betOutcome.outcome === 'WIN'
+                  ? '0 2px 12px rgba(16, 185, 129, 0.4)'
+                  : '0 2px 12px rgba(239, 68, 68, 0.4)',
+                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
+              }}>
+                {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Grade + Units for PENDING games */}
+        {!game.betOutcome && (
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.75rem' }}>
             {/* Grade Badge */}
             <div style={{
               background: gradeColors.borderColor,
-              padding: '2px',
-              borderRadius: '10px',
-              boxShadow: `0 4px 20px ${gradeColors.borderColor}40, 0 0 40px ${gradeColors.borderColor}20`
+              padding: '1.5px',
+              borderRadius: '8px',
+              boxShadow: `0 2px 10px ${gradeColors.borderColor}30`
             }}>
               <div style={{
-                background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}15 100%)`,
-                backdropFilter: 'blur(10px)',
+                background: `linear-gradient(135deg, ${gradeColors.bg} 0%, ${gradeColors.borderColor}10 100%)`,
                 color: gradeColors.color,
-                padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 1rem',
-                borderRadius: '8px',
+                padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
+                borderRadius: '7px',
                 fontWeight: '900',
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                letterSpacing: '-0.02em',
-                textShadow: `0 2px 8px ${gradeColors.borderColor}60`,
-                minWidth: isMobile ? '48px' : '60px',
-                textAlign: 'center'
+                fontSize: isMobile ? '0.875rem' : '0.938rem',
+                letterSpacing: '-0.01em',
+                textShadow: `0 1px 4px ${gradeColors.borderColor}40`
               }}>
                 {pred.grade}
               </div>
@@ -817,27 +809,26 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             {/* Unit Size Badge */}
             <div style={{
               background: getUnitColor(pred.grade),
-              padding: '2px',
-              borderRadius: '10px',
-              boxShadow: `0 4px 20px ${getUnitColor(pred.grade)}40, 0 0 40px ${getUnitColor(pred.grade)}20`
+              padding: '1.5px',
+              borderRadius: '8px',
+              boxShadow: `0 2px 10px ${getUnitColor(pred.grade)}30`
             }}>
               <div style={{
-                background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}20 0%, ${getUnitColor(pred.grade)}10 100%)`,
-                backdropFilter: 'blur(10px)',
+                background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
                 color: getUnitColor(pred.grade),
-                padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 0.875rem',
-                borderRadius: '8px',
+                padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
+                borderRadius: '7px',
                 fontWeight: '900',
-                fontSize: isMobile ? '0.938rem' : '1.063rem',
-                letterSpacing: '-0.01em',
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                letterSpacing: '0.01em',
                 fontFeatureSettings: "'tnum'",
-                textShadow: `0 2px 8px ${getUnitColor(pred.grade)}60`
+                textShadow: `0 1px 4px ${getUnitColor(pred.grade)}40`
               }}>
                 {getUnitDisplay(pred.grade)}
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Live Score Display */}
