@@ -49,7 +49,8 @@ export class BasketballEdgeCalculator {
     let ensembleHomeScore = null;
     let ensembleTotal = null;
     
-    // CASE 1: Full data (D-Ratings + Haslametrics) - BEST
+    // REQUIREMENT: BOTH D-Ratings AND Haslametrics for quality picks
+    // This ensures ensemble prediction accuracy and consistency
     if (dratings && dratings.awayWinProb && haslametrics) {
       ensembleAwayProb = 
         (dratings.awayWinProb * this.weights.dratings) +
@@ -71,21 +72,9 @@ export class BasketballEdgeCalculator {
         ensembleTotal = ensembleAwayScore + ensembleHomeScore;
       }
     }
-    // CASE 2: D-Ratings only (no Haslametrics) - GOOD
-    else if (dratings && dratings.awayWinProb) {
-      ensembleAwayProb = dratings.awayWinProb;
-      ensembleHomeProb = dratings.homeWinProb;
-      confidence = 'MEDIUM';
-    }
-    // CASE 3: Haslametrics only (no D-Ratings) - FAIR
-    else if (haslametrics) {
-      ensembleAwayProb = this.estimateHaslaProbability(matchedGame, 'away');
-      ensembleHomeProb = 1 - ensembleAwayProb;
-      confidence = 'MEDIUM';
-    }
-    // CASE 4: No prediction data - SKIP
+    // CASE 2: Missing D-Ratings or Haslametrics - SKIP
     else {
-      return { error: 'Insufficient prediction data', grade: 'N/A' };
+      return { error: 'Requires BOTH D-Ratings AND Haslametrics', grade: 'N/A' };
     }
     
     // Calculate market probability from odds
