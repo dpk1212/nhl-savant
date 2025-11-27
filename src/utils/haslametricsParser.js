@@ -6,9 +6,9 @@
  * Row 1: Away teams with ratings
  * Row 2: Home teams with ratings  
  * Row 3: Game times with TV networks
+ * 
+ * EXTRACTS EXACT NAMES - CSV handles all mappings!
  */
-
-import { normalizeTeamName } from './teamNameNormalizer.js';
 
 /**
  * Parse Haslametrics data - returns both games and team ratings
@@ -39,8 +39,7 @@ export function parseHaslametrics(markdown) {
       const teamMatch = cells[1].match(/\[([^\]]+)\]/);
       if (!teamMatch) continue;
       
-      const teamName = teamMatch[1];
-      const normalizedName = normalizeTeamName(teamName);
+      const teamName = teamMatch[1];  // EXACT name from Haslametrics
       
       // Extract record
       const recordMatch = cells[1].match(/\((\d+-\d+)\)/);
@@ -49,9 +48,8 @@ export function parseHaslametrics(markdown) {
       // Extract offensive efficiency (3rd column)
       const offEff = parseFloat(cells[2]) || null;
       
-      teams[normalizedName] = {
-        name: normalizedName,
-        rawName: teamName,
+      teams[teamName] = {
+        name: teamName,  // Store EXACT name for CSV matching
         record: record,
         offensiveEff: offEff,
         source: 'Haslametrics'
@@ -95,16 +93,14 @@ export function parseHaslametrics(markdown) {
       for (let j = 0; j < numGames; j++) {
         if (awayTeams[j] && homeTeams[j]) {
           games.push({
-            awayTeam: normalizeTeamName(awayTeams[j].name),
-            awayTeamRaw: awayTeams[j].name,
+            awayTeam: awayTeams[j].name,  // EXACT name from Haslametrics
+            homeTeam: homeTeams[j].name,  // EXACT name from Haslametrics
             awayRating: awayTeams[j].rating,
             awayRank: awayTeams[j].rank,
-            homeTeam: normalizeTeamName(homeTeams[j].name),
-            homeTeamRaw: homeTeams[j].name,
             homeRating: homeTeams[j].rating,
             homeRank: homeTeams[j].rank,
             gameTime: gameTimes[j] || null,
-            matchup: `${normalizeTeamName(awayTeams[j].name)} @ ${normalizeTeamName(homeTeams[j].name)}`,
+            matchup: `${awayTeams[j].name} @ ${homeTeams[j].name}`,
             source: 'Haslametrics'
           });
         }

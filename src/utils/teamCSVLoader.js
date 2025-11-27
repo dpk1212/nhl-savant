@@ -123,17 +123,17 @@ export function findDRatingsPrediction(predictions, awayDRateName, homeDRateName
 }
 
 /**
- * Find Haslametrics game by team names
+ * Find Haslametrics game by team names (EXACT match from CSV)
  * @param {array} games - Haslametrics games
- * @param {string} awayHaslaName - Away team Haslametrics name
- * @param {string} homeHaslaName - Home team Haslametrics name
+ * @param {string} awayHaslaName - Away team Haslametrics name from CSV
+ * @param {string} homeHaslaName - Home team Haslametrics name from CSV
  * @returns {object|null} - Game or null
  */
 export function findHaslametricsGame(games, awayHaslaName, homeHaslaName) {
   if (!awayHaslaName || !homeHaslaName) return null;
   
   return games.find(game =>
-    game.awayTeamRaw === awayHaslaName && game.homeTeamRaw === homeHaslaName
+    game.awayTeam === awayHaslaName && game.homeTeam === homeHaslaName
   );
 }
 
