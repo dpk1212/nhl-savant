@@ -295,15 +295,38 @@ export async function getLiveScores(ourGames, teamMappings) {
     
     if (ncaaGame) {
       matchedCount++;
-      const newAway = ncaaGame.awayScore;
-      const newHome = ncaaGame.homeScore;
+      
+      // ✅ FIX: MAP SCORES BY TEAM NAME, NOT POSITION!
+      // This handles cases where NCAA has teams in reverse order
+      
+      // Get CSV mappings for both teams
+      const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
+      const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
+      
+      // Map scores by matching team names through CSV
+      let ourAwayScore, ourHomeScore;
+      
+      // Check if NCAA's away team matches our away team
+      if (ourAwayMapping && teamNamesMatch(ncaaGame.awayTeam, ourAwayMapping.ncaa_name)) {
+        // Normal order
+        ourAwayScore = ncaaGame.awayScore;
+        ourHomeScore = ncaaGame.homeScore;
+      } else if (ourAwayMapping && teamNamesMatch(ncaaGame.homeTeam, ourAwayMapping.ncaa_name)) {
+        // Reversed order - NCAA has our away team as home
+        ourAwayScore = ncaaGame.homeScore;  // ← NCAA's home is our away
+        ourHomeScore = ncaaGame.awayScore;  // ← NCAA's away is our home
+      } else {
+        // Fallback - use position-based (shouldn't happen with correct CSV)
+        ourAwayScore = ncaaGame.awayScore;
+        ourHomeScore = ncaaGame.homeScore;
+      }
       
       return {
         ...ourGame,
         liveScore: {
           status: ncaaGame.status,
-          awayScore: ncaaGame.awayScore,
-          homeScore: ncaaGame.homeScore,
+          awayScore: ourAwayScore,  // ✅ Mapped to OUR away team
+          homeScore: ourHomeScore,  // ✅ Mapped to OUR home team
           period: ncaaGame.period,
           clock: ncaaGame.clock,
           network: ncaaGame.network,
