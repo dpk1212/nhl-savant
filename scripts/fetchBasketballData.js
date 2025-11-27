@@ -90,7 +90,7 @@ async function fetchBasketballData() {
     console.log('   ⏳ Timeout set to 5 minutes');
     const haslametricsResult = await retryWithBackoff(async () => {
       return await firecrawl.scrape(
-        `https://haslametrics.com/games.php?_=${cacheBuster}`,
+        `https://haslametrics.com/?_=${cacheBuster}`,
         {
           formats: ['markdown'],
           onlyMainContent: true,
