@@ -126,17 +126,17 @@ export function parseBasketballOdds(markdown) {
       
       // Create game object
       games.push({
-        awayTeam: normalizeTeamName(awayTeamName),
+        awayTeam: awayTeamName, // EXACT NAME from OddsTrader (no normalization)
         awayTeamRaw: awayTeamName,
         awayRecord: awayRecord,
         awayOdds: awayOdds,
-        homeTeam: normalizeTeamName(homeTeamName),
+        homeTeam: homeTeamName, // EXACT NAME from OddsTrader (no normalization)
         homeTeamRaw: homeTeamName,
         homeRecord: homeRecord,
         homeOdds: homeOdds,
         gameTime: gameTime,
         source: 'OddsTrader',
-        matchup: `${normalizeTeamName(awayTeamName)} @ ${normalizeTeamName(homeTeamName)}`
+        matchup: `${awayTeamName} @ ${homeTeamName}` // Use exact names
       });
       
       // Skip the home team line we just processed
