@@ -282,6 +282,7 @@ export async function getLiveScores(ourGames, teamMappings) {
   
   let matchedCount = 0;
   let preservedCount = 0;
+  const unmatchedGames = [];
   
   const enrichedGames = ourGames.map(ourGame => {
     // If game already has a FINAL score, KEEP IT! (all-day persistence)
@@ -335,13 +336,56 @@ export async function getLiveScores(ourGames, teamMappings) {
       };
     }
     
+    // Track unmapped games
+    unmatchedGames.push({
+      away: ourGame.awayTeam,
+      home: ourGame.homeTeam,
+      awayMapping: findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader'),
+      homeMapping: findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader')
+    });
+    
     return ourGame;
   });
   
-  // Silent summary - only log once, not per game
-  if (matchedCount > 0 || preservedCount > 0) {
-    const notMatched = ourGames.length - matchedCount - preservedCount;
-    console.log(`📊 NCAA API: ${matchedCount} live, ${preservedCount} final, ${notMatched} not in API`);
+  // Detailed NCAA API matching report
+  const notMatched = ourGames.length - matchedCount - preservedCount;
+  
+  console.log('\n🔗 NCAA API MATCHING REPORT');
+  console.log('====================================');
+  console.log(`Total Games: ${ourGames.length}`);
+  console.log(`✅ Matched: ${matchedCount} (live scores)`);
+  console.log(`💾 Preserved: ${preservedCount} (final scores)`);
+  console.log(`❌ Not Matched: ${notMatched}`);
+  
+  // Show unmapped games with CSV mapping status
+  if (unmatchedGames.length > 0) {
+    console.log('\n❌ GAMES NOT FOUND IN NCAA API:');
+    console.log('====================================');
+    unmatchedGames.forEach((game, i) => {
+      console.log(`${i + 1}. ${game.away} @ ${game.home}`);
+      
+      // Check CSV mapping status
+      const awayNcaaName = game.awayMapping?.ncaa_name;
+      const homeNcaaName = game.homeMapping?.ncaa_name;
+      
+      if (!awayNcaaName) {
+        console.log(`   ⚠️  ${game.away}: NO NCAA_NAME in CSV`);
+      } else {
+        console.log(`   ✅ ${game.away} → NCAA: "${awayNcaaName}"`);
+      }
+      
+      if (!homeNcaaName) {
+        console.log(`   ⚠️  ${game.home}: NO NCAA_NAME in CSV`);
+      } else {
+        console.log(`   ✅ ${game.home} → NCAA: "${homeNcaaName}"`);
+      }
+      
+      // If both have mappings but still not found, it's not in NCAA API today
+      if (awayNcaaName && homeNcaaName) {
+        console.log(`   💡 Both teams mapped - game not in NCAA API today`);
+      }
+    });
+    console.log('====================================\n');
   }
   
   return enrichedGames;
