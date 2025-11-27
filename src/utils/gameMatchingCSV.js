@@ -287,9 +287,15 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       matchedGames
         .filter(g => g.haslametrics && !g.dratings)
         .forEach((g, i) => {
+          const awayMapping = findTeamMapping(teamMappings, g.awayTeam, 'oddstrader');
+          const homeMapping = findTeamMapping(teamMappings, g.homeTeam, 'oddstrader');
+          const ncaaAway = awayMapping?.ncaa_name || '❌ NO NCAA MAPPING';
+          const ncaaHome = homeMapping?.ncaa_name || '❌ NO NCAA MAPPING';
+          
           console.log(`   ${i + 1}. ${g.matchup}`);
           console.log(`      ✅ Has Haslametrics`);
           console.log(`      ❌ Missing D-Ratings`);
+          console.log(`      📊 NCAA API: ${ncaaAway} @ ${ncaaHome}`);
         });
     }
     
@@ -299,9 +305,15 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       matchedGames
         .filter(g => !g.haslametrics && g.dratings)
         .forEach((g, i) => {
+          const awayMapping = findTeamMapping(teamMappings, g.awayTeam, 'oddstrader');
+          const homeMapping = findTeamMapping(teamMappings, g.homeTeam, 'oddstrader');
+          const ncaaAway = awayMapping?.ncaa_name || '❌ NO NCAA MAPPING';
+          const ncaaHome = homeMapping?.ncaa_name || '❌ NO NCAA MAPPING';
+          
           console.log(`   ${i + 1}. ${g.matchup}`);
           console.log(`      ❌ Missing Haslametrics`);
           console.log(`      ✅ Has D-Ratings`);
+          console.log(`      📊 NCAA API: ${ncaaAway} @ ${ncaaHome}`);
         });
     }
     
@@ -311,9 +323,15 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       matchedGames
         .filter(g => !g.haslametrics && !g.dratings)
         .forEach((g, i) => {
+          const awayMapping = findTeamMapping(teamMappings, g.awayTeam, 'oddstrader');
+          const homeMapping = findTeamMapping(teamMappings, g.homeTeam, 'oddstrader');
+          const ncaaAway = awayMapping?.ncaa_name || '❌ NO NCAA MAPPING';
+          const ncaaHome = homeMapping?.ncaa_name || '❌ NO NCAA MAPPING';
+          
           console.log(`   ${i + 1}. ${g.matchup}`);
           console.log(`      ❌ Missing Haslametrics`);
           console.log(`      ❌ Missing D-Ratings`);
+          console.log(`      📊 NCAA API: ${ncaaAway} @ ${ncaaHome}`);
         });
     }
     
