@@ -3,9 +3,9 @@
  * Parses D-Ratings game predictions (PRIMARY 60% SOURCE)
  * 
  * Format: [Rhode Island Rams](link)(4-1)<br>[Towson Tigers](link)(3-2) | 55.0%<br>45.0% | ... | 72.9<br>70.9
+ * 
+ * EXTRACTS EXACT NAMES - CSV handles all mappings!
  */
-
-import { normalizeTeamName } from './teamNameNormalizer.js';
 
 /**
  * Parse D-Ratings predictions from markdown
@@ -46,12 +46,9 @@ export function parseDRatings(markdown) {
         const teamMatches = [...teamsCell.matchAll(/\[([^\]]+)\]\([^\)]+\)/g)];
         if (teamMatches.length < 2) continue;
         
-        let awayTeamFull = teamMatches[0][1];
-        let homeTeamFull = teamMatches[1][1];
-        
-        // Remove mascot to get school name
-        const awayTeam = extractSchoolName(awayTeamFull);
-        const homeTeam = extractSchoolName(homeTeamFull);
+        // Extract EXACT team names from D-Ratings (no modifications!)
+        const awayTeam = teamMatches[0][1];
+        const homeTeam = teamMatches[1][1];
         
         // Extract win probabilities from third cell
         // Format: 55.0%<br>45.0%
@@ -84,17 +81,15 @@ export function parseDRatings(markdown) {
         }
         
         predictions.push({
-          awayTeam: normalizeTeamName(awayTeam),
-          awayTeamRaw: awayTeamFull,
-          homeTeam: normalizeTeamName(homeTeam),
-          homeTeamRaw: homeTeamFull,
+          awayTeam: awayTeam,  // EXACT name from D-Ratings (e.g., "Richmond Spiders")
+          homeTeam: homeTeam,  // EXACT name from D-Ratings (e.g., "Furman Paladins")
           awayWinProb: awayWinProb,
           homeWinProb: homeWinProb,
           awayScore: awayScore,
           homeScore: homeScore,
           gameTime: gameTime,
           source: 'D-Ratings',
-          matchup: `${normalizeTeamName(awayTeam)} @ ${normalizeTeamName(homeTeam)}`
+          matchup: `${awayTeam} @ ${homeTeam}`
         });
         
       } catch (error) {
