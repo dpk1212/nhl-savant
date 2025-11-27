@@ -286,9 +286,9 @@ const Basketball = () => {
         totalGames: oddsGames.length,
         qualityPicks: sortedGames.length,
         displayedGames: sortedGames.length,
-        gamesWithDRatings: allGames.filter(g => g.hasDRatings).length,
-        gamesWithHasla: allGames.filter(g => g.hasHaslametrics).length,
-        missingDRatings: allGames.filter(g => !g.hasDRatings).length,
+        gamesWithDRatings: todaysGames.filter(g => g.hasDRatings).length,
+        gamesWithHasla: todaysGames.filter(g => g.hasHaslametrics).length,
+        missingDRatings: todaysGames.filter(g => !g.hasDRatings).length,
         avgEV: sortedGames.length > 0 
           ? (sortedGames.reduce((sum, g) => sum + (g.prediction?.bestEV || 0), 0) / sortedGames.length).toFixed(1)
           : '0.0'
