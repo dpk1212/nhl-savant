@@ -152,8 +152,10 @@ const Basketball = () => {
       const drateMarkdown = await drateResponse.text();
       const csvContent = await csvResponse.text();
       
-      // Parse data
+      // Parse data (odds parser filters for TODAY only)
       const oddsGames = parseBasketballOdds(oddsMarkdown);
+      console.log(`🏀 Found ${oddsGames.length} games TODAY`);
+      
       const haslaData = parseHaslametrics(haslaMarkdown);
       const dratePreds = parseDRatings(drateMarkdown);
       
@@ -164,9 +166,8 @@ const Basketball = () => {
       // Match games using CSV mappings (OddsTrader as base)
       const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
       
-      // CRITICAL: Show ALL 55 OddsTrader games - NO FILTERING!
-      // User needs to verify D-Ratings matching for every game
-      const allGames = matchedGames.map(game => ({
+      // TODAY'S GAMES ONLY (parser filters by today's date)
+      const todaysGames = matchedGames.map(game => ({
         ...game,
         // Add verification fields
         hasOdds: !!game.odds,
@@ -175,9 +176,9 @@ const Basketball = () => {
         verificationStatus: game.dratings ? 'MATCHED' : 'MISSING'
       }));
       
-      // Calculate predictions for ALL games (even if they fail, we still show the game)
+      // Calculate predictions for TODAY'S games (even if they fail, we still show the game)
       const calculator = new BasketballEdgeCalculator();
-      const gamesWithPredictions = allGames.map(game => {
+      const gamesWithPredictions = todaysGames.map(game => {
         // Try to calculate prediction, but keep game even if it fails
         try {
           const prediction = calculator.calculateEnsemblePrediction(game);

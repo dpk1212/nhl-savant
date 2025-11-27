@@ -8,9 +8,42 @@
 import { normalizeTeamName } from './teamNameNormalizer.js';
 
 /**
+ * Get today's day abbreviation (MON, TUE, WED, etc.)
+ */
+function getTodayDayAbbr() {
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  return days[new Date().getDay()];
+}
+
+/**
+ * Get today's month/day (e.g., "11/27")
+ */
+function getTodayMonthDay() {
+  const now = new Date();
+  return `${now.getMonth() + 1}/${now.getDate()}`;
+}
+
+/**
+ * Check if a game line is for TODAY
+ */
+function isTodayGame(line) {
+  // LIVE games or "STARTS IN" are always today
+  if (line.includes('LIVE') || line.includes('STARTS IN')) {
+    return true;
+  }
+  
+  // Check if date matches today (e.g., "THU 11/27")
+  const todayDay = getTodayDayAbbr();
+  const todayDate = getTodayMonthDay();
+  const datePattern = `${todayDay} ${todayDate}`;
+  
+  return line.includes(datePattern);
+}
+
+/**
  * Parse basketball odds from OddsTrader markdown
  * @param {string} markdown - Raw markdown from OddsTrader
- * @returns {array} - Array of game objects with odds
+ * @returns {array} - Array of game objects with odds (TODAY ONLY)
  */
 export function parseBasketballOdds(markdown) {
   if (!markdown || typeof markdown !== 'string') {
@@ -21,6 +54,8 @@ export function parseBasketballOdds(markdown) {
   const games = [];
   const lines = markdown.split('\n');
   
+  console.log(`📅 Filtering for TODAY: ${getTodayDayAbbr()} ${getTodayMonthDay()}`);
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
@@ -28,11 +63,15 @@ export function parseBasketballOdds(markdown) {
     if (!line || !line.startsWith('|')) continue;
     
     // Look for AWAY team line (has ![bell] and time marker)
-    // Parse games for TODAY (any date format: MON, TUE, WED, THU, FRI, SAT, SUN or STARTS IN)
     if (line.includes('![bell]') && 
         (line.match(/(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+\d{1,2}\/\d{1,2}/) || 
          line.includes('STARTS IN') ||
          line.includes('LIVE'))) {
+      
+      // ✅ FILTER: Only parse games for TODAY
+      if (!isTodayGame(line)) {
+        continue;
+      }
       
       // Extract time (handle all date formats and live games)
       const timeMatch = line.match(/(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+\d{1,2}\/\d{1,2}(\d{1,2}:\d{2}\s*(?:AM|PM))/);
