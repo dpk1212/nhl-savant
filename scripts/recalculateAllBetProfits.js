@@ -36,7 +36,7 @@ console.log('='.repeat(70));
 async function recalculateAllProfits() {
   try {
     // Fetch all basketball bets
-    const betsSnapshot = await db.collection('basketball-bets').get();
+    const betsSnapshot = await db.collection('basketball_bets').get();
     
     console.log(`\n📊 Found ${betsSnapshot.size} total bets in Firebase\n`);
     
@@ -85,7 +85,7 @@ async function recalculateAllProfits() {
         });
         
         // Update in Firebase
-        await db.collection('basketball-bets').doc(docId).update(updateData);
+        await db.collection('basketball_bets').doc(docId).update(updateData);
         updatedCount++;
         
         console.log(`✅ ${updatedCount}. ${bet.teams?.away || '?'} @ ${bet.teams?.home || '?'}`);
