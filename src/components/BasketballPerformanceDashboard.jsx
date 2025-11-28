@@ -3,19 +3,39 @@
  * Premium section matching NHL brand standards
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { collection, query, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { useBasketballBetStats } from '../hooks/useBasketballBetStats';
 import BasketballProfitChart from './BasketballProfitChart';
 import { Calendar, TrendingUp, Target, DollarSign, Award, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 
-export function BasketballPerformanceDashboard({ allBets = [] }) {
+export function BasketballPerformanceDashboard() {
   const { stats, loading, dailyStats } = useBasketballBetStats();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
+  const [allBets, setAllBets] = useState([]);
+
+  // Fetch ALL bets from Firebase for chart and time calculations
+  useEffect(() => {
+    const betsQuery = query(collection(db, 'basketball_bets'));
+    
+    const unsubscribe = onSnapshot(betsQuery, (snapshot) => {
+      const bets = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      console.log(`📊 Dashboard: Loaded ${bets.length} total bets for chart`);
+      setAllBets(bets);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Calculate time-based stats
   const timeStats = useMemo(() => {
-    if (!allBets || allBets.length === 0) return { thisWeek: null, thisMonth: null };
+    if (!allBets || allBets.length === 0) return { thisWeek: null, thisMonth: null, showTimeBreakdown: false };
 
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -41,9 +61,17 @@ export function BasketballPerformanceDashboard({ allBets = [] }) {
       return { record: `${wins}-${losses}`, profit, winRate, total: bets.length };
     };
 
+    const weekStats = calcStats(weekBets);
+    const monthStats = calcStats(monthBets);
+    
+    // Only show time breakdown if there's meaningful difference from overall stats
+    // (i.e., not all bets are from this week/month)
+    const showTimeBreakdown = weekBets.length < gradedBets.length || monthBets.length < gradedBets.length;
+
     return {
-      thisWeek: calcStats(weekBets),
-      thisMonth: calcStats(monthBets)
+      thisWeek: weekStats,
+      thisMonth: monthStats,
+      showTimeBreakdown
     };
   }, [allBets]);
 
@@ -190,8 +218,8 @@ export function BasketballPerformanceDashboard({ allBets = [] }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-            gap: isMobile ? '1rem' : '1.5rem',
-            marginBottom: '2rem'
+            gap: isMobile ? '0.75rem' : '1.5rem',
+            marginBottom: isMobile ? '1.5rem' : '2rem'
           }}>
             {/* Graded Bets */}
             <StatCard
@@ -251,40 +279,42 @@ export function BasketballPerformanceDashboard({ allBets = [] }) {
             />
           </div>
 
-          {/* Profit Timeline Toggle */}
-          <button
-            onClick={() => setShowTimeBreakdown(!showTimeBreakdown)}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              padding: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              marginBottom: '1.5rem',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)';
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Calendar size={20} color="rgba(16, 185, 129, 0.8)" />
-              <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600', fontSize: '0.938rem' }}>
-                {showTimeBreakdown ? 'Hide' : 'Show'} Daily Results
-              </span>
-            </div>
-            {showTimeBreakdown ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
+          {/* Profit Timeline Toggle - Only show if there's meaningful time-based data */}
+          {timeStats.showTimeBreakdown && (
+            <button
+              onClick={() => setShowTimeBreakdown(!showTimeBreakdown)}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                padding: isMobile ? '0.875rem' : '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                marginBottom: '1.5rem',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)';
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Calendar size={isMobile ? 18 : 20} color="rgba(16, 185, 129, 0.8)" />
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600', fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
+                  {showTimeBreakdown ? 'Hide' : 'Show'} Time Breakdown
+                </span>
+              </div>
+              {showTimeBreakdown ? <ChevronUp size={isMobile ? 18 : 20} /> : <ChevronDown size={isMobile ? 18 : 20} />}
+            </button>
+          )}
 
           {/* Time Period Breakdown */}
-          {showTimeBreakdown && timeStats.thisMonth && (
+          {timeStats.showTimeBreakdown && showTimeBreakdown && timeStats.thisMonth && (
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
@@ -352,8 +382,8 @@ function StatCard({ icon, value, label, color, highlight = false, isMobile }) {
       border: highlight 
         ? `1px solid ${color}40`
         : '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '16px',
-      padding: isMobile ? '1.25rem' : '1.5rem',
+      borderRadius: isMobile ? '12px' : '16px',
+      padding: isMobile ? '1rem' : '1.5rem',
       textAlign: 'center',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'default',
@@ -361,18 +391,22 @@ function StatCard({ icon, value, label, color, highlight = false, isMobile }) {
       overflow: 'hidden'
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-4px)';
-      e.currentTarget.style.boxShadow = `0 12px 32px rgba(0,0,0,0.3), 0 0 40px ${color}30`;
+      if (!isMobile) {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = `0 12px 32px rgba(0,0,0,0.3), 0 0 40px ${color}30`;
+      }
     }}
     onMouseLeave={(e) => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = 'none';
+      if (!isMobile) {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }
     }}
     >
       {/* Icon */}
       <div style={{
         color,
-        marginBottom: '0.75rem',
+        marginBottom: isMobile ? '0.5rem' : '0.75rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -383,24 +417,26 @@ function StatCard({ icon, value, label, color, highlight = false, isMobile }) {
       
       {/* Value */}
       <div style={{
-        fontSize: isMobile ? '1.75rem' : '2rem',
+        fontSize: isMobile ? '1.5rem' : '2rem',
         fontWeight: '900',
         color,
-        marginBottom: '0.5rem',
+        marginBottom: isMobile ? '0.375rem' : '0.5rem',
         fontFeatureSettings: "'tnum'",
         letterSpacing: '-0.03em',
-        textShadow: `0 2px 16px ${color}40`
+        textShadow: `0 2px 16px ${color}40`,
+        lineHeight: 1
       }}>
         {value}
       </div>
       
       {/* Label */}
       <div style={{
-        fontSize: isMobile ? '0.688rem' : '0.75rem',
+        fontSize: isMobile ? '0.625rem' : '0.75rem',
         color: 'rgba(255,255,255,0.6)',
         fontWeight: '700',
         textTransform: 'uppercase',
-        letterSpacing: '0.1em'
+        letterSpacing: '0.1em',
+        lineHeight: 1.2
       }}>
         {label}
       </div>

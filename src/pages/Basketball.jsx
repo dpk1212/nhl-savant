@@ -381,7 +381,7 @@ const Basketball = () => {
 
       {/* Premium Performance Dashboard - NHL Style */}
       <div style={{ maxWidth: '1200px', margin: '0 auto 2rem auto', padding: isMobile ? '0 1rem' : '0' }}>
-        <BasketballPerformanceDashboard allBets={Array.from(betsMap.values())} />
+        <BasketballPerformanceDashboard />
         
         {stats && (
           <div style={{
