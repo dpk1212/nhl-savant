@@ -31,20 +31,11 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
   
   // Track unmapped teams for diagnostics
   const unmappedOddsTeams = new Set();
+  const missingHaslaNames = new Set(); // Teams in CSV but missing haslametrics_name
+  const missingDrateNames = new Set(); // Teams in CSV but missing dratings_name
+  const missingNcaaNames = new Set(); // Teams in CSV but missing ncaa_name
   const unmatchedHaslaGames = new Set();
   const unmatchedDrateGames = new Set();
-  
-  // DIAGNOSTIC: Show all OddsTrader team names (normalized)
-  console.log('\n📊 ALL ODDSTRADER TEAMS (normalized):');
-  console.log('=====================================');
-  const oddsTeamNames = new Set();
-  oddsGames.forEach(g => {
-    oddsTeamNames.add(g.awayTeam);
-    oddsTeamNames.add(g.homeTeam);
-  });
-  Array.from(oddsTeamNames).sort().forEach(team => {
-    console.log(`   - "${team}"`);
-  });
   
   let fullMatches = 0;
   let haslaOnly = 0;
@@ -61,7 +52,6 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     const homeMapping = findTeamMapping(teamMappings, homeTeam, 'oddstrader');
     
     if (!awayMapping || !homeMapping) {
-      console.warn(`⚠️  No CSV mapping for: ${awayTeam} @ ${homeTeam}`);
       if (!awayMapping) unmappedOddsTeams.add(awayTeam);
       if (!homeMapping) unmappedOddsTeams.add(homeTeam);
       noMatches++;
@@ -99,20 +89,14 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
         }
       }
       
-      // Track if not found - WITH DETAILED LOGGING
+      // Track if not found
       if (!haslaGame) {
-        unmatchedHaslaGames.add(`${awayMapping.haslametrics} @ ${homeMapping.haslametrics}`);
-        console.log(`   ❌ Haslametrics: CSV says "${awayMapping.haslametrics} @ ${homeMapping.haslametrics}" but NO GAME FOUND in today's data`);
-        console.log(`      This game is NOT in Haslametrics today (legitimately not covered)`);
+        unmatchedHaslaGames.add(`${awayTeam} @ ${homeTeam}`);
       }
     } else {
-      if (!awayMapping.haslametrics && !homeMapping.haslametrics) {
-        console.log(`   ⚠️  ${awayTeam} @ ${homeTeam}: CSV has NO haslametrics_name for either team`);
-      } else if (!awayMapping.haslametrics) {
-        console.log(`   ⚠️  ${awayTeam}: CSV has NO haslametrics_name (needs to be added)`);
-      } else if (!homeMapping.haslametrics) {
-        console.log(`   ⚠️  ${homeTeam}: CSV has NO haslametrics_name (needs to be added)`);
-      }
+      // Track teams missing Haslametrics names in CSV
+      if (!awayMapping.haslametrics) missingHaslaNames.add(awayTeam);
+      if (!homeMapping.haslametrics) missingHaslaNames.add(homeTeam);
     }
     
     // Find in D-Ratings using CSV mapping
@@ -148,9 +132,17 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       
       // Track if not found
       if (!dratePred) {
-        unmatchedDrateGames.add(`${awayMapping.dratings} @ ${homeMapping.dratings}`);
+        unmatchedDrateGames.add(`${awayTeam} @ ${homeTeam}`);
       }
+    } else {
+      // Track teams missing D-Ratings names in CSV
+      if (!awayMapping.dratings) missingDrateNames.add(awayTeam);
+      if (!homeMapping.dratings) missingDrateNames.add(homeTeam);
     }
+    
+    // Track teams missing NCAA names in CSV
+    if (!awayMapping.ncaa_name) missingNcaaNames.add(awayTeam);
+    if (!homeMapping.ncaa_name) missingNcaaNames.add(homeTeam);
     
     // Track data sources
     const sources = ['odds']; // Always have odds (it's our base)
@@ -225,114 +217,49 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
   console.log(`   - With D-Ratings only: ${drateOnly}`);
   console.log(`   - No model data: ${noMatches}`);
   
-  // DIAGNOSTIC: Show unmapped OddsTrader teams
+  // CLEAN CSV MAPPING STATUS REPORT
+  console.log('\n📋 CSV MAPPING STATUS REPORT');
+  console.log('='.repeat(70));
+  
   if (unmappedOddsTeams.size > 0) {
-    console.log('\n❌ ODDSTRADER TEAMS WITH NO CSV MAPPING:');
-    console.log('=====================================');
-    Array.from(unmappedOddsTeams).sort().forEach(team => {
-      console.log(`   - "${team}"`);
-    });
+    console.log(`\n❌ Teams NOT in CSV (${unmappedOddsTeams.size}):`);
+    Array.from(unmappedOddsTeams).sort().forEach(team => console.log(`   - ${team}`));
   }
   
-  // DIAGNOSTIC: Show all available Haslametrics teams
-  console.log('\n📊 AVAILABLE HASLAMETRICS TEAMS (raw names):');
-  console.log('=====================================');
-  const haslaTeamNames = new Set();
-  haslaGames.forEach(g => {
-    haslaTeamNames.add(g.awayTeamRaw);
-    haslaTeamNames.add(g.homeTeamRaw);
-  });
-  Array.from(haslaTeamNames).sort().forEach(team => {
-    console.log(`   - "${team}"`);
-  });
-  
-  // DIAGNOSTIC: Show all available D-Ratings teams
-  console.log('\n📊 AVAILABLE D-RATINGS TEAMS (school names):');
-  console.log('=====================================');
-  const drateTeamNames = new Set();
-  dratePredictions.forEach(p => {
-    drateTeamNames.add(p.awayTeam);
-    drateTeamNames.add(p.homeTeam);
-  });
-  Array.from(drateTeamNames).sort().forEach(team => {
-    console.log(`   - "${team}"`);
-  });
-  
-  // DIAGNOSTIC: Show unmatched Haslametrics games
-  if (unmatchedHaslaGames.size > 0) {
-    console.log('\n⚠️  HASLAMETRICS GAMES NOT MATCHED:');
-    console.log('=====================================');
-    Array.from(unmatchedHaslaGames).forEach(game => {
-      console.log(`   - ${game}`);
-    });
+  if (missingHaslaNames.size > 0) {
+    console.log(`\n⚠️  Teams missing haslametrics_name in CSV (${missingHaslaNames.size}):`);
+    Array.from(missingHaslaNames).sort().forEach(team => console.log(`   - ${team}`));
   }
   
-  // DIAGNOSTIC: Show unmatched D-Ratings games
-  if (unmatchedDrateGames.size > 0) {
-    console.log('\n⚠️  D-RATINGS GAMES NOT MATCHED:');
-    console.log('=====================================');
-    Array.from(unmatchedDrateGames).forEach(game => {
-      console.log(`   - ${game}`);
-    });
+  if (missingDrateNames.size > 0) {
+    console.log(`\n⚠️  Teams missing dratings_name in CSV (${missingDrateNames.size}):`);
+    Array.from(missingDrateNames).sort().forEach(team => console.log(`   - ${team}`));
   }
   
-  // DETAILED MISSING DATA REPORT
-  if (haslaOnly > 0 || drateOnly > 0 || noMatches > 0) {
-    console.log('\n🔍 DETAILED MISSING DATA REPORT');
-    console.log('=====================================');
+  if (missingNcaaNames.size > 0) {
+    console.log(`\n⚠️  Teams missing ncaa_name in CSV (${missingNcaaNames.size}):`);
+    Array.from(missingNcaaNames).sort().forEach(team => console.log(`   - ${team}`));
+  }
+  
+  if (unmappedOddsTeams.size === 0 && missingHaslaNames.size === 0 && missingDrateNames.size === 0 && missingNcaaNames.size === 0) {
+    console.log('\n✅ ALL CSV MAPPINGS COMPLETE!');
+  }
+  
+  // GAMES WITH MISSING DATA (simplified)
+  if (unmatchedHaslaGames.size > 0 || unmatchedDrateGames.size > 0 || noMatches > 0) {
+    console.log('\n🎯 GAMES MISSING MODEL DATA');
+    console.log('='.repeat(70));
     
-    // Games with Haslametrics only (missing D-Ratings)
-    if (haslaOnly > 0) {
-      console.log(`\n⚠️  MISSING D-RATINGS (${haslaOnly} games):`);
-      matchedGames
-        .filter(g => g.haslametrics && !g.dratings)
-        .forEach((g, i) => {
-          const awayMapping = findTeamMapping(teamMappings, g.awayTeam, 'oddstrader');
-          const homeMapping = findTeamMapping(teamMappings, g.homeTeam, 'oddstrader');
-          const ncaaAway = awayMapping?.ncaa_name || '❌ NO NCAA MAPPING';
-          const ncaaHome = homeMapping?.ncaa_name || '❌ NO NCAA MAPPING';
-          
-          console.log(`   ${i + 1}. ${g.matchup}`);
-          console.log(`      ✅ Has Haslametrics`);
-          console.log(`      ❌ Missing D-Ratings`);
-          console.log(`      📊 NCAA API: ${ncaaAway} @ ${ncaaHome}`);
-        });
+    if (unmatchedHaslaGames.size > 0) {
+      console.log(`⚠️  ${unmatchedHaslaGames.size} games missing Haslametrics (have odds + D-Ratings)`);
     }
     
-    // Games with D-Ratings only (missing Haslametrics)
-    if (drateOnly > 0) {
-      console.log(`\n⚠️  MISSING HASLAMETRICS (${drateOnly} games):`);
-      matchedGames
-        .filter(g => !g.haslametrics && g.dratings)
-        .forEach((g, i) => {
-          const awayMapping = findTeamMapping(teamMappings, g.awayTeam, 'oddstrader');
-          const homeMapping = findTeamMapping(teamMappings, g.homeTeam, 'oddstrader');
-          const ncaaAway = awayMapping?.ncaa_name || '❌ NO NCAA MAPPING';
-          const ncaaHome = homeMapping?.ncaa_name || '❌ NO NCAA MAPPING';
-          
-          console.log(`   ${i + 1}. ${g.matchup}`);
-          console.log(`      ❌ Missing Haslametrics`);
-          console.log(`      ✅ Has D-Ratings`);
-          console.log(`      📊 NCAA API: ${ncaaAway} @ ${ncaaHome}`);
-        });
+    if (unmatchedDrateGames.size > 0) {
+      console.log(`⚠️  ${unmatchedDrateGames.size} games missing D-Ratings (have odds + Haslametrics)`);
     }
     
-    // Games with no model data
     if (noMatches > 0) {
-      console.log(`\n❌ NO MODEL DATA (${noMatches} games):`);
-      matchedGames
-        .filter(g => !g.haslametrics && !g.dratings)
-        .forEach((g, i) => {
-          const awayMapping = findTeamMapping(teamMappings, g.awayTeam, 'oddstrader');
-          const homeMapping = findTeamMapping(teamMappings, g.homeTeam, 'oddstrader');
-          const ncaaAway = awayMapping?.ncaa_name || '❌ NO NCAA MAPPING';
-          const ncaaHome = homeMapping?.ncaa_name || '❌ NO NCAA MAPPING';
-          
-          console.log(`   ${i + 1}. ${g.matchup}`);
-          console.log(`      ❌ Missing Haslametrics`);
-          console.log(`      ❌ Missing D-Ratings`);
-          console.log(`      📊 NCAA API: ${ncaaAway} @ ${ncaaHome}`);
-        });
+      console.log(`❌ ${noMatches} games with NO model data (odds only)`);
     }
     
     console.log('\n=====================================\n');
