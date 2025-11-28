@@ -1,64 +1,143 @@
 /**
- * ESPN API Integration (formerly NCAA API)
- * Fetches live scores from ESPN's public API
- * MIGRATED: Nov 28, 2025 - Switched from NCAA API (had reversed home/away) to ESPN API (accurate)
+ * HYBRID API Integration - ESPN + NCAA
+ * Uses ESPN when available (accurate, limited coverage)
+ * Falls back to NCAA for complete coverage (fixed reversed home/away)
+ * 
+ * ESPN: ~5 featured games (100% accurate home/away)
+ * NCAA: ~57 total games (home/away REVERSED - we fix it)
+ * Result: Complete coverage with best accuracy
  */
 
-// ESPN API - No CORS issues, no proxy needed!
+// ESPN API - No CORS, but limited coverage (featured games only)
 const ESPN_API_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard';
 
+// NCAA API via Firebase proxy - Complete coverage, but home/away reversed
+const NCAA_PROXY_URL = 'https://ncaaproxy-lviwud3q2q-uc.a.run.app';
+
 /**
- * Fetch today's D1 Men's Basketball games from ESPN
- * @param {string} date - YYYYMMDD format (optional, defaults to today)
+ * Fetch today's D1 Men's Basketball games from BOTH sources
+ * @param {string} date - YYYYMMDD format (optional)
  * @returns {Promise<Array>} - Array of game objects
  */
 export async function fetchTodaysGames(date = null) {
   try {
-    // ESPN API doesn't need date parameter - always returns today's games
-    const response = await fetch(ESPN_API_URL);
+    // Fetch from both sources in parallel
+    const [espnGames, ncaaGames] = await Promise.all([
+      fetchESPNGames(),
+      fetchNCAAGames(date)
+    ]);
     
-    if (!response.ok) {
-      throw new Error(`ESPN API error: ${response.status}`);
-    }
+    console.log(`📊 Fetched ${espnGames.length} ESPN games, ${ncaaGames.length} NCAA games`);
     
-    const data = await response.json();
+    // Merge: prefer ESPN for games that exist in both
+    const mergedGames = mergeGameSources(espnGames, ncaaGames);
     
-    // Parse the games from ESPN's structure
-    const games = data.events || [];
+    console.log(`✅ Total games after merge: ${mergedGames.length}`);
     
-    return games.map(event => parseESPNgame(event));
+    return mergedGames;
   } catch (error) {
-    console.error('Error fetching ESPN games:', error);
+    console.error('Error fetching games:', error);
     return [];
   }
 }
 
 /**
- * Parse ESPN game object to our standard format
- * @param {object} event - Raw ESPN API event object
- * @returns {object} - Parsed game object
+ * Fetch from ESPN API (featured games only)
+ */
+async function fetchESPNGames() {
+  try {
+    const response = await fetch(ESPN_API_URL);
+    if (!response.ok) throw new Error(`ESPN API error: ${response.status}`);
+    
+    const data = await response.json();
+    const games = data.events || [];
+    
+    return games.map(event => parseESPNgame(event));
+  } catch (error) {
+    console.warn('ESPN API failed, will use NCAA only:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Fetch from NCAA API (complete coverage)
+ */
+async function fetchNCAAGames(date = null) {
+  if (!date) {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    date = `${year}${month}${day}`;
+  }
+  
+  try {
+    const response = await fetch(`${NCAA_PROXY_URL}?date=${date}`);
+    if (!response.ok) throw new Error(`NCAA API error: ${response.status}`);
+    
+    const data = await response.json();
+    const games = data.games || [];
+    
+    return games.map(game => parseNCAAgame(game));
+  } catch (error) {
+    console.error('NCAA API failed:', error);
+    return [];
+  }
+}
+
+/**
+ * Merge ESPN and NCAA games, preferring ESPN when available
+ */
+function mergeGameSources(espnGames, ncaaGames) {
+  const merged = new Map();
+  
+  // Add ESPN games first (these are authoritative)
+  espnGames.forEach(game => {
+    const key = normalizeTeamPair(game.awayTeam, game.homeTeam);
+    merged.set(key, { ...game, source: 'ESPN' });
+  });
+  
+  // Add NCAA games that don't exist in ESPN
+  ncaaGames.forEach(game => {
+    const key = normalizeTeamPair(game.awayTeam, game.homeTeam);
+    if (!merged.has(key)) {
+      merged.set(key, { ...game, source: 'NCAA' });
+    }
+  });
+  
+  return Array.from(merged.values());
+}
+
+/**
+ * Normalize team pair for matching (order-independent)
+ */
+function normalizeTeamPair(team1, team2) {
+  const normalize = (t) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const t1 = normalize(team1);
+  const t2 = normalize(team2);
+  return t1 < t2 ? `${t1}_${t2}` : `${t2}_${t1}`;
+}
+
+/**
+ * Parse ESPN game object
  */
 function parseESPNgame(event) {
   const competition = event.competitions?.[0] || {};
   const competitors = competition.competitors || [];
   
-  // Find home and away teams using explicit homeAway field (ESPN does this correctly!)
   const awayTeam = competitors.find(c => c.homeAway === 'away') || {};
   const homeTeam = competitors.find(c => c.homeAway === 'home') || {};
   
   const awayTeamName = awayTeam.team?.shortDisplayName || awayTeam.team?.displayName || '';
   const homeTeamName = homeTeam.team?.shortDisplayName || homeTeam.team?.displayName || '';
   
-  // Parse scores
   const awayScore = parseInt(awayTeam.score) || 0;
   const homeScore = parseInt(homeTeam.score) || 0;
   
-  // Parse status
   const status = competition.status || {};
   const statusType = status.type || {};
   let gameState = 'pre';
   
-  // Map ESPN status to our format
   if (statusType.state === 'post' || statusType.completed) {
     gameState = 'final';
   } else if (statusType.state === 'in') {
@@ -67,11 +146,10 @@ function parseESPNgame(event) {
   
   return {
     id: event.id,
-    status: gameState, // 'pre', 'live', 'final'
+    status: gameState,
     startTime: event.date,
     startTimeEpoch: new Date(event.date).getTime() / 1000,
     
-    // Teams
     awayTeam: awayTeamName,
     awayTeamFull: awayTeam.team?.displayName || '',
     awayScore: awayScore,
@@ -82,76 +160,100 @@ function parseESPNgame(event) {
     homeScore: homeScore,
     homeRank: homeTeam.curatedRank?.current || null,
     
-    // Game state
     period: status.period || null,
     clock: status.displayClock || null,
-    
-    // TV/Network
     network: competition.broadcasts?.[0]?.names?.[0] || null,
-    
-    // Metadata
     venue: competition.venue?.fullName || null,
     neutral: competition.neutralSite || false,
     
-    // Raw data (for debugging)
     _raw: event
   };
 }
 
 /**
- * Match ESPN game to our prediction game
- * @param {object} espnGame - ESPN API game
- * @param {object} ourGame - Our prediction game
- * @param {Map} teamMappings - CSV team mappings with espn_name column
- * @returns {boolean} - True if games match
+ * Parse NCAA game object (with reversal fix)
  */
-export function matchGames(espnGame, ourGame, teamMappings) {
-  // ROBUSTNESS: Validate inputs
-  if (!espnGame || !ourGame) {
-    console.error('❌ matchGames: Invalid game objects');
-    return false;
-  }
+function parseNCAAgame(game) {
+  const gameData = game.game || {};
   
-  if (!espnGame.awayTeam || !espnGame.homeTeam || !ourGame.awayTeam || !ourGame.homeTeam) {
-    return false;
-  }
+  // 🚨 CRITICAL: NCAA API has away/home REVERSED!
+  // What NCAA calls "away" is actually HOME, and what it calls "home" is actually AWAY
+  const homeTeam = gameData.away || {};  // NCAA's "away" is actually HOME
+  const awayTeam = gameData.home || {};  // NCAA's "home" is actually AWAY
   
-  // Find CSV mappings for our teams
-  const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
-  const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
+  const awayTeamName = awayTeam.names?.short || awayTeam.names?.full || '';
+  const homeTeamName = homeTeam.names?.short || homeTeam.names?.full || '';
   
-  // Check if teams are in CSV and have ESPN mappings
-  if (!ourAwayMapping || !ourHomeMapping || !ourAwayMapping.espn_name || !ourHomeMapping.espn_name) {
-    // Silent failure - only log CSV errors during development/audit
-    return false;
-  }
+  const awayScore = parseInt(awayTeam.score) || 0;
+  const homeScore = parseInt(homeTeam.score) || 0;
   
-  // Use ONLY CSV mappings - no fuzzy matching!
-  const expectedAwayESPN = ourAwayMapping.espn_name;
-  const expectedHomeESPN = ourHomeMapping.espn_name;
+  const status = gameData.gameState;
   
-  // Check if teams match (normal or reversed)
-  const normalMatch = 
-    teamNamesMatch(espnGame.awayTeam, expectedAwayESPN) &&
-    teamNamesMatch(espnGame.homeTeam, expectedHomeESPN);
-  
-  const reversedMatch = 
-    teamNamesMatch(espnGame.awayTeam, expectedHomeESPN) &&
-    teamNamesMatch(espnGame.homeTeam, expectedAwayESPN);
-  
-  if (normalMatch || reversedMatch) {
-    return true;
-  }
-  
-  // No match - game not in ESPN API (this is OK for some games)
-  return false;
+  return {
+    id: gameData.gameID || game.id,
+    status: status, // 'pre', 'live', 'final'
+    startTime: gameData.startTime,
+    startTimeEpoch: gameData.startTimeEpoch,
+    
+    awayTeam: awayTeamName,
+    awayTeamFull: awayTeam.names?.full || '',
+    awayScore: awayScore,
+    awayRank: awayTeam.rank || null,
+    
+    homeTeam: homeTeamName,
+    homeTeamFull: homeTeam.names?.full || '',
+    homeScore: homeScore,
+    homeRank: homeTeam.rank || null,
+    
+    period: gameData.currentPeriod || null,
+    clock: gameData.contestClock || null,
+    network: gameData.network || null,
+    venue: gameData.venue || null,
+    neutral: gameData.neutralSite || false,
+    
+    _raw: game
+  };
 }
 
 /**
- * Check if two team names match (fuzzy)
- * @param {string} name1 
- * @param {string} name2 
- * @returns {boolean}
+ * Match game to our prediction game (handles both ESPN and NCAA names)
+ */
+export function matchGames(apiGame, ourGame, teamMappings) {
+  if (!apiGame || !ourGame || !apiGame.awayTeam || !apiGame.homeTeam || !ourGame.awayTeam || !ourGame.homeTeam) {
+    return false;
+  }
+  
+  const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
+  const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
+  
+  if (!ourAwayMapping || !ourHomeMapping) {
+    return false;
+  }
+  
+  // Try matching with both ESPN and NCAA names
+  const apiSource = apiGame.source || 'NCAA';
+  const nameColumn = apiSource === 'ESPN' ? 'espn_name' : 'ncaa_name';
+  
+  if (!ourAwayMapping[nameColumn] || !ourHomeMapping[nameColumn]) {
+    return false;
+  }
+  
+  const expectedAwayName = ourAwayMapping[nameColumn];
+  const expectedHomeName = ourHomeMapping[nameColumn];
+  
+  const normalMatch = 
+    teamNamesMatch(apiGame.awayTeam, expectedAwayName) &&
+    teamNamesMatch(apiGame.homeTeam, expectedHomeName);
+  
+  const reversedMatch = 
+    teamNamesMatch(apiGame.awayTeam, expectedHomeName) &&
+    teamNamesMatch(apiGame.homeTeam, expectedAwayName);
+  
+  return normalMatch || reversedMatch;
+}
+
+/**
+ * Fuzzy team name matching
  */
 function teamNamesMatch(name1, name2) {
   if (!name1 || !name2) return false;
@@ -160,7 +262,6 @@ function teamNamesMatch(name1, name2) {
     return str
       .toLowerCase()
       .trim()
-      // Remove common words
       .replace(/\buniversity\b/g, '')
       .replace(/\bcollege\b/g, '')
       .replace(/\bof\b/g, '')
@@ -168,17 +269,14 @@ function teamNamesMatch(name1, name2) {
       .replace(/\bstate\b/g, 'st')
       .replace(/\bsaint\b/g, 'st')
       .replace(/\bst\./g, 'st')
-      // Clean up
       .replace(/[^a-z0-9]/g, '');
   };
   
   const norm1 = normalize(name1);
   const norm2 = normalize(name2);
   
-  // Exact match
   if (norm1 === norm2) return true;
   
-  // One contains the other (for cases like "UConn" vs "UConn Huskies")
   if (norm1.length >= 4 && norm2.length >= 4) {
     if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
   }
@@ -187,11 +285,7 @@ function teamNamesMatch(name1, name2) {
 }
 
 /**
- * Find team in mappings by source column
- * @param {Map} mappings 
- * @param {string} teamName 
- * @param {string} source 
- * @returns {object|null}
+ * Find team in mappings
  */
 function findTeamInMappings(mappings, teamName, source) {
   const searchName = teamName.toLowerCase().trim();
@@ -207,127 +301,98 @@ function findTeamInMappings(mappings, teamName, source) {
 }
 
 /**
- * Get live scores for our games
- * @param {Array} ourGames - Our prediction games
- * @param {Map} teamMappings - CSV team mappings
- * @returns {Promise<Array>} - Our games enriched with live scores
+ * Get live scores for our games (HYBRID: ESPN + NCAA)
  */
 export async function getLiveScores(ourGames, teamMappings) {
-  const espnGames = await fetchTodaysGames();
+  const apiGames = await fetchTodaysGames();
   
   let matchedCount = 0;
   let preservedCount = 0;
-  const unmatchedGames = [];
+  let espnCount = 0;
+  let ncaaCount = 0;
   
   const enrichedGames = ourGames.map(ourGame => {
-    // If game already has a FINAL score, KEEP IT! (all-day persistence)
+    // Preserve final scores
     if (ourGame.liveScore && ourGame.liveScore.status === 'final') {
       preservedCount++;
       return ourGame;
     }
     
-    // Find matching ESPN game using CSV mappings
-    const espnGame = espnGames.find(eg => matchGames(eg, ourGame, teamMappings));
+    // Find matching game
+    const apiGame = apiGames.find(ag => matchGames(ag, ourGame, teamMappings));
     
-    if (espnGame) {
+    if (apiGame) {
       matchedCount++;
+      if (apiGame.source === 'ESPN') espnCount++;
+      else ncaaCount++;
       
-      // ✅ PURE TEAM-TO-TEAM MAPPING (NO POSITION LOGIC)
-      // Create a map: ESPN team name → score
-      const espnTeamScores = new Map();
-      espnTeamScores.set(espnGame.awayTeam.toLowerCase().trim(), espnGame.awayScore);
-      espnTeamScores.set(espnGame.homeTeam.toLowerCase().trim(), espnGame.homeScore);
+      // Map scores using team names (not positions)
+      const gameScores = new Map();
+      gameScores.set(apiGame.awayTeam.toLowerCase().trim(), apiGame.awayScore);
+      gameScores.set(apiGame.homeTeam.toLowerCase().trim(), apiGame.homeScore);
       
-      // Get CSV mappings for OUR teams
       const ourAwayMapping = findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader');
       const ourHomeMapping = findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader');
       
-      // 🔍 DIAGNOSTIC LOGGING
-      console.log(`\n🏀 SCORE MAPPING: ${ourGame.awayTeam} @ ${ourGame.homeTeam}`);
-      console.log(`   ESPN API: ${espnGame.awayTeam} (${espnGame.awayScore}) @ ${espnGame.homeTeam} (${espnGame.homeScore})`);
-      console.log(`   Our Away (${ourGame.awayTeam}) → ESPN name: ${ourAwayMapping?.espn_name || 'MISSING'}`);
-      console.log(`   Our Home (${ourGame.homeTeam}) → ESPN name: ${ourHomeMapping?.espn_name || 'MISSING'}`);
+      const nameColumn = apiGame.source === 'ESPN' ? 'espn_name' : 'ncaa_name';
       
-      // Extract scores for OUR teams by matching ESPN names from CSV
       let ourAwayScore = 0;
       let ourHomeScore = 0;
       
-      // Match our away team to ESPN score
-      if (ourAwayMapping && ourAwayMapping.espn_name) {
-        const espnAwayName = ourAwayMapping.espn_name.toLowerCase().trim();
-        for (const [espnTeam, score] of espnTeamScores) {
-          if (teamNamesMatch(espnTeam, espnAwayName)) {
+      if (ourAwayMapping && ourAwayMapping[nameColumn]) {
+        const apiName = ourAwayMapping[nameColumn].toLowerCase().trim();
+        for (const [team, score] of gameScores) {
+          if (teamNamesMatch(team, apiName)) {
             ourAwayScore = score;
-            console.log(`   ✅ Matched ${ourGame.awayTeam} to ESPN ${espnTeam} → score ${score}`);
             break;
           }
         }
       }
       
-      // Match our home team to ESPN score
-      if (ourHomeMapping && ourHomeMapping.espn_name) {
-        const espnHomeName = ourHomeMapping.espn_name.toLowerCase().trim();
-        for (const [espnTeam, score] of espnTeamScores) {
-          if (teamNamesMatch(espnTeam, espnHomeName)) {
+      if (ourHomeMapping && ourHomeMapping[nameColumn]) {
+        const apiName = ourHomeMapping[nameColumn].toLowerCase().trim();
+        for (const [team, score] of gameScores) {
+          if (teamNamesMatch(team, apiName)) {
             ourHomeScore = score;
-            console.log(`   ✅ Matched ${ourGame.homeTeam} to ESPN ${espnTeam} → score ${score}`);
             break;
           }
         }
       }
       
-      console.log(`   📊 FINAL MAPPING: ${ourGame.awayTeam} ${ourAwayScore} - ${ourHomeScore} ${ourGame.homeTeam}`);
+      console.log(`✅ ${apiGame.source}: ${ourGame.awayTeam} ${ourAwayScore}-${ourHomeScore} ${ourGame.homeTeam}`);
       
       return {
         ...ourGame,
         liveScore: {
-          status: espnGame.status,
-          awayScore: ourAwayScore,  // ✅ Direct team-to-score map
-          homeScore: ourHomeScore,  // ✅ Direct team-to-score map
-          period: espnGame.period,
-          clock: espnGame.clock,
-          network: espnGame.network,
+          status: apiGame.status,
+          awayScore: ourAwayScore,
+          homeScore: ourHomeScore,
+          period: apiGame.period,
+          clock: apiGame.clock,
+          network: apiGame.network,
+          source: apiGame.source,
           lastUpdated: new Date().toISOString()
         }
       };
     }
     
-    // Track unmapped games
-    unmatchedGames.push({
-      away: ourGame.awayTeam,
-      home: ourGame.homeTeam,
-      awayMapping: findTeamInMappings(teamMappings, ourGame.awayTeam, 'oddstrader'),
-      homeMapping: findTeamInMappings(teamMappings, ourGame.homeTeam, 'oddstrader')
-    });
-    
     return ourGame;
   });
   
-  // Detailed ESPN API matching report
-  const notMatched = ourGames.length - matchedCount - preservedCount;
-  
-  // Logging removed for security - prevents users from discovering API sources
+  console.log(`📊 Matched ${matchedCount} games (${espnCount} ESPN, ${ncaaCount} NCAA), ${preservedCount} preserved`);
   
   return enrichedGames;
 }
 
 /**
  * Start polling for live scores
- * @param {Array} games - Games to poll
- * @param {Map} teamMappings - Team mappings
- * @param {Function} callback - Called with updated games
- * @param {number} intervalMs - Polling interval (default 60s)
- * @returns {Function} - Cleanup function to stop polling
  */
 export function startScorePolling(games, teamMappings, callback, intervalMs = 60000) {
-  // Initial fetch
   getLiveScores(games, teamMappings).then(callback);
   
-  // Set up interval
   const intervalId = setInterval(() => {
     getLiveScores(games, teamMappings).then(callback);
   }, intervalMs);
   
-  // Return cleanup function
   return () => clearInterval(intervalId);
 }
