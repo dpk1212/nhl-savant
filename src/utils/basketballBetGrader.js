@@ -52,7 +52,6 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
         
         // Skip if already graded
         if (betData.status === 'COMPLETED') {
-          console.log(`⏭️  Bet already graded: ${id}`);
           return false;
         }
         
@@ -99,17 +98,10 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       'status': 'COMPLETED'
     });
     
-    const units = getUnitSize(currentGrade);
-    console.log(`✅ ${outcome}: ${awayTeam} @ ${homeTeam}`);
-    console.log(`   Pick: ${gradedBet.bet.team} (${odds > 0 ? '+' : ''}${odds})`);
-    console.log(`   Grade: ${currentGrade} → ${units}u risked`);
-    console.log(`   Score: ${awayScore}-${homeScore}`);
-    console.log(`   Profit: ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u`);
-    
     return true;
     
   } catch (error) {
-    console.error(`❌ Error grading bet for ${awayTeam} @ ${homeTeam}:`, error);
+    // Silent error handling for security
     return false;
   }
 }

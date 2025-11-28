@@ -35,15 +35,7 @@ export class BetTracker {
     // This ensures we never save inferior market-ensemble bets
     // Note: Puck line bets don't have MoneyPuck calibration yet, so skip this check for them
     if (bestEdge.market === 'MONEYLINE' && !bestEdge.moneyPuckProb && !bestEdge.calibratedProb) {
-      console.log(`⏳ Skipping bet (waiting for MoneyPuck data): ${game.awayTeam} @ ${game.homeTeam}`);
-      console.log(`   📊 Current: Market ensemble fallback | Required: MoneyPuck 70/30 blend`);
-      console.log(`   ⏰ MoneyPuck updates at 11:00 AM ET - bet will be created after next data fetch`);
       return null;
-    }
-    
-    // Log successful MoneyPuck calibration
-    if (bestEdge.moneyPuckProb) {
-      console.log(`✅ MoneyPuck calibration active: ${game.awayTeam} @ ${game.homeTeam} (${(bestEdge.moneyPuckProb * 100).toFixed(1)}% MP prob)`);
     }
     
     // CRITICAL FIX: Get date using ET game date (treats 12am-6am as previous day)
