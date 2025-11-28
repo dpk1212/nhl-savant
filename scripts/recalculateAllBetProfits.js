@@ -5,17 +5,28 @@
 
 import admin from 'firebase-admin';
 import { calculateUnitProfit, getUnitSize } from '../src/utils/staggeredUnits.js';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-// Initialize Firebase Admin
-const serviceAccount = {
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// Initialize Firebase Admin - OPTION 1: Use JSON file
+try {
+  const serviceAccountPath = join(__dirname, '..', 'serviceAccountKey.json');
+  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  
+  console.log('✅ Firebase Admin initialized');
+} catch (error) {
+  console.error('❌ Error loading service account key:', error.message);
+  console.error('📋 Place your serviceAccountKey.json in the project root directory');
+  process.exit(1);
+}
 
 const db = admin.firestore();
 
