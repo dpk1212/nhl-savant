@@ -1,8 +1,6 @@
 /**
  * Basketball Bet Grader - Real-time client-side grading
- * 
  * Grades bets instantly when NCAA API shows game as FINAL
- * No need to wait for scheduled GitHub Action!
  */
 
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -11,16 +9,10 @@ import { getUnitSize, calculateUnitProfit } from './staggeredUnits';
 
 /**
  * Grade a basketball bet instantly when game goes final
- * 
- * @param {string} awayTeam - Away team name from our prediction
- * @param {string} homeTeam - Home team name from our prediction
- * @param {object} liveScore - NCAA API live score object
- * @param {object} currentPrediction - CURRENT prediction with updated grade
- * @returns {Promise<boolean>} - True if bet was graded, false if not found/already graded
  */
 export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentPrediction) {
-  // Only grade if game is final
-  if (liveScore?.status !== 'final') {
+  // Only grade if game is final and has valid scores
+  if (liveScore?.status !== 'final' || liveScore.awayScore === null || liveScore.homeScore === null) {
     return false;
   }
   
@@ -29,11 +21,10 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     const date = new Date().toISOString().split('T')[0];
     const normalizeForId = (name) => name.replace(/\s+/g, '_').toUpperCase();
     
-    // We need to check both possible bet IDs (away pick or home pick)
     const awayNorm = normalizeForId(awayTeam);
     const homeNorm = normalizeForId(homeTeam);
     
-    // Try both possible bet IDs (we bet on either away or home)
+    // Try both possible bet IDs
     const possibleBetIds = [
       `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${awayNorm}_(AWAY)`,
       `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${homeNorm}_(HOME)`
@@ -42,7 +33,7 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     let gradedBet = null;
     let betId = null;
     
-    // Find which bet exists (if any)
+    // Find which bet exists
     for (const id of possibleBetIds) {
       const betRef = doc(db, 'basketball_bets', id);
       const betDoc = await getDoc(betRef);
@@ -61,40 +52,30 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       }
     }
     
+    // No bet found - we didn't bet on this game
     if (!gradedBet) {
-      // No bet found for this game (we didn't bet on it)
       return false;
     }
     
-    // Determine winner from NCAA API scores
-    const awayScore = liveScore.awayScore;
-    const homeScore = liveScore.homeScore;
+    // Determine winner
+    const winnerTeam = liveScore.awayScore > liveScore.homeScore ? awayTeam : homeTeam;
     
-    // Validate scores exist
-    if (awayScore === null || awayScore === undefined || homeScore === null || homeScore === undefined) {
-      return false;
-    }
-    
-    const winnerTeam = awayScore > homeScore ? awayTeam : homeTeam;
-    
-    // Determine outcome (did our bet win?)
+    // Determine outcome
     const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
     const betTeamNorm = normalizeTeam(gradedBet.bet.team);
     const winnerNorm = normalizeTeam(winnerTeam);
     const outcome = betTeamNorm === winnerNorm ? 'WIN' : 'LOSS';
     
-    // ✅ USE CURRENT GRADE (not old saved grade)
+    // Calculate profit using CURRENT grade
     const currentGrade = currentPrediction?.grade || gradedBet.prediction?.grade || 'B';
-    const odds = gradedBet.bet.odds;
-    const profit = calculateUnitProfit(currentGrade, odds, outcome === 'WIN');
+    const profit = calculateUnitProfit(currentGrade, gradedBet.bet.odds, outcome === 'WIN');
     
-    // Update bet in Firebase with CURRENT grade and calculated profit
+    // Update bet in Firebase
     const betRef = doc(db, 'basketball_bets', betId);
-    
     await updateDoc(betRef, {
-      'result.awayScore': awayScore,
-      'result.homeScore': homeScore,
-      'result.winner': awayScore > homeScore ? 'AWAY' : 'HOME',
+      'result.awayScore': liveScore.awayScore,
+      'result.homeScore': liveScore.homeScore,
+      'result.winner': liveScore.awayScore > liveScore.homeScore ? 'AWAY' : 'HOME',
       'result.winnerTeam': winnerTeam,
       'result.outcome': outcome,
       'result.profit': profit,
@@ -112,4 +93,3 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     return false;
   }
 }
-
