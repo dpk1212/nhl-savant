@@ -31,6 +31,7 @@ const BasketballProfitChart = ({ bets }) => {
     let cumulativeBPlus = 0;
     let cumulativeB = 0;
     let cumulativeBMinus = 0;
+    let cumulativeCToF = 0; // C+ to F combined
     
     return sortedBets.map((bet, index) => {
       const profit = bet.result?.profit || 0;
@@ -44,6 +45,8 @@ const BasketballProfitChart = ({ bets }) => {
       if (grade === 'B+') cumulativeBPlus += profit;
       if (grade === 'B') cumulativeB += profit;
       if (grade === 'B-') cumulativeBMinus += profit;
+      // Track C-F grades together (C+, C, C-, D, F)
+      if (['C+', 'C', 'C-', 'D', 'F'].includes(grade)) cumulativeCToF += profit;
       
       const date = bet.timestamp?.toDate?.() || new Date(bet.timestamp);
       
@@ -58,6 +61,7 @@ const BasketballProfitChart = ({ bets }) => {
         bPlus: parseFloat(cumulativeBPlus.toFixed(2)),
         b: parseFloat(cumulativeB.toFixed(2)),
         bMinus: parseFloat(cumulativeBMinus.toFixed(2)),
+        cToF: parseFloat(cumulativeCToF.toFixed(2)), // C+ to F combined
         betDetails: {
           grade,
           profit,
@@ -75,7 +79,8 @@ const BasketballProfitChart = ({ bets }) => {
                   selectedGrade === 'A-' ? 'aMinus' :
                   selectedGrade === 'B+' ? 'bPlus' :
                   selectedGrade === 'B' ? 'b' :
-                  selectedGrade === 'B-' ? 'bMinus' : 'all';
+                  selectedGrade === 'B-' ? 'bMinus' :
+                  selectedGrade === 'C-F' ? 'cToF' : 'all';
   
   // Get final profit for selected filter
   const finalProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1][lineKey] : 0;
@@ -88,7 +93,8 @@ const BasketballProfitChart = ({ bets }) => {
     { value: 'A-', label: 'A-', color: '#3B82F6' },
     { value: 'B+', label: 'B+', color: '#8B5CF6' },
     { value: 'B', label: 'B', color: '#F59E0B' },
-    { value: 'B-', label: 'B-', color: '#FB923C' }
+    { value: 'B-', label: 'B-', color: '#FB923C' },
+    { value: 'C-F', label: 'C-F', color: '#94A3B8' }
   ];
   
   // Custom tooltip
