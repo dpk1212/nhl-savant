@@ -1,6 +1,6 @@
 /**
  * Basketball Bet Grader - Real-time client-side grading
- * Grades bets instantly when NCAA API shows game as FINAL
+ * Grades bets instantly when ESPN API shows game as FINAL
  */
 
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -81,7 +81,7 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       'result.profit': profit,
       'result.fetched': true,
       'result.fetchedAt': Date.now(),
-      'result.source': 'NCAA_API_LIVE',
+      'result.source': 'ESPN_API_LIVE',
       'prediction.grade': currentGrade,
       'status': 'COMPLETED',
       'gradedAt': Date.now()

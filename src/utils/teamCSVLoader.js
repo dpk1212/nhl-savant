@@ -27,14 +27,15 @@ export function loadTeamMappings(csvContent) {
       haslametrics: values[2],
       dratings: values[3],
       conference: values[4] || '',
-      ncaa_name: values[5] || '', // FIXED: Column 5 is NCAA name, not notes
-      notes: values[6] || '' // FIXED: Column 6 is notes
+      ncaa_name: values[5] || '',
+      notes: values[6] || '',
+      espn_name: values[7] || '' // NEW: ESPN API team name (Nov 28, 2025)
     };
     
     mappings.set(mapping.normalized, mapping);
   }
   
-  console.log(`✅ Loaded ${mappings.size} team mappings with NCAA names`);
+  console.log(`✅ Loaded ${mappings.size} team mappings with ESPN/NCAA names`);
   return mappings;
 }
 
