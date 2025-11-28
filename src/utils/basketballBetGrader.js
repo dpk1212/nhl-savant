@@ -87,6 +87,8 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       'gradedAt': Date.now()
     });
     
+    console.log(`✅ BET GRADED: ${outcome} ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u`);
+    
     return true;
     
   } catch (error) {
