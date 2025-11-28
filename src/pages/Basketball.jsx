@@ -10,6 +10,7 @@ import { loadTeamMappings } from '../utils/teamCSVLoader';
 import { startScorePolling } from '../utils/ncaaAPI';
 import { gradePrediction, calculateGradingStats } from '../utils/basketballGrading';
 import { gradeBasketballBet } from '../utils/basketballBetGrader';
+import { diagnoseBetGrading, getAllPendingBets } from '../utils/basketballBetDiagnostic';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { GradeStats } from '../components/GradeBadge';
 import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
@@ -101,8 +102,11 @@ const Basketball = () => {
             
             // 🎯 INSTANT BET GRADING: Grade bet in Firebase using CURRENT prediction
             gradeBasketballBet(game.awayTeam, game.homeTeam, game.liveScore, game.prediction)
-              .catch(() => {
-                // Silent error handling
+              .then(wasGraded => {
+                if (!wasGraded) {
+                  // Run diagnostic if grading failed or bet not found
+                  diagnoseBetGrading(game.awayTeam, game.homeTeam);
+                }
               });
           }
           

@@ -20,7 +20,7 @@ import { getUnitSize, calculateUnitProfit } from './staggeredUnits';
  */
 export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentPrediction) {
   // Only grade if game is final
-  if (liveScore.status !== 'final') {
+  if (liveScore?.status !== 'final') {
     return false;
   }
   
@@ -69,6 +69,12 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     // Determine winner from NCAA API scores
     const awayScore = liveScore.awayScore;
     const homeScore = liveScore.homeScore;
+    
+    // Validate scores exist
+    if (awayScore === null || awayScore === undefined || homeScore === null || homeScore === undefined) {
+      return false;
+    }
+    
     const winnerTeam = awayScore > homeScore ? awayTeam : homeTeam;
     
     // Determine outcome (did our bet win?)
@@ -84,6 +90,7 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     
     // Update bet in Firebase with CURRENT grade and calculated profit
     const betRef = doc(db, 'basketball_bets', betId);
+    
     await updateDoc(betRef, {
       'result.awayScore': awayScore,
       'result.homeScore': homeScore,
@@ -94,14 +101,14 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       'result.fetched': true,
       'result.fetchedAt': Date.now(),
       'result.source': 'NCAA_API_LIVE',
-      'prediction.grade': currentGrade, // ✅ Update grade to current
-      'status': 'COMPLETED'
+      'prediction.grade': currentGrade,
+      'status': 'COMPLETED',
+      'gradedAt': Date.now()
     });
     
     return true;
     
   } catch (error) {
-    // Silent error handling for security
     return false;
   }
 }
