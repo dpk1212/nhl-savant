@@ -20,8 +20,6 @@ export async function fetchTodaysGames(date = null) {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     date = `${year}${month}${day}`;
-    
-    console.log(`📅 Fetching NCAA games for LOCAL date: ${year}-${month}-${day}`);
   }
   
   try {
@@ -350,43 +348,7 @@ export async function getLiveScores(ourGames, teamMappings) {
   // Detailed NCAA API matching report
   const notMatched = ourGames.length - matchedCount - preservedCount;
   
-  console.log('\n🔗 NCAA API MATCHING REPORT');
-  console.log('====================================');
-  console.log(`Total Games: ${ourGames.length}`);
-  console.log(`✅ Matched: ${matchedCount} (live scores)`);
-  console.log(`💾 Preserved: ${preservedCount} (final scores)`);
-  console.log(`❌ Not Matched: ${notMatched}`);
-  
-  // Show unmapped games with CSV mapping status
-  if (unmatchedGames.length > 0) {
-    console.log('\n❌ GAMES NOT FOUND IN NCAA API:');
-    console.log('====================================');
-    unmatchedGames.forEach((game, i) => {
-      console.log(`${i + 1}. ${game.away} @ ${game.home}`);
-      
-      // Check CSV mapping status
-      const awayNcaaName = game.awayMapping?.ncaa_name;
-      const homeNcaaName = game.homeMapping?.ncaa_name;
-      
-      if (!awayNcaaName) {
-        console.log(`   ⚠️  ${game.away}: NO NCAA_NAME in CSV`);
-      } else {
-        console.log(`   ✅ ${game.away} → NCAA: "${awayNcaaName}"`);
-      }
-      
-      if (!homeNcaaName) {
-        console.log(`   ⚠️  ${game.home}: NO NCAA_NAME in CSV`);
-      } else {
-        console.log(`   ✅ ${game.home} → NCAA: "${homeNcaaName}"`);
-      }
-      
-      // If both have mappings but still not found, it's not in NCAA API today
-      if (awayNcaaName && homeNcaaName) {
-        console.log(`   💡 Both teams mapped - game not in NCAA API today`);
-      }
-    });
-    console.log('====================================\n');
-  }
+  // Logging removed for security - prevents users from discovering API sources
   
   return enrichedGames;
 }

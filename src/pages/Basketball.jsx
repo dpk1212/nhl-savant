@@ -68,7 +68,6 @@ const Basketball = () => {
           betsData.set(key, bet);
         });
         
-        console.log(`📊 Loaded ${betsData.size} bets from Firebase`);
         setBetsMap(betsData);
       } catch (err) {
         console.error('Error fetching bets:', err);
@@ -102,12 +101,9 @@ const Basketball = () => {
             
             // 🎯 INSTANT BET GRADING: Grade bet in Firebase using CURRENT prediction
             gradeBasketballBet(game.awayTeam, game.homeTeam, game.liveScore, game.prediction)
-              .then(wasGraded => {
-                if (wasGraded) {
-                  console.log(`🏀 Auto-graded bet: ${game.awayTeam} @ ${game.homeTeam}`);
-                }
-              })
-              .catch(err => console.error('Error auto-grading bet:', err));
+              .catch(() => {
+                // Silent error handling
+              });
           }
           
           // Match and attach bet outcome from Firebase
@@ -154,7 +150,6 @@ const Basketball = () => {
       
       // Parse data (odds parser filters for TODAY only)
       const oddsGames = parseBasketballOdds(oddsMarkdown);
-      console.log(`🏀 Found ${oddsGames.length} games TODAY`);
       
       const haslaData = parseHaslametrics(haslaMarkdown);
       const dratePreds = parseDRatings(drateMarkdown);
@@ -633,7 +628,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
       )}
       
       {/* HEADER - Ultra Compact */}
-      <div style={{
+      <div style={{ 
         padding: isMobile ? '0.875rem' : '1rem',
         borderBottom: ELEVATION.flat.border,
         background: 'rgba(0,0,0,0.2)',
@@ -689,15 +684,15 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         </div>
         
         {/* Premium Result Bar - FINAL GAMES */}
-        {game.betOutcome && (
-          <div style={{
+          {game.betOutcome && (
+            <div style={{
             marginTop: '0.75rem',
-            background: game.betOutcome.outcome === 'WIN'
+              background: game.betOutcome.outcome === 'WIN' 
               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)'
               : 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.06) 100%)',
             backdropFilter: 'blur(10px)',
             border: `1.5px solid ${game.betOutcome.outcome === 'WIN' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
-            borderRadius: '10px',
+              borderRadius: '10px',
             padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 0.875rem',
             display: 'flex',
             alignItems: 'center',
@@ -716,7 +711,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 color: gradeColors.color,
                 padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
                 borderRadius: '7px',
-                fontWeight: '900',
+              fontWeight: '900',
                 fontSize: isMobile ? '0.813rem' : '0.875rem',
                 letterSpacing: '-0.01em',
                 boxShadow: `0 2px 8px ${gradeColors.borderColor}20`
@@ -743,8 +738,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             
             {/* Right: Profit (hero element) */}
             <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+              display: 'flex',
+              alignItems: 'center',
               gap: '0.5rem',
               padding: isMobile ? '0.25rem 0.5rem' : '0.313rem 0.625rem',
               background: game.betOutcome.outcome === 'WIN'
@@ -775,12 +770,12 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 {game.betOutcome.profit > 0 ? '+' : ''}{game.betOutcome.profit.toFixed(2)}u
               </div>
             </div>
-          </div>
-        )}
-        
+            </div>
+          )}
+          
         {/* Grade + Units for PENDING games */}
         {!game.betOutcome && (
-          <div style={{ 
+          <div style={{
             marginTop: '0.75rem',
             display: 'flex', 
             gap: '0.5rem', 
@@ -790,16 +785,16 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             <div style={{
               background: `linear-gradient(135deg, ${gradeColors.borderColor}20 0%, ${gradeColors.borderColor}10 100%)`,
               border: `1.5px solid ${gradeColors.borderColor}`,
-              color: gradeColors.color,
+            color: gradeColors.color,
               padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
               borderRadius: '7px',
-              fontWeight: '900',
+            fontWeight: '900',
               fontSize: isMobile ? '0.813rem' : '0.875rem',
               letterSpacing: '-0.01em',
               boxShadow: `0 2px 8px ${gradeColors.borderColor}20`
-            }}>
-              {pred.grade}
-            </div>
+          }}>
+            {pred.grade}
+          </div>
             
             {/* Units */}
             <div style={{
@@ -815,7 +810,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}20`
             }}>
               {getUnitDisplay(pred.grade)}
-            </div>
+        </div>
           </div>
         )}
       </div>
@@ -862,15 +857,15 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 {isUpsetTerritory ? '🎯' : isPositiveEV ? '💡' : '⚠️'}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ 
-                  fontSize: isMobile ? '0.875rem' : '1rem',
+        <div style={{ 
+          fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '800',
                   color: isPositiveEV ? '#10B981' : '#EF4444',
                   marginBottom: '0.25rem',
-                  letterSpacing: '-0.01em'
-                }}>
+          letterSpacing: '-0.01em'
+        }}>
                   {pred.bestTeam} Moneyline {isUpsetTerritory && '• Upset Alert'}
-                </div>
+        </div>
                 <div style={{ 
                   fontSize: isMobile ? '0.688rem' : '0.75rem',
                   color: 'rgba(255,255,255,0.7)',
@@ -920,7 +915,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             <div style={{ 
               fontSize: isMobile ? '1.25rem' : '1.375rem',
               fontWeight: '900',
-              color: '#10B981',
+              color: '#10B981', 
               lineHeight: 1.1,
               letterSpacing: '-0.02em',
               marginBottom: '0.25rem'
@@ -939,42 +934,42 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           {/* MARKET ODDS */}
           <div style={{
             background: 'rgba(255,255,255,0.03)',
-            borderRadius: '8px',
+                borderRadius: '8px',
             padding: isMobile ? '0.5rem' : '0.625rem',
             border: '1px solid rgba(255,255,255,0.08)'
           }}>
-            <div style={{ 
+                <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: 'rgba(255,255,255,0.5)',
+                  color: 'rgba(255,255,255,0.5)',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-              fontWeight: '700',
+                  fontWeight: '700',
               marginBottom: '0.375rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.25rem'
-            }}>
+                }}>
               <span>💵</span> MARKET
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? '1.125rem' : '1.25rem',
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
               fontWeight: '900',
               color: 'rgba(255,255,255,0.9)',
-              lineHeight: 1.1,
+                  lineHeight: 1.1,
               letterSpacing: '-0.01em',
               marginBottom: '0.25rem'
-            }}>
+                }}>
               {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
-            </div>
-            <div style={{ 
+                </div>
+                  <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: 'rgba(255,255,255,0.5)',
+                    color: 'rgba(255,255,255,0.5)',
               lineHeight: 1.2
-            }}>
+                  }}>
               {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
-            </div>
-          </div>
-
+                  </div>
+        </div>
+        
           {/* CONFIDENCE & UNIT SIZING */}
           <div style={{
             background: `linear-gradient(135deg, ${gradeColors.borderColor}15 0%, ${gradeColors.borderColor}08 100%)`,
@@ -982,11 +977,11 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             padding: isMobile ? '0.5rem' : '0.625rem',
             border: `1px solid ${gradeColors.borderColor}30`
           }}>
-            <div style={{ 
+              <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               color: `${gradeColors.color}cc`,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
               fontWeight: '700',
               marginBottom: '0.375rem',
               display: 'flex',
@@ -994,8 +989,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               gap: '0.25rem'
             }}>
               <span>⭐</span> GRADE / BET SIZE
-            </div>
-            <div style={{ 
+              </div>
+              <div style={{ 
               display: 'flex',
               alignItems: 'baseline',
               gap: '0.5rem',
@@ -1028,12 +1023,12 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 ? `Risk ${getUnitSize(pred.grade)} unit${getUnitSize(pred.grade) !== 1 ? 's' : ''}`
                 : 'Below betting threshold'}
             </div>
-          </div>
-        </div>
-        
+              </div>
+            </div>
+            
         {/* Predicted Score - Compact Mobile */}
         {pred.ensembleTotal && (
-          <div style={{
+            <div style={{ 
             background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
             borderRadius: '8px',
             padding: isMobile ? '0.5rem 0.625rem' : '0.75rem',
@@ -1067,30 +1062,30 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               alignItems: 'center'
             }}>
               {/* Away Team */}
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ 
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
                   color: 'rgba(255,255,255,0.4)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
+                fontWeight: '700',
+                textTransform: 'uppercase',
                   letterSpacing: '0.03em',
                   marginBottom: isMobile ? '0.125rem' : '0.25rem'
-                }}>
+              }}>
                   {isMobile && game.awayTeam.length > 8 ? game.awayTeam.substring(0, 7) + '...' : game.awayTeam.substring(0, 12)}
-                </div>
-                <div style={{ 
-                  fontSize: isMobile ? '1.125rem' : '1.5rem',
-                  fontWeight: '900',
-                  color: 'white',
-                  lineHeight: 1,
-                  letterSpacing: '-0.02em'
-                }}>
-                  {pred.ensembleAwayScore}
-                </div>
               </div>
-              
-              {/* Separator */}
               <div style={{ 
+                  fontSize: isMobile ? '1.125rem' : '1.5rem',
+                fontWeight: '900',
+                color: 'white',
+                lineHeight: 1,
+                  letterSpacing: '-0.02em'
+              }}>
+                  {pred.ensembleAwayScore}
+              </div>
+            </div>
+            
+              {/* Separator */}
+                <div style={{ 
                 color: 'rgba(255,255,255,0.25)', 
                 fontSize: isMobile ? '0.75rem' : '1rem',
                 fontWeight: '700'
@@ -1099,27 +1094,27 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               </div>
               
               {/* Home Team */}
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ 
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
                   color: 'rgba(255,255,255,0.4)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
                   letterSpacing: '0.03em',
                   marginBottom: isMobile ? '0.125rem' : '0.25rem'
-                }}>
+                  }}>
                   {isMobile && game.homeTeam.length > 8 ? game.homeTeam.substring(0, 7) + '...' : game.homeTeam.substring(0, 12)}
-                </div>
-                <div style={{ 
+                  </div>
+                  <div style={{ 
                   fontSize: isMobile ? '1.125rem' : '1.5rem',
-                  fontWeight: '900',
+                    fontWeight: '900',
                   color: 'white',
-                  lineHeight: 1,
+                    lineHeight: 1,
                   letterSpacing: '-0.02em'
-                }}>
+                  }}>
                   {pred.ensembleHomeScore}
+                  </div>
                 </div>
-              </div>
             </div>
           </div>
         )}
