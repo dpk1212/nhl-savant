@@ -12,7 +12,7 @@ import { gradePrediction, calculateGradingStats } from '../utils/basketballGradi
 import { gradeBasketballBet } from '../utils/basketballBetGrader';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { GradeStats } from '../components/GradeBadge';
-import { BasketballBetStats } from '../components/BasketballBetStats';
+import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -379,9 +379,9 @@ const Basketball = () => {
         </p>
       </div>
 
-      {/* Clean Stats Section - NHL Style */}
+      {/* Premium Performance Dashboard - NHL Style */}
       <div style={{ maxWidth: '1200px', margin: '0 auto 2rem auto', padding: isMobile ? '0 1rem' : '0' }}>
-        <BasketballBetStats />
+        <BasketballPerformanceDashboard allBets={Array.from(betsMap.values())} />
         
         {stats && (
           <div style={{

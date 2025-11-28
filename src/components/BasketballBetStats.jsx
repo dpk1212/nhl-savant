@@ -1,11 +1,12 @@
 /**
  * Basketball Bet Performance Stats Component
- * Premium collapsible section with calendar view
+ * Premium section matching NHL brand standards
  */
 
 import React, { useState } from 'react';
 import { useBasketballBetStats } from '../hooks/useBasketballBetStats';
-import { ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar, TrendingUp, Target, DollarSign, Award, BarChart3 } from 'lucide-react';
+import BasketballProfitChart from './BasketballProfitChart';
 
 // Premium Stat Box Component
 function PremiumStatBox({ value, label, icon, color, isMobile, highlight = false }) {
