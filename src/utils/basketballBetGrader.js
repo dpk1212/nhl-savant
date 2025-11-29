@@ -17,8 +17,15 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
   }
   
   try {
-    // Generate bet ID using same format as writeBasketballBets.js
-    const date = new Date().toISOString().split('T')[0];
+    // 🔧 FIX: Use ET date instead of UTC to match bet creation date
+    const now = new Date();
+    const etString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    const etDate = new Date(etString);
+    const year = etDate.getFullYear();
+    const month = String(etDate.getMonth() + 1).padStart(2, '0');
+    const day = String(etDate.getDate()).padStart(2, '0');
+    const date = `${year}-${month}-${day}`;
+    
     const normalizeForId = (name) => name.replace(/\s+/g, '_').toUpperCase();
     
     const awayNorm = normalizeForId(awayTeam);
@@ -43,6 +50,7 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
         
         // Skip if already graded
         if (betData.status === 'COMPLETED') {
+          console.log(`⏭️  Already graded: ${awayTeam} @ ${homeTeam}`);
           return false;
         }
         
@@ -52,10 +60,12 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       }
     }
     
-    // No bet found - we didn't bet on this game
+    // No bet found - we didn't bet on this game (this is normal)
     if (!gradedBet) {
       return false;
     }
+    
+    console.log(`🎯 Grading bet for: ${awayTeam} @ ${homeTeam}`);
     
     // Determine winner
     const winnerTeam = liveScore.awayScore > liveScore.homeScore ? awayTeam : homeTeam;
@@ -81,24 +91,30 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       'result.profit': profit,
       'result.fetched': true,
       'result.fetchedAt': Date.now(),
-      'result.source': `${liveScore.source || 'NCAA'}_API_LIVE`, // ESPN or NCAA
+      'result.source': `${liveScore.source || 'NCAA'}_API_LIVE`,
       'prediction.grade': currentGrade,
       'status': 'COMPLETED',
       'gradedAt': Date.now()
     });
     
-    console.log(`✅ BET GRADED: ${outcome} ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u (${awayTeam} @ ${homeTeam})`);
-    
+    console.log(`✅ BET GRADED: ${awayTeam} @ ${homeTeam} → ${outcome} ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u`);
     return true;
     
   } catch (error) {
-    // 🚨 LOG ERRORS - don't fail silently!
-    console.error(`❌ BET GRADING FAILED: ${awayTeam} @ ${homeTeam}`, error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack?.split('\n')[0]
-    });
+    // 🚨 DETAILED ERROR LOGGING
+    console.error(`❌ BET GRADING FAILED: ${awayTeam} @ ${homeTeam}`);
+    console.error('   Error:', error.message);
+    console.error('   Code:', error.code);
+    console.error('   Firebase Auth:', error.code === 'permission-denied' ? 'DENIED' : 'OK');
+    
+    if (error.code === 'permission-denied') {
+      console.error('   🔒 Check Firebase rules for basketball_bets collection');
+    } else if (error.code === 'unavailable') {
+      console.error('   🌐 Firebase temporarily unavailable - will retry');
+    } else if (error.code === 'not-found') {
+      console.error('   📝 Bet document not found (likely no bet placed)');
+    }
+    
     return false;
   }
 }
