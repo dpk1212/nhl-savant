@@ -67,13 +67,13 @@ export function parseDRatings(markdown) {
           continue;
         }
         
-        // Extract predicted scores from "Points" column (index 5)
-        // Format: 72.9<br>70.9
+        // Extract predicted scores from "Points" column (index 4)
+        // Format: 75.3<br>69.6
         let awayScore = null;
         let homeScore = null;
         
-        if (cells[5]) {
-          const scoreMatches = cells[5].match(/([\d.]+)/g);
+        if (cells[4]) {
+          const scoreMatches = cells[4].match(/([\d.]+)/g);
           if (scoreMatches && scoreMatches.length >= 2) {
             awayScore = parseFloat(scoreMatches[0]);
             homeScore = parseFloat(scoreMatches[1]);
