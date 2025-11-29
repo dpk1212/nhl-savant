@@ -42,12 +42,12 @@ export function getBasketballContext(game, prediction, odds) {
     };
   }
   
-  // 2. TOSS-UP / UPSET ALERT (45-65% win prob + edge >= 2%)
+  // 2. TOSS-UP / UPSET OPPORTUNITY (45-65% win prob + edge >= 2%)
   if (modelProb >= 45 && modelProb <= 65 && Math.abs(bestEV) >= 2) {
     return {
       icon: '🎯',
-      title: `${bestTeam} Upset Alert`,
-      subtitle: `${modelProb.toFixed(0)}% in close game • Market undervalues ${bestTeam}`
+      title: `${bestTeam} Underdog Value`,
+      subtitle: `${modelProb.toFixed(0)}% to win • Market undervalues ${bestTeam} in close game`
     };
   }
   
@@ -55,8 +55,8 @@ export function getBasketballContext(game, prediction, odds) {
   if (marketDiff >= 10) {
     return {
       icon: '💎',
-      title: `${bestTeam} Market Miss`,
-      subtitle: `Sharp model finds ${marketDiff.toFixed(0)}% more value than public odds`
+      title: `${bestTeam} Market Value`,
+      subtitle: `Our model finds ${marketDiff.toFixed(0)}% more value than public odds`
     };
   }
   
@@ -65,7 +65,7 @@ export function getBasketballContext(game, prediction, odds) {
     return {
       icon: '⚡',
       title: `${bestTeam} High Conviction`,
-      subtitle: `${bestEV.toFixed(1)}% edge • Both D-Ratings and Haslametrics agree`
+      subtitle: `${bestEV.toFixed(1)}% edge • Both systems strongly agree`
     };
   }
   
