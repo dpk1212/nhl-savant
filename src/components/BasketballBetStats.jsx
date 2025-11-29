@@ -100,7 +100,7 @@ export function BasketballBetStats() {
     return null;
   }
 
-  const { wins, losses, pending, winRate, unitsWon, totalRisked, roi, gradedBets } = stats;
+  const { wins, losses, pending, winRate, unitsWon, totalRisked, roi, gradedBets, currentStreak, streakType } = stats;
   const isMobile = window.innerWidth < 768;
 
   return (
@@ -235,13 +235,14 @@ export function BasketballBetStats() {
           isMobile={isMobile}
         />
 
-        {/* Units Risked */}
+        {/* Current Streak */}
         <PremiumStatBox
-          value={`${totalRisked ? totalRisked.toFixed(2) : '0.00'}u`}
-          label="Units Risked"
-          icon="🎲"
-          color="#3B82F6"
+          value={currentStreak || '-'}
+          label="Current Streak"
+          icon={streakType === 'WIN' ? '🔥' : streakType === 'LOSS' ? '❄️' : '🎯'}
+          color={streakType === 'WIN' ? '#10B981' : streakType === 'LOSS' ? '#EF4444' : '#94a3b8'}
           isMobile={isMobile}
+          highlight={currentStreak && parseInt(currentStreak.substring(1)) >= 4}
         />
 
         {/* Units Won */}

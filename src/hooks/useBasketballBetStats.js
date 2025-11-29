@@ -61,6 +61,34 @@ export function useBasketballBetStats() {
         }, 0);
         const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
 
+        // Calculate current streak (W5, L2, etc.)
+        const sortedBets = [...gradedBets].sort((a, b) => {
+          const dateA = new Date(a.date || a.id.split('_')[0]);
+          const dateB = new Date(b.date || b.id.split('_')[0]);
+          return dateB - dateA; // Most recent first
+        });
+        
+        let currentStreak = 0;
+        let streakType = null;
+        
+        for (const bet of sortedBets) {
+          const outcome = bet.result?.outcome;
+          if (!outcome) continue;
+          
+          if (streakType === null) {
+            streakType = outcome; // First graded bet sets the streak type
+            currentStreak = 1;
+          } else if (outcome === streakType) {
+            currentStreak++;
+          } else {
+            break; // Streak broken
+          }
+        }
+        
+        const streakDisplay = currentStreak > 0 
+          ? `${streakType === 'WIN' ? 'W' : 'L'}${currentStreak}`
+          : '-';
+
         // Calculate daily stats for calendar
         const dailyStatsMap = {};
         gradedBets.forEach(bet => {
@@ -94,6 +122,8 @@ export function useBasketballBetStats() {
           unitsWon,
           totalRisked,
           roi,
+          currentStreak: streakDisplay,
+          streakType: streakType,
           loading: false,
         });
         

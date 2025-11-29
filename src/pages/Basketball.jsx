@@ -23,6 +23,7 @@ import {
   GRADIENTS, 
   getGradeColorScale
 } from '../utils/designSystem';
+import { getBasketballContext } from '../utils/basketballContextGenerator';
 
 const Basketball = () => {
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,9 @@ const Basketball = () => {
   
   // Bet outcomes state
   const [betsMap, setBetsMap] = useState(new Map());
+  
+  // Track which bets we've already attempted to grade (prevent duplicates)
+  const [gradedGameIds, setGradedGameIds] = useState(new Set());
   
   // Auto-grade bets when results are available (CLIENT-SIDE!)
   const { grading, gradedCount } = useBasketballResultsGrader();
@@ -90,17 +94,47 @@ const Basketball = () => {
     const stopPolling = startScorePolling(
       recommendations,
       teamMappings,
-      (updatedGames) => {
-        // Add grades and bet outcomes for completed games
+      async (updatedGames) => {
+        // 🎯 GRADE ALL FINAL GAMES FIRST (batch processing with error isolation)
+        const finalGames = updatedGames.filter(g => g.liveScore?.status === 'final');
+        
+        for (const game of finalGames) {
+          const gameId = `${game.awayTeam}_${game.homeTeam}`;
+          
+          // Only attempt to grade each game once
+          if (!gradedGameIds.has(gameId)) {
+            setGradedGameIds(prev => new Set(prev).add(gameId));
+            
+            try {
+              const graded = await gradeBasketballBet(
+                game.awayTeam, 
+                game.homeTeam, 
+                game.liveScore, 
+                game.prediction
+              );
+              
+              if (graded) {
+                console.log(`✅ Successfully graded bet for ${gameId}`);
+              }
+            } catch (error) {
+              console.error(`❌ Failed to grade ${gameId}:`, error);
+              // Remove from set so we can retry on next poll
+              setGradedGameIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(gameId);
+                return newSet;
+              });
+            }
+          }
+        }
+        
+        // Add grades and bet outcomes for display
         const gamesWithGradesAndBets = updatedGames.map(game => {
           const gameData = { ...game };
           
           // Add prediction grade if game is final
           if (game.liveScore && game.liveScore.status === 'final') {
             gameData.grade = gradePrediction(game, game.liveScore);
-            
-            // 🎯 INSTANT BET GRADING: Grade bet in Firebase
-            gradeBasketballBet(game.awayTeam, game.homeTeam, game.liveScore, game.prediction);
           }
           
           // Match and attach bet outcome from Firebase
@@ -128,7 +162,7 @@ const Basketball = () => {
     );
     
     return stopPolling;
-  }, [recommendations, teamMappings, betsMap]);
+  }, [recommendations, teamMappings, betsMap, gradedGameIds]);
 
   async function loadBasketballData() {
     try {
@@ -831,49 +865,53 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Value Proposition Banner */}
+        {/* Dynamic Pick Context */}
         {(() => {
           const isPositiveEV = pred.bestEV > 0;
-          const modelProb = (pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100;
-          const isUpsetTerritory = modelProb >= 45 && modelProb <= 65 && Math.abs(pred.bestEV) >= 2;
+          const context = getBasketballContext(game, pred, odds);
           
           return (
             <div style={{ 
-              background: isPositiveEV 
+              background: isPositiveEV
                 ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
                 : 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
               border: `1px solid ${isPositiveEV ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
               borderRadius: '8px',
-              padding: isMobile ? '0.5rem 0.625rem' : '0.625rem',
+              padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
               marginBottom: isMobile ? '0.5rem' : '0.75rem',
               display: 'flex',
               alignItems: 'center',
               gap: isMobile ? '0.5rem' : '0.625rem'
             }}>
-              <div style={{ fontSize: '1.5rem', lineHeight: 1, flexShrink: 0 }}>
-                {isUpsetTerritory ? '🎯' : isPositiveEV ? '💡' : '⚠️'}
+              {/* Icon */}
+              <div style={{ 
+                fontSize: isMobile ? '1.375rem' : '1.5rem', 
+                lineHeight: 1, 
+                flexShrink: 0 
+              }}>
+                {context.icon}
               </div>
-              <div style={{ flex: 1 }}>
-        <div style={{ 
-          fontSize: isMobile ? '0.875rem' : '1rem',
+              
+              {/* Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Title */}
+                <div style={{ 
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '800',
                   color: isPositiveEV ? '#10B981' : '#EF4444',
                   marginBottom: '0.25rem',
-          letterSpacing: '-0.01em'
-        }}>
-                  {pred.bestTeam} Moneyline {isUpsetTerritory && '• Upset Alert'}
-        </div>
+                  letterSpacing: '-0.01em'
+                }}>
+                  {context.title}
+                </div>
+                
+                {/* Subtitle */}
                 <div style={{ 
                   fontSize: isMobile ? '0.688rem' : '0.75rem',
                   color: 'rgba(255,255,255,0.7)',
                   lineHeight: 1.4
                 }}>
-                  {isUpsetTerritory 
-                    ? `${Math.abs(pred.bestEV).toFixed(1)}% edge • Close game (45-65% probability)`
-                    : isPositiveEV
-                      ? `${pred.bestEV.toFixed(1)}% more value than market • ${((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}% win probability`
-                      : `${Math.abs(pred.bestEV).toFixed(1)}% disadvantage vs market`
-                  }
+                  {context.subtitle}
                 </div>
               </div>
             </div>
