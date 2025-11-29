@@ -32,7 +32,33 @@ grep -i "TEAM_NAME" public/dratings.md | head -5
 # Check the NCAA API or use existing mappings as reference
 ```
 
-### **Step 3: Add/Fix Rows in basketball_teams.csv**
+### **Step 3: Check for Existing Mappings FIRST (CRITICAL!)**
+
+**BEFORE adding any team, check if it already exists:**
+```bash
+# Search for the OddsTrader name in CSV
+grep -i "TEAM_NAME" public/basketball_teams.csv
+
+# Example: Check if "Georgia State" exists
+grep -i "georgia state" public/basketball_teams.csv
+```
+
+**⚠️ PREVENT DUPLICATES:**
+- If team EXISTS → DO NOT add a new row
+- If team is WRONG (maps to wrong school) → FIX the existing row, don't add new
+- If team is MISSING → Add new row at END of file
+
+**Example - Georgia vs Georgia State:**
+```csv
+# ✅ CORRECT - Two separate schools, both exist:
+Georgia,Georgia,Georgia,Georgia Bulldogs,TBD,Georgia,NEW,Georgia
+Georgia State,Georgia State,Georgia State,Georgia State,TBD,Georgia St.,MISSING_DRATE,Georgia State
+
+# ❌ WRONG - Would cause Georgia to map to Georgia State:
+# (Don't do this - fuzzy matching will cause incorrect matches)
+```
+
+### **Step 4: Add/Fix Rows in basketball_teams.csv**
 
 **CSV Format:**
 ```csv
@@ -71,7 +97,15 @@ Detroit Mercy,Detroit Mercy,Detroit Mercy,Detroit Titans,TBD,Detroit Mercy,NEW,D
    grep -i "TEAM_NAME" public/basketball_teams.csv
    ```
 
-### **Step 4: Verify the Fix**
+6. **SCHOOL DISAMBIGUATION** - Many schools have similar names:
+   - Indiana ≠ Indiana State
+   - Georgia ≠ Georgia State  
+   - South Carolina ≠ South Carolina State
+   - USC ≠ USC Upstate
+   - Nebraska ≠ Nebraska-Omaha
+   - **Always verify you're adding the CORRECT school!**
+
+### **Step 5: Verify the Fix**
 
 ```bash
 node detailed_game_audit.js | tail -5
@@ -79,7 +113,7 @@ node detailed_game_audit.js | tail -5
 
 Should show: `📊 FINAL COUNT: X out of X games can be bet on`
 
-### **Step 5: Test End-to-End**
+### **Step 6: Test End-to-End**
 
 ```bash
 # Run the bet writing script (dry run)
