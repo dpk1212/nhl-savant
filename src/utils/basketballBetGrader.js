@@ -87,11 +87,18 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       'gradedAt': Date.now()
     });
     
-    console.log(`✅ BET GRADED: ${outcome} ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u`);
+    console.log(`✅ BET GRADED: ${outcome} ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u (${awayTeam} @ ${homeTeam})`);
     
     return true;
     
   } catch (error) {
+    // 🚨 LOG ERRORS - don't fail silently!
+    console.error(`❌ BET GRADING FAILED: ${awayTeam} @ ${homeTeam}`, error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack?.split('\n')[0]
+    });
     return false;
   }
 }
