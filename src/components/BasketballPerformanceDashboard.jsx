@@ -12,7 +12,7 @@ import { Calendar, TrendingUp, Target, DollarSign, Award, BarChart3, ChevronDown
 
 export function BasketballPerformanceDashboard() {
   const { stats, loading, dailyStats } = useBasketballBetStats();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
   const [allBets, setAllBets] = useState([]);
 

@@ -752,11 +752,11 @@ const EnhancedTierHeader = ({
   
   // Calculate 5-tier granular distribution for PREMIUM visual
   const distributionTiers = {
-    elite: { min: 5.0, max: 5.0, games: [], totalUnits: 0, color: '#10B981', label: 'Elite', emoji: '🔥' },
-    premium: { min: 4.0, max: 4.9, games: [], totalUnits: 0, color: '#14B8A6', label: 'Premium', emoji: '⭐' },
-    strong: { min: 2.5, max: 3.9, games: [], totalUnits: 0, color: '#3B82F6', label: 'Strong', emoji: '💪' },
-    conservative: { min: 1.0, max: 2.4, games: [], totalUnits: 0, color: '#8B5CF6', label: 'Conservative', emoji: '📊' },
-    minimal: { min: 0.5, max: 0.9, games: [], totalUnits: 0, color: '#6366F1', label: 'Minimal', emoji: '📌' }
+    elite: { min: 5.0, max: 5.0, games: [], totalUnits: 0, color: '#10B981', label: 'Elite' },
+    premium: { min: 4.0, max: 4.9, games: [], totalUnits: 0, color: '#14B8A6', label: 'Premium' },
+    strong: { min: 2.5, max: 3.9, games: [], totalUnits: 0, color: '#3B82F6', label: 'Strong' },
+    conservative: { min: 1.0, max: 2.4, games: [], totalUnits: 0, color: '#8B5CF6', label: 'Conservative' },
+    minimal: { min: 0.5, max: 0.9, games: [], totalUnits: 0, color: '#6366F1', label: 'Minimal' }
   };
   
   // Distribute all games across tiers - SAFE ACCESS
@@ -1332,31 +1332,38 @@ const EnhancedTierHeader = ({
                     textAlign: 'center'
                   }}>
                     <div style={{
-                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      fontSize: isMobile ? '0.625rem' : '0.688rem',
                       fontWeight: '800',
                       color: tier.color,
-                      marginBottom: '0.25rem',
-                      letterSpacing: '0.02em'
+                      marginBottom: '0.375rem',
+                      letterSpacing: '0.02em',
+                      textTransform: 'uppercase'
                     }}>
-                      {tier.emoji} {tier.games.length}
+                      {tier.games.length}
                     </div>
                     <div style={{
-                      height: isMobile ? '4px' : '5px',
+                      height: isMobile ? '5px' : '6px',
                       background: `linear-gradient(90deg, ${tier.color} 0%, ${tier.color}DD 100%)`,
-                      borderRadius: '3px',
-                      boxShadow: `0 2px 8px ${tier.color}40`
+                      borderRadius: '4px',
+                      boxShadow: `0 3px 10px ${tier.color}45`,
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}>
                       <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
                         height: '50%',
                         background: 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%)',
-                        borderRadius: '3px 3px 0 0'
+                        borderRadius: '4px 4px 0 0'
                       }} />
                     </div>
                     <div style={{
-                      fontSize: isMobile ? '0.5rem' : '0.563rem',
-                      fontWeight: '700',
-                      color: 'rgba(255,255,255,0.50)',
-                      marginTop: '0.25rem',
+                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      fontWeight: '800',
+                      color: 'rgba(255,255,255,0.55)',
+                      marginTop: '0.375rem',
                       fontFeatureSettings: "'tnum'"
                     }}>
                       {tier.totalUnits.toFixed(1)}u
