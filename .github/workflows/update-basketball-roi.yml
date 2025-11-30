@@ -1,0 +1,31 @@
+name: Update Basketball Pattern ROI
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  update-roi:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Update Pattern ROI & Pending Bets
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "🔄 Starting dynamic ROI update..."
+          npm run update-roi-manual
+          echo "✅ Dynamic ROI update complete!"
+
