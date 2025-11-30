@@ -11,7 +11,6 @@ import { startScorePolling } from '../utils/ncaaAPI';
 import { gradePrediction, calculateGradingStats } from '../utils/basketballGrading';
 import { gradeBasketballBet } from '../utils/basketballBetGrader';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
-import { GradeStats } from '../components/GradeBadge';
 import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
@@ -37,7 +36,6 @@ const Basketball = () => {
   const [gamesWithLiveScores, setGamesWithLiveScores] = useState([]);
   const [gameStatusFilter, setGameStatusFilter] = useState('all');
   const [teamMappings, setTeamMappings] = useState(null);
-  const [gradingStats, setGradingStats] = useState(null);
   
   // Bet outcomes state
   const [betsMap, setBetsMap] = useState(new Map());
@@ -154,10 +152,6 @@ const Basketball = () => {
         });
         
         setGamesWithLiveScores(gamesWithGradesAndBets);
-        
-        // Calculate grading stats
-        const stats = calculateGradingStats(gamesWithGradesAndBets);
-        setGradingStats(stats);
       },
       15000 // Poll every 15 seconds
     );
@@ -526,12 +520,7 @@ const Basketball = () => {
         )}
       </div>
 
-      {/* Grading Stats (only show if we have graded games) */}
-      {gradingStats && gradingStats.totalGames > 0 && (
-        <div style={{ maxWidth: '1200px', margin: '0 auto 2rem auto' }}>
-          <GradeStats stats={gradingStats} />
-        </div>
-      )}
+      {/* Grading Stats - REMOVED */}
       
       {/* Game Status Filter */}
       {gamesWithLiveScores.length > 0 && (
