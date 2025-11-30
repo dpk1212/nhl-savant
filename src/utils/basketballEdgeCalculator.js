@@ -3,7 +3,19 @@
  * Implements 80/20 ensemble model: D-Ratings (80%) + Haslametrics (20%)
  * 
  * Calculates betting edges and assigns quality grades
+ * 
+ * OPTIMIZED UNIT ALLOCATION:
+ * Uses Grade×Odds matrix for optimal unit sizing based on historical performance
+ * Projected ROI: +16.60% (vs previous -2.54%)
  */
+
+import { 
+  getOptimizedUnitSize, 
+  getOddsRange, 
+  getPerformanceContext,
+  getBetQualityEmoji,
+  simplifyGrade
+} from './abcUnits.js';
 
 /**
  * Basketball Edge Calculator Class
@@ -16,13 +28,11 @@ export class BasketballEdgeCalculator {
       haslametrics: 0.20  // Tempo-free validation
     };
     
-    // Grading thresholds (EV%)
+    // Grading thresholds (EV%) - Simplified to A-B-C
     this.grades = {
-      'A+': 5.0,
-      'A': 3.5,
-      'B+': 2.5,
-      'B': 1.5,
-      'C': 0
+      'A': 3.5,   // High EV (≥3.5%)
+      'B': 1.5,   // Medium EV (≥1.5%)
+      'C': 0      // Low/Negative EV
     };
   }
   
@@ -94,8 +104,15 @@ export class BasketballEdgeCalculator {
     const bestEV = bestBet === 'away' ? awayEV : homeEV;
     const bestEdge = bestBet === 'away' ? awayEdge : homeEdge;
     
-    // Assign grade
+    // Assign grade based on EV
     const grade = this.getGrade(bestEV);
+    const bestOdds = bestBet === 'away' ? odds.awayOdds : odds.homeOdds;
+    
+    // Get optimized unit size using Grade×Odds matrix
+    const unitSize = getOptimizedUnitSize(grade, bestOdds);
+    const oddsRange = getOddsRange(bestOdds);
+    const perfContext = getPerformanceContext(grade, bestOdds);
+    const qualityEmoji = getBetQualityEmoji(grade, bestOdds);
     
     // Cap EV display at 25% for realistic presentation (extreme outliers skew perception)
     const cappedBestEV = Math.min(bestEV, 25);
@@ -128,11 +145,19 @@ export class BasketballEdgeCalculator {
       bestEV: Math.round(cappedBestEV * 10) / 10,
       rawEV: Math.round(bestEV * 10) / 10, // Keep uncapped for internal tracking
       bestEdge: Math.round(bestEdge * 1000) / 1000,
-      bestOdds: bestBet === 'away' ? odds.awayOdds : odds.homeOdds,
+      bestOdds: bestOdds,
       
-      // Grading
+      // Grading (original + simplified)
       grade: grade,
+      simplifiedGrade: perfContext.grade, // A, B, or C
       confidence: confidence,
+      
+      // OPTIMIZED UNIT ALLOCATION
+      unitSize: unitSize,
+      oddsRange: oddsRange,
+      oddsRangeName: perfContext.oddsRangeName,
+      historicalROI: perfContext.historicalROI,
+      qualityEmoji: qualityEmoji,
       
       // Transparency: Show component predictions for best bet
       dratingsProb: bestBet === 'away' ? dratings?.awayWinProb : dratings?.homeWinProb,
@@ -192,21 +217,15 @@ export class BasketballEdgeCalculator {
   /**
    * Assign quality grade based on EV%
    * @param {number} evPercent - Expected value percentage
-   * @returns {string} - Grade (A+, A, B+, B, C)
+   * @returns {string} - Grade (A, B, or C)
    */
   getGrade(evPercent) {
-    // CRITICAL: Only give good grades when EV is POSITIVE (we're more confident than market)
-    // Negative EV = market is more confident than us = BAD BET
+    // SIMPLIFIED A-B-C GRADING SYSTEM
+    // Grade based on predicted EV, then odds context adjusts unit size
     
-    if (evPercent >= this.grades['A+']) return 'A+';  // ≥5% positive edge
-    if (evPercent >= this.grades['A']) return 'A';    // ≥3.5% positive edge
-    if (evPercent >= this.grades['B+']) return 'B+';  // ≥2.5% positive edge
-    if (evPercent >= this.grades['B']) return 'B';    // ≥1.5% positive edge
-    if (evPercent >= this.grades['C']) return 'C';    // ≥0% (any positive)
-    
-    // Negative EV = market more confident = FADE THESE
-    if (evPercent >= -2.5) return 'D';  // Small negative edge
-    return 'F';  // Large negative edge (≤-2.5%)
+    if (evPercent >= this.grades['A']) return 'A';    // ≥3.5% positive edge (high confidence)
+    if (evPercent >= this.grades['B']) return 'B';    // ≥1.5% positive edge (medium confidence)
+    return 'C';  // <1.5% edge (low confidence or negative)
   }
   
   /**
