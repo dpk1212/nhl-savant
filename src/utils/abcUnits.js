@@ -259,3 +259,71 @@ export function getBetQualityEmoji(grade, odds) {
   return '🟡';                                                              // Small tracking bet
 }
 
+// ============================================================================
+// STAR RATING SYSTEM (for UI)
+// ============================================================================
+
+/**
+ * Get star rating (0-3) based on historical ROI
+ * ⭐⭐⭐ = Elite (ROI > +25%)
+ * ⭐⭐ = Premium (ROI +15% to +25%)
+ * ⭐ = Value (ROI +5% to +15%)
+ * ⚠️ = Caution (ROI -10% to +5%)
+ * 🚫 = Avoid (ROI < -10%)
+ */
+export function getStarRating(grade, odds) {
+  const context = getPerformanceContext(grade, odds);
+  const roi = context.historicalROI;
+  
+  if (roi > 25) return { stars: 3, label: 'ELITE', emoji: '⭐⭐⭐' };
+  if (roi >= 15) return { stars: 2, label: 'PREMIUM', emoji: '⭐⭐' };
+  if (roi >= 5) return { stars: 1, label: 'VALUE', emoji: '⭐' };
+  if (roi >= -10) return { stars: 0, label: 'CAUTION', emoji: '⚠️' };
+  return { stars: -1, label: 'AVOID', emoji: '🚫' };
+}
+
+/**
+ * Get tier classification for visual grouping
+ * TIER 1: PREMIUM PICKS (ROI > +20%)
+ * TIER 2: VALUE PLAYS (ROI 0% to +20%)
+ * TIER 3: TRACK ONLY (ROI < 0%)
+ */
+export function getBetTier(grade, odds) {
+  const context = getPerformanceContext(grade, odds);
+  const roi = context.historicalROI;
+  
+  if (roi > 20) {
+    return {
+      tier: 1,
+      name: 'PREMIUM PICK',
+      emoji: '🔥',
+      color: '#10B981',
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.10) 100%)',
+      borderColor: 'rgba(16, 185, 129, 0.35)',
+      description: `Historically returns ${roi.toFixed(1)}% profit on this pattern`
+    };
+  }
+  
+  if (roi >= 0) {
+    return {
+      tier: 2,
+      name: 'VALUE PLAY',
+      emoji: '⚡',
+      color: '#3B82F6',
+      bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.10) 100%)',
+      borderColor: 'rgba(59, 130, 246, 0.35)',
+      description: `Historically returns ${roi.toFixed(1)}% profit on this pattern`
+    };
+  }
+  
+  return {
+    tier: 3,
+    name: 'TRACK ONLY',
+    emoji: '📊',
+    color: '#94A3B8',
+    bgGradient: 'linear-gradient(135deg, rgba(148, 163, 184, 0.12) 0%, rgba(100, 116, 139, 0.08) 100%)',
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    description: `Historically loses ${Math.abs(roi).toFixed(1)}% on this pattern (tracking only)`
+  };
+}
+
