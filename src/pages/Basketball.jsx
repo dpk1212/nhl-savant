@@ -613,7 +613,7 @@ const Basketball = () => {
                   return;
                 }
                 
-                const tier = getBetTier(game.prediction.grade, game.bet.odds);
+                const tier = getBetTier(game.prediction.grade, game.bet.odds, game.prediction.unitSize);
                 if (tier.tier === 1) gamesByTier.max.push(game);
                 else if (tier.tier === 2) gamesByTier.moderate.push(game);
                 else gamesByTier.small.push(game);
@@ -886,8 +886,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
       }}>
         {/* 🎯 UNIT SIZE HERO + CONFIDENCE BADGE */}
         {(() => {
-          const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-          const confidence = getConfidenceRating(pred.grade, pred.bestOdds);
+          const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+          const confidence = getConfidenceRating(pred.grade, pred.bestOdds, pred.unitSize);
           
           return (
             <div style={{
@@ -1103,17 +1103,17 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           <div style={{
             marginTop: isMobile ? '0.75rem' : '0.875rem',
             background: (() => {
-              const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+              const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
               return tierInfo.bgGradient;
             })(),
             border: (() => {
-              const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+              const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
               return `2px solid ${tierInfo.borderColor}`;
             })(),
             borderRadius: '12px',
             padding: isMobile ? '0.875rem 1rem' : '1rem 1.125rem',
             boxShadow: (() => {
-              const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+              const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
               return `0 5px 18px ${tierInfo.color}22, inset 0 1px 0 rgba(255,255,255,0.08)`;
             })()
           }}>
@@ -1161,7 +1161,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 letterSpacing: '0.005em'
               }}>
                 {(() => {
-                  const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                  const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
                   // Clean description without emoji
                   return tierInfo.description;
                 })()}
@@ -1349,7 +1349,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               gap: '0.25rem'
             }}>
               {(() => {
-                const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
                 return <span>{tierInfo.emoji}</span>;
               })()} GRADE / BET SIZE
               </div>
@@ -1372,7 +1372,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 fontSize: isMobile ? '0.938rem' : '1rem',
                 fontWeight: '900',
                 color: (() => {
-                  const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                  const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
                   return tierInfo.color;
                 })(),
                 fontFeatureSettings: "'tnum'"
