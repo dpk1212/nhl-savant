@@ -654,12 +654,12 @@ const Basketball = () => {
                     </>
                   )}
                   
-                  {/* TIER 2: MODERATE CONVICTION (1.5-4.0u) */}
+                  {/* TIER 2: CORE PLAYS (1.5-4.0u) */}
                   {gamesByTier.moderate.length > 0 && (
                     <>
                       <EnhancedTierHeader 
                         emoji="⚡" 
-                        title="MODERATE CONVICTION" 
+                        title="CORE PLAYS" 
                         subtitle={`${gamesByTier.moderate.length} game${gamesByTier.moderate.length !== 1 ? 's' : ''} • Standard allocation between 1.5-4.0 units`}
                         color="#3B82F6"
                         unitRange="1.5-4.0u"
