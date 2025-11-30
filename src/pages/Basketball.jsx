@@ -742,6 +742,11 @@ const EnhancedTierHeader = ({
     : 0;
   const expectedProfit = totalUnits * (avgROI / 100);
   
+  // HIDE TIER if expected profit is negative - we don't recommend losing money!
+  if (expectedProfit < 0) {
+    return null;
+  }
+  
   // Get top 3 plays by unit size
   const topPlays = [...tierGames]
     .sort((a, b) => (b.prediction?.unitSize || 0) - (a.prediction?.unitSize || 0))
@@ -865,20 +870,15 @@ const EnhancedTierHeader = ({
           position: 'relative',
           zIndex: 1
         }}>
-          {/* Visual Distribution - PREMIUM */}
+          {/* Visual Distribution - PREMIUM SEPARATED CARDS */}
           <div style={{
-            marginBottom: isMobile ? '1rem' : '1.25rem',
-            background: 'rgba(0,0,0,0.25)',
-            borderRadius: '12px',
-            padding: isMobile ? '0.875rem' : '1rem',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(8px)'
+            marginBottom: isMobile ? '1rem' : '1.25rem'
           }}>
             <div style={{
               fontSize: isMobile ? '0.688rem' : '0.75rem',
               color: 'rgba(255,255,255,0.85)',
               fontWeight: '900',
-              marginBottom: isMobile ? '0.75rem' : '0.875rem',
+              marginBottom: isMobile ? '0.625rem' : '0.75rem',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               display: 'flex',
@@ -894,17 +894,24 @@ const EnhancedTierHeader = ({
               Today's Distribution
             </div>
             
-            {/* Maximum Tier Bar - ENHANCED */}
-            <div style={{ marginBottom: isMobile ? '0.625rem' : '0.75rem' }}>
+            {/* Maximum Tier Card */}
+            <div style={{
+              background: 'rgba(0,0,0,0.25)',
+              borderRadius: '10px',
+              padding: isMobile ? '0.75rem' : '0.875rem',
+              border: '1px solid rgba(16,185,129,0.20)',
+              backdropFilter: 'blur(8px)',
+              marginBottom: isMobile ? '0.5rem' : '0.625rem'
+            }}>
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '0.375rem'
+                marginBottom: '0.5rem'
               }}>
                 <div style={{
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.70)',
+                  color: 'rgba(255,255,255,0.75)',
                   fontWeight: '700',
                   letterSpacing: '0.02em'
                 }}>
@@ -924,7 +931,7 @@ const EnhancedTierHeader = ({
                     padding: '0.125rem 0.375rem',
                     background: 'rgba(16,185,129,0.15)',
                     borderRadius: '4px',
-                    border: '1px solid rgba(16,185,129,0.25)'
+                    border: '1px solid rgba(16,185,129,0.30)'
                   }}>
                     {allTiers.maximum.totalUnits.toFixed(1)}u
                   </span>
@@ -959,13 +966,20 @@ const EnhancedTierHeader = ({
               </div>
             </div>
             
-            {/* Moderate Tier Bar - ENHANCED */}
-            <div style={{ marginBottom: isMobile ? '0.625rem' : '0.75rem' }}>
+            {/* Moderate Tier Card */}
+            <div style={{
+              background: 'rgba(0,0,0,0.25)',
+              borderRadius: '10px',
+              padding: isMobile ? '0.75rem' : '0.875rem',
+              border: `1px solid ${color}25`,
+              backdropFilter: 'blur(8px)',
+              marginBottom: isMobile ? '0.5rem' : '0.625rem'
+            }}>
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '0.375rem'
+                marginBottom: '0.5rem'
               }}>
                 <div style={{
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
@@ -1024,17 +1038,23 @@ const EnhancedTierHeader = ({
               </div>
             </div>
             
-            {/* Small Tier Bar - ENHANCED */}
-            <div>
+            {/* Small Tier Card */}
+            <div style={{
+              background: 'rgba(0,0,0,0.25)',
+              borderRadius: '10px',
+              padding: isMobile ? '0.75rem' : '0.875rem',
+              border: '1px solid rgba(139,92,246,0.20)',
+              backdropFilter: 'blur(8px)'
+            }}>
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '0.375rem'
+                marginBottom: '0.5rem'
               }}>
                 <div style={{
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.70)',
+                  color: 'rgba(255,255,255,0.75)',
                   fontWeight: '700',
                   letterSpacing: '0.02em'
                 }}>
@@ -1054,7 +1074,7 @@ const EnhancedTierHeader = ({
                     padding: '0.125rem 0.375rem',
                     background: 'rgba(139,92,246,0.15)',
                     borderRadius: '4px',
-                    border: '1px solid rgba(139,92,246,0.25)'
+                    border: '1px solid rgba(139,92,246,0.30)'
                   }}>
                     {allTiers.small.totalUnits.toFixed(1)}u
                   </span>
