@@ -752,11 +752,11 @@ const EnhancedTierHeader = ({
   
   // Calculate 5-tier granular distribution for PREMIUM visual
   const distributionTiers = {
-    elite: { min: 5.0, max: 5.0, games: [], totalUnits: 0, color: '#10B981', label: 'Elite' },
-    premium: { min: 4.0, max: 4.9, games: [], totalUnits: 0, color: '#14B8A6', label: 'Premium' },
-    standard: { min: 2.5, max: 3.9, games: [], totalUnits: 0, color: '#3B82F6', label: 'Standard' },
-    conservative: { min: 1.0, max: 2.4, games: [], totalUnits: 0, color: '#8B5CF6', label: 'Conservative' },
-    minimal: { min: 0.5, max: 0.9, games: [], totalUnits: 0, color: '#6366F1', label: 'Minimal' }
+    elite: { min: 5.0, max: 5.0, games: [], totalUnits: 0, color: '#10B981', label: 'Elite', emoji: '🔥' },
+    premium: { min: 4.0, max: 4.9, games: [], totalUnits: 0, color: '#14B8A6', label: 'Premium', emoji: '⭐' },
+    strong: { min: 2.5, max: 3.9, games: [], totalUnits: 0, color: '#3B82F6', label: 'Strong', emoji: '💪' },
+    conservative: { min: 1.0, max: 2.4, games: [], totalUnits: 0, color: '#8B5CF6', label: 'Conservative', emoji: '📊' },
+    minimal: { min: 0.5, max: 0.9, games: [], totalUnits: 0, color: '#6366F1', label: 'Minimal', emoji: '📌' }
   };
   
   // Distribute all games across tiers
@@ -843,20 +843,106 @@ const EnhancedTierHeader = ({
             fontWeight: '900',
             color: color,
             letterSpacing: '-0.02em',
-            marginBottom: '0.25rem',
+            marginBottom: '0.375rem',
             textShadow: `0 2px 16px ${color}35`,
             lineHeight: 1.15
           }}>
             {title}
           </div>
-          <div style={{
-            fontSize: isMobile ? '0.688rem' : '0.75rem',
-            color: 'rgba(255,255,255,0.70)',
-            lineHeight: 1.35,
-            fontWeight: '600'
-          }}>
-            {tierGames.length} games • {totalUnits.toFixed(1)}u allocated • {avgROI >= 0 ? '+' : ''}{avgROI.toFixed(1)}% ROI
-          </div>
+          
+          {/* PREMIUM STATS ROW when collapsed */}
+          {!expanded && (
+            <div style={{
+              display: 'flex',
+              gap: isMobile ? '0.625rem' : '0.75rem',
+              alignItems: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: '6px',
+                border: '1px solid rgba(255,255,255,0.12)'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.60)',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em'
+                }}>Games</span>
+                <span style={{
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  color: 'rgba(255,255,255,0.95)',
+                  fontWeight: '900',
+                  fontFeatureSettings: "'tnum'"
+                }}>{tierGames.length}</span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.25rem 0.5rem',
+                background: `${color}15`,
+                borderRadius: '6px',
+                border: `1px solid ${color}30`
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.60)',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em'
+                }}>Units</span>
+                <span style={{
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  color: color,
+                  fontWeight: '900',
+                  fontFeatureSettings: "'tnum'"
+                }}>{totalUnits.toFixed(1)}</span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.25rem 0.5rem',
+                background: avgROI >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                borderRadius: '6px',
+                border: avgROI >= 0 ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(239,68,68,0.25)'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.60)',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em'
+                }}>ROI</span>
+                <span style={{
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  color: avgROI >= 0 ? '#10B981' : '#EF4444',
+                  fontWeight: '900',
+                  fontFeatureSettings: "'tnum'"
+                }}>{avgROI >= 0 ? '+' : ''}{avgROI.toFixed(1)}%</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Simple text when expanded */}
+          {expanded && (
+            <div style={{
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.70)',
+              lineHeight: 1.35,
+              fontWeight: '600'
+            }}>
+              {tierGames.length} games • {totalUnits.toFixed(1)}u allocated • {avgROI >= 0 ? '+' : ''}{avgROI.toFixed(1)}% ROI
+            </div>
+          )}
         </div>
         
         {/* Expected Profit Badge - ONLY show if positive */}
@@ -1212,47 +1298,124 @@ const EnhancedTierHeader = ({
         </div>
       )}
       
-      {/* Click to expand hint (when collapsed) - PREMIUM */}
+      {/* PREMIUM COLLAPSED VIEW */}
       {!expanded && (
-        <div style={{
-          marginTop: isMobile ? '0.75rem' : '0.875rem',
-          paddingTop: isMobile ? '0.75rem' : '0.875rem',
-          borderTop: `1px solid ${color}15`,
-          textAlign: 'center',
-          position: 'relative',
-          zIndex: 1
-        }}>
+        <>
+          {/* Quick Stats Bar */}
           <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.375rem 0.875rem',
-            background: `linear-gradient(135deg, ${color}12 0%, ${color}08 100%)`,
-            border: `1px solid ${color}20`,
-            borderRadius: '8px',
-            fontSize: isMobile ? '0.625rem' : '0.688rem',
-            color: 'rgba(255,255,255,0.55)',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = `linear-gradient(135deg, ${color}20 0%, ${color}12 100%)`;
-            e.currentTarget.style.borderColor = `${color}35`;
-            e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = `linear-gradient(135deg, ${color}12 0%, ${color}08 100%)`;
-            e.currentTarget.style.borderColor = `${color}20`;
-            e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
-          }}
-          >
-            <span>View Details</span>
-            <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>↓</span>
+            marginTop: isMobile ? '0.75rem' : '0.875rem',
+            paddingTop: isMobile ? '0.75rem' : '0.875rem',
+            borderTop: `1px solid ${color}15`,
+            position: 'relative',
+            zIndex: 1
+          }}>
+            {/* Mini Distribution Preview */}
+            <div style={{
+              display: 'flex',
+              gap: isMobile ? '0.375rem' : '0.5rem',
+              marginBottom: isMobile ? '0.625rem' : '0.75rem',
+              alignItems: 'center'
+            }}>
+              {Object.entries(distributionTiers).map(([key, tier]) => {
+                if (tier.games.length === 0) return null;
+                const percent = grandTotal > 0 ? (tier.totalUnits / grandTotal) * 100 : 0;
+                
+                return (
+                  <div key={key} style={{
+                    flex: percent,
+                    minWidth: '0',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      fontWeight: '800',
+                      color: tier.color,
+                      marginBottom: '0.25rem',
+                      letterSpacing: '0.02em'
+                    }}>
+                      {tier.emoji} {tier.games.length}
+                    </div>
+                    <div style={{
+                      height: isMobile ? '4px' : '5px',
+                      background: `linear-gradient(90deg, ${tier.color} 0%, ${tier.color}DD 100%)`,
+                      borderRadius: '3px',
+                      boxShadow: `0 2px 8px ${tier.color}40`
+                    }}>
+                      <div style={{
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%)',
+                        borderRadius: '3px 3px 0 0'
+                      }} />
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.5rem' : '0.563rem',
+                      fontWeight: '700',
+                      color: 'rgba(255,255,255,0.50)',
+                      marginTop: '0.25rem',
+                      fontFeatureSettings: "'tnum'"
+                    }}>
+                      {tier.totalUnits.toFixed(1)}u
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Expand Button - PREMIUM */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.625rem',
+                padding: isMobile ? '0.5rem 1rem' : '0.625rem 1.25rem',
+                background: `linear-gradient(135deg, ${color}18 0%, ${color}10 100%)`,
+                border: `1.5px solid ${color}30`,
+                borderRadius: '10px',
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: color,
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: `0 4px 12px ${color}20, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${color}28 0%, ${color}18 100%)`;
+                e.currentTarget.style.borderColor = `${color}50`;
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = `0 6px 20px ${color}35, inset 0 1px 0 rgba(255,255,255,0.15)`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${color}18 0%, ${color}10 100%)`;
+                e.currentTarget.style.borderColor = `${color}30`;
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = `0 4px 12px ${color}20, inset 0 1px 0 rgba(255,255,255,0.1)`;
+              }}
+              >
+                {/* Glow effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: `radial-gradient(circle at center, ${color}15 0%, transparent 70%)`,
+                  pointerEvents: 'none'
+                }} />
+                
+                <span style={{ position: 'relative', zIndex: 1 }}>View Full Breakdown</span>
+                <span style={{ 
+                  fontSize: isMobile ? '0.813rem' : '0.875rem',
+                  position: 'relative',
+                  zIndex: 1
+                }}>↓</span>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
