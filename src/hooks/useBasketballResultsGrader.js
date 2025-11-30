@@ -4,6 +4,7 @@
  * Loads basketball_results.json and grades pending bets CLIENT-SIDE
  * Uses existing Firebase Client SDK (already working!)
  * Uses CSV mapping for robust team name matching
+ * Uses optimized unit allocation system for accurate profit calculation
  * 
  * Usage: Call from Basketball page to auto-grade bets
  */
@@ -12,6 +13,9 @@ import { useState, useEffect } from 'react';
 import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { getETGameDate } from '../utils/dateUtils';
+import { getOptimizedUnitSize, calculateUnitProfit } from '../utils/abcUnits';
+import { updateAllPatternROI } from '../utils/clientPatternROI';
+import { updatePendingBets } from '../utils/clientPendingUpdater';
 
 export function useBasketballResultsGrader() {
   const [grading, setGrading] = useState(false);
@@ -116,10 +120,15 @@ export function useBasketballResultsGrader() {
         const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
         const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
         
-        // Calculate profit (1 unit flat bet)
-        const profit = outcome === 'WIN' 
-          ? (bet.bet.odds < 0 ? 100 / Math.abs(bet.bet.odds) : bet.bet.odds / 100)
-          : -1;
+        // Calculate profit using OPTIMIZED UNIT ALLOCATION
+        const grade = bet.prediction?.grade;
+        const odds = bet.bet?.odds;
+        
+        // Use stored units from prediction, or calculate if missing (fallback)
+        const units = bet.prediction?.unitSize || getOptimizedUnitSize(grade, odds);
+        
+        // Calculate profit based on actual units risked
+        const profit = calculateUnitProfit(grade, odds, outcome === 'WIN');
         
         // Update bet in Firebase (CLIENT SDK - already works!)
         await updateDoc(doc(db, 'basketball_bets', betId), {
@@ -128,6 +137,7 @@ export function useBasketballResultsGrader() {
           'result.loserTeam': matchingResult.loserTeam,
           'result.outcome': outcome,
           'result.profit': profit,
+          'result.units': units,  // ✅ Store actual units risked
           'result.fetched': true,
           'result.fetchedAt': Date.now(),
           'result.source': 'OddsTrader',
@@ -142,7 +152,18 @@ export function useBasketballResultsGrader() {
       
       setGradedCount(graded);
       console.log(`\n🎉 Graded ${graded}/${betsSnapshot.size} bets`);
+      
+      // ✅ DYNAMIC ROI SYSTEM: Update pattern performance & pending bets
       if (graded > 0) {
+        console.log('\n🔄 Activating dynamic ROI system...');
+        
+        // Update historical ROI for all patterns
+        await updateAllPatternROI();
+        
+        // Update pending bets with new unit sizes based on live ROI
+        await updatePendingBets();
+        
+        console.log('✅ Dynamic ROI system updated!');
         console.log('   Refresh page to see updated results!');
       }
       
