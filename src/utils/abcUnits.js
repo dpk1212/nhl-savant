@@ -267,10 +267,15 @@ export function getBetQualityEmoji(grade, odds) {
  * Get confidence rating based on unit size (conviction)
  * All picks are bets - rating shows conviction level
  * NO EMOJIS - premium clean design
+ * 
+ * @param {string} grade - Letter grade
+ * @param {number} odds - American odds
+ * @param {number} actualUnits - ACTUAL unit size from prediction (DO NOT RECALCULATE!)
  */
-export function getConfidenceRating(grade, odds) {
+export function getConfidenceRating(grade, odds, actualUnits = null) {
   const context = getPerformanceContext(grade, odds);
-  const units = context.units;
+  // USE ACTUAL UNITS if provided, otherwise fallback to calculated
+  const units = actualUnits !== null ? actualUnits : context.units;
   const roi = context.historicalROI;
   
   if (units >= 5.0) {
@@ -322,11 +327,16 @@ export function getConfidenceRating(grade, odds) {
  * TIER 1: MAXIMUM CONVICTION (5.0u)
  * TIER 2: MODERATE CONVICTION (1.5-4.0u)  
  * TIER 3: SMALL POSITION (0.5-1.0u)
+ * 
+ * @param {string} grade - Letter grade
+ * @param {number} odds - American odds
+ * @param {number} actualUnits - ACTUAL unit size from prediction (DO NOT RECALCULATE!)
  */
-export function getBetTier(grade, odds) {
+export function getBetTier(grade, odds, actualUnits = null) {
   const context = getPerformanceContext(grade, odds);
   const roi = context.historicalROI;
-  const units = context.units;
+  // USE ACTUAL UNITS if provided, otherwise fallback to calculated
+  const units = actualUnits !== null ? actualUnits : context.units;
   
   // DYNAMIC description based on ACTUAL unit size and ROI
   const getDescription = (u, r) => {
