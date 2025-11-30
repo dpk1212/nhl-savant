@@ -54,9 +54,10 @@ export function useBasketballBetStats() {
 
         // Calculate ROI from ALL bets
         // ROI = (total profit / total risked) * 100
+        // USE ACTUAL UNITS RISKED (stored in Firebase), don't recalculate!
         const totalRisked = gradedBets.reduce((sum, bet) => {
-          const grade = bet.prediction?.grade || 'B';
-          const units = getUnitSize(grade);
+          // Priority: 1) result.units (actual risked), 2) prediction.unitSize, 3) fallback
+          const units = bet.result?.units || bet.prediction?.unitSize || 1.0;
           return sum + units;
         }, 0);
         const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
