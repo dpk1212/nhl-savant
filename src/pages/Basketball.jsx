@@ -1054,8 +1054,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               color: 'rgba(255,255,255,0.5)',
               lineHeight: 1.3
             }}>
-              {gradeColors.tier.split(' ')[0]} • {getUnitSize(pred.grade) > 0 
-                ? `Risk ${getUnitSize(pred.grade)} unit${getUnitSize(pred.grade) !== 1 ? 's' : ''}`
+              {gradeColors.tier.split(' ')[0]} • {pred.unitSize > 0 
+                ? `Risk ${pred.unitSize} unit${pred.unitSize !== 1 ? 's' : ''}`
                 : 'Below betting threshold'}
             </div>
               </div>
