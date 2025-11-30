@@ -264,66 +264,112 @@ export function getBetQualityEmoji(grade, odds) {
 // ============================================================================
 
 /**
- * Get star rating (0-3) based on historical ROI
- * ⭐⭐⭐ = Elite (ROI > +25%)
- * ⭐⭐ = Premium (ROI +15% to +25%)
- * ⭐ = Value (ROI +5% to +15%)
- * ⚠️ = Caution (ROI -10% to +5%)
- * 🚫 = Avoid (ROI < -10%)
+ * Get confidence rating based on unit size (conviction)
+ * All picks are bets - rating shows conviction level
  */
-export function getStarRating(grade, odds) {
+export function getConfidenceRating(grade, odds) {
   const context = getPerformanceContext(grade, odds);
+  const units = context.units;
   const roi = context.historicalROI;
   
-  if (roi > 25) return { stars: 3, label: 'ELITE', emoji: '⭐⭐⭐' };
-  if (roi >= 15) return { stars: 2, label: 'PREMIUM', emoji: '⭐⭐' };
-  if (roi >= 5) return { stars: 1, label: 'VALUE', emoji: '⭐' };
-  if (roi >= -10) return { stars: 0, label: 'CAUTION', emoji: '⚠️' };
-  return { stars: -1, label: 'AVOID', emoji: '🚫' };
+  if (units >= 5.0) {
+    return { 
+      level: 'MAXIMUM', 
+      emoji: '🔥',
+      color: '#10B981',
+      label: roi > 25 ? 'ELITE PLAY' : 'MAX CONVICTION'
+    };
+  }
+  if (units >= 3.5) {
+    return { 
+      level: 'HIGH', 
+      emoji: '⭐',
+      color: '#14B8A6',
+      label: 'STRONG PLAY'
+    };
+  }
+  if (units >= 2.0) {
+    return { 
+      level: 'MODERATE', 
+      emoji: '⚡',
+      color: '#3B82F6',
+      label: 'SOLID PLAY'
+    };
+  }
+  if (units >= 1.0) {
+    return { 
+      level: 'CONSERVATIVE', 
+      emoji: '📊',
+      color: '#8B5CF6',
+      label: 'MANAGED RISK'
+    };
+  }
+  return { 
+    level: 'MINIMAL', 
+    emoji: '💎',
+    color: '#6366F1',
+    label: 'SMALL POSITION'
+  };
 }
 
 /**
  * Get tier classification for visual grouping
- * TIER 1: PREMIUM PICKS (ROI > +20%)
- * TIER 2: VALUE PLAYS (ROI 0% to +20%)
- * TIER 3: TRACK ONLY (ROI < 0%)
+ * Based on UNIT SIZE (conviction level) - all picks are bets!
+ * 
+ * TIER 1: MAXIMUM CONVICTION (5.0u)
+ * TIER 2: MODERATE CONVICTION (1.5-4.0u)  
+ * TIER 3: SMALL POSITION (0.5-1.0u)
  */
 export function getBetTier(grade, odds) {
   const context = getPerformanceContext(grade, odds);
   const roi = context.historicalROI;
+  const units = context.units;
   
-  if (roi > 20) {
+  // Tier by unit size (represents conviction)
+  if (units >= 5.0) {
     return {
       tier: 1,
-      name: 'PREMIUM PICK',
+      name: 'MAXIMUM CONVICTION',
+      shortName: 'Max Conviction',
       emoji: '🔥',
       color: '#10B981',
-      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.10) 100%)',
-      borderColor: 'rgba(16, 185, 129, 0.35)',
-      description: `Historically returns ${roi.toFixed(1)}% profit on this pattern`
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.12) 100%)',
+      borderColor: 'rgba(16, 185, 129, 0.40)',
+      unitRange: '5.0u',
+      description: roi > 0 
+        ? `Strong pattern (+${roi.toFixed(1)}% historical ROI) • Maximum allocation`
+        : `Model edge detected • 5.0 unit position`
     };
   }
   
-  if (roi >= 0) {
+  if (units >= 1.5) {
     return {
       tier: 2,
-      name: 'VALUE PLAY',
+      name: 'MODERATE CONVICTION',
+      shortName: 'Moderate',
       emoji: '⚡',
       color: '#3B82F6',
       bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.10) 100%)',
       borderColor: 'rgba(59, 130, 246, 0.35)',
-      description: `Historically returns ${roi.toFixed(1)}% profit on this pattern`
+      unitRange: '1.5-4.0u',
+      description: roi > 0
+        ? `Solid pattern (+${roi.toFixed(1)}% historical ROI) • Standard allocation`
+        : `Balanced risk management • ${units}u position`
     };
   }
   
   return {
     tier: 3,
-    name: 'TRACK ONLY',
+    name: 'SMALL POSITION',
+    shortName: 'Small Position',
     emoji: '📊',
-    color: '#94A3B8',
-    bgGradient: 'linear-gradient(135deg, rgba(148, 163, 184, 0.12) 0%, rgba(100, 116, 139, 0.08) 100%)',
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-    description: `Historically loses ${Math.abs(roi).toFixed(1)}% on this pattern (tracking only)`
+    color: '#8B5CF6',
+    bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.10) 100%)',
+    borderColor: 'rgba(139, 92, 246, 0.35)',
+    unitRange: '0.5-1.0u',
+    description: roi >= 0
+      ? `Conservative entry (+${roi.toFixed(1)}% historical ROI) • Minimal exposure`
+      : `Risk-managed bet (${roi.toFixed(1)}% pattern) • Limited ${units}u allocation`
   };
 }
 

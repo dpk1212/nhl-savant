@@ -14,7 +14,7 @@ import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballL
 import { GradeStats } from '../components/GradeBadge';
 import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
-import { getStarRating, getBetTier } from '../utils/abcUnits';
+import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -406,6 +406,56 @@ const Basketball = () => {
         </p>
       </div>
 
+      {/* Unit Sizing Explainer - Premium */}
+      <div style={{ 
+        maxWidth: '1200px', 
+        margin: '0 auto 1.5rem auto', 
+        padding: isMobile ? '0 1rem' : '0' 
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+          border: '1.5px solid rgba(16, 185, 129, 0.20)',
+          borderRadius: isMobile ? '14px' : '16px',
+          padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255,255,255,0.05)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: isMobile ? '0.875rem' : '1rem'
+          }}>
+            <div style={{
+              fontSize: isMobile ? '1.5rem' : '1.75rem',
+              lineHeight: 1,
+              filter: 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.3))'
+            }}>
+              💡
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: isMobile ? '0.875rem' : '0.938rem',
+                fontWeight: '800',
+                color: '#10B981',
+                marginBottom: '0.375rem',
+                letterSpacing: '-0.01em'
+              }}>
+                Smart Unit Allocation System
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                color: 'rgba(255,255,255,0.75)',
+                lineHeight: 1.5,
+                fontWeight: '600'
+              }}>
+                We bet on {isMobile ? 'all' : 'every'} quality matchup but allocate units based on historical pattern performance. 
+                {!isMobile && ' High-performing patterns receive 5.0 units, while volatile patterns get conservative 0.5-1.0 unit allocations for risk management.'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Premium Performance Dashboard - NHL Style */}
       <div style={{ maxWidth: '1200px', margin: '0 auto 2rem auto', padding: isMobile ? '0 1rem' : '0' }}>
         <BasketballPerformanceDashboard />
@@ -561,40 +611,41 @@ const Basketball = () => {
                 return game.liveScore.status === gameStatusFilter;
               });
               
-              // 🎯 GROUP BY TIER (Premium > Value > Track Only)
+              // 🎯 GROUP BY CONVICTION TIER (all are bets!)
               const gamesByTier = {
-                premium: [],
-                value: [],
-                track: []
+                max: [],
+                moderate: [],
+                small: []
               };
               
               filteredGames.forEach(game => {
                 if (!game.prediction?.grade || !game.bet?.odds) {
-                  gamesByTier.value.push(game); // Default to value if no tier data
+                  gamesByTier.moderate.push(game); // Default to moderate if no tier data
                   return;
                 }
                 
                 const tier = getBetTier(game.prediction.grade, game.bet.odds);
-                if (tier.tier === 1) gamesByTier.premium.push(game);
-                else if (tier.tier === 2) gamesByTier.value.push(game);
-                else gamesByTier.track.push(game);
+                if (tier.tier === 1) gamesByTier.max.push(game);
+                else if (tier.tier === 2) gamesByTier.moderate.push(game);
+                else gamesByTier.small.push(game);
               });
               
               let rankCounter = 1;
               
               return (
                 <>
-                  {/* TIER 1: PREMIUM PICKS */}
-                  {gamesByTier.premium.length > 0 && (
+                  {/* TIER 1: MAXIMUM CONVICTION (5.0u) */}
+                  {gamesByTier.max.length > 0 && (
                     <>
                       <TierHeader 
                         emoji="🔥" 
-                        title="PREMIUM PICKS" 
-                        subtitle={`${gamesByTier.premium.length} game${gamesByTier.premium.length !== 1 ? 's' : ''} with +20% historical ROI or higher`}
+                        title={isMobile ? "MAX CONVICTION" : "MAXIMUM CONVICTION"}
+                        subtitle={`${gamesByTier.max.length} game${gamesByTier.max.length !== 1 ? 's' : ''} • Top-tier opportunities with 5.0 unit allocation`}
                         color="#10B981"
+                        unitRange="5.0u"
                         isMobile={isMobile}
                       />
-                      {gamesByTier.premium.map((game) => (
+                      {gamesByTier.max.map((game) => (
                         <BasketballGameCard 
                           key={rankCounter} 
                           game={game} 
@@ -606,17 +657,18 @@ const Basketball = () => {
                     </>
                   )}
                   
-                  {/* TIER 2: VALUE PLAYS */}
-                  {gamesByTier.value.length > 0 && (
+                  {/* TIER 2: MODERATE CONVICTION (1.5-4.0u) */}
+                  {gamesByTier.moderate.length > 0 && (
                     <>
                       <TierHeader 
                         emoji="⚡" 
-                        title="VALUE PLAYS" 
-                        subtitle={`${gamesByTier.value.length} game${gamesByTier.value.length !== 1 ? 's' : ''} with positive expected ROI`}
+                        title="MODERATE CONVICTION" 
+                        subtitle={`${gamesByTier.moderate.length} game${gamesByTier.moderate.length !== 1 ? 's' : ''} • Standard allocation between 1.5-4.0 units`}
                         color="#3B82F6"
+                        unitRange="1.5-4.0u"
                         isMobile={isMobile}
                       />
-                      {gamesByTier.value.map((game) => (
+                      {gamesByTier.moderate.map((game) => (
                         <BasketballGameCard 
                           key={rankCounter} 
                           game={game} 
@@ -628,17 +680,18 @@ const Basketball = () => {
                     </>
                   )}
                   
-                  {/* TIER 3: TRACK ONLY (collapsed by default) */}
-                  {gamesByTier.track.length > 0 && (
+                  {/* TIER 3: SMALL POSITION (0.5-1.0u) */}
+                  {gamesByTier.small.length > 0 && (
                     <>
                       <TierHeader 
                         emoji="📊" 
-                        title="TRACK ONLY (Do Not Bet)" 
-                        subtitle={`${gamesByTier.track.length} game${gamesByTier.track.length !== 1 ? 's' : ''} with negative historical ROI`}
-                        color="#94A3B8"
+                        title="SMALL POSITION" 
+                        subtitle={`${gamesByTier.small.length} game${gamesByTier.small.length !== 1 ? 's' : ''} • Conservative 0.5-1.0 unit allocation for risk management`}
+                        color="#8B5CF6"
+                        unitRange="0.5-1.0u"
                         isMobile={isMobile}
                       />
-                      {gamesByTier.track.map((game) => (
+                      {gamesByTier.small.map((game) => (
                         <BasketballGameCard 
                           key={rankCounter} 
                           game={game} 
@@ -661,45 +714,95 @@ const Basketball = () => {
 
 // Helper Components
 
-// Tier Header Component
-const TierHeader = ({ emoji, title, subtitle, color, isMobile }) => {
+// Tier Header Component - Premium Mobile-Optimized
+const TierHeader = ({ emoji, title, subtitle, color, unitRange, isMobile }) => {
   return (
     <div style={{
-      background: `linear-gradient(135deg, ${color}15 0%, ${color}08 100%)`,
-      border: `1.5px solid ${color}30`,
-      borderRadius: isMobile ? '12px' : '16px',
-      padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: isMobile ? '0.75rem' : '1rem',
-      backdropFilter: 'blur(10px)',
-      boxShadow: `0 4px 16px ${color}15, inset 0 1px 0 rgba(255,255,255,0.05)`
+      background: `linear-gradient(135deg, ${color}18 0%, ${color}10 100%)`,
+      border: `2px solid ${color}40`,
+      borderRadius: isMobile ? '14px' : '16px',
+      padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
+      marginBottom: isMobile ? '0.75rem' : '1rem',
+      backdropFilter: 'blur(12px)',
+      boxShadow: `0 6px 20px ${color}20, inset 0 1px 0 rgba(255,255,255,0.08)`,
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* Subtle glow effect */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `radial-gradient(circle at top left, ${color}15 0%, transparent 60%)`,
+        pointerEvents: 'none'
+      }} />
+      
       <div style={{ 
-        fontSize: isMobile ? '1.5rem' : '1.75rem',
-        lineHeight: 1,
-        filter: `drop-shadow(0 2px 8px ${color}40)`
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: isMobile ? '0.875rem' : '1rem',
+        position: 'relative',
+        zIndex: 1
       }}>
-        {emoji}
-      </div>
-      <div style={{ flex: 1 }}>
+        {/* Emoji Badge */}
         <div style={{
-          fontSize: isMobile ? '0.938rem' : '1.063rem',
-          fontWeight: '900',
-          color: color,
-          letterSpacing: '-0.01em',
-          marginBottom: '0.25rem',
-          textShadow: `0 2px 12px ${color}30`
+          width: isMobile ? '42px' : '48px',
+          height: isMobile ? '42px' : '48px',
+          borderRadius: '12px',
+          background: `linear-gradient(135deg, ${color}30 0%, ${color}20 100%)`,
+          border: `2px solid ${color}50`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: isMobile ? '1.375rem' : '1.5rem',
+          flexShrink: 0,
+          boxShadow: `0 4px 12px ${color}25, inset 0 1px 0 rgba(255,255,255,0.15)`
         }}>
-          {title}
+          {emoji}
         </div>
-        <div style={{
-          fontSize: isMobile ? '0.688rem' : '0.75rem',
-          color: 'rgba(255,255,255,0.65)',
-          lineHeight: 1.3
-        }}>
-          {subtitle}
+        
+        {/* Text Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: isMobile ? '0.938rem' : '1.063rem',
+            fontWeight: '900',
+            color: color,
+            letterSpacing: '-0.02em',
+            marginBottom: '0.25rem',
+            textShadow: `0 2px 16px ${color}35`,
+            lineHeight: 1.15
+          }}>
+            {title}
+          </div>
+          <div style={{
+            fontSize: isMobile ? '0.688rem' : '0.75rem',
+            color: 'rgba(255,255,255,0.70)',
+            lineHeight: 1.35,
+            fontWeight: '600'
+          }}>
+            {subtitle}
+          </div>
         </div>
+        
+        {/* Unit Range Badge (desktop only) */}
+        {!isMobile && unitRange && (
+          <div style={{
+            padding: '0.5rem 0.875rem',
+            background: `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`,
+            border: `1.5px solid ${color}40`,
+            borderRadius: '10px',
+            fontSize: '0.813rem',
+            fontWeight: '900',
+            color: color,
+            fontFeatureSettings: "'tnum'",
+            letterSpacing: '0.02em',
+            boxShadow: `0 2px 8px ${color}20`
+          }}>
+            {unitRange}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -784,68 +887,95 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         </>
       )}
       
-      {/* HEADER - Ultra Compact */}
+      {/* HEADER - Unit-First Design */}
       <div style={{ 
-        padding: isMobile ? '0.875rem' : '1rem',
+        padding: isMobile ? '1rem' : '1.125rem',
         borderBottom: ELEVATION.flat.border,
-        background: 'rgba(0,0,0,0.2)',
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%)',
         position: 'relative',
         zIndex: 2
       }}>
-        {/* ⭐ STAR RATING + TIER BADGE (NEW!) */}
+        {/* 🎯 UNIT SIZE HERO + CONFIDENCE BADGE */}
         {(() => {
           const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-          const starInfo = getStarRating(pred.grade, pred.bestOdds);
+          const confidence = getConfidenceRating(pred.grade, pred.bestOdds);
           
           return (
             <div style={{
-              marginBottom: '0.625rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
+              marginBottom: isMobile ? '0.75rem' : '0.875rem'
             }}>
-              {/* Star Rating */}
+              {/* UNIT SIZE - HERO ELEMENT */}
               <div style={{
-                background: `linear-gradient(135deg, ${tierInfo.color}20 0%, ${tierInfo.color}10 100%)`,
-                border: `1.5px solid ${tierInfo.color}40`,
-                borderRadius: '8px',
-                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                marginBottom: '0.625rem',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                boxShadow: `0 2px 8px ${tierInfo.color}25`
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: '0.75rem'
               }}>
-                <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
-                  {starInfo.emoji}
-                </span>
-                <span style={{
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  fontWeight: '800',
-                  color: tierInfo.color,
-                  letterSpacing: '0.02em'
+                {/* Left: BET label + HUGE unit */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                  <span style={{
+                    fontSize: isMobile ? '0.813rem' : '0.875rem',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em'
+                  }}>
+                    BET:
+                  </span>
+                  <span style={{
+                    fontSize: isMobile ? '2rem' : '2.25rem',
+                    fontWeight: '900',
+                    color: tierInfo.color,
+                    letterSpacing: '-0.04em',
+                    fontFeatureSettings: "'tnum'",
+                    textShadow: `0 2px 16px ${tierInfo.color}40, 0 0 40px ${tierInfo.color}20`,
+                    lineHeight: 0.9
+                  }}>
+                    {pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u'}
+                  </span>
+                </div>
+                
+                {/* Right: Confidence badge */}
+                <div style={{
+                  background: `linear-gradient(135deg, ${confidence.color}22 0%, ${confidence.color}12 100%)`,
+                  border: `2px solid ${confidence.color}45`,
+                  borderRadius: '10px',
+                  padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  boxShadow: `0 3px 10px ${confidence.color}20`
                 }}>
-                  {starInfo.label}
-                </span>
+                  <span style={{ fontSize: isMobile ? '1rem' : '1.125rem' }}>
+                    {confidence.emoji}
+                  </span>
+                  <span style={{
+                    fontSize: isMobile ? '0.688rem' : '0.75rem',
+                    fontWeight: '800',
+                    color: confidence.color,
+                    letterSpacing: '0.01em',
+                    textTransform: 'uppercase'
+                  }}>
+                    {isMobile ? confidence.level : confidence.label}
+                  </span>
+                </div>
               </div>
               
-              {/* Historical ROI Badge */}
+              {/* Pattern Performance */}
               <div style={{
-                background: pred.historicalROI >= 0
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.10) 100%)'
-                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.10) 100%)',
-                border: `1.5px solid ${pred.historicalROI >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
-                borderRadius: '8px',
-                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
-                fontWeight: '900',
-                color: pred.historicalROI >= 0 ? '#10B981' : '#EF4444',
-                fontFeatureSettings: "'tnum'",
-                letterSpacing: '-0.01em',
-                boxShadow: pred.historicalROI >= 0
-                  ? '0 2px 8px rgba(16, 185, 129, 0.25)'
-                  : '0 2px 8px rgba(239, 68, 68, 0.25)'
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(255,255,255,0.65)',
+                fontWeight: '600',
+                lineHeight: 1.4
               }}>
-                {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}% ROI
+                {pred.oddsRangeName || 'Standard'} • Pattern ROI:{' '}
+                <span style={{
+                  color: pred.historicalROI >= 0 ? '#10B981' : '#F59E0B',
+                  fontWeight: '800'
+                }}>
+                  {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}%
+                </span>
               </div>
             </div>
           );
@@ -989,10 +1119,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             </div>
           )}
           
-        {/* Grade + UNITS (BIG & BOLD!) for PENDING games */}
+        {/* Bet Details for PENDING games - Premium Display */}
         {!game.betOutcome && (
           <div style={{
-            marginTop: '0.75rem',
+            marginTop: isMobile ? '0.75rem' : '0.875rem',
             background: (() => {
               const tierInfo = getBetTier(pred.grade, pred.bestOdds);
               return tierInfo.bgGradient;
@@ -1002,97 +1132,65 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               return `2px solid ${tierInfo.borderColor}`;
             })(),
             borderRadius: '12px',
-            padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1rem',
+            padding: isMobile ? '0.875rem 1rem' : '1rem 1.125rem',
             boxShadow: (() => {
               const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-              return `0 4px 16px ${tierInfo.color}20, inset 0 1px 0 rgba(255,255,255,0.06)`;
+              return `0 5px 18px ${tierInfo.color}22, inset 0 1px 0 rgba(255,255,255,0.08)`;
             })()
           }}>
+            {/* Top Row: Pick + Grade */}
             <div style={{
               display: 'flex',
-              alignItems: 'baseline',
+              alignItems: 'center',
               justifyContent: 'space-between',
+              marginBottom: '0.625rem',
               gap: '1rem'
             }}>
-              {/* Left: Grade */}
               <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.5rem'
+                fontSize: isMobile ? '0.875rem' : '0.938rem',
+                fontWeight: '800',
+                color: 'rgba(255,255,255,0.9)',
+                letterSpacing: '-0.01em'
               }}>
-                <span style={{
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  Grade:
-                </span>
-                <span style={{
-                  fontSize: isMobile ? '1.125rem' : '1.25rem',
-                  fontWeight: '900',
-                  color: gradeColors.color,
-                  letterSpacing: '-0.02em',
-                  textShadow: `0 2px 8px ${gradeColors.borderColor}30`
-                }}>
-                  {pred.grade}
-                </span>
+                Recommended Bet
               </div>
-              
-              {/* Right: UNITS (HERO ELEMENT) */}
               <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.5rem'
+                background: `linear-gradient(135deg, ${gradeColors.borderColor}22 0%, ${gradeColors.borderColor}12 100%)`,
+                border: `1.5px solid ${gradeColors.borderColor}`,
+                color: gradeColors.color,
+                padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
+                borderRadius: '8px',
+                fontWeight: '900',
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                letterSpacing: '-0.01em',
+                boxShadow: `0 2px 8px ${gradeColors.borderColor}25`
               }}>
-                <span style={{
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  Bet:
-                </span>
-                <span style={{
-                  fontSize: isMobile ? '1.5rem' : '1.75rem',
-                  fontWeight: '900',
-                  color: (() => {
-                    const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-                    return tierInfo.color;
-                  })(),
-                  letterSpacing: '-0.04em',
-                  fontFeatureSettings: "'tnum'",
-                  textShadow: (() => {
-                    const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-                    return `0 2px 12px ${tierInfo.color}40`;
-                  })()
-                }}>
-                  {pred.unitSize > 0 ? `${pred.unitSize}u` : 'Track Only'}
-                </span>
+                Grade: {pred.grade}
               </div>
             </div>
             
-            {/* Bottom: Historical Context */}
+            {/* Bottom: Unit Allocation + Rationale */}
             <div style={{
-              marginTop: '0.5rem',
-              paddingTop: '0.5rem',
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'rgba(255,255,255,0.7)',
-              lineHeight: 1.4
+              paddingTop: '0.625rem',
+              borderTop: '1px solid rgba(255,255,255,0.10)'
             }}>
-              {(() => {
-                const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-                return (
-                  <>
-                    <span style={{ color: tierInfo.color, fontWeight: '700' }}>{tierInfo.emoji}</span>
-                    {' '}
-                    {tierInfo.description}
-                  </>
-                );
-              })()}
+              <div style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(255,255,255,0.75)',
+                lineHeight: 1.5,
+                fontWeight: '600'
+              }}>
+                {(() => {
+                  const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                  return (
+                    <>
+                      <span style={{ color: tierInfo.color, fontWeight: '800' }}>{tierInfo.emoji}</span>
+                      {' '}
+                      {tierInfo.description}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         )}
