@@ -2,6 +2,8 @@ import admin from 'firebase-admin';
 import { parseBasketballResults } from '../src/utils/basketballResultsParser.js';
 import { getETGameDate } from '../src/utils/dateUtils.js';
 import { getOptimizedUnitSize, calculateUnitProfit } from '../src/utils/abcUnits.js';
+import { updateAllPatternROI } from './updatePatternROI.js';
+import { updatePendingBets } from './updatePendingBets.js';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
@@ -127,6 +129,16 @@ async function gradeBasketballBets() {
     
     console.log('==================================');
     console.log(`🎉 Graded ${gradedCount}/${betsSnapshot.size} bets\n`);
+    
+    // Trigger pattern ROI update and pending bet updates if bets were graded
+    if (gradedCount > 0) {
+      console.log('🔄 Triggering pattern ROI update...');
+      await updateAllPatternROI();
+      
+      console.log('🔄 Updating pending bets with new ROI data...');
+      await updatePendingBets();
+    }
+    
     return gradedCount;
     
   } catch (error) {
