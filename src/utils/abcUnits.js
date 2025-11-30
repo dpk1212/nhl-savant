@@ -266,6 +266,7 @@ export function getBetQualityEmoji(grade, odds) {
 /**
  * Get confidence rating based on unit size (conviction)
  * All picks are bets - rating shows conviction level
+ * NO EMOJIS - premium clean design
  */
 export function getConfidenceRating(grade, odds) {
   const context = getPerformanceContext(grade, odds);
@@ -275,40 +276,42 @@ export function getConfidenceRating(grade, odds) {
   if (units >= 5.0) {
     return { 
       level: 'MAXIMUM', 
-      emoji: '🔥',
       color: '#10B981',
-      label: roi > 25 ? 'ELITE PLAY' : 'MAX CONVICTION'
+      label: roi > 25 ? 'ELITE' : 'MAXIMUM'
     };
   }
-  if (units >= 3.5) {
+  if (units >= 4.0) {
     return { 
       level: 'HIGH', 
-      emoji: '⭐',
       color: '#14B8A6',
-      label: 'STRONG PLAY'
+      label: 'HIGH'
+    };
+  }
+  if (units >= 3.0) {
+    return { 
+      level: 'STRONG', 
+      color: '#3B82F6',
+      label: 'STRONG'
     };
   }
   if (units >= 2.0) {
     return { 
       level: 'MODERATE', 
-      emoji: '⚡',
-      color: '#3B82F6',
-      label: 'SOLID PLAY'
+      color: '#8B5CF6',
+      label: 'MODERATE'
     };
   }
   if (units >= 1.0) {
     return { 
       level: 'CONSERVATIVE', 
-      emoji: '📊',
-      color: '#8B5CF6',
-      label: 'MANAGED RISK'
+      color: '#A855F7',
+      label: 'CONSERVATIVE'
     };
   }
   return { 
     level: 'MINIMAL', 
-    emoji: '💎',
     color: '#6366F1',
-    label: 'SMALL POSITION'
+    label: 'MINIMAL'
   };
 }
 
@@ -325,6 +328,46 @@ export function getBetTier(grade, odds) {
   const roi = context.historicalROI;
   const units = context.units;
   
+  // DYNAMIC description based on ACTUAL unit size and ROI
+  const getDescription = (u, r) => {
+    const roiText = r >= 0 ? `+${r.toFixed(1)}%` : `${r.toFixed(1)}%`;
+    
+    if (u >= 5.0) {
+      return r > 20 
+        ? `Elite pattern (${roiText} ROI) • Maximum ${u} unit allocation`
+        : `Maximum ${u} unit position • Pattern ROI: ${roiText}`;
+    }
+    
+    if (u >= 4.0) {
+      return r > 15
+        ? `Strong pattern (${roiText} ROI) • ${u} unit allocation`
+        : `Above-standard ${u} unit position • Pattern ROI: ${roiText}`;
+    }
+    
+    if (u >= 3.0) {
+      return r > 10
+        ? `Solid pattern (${roiText} ROI) • ${u} unit allocation`
+        : `Standard ${u} unit position • Pattern ROI: ${roiText}`;
+    }
+    
+    if (u >= 2.0) {
+      return r > 0
+        ? `Moderate pattern (${roiText} ROI) • ${u} unit allocation`
+        : `${u} unit position with managed risk • Pattern ROI: ${roiText}`;
+    }
+    
+    if (u >= 1.0) {
+      return r >= 0
+        ? `Conservative ${u} unit allocation • Pattern ROI: ${roiText}`
+        : `Risk-managed ${u} unit position • Pattern ROI: ${roiText}`;
+    }
+    
+    // 0.5u
+    return r >= 0
+      ? `Minimal ${u} unit exposure • Pattern ROI: ${roiText}`
+      : `Small ${u} unit tracking position • Pattern ROI: ${roiText}`;
+  };
+  
   // Tier by unit size (represents conviction)
   if (units >= 5.0) {
     return {
@@ -336,9 +379,7 @@ export function getBetTier(grade, odds) {
       bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.12) 100%)',
       borderColor: 'rgba(16, 185, 129, 0.40)',
       unitRange: '5.0u',
-      description: roi > 0 
-        ? `Strong pattern (+${roi.toFixed(1)}% historical ROI) • Maximum allocation`
-        : `Model edge detected • 5.0 unit position`
+      description: getDescription(units, roi)
     };
   }
   
@@ -352,9 +393,7 @@ export function getBetTier(grade, odds) {
       bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.10) 100%)',
       borderColor: 'rgba(59, 130, 246, 0.35)',
       unitRange: '1.5-4.0u',
-      description: roi > 0
-        ? `Solid pattern (+${roi.toFixed(1)}% historical ROI) • Standard allocation`
-        : `Balanced risk management • ${units}u position`
+      description: getDescription(units, roi)
     };
   }
   
@@ -367,9 +406,7 @@ export function getBetTier(grade, odds) {
     bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.10) 100%)',
     borderColor: 'rgba(139, 92, 246, 0.35)',
     unitRange: '0.5-1.0u',
-    description: roi >= 0
-      ? `Conservative entry (+${roi.toFixed(1)}% historical ROI) • Minimal exposure`
-      : `Risk-managed bet (${roi.toFixed(1)}% pattern) • Limited ${units}u allocation`
+    description: getDescription(units, roi)
   };
 }
 

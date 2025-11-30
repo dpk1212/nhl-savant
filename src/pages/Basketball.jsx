@@ -406,51 +406,40 @@ const Basketball = () => {
         </p>
       </div>
 
-      {/* Unit Sizing Explainer - Premium */}
+      {/* Unit Sizing Explainer - Premium (No Emoji) */}
       <div style={{ 
         maxWidth: '1200px', 
         margin: '0 auto 1.5rem auto', 
         padding: isMobile ? '0 1rem' : '0' 
       }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
-          border: '1.5px solid rgba(16, 185, 129, 0.20)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(59, 130, 246, 0.10) 100%)',
+          border: '2px solid rgba(16, 185, 129, 0.25)',
           borderRadius: isMobile ? '14px' : '16px',
           padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255,255,255,0.05)'
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 5px 18px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.08)'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: isMobile ? '0.875rem' : '1rem'
-          }}>
+          <div style={{ flex: 1 }}>
             <div style={{
-              fontSize: isMobile ? '1.5rem' : '1.75rem',
-              lineHeight: 1,
-              filter: 'drop-shadow(0 2px 8px rgba(16, 185, 129, 0.3))'
+              fontSize: isMobile ? '0.875rem' : '0.938rem',
+              fontWeight: '900',
+              color: '#10B981',
+              marginBottom: '0.375rem',
+              letterSpacing: '-0.01em',
+              textTransform: 'uppercase'
             }}>
-              💡
+              Smart Unit Allocation
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontSize: isMobile ? '0.875rem' : '0.938rem',
-                fontWeight: '800',
-                color: '#10B981',
-                marginBottom: '0.375rem',
-                letterSpacing: '-0.01em'
-              }}>
-                Smart Unit Allocation System
-              </div>
-              <div style={{
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
-                color: 'rgba(255,255,255,0.75)',
-                lineHeight: 1.5,
-                fontWeight: '600'
-              }}>
-                We bet on {isMobile ? 'all' : 'every'} quality matchup but allocate units based on historical pattern performance. 
-                {!isMobile && ' High-performing patterns receive 5.0 units, while volatile patterns get conservative 0.5-1.0 unit allocations for risk management.'}
-              </div>
+            <div style={{
+              fontSize: isMobile ? '0.75rem' : '0.813rem',
+              color: 'rgba(255,255,255,0.80)',
+              lineHeight: 1.5,
+              fontWeight: '600'
+            }}>
+              {isMobile 
+                ? 'Unit sizes based on historical pattern performance (0.5u-5.0u)' 
+                : 'Every matchup is analyzed, but unit allocation is scaled by historical pattern performance. Strong patterns receive up to 5.0 units, while volatile patterns are allocated 0.5-1.0 units for optimal risk management.'}
             </div>
           </div>
         </div>
@@ -936,46 +925,36 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                   </span>
                 </div>
                 
-                {/* Right: Confidence badge */}
+                {/* Right: Confidence badge (NO EMOJI - PREMIUM) */}
                 <div style={{
-                  background: `linear-gradient(135deg, ${confidence.color}22 0%, ${confidence.color}12 100%)`,
-                  border: `2px solid ${confidence.color}45`,
+                  background: `linear-gradient(135deg, ${confidence.color}20 0%, ${confidence.color}12 100%)`,
+                  border: `2px solid ${confidence.color}50`,
                   borderRadius: '10px',
-                  padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  boxShadow: `0 3px 10px ${confidence.color}20`
+                  padding: isMobile ? '0.563rem 0.875rem' : '0.625rem 1rem',
+                  boxShadow: `0 3px 12px ${confidence.color}22, inset 0 1px 0 rgba(255,255,255,0.08)`
                 }}>
-                  <span style={{ fontSize: isMobile ? '1rem' : '1.125rem' }}>
-                    {confidence.emoji}
-                  </span>
                   <span style={{
-                    fontSize: isMobile ? '0.688rem' : '0.75rem',
-                    fontWeight: '800',
+                    fontSize: isMobile ? '0.75rem' : '0.813rem',
+                    fontWeight: '900',
                     color: confidence.color,
-                    letterSpacing: '0.01em',
-                    textTransform: 'uppercase'
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    textShadow: `0 1px 6px ${confidence.color}30`
                   }}>
-                    {isMobile ? confidence.level : confidence.label}
+                    {confidence.label}
                   </span>
                 </div>
               </div>
               
-              {/* Pattern Performance */}
+              {/* Pattern Context */}
               <div style={{
                 fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255,255,255,0.65)',
+                color: 'rgba(255,255,255,0.70)',
                 fontWeight: '600',
-                lineHeight: 1.4
+                lineHeight: 1.4,
+                letterSpacing: '0.01em'
               }}>
-                {pred.oddsRangeName || 'Standard'} • Pattern ROI:{' '}
-                <span style={{
-                  color: pred.historicalROI >= 0 ? '#10B981' : '#F59E0B',
-                  fontWeight: '800'
-                }}>
-                  {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}%
-                </span>
+                {pred.oddsRangeName || 'Standard odds'} pattern
               </div>
             </div>
           );
@@ -1169,7 +1148,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               </div>
             </div>
             
-            {/* Bottom: Unit Allocation + Rationale */}
+            {/* Bottom: Unit Allocation Rationale (DYNAMIC) */}
             <div style={{
               paddingTop: '0.625rem',
               borderTop: '1px solid rgba(255,255,255,0.10)'
@@ -1178,17 +1157,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 fontSize: isMobile ? '0.688rem' : '0.75rem',
                 color: 'rgba(255,255,255,0.75)',
                 lineHeight: 1.5,
-                fontWeight: '600'
+                fontWeight: '600',
+                letterSpacing: '0.005em'
               }}>
                 {(() => {
                   const tierInfo = getBetTier(pred.grade, pred.bestOdds);
-                  return (
-                    <>
-                      <span style={{ color: tierInfo.color, fontWeight: '800' }}>{tierInfo.emoji}</span>
-                      {' '}
-                      {tierInfo.description}
-                    </>
-                  );
+                  // Clean description without emoji
+                  return tierInfo.description;
                 })()}
               </div>
             </div>
