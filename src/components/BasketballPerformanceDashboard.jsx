@@ -292,15 +292,6 @@ export function BasketballPerformanceDashboard() {
               isMobile={isMobile}
             />
 
-            {/* Units Risked */}
-            <StatCard
-              icon={<DollarSign size={20} />}
-              value={`${totalRisked.toFixed(1)}u`}
-              label="Units Risked"
-              color="rgba(255,255,255,0.7)"
-              isMobile={isMobile}
-            />
-
             {/* Units Won */}
             <StatCard
               icon={<DollarSign size={20} />}
