@@ -149,9 +149,9 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     else if (dratePred) drateOnly++;
     else noMatches++;
     
-    // Get team ratings from Haslametrics
-    const awayTeamData = haslaTeams[awayMapping.normalized];
-    const homeTeamData = haslaTeams[homeMapping.normalized];
+    // Get team ratings from Haslametrics (use Haslametrics name, not normalized!)
+    const awayTeamData = haslaTeams[awayMapping.haslametrics];
+    const homeTeamData = haslaTeams[homeMapping.haslametrics];
     
     // Build matched game object
     const matchedGame = {
