@@ -132,10 +132,37 @@ function calculatePatternStats(bets) {
       losses++;
     }
 
-    // Use actual units risked from result if available, otherwise prediction
-    const units = bet.result?.units || bet.prediction?.unitSize || 0;
+    // Use actual units risked from result if available, otherwise prediction, 
+    // otherwise calculate retroactively based on grade + odds
+    let units = bet.result?.units || bet.prediction?.unitSize;
+    
+    if (!units || units === 0) {
+      // Retroactively calculate units for historical bets
+      const grade = bet.prediction?.grade;
+      const odds = bet.bet?.odds || bet.prediction?.bestOdds;
+      units = getOptimizedUnitSize(grade, odds);
+    }
+    
     totalRisked += units;
-    totalProfit += (bet.result?.profit || 0);
+    
+    // Calculate profit - use stored profit if available, otherwise calculate it
+    let profit = bet.result?.profit;
+    
+    if (profit === undefined || profit === null) {
+      // Retroactively calculate profit for historical bets
+      const odds = bet.bet?.odds || bet.prediction?.bestOdds;
+      const isWin = bet.result?.outcome === 'WIN';
+      
+      if (isWin) {
+        // American odds to decimal
+        const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+        profit = units * decimal;
+      } else {
+        profit = -units;
+      }
+    }
+    
+    totalProfit += profit;
   });
 
   const winRate = totalBets > 0 ? (wins / totalBets) * 100 : 0;
