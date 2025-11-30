@@ -346,21 +346,30 @@ export function getBasketballContext(game, prediction, odds) {
   }
   
   // ============================================================
-  // C/D TIER (<1.5% Edge) - Minimal/Monitor
+  // C/D TIER (<1.5% Edge) - Minimal/Conservative Sizing
   // ============================================================
   
   if (bestEV < 0) {
+    // NEGATIVE EV - but we bet it with conservative unit sizing
     return {
-      icon: '⚠️',
-      title: `${bestTeam} Negative Edge`,
-      subtitle: `${modelProb.toFixed(0)}% to win • ${bestEV.toFixed(1)}% disadvantage, avoid`
+      icon: '📊',
+      title: `${bestTeam} Tracked Position`,
+      subtitle: `Model shows ${modelProb.toFixed(0)}% • Conservative sizing manages ${Math.abs(bestEV).toFixed(1)}% pattern volatility`
+    };
+  }
+  
+  if (bestEV < 0.5) {
+    return {
+      icon: '📊',
+      title: `${bestTeam} Minimal Edge Play`,
+      subtitle: `${modelProb.toFixed(0)}% to win • Small +${bestEV.toFixed(1)}% edge, reduced allocation`
     };
   }
   
   return {
-    icon: '👀',
-    title: `${bestTeam} Minimal Edge`,
-    subtitle: `${modelProb.toFixed(0)}% to win • <1% edge, monitor for line movement`
+    icon: '💡',
+    title: `${bestTeam} Standard Opportunity`,
+    subtitle: `${modelProb.toFixed(0)}% to win • +${bestEV.toFixed(1)}% edge, moderate sizing`
   };
 }
 
