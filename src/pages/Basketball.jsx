@@ -865,222 +865,484 @@ const EnhancedTierHeader = ({
           position: 'relative',
           zIndex: 1
         }}>
-          {/* Visual Distribution */}
+          {/* Visual Distribution - PREMIUM */}
           <div style={{
-            marginBottom: isMobile ? '0.875rem' : '1rem'
+            marginBottom: isMobile ? '1rem' : '1.25rem',
+            background: 'rgba(0,0,0,0.25)',
+            borderRadius: '12px',
+            padding: isMobile ? '0.875rem' : '1rem',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(8px)'
           }}>
             <div style={{
               fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'rgba(255,255,255,0.80)',
-              fontWeight: '800',
-              marginBottom: '0.625rem',
+              color: 'rgba(255,255,255,0.85)',
+              fontWeight: '900',
+              marginBottom: isMobile ? '0.75rem' : '0.875rem',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              letterSpacing: '0.08em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
+              <div style={{
+                width: isMobile ? '3px' : '4px',
+                height: isMobile ? '12px' : '14px',
+                background: `linear-gradient(180deg, ${color} 0%, ${color}80 100%)`,
+                borderRadius: '2px'
+              }} />
               Today's Distribution
             </div>
             
-            {/* Maximum Tier Bar */}
-            <div style={{ marginBottom: '0.5rem' }}>
+            {/* Maximum Tier Bar - ENHANCED */}
+            <div style={{ marginBottom: isMobile ? '0.625rem' : '0.75rem' }}>
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
-                marginBottom: '0.25rem',
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
-                color: 'rgba(255,255,255,0.70)',
-                fontWeight: '700'
+                alignItems: 'center',
+                marginBottom: '0.375rem'
               }}>
-                <span>MAXIMUM (5.0u)</span>
-                <span>{allTiers.maximum.count} games • {allTiers.maximum.totalUnits.toFixed(1)}u</span>
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.70)',
+                  fontWeight: '700',
+                  letterSpacing: '0.02em'
+                }}>
+                  MAXIMUM <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>(5.0u)</span>
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '800',
+                  color: '#10B981',
+                  fontFeatureSettings: "'tnum'",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
+                }}>
+                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>{allTiers.maximum.count} games</span>
+                  <span style={{
+                    padding: '0.125rem 0.375rem',
+                    background: 'rgba(16,185,129,0.15)',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(16,185,129,0.25)'
+                  }}>
+                    {allTiers.maximum.totalUnits.toFixed(1)}u
+                  </span>
+                </div>
               </div>
               <div style={{
-                height: isMobile ? '6px' : '8px',
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: '4px',
-                overflow: 'hidden'
+                height: isMobile ? '8px' : '10px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.08)',
+                position: 'relative'
               }}>
                 <div style={{
                   width: `${maxPercent}%`,
                   height: '100%',
                   background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
-                  transition: 'width 0.5s ease'
-                }} />
+                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 0 12px rgba(16,185,129,0.4)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '50%',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                    borderRadius: '6px 6px 0 0'
+                  }} />
+                </div>
               </div>
             </div>
             
-            {/* Moderate Tier Bar */}
-            <div style={{ marginBottom: '0.5rem' }}>
+            {/* Moderate Tier Bar - ENHANCED */}
+            <div style={{ marginBottom: isMobile ? '0.625rem' : '0.75rem' }}>
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
-                marginBottom: '0.25rem',
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
-                color: color,
-                fontWeight: '800'
+                alignItems: 'center',
+                marginBottom: '0.375rem'
               }}>
-                <span>MODERATE (1.5-4.0u)</span>
-                <span>{allTiers.moderate.count} games • {allTiers.moderate.totalUnits.toFixed(1)}u</span>
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: color,
+                  fontWeight: '800',
+                  letterSpacing: '0.02em'
+                }}>
+                  MODERATE <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>(1.5-4.0u)</span>
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '800',
+                  color: color,
+                  fontFeatureSettings: "'tnum'",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
+                }}>
+                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>{allTiers.moderate.count} games</span>
+                  <span style={{
+                    padding: '0.125rem 0.375rem',
+                    background: `${color}20`,
+                    borderRadius: '4px',
+                    border: `1px solid ${color}35`
+                  }}>
+                    {allTiers.moderate.totalUnits.toFixed(1)}u
+                  </span>
+                </div>
               </div>
               <div style={{
-                height: isMobile ? '6px' : '8px',
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: '4px',
-                overflow: 'hidden'
+                height: isMobile ? '8px' : '10px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.08)',
+                position: 'relative'
               }}>
                 <div style={{
                   width: `${moderatePercent}%`,
                   height: '100%',
-                  background: `linear-gradient(90deg, ${color} 0%, ${color}CC 100%)`,
-                  transition: 'width 0.5s ease'
-                }} />
+                  background: `linear-gradient(90deg, ${color} 0%, ${color}DD 100%)`,
+                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: `0 0 12px ${color}50`,
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '50%',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                    borderRadius: '6px 6px 0 0'
+                  }} />
+                </div>
               </div>
             </div>
             
-            {/* Small Tier Bar */}
+            {/* Small Tier Bar - ENHANCED */}
             <div>
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
-                marginBottom: '0.25rem',
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
-                color: 'rgba(255,255,255,0.70)',
-                fontWeight: '700'
+                alignItems: 'center',
+                marginBottom: '0.375rem'
               }}>
-                <span>SMALL (0.5-1.0u)</span>
-                <span>{allTiers.small.count} games • {allTiers.small.totalUnits.toFixed(1)}u</span>
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.70)',
+                  fontWeight: '700',
+                  letterSpacing: '0.02em'
+                }}>
+                  SMALL <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>(0.5-1.0u)</span>
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '800',
+                  color: '#8B5CF6',
+                  fontFeatureSettings: "'tnum'",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
+                }}>
+                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>{allTiers.small.count} games</span>
+                  <span style={{
+                    padding: '0.125rem 0.375rem',
+                    background: 'rgba(139,92,246,0.15)',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(139,92,246,0.25)'
+                  }}>
+                    {allTiers.small.totalUnits.toFixed(1)}u
+                  </span>
+                </div>
               </div>
               <div style={{
-                height: isMobile ? '6px' : '8px',
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: '4px',
-                overflow: 'hidden'
+                height: isMobile ? '8px' : '10px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
+                borderRadius: '6px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.08)',
+                position: 'relative'
               }}>
                 <div style={{
                   width: `${smallPercent}%`,
                   height: '100%',
                   background: 'linear-gradient(90deg, #8B5CF6 0%, #7C3AED 100%)',
-                  transition: 'width 0.5s ease'
-                }} />
+                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 0 12px rgba(139,92,246,0.4)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '50%',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                    borderRadius: '6px 6px 0 0'
+                  }} />
+                </div>
               </div>
             </div>
           </div>
           
-          {/* Top Plays */}
-          <div>
+          {/* Top Plays - PREMIUM */}
+          <div style={{
+            background: 'rgba(0,0,0,0.25)',
+            borderRadius: '12px',
+            padding: isMobile ? '0.875rem' : '1rem',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(8px)'
+          }}>
             <div style={{
               fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'rgba(255,255,255,0.80)',
-              fontWeight: '800',
-              marginBottom: '0.625rem',
+              color: 'rgba(255,255,255,0.85)',
+              fontWeight: '900',
+              marginBottom: isMobile ? '0.75rem' : '0.875rem',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              letterSpacing: '0.08em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
+              <div style={{
+                width: isMobile ? '3px' : '4px',
+                height: isMobile ? '12px' : '14px',
+                background: `linear-gradient(180deg, ${color} 0%, ${color}80 100%)`,
+                borderRadius: '2px'
+              }} />
               Top Plays in This Tier
             </div>
             
-            {topPlays.map((game, idx) => (
-              <div key={idx} style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: '8px',
-                padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
-                marginBottom: idx < topPlays.length - 1 ? '0.5rem' : 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.625rem'
-              }}>
-                <div style={{
-                  width: isMobile ? '20px' : '24px',
-                  height: isMobile ? '20px' : '24px',
-                  borderRadius: '6px',
-                  background: `linear-gradient(135deg, ${color}35 0%, ${color}25 100%)`,
-                  border: `1.5px solid ${color}50`,
+            {topPlays.map((game, idx) => {
+              const gradeColors = getGradeColorScale(game.prediction?.grade || 'B');
+              const rankColors = ['#10B981', '#14B8A6', '#3B82F6'];
+              const rankColor = rankColors[idx] || color;
+              
+              return (
+                <div key={idx} style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '10px',
+                  padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 0.875rem',
+                  marginBottom: idx < topPlays.length - 1 ? (isMobile ? '0.5rem' : '0.625rem') : 0,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  fontWeight: '900',
-                  color: color,
-                  flexShrink: 0
-                }}>
-                  {idx + 1}
-                </div>
-                
-                <div style={{ flex: 1, minWidth: 0 }}>
+                  gap: isMobile ? '0.625rem' : '0.75rem',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.05) 100%)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)';
+                  e.currentTarget.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.currentTarget.style.transform = 'translateX(0)';
+                }}
+                >
+                  {/* Rank Badge - Gradient */}
                   <div style={{
+                    width: isMobile ? '26px' : '30px',
+                    height: isMobile ? '26px' : '30px',
+                    borderRadius: '8px',
+                    background: `linear-gradient(135deg, ${rankColor}35 0%, ${rankColor}20 100%)`,
+                    border: `2px solid ${rankColor}50`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     fontSize: isMobile ? '0.688rem' : '0.75rem',
-                    fontWeight: '800',
-                    color: 'rgba(255,255,255,0.95)',
-                    marginBottom: '0.125rem',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    fontWeight: '900',
+                    color: rankColor,
+                    flexShrink: 0,
+                    boxShadow: `0 4px 12px ${rankColor}25, inset 0 1px 0 rgba(255,255,255,0.15)`,
+                    position: 'relative'
                   }}>
-                    {game.awayTeam} @ {game.homeTeam}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: `radial-gradient(circle at top, ${rankColor}20 0%, transparent 70%)`,
+                      pointerEvents: 'none'
+                    }} />
+                    {idx + 1}
                   </div>
+                  
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '900',
+                      color: 'rgba(255,255,255,0.95)',
+                      marginBottom: '0.25rem',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      letterSpacing: '-0.01em'
+                    }}>
+                      {game.awayTeam} @ {game.homeTeam}
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.625rem' : '0.688rem',
+                      color: 'rgba(255,255,255,0.60)',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{
+                        padding: '0.125rem 0.375rem',
+                        background: `${gradeColors.borderColor}20`,
+                        border: `1px solid ${gradeColors.borderColor}35`,
+                        borderRadius: '4px',
+                        color: gradeColors.color,
+                        fontWeight: '800',
+                        fontSize: isMobile ? '0.625rem' : '0.688rem'
+                      }}>
+                        {game.prediction?.grade}
+                      </span>
+                      <span style={{
+                        color: 'rgba(255,255,255,0.55)',
+                        fontFeatureSettings: "'tnum'"
+                      }}>
+                        {game.prediction?.bestOdds > 0 ? '+' : ''}{game.prediction?.bestOdds}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Unit Badge */}
                   <div style={{
-                    fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.65)',
-                    fontWeight: '600'
+                    padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                    background: `linear-gradient(135deg, ${color}30 0%, ${color}20 100%)`,
+                    border: `1.5px solid ${color}45`,
+                    borderRadius: '8px',
+                    fontSize: isMobile ? '0.75rem' : '0.813rem',
+                    fontWeight: '900',
+                    color: color,
+                    whiteSpace: 'nowrap',
+                    boxShadow: `0 2px 8px ${color}20, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                    fontFeatureSettings: "'tnum'",
+                    letterSpacing: '-0.01em'
                   }}>
-                    {game.prediction?.grade} • {game.prediction?.bestOdds > 0 ? '+' : ''}{game.prediction?.bestOdds}
+                    {game.prediction?.unitSize.toFixed(1)}u
+                  </div>
+                  
+                  {/* ROI Badge */}
+                  <div style={{
+                    padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.625rem',
+                    background: game.prediction?.historicalROI >= 0 
+                      ? 'linear-gradient(135deg, rgba(16,185,129,0.20) 0%, rgba(16,185,129,0.12) 100%)'
+                      : 'linear-gradient(135deg, rgba(245,158,11,0.20) 0%, rgba(245,158,11,0.12) 100%)',
+                    border: game.prediction?.historicalROI >= 0
+                      ? '1.5px solid rgba(16,185,129,0.35)'
+                      : '1.5px solid rgba(245,158,11,0.35)',
+                    borderRadius: '8px',
+                    fontSize: isMobile ? '0.688rem' : '0.75rem',
+                    fontWeight: '900',
+                    color: game.prediction?.historicalROI >= 0 ? '#10B981' : '#F59E0B',
+                    whiteSpace: 'nowrap',
+                    fontFeatureSettings: "'tnum'",
+                    boxShadow: game.prediction?.historicalROI >= 0
+                      ? '0 2px 8px rgba(16,185,129,0.15)'
+                      : '0 2px 8px rgba(245,158,11,0.15)'
+                  }}>
+                    {game.prediction?.historicalROI >= 0 ? '+' : ''}{game.prediction?.historicalROI.toFixed(1)}%
                   </div>
                 </div>
-                
-                <div style={{
-                  padding: '0.25rem 0.5rem',
-                  background: `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`,
-                  border: `1px solid ${color}35`,
-                  borderRadius: '6px',
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  fontWeight: '900',
-                  color: color,
-                  whiteSpace: 'nowrap'
-                }}>
-                  {game.prediction?.unitSize.toFixed(1)}u
-                </div>
-                
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  fontWeight: '800',
-                  color: game.prediction?.historicalROI >= 0 ? '#10B981' : '#F59E0B',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {game.prediction?.historicalROI >= 0 ? '+' : ''}{game.prediction?.historicalROI.toFixed(1)}%
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
-          {/* Click to collapse hint */}
+          {/* Click to collapse hint - PREMIUM */}
           <div style={{
-            marginTop: isMobile ? '0.75rem' : '0.875rem',
-            textAlign: 'center',
-            fontSize: isMobile ? '0.625rem' : '0.688rem',
-            color: 'rgba(255,255,255,0.50)',
-            fontWeight: '600',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            marginTop: isMobile ? '1rem' : '1.125rem',
+            paddingTop: isMobile ? '0.875rem' : '1rem',
+            borderTop: `1px solid ${color}15`,
+            textAlign: 'center'
           }}>
-            Click to collapse ↑
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.375rem 0.875rem',
+              background: `linear-gradient(135deg, ${color}12 0%, ${color}08 100%)`,
+              border: `1px solid ${color}20`,
+              borderRadius: '8px',
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255,255,255,0.55)',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `linear-gradient(135deg, ${color}20 0%, ${color}12 100%)`;
+              e.currentTarget.style.borderColor = `${color}35`;
+              e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = `linear-gradient(135deg, ${color}12 0%, ${color}08 100%)`;
+              e.currentTarget.style.borderColor = `${color}20`;
+              e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
+            }}
+            >
+              <span>Collapse Details</span>
+              <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>↑</span>
+            </div>
           </div>
         </div>
       )}
       
-      {/* Click to expand hint (when collapsed) */}
+      {/* Click to expand hint (when collapsed) - PREMIUM */}
       {!expanded && (
         <div style={{
-          marginTop: '0.625rem',
+          marginTop: isMobile ? '0.75rem' : '0.875rem',
+          paddingTop: isMobile ? '0.75rem' : '0.875rem',
+          borderTop: `1px solid ${color}15`,
           textAlign: 'center',
-          fontSize: isMobile ? '0.625rem' : '0.688rem',
-          color: 'rgba(255,255,255,0.50)',
-          fontWeight: '600',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
           position: 'relative',
           zIndex: 1
         }}>
-          Click for details ↓
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.375rem 0.875rem',
+            background: `linear-gradient(135deg, ${color}12 0%, ${color}08 100%)`,
+            border: `1px solid ${color}20`,
+            borderRadius: '8px',
+            fontSize: isMobile ? '0.625rem' : '0.688rem',
+            color: 'rgba(255,255,255,0.55)',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = `linear-gradient(135deg, ${color}20 0%, ${color}12 100%)`;
+            e.currentTarget.style.borderColor = `${color}35`;
+            e.currentTarget.style.color = 'rgba(255,255,255,0.75)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = `linear-gradient(135deg, ${color}12 0%, ${color}08 100%)`;
+            e.currentTarget.style.borderColor = `${color}20`;
+            e.currentTarget.style.color = 'rgba(255,255,255,0.55)';
+          }}
+          >
+            <span>View Details</span>
+            <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem' }}>↓</span>
+          </div>
         </div>
       )}
     </div>
