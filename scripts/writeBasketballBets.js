@@ -92,7 +92,15 @@ async function saveBetToFirebase(db, game, prediction) {
     prediction: {
       evPercent: prediction.bestEV,
       grade: prediction.grade,
+      simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
+      
+      // OPTIMIZED UNIT ALLOCATION
+      unitSize: prediction.unitSize,
+      oddsRange: prediction.oddsRange,
+      oddsRangeName: prediction.oddsRangeName,
+      historicalROI: prediction.historicalROI,
+      qualityEmoji: prediction.qualityEmoji,
       
       ensembleAwayProb: prediction.ensembleAwayProb,
       ensembleHomeProb: prediction.ensembleHomeProb,
@@ -133,7 +141,8 @@ async function saveBetToFirebase(db, game, prediction) {
   };
   
   await setDoc(betRef, betData);
-  console.log(`   ✅ Saved: ${betId} (${prediction.bestOdds}, +${prediction.bestEV.toFixed(1)}% EV, Grade: ${prediction.grade})`);
+  console.log(`   ✅ Saved: ${betId}`);
+  console.log(`      ${prediction.bestOdds} (${prediction.oddsRangeName}) | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade} | ${prediction.unitSize}u`);
   
   return betId;
 }
@@ -185,8 +194,9 @@ async function writeBasketballBets() {
       const pred = game.prediction;
       const winProb = (pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100;
       console.log(`   ${i + 1}. ${game.awayTeam} @ ${game.homeTeam}`);
-      console.log(`      Pick: ${pred.bestTeam} ${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds}`);
-      console.log(`      ${winProb.toFixed(1)}% to win (${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% edge) | Grade: ${pred.grade} | ${pred.confidence}`);
+      console.log(`      Pick: ${pred.bestTeam} ${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds} (${pred.oddsRangeName})`);
+      console.log(`      ${winProb.toFixed(1)}% to win (${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% EV) | Grade: ${pred.grade}`);
+      console.log(`      ${pred.qualityEmoji} UNITS: ${pred.unitSize}u (${pred.historicalROI > 0 ? '+' : ''}${pred.historicalROI.toFixed(1)}% historical ROI)`);
     });
     
     if (qualityBets.length === 0) {
