@@ -623,15 +623,18 @@ const Basketball = () => {
               const allTiers = {
                 maximum: {
                   count: gamesByTier.max.length,
-                  totalUnits: gamesByTier.max.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0)
+                  totalUnits: gamesByTier.max.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0),
+                  games: gamesByTier.max
                 },
                 moderate: {
                   count: gamesByTier.moderate.length,
-                  totalUnits: gamesByTier.moderate.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0)
+                  totalUnits: gamesByTier.moderate.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0),
+                  games: gamesByTier.moderate
                 },
                 small: {
                   count: gamesByTier.small.length,
-                  totalUnits: gamesByTier.small.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0)
+                  totalUnits: gamesByTier.small.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0),
+                  games: gamesByTier.small
                 }
               };
               
@@ -742,25 +745,44 @@ const EnhancedTierHeader = ({
     : 0;
   const expectedProfit = totalUnits * (avgROI / 100);
   
-  // HIDE TIER if expected profit is negative - we don't recommend losing money!
-  if (expectedProfit < 0) {
-    return null;
-  }
-  
   // Get top 3 plays by unit size
   const topPlays = [...tierGames]
     .sort((a, b) => (b.prediction?.unitSize || 0) - (a.prediction?.unitSize || 0))
     .slice(0, 3);
   
-  // Calculate distribution for visual bars
-  const maxTotalUnits = allTiers.maximum.totalUnits;
-  const moderateTotalUnits = allTiers.moderate.totalUnits;
-  const smallTotalUnits = allTiers.small.totalUnits;
-  const grandTotal = maxTotalUnits + moderateTotalUnits + smallTotalUnits;
+  // Calculate 5-tier granular distribution for PREMIUM visual
+  const distributionTiers = {
+    elite: { min: 5.0, max: 5.0, games: [], totalUnits: 0, color: '#10B981', label: 'Elite' },
+    premium: { min: 4.0, max: 4.9, games: [], totalUnits: 0, color: '#14B8A6', label: 'Premium' },
+    standard: { min: 2.5, max: 3.9, games: [], totalUnits: 0, color: '#3B82F6', label: 'Standard' },
+    conservative: { min: 1.0, max: 2.4, games: [], totalUnits: 0, color: '#8B5CF6', label: 'Conservative' },
+    minimal: { min: 0.5, max: 0.9, games: [], totalUnits: 0, color: '#6366F1', label: 'Minimal' }
+  };
   
-  const maxPercent = (maxTotalUnits / grandTotal) * 100;
-  const moderatePercent = (moderateTotalUnits / grandTotal) * 100;
-  const smallPercent = (smallTotalUnits / grandTotal) * 100;
+  // Distribute all games across tiers
+  const allGames = [...allTiers.maximum.games, ...allTiers.moderate.games, ...allTiers.small.games];
+  allGames.forEach(game => {
+    const units = game.prediction?.unitSize || 0;
+    
+    if (units >= 5.0) {
+      distributionTiers.elite.games.push(game);
+      distributionTiers.elite.totalUnits += units;
+    } else if (units >= 4.0) {
+      distributionTiers.premium.games.push(game);
+      distributionTiers.premium.totalUnits += units;
+    } else if (units >= 2.5) {
+      distributionTiers.standard.games.push(game);
+      distributionTiers.standard.totalUnits += units;
+    } else if (units >= 1.0) {
+      distributionTiers.conservative.games.push(game);
+      distributionTiers.conservative.totalUnits += units;
+    } else if (units >= 0.5) {
+      distributionTiers.minimal.games.push(game);
+      distributionTiers.minimal.totalUnits += units;
+    }
+  });
+  
+  const grandTotal = Object.values(distributionTiers).reduce((sum, tier) => sum + tier.totalUnits, 0);
   
   return (
     <div style={{
@@ -837,28 +859,24 @@ const EnhancedTierHeader = ({
           </div>
         </div>
         
-        {/* Expected Profit Badge */}
-        <div style={{
-          padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
-          background: expectedProfit >= 0 
-            ? 'linear-gradient(135deg, rgba(16,185,129,0.25) 0%, rgba(16,185,129,0.15) 100%)'
-            : 'linear-gradient(135deg, rgba(239,68,68,0.25) 0%, rgba(239,68,68,0.15) 100%)',
-          border: expectedProfit >= 0 
-            ? '1.5px solid rgba(16,185,129,0.40)'
-            : '1.5px solid rgba(239,68,68,0.40)',
-          borderRadius: '10px',
-          fontSize: isMobile ? '0.75rem' : '0.813rem',
-          fontWeight: '900',
-          color: expectedProfit >= 0 ? '#10B981' : '#EF4444',
-          fontFeatureSettings: "'tnum'",
-          letterSpacing: '0.02em',
-          boxShadow: expectedProfit >= 0 
-            ? '0 2px 8px rgba(16,185,129,0.20)'
-            : '0 2px 8px rgba(239,68,68,0.20)',
-          whiteSpace: 'nowrap'
-        }}>
-          {expectedProfit >= 0 ? '+' : ''}{expectedProfit.toFixed(1)}u
-        </div>
+        {/* Expected Profit Badge - ONLY show if positive */}
+        {expectedProfit >= 0 && (
+          <div style={{
+            padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.25) 0%, rgba(16,185,129,0.15) 100%)',
+            border: '1.5px solid rgba(16,185,129,0.40)',
+            borderRadius: '10px',
+            fontSize: isMobile ? '0.75rem' : '0.813rem',
+            fontWeight: '900',
+            color: '#10B981',
+            fontFeatureSettings: "'tnum'",
+            letterSpacing: '0.02em',
+            boxShadow: '0 2px 8px rgba(16,185,129,0.20)',
+            whiteSpace: 'nowrap'
+          }}>
+            +{expectedProfit.toFixed(1)}u
+          </div>
+        )}
       </div>
       
       {/* Expanded Content */}
@@ -870,7 +888,7 @@ const EnhancedTierHeader = ({
           position: 'relative',
           zIndex: 1
         }}>
-          {/* Visual Distribution - PREMIUM SEPARATED CARDS */}
+          {/* Visual Distribution - 5-TIER PREMIUM GRANULAR */}
           <div style={{
             marginBottom: isMobile ? '1rem' : '1.25rem'
           }}>
@@ -894,220 +912,91 @@ const EnhancedTierHeader = ({
               Today's Distribution
             </div>
             
-            {/* Maximum Tier Card */}
-            <div style={{
-              background: 'rgba(0,0,0,0.25)',
-              borderRadius: '10px',
-              padding: isMobile ? '0.75rem' : '0.875rem',
-              border: '1px solid rgba(16,185,129,0.20)',
-              backdropFilter: 'blur(8px)',
-              marginBottom: isMobile ? '0.5rem' : '0.625rem'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '0.5rem'
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.75)',
-                  fontWeight: '700',
-                  letterSpacing: '0.02em'
+            {/* Render 5 granular tiers */}
+            {Object.entries(distributionTiers).map(([key, tier], idx) => {
+              const percent = grandTotal > 0 ? (tier.totalUnits / grandTotal) * 100 : 0;
+              const isLast = idx === Object.keys(distributionTiers).length - 1;
+              
+              // Only show tiers with games
+              if (tier.games.length === 0) return null;
+              
+              return (
+                <div key={key} style={{
+                  background: 'rgba(0,0,0,0.25)',
+                  borderRadius: '10px',
+                  padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 0.875rem',
+                  border: `1px solid ${tier.color}20`,
+                  backdropFilter: 'blur(8px)',
+                  marginBottom: isLast ? 0 : (isMobile ? '0.5rem' : '0.625rem')
                 }}>
-                  MAXIMUM <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>(5.0u)</span>
-                </div>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  fontWeight: '800',
-                  color: '#10B981',
-                  fontFeatureSettings: "'tnum'",
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem'
-                }}>
-                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>{allTiers.maximum.count} games</span>
-                  <span style={{
-                    padding: '0.125rem 0.375rem',
-                    background: 'rgba(16,185,129,0.15)',
-                    borderRadius: '4px',
-                    border: '1px solid rgba(16,185,129,0.30)'
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
                   }}>
-                    {allTiers.maximum.totalUnits.toFixed(1)}u
-                  </span>
-                </div>
-              </div>
-              <div style={{
-                height: isMobile ? '8px' : '10px',
-                background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
-                borderRadius: '6px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.08)',
-                position: 'relative'
-              }}>
-                <div style={{
-                  width: `${maxPercent}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
-                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 0 12px rgba(16,185,129,0.4)',
-                  position: 'relative'
-                }}>
+                    <div style={{
+                      fontSize: isMobile ? '0.625rem' : '0.688rem',
+                      color: tier.color,
+                      fontWeight: idx === 0 ? '800' : '700',
+                      letterSpacing: '0.02em'
+                    }}>
+                      {tier.label.toUpperCase()} <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>
+                        ({tier.min === tier.max ? `${tier.min}u` : `${tier.min}-${tier.max}u`})
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.625rem' : '0.688rem',
+                      fontWeight: '800',
+                      color: tier.color,
+                      fontFeatureSettings: "'tnum'",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem'
+                    }}>
+                      <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>
+                        {tier.games.length} game{tier.games.length !== 1 ? 's' : ''}
+                      </span>
+                      <span style={{
+                        padding: '0.125rem 0.375rem',
+                        background: `${tier.color}15`,
+                        borderRadius: '4px',
+                        border: `1px solid ${tier.color}30`
+                      }}>
+                        {tier.totalUnits.toFixed(1)}u
+                      </span>
+                    </div>
+                  </div>
                   <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '50%',
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
-                    borderRadius: '6px 6px 0 0'
-                  }} />
-                </div>
-              </div>
-            </div>
-            
-            {/* Moderate Tier Card */}
-            <div style={{
-              background: 'rgba(0,0,0,0.25)',
-              borderRadius: '10px',
-              padding: isMobile ? '0.75rem' : '0.875rem',
-              border: `1px solid ${color}25`,
-              backdropFilter: 'blur(8px)',
-              marginBottom: isMobile ? '0.5rem' : '0.625rem'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '0.5rem'
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: color,
-                  fontWeight: '800',
-                  letterSpacing: '0.02em'
-                }}>
-                  MODERATE <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>(1.5-4.0u)</span>
-                </div>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  fontWeight: '800',
-                  color: color,
-                  fontFeatureSettings: "'tnum'",
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem'
-                }}>
-                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>{allTiers.moderate.count} games</span>
-                  <span style={{
-                    padding: '0.125rem 0.375rem',
-                    background: `${color}20`,
-                    borderRadius: '4px',
-                    border: `1px solid ${color}35`
+                    height: isMobile ? '7px' : '9px',
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    position: 'relative'
                   }}>
-                    {allTiers.moderate.totalUnits.toFixed(1)}u
-                  </span>
+                    <div style={{
+                      width: `${percent}%`,
+                      height: '100%',
+                      background: `linear-gradient(90deg, ${tier.color} 0%, ${tier.color}DD 100%)`,
+                      transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: `0 0 10px ${tier.color}40`,
+                      position: 'relative'
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                        borderRadius: '6px 6px 0 0'
+                      }} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div style={{
-                height: isMobile ? '8px' : '10px',
-                background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
-                borderRadius: '6px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.08)',
-                position: 'relative'
-              }}>
-                <div style={{
-                  width: `${moderatePercent}%`,
-                  height: '100%',
-                  background: `linear-gradient(90deg, ${color} 0%, ${color}DD 100%)`,
-                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: `0 0 12px ${color}50`,
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '50%',
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
-                    borderRadius: '6px 6px 0 0'
-                  }} />
-                </div>
-              </div>
-            </div>
-            
-            {/* Small Tier Card */}
-            <div style={{
-              background: 'rgba(0,0,0,0.25)',
-              borderRadius: '10px',
-              padding: isMobile ? '0.75rem' : '0.875rem',
-              border: '1px solid rgba(139,92,246,0.20)',
-              backdropFilter: 'blur(8px)'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '0.5rem'
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.75)',
-                  fontWeight: '700',
-                  letterSpacing: '0.02em'
-                }}>
-                  SMALL <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>(0.5-1.0u)</span>
-                </div>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  fontWeight: '800',
-                  color: '#8B5CF6',
-                  fontFeatureSettings: "'tnum'",
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem'
-                }}>
-                  <span style={{ color: 'rgba(255,255,255,0.60)', fontWeight: '600' }}>{allTiers.small.count} games</span>
-                  <span style={{
-                    padding: '0.125rem 0.375rem',
-                    background: 'rgba(139,92,246,0.15)',
-                    borderRadius: '4px',
-                    border: '1px solid rgba(139,92,246,0.30)'
-                  }}>
-                    {allTiers.small.totalUnits.toFixed(1)}u
-                  </span>
-                </div>
-              </div>
-              <div style={{
-                height: isMobile ? '8px' : '10px',
-                background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%)',
-                borderRadius: '6px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.08)',
-                position: 'relative'
-              }}>
-                <div style={{
-                  width: `${smallPercent}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #8B5CF6 0%, #7C3AED 100%)',
-                  transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 0 12px rgba(139,92,246,0.4)',
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '50%',
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
-                    borderRadius: '6px 6px 0 0'
-                  }} />
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
           
           {/* Top Plays - PREMIUM */}
