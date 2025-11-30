@@ -759,8 +759,13 @@ const EnhancedTierHeader = ({
     minimal: { min: 0.5, max: 0.9, games: [], totalUnits: 0, color: '#6366F1', label: 'Minimal', emoji: '📌' }
   };
   
-  // Distribute all games across tiers
-  const allGames = [...allTiers.maximum.games, ...allTiers.moderate.games, ...allTiers.small.games];
+  // Distribute all games across tiers - SAFE ACCESS
+  const allGames = [
+    ...(allTiers?.maximum?.games || []), 
+    ...(allTiers?.moderate?.games || []), 
+    ...(allTiers?.small?.games || [])
+  ];
+  
   allGames.forEach(game => {
     const units = game.prediction?.unitSize || 0;
     
@@ -771,8 +776,8 @@ const EnhancedTierHeader = ({
       distributionTiers.premium.games.push(game);
       distributionTiers.premium.totalUnits += units;
     } else if (units >= 2.5) {
-      distributionTiers.standard.games.push(game);
-      distributionTiers.standard.totalUnits += units;
+      distributionTiers.strong.games.push(game);
+      distributionTiers.strong.totalUnits += units;
     } else if (units >= 1.0) {
       distributionTiers.conservative.games.push(game);
       distributionTiers.conservative.totalUnits += units;
