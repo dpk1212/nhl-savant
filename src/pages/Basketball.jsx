@@ -1117,54 +1117,46 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               return `0 5px 18px ${tierInfo.color}22, inset 0 1px 0 rgba(255,255,255,0.08)`;
             })()
           }}>
-            {/* Top Row: Pick + Grade */}
+            {/* SIMPLIFIED: Grade + Unit Rationale */}
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '0.625rem',
-              gap: '1rem'
+              alignItems: 'flex-start',
+              gap: isMobile ? '0.75rem' : '0.875rem'
             }}>
+              {/* Grade Badge */}
               <div style={{
-                fontSize: isMobile ? '0.875rem' : '0.938rem',
-                fontWeight: '800',
-                color: 'rgba(255,255,255,0.9)',
-                letterSpacing: '-0.01em'
-              }}>
-                Recommended Bet
-              </div>
-              <div style={{
-                background: `linear-gradient(135deg, ${gradeColors.borderColor}22 0%, ${gradeColors.borderColor}12 100%)`,
-                border: `1.5px solid ${gradeColors.borderColor}`,
+                background: `linear-gradient(135deg, ${gradeColors.borderColor}25 0%, ${gradeColors.borderColor}15 100%)`,
+                border: `2px solid ${gradeColors.borderColor}`,
                 color: gradeColors.color,
-                padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
-                borderRadius: '8px',
+                padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
+                borderRadius: '10px',
                 fontWeight: '900',
-                fontSize: isMobile ? '0.813rem' : '0.875rem',
-                letterSpacing: '-0.01em',
-                boxShadow: `0 2px 8px ${gradeColors.borderColor}25`
+                fontSize: isMobile ? '0.938rem' : '1rem',
+                letterSpacing: '-0.02em',
+                boxShadow: `0 3px 12px ${gradeColors.borderColor}28`,
+                flexShrink: 0,
+                lineHeight: 1
               }}>
-                Grade: {pred.grade}
+                {pred.grade}
               </div>
-            </div>
-            
-            {/* Bottom: Unit Allocation Rationale (DYNAMIC) */}
-            <div style={{
-              paddingTop: '0.625rem',
-              borderTop: '1px solid rgba(255,255,255,0.10)'
-            }}>
+              
+              {/* Unit Allocation Rationale */}
               <div style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255,255,255,0.75)',
-                lineHeight: 1.5,
-                fontWeight: '600',
-                letterSpacing: '0.005em'
+                flex: 1,
+                minWidth: 0
               }}>
-                {(() => {
-                  const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
-                  // Clean description without emoji
-                  return tierInfo.description;
-                })()}
+                <div style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.80)',
+                  lineHeight: 1.5,
+                  fontWeight: '600',
+                  letterSpacing: '0.005em'
+                }}>
+                  {(() => {
+                    const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+                    return tierInfo.description;
+                  })()}
+                </div>
               </div>
             </div>
           </div>
