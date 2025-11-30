@@ -33,15 +33,25 @@ export function BasketballPerformanceDashboard() {
     return () => unsubscribe();
   }, []);
 
-  // Calculate time-based stats
+  // Calculate time-based stats and Last 10 profit
   const timeStats = useMemo(() => {
-    if (!allBets || allBets.length === 0) return { thisWeek: null, thisMonth: null, showTimeBreakdown: false };
+    if (!allBets || allBets.length === 0) return { thisWeek: null, thisMonth: null, showTimeBreakdown: false, last10Profit: 0 };
 
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const gradedBets = allBets.filter(b => b.result && b.result.outcome);
+
+    // Sort chronologically and get last 10
+    const sortedBets = [...gradedBets].sort((a, b) => {
+      const timeA = a.timestamp?.toDate?.() || new Date(a.timestamp);
+      const timeB = b.timestamp?.toDate?.() || new Date(b.timestamp);
+      return timeB - timeA; // Descending (newest first)
+    });
+    
+    const last10Bets = sortedBets.slice(0, 10);
+    const last10Profit = last10Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
 
     const weekBets = gradedBets.filter(b => {
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
@@ -71,7 +81,8 @@ export function BasketballPerformanceDashboard() {
     return {
       thisWeek: weekStats,
       thisMonth: monthStats,
-      showTimeBreakdown
+      showTimeBreakdown,
+      last10Profit
     };
   }, [allBets]);
 
@@ -309,6 +320,16 @@ export function BasketballPerformanceDashboard() {
               label="ROI"
               color={roi >= 0 ? '#10B981' : '#EF4444'}
               highlight={roi >= 5}
+              isMobile={isMobile}
+            />
+
+            {/* Last 10 Unit Profit */}
+            <StatCard
+              icon={<Calendar size={20} />}
+              value={`${timeStats.last10Profit >= 0 ? '+' : ''}${timeStats.last10Profit.toFixed(2)}u`}
+              label="Last 10 Profit"
+              color={timeStats.last10Profit >= 0 ? '#10B981' : '#EF4444'}
+              highlight={timeStats.last10Profit >= 2}
               isMobile={isMobile}
             />
           </div>
