@@ -1098,7 +1098,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             </div>
           )}
           
-        {/* Bet Details for PENDING games - Premium Display */}
+        {/* Bet Details for PENDING games - PREMIUM MOBILE-OPTIMIZED */}
         {!game.betOutcome && (
           <div style={{
             marginTop: isMobile ? '0.75rem' : '0.875rem',
@@ -1108,56 +1108,104 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             })(),
             border: (() => {
               const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
-              return `2px solid ${tierInfo.borderColor}`;
+              return `2.5px solid ${tierInfo.borderColor}`;
             })(),
-            borderRadius: '12px',
-            padding: isMobile ? '0.875rem 1rem' : '1rem 1.125rem',
+            borderRadius: isMobile ? '14px' : '16px',
+            padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
             boxShadow: (() => {
               const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
-              return `0 5px 18px ${tierInfo.color}22, inset 0 1px 0 rgba(255,255,255,0.08)`;
-            })()
+              return `0 6px 22px ${tierInfo.color}28, inset 0 1px 0 rgba(255,255,255,0.12)`;
+            })(),
+            backdropFilter: 'blur(10px)'
           }}>
-            {/* SIMPLIFIED: Grade + Unit Rationale */}
+            {/* PREMIUM MOBILE-FIRST LAYOUT */}
             <div style={{
               display: 'flex',
-              alignItems: 'flex-start',
-              gap: isMobile ? '0.75rem' : '0.875rem'
+              alignItems: 'center',
+              gap: isMobile ? '0.875rem' : '1rem',
+              marginBottom: isMobile ? '0.625rem' : '0.75rem'
             }}>
-              {/* Grade Badge */}
+              {/* Grade Badge - HERO ELEMENT */}
               <div style={{
-                background: `linear-gradient(135deg, ${gradeColors.borderColor}25 0%, ${gradeColors.borderColor}15 100%)`,
-                border: `2px solid ${gradeColors.borderColor}`,
+                background: `linear-gradient(135deg, ${gradeColors.borderColor}30 0%, ${gradeColors.borderColor}18 100%)`,
+                border: `2.5px solid ${gradeColors.borderColor}`,
                 color: gradeColors.color,
-                padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
-                borderRadius: '10px',
+                padding: isMobile ? '0.625rem 0.875rem' : '0.688rem 1rem',
+                borderRadius: '11px',
                 fontWeight: '900',
-                fontSize: isMobile ? '0.938rem' : '1rem',
-                letterSpacing: '-0.02em',
-                boxShadow: `0 3px 12px ${gradeColors.borderColor}28`,
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                letterSpacing: '-0.03em',
+                boxShadow: `0 4px 14px ${gradeColors.borderColor}35, inset 0 1px 0 rgba(255,255,255,0.15)`,
                 flexShrink: 0,
-                lineHeight: 1
+                lineHeight: 0.9,
+                minWidth: isMobile ? '42px' : '48px',
+                textAlign: 'center'
               }}>
                 {pred.grade}
               </div>
               
-              {/* Unit Allocation Rationale */}
+              {/* Unit Size - PROMINENT */}
               <div style={{
-                flex: 1,
-                minWidth: 0
+                flex: 1
               }}>
                 <div style={{
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: 'rgba(255,255,255,0.80)',
-                  lineHeight: 1.5,
-                  fontWeight: '600',
-                  letterSpacing: '0.005em'
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  fontWeight: '800',
+                  color: 'rgba(255,255,255,0.95)',
+                  marginBottom: '0.25rem',
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.2
                 }}>
-                  {(() => {
-                    const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
-                    return tierInfo.description;
-                  })()}
+                  {pred.unitSize} unit{pred.unitSize !== 1 ? 's' : ''} allocated
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: pred.historicalROI >= 0 ? '#10B981' : '#F59E0B',
+                  fontWeight: '700',
+                  letterSpacing: '0.01em'
+                }}>
+                  Pattern ROI: {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}%
                 </div>
               </div>
+            </div>
+            
+            {/* Rationale - TERTIARY INFO */}
+            <div style={{
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.70)',
+              lineHeight: 1.45,
+              fontWeight: '600',
+              paddingTop: isMobile ? '0.625rem' : '0.75rem',
+              borderTop: '1px solid rgba(255,255,255,0.12)',
+              letterSpacing: '0.005em'
+            }}>
+              {(() => {
+                const roi = pred.historicalROI || 0;
+                
+                // Custom premium descriptions based on unit size + ROI
+                if (pred.unitSize >= 5.0) {
+                  return roi > 20 
+                    ? `Elite opportunity with strong historical performance`
+                    : `Maximum allocation for highest conviction plays`;
+                }
+                if (pred.unitSize >= 4.0) {
+                  return `Above-standard position backed by solid metrics`;
+                }
+                if (pred.unitSize >= 3.0) {
+                  return roi > 15
+                    ? `Strong pattern with proven profitability`
+                    : `Standard allocation for balanced risk/reward`;
+                }
+                if (pred.unitSize >= 2.0) {
+                  return roi > 0
+                    ? `Moderate sizing for positive-expectation opportunity`
+                    : `Measured approach to volatile pattern`;
+                }
+                if (pred.unitSize >= 1.0) {
+                  return `Conservative sizing manages pattern volatility`;
+                }
+                return `Minimal allocation for tracking purposes`;
+              })()}
             </div>
           </div>
         )}
