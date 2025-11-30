@@ -619,6 +619,22 @@ const Basketball = () => {
                 else gamesByTier.small.push(game);
               });
               
+              // Calculate tier statistics for enhanced header
+              const allTiers = {
+                maximum: {
+                  count: gamesByTier.max.length,
+                  totalUnits: gamesByTier.max.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0)
+                },
+                moderate: {
+                  count: gamesByTier.moderate.length,
+                  totalUnits: gamesByTier.moderate.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0)
+                },
+                small: {
+                  count: gamesByTier.small.length,
+                  totalUnits: gamesByTier.small.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0)
+                }
+              };
+              
               let rankCounter = 1;
               
               return (
@@ -649,13 +665,15 @@ const Basketball = () => {
                   {/* TIER 2: MODERATE CONVICTION (1.5-4.0u) */}
                   {gamesByTier.moderate.length > 0 && (
                     <>
-                      <TierHeader 
+                      <EnhancedTierHeader 
                         emoji="⚡" 
                         title="MODERATE CONVICTION" 
                         subtitle={`${gamesByTier.moderate.length} game${gamesByTier.moderate.length !== 1 ? 's' : ''} • Standard allocation between 1.5-4.0 units`}
                         color="#3B82F6"
                         unitRange="1.5-4.0u"
                         isMobile={isMobile}
+                        tierGames={gamesByTier.moderate}
+                        allTiers={allTiers}
                       />
                       {gamesByTier.moderate.map((game) => (
                         <BasketballGameCard 
@@ -704,6 +722,372 @@ const Basketball = () => {
 // Helper Components
 
 // Tier Header Component - Premium Mobile-Optimized
+// Enhanced Tier Header with Visual Distribution + Top Plays
+const EnhancedTierHeader = ({ 
+  emoji, 
+  title, 
+  subtitle, 
+  color, 
+  unitRange, 
+  isMobile,
+  tierGames,
+  allTiers
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  // Calculate tier stats
+  const totalUnits = tierGames.reduce((sum, g) => sum + (g.prediction?.unitSize || 0), 0);
+  const avgROI = tierGames.length > 0 
+    ? tierGames.reduce((sum, g) => sum + (g.prediction?.historicalROI || 0), 0) / tierGames.length 
+    : 0;
+  const expectedProfit = totalUnits * (avgROI / 100);
+  
+  // Get top 3 plays by unit size
+  const topPlays = [...tierGames]
+    .sort((a, b) => (b.prediction?.unitSize || 0) - (a.prediction?.unitSize || 0))
+    .slice(0, 3);
+  
+  // Calculate distribution for visual bars
+  const maxTotalUnits = allTiers.maximum.totalUnits;
+  const moderateTotalUnits = allTiers.moderate.totalUnits;
+  const smallTotalUnits = allTiers.small.totalUnits;
+  const grandTotal = maxTotalUnits + moderateTotalUnits + smallTotalUnits;
+  
+  const maxPercent = (maxTotalUnits / grandTotal) * 100;
+  const moderatePercent = (moderateTotalUnits / grandTotal) * 100;
+  const smallPercent = (smallTotalUnits / grandTotal) * 100;
+  
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${color}18 0%, ${color}10 100%)`,
+      border: `2px solid ${color}40`,
+      borderRadius: isMobile ? '14px' : '16px',
+      padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
+      marginBottom: isMobile ? '0.75rem' : '1rem',
+      backdropFilter: 'blur(12px)',
+      boxShadow: `0 6px 20px ${color}20, inset 0 1px 0 rgba(255,255,255,0.08)`,
+      position: 'relative',
+      overflow: 'hidden',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease'
+    }}
+    onClick={() => setExpanded(!expanded)}
+    >
+      {/* Subtle glow effect */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `radial-gradient(circle at top left, ${color}15 0%, transparent 60%)`,
+        pointerEvents: 'none'
+      }} />
+      
+      {/* Main Header */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: isMobile ? '0.875rem' : '1rem',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        {/* Emoji Badge */}
+        <div style={{
+          width: isMobile ? '42px' : '48px',
+          height: isMobile ? '42px' : '48px',
+          borderRadius: '12px',
+          background: `linear-gradient(135deg, ${color}30 0%, ${color}20 100%)`,
+          border: `2px solid ${color}50`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: isMobile ? '1.375rem' : '1.5rem',
+          flexShrink: 0,
+          boxShadow: `0 4px 12px ${color}25, inset 0 1px 0 rgba(255,255,255,0.15)`
+        }}>
+          {emoji}
+        </div>
+        
+        {/* Text Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: isMobile ? '0.938rem' : '1.063rem',
+            fontWeight: '900',
+            color: color,
+            letterSpacing: '-0.02em',
+            marginBottom: '0.25rem',
+            textShadow: `0 2px 16px ${color}35`,
+            lineHeight: 1.15
+          }}>
+            {title}
+          </div>
+          <div style={{
+            fontSize: isMobile ? '0.688rem' : '0.75rem',
+            color: 'rgba(255,255,255,0.70)',
+            lineHeight: 1.35,
+            fontWeight: '600'
+          }}>
+            {tierGames.length} games • {totalUnits.toFixed(1)}u allocated • {avgROI >= 0 ? '+' : ''}{avgROI.toFixed(1)}% ROI
+          </div>
+        </div>
+        
+        {/* Expected Profit Badge */}
+        <div style={{
+          padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.875rem',
+          background: expectedProfit >= 0 
+            ? 'linear-gradient(135deg, rgba(16,185,129,0.25) 0%, rgba(16,185,129,0.15) 100%)'
+            : 'linear-gradient(135deg, rgba(239,68,68,0.25) 0%, rgba(239,68,68,0.15) 100%)',
+          border: expectedProfit >= 0 
+            ? '1.5px solid rgba(16,185,129,0.40)'
+            : '1.5px solid rgba(239,68,68,0.40)',
+          borderRadius: '10px',
+          fontSize: isMobile ? '0.75rem' : '0.813rem',
+          fontWeight: '900',
+          color: expectedProfit >= 0 ? '#10B981' : '#EF4444',
+          fontFeatureSettings: "'tnum'",
+          letterSpacing: '0.02em',
+          boxShadow: expectedProfit >= 0 
+            ? '0 2px 8px rgba(16,185,129,0.20)'
+            : '0 2px 8px rgba(239,68,68,0.20)',
+          whiteSpace: 'nowrap'
+        }}>
+          {expectedProfit >= 0 ? '+' : ''}{expectedProfit.toFixed(1)}u
+        </div>
+      </div>
+      
+      {/* Expanded Content */}
+      {expanded && (
+        <div style={{
+          marginTop: isMobile ? '0.875rem' : '1rem',
+          paddingTop: isMobile ? '0.875rem' : '1rem',
+          borderTop: `1px solid ${color}25`,
+          position: 'relative',
+          zIndex: 1
+        }}>
+          {/* Visual Distribution */}
+          <div style={{
+            marginBottom: isMobile ? '0.875rem' : '1rem'
+          }}>
+            <div style={{
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.80)',
+              fontWeight: '800',
+              marginBottom: '0.625rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Today's Distribution
+            </div>
+            
+            {/* Maximum Tier Bar */}
+            <div style={{ marginBottom: '0.5rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                marginBottom: '0.25rem',
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(255,255,255,0.70)',
+                fontWeight: '700'
+              }}>
+                <span>MAXIMUM (5.0u)</span>
+                <span>{allTiers.maximum.count} games • {allTiers.maximum.totalUnits.toFixed(1)}u</span>
+              </div>
+              <div style={{
+                height: isMobile ? '6px' : '8px',
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${maxPercent}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
+                  transition: 'width 0.5s ease'
+                }} />
+              </div>
+            </div>
+            
+            {/* Moderate Tier Bar */}
+            <div style={{ marginBottom: '0.5rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                marginBottom: '0.25rem',
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: color,
+                fontWeight: '800'
+              }}>
+                <span>MODERATE (1.5-4.0u)</span>
+                <span>{allTiers.moderate.count} games • {allTiers.moderate.totalUnits.toFixed(1)}u</span>
+              </div>
+              <div style={{
+                height: isMobile ? '6px' : '8px',
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${moderatePercent}%`,
+                  height: '100%',
+                  background: `linear-gradient(90deg, ${color} 0%, ${color}CC 100%)`,
+                  transition: 'width 0.5s ease'
+                }} />
+              </div>
+            </div>
+            
+            {/* Small Tier Bar */}
+            <div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                marginBottom: '0.25rem',
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(255,255,255,0.70)',
+                fontWeight: '700'
+              }}>
+                <span>SMALL (0.5-1.0u)</span>
+                <span>{allTiers.small.count} games • {allTiers.small.totalUnits.toFixed(1)}u</span>
+              </div>
+              <div style={{
+                height: isMobile ? '6px' : '8px',
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${smallPercent}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #8B5CF6 0%, #7C3AED 100%)',
+                  transition: 'width 0.5s ease'
+                }} />
+              </div>
+            </div>
+          </div>
+          
+          {/* Top Plays */}
+          <div>
+            <div style={{
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.80)',
+              fontWeight: '800',
+              marginBottom: '0.625rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Top Plays in This Tier
+            </div>
+            
+            {topPlays.map((game, idx) => (
+              <div key={idx} style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                borderRadius: '8px',
+                padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
+                marginBottom: idx < topPlays.length - 1 ? '0.5rem' : 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.625rem'
+              }}>
+                <div style={{
+                  width: isMobile ? '20px' : '24px',
+                  height: isMobile ? '20px' : '24px',
+                  borderRadius: '6px',
+                  background: `linear-gradient(135deg, ${color}35 0%, ${color}25 100%)`,
+                  border: `1.5px solid ${color}50`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '900',
+                  color: color,
+                  flexShrink: 0
+                }}>
+                  {idx + 1}
+                </div>
+                
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: isMobile ? '0.688rem' : '0.75rem',
+                    fontWeight: '800',
+                    color: 'rgba(255,255,255,0.95)',
+                    marginBottom: '0.125rem',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {game.awayTeam} @ {game.homeTeam}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
+                    color: 'rgba(255,255,255,0.65)',
+                    fontWeight: '600'
+                  }}>
+                    {game.prediction?.grade} • {game.prediction?.bestOdds > 0 ? '+' : ''}{game.prediction?.bestOdds}
+                  </div>
+                </div>
+                
+                <div style={{
+                  padding: '0.25rem 0.5rem',
+                  background: `linear-gradient(135deg, ${color}25 0%, ${color}15 100%)`,
+                  border: `1px solid ${color}35`,
+                  borderRadius: '6px',
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  fontWeight: '900',
+                  color: color,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {game.prediction?.unitSize.toFixed(1)}u
+                </div>
+                
+                <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '800',
+                  color: game.prediction?.historicalROI >= 0 ? '#10B981' : '#F59E0B',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {game.prediction?.historicalROI >= 0 ? '+' : ''}{game.prediction?.historicalROI.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Click to collapse hint */}
+          <div style={{
+            marginTop: isMobile ? '0.75rem' : '0.875rem',
+            textAlign: 'center',
+            fontSize: isMobile ? '0.625rem' : '0.688rem',
+            color: 'rgba(255,255,255,0.50)',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            Click to collapse ↑
+          </div>
+        </div>
+      )}
+      
+      {/* Click to expand hint (when collapsed) */}
+      {!expanded && (
+        <div style={{
+          marginTop: '0.625rem',
+          textAlign: 'center',
+          fontSize: isMobile ? '0.625rem' : '0.688rem',
+          color: 'rgba(255,255,255,0.50)',
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          Click for details ↓
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Simple Tier Header (for non-moderate tiers)
 const TierHeader = ({ emoji, title, subtitle, color, unitRange, isMobile }) => {
   return (
     <div style={{
