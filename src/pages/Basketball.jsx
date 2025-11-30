@@ -14,6 +14,7 @@ import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballL
 import { GradeStats } from '../components/GradeBadge';
 import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
+import { getStarRating, getBetTier } from '../utils/abcUnits';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -560,15 +561,96 @@ const Basketball = () => {
                 return game.liveScore.status === gameStatusFilter;
               });
               
-              return filteredGames.map((game, index) => (
-                <BasketballGameCard 
-                  key={index} 
-                  game={game} 
-                  rank={index + 1} 
-                  isMobile={isMobile}
-                  hasLiveScore={!!game.liveScore}
-                />
-              ));
+              // 🎯 GROUP BY TIER (Premium > Value > Track Only)
+              const gamesByTier = {
+                premium: [],
+                value: [],
+                track: []
+              };
+              
+              filteredGames.forEach(game => {
+                if (!game.prediction?.grade || !game.bet?.odds) {
+                  gamesByTier.value.push(game); // Default to value if no tier data
+                  return;
+                }
+                
+                const tier = getBetTier(game.prediction.grade, game.bet.odds);
+                if (tier.tier === 1) gamesByTier.premium.push(game);
+                else if (tier.tier === 2) gamesByTier.value.push(game);
+                else gamesByTier.track.push(game);
+              });
+              
+              let rankCounter = 1;
+              
+              return (
+                <>
+                  {/* TIER 1: PREMIUM PICKS */}
+                  {gamesByTier.premium.length > 0 && (
+                    <>
+                      <TierHeader 
+                        emoji="🔥" 
+                        title="PREMIUM PICKS" 
+                        subtitle={`${gamesByTier.premium.length} game${gamesByTier.premium.length !== 1 ? 's' : ''} with +20% historical ROI or higher`}
+                        color="#10B981"
+                        isMobile={isMobile}
+                      />
+                      {gamesByTier.premium.map((game) => (
+                        <BasketballGameCard 
+                          key={rankCounter} 
+                          game={game} 
+                          rank={rankCounter++} 
+                          isMobile={isMobile}
+                          hasLiveScore={!!game.liveScore}
+                        />
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* TIER 2: VALUE PLAYS */}
+                  {gamesByTier.value.length > 0 && (
+                    <>
+                      <TierHeader 
+                        emoji="⚡" 
+                        title="VALUE PLAYS" 
+                        subtitle={`${gamesByTier.value.length} game${gamesByTier.value.length !== 1 ? 's' : ''} with positive expected ROI`}
+                        color="#3B82F6"
+                        isMobile={isMobile}
+                      />
+                      {gamesByTier.value.map((game) => (
+                        <BasketballGameCard 
+                          key={rankCounter} 
+                          game={game} 
+                          rank={rankCounter++} 
+                          isMobile={isMobile}
+                          hasLiveScore={!!game.liveScore}
+                        />
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* TIER 3: TRACK ONLY (collapsed by default) */}
+                  {gamesByTier.track.length > 0 && (
+                    <>
+                      <TierHeader 
+                        emoji="📊" 
+                        title="TRACK ONLY (Do Not Bet)" 
+                        subtitle={`${gamesByTier.track.length} game${gamesByTier.track.length !== 1 ? 's' : ''} with negative historical ROI`}
+                        color="#94A3B8"
+                        isMobile={isMobile}
+                      />
+                      {gamesByTier.track.map((game) => (
+                        <BasketballGameCard 
+                          key={rankCounter} 
+                          game={game} 
+                          rank={rankCounter++} 
+                          isMobile={isMobile}
+                          hasLiveScore={!!game.liveScore}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
+              );
             })()}
           </div>
         )}
@@ -578,6 +660,50 @@ const Basketball = () => {
 };
 
 // Helper Components
+
+// Tier Header Component
+const TierHeader = ({ emoji, title, subtitle, color, isMobile }) => {
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${color}15 0%, ${color}08 100%)`,
+      border: `1.5px solid ${color}30`,
+      borderRadius: isMobile ? '12px' : '16px',
+      padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: isMobile ? '0.75rem' : '1rem',
+      backdropFilter: 'blur(10px)',
+      boxShadow: `0 4px 16px ${color}15, inset 0 1px 0 rgba(255,255,255,0.05)`
+    }}>
+      <div style={{ 
+        fontSize: isMobile ? '1.5rem' : '1.75rem',
+        lineHeight: 1,
+        filter: `drop-shadow(0 2px 8px ${color}40)`
+      }}>
+        {emoji}
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{
+          fontSize: isMobile ? '0.938rem' : '1.063rem',
+          fontWeight: '900',
+          color: color,
+          letterSpacing: '-0.01em',
+          marginBottom: '0.25rem',
+          textShadow: `0 2px 12px ${color}30`
+        }}>
+          {title}
+        </div>
+        <div style={{
+          fontSize: isMobile ? '0.688rem' : '0.75rem',
+          color: 'rgba(255,255,255,0.65)',
+          lineHeight: 1.3
+        }}>
+          {subtitle}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
   const [showDetails, setShowDetails] = useState(false);
@@ -666,6 +792,65 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         position: 'relative',
         zIndex: 2
       }}>
+        {/* ⭐ STAR RATING + TIER BADGE (NEW!) */}
+        {(() => {
+          const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+          const starInfo = getStarRating(pred.grade, pred.bestOdds);
+          
+          return (
+            <div style={{
+              marginBottom: '0.625rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              {/* Star Rating */}
+              <div style={{
+                background: `linear-gradient(135deg, ${tierInfo.color}20 0%, ${tierInfo.color}10 100%)`,
+                border: `1.5px solid ${tierInfo.color}40`,
+                borderRadius: '8px',
+                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                boxShadow: `0 2px 8px ${tierInfo.color}25`
+              }}>
+                <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                  {starInfo.emoji}
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  fontWeight: '800',
+                  color: tierInfo.color,
+                  letterSpacing: '0.02em'
+                }}>
+                  {starInfo.label}
+                </span>
+              </div>
+              
+              {/* Historical ROI Badge */}
+              <div style={{
+                background: pred.historicalROI >= 0
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.10) 100%)'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.10) 100%)',
+                border: `1.5px solid ${pred.historicalROI >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+                borderRadius: '8px',
+                padding: isMobile ? '0.375rem 0.625rem' : '0.5rem 0.75rem',
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontWeight: '900',
+                color: pred.historicalROI >= 0 ? '#10B981' : '#EF4444',
+                fontFeatureSettings: "'tnum'",
+                letterSpacing: '-0.01em',
+                boxShadow: pred.historicalROI >= 0
+                  ? '0 2px 8px rgba(16, 185, 129, 0.25)'
+                  : '0 2px 8px rgba(239, 68, 68, 0.25)'
+              }}>
+                {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}% ROI
+              </div>
+            </div>
+          );
+        })()}
+        
         {/* Top Row: Rank + Teams + Time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem' }}>
           {/* Rank Badge */}
@@ -804,44 +989,111 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             </div>
           )}
           
-        {/* Grade + Units for PENDING games */}
+        {/* Grade + UNITS (BIG & BOLD!) for PENDING games */}
         {!game.betOutcome && (
           <div style={{
             marginTop: '0.75rem',
-            display: 'flex', 
-            gap: '0.5rem', 
-            alignItems: 'center'
+            background: (() => {
+              const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+              return tierInfo.bgGradient;
+            })(),
+            border: (() => {
+              const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+              return `2px solid ${tierInfo.borderColor}`;
+            })(),
+            borderRadius: '12px',
+            padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1rem',
+            boxShadow: (() => {
+              const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+              return `0 4px 16px ${tierInfo.color}20, inset 0 1px 0 rgba(255,255,255,0.06)`;
+            })()
           }}>
-            {/* Grade */}
             <div style={{
-              background: `linear-gradient(135deg, ${gradeColors.borderColor}20 0%, ${gradeColors.borderColor}10 100%)`,
-              border: `1.5px solid ${gradeColors.borderColor}`,
-            color: gradeColors.color,
-              padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
-              borderRadius: '7px',
-            fontWeight: '900',
-              fontSize: isMobile ? '0.813rem' : '0.875rem',
-              letterSpacing: '-0.01em',
-              boxShadow: `0 2px 8px ${gradeColors.borderColor}20`
-          }}>
-            {pred.grade}
-          </div>
-            
-            {/* Units */}
-            <div style={{
-              background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
-              border: `1.5px solid ${getUnitColor(pred.grade)}`,
-              color: getUnitColor(pred.grade),
-              padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
-              borderRadius: '7px',
-              fontWeight: '900',
-              fontSize: isMobile ? '0.75rem' : '0.813rem',
-              letterSpacing: '0.01em',
-              fontFeatureSettings: "'tnum'",
-              boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}20`
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: '1rem'
             }}>
-              {getUnitDisplay(pred.grade)}
-        </div>
+              {/* Left: Grade */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '0.5rem'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Grade:
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
+                  fontWeight: '900',
+                  color: gradeColors.color,
+                  letterSpacing: '-0.02em',
+                  textShadow: `0 2px 8px ${gradeColors.borderColor}30`
+                }}>
+                  {pred.grade}
+                </span>
+              </div>
+              
+              {/* Right: UNITS (HERO ELEMENT) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '0.5rem'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Bet:
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '1.5rem' : '1.75rem',
+                  fontWeight: '900',
+                  color: (() => {
+                    const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                    return tierInfo.color;
+                  })(),
+                  letterSpacing: '-0.04em',
+                  fontFeatureSettings: "'tnum'",
+                  textShadow: (() => {
+                    const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                    return `0 2px 12px ${tierInfo.color}40`;
+                  })()
+                }}>
+                  {pred.unitSize > 0 ? `${pred.unitSize}u` : 'Track Only'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Bottom: Historical Context */}
+            <div style={{
+              marginTop: '0.5rem',
+              paddingTop: '0.5rem',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              fontSize: isMobile ? '0.688rem' : '0.75rem',
+              color: 'rgba(255,255,255,0.7)',
+              lineHeight: 1.4
+            }}>
+              {(() => {
+                const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                return (
+                  <>
+                    <span style={{ color: tierInfo.color, fontWeight: '700' }}>{tierInfo.emoji}</span>
+                    {' '}
+                    {tierInfo.description}
+                  </>
+                );
+              })()}
+            </div>
           </div>
         )}
       </div>
@@ -1023,7 +1275,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               alignItems: 'center',
               gap: '0.25rem'
             }}>
-              <span>⭐</span> GRADE / BET SIZE
+              {(() => {
+                const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                return <span>{tierInfo.emoji}</span>;
+              })()} GRADE / BET SIZE
               </div>
               <div style={{ 
               display: 'flex',
@@ -1043,10 +1298,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               <div style={{
                 fontSize: isMobile ? '0.938rem' : '1rem',
                 fontWeight: '900',
-                color: getUnitColor(pred.grade),
+                color: (() => {
+                  const tierInfo = getBetTier(pred.grade, pred.bestOdds);
+                  return tierInfo.color;
+                })(),
                 fontFeatureSettings: "'tnum'"
               }}>
-                → {getUnitDisplay(pred.grade)}
+                → {pred.unitSize > 0 ? `${pred.unitSize}u` : 'No Bet'}
               </div>
             </div>
             <div style={{ 
@@ -1054,7 +1312,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               color: 'rgba(255,255,255,0.5)',
               lineHeight: 1.3
             }}>
-              {gradeColors.tier.split(' ')[0]} • {pred.unitSize > 0 
+              {pred.oddsRangeName || 'Unknown Odds'} • {pred.unitSize > 0 
                 ? `Risk ${pred.unitSize} unit${pred.unitSize !== 1 ? 's' : ''}`
                 : 'Below betting threshold'}
             </div>
