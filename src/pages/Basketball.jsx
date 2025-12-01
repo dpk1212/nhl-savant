@@ -163,11 +163,14 @@ const Basketball = () => {
     try {
       setLoading(true);
       
-      // Load data files
-      const oddsResponse = await fetch('/basketball_odds.md');
-      const haslaResponse = await fetch('/haslametrics.md');
-      const drateResponse = await fetch('/dratings.md');
-      const csvResponse = await fetch('/basketball_teams.csv');
+      // Cache-busting timestamp to force fresh data
+      const cacheBuster = `?t=${Date.now()}`;
+      
+      // Load data files with cache busting
+      const oddsResponse = await fetch(`/basketball_odds.md${cacheBuster}`);
+      const haslaResponse = await fetch(`/haslametrics.md${cacheBuster}`);
+      const drateResponse = await fetch(`/dratings.md${cacheBuster}`);
+      const csvResponse = await fetch(`/basketball_teams.csv${cacheBuster}`);
       
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();
@@ -378,17 +381,51 @@ const Basketball = () => {
           <span>🏒 NHL Today's Games</span>
         </Link>
         
-        <h1 style={{
-          fontSize: isMobile ? TYPOGRAPHY.hero.size : '2rem',
-          fontWeight: TYPOGRAPHY.hero.weight,
-          color: '#FF8C42',
-          marginBottom: '0.75rem',
-          textAlign: 'center',
-          letterSpacing: '-0.02em',
-          lineHeight: TYPOGRAPHY.hero.lineHeight
-        }}>
-          🏀 Today's Best Picks
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+          <h1 style={{
+            fontSize: isMobile ? TYPOGRAPHY.hero.size : '2rem',
+            fontWeight: TYPOGRAPHY.hero.weight,
+            color: '#FF8C42',
+            margin: 0,
+            letterSpacing: '-0.02em',
+            lineHeight: TYPOGRAPHY.hero.lineHeight
+          }}>
+            🏀 Today's Best Picks
+          </h1>
+          <button
+            onClick={() => {
+              setLoading(true);
+              loadBasketballData();
+            }}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 140, 66, 0.3)',
+              background: 'linear-gradient(135deg, rgba(255, 140, 66, 0.1) 0%, rgba(255, 140, 66, 0.05) 100%)',
+              color: '#FF8C42',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 140, 66, 0.2) 0%, rgba(255, 140, 66, 0.1) 100%)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 140, 66, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 140, 66, 0.1) 0%, rgba(255, 140, 66, 0.05) 100%)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <span>🔄</span>
+            <span>Refresh Data</span>
+          </button>
+        </div>
         <p style={{ 
           fontSize: TYPOGRAPHY.body.size,
           fontWeight: TYPOGRAPHY.body.weight,
