@@ -132,10 +132,20 @@ async function getSeasonStats() {
     // Get all NHL bets
     const snapshot = await db.collection('bets').get();
     const allBets = snapshot.docs.map(doc => doc.data());
-    const completed = allBets.filter(b => b.status === 'won' || b.status === 'lost');
     
-    const wins = completed.filter(b => b.status === 'won').length;
-    const losses = completed.filter(b => b.status === 'lost').length;
+    // FIX: Check both old and new status formats
+    const completed = allBets.filter(b => 
+      b.status === 'won' || b.status === 'lost' || 
+      (b.status === 'COMPLETED' && b.result?.outcome)
+    );
+    
+    const wins = completed.filter(b => 
+      b.status === 'won' || b.result?.outcome === 'WIN'
+    ).length;
+    
+    const losses = completed.filter(b => 
+      b.status === 'lost' || b.result?.outcome === 'LOSS'
+    ).length;
     const units = completed.reduce((sum, b) => sum + parseFloat(b.profit || 0), 0);
     const unitsWagered = completed.reduce((sum, b) => sum + parseFloat(b.units || 1), 0);
     const roi = unitsWagered > 0 ? ((units / unitsWagered) * 100).toFixed(1) : 0;

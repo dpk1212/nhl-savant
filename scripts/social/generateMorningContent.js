@@ -69,6 +69,12 @@ function getETDate() {
 
 // Transform Firebase bet structure to template format
 function mapBetToTemplateFormat(bet) {
+  // Extract and format properly
+  const evPercent = parseFloat(bet.prediction?.evPercent || 0);
+  const ensembleProb = parseFloat(bet.prediction?.ensembleProb || bet.prediction?.modelProb || 50);
+  const marketProb = parseFloat(bet.prediction?.marketProb || 50);
+  const recommendedUnit = parseFloat(bet.prediction?.recommendedUnit || 1);
+  
   return {
     team: bet.bet?.team || bet.bet?.pick || 'Unknown',
     opponent: bet.game?.awayTeam === (bet.bet?.team || bet.bet?.pick) 
@@ -76,12 +82,12 @@ function mapBetToTemplateFormat(bet) {
       : bet.game?.awayTeam,
     betType: bet.bet?.market || 'MONEYLINE',
     odds: bet.bet?.odds || 0,
-    ev: bet.prediction?.evPercent || 0,
+    ev: evPercent.toFixed(1),  // FORMAT TO 1 DECIMAL
     qualityGrade: bet.prediction?.qualityGrade || bet.prediction?.rating || 'B',
-    units: bet.prediction?.recommendedUnit || 1,
+    units: recommendedUnit.toFixed(2),  // FORMAT TO 2 DECIMALS
     reasoning: `${bet.prediction?.confidence || 'MEDIUM'} confidence ensemble pick`,
-    winProb: bet.prediction?.modelProb?.toFixed(1) || 'N/A',
-    marketProb: bet.prediction?.marketProb?.toFixed(1) || 'N/A',
+    winProb: ensembleProb.toFixed(1),  // CORRECT FIELD + FORMAT
+    marketProb: marketProb.toFixed(1),  // FORMAT
     gameTime: bet.game?.gameTime || 'TBD'
   };
 }
@@ -198,10 +204,20 @@ async function getSeasonStats() {
     // Get all NHL bets
     const nhlSnapshot = await db.collection('bets').get();
     const nhlBets = nhlSnapshot.docs.map(doc => doc.data());
-    const nhlCompleted = nhlBets.filter(b => b.status === 'won' || b.status === 'lost');
     
-    const nhlWins = nhlCompleted.filter(b => b.status === 'won').length;
-    const nhlLosses = nhlCompleted.filter(b => b.status === 'lost').length;
+    // FIX: Check both old and new status formats
+    const nhlCompleted = nhlBets.filter(b => 
+      b.status === 'won' || b.status === 'lost' || 
+      (b.status === 'COMPLETED' && b.result?.outcome)
+    );
+    
+    const nhlWins = nhlCompleted.filter(b => 
+      b.status === 'won' || b.result?.outcome === 'WIN'
+    ).length;
+    
+    const nhlLosses = nhlCompleted.filter(b => 
+      b.status === 'lost' || b.result?.outcome === 'LOSS'
+    ).length;
     const nhlUnits = nhlCompleted.reduce((sum, b) => sum + parseFloat(b.profit || 0), 0);
     const nhlUnitsWagered = nhlCompleted.reduce((sum, b) => sum + parseFloat(b.units || 1), 0);
     const nhlROI = nhlUnitsWagered > 0 ? ((nhlUnits / nhlUnitsWagered) * 100).toFixed(1) : 0;
@@ -210,10 +226,20 @@ async function getSeasonStats() {
     // Get CBB stats
     const cbbSnapshot = await db.collection('basketball_bets').get();
     const cbbBets = cbbSnapshot.docs.map(doc => doc.data());
-    const cbbCompleted = cbbBets.filter(b => b.status === 'won' || b.status === 'lost');
     
-    const cbbWins = cbbCompleted.filter(b => b.status === 'won').length;
-    const cbbLosses = cbbCompleted.filter(b => b.status === 'lost').length;
+    // FIX: Check both status formats
+    const cbbCompleted = cbbBets.filter(b => 
+      b.status === 'won' || b.status === 'lost' || 
+      (b.status === 'COMPLETED' && b.result?.outcome)
+    );
+    
+    const cbbWins = cbbCompleted.filter(b => 
+      b.status === 'won' || b.result?.outcome === 'WIN'
+    ).length;
+    
+    const cbbLosses = cbbCompleted.filter(b => 
+      b.status === 'lost' || b.result?.outcome === 'LOSS'
+    ).length;
     const cbbUnits = cbbCompleted.reduce((sum, b) => sum + parseFloat(b.profit || 0), 0);
     const cbbUnitsWagered = cbbCompleted.reduce((sum, b) => sum + parseFloat(b.units || 1), 0);
     const cbbROI = cbbUnitsWagered > 0 ? ((cbbUnits / cbbUnitsWagered) * 100).toFixed(1) : 0;
