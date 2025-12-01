@@ -15,6 +15,7 @@ export function BasketballPerformanceDashboard() {
   const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
   const [allBets, setAllBets] = useState([]);
+  const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
 
   // Fetch ALL bets from Firebase for chart and time calculations
   useEffect(() => {
@@ -33,25 +34,48 @@ export function BasketballPerformanceDashboard() {
     return () => unsubscribe();
   }, []);
 
-  // Calculate time-based stats and Last 10 profit
+  // Calculate filtered stats and best recent performance
   const timeStats = useMemo(() => {
-    if (!allBets || allBets.length === 0) return { thisWeek: null, thisMonth: null, showTimeBreakdown: false, last10Profit: 0 };
+    if (!allBets || allBets.length === 0) return { 
+      thisWeek: null, 
+      thisMonth: null, 
+      showTimeBreakdown: false, 
+      bestRecent: { profit: 0, period: 'L10', count: 0 }
+    };
 
     const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const gradedBets = allBets.filter(b => b.result && b.result.outcome);
 
-    // Sort chronologically and get last 10
+    // Sort chronologically (newest first)
     const sortedBets = [...gradedBets].sort((a, b) => {
       const timeA = a.timestamp?.toDate?.() || new Date(a.timestamp);
       const timeB = b.timestamp?.toDate?.() || new Date(b.timestamp);
-      return timeB - timeA; // Descending (newest first)
+      return timeB - timeA;
     });
     
+    // Calculate L5, L10, L20 profits
+    const last5Bets = sortedBets.slice(0, 5);
     const last10Bets = sortedBets.slice(0, 10);
-    const last10Profit = last10Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    const last20Bets = sortedBets.slice(0, 20);
+    
+    const l5Profit = last5Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    const l10Profit = last10Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    const l20Profit = last20Bets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    
+    // Find the best performing period
+    const periods = [
+      { profit: l5Profit, period: 'L5', count: last5Bets.length },
+      { profit: l10Profit, period: 'L10', count: last10Bets.length },
+      { profit: l20Profit, period: 'L20', count: last20Bets.length }
+    ];
+    const bestRecent = periods.reduce((best, current) => 
+      current.profit > best.profit ? current : best
+    );
 
     const weekBets = gradedBets.filter(b => {
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
@@ -74,15 +98,13 @@ export function BasketballPerformanceDashboard() {
     const weekStats = calcStats(weekBets);
     const monthStats = calcStats(monthBets);
     
-    // Only show time breakdown if there's meaningful difference from overall stats
-    // (i.e., not all bets are from this week/month)
     const showTimeBreakdown = weekBets.length < gradedBets.length || monthBets.length < gradedBets.length;
 
     return {
       thisWeek: weekStats,
       thisMonth: monthStats,
       showTimeBreakdown,
-      last10Profit
+      bestRecent
     };
   }, [allBets]);
 
@@ -105,11 +127,54 @@ export function BasketballPerformanceDashboard() {
     );
   }
 
+  // Filter stats based on selected time period
+  const filteredStats = useMemo(() => {
+    if (timeFilter === 'all') return stats;
+    
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const gradedBets = allBets.filter(b => {
+      if (!b.result || !b.result.outcome) return false;
+      
+      const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
+      
+      if (timeFilter === 'today') {
+        return betDate >= startOfToday;
+      } else if (timeFilter === 'yesterday') {
+        return betDate >= startOfYesterday && betDate < startOfToday;
+      } else if (timeFilter === 'week') {
+        return betDate >= weekAgo;
+      }
+      return true;
+    });
+    
+    const wins = gradedBets.filter(b => b.result?.outcome === 'WIN').length;
+    const losses = gradedBets.filter(b => b.result?.outcome === 'LOSS').length;
+    const unitsWon = gradedBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
+    const totalRisked = gradedBets.reduce((sum, b) => sum + (b.result?.units || 0), 0);
+    const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
+    const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
+    
+    return {
+      wins,
+      losses,
+      winRate,
+      unitsWon,
+      totalRisked,
+      roi,
+      gradedBets: gradedBets.length,
+      totalBets: gradedBets.length
+    };
+  }, [stats, allBets, timeFilter]);
+
   if (stats.totalBets === 0) {
     return null;
   }
 
-  const { wins, losses, winRate, unitsWon, totalRisked, roi, gradedBets } = stats;
+  const { wins, losses, winRate, unitsWon, totalRisked, roi, gradedBets } = filteredStats;
   const isMobile = window.innerWidth < 768;
 
   return (
@@ -268,6 +333,84 @@ export function BasketballPerformanceDashboard() {
       {/* Expanded Content */}
       {isExpanded && (
         <div style={{ position: 'relative', zIndex: 1 }}>
+          {/* Premium Time Filters */}
+          <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem', 
+              color: 'rgba(255,255,255,0.55)', 
+              marginBottom: '0.875rem', 
+              fontWeight: '700', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.12em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <div style={{
+                width: '2px',
+                height: '12px',
+                background: 'linear-gradient(180deg, #10B981 0%, transparent 100%)',
+                borderRadius: '1px'
+              }} />
+              TIME PERIOD
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {[
+                { value: 'all', label: 'All Time', color: '#10B981' },
+                { value: 'today', label: 'Today', color: '#14B8A6' },
+                { value: 'yesterday', label: 'Yesterday', color: '#3B82F6' },
+                { value: 'week', label: 'This Week', color: '#8B5CF6' }
+              ].map(filter => {
+                const isSelected = timeFilter === filter.value;
+                return (
+                  <button
+                    key={filter.value}
+                    onClick={() => setTimeFilter(filter.value)}
+                    style={{
+                      background: isSelected 
+                        ? `linear-gradient(135deg, ${filter.color}22 0%, ${filter.color}12 100%)`
+                        : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                      border: isSelected 
+                        ? `1px solid ${filter.color}50`
+                        : '1px solid rgba(255,255,255,0.08)',
+                      color: isSelected ? filter.color : 'rgba(255,255,255,0.7)',
+                      padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
+                      borderRadius: '8px',
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      outline: 'none',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      boxShadow: isSelected
+                        ? `0 4px 12px ${filter.color}20, inset 0 1px 0 rgba(255, 255, 255, 0.08)`
+                        : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                      letterSpacing: '-0.01em',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected && !isMobile) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Main Stats Grid - Premium Layout */}
           <div style={{
             display: 'grid',
@@ -323,13 +466,13 @@ export function BasketballPerformanceDashboard() {
               isMobile={isMobile}
             />
 
-            {/* Last 10 Unit Profit */}
+            {/* Best Recent Performance */}
             <StatCard
               icon={<Calendar size={20} />}
-              value={`${timeStats.last10Profit >= 0 ? '+' : ''}${timeStats.last10Profit.toFixed(2)}u`}
-              label="Last 10 Profit"
-              color={timeStats.last10Profit >= 0 ? '#10B981' : '#EF4444'}
-              highlight={timeStats.last10Profit >= 2}
+              value={`${timeStats.bestRecent.profit >= 0 ? '+' : ''}${timeStats.bestRecent.profit.toFixed(2)}u`}
+              label={`${timeStats.bestRecent.period} Best`}
+              color={timeStats.bestRecent.profit >= 0 ? '#10B981' : '#EF4444'}
+              highlight={timeStats.bestRecent.profit >= 2}
               isMobile={isMobile}
             />
           </div>
