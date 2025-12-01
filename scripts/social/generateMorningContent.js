@@ -78,12 +78,18 @@ async function generateMorningContent() {
       .where('status', '==', 'PENDING')
       .get();
     
+    console.log(`📊 Raw NHL bets from Firebase: ${nhlSnapshot.size}`);
+    
     const nhlPicks = nhlSnapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(bet => parseFloat(bet.prediction?.evPercent || bet.ev || 0) >= 1.0) // Only quality picks
+      .filter(bet => {
+        const ev = parseFloat(bet.prediction?.evPercent || bet.ev || 0);
+        console.log(`   - ${bet.game?.awayTeam || 'Unknown'} @ ${bet.game?.homeTeam || 'Unknown'}: EV=${ev}%`);
+        return ev >= 1.0; // Only quality picks
+      })
       .sort((a, b) => parseFloat(b.prediction?.evPercent || b.ev || 0) - parseFloat(a.prediction?.evPercent || a.ev || 0));
 
-    console.log(`✅ Found ${nhlPicks.length} NHL picks for today`);
+    console.log(`✅ Found ${nhlPicks.length} NHL picks for today (EV >= 1.0%)`);
 
     // Pull today's CBB bets (CORRECT COLLECTION NAME: basketball_bets with underscore)
     const cbbSnapshot = await db.collection('basketball_bets')
