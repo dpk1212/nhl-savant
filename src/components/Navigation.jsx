@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, User, LogOut, CreditCard, Crown, Flame } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, User, LogOut, CreditCard, Crown, Flame, HelpCircle, Database } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import AuthModal from './AuthModal';
@@ -23,6 +23,8 @@ const Navigation = () => {
     { path: '/dashboard', label: 'Analytics Hub', icon: BarChart3 },
     { path: '/performance', label: 'Performance', icon: TrendingUp },
     { path: '/methodology', label: 'Methodology', icon: BookOpen },
+    { path: '/faq', label: 'FAQ', icon: HelpCircle },
+    { path: '/data', label: 'Data', icon: Database },
     { path: '/inspector', label: 'Data Inspector', icon: Search }
   ];
 

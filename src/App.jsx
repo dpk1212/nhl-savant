@@ -26,6 +26,12 @@ import Account from './pages/Account';
 import TopScorersTonight from './pages/TopScorersTonight';
 import Basketball from './pages/Basketball';
 import BasketballMappingAudit from './pages/BasketballMappingAudit';
+import FAQ from './pages/FAQ';
+import TodaysPicksPreview from './pages/TodaysPicksPreview';
+import PDORegressionGuide from './pages/guides/PDORegressionGuide';
+import EVNHLGuide from './pages/guides/EVNHLGuide';
+import EVCBBGuide from './pages/guides/EVCBBGuide';
+import Data from './pages/Data';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 // DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames)
@@ -305,6 +311,12 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/performance" element={<PerformanceDashboard />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/todays-picks" element={<TodaysPicksPreview />} />
+              <Route path="/guides/pdo-regression-nhl-betting" element={<PDORegressionGuide />} />
+              <Route path="/guides/how-to-find-ev-nhl-picks" element={<EVNHLGuide />} />
+              <Route path="/guides/how-to-find-ev-college-basketball-picks" element={<EVCBBGuide />} />
+              <Route path="/data" element={<Data />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
           </Routes>
         </main>
