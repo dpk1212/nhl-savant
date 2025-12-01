@@ -47,11 +47,14 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-console.log('🌅 Generating morning social content...');
+console.log('🌅 Starting morning social content generation...');
+console.log(`📅 Date: ${new Date().toISOString()}`);
+console.log(`✅ Firebase credentials loaded`);
 
 async function generateMorningContent() {
   try {
     const today = new Date().toISOString().split('T')[0];
+    console.log(`📅 Generating content for: ${today}`);
     
     // Pull today's NHL bets (pending)
     const nhlSnapshot = await db.collection('bets')
@@ -140,7 +143,10 @@ async function generateMorningContent() {
     console.log(`\n📱 View at: nhlsavant.com/admin/social-content`);
 
   } catch (error) {
-    console.error('❌ Failed to generate morning content:', error);
+    console.error('❌ Failed to generate morning content:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     process.exit(1);
   }
 }
@@ -219,5 +225,9 @@ async function getSeasonStats() {
 }
 
 // Run if called directly
-generateMorningContent();
+generateMorningContent().catch(error => {
+  console.error('💥 Fatal error in generateMorningContent:');
+  console.error(error);
+  process.exit(1);
+});
 

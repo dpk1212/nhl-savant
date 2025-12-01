@@ -158,5 +158,9 @@ async function getSeasonStats() {
 }
 
 // Run if called directly
-generateNightContent();
+generateNightContent().catch(error => {
+  console.error('💥 Fatal error in generateNightContent:');
+  console.error(error);
+  process.exit(1);
+});
 
