@@ -32,6 +32,12 @@ service cloud.firestore {
       allow write: if true;  // Allow GitHub Action to cache analysis
     }
     
+    // Social media content - Admin read only, GitHub Action writes
+    match /socialContent/{document=**} {
+      allow read: if request.auth != null;  // Authenticated users can read (admin page checks email separately)
+      allow write: if false;  // Only GitHub Action (Admin SDK) can write
+    }
+    
     // API Secrets - public read only (keys stored here)
     match /Secrets/{document=**} {
       allow read: if true;  // Client needs to read API keys
