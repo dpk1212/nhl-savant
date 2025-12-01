@@ -73,7 +73,6 @@ async function generatePublicExports() {
 
       fs.writeFileSync(`${outputDir}/nhl-picks-completed.csv`, nhlOutput);
       console.log(`✅ NHL export: ${completedPicks.length} completed picks`);
-    }
     } catch (err) {
       console.error('❌ Failed to process NHL picks:', err.message);
     }
