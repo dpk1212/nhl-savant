@@ -102,6 +102,37 @@ export default function AdminSocialContent() {
   if (!content) {
     return (
       <div style={{ maxWidth: '1200px', margin: '2rem auto', padding: '2rem' }}>
+        {/* Date Selector */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{
+              padding: '0.5rem',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              fontSize: '0.875rem'
+            }}
+          />
+          <button
+            onClick={loadContent}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'white',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <RefreshCw style={{ width: '1rem', height: '1rem' }} />
+            Refresh
+          </button>
+        </div>
+        
         <div style={{ textAlign: 'center', padding: '4rem', background: '#f9fafb', borderRadius: '8px' }}>
           <Calendar style={{ width: '3rem', height: '3rem', color: '#666', margin: '0 auto' }} />
           <h2 style={{ fontSize: '1.5rem', marginTop: '1rem' }}>No Content Generated Yet</h2>
@@ -111,25 +142,6 @@ export default function AdminSocialContent() {
           <p style={{ color: '#666', marginTop: '1rem', fontSize: '0.875rem' }}>
             Content generates automatically at 8 AM ET (morning) and 11 PM ET (night).
           </p>
-          <button 
-            onClick={loadContent}
-            style={{
-              marginTop: '1.5rem',
-              padding: '0.75rem 1.5rem',
-              background: '#6366f1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              margin: '1.5rem auto 0'
-            }}
-          >
-            <RefreshCw style={{ width: '1rem', height: '1rem' }} />
-            Refresh
-          </button>
         </div>
       </div>
     );
