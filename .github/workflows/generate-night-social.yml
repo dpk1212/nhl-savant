@@ -1,10 +1,11 @@
 name: Generate Night Social Content
 
 on:
-  schedule:
-    # 11 PM ET = 4 AM UTC next day
-    - cron: '0 4 * * *'
-  workflow_dispatch:
+  # Disable automatic triggers for now - manual only
+  # schedule:
+  #   # 11 PM ET = 4 AM UTC next day
+  #   - cron: '0 4 * * *'
+  workflow_dispatch:  # Manual trigger only
 
 jobs:
   generate-night:

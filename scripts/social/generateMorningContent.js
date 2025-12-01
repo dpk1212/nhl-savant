@@ -79,7 +79,11 @@ async function generateMorningContent() {
 
     if (nhlPicks.length === 0) {
       console.log('⚠️  No quality NHL picks today - skipping content generation');
-      return;
+      console.log('ℹ️  This is normal if:');
+      console.log('   - No NHL games scheduled for today');
+      console.log('   - Bets haven\'t been written to Firebase yet');
+      console.log('   - No picks meet the quality threshold (EV >= 1.0%)');
+      process.exit(0);  // Exit successfully (not an error)
     }
 
     // Generate Perplexity analysis for top pick
