@@ -53,39 +53,92 @@ const BasketballProfitChart = ({ bets }) => {
   // Get final profit
   const finalProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].all : 0;
   
-  // Custom tooltip
+  // Custom tooltip with improved design
   const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '12px',
-          padding: '1rem',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+    if (!active || !payload || !payload.length) return null;
+    
+    const data = payload[0].payload;
+    const value = payload[0].value;
+    const isPositive = value >= 0;
+    
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+        borderRadius: isMobile ? '10px' : '12px',
+        padding: isMobile ? '0.875rem' : '1rem',
+        boxShadow: isPositive
+          ? '0 8px 32px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+          : '0 8px 32px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+        minWidth: isMobile ? '140px' : '160px'
+      }}>
+        <div style={{ 
+          fontSize: isMobile ? '0.75rem' : '0.875rem', 
+          color: 'rgba(255,255,255,0.6)', 
+          marginBottom: '0.5rem',
+          fontWeight: '600',
+          letterSpacing: '0.02em'
         }}>
-          <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem' }}>
-            {data.date} • Bet #{data.index}
-          </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: '800', color: payload[0].value >= 0 ? '#10B981' : '#EF4444', marginBottom: '0.5rem' }}>
-            {payload[0].value >= 0 ? '+' : ''}{payload[0].value}u
-          </div>
-          {data.betDetails && (
-            <>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
-                {data.betDetails.teams}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
-                Grade: {data.betDetails.grade} • {data.betDetails.outcome} • {data.betDetails.profit >= 0 ? '+' : ''}{data.betDetails.profit.toFixed(2)}u
-              </div>
-            </>
-          )}
+          {data.date} • Bet #{data.index}
         </div>
-      );
-    }
-    return null;
+        <div style={{ 
+          fontSize: isMobile ? '1.125rem' : '1.375rem', 
+          fontWeight: '900', 
+          color: isPositive ? '#10B981' : '#EF4444',
+          marginBottom: '0.625rem',
+          fontFeatureSettings: "'tnum'",
+          letterSpacing: '-0.02em',
+          textShadow: isPositive 
+            ? '0 2px 12px rgba(16, 185, 129, 0.3)'
+            : '0 2px 12px rgba(239, 68, 68, 0.3)'
+        }}>
+          {value >= 0 ? '+' : ''}{value.toFixed(2)}u
+        </div>
+        {data.betDetails && (
+          <div style={{
+            paddingTop: '0.625rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            <div style={{ 
+              fontSize: isMobile ? '0.688rem' : '0.75rem', 
+              color: 'rgba(255,255,255,0.5)', 
+              marginBottom: '0.25rem',
+              fontWeight: '600'
+            }}>
+              {data.betDetails.teams}
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '0.625rem' : '0.688rem', 
+              color: 'rgba(255,255,255,0.45)',
+              display: 'flex',
+              gap: '0.5rem',
+              alignItems: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <span style={{ 
+                background: 'rgba(255, 255, 255, 0.05)',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '4px',
+                fontWeight: '700'
+              }}>
+                {data.betDetails.grade}
+              </span>
+              <span style={{
+                color: data.betDetails.outcome === 'WIN' ? '#10B981' : '#EF4444',
+                fontWeight: '700'
+              }}>
+                {data.betDetails.outcome}
+              </span>
+              <span style={{ fontWeight: '600' }}>
+                {data.betDetails.profit >= 0 ? '+' : ''}{data.betDetails.profit.toFixed(2)}u
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
   
   if (timelineData.length === 0) {
@@ -218,7 +271,16 @@ const BasketballProfitChart = ({ bets }) => {
       {/* Chart */}
       <div style={{ height: isMobile ? '250px' : '300px', marginTop: isMobile ? '1rem' : '1.5rem' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={timelineData} margin={{ top: 5, right: isMobile ? 10 : 30, left: isMobile ? 0 : 20, bottom: 5 }}>
+          <LineChart 
+            data={timelineData} 
+            margin={{ top: 5, right: isMobile ? 10 : 30, left: isMobile ? 0 : 20, bottom: 5 }}
+          >
+            <defs>
+              <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={finalProfit >= 0 ? '#10B981' : '#EF4444'} stopOpacity={0.15}/>
+                <stop offset="95%" stopColor={finalProfit >= 0 ? '#10B981' : '#EF4444'} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
             <CartesianGrid 
               strokeDasharray="3 3" 
               stroke="rgba(255, 255, 255, 0.05)" 
@@ -229,6 +291,8 @@ const BasketballProfitChart = ({ bets }) => {
               stroke="rgba(255, 255, 255, 0.3)"
               style={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }}
               tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={isMobile ? 30 : 50}
             />
             <YAxis 
               stroke="rgba(255, 255, 255, 0.3)"
@@ -236,18 +300,26 @@ const BasketballProfitChart = ({ bets }) => {
               tickLine={false}
               tickFormatter={(value) => `${value >= 0 ? '+' : ''}${value}u`}
               width={isMobile ? 45 : 60}
+              domain={['auto', 'auto']}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 1 }} />
             <Line 
               type="monotone" 
               dataKey="all"
               stroke={finalProfit >= 0 ? '#10B981' : '#EF4444'}
               strokeWidth={isMobile ? 2.5 : 3}
               dot={false}
-              activeDot={{ r: isMobile ? 5 : 6, fill: finalProfit >= 0 ? '#10B981' : '#EF4444' }}
-              animationDuration={500}
+              activeDot={{ 
+                r: isMobile ? 5 : 6, 
+                fill: finalProfit >= 0 ? '#10B981' : '#EF4444',
+                strokeWidth: 2,
+                stroke: 'rgba(255, 255, 255, 0.3)'
+              }}
+              animationDuration={800}
+              animationEasing="ease-in-out"
+              isAnimationActive={true}
             />
-            {/* Zero line */}
+            {/* Zero reference line */}
             <Line 
               type="monotone" 
               dataKey={() => 0}
@@ -255,6 +327,7 @@ const BasketballProfitChart = ({ bets }) => {
               strokeWidth={1}
               strokeDasharray="5 5"
               dot={false}
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>

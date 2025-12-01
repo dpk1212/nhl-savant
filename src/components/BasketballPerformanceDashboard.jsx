@@ -135,7 +135,13 @@ export function BasketballPerformanceDashboard() {
     const wins = gradedBets.filter(b => b.result?.outcome === 'WIN').length;
     const losses = gradedBets.filter(b => b.result?.outcome === 'LOSS').length;
     const unitsWon = gradedBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
-    const totalRisked = gradedBets.reduce((sum, b) => sum + (b.result?.units || 0), 0);
+    
+    // Calculate total risked - use stored units or calculate from prediction
+    const totalRisked = gradedBets.reduce((sum, b) => {
+      const units = b.result?.units || b.prediction?.unitSize || 0;
+      return sum + units;
+    }, 0);
+    
     const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
     const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
     
