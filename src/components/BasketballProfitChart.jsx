@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
-const BasketballProfitChart = ({ bets }) => {
+const BasketballProfitChart = ({ bets, timeFilter = 'all' }) => {
   const isMobile = window.innerWidth < 768;
   
   // Process bets into timeline data
@@ -15,7 +15,28 @@ const BasketballProfitChart = ({ bets }) => {
     if (!bets || bets.length === 0) return [];
     
     // Filter to only graded bets with results
-    const gradedBets = bets.filter(b => b.result && b.result.outcome);
+    let gradedBets = bets.filter(b => b.result && b.result.outcome);
+    
+    // Apply time filter
+    if (timeFilter !== 'all') {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      gradedBets = gradedBets.filter(b => {
+        const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
+        
+        if (timeFilter === 'today') {
+          return betDate >= startOfToday;
+        } else if (timeFilter === 'yesterday') {
+          return betDate >= startOfYesterday && betDate < startOfToday;
+        } else if (timeFilter === 'week') {
+          return betDate >= weekAgo;
+        }
+        return true;
+      });
+    }
     
     // Sort chronologically
     const sortedBets = [...gradedBets].sort((a, b) => {
@@ -48,10 +69,16 @@ const BasketballProfitChart = ({ bets }) => {
         }
       };
     });
-  }, [bets]);
+  }, [bets, timeFilter]);
   
   // Get final profit
   const finalProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].all : 0;
+  
+  // Get filter label
+  const filterLabel = timeFilter === 'all' ? 'All Time' :
+                      timeFilter === 'today' ? 'Today' :
+                      timeFilter === 'yesterday' ? 'Yesterday' :
+                      timeFilter === 'week' ? 'This Week' : 'All Time';
   
   // Custom tooltip with improved design
   const CustomTooltip = ({ active, payload }) => {
@@ -142,7 +169,31 @@ const BasketballProfitChart = ({ bets }) => {
   };
   
   if (timelineData.length === 0) {
-    return null;
+    return (
+      <div style={{
+        background: `
+          linear-gradient(135deg, 
+            rgba(15, 23, 42, 0.7) 0%, 
+            rgba(30, 41, 59, 0.5) 50%,
+            rgba(15, 23, 42, 0.7) 100%)
+        `,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(16, 185, 129, 0.12)',
+        borderRadius: isMobile ? '14px' : '16px',
+        padding: isMobile ? '2rem' : '3rem',
+        marginBottom: isMobile ? '1.5rem' : '2rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ 
+          fontSize: isMobile ? '0.938rem' : '1.063rem',
+          color: 'rgba(255,255,255,0.5)',
+          fontWeight: '600'
+        }}>
+          No bets found for {filterLabel.toLowerCase()}
+        </div>
+      </div>
+    );
   }
   
   return (
@@ -222,7 +273,7 @@ const BasketballProfitChart = ({ bets }) => {
               margin: '0.25rem 0 0 0',
               fontWeight: '600'
             }}>
-              Cumulative performance • {timelineData.length} bets tracked
+              {filterLabel} • {timelineData.length} bets tracked
             </p>
           </div>
         </div>

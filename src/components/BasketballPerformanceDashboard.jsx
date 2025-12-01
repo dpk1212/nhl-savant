@@ -567,7 +567,7 @@ export function BasketballPerformanceDashboard() {
 
           {/* Profit Timeline Chart */}
           {allBets && allBets.length > 0 && (
-            <BasketballProfitChart bets={allBets} />
+            <BasketballProfitChart bets={allBets} timeFilter={timeFilter} />
           )}
         </div>
       )}
