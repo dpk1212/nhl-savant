@@ -67,10 +67,8 @@ export default function AdminSocialContent() {
     );
   }
 
-  // Admin check - allow any authenticated user for now (you can restrict later)
-  // If you want to restrict, uncomment the lines below and add your email
-  /*
-  const adminEmails = ['dale@nhlsavant.com', 'dalekolnitys@gmail.com', 'your-email@gmail.com'];
+  // Admin check - only allow specific emails
+  const adminEmails = ['kolnitd12@gmail.com', 'dalekolnitys@gmail.com', 'dale@nhlsavant.com'];
   if (!adminEmails.includes(user.email)) {
     return (
       <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '2rem', textAlign: 'center' }}>
@@ -80,7 +78,6 @@ export default function AdminSocialContent() {
       </div>
     );
   }
-  */
 
   if (loading) {
     return (
