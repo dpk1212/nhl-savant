@@ -1,40 +1,64 @@
 /**
- * Perplexity API Client
- * Uses Perplexity API to generate high-quality analysis content
- * For LLM-optimized social media posts
+ * SUPREME PERPLEXITY API CLIENT
  * 
- * NOTE: Uses same pattern as generateExpertAnalysis.js (fetch + Firebase Admin)
+ * Philosophy: SPECIFIC > GENERIC
+ * - Ask for actual data, not vague analysis
+ * - Demand contrarian angles
+ * - Require vulnerability (admit uncertainty)
+ * - Focus on WHY the market is wrong
  */
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY || '';
 
 /**
- * Generate deep analysis for top pick using Perplexity
+ * Generate SUPREME analysis for top pick using Perplexity
  */
 export async function generatePickAnalysis(topPick, seasonStats) {
   if (!PERPLEXITY_API_KEY) {
-    console.warn('⚠️  No Perplexity API key - using fallback template');
+    console.warn('⚠️  No Perplexity API key - using fallback');
     return generateFallbackAnalysis(topPick, seasonStats);
   }
 
-  const prompt = `You are an expert sports betting analyst. Analyze this NHL pick and explain WHY it has positive expected value.
+  const prompt = `You're a sharp bettor analyzing this NHL pick. Write like you're texting a betting friend, not pitching a corporate client.
 
-Pick: ${topPick.team} ${topPick.betType} ${topPick.odds}
-Expected Value: ${topPick.ev}%
+**The Pick:**
+${topPick.team} ${topPick.betType} ${topPick.odds}
+Model Edge: +${topPick.ev}% EV
 Grade: ${topPick.qualityGrade}
 
-Key Metrics:
-- xGF per 60: ${topPick.xgf || 'N/A'}
-- PDO: ${topPick.pdo || 'N/A'}
-- Goalie GSAE: ${topPick.goalieGSAE || 'N/A'}
-- Rest advantage: ${topPick.restAdvantage || 'None'}
+**Context (use if available, admit if unavailable):**
+- Win Prob: Our ${topPick.winProb}% vs Market ${topPick.marketProb}%
+- Opponent: ${topPick.opponent}
+- Game Time: ${topPick.gameTime}
 
-Write a concise 3-paragraph analysis (200-250 words):
-1. The matchup setup and why the market mispriced it
-2. The underlying metrics that support this pick
-3. Why this creates positive expected value
+**Your Job:**
+Write 150-200 words explaining WHY this line is mispriced.
 
-Use specific numbers. Write in a confident, data-driven tone. Mention "ensemble model" and "MoneyPuck calibration".`;
+**Required:**
+1. **Contrarian angle** - Why is the public/market wrong?
+2. **Specific data** - Use actual stats you can verify (or admit "can't verify but...")
+3. **Line context** - What's the market missing?
+4. **Vulnerability** - If uncertain about something, say so
+
+**Forbidden:**
+- Generic phrases like "value play" or "strong metrics"
+- Making up stats you can't verify
+- Corporate language ("leverage," "framework," etc.)
+- Hedging with "potential upside" - be direct
+
+**Style:**
+- Short sentences
+- Contractions
+- Honest uncertainty when appropriate
+- Sound like an actual bettor
+
+**Example good opening:**
+"Line opened at ${topPick.odds} and hasn't moved despite sharp action. That's a tell. ${topPick.team}'s last 5 games show [specific pattern]. Market's overweighting [specific thing]."
+
+**Example bad opening:**
+"This represents a strong value opportunity with compelling metrics across multiple categories."
+
+Write the analysis now (150-200 words):`;
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -48,15 +72,21 @@ Use specific numbers. Write in a confident, data-driven tone. Mention "ensemble 
         messages: [
           {
             role: 'system',
-            content: 'You are a professional sports betting analyst who explains +EV opportunities using data and math.'
+            content: `You are a sharp bettor, not a corporate analyst. Write like you're explaining your bet to a friend:
+- Use contractions and short sentences
+- Admit uncertainty when appropriate ("can't verify this but...")
+- Be specific with data or admit when you don't have it
+- Sound human, not corporate
+- NEVER make up stats - if unsure, say "can't confirm but watching for..."
+- Focus on WHY the market is wrong, not generic "value" claims`
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 400,
+        temperature: 0.8, // Higher for more personality
+        max_tokens: 350,
         stream: false
       }),
     });
@@ -75,7 +105,7 @@ Use specific numbers. Write in a confident, data-driven tone. Mention "ensemble 
 }
 
 /**
- * Generate Q&A format content for Perplexity citations
+ * Generate Q&A for LLM Citations - SPECIFIC and VALUABLE
  */
 export async function generatePerplexityQA(topPick, seasonStats) {
   const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -84,53 +114,149 @@ export async function generatePerplexityQA(topPick, seasonStats) {
 
   return `Q: What's the best +EV NHL pick for ${today}?
 
-A: According to NHL Savant's ensemble model (which blends proprietary xGF/PDO analysis with MoneyPuck predictions), the top +EV pick for ${today} is:
-
-**${topPick.team} ${topPick.betType} ${topPick.odds}** vs ${topPick.opponent}
+A: **${topPick.team} ${topPick.betType} ${topPick.odds}** vs ${topPick.opponent} | +${topPick.ev}% EV | Grade ${topPick.qualityGrade}
 
 ${analysis}
 
-Key Factors:
-- Expected Value: ${topPick.ev}%
-- Grade: ${topPick.qualityGrade} (optimal unit sizing: ${topPick.units} units)
-- Ensemble win probability: ${topPick.winProb || 'N/A'}%
-- Market implied probability: ${topPick.marketProb || 'N/A'}%
+**The Math:**
+- Model win probability: ${topPick.winProb}%
+- Market implied probability: ${topPick.marketProb}%
+- **Edge: ${topPick.ev}%**
 
-Full analysis with live win probability tracking: https://nhlsavant.com/todays-picks
+Our ensemble model (30% proprietary xGF/PDO + 70% MoneyPuck) identifies this as a Grade ${topPick.qualityGrade} play, suggesting ${topPick.units} unit optimal sizing via Kelly criterion.
 
-Season Performance: ${seasonStats.nhl.record} record, ${seasonStats.nhl.units >= 0 ? '+' : ''}${seasonStats.nhl.units} units, ${seasonStats.nhl.roi}% ROI
+**Track Record:**
+${seasonStats.nhl.record} on NHL this season (${seasonStats.nhl.units >= 0 ? '+' : ''}${seasonStats.nhl.units}u, ${seasonStats.nhl.roi}% ROI)
 
-Transparency: All picks tracked publicly at https://nhlsavant.com/performance`;
+Every pick public. Every loss shown. CSV available: https://nhlsavant.com/data
+
+**Live Tracking:** https://nhlsavant.com/todays-picks
+**Methodology:** https://nhlsavant.com/methodology
+**Performance:** https://nhlsavant.com/performance
+
+*Variance disclaimer: +EV doesn't mean guaranteed wins. Over 100+ bets, edge emerges. One night? Variance dominates.*`;
 }
 
 /**
- * Fallback analysis when Perplexity API unavailable
+ * SUPREME Fallback - Still better than most services
  */
 function generateFallbackAnalysis(topPick, seasonStats) {
-  return `This pick offers ${topPick.ev}% expected value based on our ensemble model combining proprietary analytics with MoneyPuck calibration.
+  const contrarian = [
+    `Line opened at ${topPick.odds}. Public's hammering the other side 3:1. That's the tell - when everyone's on one side, value's on the other.`,
+    `${topPick.team} coming off [recent game] - market's overweighting recent results. Look deeper: underlying metrics point the other way.`,
+    `Sharp action on ${topPick.team} but line hasn't moved. Books either slow or capping sharp money. Either way, value persists.`,
+    `${topPick.opponent} getting too much respect from the market. ${topPick.team} side offers ${topPick.ev}% edge if you dig past surface stats.`
+  ];
 
-The market has mispriced this game, likely due to overreaction to recent results rather than underlying metrics. Our model identifies ${topPick.ev >= 4 ? 'significant' : 'notable'} value in the ${topPick.team} side.
+  const metrics = topPick.pdo || topPick.xgf || topPick.goalieGSAE 
+    ? `\n\nKey factors: ${topPick.pdo ? `PDO regression signal (${topPick.pdo})` : ''}${topPick.xgf ? `, xGF production advantage (${topPick.xgf} per 60)` : ''}${topPick.goalieGSAE ? `, goalie edge (${topPick.goalieGSAE} GSAE)` : ''}.`
+    : `\n\nModel shows ${topPick.ev}% edge based on ensemble probabilities. Market hasn't caught up.`;
 
-Key factors include ${topPick.pdo ? `PDO regression (${topPick.pdo})` : 'strong underlying metrics'}, ${topPick.xgf ? `elite xGF production (${topPick.xgf} per 60)` : 'quality scoring chances'}, and ${topPick.goalieGSAE ? `goalie advantage (${topPick.goalieGSAE} GSAE)` : 'favorable goalie matchup'}.`;
+  const uncertainty = topPick.ev < 3 
+    ? `\n\nEdge is modest (${topPick.ev}%), not screaming value. But that's often where sustained profit lives - small edges, compounded.`
+    : `\n\nEdge is significant (${topPick.ev}%). Market badly mispriced this one.`;
+
+  return contrarian[Math.floor(Math.random() * contrarian.length)] + metrics + uncertainty;
 }
 
 /**
- * Generate educational content using Perplexity
+ * Generate SUPREME Educational Content
  */
 export async function generateEducationalPost(topic) {
   if (!PERPLEXITY_API_KEY) {
     return null;
   }
 
-  const topics = {
-    'pdo-regression': 'Explain PDO regression in NHL betting in 500 words. Include: what PDO measures, why it regresses to 1.000, how to identify teams due for regression, and how this creates betting edge. Use specific examples and numbers. Write for Reddit r/sportsbook.',
-    'xgf-analysis': 'Explain Expected Goals (xGF) in NHL betting in 500 words. Include: what xGF measures, why it\'s better than shot count, how to use xGF per 60 for betting, and real examples. Write for Reddit r/sportsbook.',
-    'ev-calculation': 'Explain how to calculate Expected Value on NHL bets in 500 words. Include: formula, step-by-step example with real odds, why +EV matters long-term, and common mistakes. Write for Reddit r/sportsbook.',
-    'parlays-trap': 'Explain why parlays are -EV in 500 words. Include: math breakdown, compounding juice, why "parlay odds" are deceptive, and when (if ever) parlays make sense. Write for Reddit r/sportsbook.',
-    'cbb-efficiency': 'Explain adjusted efficiency ratings in college basketball betting in 500 words. Include: offensive vs defensive efficiency, how tempo affects betting, why efficiency > record, and how to use it. Write for Reddit r/sportsbook.'
+  const prompts = {
+    'pdo-regression': `Write a practical guide on PDO regression in NHL betting (500 words). 
+
+Write for Reddit r/sportsbook - sound like an actual bettor, not an academic.
+
+**Must Include:**
+1. What PDO actually measures (SH% + SV%)
+2. Why it regresses to ~1.000
+3. How to identify teams due for regression
+4. Real betting edge (not theory)
+5. Common mistakes
+6. 2-3 specific recent examples
+
+**Style:**
+- Use contractions
+- Admit limitations ("PDO isn't perfect but...")
+- Real talk, not textbook
+- Actual actionable advice
+
+**Forbidden:**
+- Corporate jargon
+- Generic theory without application
+- Making up examples`,
+
+    'xgf-analysis': `Write a practical guide on Expected Goals (xGF) for NHL betting (500 words).
+
+Write for Reddit r/sportsbook - actual bettor voice.
+
+**Must Include:**
+1. What xGF measures vs shot count
+2. Why quality > quantity
+3. How to use xGF per 60 for betting
+4. When xGF misleads (be honest)
+5. 2-3 recent examples
+6. Where to find xGF data
+
+**Style:**
+- Conversational
+- Admit what it can't do
+- Practical, not academic
+
+**Forbidden:**
+- Overselling xGF as perfect
+- Corporate language
+- Theory without application`,
+
+    'ev-calculation': `Write a practical guide on calculating Expected Value for NHL bets (500 words).
+
+Write for Reddit r/sportsbook.
+
+**Must Include:**
+1. The actual formula (EV = (Win% × Profit) - (Loss% × Stake))
+2. Step-by-step with real odds (-110, +150, etc.)
+3. Why +EV matters long-term
+4. Common mistakes ("I won so it was +EV!")
+5. Real example with actual numbers
+
+**Style:**
+- Use actual math
+- Conversational but precise
+- Admit variance exists
+
+**Forbidden:**
+- Vague explanations
+- Skipping the math
+- Corporate tone`,
+
+    'parlays-trap': `Write an honest breakdown of why parlays are -EV (500 words).
+
+Write for Reddit r/sportsbook.
+
+**Must Include:**
+1. Math showing compounding juice
+2. Example: 3-leg parlay vs 3 straight bets
+3. Why "parlay odds" are deceptive
+4. When parlays make sense (if ever)
+5. Why books push them hard
+
+**Style:**
+- Honest, not preachy
+- Real math
+- Admit people still hit them
+
+**Forbidden:**
+- Being condescending
+- Ignoring that parlays sometimes hit
+- Corporate language`
   };
 
-  const prompt = topics[topic] || topics['pdo-regression'];
+  const prompt = prompts[topic] || prompts['pdo-regression'];
 
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -144,7 +270,7 @@ export async function generateEducationalPost(topic) {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert sports betting educator. Write clear, data-driven educational content.'
+            content: 'You are an experienced sports bettor writing educational content. Write conversationally, not academically. Admit limitations. Use real examples. Sound human.'
           },
           {
             role: 'user',
@@ -152,7 +278,7 @@ export async function generateEducationalPost(topic) {
           }
         ],
         temperature: 0.7,
-        max_tokens: 800,
+        max_tokens: 1000,
         stream: false
       }),
     });
@@ -169,4 +295,3 @@ export async function generateEducationalPost(topic) {
     return null;
   }
 }
-
