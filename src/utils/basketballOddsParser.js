@@ -16,11 +16,13 @@ function getTodayDayAbbr() {
 }
 
 /**
- * Get today's month/day (e.g., "11/27")
+ * Get today's month/day with leading zeros (e.g., "12/01")
  */
 function getTodayMonthDay() {
   const now = new Date();
-  return `${now.getMonth() + 1}/${now.getDate()}`;
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  return `${month}/${day.toString().padStart(2, '0')}`;
 }
 
 /**
