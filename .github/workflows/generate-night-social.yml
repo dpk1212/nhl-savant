@@ -18,16 +18,14 @@ jobs:
           node-version: '18'
       
       - name: Install dependencies
-        run: |
-          cd nhl-savant
-          npm install
+        working-directory: nhl-savant
+        run: npm install
       
       - name: Generate night results content
+        working-directory: nhl-savant
         env:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-        run: |
-          cd nhl-savant
-          npm run generate-social-night
+        run: npm run generate-social-night
 
