@@ -67,16 +67,20 @@ export default function AdminSocialContent() {
     );
   }
 
-  // Admin check (adjust email to match your admin email)
-  const adminEmails = ['dale@nhlsavant.com', 'dalekolnitys@gmail.com'];
+  // Admin check - allow any authenticated user for now (you can restrict later)
+  // If you want to restrict, uncomment the lines below and add your email
+  /*
+  const adminEmails = ['dale@nhlsavant.com', 'dalekolnitys@gmail.com', 'your-email@gmail.com'];
   if (!adminEmails.includes(user.email)) {
     return (
       <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '2rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>🔒 Unauthorized</h1>
         <p style={{ color: '#666' }}>This page is restricted to admin users only.</p>
+        <p style={{ color: '#999', marginTop: '1rem', fontSize: '0.875rem' }}>Signed in as: {user.email}</p>
       </div>
     );
   }
+  */
 
   if (loading) {
     return (
