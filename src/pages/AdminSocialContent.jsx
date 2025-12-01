@@ -12,12 +12,21 @@ import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { Copy, CheckCircle, RefreshCw, Twitter, MessageCircle, Search, Calendar, BookOpen } from 'lucide-react';
 
+// Get ET date (same as scripts use)
+function getETDate() {
+  const now = new Date();
+  const etOffset = -5; // EST (adjust to -4 for EDT if needed)
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const etDate = new Date(utc + (3600000 * etOffset));
+  return etDate.toISOString().split('T')[0];
+}
+
 export default function AdminSocialContent() {
   const { user } = useAuth();
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copiedItem, setCopiedItem] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getETDate()); // USE ET DATE, NOT UTC
 
   useEffect(() => {
     if (user) {
