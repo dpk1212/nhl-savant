@@ -354,7 +354,7 @@ export default function AdminSocialContent() {
                 <Twitter style={{ width: '1.25rem', height: '1.25rem' }} />
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Night Results - Twitter Thread</h2>
               </div>
-              <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', opacity: 0.9' }}>
+              <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', opacity: 0.9 }}>
                 {content.nightResults.todayRecord} | {content.nightResults.todayProfit >= 0 ? '+' : ''}{content.nightResults.todayProfit}u | {content.nightResults.todayROI}% ROI
               </p>
             </div>
@@ -419,7 +419,7 @@ export default function AdminSocialContent() {
               <Calendar style={{ width: '1.25rem', height: '1.25rem' }} />
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Weekly Recap (Sunday)</h2>
             </div>
-            <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', opacity: 0.9' }}>
+            <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', opacity: 0.9 }}>
               {content.weeklyRecap.weekRecord} | {content.weeklyRecap.weekProfit >= 0 ? '+' : ''}{content.weeklyRecap.weekProfit}u
             </p>
           </div>
@@ -443,7 +443,7 @@ export default function AdminSocialContent() {
               <BookOpen style={{ width: '1.25rem', height: '1.25rem' }} />
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Educational Content (Bi-weekly Wednesday)</h2>
             </div>
-            <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', opacity: 0.9', textTransform: 'capitalize' }}>
+            <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', opacity: 0.9, textTransform: 'capitalize' }}>
               Topic: {content.educational.topic.replace('-', ' ')}
               {content.educational.perplexityGenerated && ' • Generated with Perplexity AI'}
             </p>
