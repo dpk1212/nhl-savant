@@ -19,21 +19,28 @@ import {
   generateMidDayContent
 } from './contentTemplates.js';
 
-// Initialize Firebase Admin SDK (same as generateExpertAnalysis.js)
+// Initialize Firebase Admin SDK - EXACT SAME AS generateExpertAnalysis.js
 const serviceAccount = {
   project_id: process.env.VITE_FIREBASE_PROJECT_ID,
   client_email: process.env.FIREBASE_CLIENT_EMAIL,
   private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
 };
 
-if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-  console.error('❌ Firebase credentials not set');
-  console.error('ℹ️  Required environment variables:');
-  console.error('   - VITE_FIREBASE_PROJECT_ID');
-  console.error('   - FIREBASE_CLIENT_EMAIL');
-  console.error('   - FIREBASE_PRIVATE_KEY');
+// Validate credentials - EXACT SAME AS generateExpertAnalysis.js
+if (!serviceAccount.project_id) {
+  console.error('❌ VITE_FIREBASE_PROJECT_ID environment variable not set');
   process.exit(1);
 }
+if (!serviceAccount.client_email) {
+  console.error('❌ FIREBASE_CLIENT_EMAIL environment variable not set');
+  process.exit(1);
+}
+if (!serviceAccount.private_key) {
+  console.error('❌ FIREBASE_PRIVATE_KEY environment variable not set');
+  process.exit(1);
+}
+
+console.log(`✅ Service account loaded: ${serviceAccount.client_email}`);
 
 // Initialize Firebase Admin (check if already initialized)
 if (!admin.apps.length) {
