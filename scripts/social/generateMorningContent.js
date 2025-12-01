@@ -58,34 +58,43 @@ console.log('🌅 Starting morning social content generation...');
 console.log(`📅 Date: ${new Date().toISOString()}`);
 console.log(`✅ Firebase credentials loaded`);
 
+// Get ET date (same as bet tracker uses)
+function getETDate() {
+  const now = new Date();
+  const etOffset = -5; // EST (adjust to -4 for EDT if needed)
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const etDate = new Date(utc + (3600000 * etOffset));
+  return etDate.toISOString().split('T')[0];
+}
+
 async function generateMorningContent() {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`📅 Generating content for: ${today}`);
+    const today = getETDate(); // USE ET DATE, NOT UTC
+    console.log(`📅 Generating content for: ${today} (ET timezone)`);
     
     // Pull today's NHL bets (pending)
     const nhlSnapshot = await db.collection('bets')
       .where('date', '==', today)
-      .where('status', '==', 'pending')
+      .where('status', '==', 'PENDING')
       .get();
     
     const nhlPicks = nhlSnapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(bet => parseFloat(bet.ev || 0) >= 1.0) // Only quality picks
-      .sort((a, b) => parseFloat(b.ev || 0) - parseFloat(a.ev || 0));
+      .filter(bet => parseFloat(bet.prediction?.evPercent || bet.ev || 0) >= 1.0) // Only quality picks
+      .sort((a, b) => parseFloat(b.prediction?.evPercent || b.ev || 0) - parseFloat(a.prediction?.evPercent || a.ev || 0));
 
     console.log(`✅ Found ${nhlPicks.length} NHL picks for today`);
 
-    // Pull today's CBB bets
-    const cbbSnapshot = await db.collection('basketball-bets')
+    // Pull today's CBB bets (CORRECT COLLECTION NAME: basketball_bets with underscore)
+    const cbbSnapshot = await db.collection('basketball_bets')
       .where('date', '==', today)
-      .where('status', '==', 'pending')
+      .where('status', '==', 'PENDING')
       .get();
     
     const cbbPicks = cbbSnapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(bet => parseFloat(bet.ev || 0) >= 1.0)
-      .sort((a, b) => parseFloat(b.ev || 0) - parseFloat(a.ev || 0));
+      // Include ALL bets regardless of EV (some may have negative EV stored)
+      .sort((a, b) => parseFloat(b.prediction?.evPercent || b.ev || 0) - parseFloat(a.prediction?.evPercent || a.ev || 0));
 
     console.log(`✅ Found ${cbbPicks.length} CBB picks for today`);
 
@@ -173,7 +182,7 @@ async function getSeasonStats() {
     const nhlWinRate = nhlCompleted.length > 0 ? ((nhlWins / nhlCompleted.length) * 100).toFixed(1) : 0;
 
     // Get CBB stats
-    const cbbSnapshot = await db.collection('basketball-bets').get();
+    const cbbSnapshot = await db.collection('basketball_bets').get();
     const cbbBets = cbbSnapshot.docs.map(doc => doc.data());
     const cbbCompleted = cbbBets.filter(b => b.status === 'won' || b.status === 'lost');
     

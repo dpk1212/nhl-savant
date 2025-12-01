@@ -57,10 +57,18 @@ const TOPICS = [
   'cbb-efficiency'
 ];
 
+// Get ET date (same as bet tracker uses)
+function getETDate() {
+  const now = new Date();
+  const etOffset = -5; // EST (adjust to -4 for EDT if needed)
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const etDate = new Date(utc + (3600000 * etOffset));
+  return etDate.toISOString().split('T')[0];
+}
+
 async function generateEducationalContentPost() {
   try {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = getETDate(); // USE ET DATE, NOT UTC
     
     // Get current topic index from Firebase
     const topicTrackerSnap = await db.collection('system').doc('educationalTopicTracker').get();

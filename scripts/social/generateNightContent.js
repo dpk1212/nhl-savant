@@ -45,9 +45,18 @@ const db = admin.firestore();
 
 console.log('🌙 Generating night social content...');
 
+// Get ET date (same as bet tracker uses)
+function getETDate() {
+  const now = new Date();
+  const etOffset = -5; // EST (adjust to -4 for EDT if needed)
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const etDate = new Date(utc + (3600000 * etOffset));
+  return etDate.toISOString().split('T')[0];
+}
+
 async function generateNightContent() {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getETDate(); // USE ET DATE, NOT UTC
     
     // Pull today's completed bets (won/lost)
     const snapshot = await db.collection('bets')

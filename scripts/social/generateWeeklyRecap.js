@@ -44,15 +44,27 @@ const db = admin.firestore();
 
 console.log('📅 Generating weekly recap...');
 
+// Get ET date (same as bet tracker uses)
+function getETDate() {
+  const now = new Date();
+  const etOffset = -5; // EST (adjust to -4 for EDT if needed)
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const etDate = new Date(utc + (3600000 * etOffset));
+  return etDate.toISOString().split('T')[0];
+}
+
 async function generateWeeklyRecapContent() {
   try {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = getETDate(); // USE ET DATE, NOT UTC
     
     // Get last 7 days of bets
+    const today = new Date();
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+    const etOffset = -5;
+    const utc = sevenDaysAgo.getTime() + (sevenDaysAgo.getTimezoneOffset() * 60000);
+    const sevenDaysAgoET = new Date(utc + (3600000 * etOffset));
+    const sevenDaysAgoStr = sevenDaysAgoET.toISOString().split('T')[0];
     
     const snapshot = await db.collection('bets').get();
     const weekResults = snapshot.docs
