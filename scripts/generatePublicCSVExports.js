@@ -116,7 +116,6 @@ async function generatePublicExports() {
 
       fs.writeFileSync(`${outputDir}/cbb-picks-completed.csv`, cbbOutput);
       console.log(`✅ CBB export: ${completedPicks.length} completed picks`);
-    }
     } catch (err) {
       console.error('❌ Failed to process CBB picks:', err.message);
     }
