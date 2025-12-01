@@ -28,12 +28,22 @@ const serviceAccount = {
 
 if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
   console.error('❌ Firebase credentials not set');
+  console.error('ℹ️  Required environment variables:');
+  console.error('   - VITE_FIREBASE_PROJECT_ID');
+  console.error('   - FIREBASE_CLIENT_EMAIL');
+  console.error('   - FIREBASE_PRIVATE_KEY');
   process.exit(1);
 }
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// Initialize Firebase Admin (check if already initialized)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  console.log('✅ Firebase Admin initialized');
+} else {
+  console.log('✅ Firebase Admin already initialized');
+}
 
 const db = admin.firestore();
 
