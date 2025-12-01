@@ -1,0 +1,36 @@
+name: Generate CSV Exports
+
+on:
+  schedule:
+    # Run at 9:30 AM ET daily (2:30 PM UTC) - after morning picks
+    - cron: '30 14 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  generate-exports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Generate CSV exports
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: npm run generate-csv-exports
+      
+      - name: Commit and push updated data
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add public/data/*.csv public/data/*.json
+          git diff --staged --quiet || git commit -m "Update CSV exports and season stats [skip ci]"
+          git push
+
