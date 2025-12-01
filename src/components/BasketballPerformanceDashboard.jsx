@@ -108,28 +108,9 @@ export function BasketballPerformanceDashboard() {
     };
   }, [allBets]);
 
-  if (loading) {
-    return (
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '20px',
-        padding: '2rem',
-        marginBottom: '2rem',
-        textAlign: 'center'
-      }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400"></div>
-          <span style={{ color: 'rgba(255,255,255,0.6)' }}>Loading performance data...</span>
-        </div>
-      </div>
-    );
-  }
-
   // Filter stats based on selected time period
   const filteredStats = useMemo(() => {
-    if (timeFilter === 'all') return stats;
+    if (!stats || timeFilter === 'all') return stats;
     
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -170,11 +151,30 @@ export function BasketballPerformanceDashboard() {
     };
   }, [stats, allBets, timeFilter]);
 
-  if (stats.totalBets === 0) {
+  if (loading) {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '20px',
+        padding: '2rem',
+        marginBottom: '2rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-400"></div>
+          <span style={{ color: 'rgba(255,255,255,0.6)' }}>Loading performance data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats || stats.totalBets === 0) {
     return null;
   }
 
-  const { wins, losses, winRate, unitsWon, totalRisked, roi, gradedBets } = filteredStats;
+  const { wins, losses, winRate, unitsWon, totalRisked, roi, gradedBets } = filteredStats || stats;
   const isMobile = window.innerWidth < 768;
 
   return (
@@ -469,10 +469,10 @@ export function BasketballPerformanceDashboard() {
             {/* Best Recent Performance */}
             <StatCard
               icon={<Calendar size={20} />}
-              value={`${timeStats.bestRecent.profit >= 0 ? '+' : ''}${timeStats.bestRecent.profit.toFixed(2)}u`}
-              label={`${timeStats.bestRecent.period} Best`}
-              color={timeStats.bestRecent.profit >= 0 ? '#10B981' : '#EF4444'}
-              highlight={timeStats.bestRecent.profit >= 2}
+              value={`${timeStats?.bestRecent?.profit >= 0 ? '+' : ''}${(timeStats?.bestRecent?.profit || 0).toFixed(2)}u`}
+              label={`${timeStats?.bestRecent?.period || 'L10'} Best`}
+              color={(timeStats?.bestRecent?.profit || 0) >= 0 ? '#10B981' : '#EF4444'}
+              highlight={(timeStats?.bestRecent?.profit || 0) >= 2}
               isMobile={isMobile}
             />
           </div>
