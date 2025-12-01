@@ -67,6 +67,25 @@ function getETDate() {
   return etDate.toISOString().split('T')[0];
 }
 
+// Transform Firebase bet structure to template format
+function mapBetToTemplateFormat(bet) {
+  return {
+    team: bet.bet?.team || bet.bet?.pick || 'Unknown',
+    opponent: bet.game?.awayTeam === (bet.bet?.team || bet.bet?.pick) 
+      ? bet.game?.homeTeam 
+      : bet.game?.awayTeam,
+    betType: bet.bet?.market || 'MONEYLINE',
+    odds: bet.bet?.odds || 0,
+    ev: bet.prediction?.evPercent || 0,
+    qualityGrade: bet.prediction?.qualityGrade || bet.prediction?.rating || 'B',
+    units: bet.prediction?.recommendedUnit || 1,
+    reasoning: `${bet.prediction?.confidence || 'MEDIUM'} confidence ensemble pick`,
+    winProb: bet.prediction?.modelProb?.toFixed(1) || 'N/A',
+    marketProb: bet.prediction?.marketProb?.toFixed(1) || 'N/A',
+    gameTime: bet.game?.gameTime || 'TBD'
+  };
+}
+
 async function generateMorningContent() {
   try {
     const today = getETDate(); // USE ET DATE, NOT UTC
@@ -87,7 +106,8 @@ async function generateMorningContent() {
         console.log(`   - ${bet.game?.awayTeam || 'Unknown'} @ ${bet.game?.homeTeam || 'Unknown'}: EV=${ev}%`);
         return ev >= 1.0; // Only quality picks
       })
-      .sort((a, b) => parseFloat(b.prediction?.evPercent || b.ev || 0) - parseFloat(a.prediction?.evPercent || a.ev || 0));
+      .sort((a, b) => parseFloat(b.prediction?.evPercent || b.ev || 0) - parseFloat(a.prediction?.evPercent || a.ev || 0))
+      .map(mapBetToTemplateFormat); // Transform to template format
 
     console.log(`✅ Found ${nhlPicks.length} NHL picks for today (EV >= 1.0%)`);
 
