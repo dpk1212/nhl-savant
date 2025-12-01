@@ -1,0 +1,58 @@
+name: Generate Morning Social Content
+
+on:
+  schedule:
+    # 8 AM ET = 1 PM UTC (13:00)
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-morning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd nhl-savant
+          npm install
+      
+      - name: Generate morning picks content
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: |
+          cd nhl-savant
+          npm run generate-social-morning
+      
+      - name: Generate weekly recap (Sundays only)
+        if: github.event.schedule == '0 13 * * 0'
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          cd nhl-savant
+          npm run generate-social-weekly
+      
+      - name: Generate educational content (Wednesdays every 2 weeks)
+        # Run on 1st and 3rd Wednesday of each month
+        if: |
+          (github.event.schedule == '0 13 * * 3') && 
+          ((github.event.schedule_time | date('%d') | int >= 1 && github.event.schedule_time | date('%d') | int <= 7) || 
+           (github.event.schedule_time | date('%d') | int >= 15 && github.event.schedule_time | date('%d') | int <= 21))
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: |
+          cd nhl-savant
+          npm run generate-social-education
+

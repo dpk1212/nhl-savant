@@ -1,0 +1,32 @@
+name: Generate Night Social Content
+
+on:
+  schedule:
+    # 11 PM ET = 4 AM UTC next day
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-night:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd nhl-savant
+          npm install
+      
+      - name: Generate night results content
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          cd nhl-savant
+          npm run generate-social-night
+

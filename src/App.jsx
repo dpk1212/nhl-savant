@@ -32,6 +32,7 @@ import PDORegressionGuide from './pages/guides/PDORegressionGuide';
 import EVNHLGuide from './pages/guides/EVNHLGuide';
 import EVCBBGuide from './pages/guides/EVCBBGuide';
 import Data from './pages/Data';
+import AdminSocialContent from './pages/AdminSocialContent';
 import SplashScreenFallback from './components/SplashScreenFallback';
 import { useSplashScreen } from './hooks/useSplashScreen';
 // DISABLED: WelcomeModal (replaced by WelcomePopupModal in TodaysGames)
@@ -317,6 +318,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               <Route path="/guides/how-to-find-ev-nhl-picks" element={<EVNHLGuide />} />
               <Route path="/guides/how-to-find-ev-college-basketball-picks" element={<EVCBBGuide />} />
               <Route path="/data" element={<Data />} />
+              <Route path="/admin/social-content" element={<AdminSocialContent />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
           </Routes>
         </main>
