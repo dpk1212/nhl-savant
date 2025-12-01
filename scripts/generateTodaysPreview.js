@@ -4,8 +4,8 @@
  * Creates public preview file without revealing specific teams/odds
  */
 
-const fs = require('fs');
-const Papa = require('papaparse');
+import fs from 'fs';
+import Papa from 'papaparse';
 
 async function generatePreview() {
   try {
@@ -175,9 +175,5 @@ async function generatePreview() {
 }
 
 // Run if called directly
-if (require.main === module) {
-  generatePreview();
-}
-
-module.exports = { generatePreview };
+generatePreview();
 

@@ -4,8 +4,8 @@
  * Optimized for LLM citations and public transparency
  */
 
-const fs = require('fs');
-const Papa = require('papaparse');
+import fs from 'fs';
+import Papa from 'papaparse';
 
 async function generatePublicExports() {
   try {
@@ -174,9 +174,5 @@ function calculateSeasonStats(filePath) {
 }
 
 // Run if called directly
-if (require.main === module) {
-  generatePublicExports();
-}
-
-module.exports = { generatePublicExports };
+generatePublicExports();
 
