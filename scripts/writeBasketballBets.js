@@ -66,6 +66,15 @@ async function saveBetToFirebase(db, game, prediction) {
   // Check if bet already exists
   const existingBet = await getDoc(betRef);
   if (existingBet.exists()) {
+    // UPDATE existing bet with Barttorvik data if missing
+    const existingData = existingBet.data();
+    if (!existingData.barttorvik && prediction.barttorvik) {
+      await setDoc(betRef, {
+        barttorvik: prediction.barttorvik
+      }, { merge: true });
+      console.log(`   ✅ Updated with Barttorvik data: ${betId}`);
+      return betId;
+    }
     console.log(`   ⏭️  Already exists: ${betId}`);
     return betId;
   }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { parseBasketballOdds } from '../utils/basketballOddsParser';
 import { parseHaslametrics } from '../utils/haslametricsParser';
 import { parseDRatings } from '../utils/dratingsParser';
+import { parseBarttorvik } from '../utils/barttorvik Parser';
 import { matchGamesWithCSV, filterByQuality } from '../utils/gameMatchingCSV';
 import { BasketballEdgeCalculator } from '../utils/basketballEdgeCalculator';
 import { useBasketballResultsGrader } from '../hooks/useBasketballResultsGrader';
@@ -12,6 +13,7 @@ import { gradePrediction, calculateGradingStats } from '../utils/basketballGradi
 import { gradeBasketballBet } from '../utils/basketballBetGrader';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
+import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { collection, getDocs } from 'firebase/firestore';
@@ -172,9 +174,18 @@ const Basketball = () => {
       const drateResponse = await fetch(`/dratings.md${cacheBuster}`);
       const csvResponse = await fetch(`/basketball_teams.csv${cacheBuster}`);
       
+      // Find the latest Barttorvik file
+      const barttorvikFiles = await fetch(`/`).then(r => r.text()).then(html => {
+        const matches = html.match(/barttorvik\.com_teamstats[^"]+\.md/g);
+        return matches || [];
+      });
+      const latestBarttorvik = barttorvikFiles.sort().reverse()[0] || 'barttorvik.com_teamstats.php_year=2026&sort=2.2025-12-02T14_29_36.275Z.md';
+      const barttorvikResponse = await fetch(`/${latestBarttorvik}${cacheBuster}`);
+      
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();
       const drateMarkdown = await drateResponse.text();
+      const barttorvikMarkdown = await barttorvikResponse.text();
       const csvContent = await csvResponse.text();
       
       // Parse data (odds parser filters for TODAY only)
@@ -182,13 +193,14 @@ const Basketball = () => {
       
       const haslaData = parseHaslametrics(haslaMarkdown);
       const dratePreds = parseDRatings(drateMarkdown);
+      const barttorvikData = parseBarttorvik(barttorvikMarkdown);
       
       // Load team mappings for live score matching
       const mappings = loadTeamMappings(csvContent);
       setTeamMappings(mappings);
       
       // Match games using CSV mappings (OddsTrader as base)
-      const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
+      const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, barttorvikData, csvContent);
       
       // TODAY'S GAMES ONLY (parser filters by today's date)
       const todaysGames = matchedGames.map(game => ({
@@ -2355,6 +2367,20 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           </div>
         )}
       </div>
+      
+      {/* Advanced Statistical Analysis - White-Labeled */}
+      {game.barttorvik && (
+        <div style={{ 
+          padding: isMobile ? '1rem' : '1.25rem',
+          borderTop: ELEVATION.flat.border
+        }}>
+          <AdvancedMatchupCard
+            barttorvik={game.barttorvik}
+            awayTeam={game.awayTeam}
+            homeTeam={game.homeTeam}
+          />
+        </div>
+      )}
     </div>
   );
 };
