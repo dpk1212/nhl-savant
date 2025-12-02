@@ -9,6 +9,8 @@ on:
 jobs:
   generate-exports:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing CSV updates back to repo
     steps:
       - uses: actions/checkout@v3
       
