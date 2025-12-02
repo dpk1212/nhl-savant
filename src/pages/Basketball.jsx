@@ -2303,9 +2303,11 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           onClick={() => setShowDetails(!showDetails)}
           style={{
             width: '100%',
-            background: 'transparent',
+            background: game.barttorvik && !showDetails
+              ? 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(99, 102, 241, 0.08) 100%)'
+              : 'transparent',
             border: 'none',
-            padding: isMobile ? '0.375rem 0' : '0.5rem 0',
+            padding: isMobile ? '0.5rem 0' : '0.625rem 0',
             color: 'rgba(255,255,255,0.5)',
             fontSize: isMobile ? '0.688rem' : '0.75rem',
             fontWeight: '600',
@@ -2313,15 +2315,61 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '0.375rem',
-            transition: 'color 0.2s ease'
+            gap: isMobile ? '0.5rem' : '0.625rem',
+            transition: 'all 0.3s ease',
+            borderRadius: '8px',
+            position: 'relative'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.8)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'rgba(255,255,255,0.9)';
+            if (game.barttorvik && !showDetails) {
+              e.currentTarget.style.background = 'linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 50%, rgba(99, 102, 241, 0.15) 100%)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
+            if (game.barttorvik && !showDetails) {
+              e.currentTarget.style.background = 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(99, 102, 241, 0.08) 100%)';
+            }
+          }}
         >
           <span style={{ fontSize: '0.625rem' }}>{showDetails ? '▼' : '▶'}</span>
           <span>Model Breakdown</span>
+          
+          {/* Premium Badge - Show when Advanced Stats available */}
+          {game.barttorvik && !showDetails && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              padding: isMobile ? '0.188rem 0.5rem' : '0.25rem 0.625rem',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%)',
+              border: '1px solid rgba(99, 102, 241, 0.4)',
+              borderRadius: '6px',
+              fontSize: isMobile ? '0.563rem' : '0.625rem',
+              fontWeight: '800',
+              color: '#A5B4FC',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}>
+              <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem' }}>✨</span>
+              <span>Advanced Stats</span>
+            </span>
+          )}
         </button>
+        
+        <style>{`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.8;
+            }
+          }
+        `}</style>
         
         {showDetails && (
           <div style={{ 
