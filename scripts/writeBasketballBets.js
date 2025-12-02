@@ -12,6 +12,7 @@ import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
 import { parseHaslametrics } from '../src/utils/haslametricsParser.js';
 import { parseDRatings } from '../src/utils/dratingsParser.js';
+import { parseBarttorvik } from '../src/utils/barttorvik Parser.js';
 import { matchGamesWithCSV } from '../src/utils/gameMatchingCSV.js';
 import { BasketballEdgeCalculator } from '../src/utils/basketballEdgeCalculator.js';
 import fs from 'fs/promises';
@@ -157,6 +158,7 @@ async function writeBasketballBets() {
     const oddsMarkdown = await fs.readFile(join(__dirname, '../public/basketball_odds.md'), 'utf8');
     const haslaMarkdown = await fs.readFile(join(__dirname, '../public/haslametrics.md'), 'utf8');
     const drateMarkdown = await fs.readFile(join(__dirname, '../public/dratings.md'), 'utf8');
+    const barttMarkdown = await fs.readFile(join(__dirname, '../public/barttorvik.com_teamstats.php_year=2026&sort=2.2025-12-02T14_29_36.275Z.md'), 'utf8');
     const csvContent = await fs.readFile(join(__dirname, '../public/basketball_teams.csv'), 'utf8');
     
     console.log('✅ Loaded scraped data files');
@@ -166,14 +168,16 @@ async function writeBasketballBets() {
     const oddsGames = parseBasketballOdds(oddsMarkdown);
     const haslaData = parseHaslametrics(haslaMarkdown);
     const dratePreds = parseDRatings(drateMarkdown);
+    const barttData = parseBarttorvik(barttMarkdown);
     
     console.log(`   📊 OddsTrader: ${oddsGames.length} games`);
     console.log(`   📊 Haslametrics: ${haslaData.games?.length || 0} games`);
     console.log(`   📊 D-Ratings: ${dratePreds.length} predictions`);
+    console.log(`   📊 Barttorvik: ${Object.keys(barttData).length} teams`);
     
     // 3. Match games across sources using CSV mappings
     console.log('\n🔗 Matching games across sources...');
-    const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
+    const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, barttData, csvContent);
     console.log(`   ✅ Matched ${matchedGames.length} games`);
     
     // 4. Calculate ensemble predictions (80% D-Ratings, 20% Haslametrics)

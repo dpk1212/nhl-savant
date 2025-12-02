@@ -11,10 +11,11 @@ import { loadTeamMappings, findTeamMapping, findDRatingsPrediction, findHaslamet
  * @param {array} oddsGames - Parsed odds from OddsTrader
  * @param {object} haslametricsData - { games: [], teams: {} } from Haslametrics
  * @param {array} dratePredictions - Predictions from D-Ratings
+ * @param {object} barttorvik Data - Barttorvik team stats keyed by team name
  * @param {string} csvContent - CSV content from basketball_teams.csv
  * @returns {array} - Matched games with all data
  */
-export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions, csvContent) {
+export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions, barttorvik Data, csvContent) {
   const matchedGames = [];
   
   // Load CSV mappings
@@ -138,6 +139,14 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     if (!awayMapping.ncaa_name) missingNcaaNames.add(awayTeam);
     if (!homeMapping.ncaa_name) missingNcaaNames.add(homeTeam);
     
+    // Find in Barttorvik using CSV mapping
+    let awayBartt = null;
+    let homeBartt = null;
+    if (awayMapping.barttorvik && homeMapping.barttorvik) {
+      awayBartt = barttorvik Data[awayMapping.barttorvik];
+      homeBartt = barttorvik Data[homeMapping.barttorvik];
+    }
+    
     // Track data sources
     const sources = ['odds']; // Always have odds (it's our base)
     if (haslaGame) sources.push('haslametrics');
@@ -180,6 +189,45 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
         awayScore: dratePred.awayScore,
         homeScore: dratePred.homeScore,
         gameTime: dratePred.gameTime
+      } : null,
+      
+      // Barttorvik advanced stats
+      barttorvik: (awayBartt && homeBartt) ? {
+        away: {
+          rank: awayBartt.rank,
+          adjOff: awayBartt.adjOff,
+          adjDef: awayBartt.adjDef,
+          eFG_off: awayBartt.eFG_off,
+          eFG_def: awayBartt.eFG_def,
+          to_off: awayBartt.to_off,
+          to_def: awayBartt.to_def,
+          oreb_off: awayBartt.oreb_off,
+          oreb_def: awayBartt.oreb_def,
+          twoP_off: awayBartt.twoP_off,
+          threeP_off: awayBartt.threeP_off
+        },
+        home: {
+          rank: homeBartt.rank,
+          adjOff: homeBartt.adjOff,
+          adjDef: homeBartt.adjDef,
+          eFG_off: homeBartt.eFG_off,
+          eFG_def: homeBartt.eFG_def,
+          to_off: homeBartt.to_off,
+          to_def: homeBartt.to_def,
+          oreb_off: homeBartt.oreb_off,
+          oreb_def: homeBartt.oreb_def,
+          twoP_off: homeBartt.twoP_off,
+          threeP_off: homeBartt.threeP_off
+        },
+        matchup: {
+          rankAdvantage: awayBartt.rank < homeBartt.rank ? 'away' : 'home',
+          rankDiff: Math.abs(awayBartt.rank - homeBartt.rank),
+          offAdvantage: awayBartt.adjOff > homeBartt.adjOff ? 'away' : 'home',
+          offDiff: Math.abs(awayBartt.adjOff - homeBartt.adjOff).toFixed(1),
+          defAdvantage: awayBartt.adjDef < homeBartt.adjDef ? 'away' : 'home',
+          awayOffVsHomeDef: (awayBartt.eFG_off - homeBartt.eFG_def).toFixed(1),
+          homeOffVsAwayDef: (homeBartt.eFG_off - awayBartt.eFG_def).toFixed(1)
+        }
       } : null,
       
       // Odds data (for edge calculation)

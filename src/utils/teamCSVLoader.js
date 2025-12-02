@@ -29,7 +29,8 @@ export function loadTeamMappings(csvContent) {
       conference: values[4] || '',
       ncaa_name: values[5] || '',
       notes: values[6] || '',
-      espn_name: values[7] || '' // NEW: ESPN API team name (Nov 28, 2025)
+      espn_name: values[7] || '', // ESPN API team name (Nov 28, 2025)
+      barttorvik: values[8] || '' // Barttorvik team name (Dec 2, 2025)
     };
     
     mappings.set(mapping.normalized, mapping);
