@@ -63,6 +63,24 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
   // Calculate efficiency differential
   const efficiencyDiff = (offTeam.adjOff - defTeam.adjDef).toFixed(1);
   const efficiencyAdvantage = parseFloat(efficiencyDiff) > 0;
+  
+  // Calculate overall matchup advantage for hero section
+  const rankAdvantage = away.rank < home.rank ? awayTeam : homeTeam;
+  const offenseAdvantage = away.adjOff > home.adjOff ? awayTeam : homeTeam;
+  const defenseAdvantage = away.adjDef < home.adjDef ? awayTeam : homeTeam;
+  const shootingAdvantage = away.eFG_off > home.eFG_off ? awayTeam : homeTeam;
+  
+  // Count advantages for each team
+  const awayAdvantages = [
+    away.rank < home.rank,
+    away.adjOff > home.adjOff,
+    away.adjDef < home.adjDef,
+    away.eFG_off > home.eFG_off
+  ].filter(Boolean).length;
+  
+  const homeAdvantages = 4 - awayAdvantages;
+  const overallAdvantage = awayAdvantages > homeAdvantages ? awayTeam : homeTeam;
+  const advantageCount = Math.max(awayAdvantages, homeAdvantages);
 
   // Helper for percentage bars
   const getPercentageWidth = (value: number, max: number = 100) => {
@@ -181,6 +199,157 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               Switch
             </span>
           </button>
+        </div>
+      </div>
+
+      {/* 🎯 HERO: ADVANTAGE SUMMARY - Tell the story immediately */}
+      <div style={{
+        padding: isMobile ? '1.25rem 1.125rem' : '1.5rem 1.375rem',
+        background: overallAdvantage === awayTeam
+          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.08) 100%)'
+          : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.08) 100%)',
+        borderBottom: `2px solid ${overallAdvantage === awayTeam ? 'rgba(59, 130, 246, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+      }}>
+        {/* Main Advantage Statement */}
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? '0.875rem' : '1rem' }}>
+          <div style={{
+            fontSize: isMobile ? '0.625rem' : '0.688rem',
+            fontWeight: '800',
+            color: 'rgba(255, 255, 255, 0.5)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            marginBottom: isMobile ? '0.5rem' : '0.625rem'
+          }}>
+            MATCHUP ADVANTAGE
+          </div>
+          <div style={{
+            fontSize: isMobile ? '1.375rem' : '1.625rem',
+            fontWeight: '900',
+            color: overallAdvantage === awayTeam ? '#3B82F6' : '#EF4444',
+            letterSpacing: '-0.02em',
+            textShadow: `0 2px 12px ${overallAdvantage === awayTeam ? 'rgba(59, 130, 246, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+            marginBottom: isMobile ? '0.375rem' : '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: isMobile ? '0.5rem' : '0.625rem'
+          }}>
+            <span style={{ fontSize: isMobile ? '1.5rem' : '1.75rem' }}>
+              {overallAdvantage === awayTeam ? '↗' : '↘'}
+            </span>
+            <span>{overallAdvantage}</span>
+          </div>
+          <div style={{
+            fontSize: isMobile ? '0.75rem' : '0.813rem',
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontWeight: '700',
+            letterSpacing: '0.01em'
+          }}>
+            Holds {advantageCount} of 4 key advantages
+          </div>
+        </div>
+
+        {/* Quick Advantage Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: isMobile ? '0.5rem' : '0.625rem'
+        }}>
+          {/* Ranking */}
+          <div style={{
+            background: rankAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+            padding: isMobile ? '0.5rem 0.625rem' : '0.563rem 0.75rem',
+            borderRadius: '8px',
+            border: `1px solid ${rankAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
+              {rankAdvantage === overallAdvantage ? '✓' : '○'}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              fontWeight: '700',
+              color: rankAdvantage === overallAdvantage ? '#10B981' : 'rgba(255, 255, 255, 0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em'
+            }}>
+              Higher Rank
+            </span>
+          </div>
+
+          {/* Offense */}
+          <div style={{
+            background: offenseAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+            padding: isMobile ? '0.5rem 0.625rem' : '0.563rem 0.75rem',
+            borderRadius: '8px',
+            border: `1px solid ${offenseAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
+              {offenseAdvantage === overallAdvantage ? '✓' : '○'}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              fontWeight: '700',
+              color: offenseAdvantage === overallAdvantage ? '#10B981' : 'rgba(255, 255, 255, 0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em'
+            }}>
+              Better Offense
+            </span>
+          </div>
+
+          {/* Defense */}
+          <div style={{
+            background: defenseAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+            padding: isMobile ? '0.5rem 0.625rem' : '0.563rem 0.75rem',
+            borderRadius: '8px',
+            border: `1px solid ${defenseAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
+              {defenseAdvantage === overallAdvantage ? '✓' : '○'}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              fontWeight: '700',
+              color: defenseAdvantage === overallAdvantage ? '#10B981' : 'rgba(255, 255, 255, 0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em'
+            }}>
+              Better Defense
+            </span>
+          </div>
+
+          {/* Shooting */}
+          <div style={{
+            background: shootingAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+            padding: isMobile ? '0.5rem 0.625rem' : '0.563rem 0.75rem',
+            borderRadius: '8px',
+            border: `1px solid ${shootingAdvantage === overallAdvantage ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
+              {shootingAdvantage === overallAdvantage ? '✓' : '○'}
+            </span>
+            <span style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              fontWeight: '700',
+              color: shootingAdvantage === overallAdvantage ? '#10B981' : 'rgba(255, 255, 255, 0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em'
+            }}>
+              Better Shooting
+            </span>
+          </div>
         </div>
       </div>
 
@@ -325,13 +494,57 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             color: 'rgba(16, 185, 129, 0.9)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            marginBottom: isMobile ? '0.75rem' : '0.875rem',
+            marginBottom: isMobile ? '0.375rem' : '0.5rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.375rem'
           }}>
-            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>⚡</span>
+            <span style={{ fontSize: isMobile ? '0.938rem' : '1rem' }}>⚡</span>
             EFFICIENCY MATCHUP
+          </div>
+          
+          {/* Key Insight - Lead with the conclusion */}
+          <div style={{
+            marginBottom: isMobile ? '0.75rem' : '0.875rem',
+            padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 0.875rem',
+            background: efficiencyAdvantage 
+              ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.08) 100%)'
+              : 'linear-gradient(90deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.08) 100%)',
+            borderLeft: `3px solid ${efficiencyAdvantage ? '#10B981' : '#EF4444'}`,
+            borderRadius: '8px'
+          }}>
+            <div style={{
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '900',
+              color: efficiencyAdvantage ? '#10B981' : '#EF4444',
+              letterSpacing: '-0.02em',
+              marginBottom: '0.188rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: isMobile ? '1.25rem' : '1.375rem' }}>
+                {efficiencyAdvantage ? '↗' : '↘'}
+              </span>
+              <span>
+                {efficiencyAdvantage ? '+' : ''}{efficiencyDiff}
+              </span>
+              <span style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontWeight: '700'
+              }}>
+                pts/100
+              </span>
+            </div>
+            <div style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255, 255, 255, 0.75)',
+              fontWeight: '700',
+              letterSpacing: '0.01em'
+            }}>
+              {offTeamName} expected to score {efficiencyAdvantage ? 'MORE' : 'LESS'} efficiently
+            </div>
           </div>
           
           <div style={{ display: 'grid', gap: isMobile ? '0.5rem' : '0.625rem' }}>
@@ -418,13 +631,57 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             color: 'rgba(59, 130, 246, 0.9)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            marginBottom: isMobile ? '0.75rem' : '0.875rem',
+            marginBottom: isMobile ? '0.375rem' : '0.5rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.375rem'
           }}>
-            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>🎯</span>
+            <span style={{ fontSize: isMobile ? '0.938rem' : '1rem' }}>🎯</span>
             SHOOTING EFFICIENCY
+          </div>
+          
+          {/* Key Insight - Shooting advantage at a glance */}
+          <div style={{
+            marginBottom: isMobile ? '0.75rem' : '0.875rem',
+            padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 0.875rem',
+            background: parseFloat(matchupDiff) > 0
+              ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.08) 100%)'
+              : 'linear-gradient(90deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.08) 100%)',
+            borderLeft: `3px solid ${parseFloat(matchupDiff) > 0 ? '#10B981' : '#EF4444'}`,
+            borderRadius: '8px'
+          }}>
+            <div style={{
+              fontSize: isMobile ? '1.125rem' : '1.25rem',
+              fontWeight: '900',
+              color: parseFloat(matchupDiff) > 0 ? '#10B981' : '#EF4444',
+              letterSpacing: '-0.02em',
+              marginBottom: '0.188rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: isMobile ? '1.25rem' : '1.375rem' }}>
+                {parseFloat(matchupDiff) > 0 ? '↗' : '↘'}
+              </span>
+              <span>
+                {parseFloat(matchupDiff) > 0 ? '+' : ''}{matchupDiff}%
+              </span>
+              <span style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontWeight: '700'
+              }}>
+                eFG
+              </span>
+            </div>
+            <div style={{
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: 'rgba(255, 255, 255, 0.75)',
+              fontWeight: '700',
+              letterSpacing: '0.01em'
+            }}>
+              {offTeamName} has {parseFloat(matchupDiff) > 0 ? 'FAVORABLE' : 'UNFAVORABLE'} shooting matchup
+            </div>
           </div>
           
           <div style={{ display: 'grid', gap: isMobile ? '0.625rem' : '0.75rem' }}>
@@ -561,118 +818,173 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             color: 'rgba(139, 92, 246, 0.9)',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            marginBottom: isMobile ? '0.625rem' : '0.75rem',
+            marginBottom: isMobile ? '0.5rem' : '0.625rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.375rem'
           }}>
-            <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>🔑</span>
+            <span style={{ fontSize: isMobile ? '0.938rem' : '1rem' }}>🔑</span>
             KEY MATCHUP FACTORS
+          </div>
+          
+          {/* Summary count */}
+          <div style={{
+            marginBottom: isMobile ? '0.625rem' : '0.75rem',
+            fontSize: isMobile ? '0.625rem' : '0.688rem',
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontWeight: '600',
+            fontStyle: 'italic'
+          }}>
+            Critical stats that could decide this matchup
           </div>
           
           <div style={{ display: 'grid', gap: isMobile ? '0.438rem' : '0.5rem' }}>
             {/* Factor 1: 2P Shooting */}
             <div style={{ 
               display: 'flex', 
-              alignItems: 'flex-start', 
-              gap: isMobile ? '0.438rem' : '0.5rem',
-              padding: isMobile ? '0.375rem' : '0.438rem',
-              background: offTeam.twoP_off > 50 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-              borderRadius: '6px'
+              alignItems: 'center', 
+              gap: isMobile ? '0.5rem' : '0.625rem',
+              padding: isMobile ? '0.563rem 0.625rem' : '0.625rem 0.75rem',
+              background: offTeam.twoP_off > 50 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+              borderRadius: '8px',
+              border: `1px solid ${offTeam.twoP_off > 50 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)'}`
             }}>
               <span style={{ 
-                marginTop: '0.125rem',
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontSize: isMobile ? '1rem' : '1.063rem',
                 color: offTeam.twoP_off > 50 ? '#10B981' : 'rgba(255, 255, 255, 0.3)'
               }}>
-                {offTeam.twoP_off > 50 ? '✓' : '•'}
+                {offTeam.twoP_off > 50 ? '✓' : '○'}
               </span>
-              <span style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255, 255, 255, 0.85)',
-                lineHeight: 1.4,
-                fontWeight: '600'
-              }}>
-                <span style={{ color: 'white', fontWeight: '800' }}>{offTeamName}</span> shoots 2P at {offTeam.twoP_off.toFixed(1)}%
-              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  lineHeight: 1.3,
+                  fontWeight: '700',
+                  marginBottom: '0.125rem'
+                }}>
+                  <span style={{ color: offTeam.twoP_off > 50 ? '#10B981' : 'white', fontWeight: '900' }}>{offTeamName}</span> 2P Shooting
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  fontWeight: '900',
+                  color: offTeam.twoP_off > 50 ? '#10B981' : 'rgba(255, 255, 255, 0.6)',
+                  fontFamily: 'ui-monospace, monospace'
+                }}>
+                  {offTeam.twoP_off.toFixed(1)}%
+                </div>
+              </div>
             </div>
             
             {/* Factor 2: 3P Shooting */}
             <div style={{ 
               display: 'flex', 
-              alignItems: 'flex-start', 
-              gap: isMobile ? '0.438rem' : '0.5rem',
-              padding: isMobile ? '0.375rem' : '0.438rem',
-              background: offTeam.threeP_off > 35 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-              borderRadius: '6px'
+              alignItems: 'center', 
+              gap: isMobile ? '0.5rem' : '0.625rem',
+              padding: isMobile ? '0.563rem 0.625rem' : '0.625rem 0.75rem',
+              background: offTeam.threeP_off > 35 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+              borderRadius: '8px',
+              border: `1px solid ${offTeam.threeP_off > 35 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)'}`
             }}>
               <span style={{ 
-                marginTop: '0.125rem',
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontSize: isMobile ? '1rem' : '1.063rem',
                 color: offTeam.threeP_off > 35 ? '#10B981' : 'rgba(255, 255, 255, 0.3)'
               }}>
-                {offTeam.threeP_off > 35 ? '✓' : '•'}
+                {offTeam.threeP_off > 35 ? '✓' : '○'}
               </span>
-              <span style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255, 255, 255, 0.85)',
-                lineHeight: 1.4,
-                fontWeight: '600'
-              }}>
-                <span style={{ color: 'white', fontWeight: '800' }}>{offTeamName}</span> shoots 3P at {offTeam.threeP_off.toFixed(1)}%
-              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  lineHeight: 1.3,
+                  fontWeight: '700',
+                  marginBottom: '0.125rem'
+                }}>
+                  <span style={{ color: offTeam.threeP_off > 35 ? '#10B981' : 'white', fontWeight: '900' }}>{offTeamName}</span> 3P Shooting
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  fontWeight: '900',
+                  color: offTeam.threeP_off > 35 ? '#10B981' : 'rgba(255, 255, 255, 0.6)',
+                  fontFamily: 'ui-monospace, monospace'
+                }}>
+                  {offTeam.threeP_off.toFixed(1)}%
+                </div>
+              </div>
             </div>
             
             {/* Factor 3: Defense Allows */}
             <div style={{ 
               display: 'flex', 
-              alignItems: 'flex-start', 
-              gap: isMobile ? '0.438rem' : '0.5rem',
-              padding: isMobile ? '0.375rem' : '0.438rem',
-              background: defTeam.eFG_def < 50 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(251, 191, 36, 0.05)',
-              borderRadius: '6px'
+              alignItems: 'center', 
+              gap: isMobile ? '0.5rem' : '0.625rem',
+              padding: isMobile ? '0.563rem 0.625rem' : '0.625rem 0.75rem',
+              background: defTeam.eFG_def < 50 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(251, 191, 36, 0.08)',
+              borderRadius: '8px',
+              border: `1px solid ${defTeam.eFG_def < 50 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(251, 191, 36, 0.2)'}`
             }}>
               <span style={{ 
-                marginTop: '0.125rem',
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontSize: isMobile ? '1rem' : '1.063rem',
                 color: defTeam.eFG_def < 50 ? '#10B981' : '#FBB936'
               }}>
                 {defTeam.eFG_def < 50 ? '✓' : '⚠'}
               </span>
-              <span style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255, 255, 255, 0.85)',
-                lineHeight: 1.4,
-                fontWeight: '600'
-              }}>
-                <span style={{ color: 'white', fontWeight: '800' }}>{defTeamName}</span> allows {defTeam.eFG_def.toFixed(1)}% eFG
-              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  lineHeight: 1.3,
+                  fontWeight: '700',
+                  marginBottom: '0.125rem'
+                }}>
+                  <span style={{ color: defTeam.eFG_def < 50 ? '#10B981' : '#FBB936', fontWeight: '900' }}>{defTeamName}</span> Defense
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  fontWeight: '900',
+                  color: defTeam.eFG_def < 50 ? '#10B981' : '#FBB936',
+                  fontFamily: 'ui-monospace, monospace'
+                }}>
+                  {defTeam.eFG_def.toFixed(1)}% eFG
+                </div>
+              </div>
             </div>
             
             {/* Factor 4: Turnovers */}
             <div style={{ 
               display: 'flex', 
-              alignItems: 'flex-start', 
-              gap: isMobile ? '0.438rem' : '0.5rem',
-              padding: isMobile ? '0.375rem' : '0.438rem',
-              background: offTeam.to_off < 18 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(251, 191, 36, 0.05)',
-              borderRadius: '6px'
+              alignItems: 'center', 
+              gap: isMobile ? '0.5rem' : '0.625rem',
+              padding: isMobile ? '0.563rem 0.625rem' : '0.625rem 0.75rem',
+              background: offTeam.to_off < 18 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(251, 191, 36, 0.08)',
+              borderRadius: '8px',
+              border: `1px solid ${offTeam.to_off < 18 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(251, 191, 36, 0.2)'}`
             }}>
               <span style={{ 
-                marginTop: '0.125rem',
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontSize: isMobile ? '1rem' : '1.063rem',
                 color: offTeam.to_off < 18 ? '#10B981' : '#FBB936'
               }}>
                 {offTeam.to_off < 18 ? '✓' : '⚠'}
               </span>
-              <span style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255, 255, 255, 0.85)',
-                lineHeight: 1.4,
-                fontWeight: '600'
-              }}>
-                <span style={{ color: 'white', fontWeight: '800' }}>{offTeamName}</span> turns ball over at {offTeam.to_off.toFixed(1)}%
-              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  lineHeight: 1.3,
+                  fontWeight: '700',
+                  marginBottom: '0.125rem'
+                }}>
+                  <span style={{ color: offTeam.to_off < 18 ? '#10B981' : '#FBB936', fontWeight: '900' }}>{offTeamName}</span> Ball Security
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.875rem' : '0.938rem',
+                  fontWeight: '900',
+                  color: offTeam.to_off < 18 ? '#10B981' : '#FBB936',
+                  fontFamily: 'ui-monospace, monospace'
+                }}>
+                  {offTeam.to_off.toFixed(1)}% TO
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -2364,23 +2364,18 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 </div>
               </div>
             </div>
+            
+            {/* Advanced Statistical Analysis - Inside Model Breakdown */}
+            {game.barttorvik && (
+              <AdvancedMatchupCard
+                barttorvik={game.barttorvik}
+                awayTeam={game.awayTeam}
+                homeTeam={game.homeTeam}
+              />
+            )}
           </div>
         )}
       </div>
-      
-      {/* Advanced Statistical Analysis - White-Labeled */}
-      {game.barttorvik && (
-        <div style={{ 
-          padding: isMobile ? '1rem' : '1.25rem',
-          borderTop: ELEVATION.flat.border
-        }}>
-          <AdvancedMatchupCard
-            barttorvik={game.barttorvik}
-            awayTeam={game.awayTeam}
-            homeTeam={game.homeTeam}
-          />
-        </div>
-      )}
     </div>
   );
 };
