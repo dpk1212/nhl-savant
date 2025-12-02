@@ -20,7 +20,9 @@ interface AdvancedMatchupCardProps {
 interface TeamStats {
   rank: number;
   adjOff: number;
+  adjOff_rank: number;
   adjDef: number;
+  adjDef_rank: number;
   eFG_off: number;
   eFG_def: number;
   to_off: number;
@@ -365,7 +367,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             marginBottom: isMobile ? '0.625rem' : '0.75rem'
           }}>
             {(() => {
-              const rankStyle = getRankColor(offTeam.rank);
+              // Use OFFENSIVE rank for the offense team
+              const offRank = offTeam.adjOff_rank || offTeam.rank;
+              const rankStyle = getRankColor(offRank);
               return (
                 <span style={{
                   display: 'inline-flex',
@@ -380,7 +384,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   letterSpacing: '0.02em',
                   boxShadow: `0 2px 8px ${rankStyle.shadow}`
                 }}>
-                  #{offTeam.rank}
+                  #{offRank}
                 </span>
               );
             })()}
@@ -400,7 +404,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               fontWeight: '800',
               letterSpacing: '0.05em'
             }}>
-              OFFENSE
+              OFF RANK
             </span>
           </div>
           
@@ -433,7 +437,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             marginTop: isMobile ? '0.625rem' : '0.75rem'
           }}>
             {(() => {
-              const rankStyle = getRankColor(defTeam.rank);
+              // Use DEFENSIVE rank for the defense team
+              const defRank = defTeam.adjDef_rank || defTeam.rank;
+              const rankStyle = getRankColor(defRank);
               return (
                 <span style={{
                   display: 'inline-flex',
@@ -448,7 +454,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   letterSpacing: '0.02em',
                   boxShadow: `0 2px 8px ${rankStyle.shadow}`
                 }}>
-                  #{defTeam.rank}
+                  #{defRank}
                 </span>
               );
             })()}
@@ -468,7 +474,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               fontWeight: '800',
               letterSpacing: '0.05em'
             }}>
-              DEFENSE
+              DEF RANK
             </span>
           </div>
         </div>

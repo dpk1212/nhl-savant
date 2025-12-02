@@ -63,19 +63,29 @@ async function saveBetToFirebase(db, game, prediction) {
   
   const betRef = doc(db, 'basketball_bets', betId);
   
-  // Check if bet already exists
+  // Check if bet already exists - FORCE UPDATE predictions
   const existingBet = await getDoc(betRef);
   if (existingBet.exists()) {
-    // UPDATE existing bet with Barttorvik data if missing
-    const existingData = existingBet.data();
-    if (!existingData.barttorvik && prediction.barttorvik) {
-      await setDoc(betRef, {
-        barttorvik: prediction.barttorvik
-      }, { merge: true });
-      console.log(`   ✅ Updated with Barttorvik data: ${betId}`);
-      return betId;
-    }
-    console.log(`   ⏭️  Already exists: ${betId}`);
+    // ALWAYS update prediction data to ensure latest calculations
+    await setDoc(betRef, {
+      prediction: {
+        ensembleAwayProb: prediction.ensembleAwayProb,
+        ensembleHomeProb: prediction.ensembleHomeProb,
+        bestTeam: prediction.bestTeam,
+        bestBet: prediction.bestBet,
+        bestOdds: prediction.bestOdds,
+        bestEV: prediction.bestEV,
+        evPercent: prediction.bestEV,
+        grade: prediction.grade,
+        qualityGrade: prediction.grade,
+        rating: prediction.grade,
+        unitSize: prediction.unitSize,
+        oddsRangeName: prediction.oddsRangeName,
+        historicalROI: prediction.historicalROI
+      },
+      barttorvik: prediction.barttorvik || null
+    }, { merge: true });
+    console.log(`   ✅ Updated: ${betId}`);
     return betId;
   }
   
