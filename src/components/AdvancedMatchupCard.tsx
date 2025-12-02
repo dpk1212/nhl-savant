@@ -1146,63 +1146,81 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               border: '1px solid rgba(99, 102, 241, 0.25)',
               boxShadow: '0 2px 12px rgba(99, 102, 241, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03)'
             }}>
-              <div style={{
-                fontSize: isMobile ? '0.625rem' : '0.688rem',
-                fontWeight: '800',
-                color: 'rgba(167, 139, 250, 0.9)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                marginBottom: isMobile ? '0.625rem' : '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem'
-              }}>
-                <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>🏆</span>
-                NATIONAL RANKINGS
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: isMobile ? '0.75rem' : '1rem'
-              }}>
-                <div>
-                  <div style={{
-                    fontSize: isMobile ? '0.688rem' : '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    marginBottom: isMobile ? '0.313rem' : '0.375rem',
-                    fontWeight: '600'
-                  }}>
-                    {offTeamName}
+            <div style={{
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  fontWeight: '800',
+                  color: 'rgba(167, 139, 250, 0.9)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  marginBottom: isMobile ? '0.625rem' : '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
+                }}>
+                  <span style={{ fontSize: isMobile ? '0.875rem' : '0.938rem' }}>📊</span>
+                  EFFICIENCY RANKINGS
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: isMobile ? '0.75rem' : '1rem'
+                }}>
+                  <div>
+                    <div style={{
+                      fontSize: isMobile ? '0.688rem' : '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      marginBottom: isMobile ? '0.313rem' : '0.375rem',
+                      fontWeight: '600'
+                    }}>
+                      {offTeamName}
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '800',
+                      color: 'white',
+                      letterSpacing: '-0.01em',
+                      marginBottom: '0.25rem'
+                    }}>
+                      Off Rank: <span style={{ color: '#3B82F6' }}>#{offTeam.adjOff_rank || 'N/A'}</span>
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '800',
+                      color: 'white',
+                      letterSpacing: '-0.01em'
+                    }}>
+                      Def Rank: <span style={{ color: '#EF4444' }}>#{offTeam.adjDef_rank || 'N/A'}</span>
+                    </div>
                   </div>
-                  <div style={{
-                    fontSize: isMobile ? '0.813rem' : '0.875rem',
-                    fontWeight: '900',
-                    color: 'white',
-                    letterSpacing: '-0.01em'
-                  }}>
-                    Overall: <span style={{ color: '#A78BFA' }}>#{offTeam.rank}</span> of 365
+                  <div>
+                    <div style={{
+                      fontSize: isMobile ? '0.688rem' : '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      marginBottom: isMobile ? '0.313rem' : '0.375rem',
+                      fontWeight: '600'
+                    }}>
+                      {defTeamName}
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '800',
+                      color: 'white',
+                      letterSpacing: '-0.01em',
+                      marginBottom: '0.25rem'
+                    }}>
+                      Off Rank: <span style={{ color: '#3B82F6' }}>#{defTeam.adjOff_rank || 'N/A'}</span>
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '800',
+                      color: 'white',
+                      letterSpacing: '-0.01em'
+                    }}>
+                      Def Rank: <span style={{ color: '#EF4444' }}>#{defTeam.adjDef_rank || 'N/A'}</span>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div style={{
-                    fontSize: isMobile ? '0.688rem' : '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    marginBottom: isMobile ? '0.313rem' : '0.375rem',
-                    fontWeight: '600'
-                  }}>
-                    {defTeamName}
-                  </div>
-                  <div style={{
-                    fontSize: isMobile ? '0.813rem' : '0.875rem',
-                    fontWeight: '900',
-                    color: 'white',
-                    letterSpacing: '-0.01em'
-                  }}>
-                    Overall: <span style={{ color: '#A78BFA' }}>#{defTeam.rank}</span> of 365
-                  </div>
-                </div>
               </div>
-            </div>
           </div>
         </div>
       )}
