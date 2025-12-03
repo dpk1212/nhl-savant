@@ -55,6 +55,26 @@ function App() {
   const [skatersData, setSkatersData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+
+  // 🎉 Handle Stripe checkout success redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutParam = params.get('checkout');
+    
+    if (checkoutParam === 'success') {
+      console.log('🎉 Checkout success detected!');
+      setCheckoutSuccess(true);
+      
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('checkout');
+      window.history.replaceState({}, '', url.pathname + url.hash);
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => setCheckoutSuccess(false), 5000);
+    }
+  }, []);
   
   // useEffect hook - MUST be before any returns
   useEffect(() => {
@@ -233,6 +253,29 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
+        {/* 🎉 Checkout Success Banner */}
+        {checkoutSuccess && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            color: 'white',
+            padding: '1rem',
+            textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
+            animation: 'slideDown 0.3s ease-out'
+          }}>
+            <div style={{ fontWeight: '700', fontSize: '1.125rem', marginBottom: '0.25rem' }}>
+              🎉 Welcome to NHL Savant!
+            </div>
+            <div style={{ opacity: 0.9, fontSize: '0.875rem' }}>
+              Your subscription is now active. Refreshing your access...
+            </div>
+          </div>
+        )}
         <AppContent 
           dataProcessor={dataProcessor}
           oddsData={oddsData}

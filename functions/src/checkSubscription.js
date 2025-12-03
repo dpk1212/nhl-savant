@@ -46,10 +46,10 @@ exports.checkSubscription = functions.https.onCall(async (data, context) => {
 
     console.log(`Checking subscription for user: ${userId}, email: ${userEmail}`);
 
-    // Step 1: Find Stripe customer by email
+    // Step 1: Find ALL Stripe customers by email (user may have multiple from duplicate checkouts)
     const customers = await stripe.customers.list({
       email: userEmail,
-      limit: 1
+      limit: 100  // Get ALL customers with this email
     });
 
     if (customers.data.length === 0) {
@@ -65,20 +65,33 @@ exports.checkSubscription = functions.https.onCall(async (data, context) => {
       };
     }
 
-    const customer = customers.data[0];
-    console.log(`Found Stripe customer: ${customer.id}`);
+    console.log(`Found ${customers.data.length} Stripe customer(s) for ${userEmail}`);
 
-    // Step 2: Get active subscriptions for this customer
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: 'all', // Get all statuses to check trials, active, etc.
-      limit: 10
-    });
+    // Step 2: Check ALL customers for active subscriptions (handles duplicate customer issue)
+    let activeSubscription = null;
+    let activeCustomer = null;
 
-    // Find the most recent active or trialing subscription
-    const activeSubscription = subscriptions.data.find(sub => 
-      ['active', 'trialing'].includes(sub.status)
-    );
+    for (const customer of customers.data) {
+      console.log(`Checking customer: ${customer.id}`);
+      
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customer.id,
+        status: 'all',
+        limit: 10
+      });
+
+      // Find active or trialing subscription
+      const sub = subscriptions.data.find(s => ['active', 'trialing'].includes(s.status));
+      
+      if (sub) {
+        activeSubscription = sub;
+        activeCustomer = customer;
+        console.log(`✅ Found active subscription on customer ${customer.id}`);
+        break; // Found one, stop searching
+      }
+    }
+
+    const customer = activeCustomer || customers.data[0];
 
     if (!activeSubscription) {
       console.log('No active subscription found');

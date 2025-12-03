@@ -64,16 +64,44 @@ exports.handleStripeWebhook = functions.https.onRequest(async (req, res) => {
 /**
  * Handle successful checkout session
  * Creates or updates user subscription in Firestore
+ * 
+ * FIX: If client_reference_id is missing, find user by email
  */
 async function handleCheckoutCompleted(session) {
   console.log('💰 Checkout completed:', session.id);
+  console.log('Session details:', {
+    client_reference_id: session.client_reference_id,
+    customer: session.customer,
+    customer_email: session.customer_email,
+    subscription: session.subscription
+  });
 
-  const userId = session.client_reference_id;
+  let userId = session.client_reference_id;
   const customerId = session.customer;
   const subscriptionId = session.subscription;
+  const customerEmail = session.customer_email || session.customer_details?.email;
+
+  // FIX: If no client_reference_id, try to find user by email
+  if (!userId && customerEmail) {
+    console.log(`No client_reference_id, searching for user by email: ${customerEmail}`);
+    
+    const usersSnapshot = await db.collection('users')
+      .where('email', '==', customerEmail)
+      .limit(1)
+      .get();
+    
+    if (!usersSnapshot.empty) {
+      userId = usersSnapshot.docs[0].id;
+      console.log(`✅ Found user by email: ${userId}`);
+    } else {
+      console.error(`❌ No user found for email: ${customerEmail}`);
+      console.error('User must sign up on the site BEFORE checking out!');
+      return;
+    }
+  }
 
   if (!userId) {
-    console.error('No client_reference_id (userId) in session');
+    console.error('❌ No client_reference_id and no email to find user');
     return;
   }
 
