@@ -1988,20 +1988,31 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               </div>
               
               {/* Units - USE STORED VALUE, not recalculated */}
-              <div style={{
-                background: `linear-gradient(135deg, ${tierInfo.color}15 0%, ${tierInfo.color}08 100%)`,
-                border: `1.5px solid ${tierInfo.color}`,
-                color: tierInfo.color,
-                padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
-                borderRadius: '7px',
-                fontWeight: '900',
-                fontSize: isMobile ? '0.75rem' : '0.813rem',
-                letterSpacing: '0.01em',
-                fontFeatureSettings: "'tnum'",
-                boxShadow: `0 2px 8px ${tierInfo.color}20`
-              }}>
-                {pred.unitSize}u
-              </div>
+              {(() => {
+                // Get unit color based on actual stored unit size
+                const unitColor = pred.unitSize >= 5 ? '#10B981' 
+                  : pred.unitSize >= 4 ? '#14B8A6'
+                  : pred.unitSize >= 3 ? '#3B82F6'
+                  : pred.unitSize >= 2 ? '#8B5CF6'
+                  : pred.unitSize >= 1 ? '#A855F7'
+                  : '#6366F1';
+                return (
+                  <div style={{
+                    background: `linear-gradient(135deg, ${unitColor}15 0%, ${unitColor}08 100%)`,
+                    border: `1.5px solid ${unitColor}`,
+                    color: unitColor,
+                    padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+                    borderRadius: '7px',
+                    fontWeight: '900',
+                    fontSize: isMobile ? '0.75rem' : '0.813rem',
+                    letterSpacing: '0.01em',
+                    fontFeatureSettings: "'tnum'",
+                    boxShadow: `0 2px 8px ${unitColor}20`
+                  }}>
+                    {pred.unitSize}u
+                  </div>
+                );
+              })()}
             </div>
             
             {/* Right: Profit (hero element) */}
