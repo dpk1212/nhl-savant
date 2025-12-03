@@ -16,6 +16,7 @@ import { BasketballPerformanceDashboard } from '../components/BasketballPerforma
 import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
+import { getDynamicTierInfo, getDynamicConfidenceRating } from '../utils/dynamicConfidenceUnits';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -651,9 +652,10 @@ const Basketball = () => {
                   return;
                 }
                 
-                const tier = getBetTier(game.prediction.grade, game.bet.odds, game.prediction.unitSize);
-                if (tier.tier === 1) gamesByTier.max.push(game);
-                else if (tier.tier === 2) gamesByTier.moderate.push(game);
+                // Use dynamic tier from stored data when available
+                const tier = getDynamicTierInfo(game.prediction);
+                if (tier.tier <= 2) gamesByTier.max.push(game);  // ELITE or HIGH = max
+                else if (tier.tier <= 4) gamesByTier.moderate.push(game);  // GOOD or MODERATE
                 else gamesByTier.small.push(game);
               });
               
@@ -1654,8 +1656,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
       }}>
         {/* 🎯 UNIT SIZE HERO + CONFIDENCE BADGE */}
         {(() => {
-          const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
-          const confidence = getConfidenceRating(pred.grade, pred.bestOdds, pred.unitSize);
+          // Use dynamic tier from stored Firebase data when available
+          const tierInfo = getDynamicTierInfo(pred);
+          const confidence = getDynamicConfidenceRating(pred);
           
           return (
             <div style={{
@@ -1871,17 +1874,17 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
           <div style={{
             marginTop: isMobile ? '0.75rem' : '0.875rem',
             background: (() => {
-              const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+              const tierInfo = getDynamicTierInfo(pred);
               return tierInfo.bgGradient;
             })(),
             border: (() => {
-              const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+              const tierInfo = getDynamicTierInfo(pred);
               return `2.5px solid ${tierInfo.borderColor}`;
             })(),
             borderRadius: isMobile ? '14px' : '16px',
             padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
             boxShadow: (() => {
-              const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+              const tierInfo = getDynamicTierInfo(pred);
               return `0 6px 22px ${tierInfo.color}28, inset 0 1px 0 rgba(255,255,255,0.12)`;
             })(),
             backdropFilter: 'blur(10px)'
@@ -2157,7 +2160,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
               gap: '0.25rem'
             }}>
               {(() => {
-                const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+                const tierInfo = getDynamicTierInfo(pred);
                 return <span>{tierInfo.emoji}</span>;
               })()} GRADE / BET SIZE
               </div>
@@ -2180,7 +2183,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 fontSize: isMobile ? '0.938rem' : '1rem',
                 fontWeight: '900',
                 color: (() => {
-                  const tierInfo = getBetTier(pred.grade, pred.bestOdds, pred.unitSize);
+                  const tierInfo = getDynamicTierInfo(pred);
                   return tierInfo.color;
                 })(),
                 fontFeatureSettings: "'tnum'"

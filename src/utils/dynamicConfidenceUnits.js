@@ -360,3 +360,123 @@ export function getConfidenceDisplay(units, tier) {
   };
 }
 
+/**
+ * Get tier info for frontend display - uses stored tier data when available
+ * Falls back to calculating from units if tier data not present (backward compat)
+ * 
+ * This should be used by the frontend instead of getBetTier from abcUnits.js
+ * 
+ * @param {Object} prediction - The prediction object from Firebase or calculated
+ * @returns {Object} Tier info with name, color, emoji, bgGradient, etc.
+ */
+export function getDynamicTierInfo(prediction) {
+  // Get stored tier data if available (from new dynamic system)
+  const storedTier = prediction?.confidenceTier;
+  const units = prediction?.unitSize || 0;
+  const score = prediction?.confidenceScore || 0;
+  
+  // Tier mapping with all display properties
+  const tierConfigs = {
+    'ELITE': {
+      tier: 1,
+      name: 'ELITE',
+      shortName: 'Elite',
+      emoji: '🔥',
+      color: '#10B981',
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.12) 100%)',
+      borderColor: 'rgba(16, 185, 129, 0.40)',
+      description: 'Maximum conviction - multiple green flags aligned'
+    },
+    'HIGH': {
+      tier: 2,
+      name: 'HIGH CONFIDENCE',
+      shortName: 'High',
+      emoji: '💪',
+      color: '#14B8A6',
+      bgGradient: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(13, 148, 136, 0.10) 100%)',
+      borderColor: 'rgba(20, 184, 166, 0.35)',
+      description: 'Strong opportunity with solid backing'
+    },
+    'GOOD': {
+      tier: 3,
+      name: 'GOOD',
+      shortName: 'Good',
+      emoji: '✅',
+      color: '#3B82F6',
+      bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.10) 100%)',
+      borderColor: 'rgba(59, 130, 246, 0.35)',
+      description: 'Positive expectation with measured risk'
+    },
+    'MODERATE': {
+      tier: 4,
+      name: 'MODERATE',
+      shortName: 'Moderate',
+      emoji: '🟡',
+      color: '#8B5CF6',
+      bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.10) 100%)',
+      borderColor: 'rgba(139, 92, 246, 0.35)',
+      description: 'Conservative sizing for mixed signals'
+    },
+    'LOW': {
+      tier: 5,
+      name: 'LOW CONFIDENCE',
+      shortName: 'Low',
+      emoji: '⚠️',
+      color: '#F59E0B',
+      bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%)',
+      borderColor: 'rgba(245, 158, 11, 0.30)',
+      description: 'Minimal allocation - tracking position'
+    },
+    'F-CAP': {
+      tier: 6,
+      name: 'CAPPED',
+      shortName: 'Capped',
+      emoji: '🔴',
+      color: '#EF4444',
+      bgGradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.10) 0%, rgba(220, 38, 38, 0.06) 100%)',
+      borderColor: 'rgba(239, 68, 68, 0.25)',
+      description: 'F grade - hard cap at 0.5u'
+    }
+  };
+  
+  // If stored tier exists, use it
+  if (storedTier && tierConfigs[storedTier]) {
+    const config = tierConfigs[storedTier];
+    return {
+      ...config,
+      unitRange: `${units}u`,
+      confidenceScore: score
+    };
+  }
+  
+  // Fallback: derive tier from unit size (backward compatibility)
+  let derivedTier;
+  if (units >= 5) derivedTier = 'ELITE';
+  else if (units >= 4) derivedTier = 'HIGH';
+  else if (units >= 3) derivedTier = 'GOOD';
+  else if (units >= 2) derivedTier = 'MODERATE';
+  else if (units >= 1) derivedTier = 'LOW';
+  else derivedTier = 'F-CAP';
+  
+  const config = tierConfigs[derivedTier];
+  return {
+    ...config,
+    unitRange: `${units}u`,
+    confidenceScore: score
+  };
+}
+
+/**
+ * Get confidence rating for frontend - compatible with old getConfidenceRating API
+ * Uses stored tier when available
+ */
+export function getDynamicConfidenceRating(prediction) {
+  const tierInfo = getDynamicTierInfo(prediction);
+  
+  return {
+    level: tierInfo.name,
+    color: tierInfo.color,
+    label: tierInfo.shortName
+  };
+}
+
