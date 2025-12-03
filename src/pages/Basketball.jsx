@@ -1987,20 +1987,20 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
                 {pred.grade}
               </div>
               
-              {/* Units */}
+              {/* Units - USE STORED VALUE, not recalculated */}
               <div style={{
-                background: `linear-gradient(135deg, ${getUnitColor(pred.grade)}15 0%, ${getUnitColor(pred.grade)}08 100%)`,
-                border: `1.5px solid ${getUnitColor(pred.grade)}`,
-                color: getUnitColor(pred.grade),
+                background: `linear-gradient(135deg, ${tierInfo.color}15 0%, ${tierInfo.color}08 100%)`,
+                border: `1.5px solid ${tierInfo.color}`,
+                color: tierInfo.color,
                 padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
                 borderRadius: '7px',
                 fontWeight: '900',
                 fontSize: isMobile ? '0.75rem' : '0.813rem',
                 letterSpacing: '0.01em',
                 fontFeatureSettings: "'tnum'",
-                boxShadow: `0 2px 8px ${getUnitColor(pred.grade)}20`
+                boxShadow: `0 2px 8px ${tierInfo.color}20`
               }}>
-                {getUnitDisplay(pred.grade)}
+                {pred.unitSize}u
               </div>
             </div>
             
