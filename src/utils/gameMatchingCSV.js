@@ -206,7 +206,9 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
           oreb_off: awayBartt.oreb_off,
           oreb_def: awayBartt.oreb_def,
           twoP_off: awayBartt.twoP_off,
-          threeP_off: awayBartt.threeP_off
+          twoP_def: awayBartt.twoP_def,
+          threeP_off: awayBartt.threeP_off,
+          threeP_def: awayBartt.threeP_def
         },
         home: {
           rank: homeBartt.rank,
@@ -221,7 +223,9 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
           oreb_off: homeBartt.oreb_off,
           oreb_def: homeBartt.oreb_def,
           twoP_off: homeBartt.twoP_off,
-          threeP_off: homeBartt.threeP_off
+          twoP_def: homeBartt.twoP_def,
+          threeP_off: homeBartt.threeP_off,
+          threeP_def: homeBartt.threeP_def
         },
         matchup: {
           rankAdvantage: awayBartt.rank < homeBartt.rank ? 'away' : 'home',
