@@ -620,7 +620,12 @@ const Basketball = () => {
                 return (
                   <button
                     key={option.value}
-                    onClick={() => setSortOrder(option.value)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Sort clicked:', option.value);
+                      setSortOrder(option.value);
+                    }}
                     style={{
                       background: isActive 
                         ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
@@ -641,14 +646,14 @@ const Basketball = () => {
                     }}
                     onMouseEnter={e => {
                       if (!isActive) {
-                        e.target.style.background = 'rgba(30, 41, 59, 0.8)';
-                        e.target.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                        e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
+                        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
                       }
                     }}
                     onMouseLeave={e => {
                       if (!isActive) {
-                        e.target.style.background = 'rgba(15, 23, 42, 0.5)';
-                        e.target.style.borderColor = 'rgba(71, 85, 105, 0.3)';
+                        e.currentTarget.style.background = 'rgba(15, 23, 42, 0.5)';
+                        e.currentTarget.style.borderColor = 'rgba(71, 85, 105, 0.3)';
                       }
                     }}
                   >
