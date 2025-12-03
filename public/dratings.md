@@ -38,19 +38,19 @@ Close
 
 # NCAA Basketball Predictions
 
-Updated 5 sec ago
+Updated 20 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#scroll-related)
 
 ## Upcoming Games for December 1, 2025
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ Games for Nov 30, 2025
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -89,7 +89,7 @@ Games for Nov 30, 2025
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764764530803#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764765579041#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
