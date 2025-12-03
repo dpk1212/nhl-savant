@@ -2456,15 +2456,22 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           return;
         }
         
-        // SAFETY CHECK 2: For logged-in users, wait minimum 2 seconds for Stripe to respond
+        // SAFETY CHECK 2: For logged-in users, wait minimum 4 seconds for Stripe to respond
         // This prevents checking Firestore's stale 'free' tier before Stripe updates it
         if (user) {
           const timeSinceLoad = Date.now() - (window.pageLoadTime || Date.now());
-          if (timeSinceLoad < 2000) {
-            console.log('⏳ Waiting for Stripe subscription check to complete...');
-            setTimeout(checkDailySpins, 2000 - timeSinceLoad); // Check again after 2s total
+          if (timeSinceLoad < 4000) {
+            console.log('⏳ Waiting for Stripe subscription check to complete...', timeSinceLoad);
+            setTimeout(checkDailySpins, 4000 - timeSinceLoad); // Check again after 4s total
             return;
           }
+        }
+        
+        // SAFETY CHECK 3: NEVER show to logged-in users - they should be premium
+        // If they're logged in but showing as free, it's likely a Stripe sync issue
+        if (user) {
+          console.log('🚫 DAILY SPIN BLOCKED: Logged-in user - skipping modal entirely');
+          return;
         }
         
         // EXPLICIT CHECKS: Must pass ALL of these to show modal
