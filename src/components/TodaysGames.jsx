@@ -1007,8 +1007,8 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
       {/* Edge display */}
       <div style={{ 
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-        gap: '0.875rem', 
+        gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(4, 1fr)',
+        gap: isMobile ? '0.5rem' : '0.875rem', 
         marginBottom: '1rem',
         position: 'relative',
         zIndex: 1
@@ -1078,6 +1078,50 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
             </div>
           )}
         </div>
+        
+        {/* 🎯 Dynamic Confidence-Based Unit Sizing - ALWAYS VISIBLE */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: isMobile ? 'center' : 'flex-start'
+        }}>
+          <div style={{ 
+            fontSize: TYPOGRAPHY.label.size, 
+            color: 'var(--color-text-muted)', 
+            textTransform: TYPOGRAPHY.label.textTransform, 
+            letterSpacing: TYPOGRAPHY.label.letterSpacing, 
+            fontWeight: TYPOGRAPHY.label.weight,
+            marginBottom: '0.25rem'
+          }}>
+            {isMobile ? 'Bet' : 'Units'}
+          </div>
+          <div style={{ 
+            fontSize: isMobile ? '1.25rem' : TYPOGRAPHY.subheading.size, 
+            fontWeight: '800', 
+            color: getDynamicUnitColor(bestEdge), 
+            lineHeight: TYPOGRAPHY.hero.lineHeight,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            padding: isMobile ? '0.25rem 0.75rem' : '0',
+            background: isMobile ? `${getDynamicUnitColor(bestEdge)}15` : 'transparent',
+            borderRadius: isMobile ? '8px' : '0',
+            border: isMobile ? `1px solid ${getDynamicUnitColor(bestEdge)}40` : 'none'
+          }}>
+            {getDynamicUnitDisplay(bestEdge)}
+            {isMobile && (
+              <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                {getDynamicUnitTier(bestEdge).split(' ')[0]}
+              </span>
+            )}
+          </div>
+          {!isMobile && (
+            <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
+              {getDynamicUnitTier(bestEdge)}
+            </div>
+          )}
+        </div>
+        
         {!isMobile && (
           <>
             {/* Market Agreement Display */}
@@ -1110,34 +1154,6 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
                 </div>
               </div>
             )}
-            
-            {/* 🎯 Dynamic Confidence-Based Unit Sizing */}
-            <div>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.label.size, 
-                color: 'var(--color-text-muted)', 
-                textTransform: TYPOGRAPHY.label.textTransform, 
-                letterSpacing: TYPOGRAPHY.label.letterSpacing, 
-                fontWeight: TYPOGRAPHY.label.weight,
-                marginBottom: '0.25rem'
-              }}>
-                Units
-              </div>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.subheading.size, 
-                fontWeight: TYPOGRAPHY.subheading.weight, 
-                color: getDynamicUnitColor(bestEdge), 
-                lineHeight: TYPOGRAPHY.hero.lineHeight,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}>
-                {getDynamicUnitDisplay(bestEdge)}
-              </div>
-              <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
-                {getDynamicUnitTier(bestEdge)}
-              </div>
-            </div>
             
             {/* CONFIDENCE REMOVED - Using 70% MoneyPuck + 30% Your Model 
                 Agreement metric is more relevant since we're deferring to MoneyPuck */}
