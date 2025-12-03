@@ -35,8 +35,8 @@ async function diagnose() {
   console.log(`   Haslametrics: ${haslaData.games?.length || 0} games`);
   console.log(`   D-Ratings:    ${dratePreds.length} predictions\n`);
   
-  // Match games
-  const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, csvContent);
+  // Match games (pass empty object for Barttorvik data for diagnostic purposes)
+  const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, {}, csvContent);
   console.log(`🔗 Matched:      ${matchedGames.length} games\n`);
   console.log('═'.repeat(80));
   
