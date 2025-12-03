@@ -63,6 +63,101 @@ const logEvent = (eventName, params) => {
 };
 
 // ========================================
+// 🎯 DYNAMIC UNIT HELPERS (0.5u - 1.5u)
+// ROI-based confidence sizing from historical patterns
+// ========================================
+
+// Get odds range category for unit calculation
+const getOddsRangeCategory = (odds) => {
+  if (odds <= -200) return 'heavy_favorite';
+  if (odds > -200 && odds <= -150) return 'moderate_favorite';
+  if (odds > -150 && odds < -100) return 'slight_favorite';
+  if (Math.abs(odds) <= 109 || odds === -110) return 'pickem';
+  if (odds >= 110 && odds < 150) return 'slight_dog';
+  if (odds >= 150 && odds < 200) return 'moderate_dog';
+  return 'big_dog';
+};
+
+// Calculate dynamic units based on ROI patterns
+const calculateDynamicUnits = (edge) => {
+  if (!edge) return { units: 1.0, tier: 'STANDARD', score: 0 };
+  
+  let score = 0;
+  
+  // Factor 1: Rating (B+ is best at +20.9% ROI)
+  const ratingWeights = { 'A+': 0.1, 'A': 0.12, 'B+': 0.48, 'B': -0.24, 'C': -0.67 };
+  score += ratingWeights[edge.rating] || 0;
+  
+  // Factor 2: Odds Range (moderate dogs best at +23.6% ROI)
+  const oddsRange = getOddsRangeCategory(edge.odds || 0);
+  const oddsWeights = {
+    heavy_favorite: 0, moderate_favorite: 0, slight_favorite: -0.36,
+    pickem: -0.62, slight_dog: 0.35, moderate_dog: 0.53, big_dog: -0.25
+  };
+  score += oddsWeights[oddsRange] || 0;
+  
+  // Factor 3: EV Range (5-9.9% is best at +10.2% ROI)
+  const evPercent = edge.evPercent || 0;
+  if (evPercent >= 10) score += -0.07;      // Elite EV actually loses (-2.9% ROI)
+  else if (evPercent >= 5) score += 0.25;   // Strong EV wins (+10.2% ROI)
+  else if (evPercent >= 2.5) score += 0.16; // Good EV wins (+6.3% ROI)
+  
+  // Factor 4: Confidence (HIGH is best at +35.5% ROI)
+  const confWeights = { 'HIGH': 0.60, 'MEDIUM': 0.39, 'LOW': -0.26 };
+  score += confWeights[edge.confidence] || 0;
+  
+  // Factor 5: Model Probability (<50% is best at +14.1% ROI - value bets)
+  const modelProb = edge.modelProb || 0.5;
+  if (modelProb >= 0.60) score += -0.30;     // High prob loses (-17.5% ROI)
+  else if (modelProb >= 0.50) score += -0.21; // Medium prob loses (-8.6% ROI)
+  else score += 0.34;                          // Low prob wins (+14.1% ROI)
+  
+  // Normalize to -1 to +1 and map to 0.5u - 1.5u
+  const normalizedScore = Math.max(-1, Math.min(1, score));
+  let units = 1.0 + (normalizedScore * 0.5);
+  units = Math.max(0.5, Math.min(1.5, units));
+  units = Math.round(units * 4) / 4; // Round to 0.25
+  
+  let tier;
+  if (units >= 1.5) tier = 'MAX';
+  else if (units >= 1.25) tier = 'HIGH';
+  else if (units >= 1.0) tier = 'STD';
+  else if (units >= 0.75) tier = 'LOW';
+  else tier = 'MIN';
+  
+  return { units, tier, score: normalizedScore };
+};
+
+// Get display string for dynamic units
+const getDynamicUnitDisplay = (edge) => {
+  const result = calculateDynamicUnits(edge);
+  return `${result.units.toFixed(2)}u`;
+};
+
+// Get color for dynamic units
+const getDynamicUnitColor = (edge) => {
+  const result = calculateDynamicUnits(edge);
+  if (result.units >= 1.5) return '#22c55e';  // MAX - green
+  if (result.units >= 1.25) return '#3b82f6'; // HIGH - blue
+  if (result.units >= 1.0) return '#a855f7';  // STD - purple
+  if (result.units >= 0.75) return '#f59e0b'; // LOW - amber
+  return '#6b7280';                            // MIN - gray
+};
+
+// Get tier label for dynamic units
+const getDynamicUnitTier = (edge) => {
+  const result = calculateDynamicUnits(edge);
+  const tierLabels = {
+    'MAX': '🔥 Max',
+    'HIGH': '💪 High',
+    'STD': '✅ Std',
+    'LOW': '⚠️ Low',
+    'MIN': '🔻 Min'
+  };
+  return tierLabels[result.tier] || 'Std';
+};
+
+// ========================================
 // INLINE HELPER COMPONENTS
 // ========================================
 
@@ -1016,32 +1111,33 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
               </div>
             )}
             
-            {/* Kelly Sizing Recommendation */}
-            {bestEdge.recommendedUnit !== undefined && bestEdge.recommendedUnit > 0 && (
-              <div>
-                <div style={{ 
-                  fontSize: TYPOGRAPHY.label.size, 
-                  color: 'var(--color-text-muted)', 
-                  textTransform: TYPOGRAPHY.label.textTransform, 
-                  letterSpacing: TYPOGRAPHY.label.letterSpacing, 
-                  fontWeight: TYPOGRAPHY.label.weight,
-                  marginBottom: '0.25rem'
-                }}>
-                  Bet Size
-                </div>
-                <div style={{ 
-                  fontSize: TYPOGRAPHY.subheading.size, 
-                  fontWeight: TYPOGRAPHY.subheading.weight, 
-                  color: '#D4AF37', 
-                  lineHeight: TYPOGRAPHY.hero.lineHeight
-                }}>
-                  {(bestEdge.recommendedUnit * 100).toFixed(1)}%
-                </div>
-                <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
-                  Kelly
-                </div>
+            {/* 🎯 Dynamic Confidence-Based Unit Sizing */}
+            <div>
+              <div style={{ 
+                fontSize: TYPOGRAPHY.label.size, 
+                color: 'var(--color-text-muted)', 
+                textTransform: TYPOGRAPHY.label.textTransform, 
+                letterSpacing: TYPOGRAPHY.label.letterSpacing, 
+                fontWeight: TYPOGRAPHY.label.weight,
+                marginBottom: '0.25rem'
+              }}>
+                Units
               </div>
-            )}
+              <div style={{ 
+                fontSize: TYPOGRAPHY.subheading.size, 
+                fontWeight: TYPOGRAPHY.subheading.weight, 
+                color: getDynamicUnitColor(bestEdge), 
+                lineHeight: TYPOGRAPHY.hero.lineHeight,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                {getDynamicUnitDisplay(bestEdge)}
+              </div>
+              <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
+                {getDynamicUnitTier(bestEdge)}
+              </div>
+            </div>
             
             {/* CONFIDENCE REMOVED - Using 70% MoneyPuck + 30% Your Model 
                 Agreement metric is more relevant since we're deferring to MoneyPuck */}
