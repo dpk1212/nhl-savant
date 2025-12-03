@@ -1,7 +1,7 @@
 # Basketball Teams CSV - Daily Mapping Guide
 
-**Last Updated:** December 1, 2025  
-**Current Status:** 367 teams mapped | 12/12 games working (100%)
+**Last Updated:** December 3, 2025  
+**Current Status:** 394+ teams mapped | 55/55 games with picks | 55/55 games with live scoring (100%)
 
 ---
 
