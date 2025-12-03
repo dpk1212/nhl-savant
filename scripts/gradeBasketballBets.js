@@ -101,11 +101,23 @@ async function gradeBasketballBets() {
       const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
       const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
       
-      // Calculate profit using OPTIMIZED units based on Grade×Odds matrix
-      const grade = bet.prediction?.grade || 'B'; // Default to B if no grade
+      // USE THE STORED UNIT SIZE from when bet was written (dynamic confidence system)
+      // Do NOT recalculate - the displayed units should match the graded units
+      const grade = bet.prediction?.grade || 'B';
       const odds = bet.bet.odds;
-      const units = getOptimizedUnitSize(grade, odds);
-      const profit = calculateUnitProfit(grade, odds, outcome === 'WIN');
+      
+      // Priority: prediction.unitSize (dynamic) > bet.unitSize > fallback to ABC matrix
+      const units = bet.prediction?.unitSize ?? bet.unitSize ?? getOptimizedUnitSize(grade, odds);
+      
+      // Calculate profit based on ACTUAL stored units, not recalculated
+      let profit;
+      if (outcome === 'WIN') {
+        // American odds to decimal payout
+        const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+        profit = units * decimal;
+      } else {
+        profit = -units; // Lost the staked amount
+      }
       
       // Update bet in Firebase (using Admin SDK)
       await db.collection('basketball_bets').doc(betId).update({
@@ -113,7 +125,7 @@ async function gradeBasketballBets() {
         'result.winnerTeam': matchingResult.winnerTeam,
         'result.outcome': outcome,
         'result.profit': profit,
-        'result.units': units, // Store optimized units
+        'result.units': units, // Store the ACTUAL units that were bet
         'result.fetched': true,
         'result.fetchedAt': Date.now(),
         'result.source': 'OddsTrader',
@@ -123,7 +135,7 @@ async function gradeBasketballBets() {
       gradedCount++;
       console.log(`✅ ${outcome}: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
       console.log(`   Pick: ${betTeam} (${bet.bet.odds > 0 ? '+' : ''}${bet.bet.odds})`);
-      console.log(`   Grade: ${grade} @ ${odds} → ${units}u risked (optimized)`);
+      console.log(`   Grade: ${grade} • Units: ${units}u (stored from bet)`);
       console.log(`   Winner: ${matchingResult.winnerTeam}`);
       console.log(`   Profit: ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u\n`);
     }
