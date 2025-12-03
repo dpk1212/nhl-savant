@@ -1,6 +1,7 @@
 import { collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, setDoc, getDoc, arrayUnion, runTransaction } from 'firebase/firestore';
 import { db } from './config';
 import { getETDate, getETGameDate } from '../utils/dateUtils';
+import { calculateNHLDynamicUnits, loadNHLConfidenceWeights } from '../utils/nhlDynamicConfidence';
 
 export class BetTracker {
   
@@ -93,7 +94,13 @@ export class BetTracker {
         
         // Legacy EV-based rating (for comparison with ensemble grades)
         rating: bestEdge.rating || this.getRating(bestEdge.evPercent),  // A+/A/B+/B/C
-        tier: bestEdge.tier || this.getTier(bestEdge.evPercent)         // ELITE/EXCELLENT/STRONG/GOOD
+        tier: bestEdge.tier || this.getTier(bestEdge.evPercent),        // ELITE/EXCELLENT/STRONG/GOOD
+        
+        // 🎯 Dynamic Confidence-Based Unit Sizing (0.5u - 1.5u)
+        // Calculated from ROI patterns: rating, odds, EV%, confidence, side, modelProb
+        dynamicUnits: null,  // Will be calculated below
+        dynamicTier: null,   // Confidence tier label
+        dynamicScore: null   // Raw confidence score
       },
       
       // Starting Goalies (if available)
@@ -130,6 +137,21 @@ export class BetTracker {
       
       notes: ""
     };
+    
+    // 🎯 Calculate Dynamic Confidence-Based Units
+    // Uses ROI patterns from historical bets to optimize unit sizing
+    try {
+      const dynamicResult = calculateNHLDynamicUnits(betData);
+      betData.prediction.dynamicUnits = dynamicResult.units;
+      betData.prediction.dynamicTier = dynamicResult.tier;
+      betData.prediction.dynamicScore = dynamicResult.score;
+      console.log(`🎯 Dynamic Units: ${dynamicResult.units}u (${dynamicResult.tier})`);
+    } catch (err) {
+      console.warn('⚠️ Could not calculate dynamic units:', err.message);
+      betData.prediction.dynamicUnits = 1.0; // Default
+      betData.prediction.dynamicTier = '✅ STANDARD';
+      betData.prediction.dynamicScore = 0;
+    }
     
     try {
       const betRef = doc(db, 'bets', betId);
