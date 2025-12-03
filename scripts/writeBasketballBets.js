@@ -15,6 +15,7 @@ import { parseDRatings } from '../src/utils/dratingsParser.js';
 import { parseBarttorvik } from '../src/utils/barttorvik Parser.js';
 import { matchGamesWithCSV } from '../src/utils/gameMatchingCSV.js';
 import { BasketballEdgeCalculator } from '../src/utils/basketballEdgeCalculator.js';
+import { loadConfidenceWeights, calculateDynamicUnits } from '../src/utils/dynamicConfidenceUnits.js';
 import fs from 'fs/promises';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -46,11 +47,26 @@ const db = getFirestore(app);
 
 console.log(`✅ Firebase initialized: ${firebaseConfig.projectId}`);
 
+// Global confidence weights (loaded once at startup)
+let confidenceWeights = null;
+
 /**
  * Save a single basketball bet to Firebase
  * Uses Firebase Client SDK with .env credentials
+ * Now includes dynamic confidence-based unit sizing
  */
 async function saveBetToFirebase(db, game, prediction) {
+  // Calculate dynamic units using live ROI weights
+  const dynamicResult = calculateDynamicUnits({
+    prediction: prediction,
+    game: game,
+    bet: { odds: prediction.bestOdds, team: prediction.bestTeam }
+  }, confidenceWeights);
+  
+  // Use dynamic units instead of static
+  const dynamicUnits = dynamicResult.units;
+  const confidenceTier = dynamicResult.tier;
+  const confidenceScore = dynamicResult.score;
   const date = new Date().toISOString().split('T')[0];
   
   // Generate deterministic bet ID
@@ -79,13 +95,17 @@ async function saveBetToFirebase(db, game, prediction) {
         grade: prediction.grade,
         qualityGrade: prediction.grade,
         rating: prediction.grade,
-        unitSize: prediction.unitSize,
+        // Dynamic confidence-based units
+        unitSize: dynamicUnits,
+        confidenceTier: confidenceTier,
+        confidenceScore: confidenceScore,
+        staticUnitSize: prediction.unitSize, // Keep old method for comparison
         oddsRangeName: prediction.oddsRangeName,
         historicalROI: prediction.historicalROI
       },
       barttorvik: prediction.barttorvik || null
     }, { merge: true });
-    console.log(`   ✅ Updated: ${betId}`);
+    console.log(`   ✅ Updated: ${betId} (${dynamicUnits}u - ${confidenceTier})`);
     return betId;
   }
   
@@ -115,8 +135,11 @@ async function saveBetToFirebase(db, game, prediction) {
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // OPTIMIZED UNIT ALLOCATION
-      unitSize: prediction.unitSize,
+      // DYNAMIC CONFIDENCE-BASED UNIT ALLOCATION
+      unitSize: dynamicUnits,
+      confidenceTier: confidenceTier,
+      confidenceScore: confidenceScore,
+      staticUnitSize: prediction.unitSize, // Keep old method for comparison
       oddsRange: prediction.oddsRange,
       oddsRangeName: prediction.oddsRangeName,
       historicalROI: prediction.historicalROI,
@@ -162,7 +185,8 @@ async function saveBetToFirebase(db, game, prediction) {
   
   await setDoc(betRef, betData);
   console.log(`   ✅ Saved: ${betId}`);
-  console.log(`      ${prediction.bestOdds} (${prediction.oddsRangeName}) | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade} | ${prediction.unitSize}u`);
+  console.log(`      ${prediction.bestOdds} (${prediction.oddsRangeName}) | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade}`);
+  console.log(`      🎯 Dynamic Units: ${dynamicUnits}u (${confidenceTier}) | Score: ${confidenceScore}`);
   
   return betId;
 }
@@ -172,6 +196,16 @@ async function writeBasketballBets() {
   console.log('================================\n');
   
   try {
+    // 0. Load dynamic confidence weights from Firebase
+    console.log('🎯 Loading dynamic confidence weights...');
+    confidenceWeights = await loadConfidenceWeights(db);
+    if (confidenceWeights.totalBets > 0) {
+      console.log(`✅ Loaded weights from ${confidenceWeights.totalBets} graded bets`);
+    } else {
+      console.log('⚠️ Using default weights (no graded bets yet)');
+    }
+    console.log();
+    
     // 1. Load scraped data files
     console.log('📂 Loading data files...');
     const oddsMarkdown = await fs.readFile(join(__dirname, '../public/basketball_odds.md'), 'utf8');
@@ -219,7 +253,14 @@ async function writeBasketballBets() {
       console.log(`   ${i + 1}. ${game.awayTeam} @ ${game.homeTeam}`);
       console.log(`      Pick: ${pred.bestTeam} ${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds} (${pred.oddsRangeName})`);
       console.log(`      ${winProb.toFixed(1)}% to win (${pred.bestEV > 0 ? '+' : ''}${pred.bestEV.toFixed(1)}% EV) | Grade: ${pred.grade}`);
-      console.log(`      ${pred.qualityEmoji} UNITS: ${pred.unitSize}u (${pred.historicalROI > 0 ? '+' : ''}${pred.historicalROI.toFixed(1)}% historical ROI)`);
+      
+      // Calculate dynamic units for summary
+      const dynResult = calculateDynamicUnits({
+        prediction: pred,
+        game: game,
+        bet: { odds: pred.bestOdds, team: pred.bestTeam }
+      }, confidenceWeights);
+      console.log(`      🎯 ${dynResult.tierLabel} - ${dynResult.units}u (score: ${dynResult.score})`);
     });
     
     if (qualityBets.length === 0) {

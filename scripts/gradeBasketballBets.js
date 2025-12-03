@@ -4,6 +4,7 @@ import { getETGameDate } from '../src/utils/dateUtils.js';
 import { getOptimizedUnitSize, calculateUnitProfit } from '../src/utils/abcUnits.js';
 import { updateAllPatternROI } from './updatePatternROI.js';
 import { updatePendingBets } from './updatePendingBets.js';
+// Dynamic confidence is updated separately via: npm run update-dynamic-confidence
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
@@ -137,6 +138,8 @@ async function gradeBasketballBets() {
       
       console.log('🔄 Updating pending bets with new ROI data...');
       await updatePendingBets();
+      
+      console.log('\n💡 TIP: Run `npm run update-dynamic-confidence` to update unit weights');
     }
     
     return gradedCount;

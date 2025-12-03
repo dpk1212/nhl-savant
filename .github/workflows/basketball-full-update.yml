@@ -1,0 +1,117 @@
+name: Basketball Full Update (Grade + ROI + Confidence)
+
+on:
+  workflow_dispatch:  # Manual trigger anytime
+    inputs:
+      skip_grading:
+        description: 'Skip grading (just update ROI/confidence)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  full-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # Step 1: Grade bets (optional)
+      - name: Grade Basketball Bets
+        if: ${{ inputs.skip_grading != 'true' }}
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "🏀 Step 1: Grading basketball bets..."
+          npm run grade-basketball-bets
+          echo "✅ Grading complete!"
+      
+      # Step 2: Update Pattern ROI
+      - name: Update Pattern ROI
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "📊 Step 2: Updating pattern ROI..."
+          npm run update-pattern-roi
+          echo "✅ Pattern ROI updated!"
+      
+      # Step 3: Update Dynamic Confidence Weights
+      - name: Update Dynamic Confidence Weights
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: |
+          echo "🎯 Step 3: Updating dynamic confidence weights..."
+          npm run update-dynamic-confidence
+          echo "✅ Confidence weights updated!"
+      
+      # Step 4: Update Pending Bets with new data
+      - name: Update Pending Bets
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "📝 Step 4: Updating pending bets..."
+          npm run update-pending-bets
+          echo "✅ Pending bets updated!"
+      
+      # Step 5: Commit and push confidence weights
+      - name: Commit updated weights
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/basketball_confidence_weights.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🎯 Full basketball update [$(date +'%Y-%m-%d %H:%M')]" && git push)
+      
+      # Step 6: Build and deploy
+      - name: Build site
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: npm run build
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+      
+      - name: Summary
+        run: |
+          echo "🎉 BASKETBALL FULL UPDATE COMPLETE!"
+          echo ""
+          echo "Steps completed:"
+          echo "  ✅ Grade bets (if enabled)"
+          echo "  ✅ Update pattern ROI"
+          echo "  ✅ Update dynamic confidence weights"
+          echo "  ✅ Update pending bets"
+          echo "  ✅ Deploy to GitHub Pages"
+
