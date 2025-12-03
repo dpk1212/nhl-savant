@@ -38,6 +38,7 @@ const Basketball = () => {
   // Live scoring state
   const [gamesWithLiveScores, setGamesWithLiveScores] = useState([]);
   const [gameStatusFilter, setGameStatusFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState('confidence'); // 'confidence' | 'time' | 'edge'
   const [teamMappings, setTeamMappings] = useState(null);
   
   // Bet outcomes state
@@ -572,19 +573,92 @@ const Basketball = () => {
 
       {/* Grading Stats - REMOVED */}
       
-      {/* Game Status Filter */}
+      {/* Game Status Filter + Sort Order */}
       {gamesWithLiveScores.length > 0 && (
         <div style={{ maxWidth: '1200px', margin: '0 auto 1rem auto' }}>
-          <GameStatusFilter
-            currentFilter={gameStatusFilter}
-            onFilterChange={setGameStatusFilter}
-            counts={{
-              all: gamesWithLiveScores.length,
-              scheduled: gamesWithLiveScores.filter(g => !g.liveScore || g.liveScore.status === 'pre').length,
-              live: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'live').length,
-              final: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'final').length
-            }}
-          />
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}>
+            {/* Status Filter */}
+            <GameStatusFilter
+              currentFilter={gameStatusFilter}
+              onFilterChange={setGameStatusFilter}
+              counts={{
+                all: gamesWithLiveScores.length,
+                scheduled: gamesWithLiveScores.filter(g => !g.liveScore || g.liveScore.status === 'pre').length,
+                live: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'live').length,
+                final: gamesWithLiveScores.filter(g => g.liveScore && g.liveScore.status === 'final').length
+              }}
+            />
+            
+            {/* Sort Order Selector */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap'
+            }}>
+              <span style={{ 
+                fontSize: '12px', 
+                color: 'rgba(255,255,255,0.6)', 
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Sort:
+              </span>
+              {[
+                { value: 'confidence', label: 'Confidence', icon: '🎯' },
+                { value: 'time', label: 'Start Time', icon: '🕐' },
+                { value: 'edge', label: 'Edge %', icon: '📈' }
+              ].map(option => {
+                const isActive = sortOrder === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => setSortOrder(option.value)}
+                    style={{
+                      background: isActive 
+                        ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
+                        : 'rgba(15, 23, 42, 0.5)',
+                      border: isActive 
+                        ? '2px solid #8b5cf6'
+                        : '1px solid rgba(71, 85, 105, 0.3)',
+                      color: isActive ? '#ffffff' : '#cbd5e1',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={e => {
+                      if (!isActive) {
+                        e.target.style.background = 'rgba(30, 41, 59, 0.8)';
+                        e.target.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!isActive) {
+                        e.target.style.background = 'rgba(15, 23, 42, 0.5)';
+                        e.target.style.borderColor = 'rgba(71, 85, 105, 0.3)';
+                      }
+                    }}
+                  >
+                    <span>{option.icon}</span>
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
       
@@ -633,13 +707,40 @@ const Basketball = () => {
               const gamesToShow = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
               
               // Apply status filter
-              const filteredGames = gamesToShow.filter(game => {
+              let filteredGames = gamesToShow.filter(game => {
                 if (gameStatusFilter === 'all') return true;
                 if (!game.liveScore) return gameStatusFilter === 'pre';
                 return game.liveScore.status === gameStatusFilter;
               });
               
-              // 🎯 GROUP BY CONVICTION TIER (all are bets!)
+              // 🎯 APPLY SORT ORDER
+              if (sortOrder === 'time') {
+                // Sort by start time (parse from gameTime string like "7:00 PM ET")
+                filteredGames = [...filteredGames].sort((a, b) => {
+                  const parseTime = (timeStr) => {
+                    if (!timeStr) return 9999; // Put games without time at end
+                    const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                    if (!match) return 9999;
+                    let hours = parseInt(match[1]);
+                    const minutes = parseInt(match[2]);
+                    const isPM = match[3].toUpperCase() === 'PM';
+                    if (isPM && hours !== 12) hours += 12;
+                    if (!isPM && hours === 12) hours = 0;
+                    return hours * 60 + minutes;
+                  };
+                  return parseTime(a.gameTime) - parseTime(b.gameTime);
+                });
+              } else if (sortOrder === 'edge') {
+                // Sort by edge/EV percentage (highest first)
+                filteredGames = [...filteredGames].sort((a, b) => {
+                  const edgeA = a.prediction?.ev || a.prediction?.edge || 0;
+                  const edgeB = b.prediction?.ev || b.prediction?.edge || 0;
+                  return edgeB - edgeA;
+                });
+              }
+              // Default 'confidence' keeps the tier grouping below
+              
+              // 🎯 GROUP BY CONVICTION TIER (all are bets!) - only for confidence sort
               const gamesByTier = {
                 max: [],
                 moderate: [],
@@ -680,6 +781,61 @@ const Basketball = () => {
               
               let rankCounter = 1;
               
+              // 🕐 TIME or 📈 EDGE SORT: Flat list without tier grouping
+              if (sortOrder === 'time' || sortOrder === 'edge') {
+                const sortLabel = sortOrder === 'time' ? 'Start Time' : 'Edge %';
+                const sortIcon = sortOrder === 'time' ? '🕐' : '📈';
+                
+                return (
+                  <>
+                    {/* Sort Header */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: isMobile ? '12px 14px' : '14px 20px',
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05))',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      borderRadius: '12px',
+                      marginBottom: '12px'
+                    }}>
+                      <span style={{ fontSize: '20px' }}>{sortIcon}</span>
+                      <div>
+                        <div style={{
+                          fontSize: isMobile ? '14px' : '15px',
+                          fontWeight: '700',
+                          color: '#a78bfa',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em'
+                        }}>
+                          Sorted by {sortLabel}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: 'rgba(255,255,255,0.6)'
+                        }}>
+                          {filteredGames.length} game{filteredGames.length !== 1 ? 's' : ''} • 
+                          {sortOrder === 'time' ? ' Earliest games first' : ' Highest edge first'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Flat list of all games */}
+                    {filteredGames.map((game) => (
+                      <BasketballGameCard 
+                        key={rankCounter} 
+                        game={game} 
+                        rank={rankCounter++} 
+                        isMobile={isMobile}
+                        hasLiveScore={!!game.liveScore}
+                        showTime={sortOrder === 'time'}
+                      />
+                    ))}
+                  </>
+                );
+              }
+              
+              // 🎯 CONFIDENCE SORT: Grouped by tier (default)
               return (
                 <>
                   {/* TIER 1: MAXIMUM CONVICTION (5.0u) */}

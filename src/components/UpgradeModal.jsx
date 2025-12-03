@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { redirectToCheckout } from '../utils/stripe';
+import { useAuth } from '../hooks/useAuth';
+import AuthModal from './AuthModal';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 
 // Wrapper for analytics logging
@@ -9,11 +12,24 @@ const logEvent = (eventName, params) => {
   }
 };
 
-const UpgradeModal = ({ isOpen, onClose, user }) => {
+const UpgradeModal = ({ isOpen, onClose }) => {
+  const { user } = useAuth(); // Get user from auth hook instead of prop
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [selectedTier, setSelectedTier] = useState(null);
+  
   if (!isOpen) return null;
 
   const handleUpgrade = (tier) => {
     logEvent('upgrade_modal_click', { tier });
+    
+    // If user is not logged in, show auth modal first
+    if (!user) {
+      setSelectedTier(tier);
+      setShowAuthModal(true);
+      return;
+    }
+    
+    // User is logged in, go to checkout
     redirectToCheckout(tier, user);
   };
 
@@ -416,6 +432,16 @@ const UpgradeModal = ({ isOpen, onClose, user }) => {
           }
         }
       `}</style>
+      
+      {/* Auth Modal - shown when non-logged-in user clicks upgrade */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => {
+          setShowAuthModal(false);
+          setSelectedTier(null);
+        }}
+        tier={selectedTier}
+      />
     </div>
   );
 };

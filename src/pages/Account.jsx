@@ -1,17 +1,50 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, CreditCard, Crown, Calendar, TrendingUp, LogOut, ArrowLeft } from 'lucide-react';
+import { User, CreditCard, Crown, Calendar, TrendingUp, LogOut, ArrowLeft, RefreshCw } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 
+// CSS keyframes for spin animation
+const spinKeyframes = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
 const Account = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { tier, isPremium, isTrial, daysRemaining, status, createdAt } = useSubscription(user);
+  const { tier, isPremium, isTrial, daysRemaining, status, createdAt, refresh } = useSubscription(user);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState(null);
+
+  // Sync subscription from Stripe (for users who paid but Firebase wasn't updated)
+  const handleSyncSubscription = async () => {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    try {
+      console.log('🔄 Syncing subscription from Stripe...');
+      const result = await refresh(true); // Force refresh from Stripe
+      
+      if (result?.isActive) {
+        setSyncMessage({ type: 'success', text: `✅ Found your ${result.tier} subscription! Page will refresh...` });
+        // Refresh page after 2 seconds to show updated status
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setSyncMessage({ type: 'info', text: 'No active subscription found in Stripe. If you just subscribed, please wait a moment and try again.' });
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      setSyncMessage({ type: 'error', text: 'Unable to sync. Please try again or contact support.' });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (!user) {
     navigate('/');
@@ -70,11 +103,13 @@ const Account = () => {
   }) : 'Unknown';
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0A0E27 0%, #1A1F3A 50%, #0A0E27 100%)',
-      padding: '2rem 1.5rem 4rem 1.5rem'
-    }}>
+    <>
+      <style>{spinKeyframes}</style>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0A0E27 0%, #1A1F3A 50%, #0A0E27 100%)',
+        padding: '2rem 1.5rem 4rem 1.5rem'
+      }}>
       <div style={{
         maxWidth: '900px',
         margin: '0 auto'
@@ -350,35 +385,100 @@ const Account = () => {
                 You're currently on the <strong>Free</strong> plan. Upgrade to unlock unlimited access to all +EV picks.
               </p>
 
-              <button
-                onClick={() => navigate('/pricing')}
-                style={{
-                  padding: '0.875rem 1.5rem',
-                  background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: '#0A0E27',
-                  fontSize: '0.938rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 14px rgba(212, 175, 55, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(212, 175, 55, 0.3)';
-                }}
-              >
-                <Crown size={18} />
-                View Premium Plans
-              </button>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                <button
+                  onClick={() => navigate('/pricing')}
+                  style={{
+                    padding: '0.875rem 1.5rem',
+                    background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#0A0E27',
+                    fontSize: '0.938rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 14px rgba(212, 175, 55, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(212, 175, 55, 0.3)';
+                  }}
+                >
+                  <Crown size={18} />
+                  View Premium Plans
+                </button>
+
+                {/* Sync Button - For users who subscribed but Firebase wasn't updated */}
+                <button
+                  onClick={handleSyncSubscription}
+                  disabled={isSyncing}
+                  style={{
+                    padding: '0.875rem 1.5rem',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '10px',
+                    color: '#10B981',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: isSyncing ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    opacity: isSyncing ? 0.7 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSyncing) {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSyncing) {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                    }
+                  }}
+                >
+                  <RefreshCw size={16} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+                  {isSyncing ? 'Syncing...' : 'Already Subscribed?'}
+                </button>
+              </div>
+
+              {/* Sync Status Message */}
+              {syncMessage && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  background: syncMessage.type === 'success' ? 'rgba(16, 185, 129, 0.15)' :
+                              syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.15)' :
+                              'rgba(59, 130, 246, 0.15)',
+                  border: `1px solid ${syncMessage.type === 'success' ? 'rgba(16, 185, 129, 0.3)' :
+                                        syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' :
+                                        'rgba(59, 130, 246, 0.3)'}`,
+                  color: syncMessage.type === 'success' ? '#10B981' :
+                         syncMessage.type === 'error' ? '#EF4444' :
+                         '#60A5FA'
+                }}>
+                  {syncMessage.text}
+                </div>
+              )}
+
+              <p style={{
+                fontSize: '0.75rem',
+                color: 'rgba(241, 245, 249, 0.5)',
+                marginTop: '1rem',
+                fontStyle: 'italic'
+              }}>
+                💡 Already paid but showing as Free? Click "Already Subscribed?" to sync your account.
+              </p>
             </>
           )}
         </div>
@@ -445,6 +545,7 @@ const Account = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
