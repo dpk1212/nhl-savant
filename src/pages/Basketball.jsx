@@ -719,11 +719,22 @@ const Basketball = () => {
               });
               
               // 🎯 APPLY SORT ORDER
+              // Helper to get game time from various possible locations
+              const getGameTime = (game) => {
+                return game.dratings?.gameTime || 
+                       game.haslametrics?.gameTime || 
+                       game.odds?.gameTime ||
+                       game.gameTime || 
+                       '';
+              };
+              
               if (sortOrder === 'time') {
                 // Sort by start time (parse from gameTime string like "7:00 PM ET")
                 filteredGames = [...filteredGames].sort((a, b) => {
                   const parseTime = (timeStr) => {
                     if (!timeStr) return 9999; // Put games without time at end
+                    // Handle "LIVE" games - put them first
+                    if (timeStr.toUpperCase() === 'LIVE') return -1;
                     const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
                     if (!match) return 9999;
                     let hours = parseInt(match[1]);
@@ -733,7 +744,7 @@ const Basketball = () => {
                     if (!isPM && hours === 12) hours = 0;
                     return hours * 60 + minutes;
                   };
-                  return parseTime(a.gameTime) - parseTime(b.gameTime);
+                  return parseTime(getGameTime(a)) - parseTime(getGameTime(b));
                 });
               } else if (sortOrder === 'edge') {
                 // Sort by edge/EV percentage (highest first)
@@ -833,7 +844,7 @@ const Basketball = () => {
                         rank={rankCounter++} 
                         isMobile={isMobile}
                         hasLiveScore={!!game.liveScore}
-                        showTime={sortOrder === 'time'}
+                        displayTime={sortOrder === 'time' ? getGameTime(game) : null}
                       />
                     ))}
                   </>
