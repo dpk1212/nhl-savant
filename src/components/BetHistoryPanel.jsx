@@ -6,11 +6,25 @@
 import { useState, useMemo } from 'react';
 import { CheckCircle, XCircle, ChevronDown, ChevronUp, List } from 'lucide-react';
 
+// Define sort orders for each category
+const CONFIDENCE_ORDER = ['5u MAX', '4u HIGH', '3u STRONG', '2u MODERATE', '1u SMALL', '0.5u MINIMAL'];
+const ODDS_ORDER = ['Heavy Favorite', 'Moderate Favorite', 'Slight Favorite', "Pick'em", 'Slight Dog', 'Underdog'];
+const GRADE_ORDER = ['A+', 'A', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'F', 'Unknown'];
+
 // Category Performance Card
-function CategoryCard({ title, data, colorBase, icon, onSelect, selectedFilter, isMobile }) {
-  const entries = Object.entries(data).sort((a, b) => 
-    (b[1].wins + b[1].losses) - (a[1].wins + a[1].losses)
-  );
+function CategoryCard({ title, data, colorBase, icon, onSelect, selectedFilter, isMobile, sortOrder }) {
+  const entries = Object.entries(data).sort((a, b) => {
+    if (sortOrder) {
+      const indexA = sortOrder.indexOf(a[0]);
+      const indexB = sortOrder.indexOf(b[0]);
+      // Items not in sortOrder go to the end
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    }
+    // Fallback to count sort
+    return (b[1].wins + b[1].losses) - (a[1].wins + a[1].losses);
+  });
   
   return (
     <div style={{
@@ -131,17 +145,37 @@ export function BetHistoryPanel({ bets, isMobile }) {
   const [visibleCount, setVisibleCount] = useState(20);
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedFilter, setSelectedFilter] = useState(null);
+  const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'yesterday', 'week', 'month'
   
   // Sort by date (newest first) and filter for graded bets only
   const sortedBets = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
     return bets
-      .filter(b => b.result?.outcome)
+      .filter(b => {
+        if (!b.result?.outcome) return false;
+        
+        const betTime = b.timestamp?.toDate?.() || new Date(b.timestamp || 0);
+        
+        if (timeFilter === 'yesterday') {
+          return betTime >= startOfYesterday && betTime < startOfToday;
+        } else if (timeFilter === 'week') {
+          return betTime >= weekAgo;
+        } else if (timeFilter === 'month') {
+          return betTime >= monthAgo;
+        }
+        return true; // 'all'
+      })
       .sort((a, b) => {
         const timeA = a.timestamp?.toDate?.() || new Date(a.timestamp || 0);
         const timeB = b.timestamp?.toDate?.() || new Date(b.timestamp || 0);
         return timeB - timeA;
       });
-  }, [bets]);
+  }, [bets, timeFilter]);
 
   // Calculate category breakdowns
   const categoryStats = useMemo(() => {
@@ -302,8 +336,50 @@ export function BetHistoryPanel({ bets, isMobile }) {
               }}>
                 📊 Performance Breakdown
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
                 Click any category to filter picks below
+              </div>
+              
+              {/* Time Filter Buttons */}
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
+                {[
+                  { key: 'all', label: 'All Time' },
+                  { key: 'month', label: 'This Month' },
+                  { key: 'week', label: 'This Week' },
+                  { key: 'yesterday', label: 'Yesterday' }
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setTimeFilter(key);
+                      setSelectedFilter(null);
+                      setActiveCategory('all');
+                      setVisibleCount(20);
+                    }}
+                    style={{
+                      padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
+                      background: timeFilter === key 
+                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%)'
+                        : 'rgba(255,255,255,0.05)',
+                      border: timeFilter === key 
+                        ? '1px solid rgba(59, 130, 246, 0.5)' 
+                        : '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      color: timeFilter === key ? '#3B82F6' : 'rgba(255,255,255,0.7)',
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -320,6 +396,7 @@ export function BetHistoryPanel({ bets, isMobile }) {
                 onSelect={(key) => handleCategorySelect('units', key)}
                 selectedFilter={activeCategory === 'units' ? selectedFilter : null}
                 isMobile={isMobile}
+                sortOrder={CONFIDENCE_ORDER}
               />
               <CategoryCard 
                 title="By Odds Range" 
@@ -329,6 +406,7 @@ export function BetHistoryPanel({ bets, isMobile }) {
                 onSelect={(key) => handleCategorySelect('odds', key)}
                 selectedFilter={activeCategory === 'odds' ? selectedFilter : null}
                 isMobile={isMobile}
+                sortOrder={ODDS_ORDER}
               />
               <CategoryCard 
                 title="By Grade" 
@@ -338,6 +416,7 @@ export function BetHistoryPanel({ bets, isMobile }) {
                 onSelect={(key) => handleCategorySelect('grade', key)}
                 selectedFilter={activeCategory === 'grade' ? selectedFilter : null}
                 isMobile={isMobile}
+                sortOrder={GRADE_ORDER}
               />
             </div>
 
