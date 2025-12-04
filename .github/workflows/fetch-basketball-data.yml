@@ -12,12 +12,13 @@ jobs:
     permissions:
       contents: write  # Allow workflow to push changes
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
@@ -48,8 +49,8 @@ jobs:
           git add public/basketball_odds.md public/haslametrics.md public/dratings.md
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Basketball data [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
+      # Build and deploy to ensure site stays updated with fresh data
       - name: Build site
-        if: success()
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -61,10 +62,10 @@ jobs:
         run: npm run build
       
       - name: Deploy to GitHub Pages
-        if: success()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          cname: nhlsavant.com
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
