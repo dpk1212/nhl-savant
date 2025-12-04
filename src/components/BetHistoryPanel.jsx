@@ -208,13 +208,23 @@ export function BetHistoryPanel({ bets, isMobile }) {
       const isWin = bet.result?.outcome === 'WIN';
       const profit = bet.result?.profit || 0;
       
-      // Unit priority: staticUnitSize is what was ACTUALLY bet
-      const units = bet.result?.units 
+      // Unit priority: use stored values, or back-calculate from profit
+      let units = bet.result?.units 
         ?? bet.staticUnitSize 
         ?? bet.prediction?.staticUnitSize 
         ?? bet.prediction?.unitSize 
-        ?? bet.unitSize 
-        ?? 1;
+        ?? bet.unitSize;
+      
+      // If no units stored but profit exists, back-calculate
+      if (!units && profit !== 0) {
+        if (!isWin) {
+          units = Math.abs(profit);
+        } else if (odds) {
+          const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+          units = Math.round(profit / decimal * 10) / 10;
+        }
+      }
+      units = units || 1;
 
       const unitTier = getUnitTier(units);
       if (!byUnits[unitTier]) byUnits[unitTier] = { wins: 0, losses: 0, profit: 0, bets: [] };
@@ -499,17 +509,25 @@ export function BetHistoryPanel({ bets, isMobile }) {
                 const profit = bet.result?.profit || 0;
                 const odds = bet.bet?.odds;
                 
-                // Unit priority: staticUnitSize is what was ACTUALLY bet
-                // 1. result.units (stored during grading)
-                // 2. staticUnitSize (ABC matrix - what was actually bet)
-                // 3. prediction.staticUnitSize (nested version)
-                // 4. Fallback
-                const units = bet.result?.units 
+                // Unit priority: use stored values, or back-calculate from profit
+                let units = bet.result?.units 
                   ?? bet.staticUnitSize 
                   ?? bet.prediction?.staticUnitSize 
                   ?? bet.prediction?.unitSize 
-                  ?? bet.unitSize 
-                  ?? 1;
+                  ?? bet.unitSize;
+                
+                // If no units stored but profit exists, back-calculate
+                if (!units && profit !== 0) {
+                  if (!isWin) {
+                    // LOSS: you lose exactly what you bet
+                    units = Math.abs(profit);
+                  } else if (odds) {
+                    // WIN: profit = units * decimal_odds
+                    const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+                    units = Math.round(profit / decimal * 10) / 10; // Round to 1 decimal
+                  }
+                }
+                units = units || 1; // Final fallback
                 
                 const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
                 
