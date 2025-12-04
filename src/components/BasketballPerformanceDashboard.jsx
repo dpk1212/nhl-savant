@@ -8,13 +8,13 @@ import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useBasketballBetStats } from '../hooks/useBasketballBetStats';
 import BasketballProfitChart from './BasketballProfitChart';
-import { Calendar, TrendingUp, Target, DollarSign, Award, BarChart3, ChevronDown, ChevronUp, List, CheckCircle, XCircle } from 'lucide-react';
+import { BetHistoryPanel } from './BetHistoryPanel';
+import { Calendar, TrendingUp, Target, DollarSign, Award, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function BasketballPerformanceDashboard() {
   const { stats, loading, dailyStats } = useBasketballBetStats();
   const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
-  const [showBetHistory, setShowBetHistory] = useState(false);
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
 
@@ -550,53 +550,9 @@ export function BasketballPerformanceDashboard() {
             </div>
           )}
 
-          {/* Bet History Toggle Button */}
+          {/* Bet History Panel with Premium Summary */}
           {allBets && allBets.filter(b => b.result?.outcome).length > 0 && (
-            <button
-              onClick={() => setShowBetHistory(!showBetHistory)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.6)',
-                marginBottom: '1.5rem',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <List size={isMobile ? 18 : 20} color="rgba(59, 130, 246, 0.8)" />
-                <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600', fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
-                  {showBetHistory ? 'Hide' : 'Show'} Bet History
-                </span>
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  color: 'rgba(255,255,255,0.5)',
-                  background: 'rgba(255,255,255,0.1)',
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '999px'
-                }}>
-                  {allBets.filter(b => b.result?.outcome).length} picks
-                </span>
-              </div>
-              {showBetHistory ? <ChevronUp size={isMobile ? 18 : 20} /> : <ChevronDown size={isMobile ? 18 : 20} />}
-            </button>
-          )}
-
-          {/* Bet History List */}
-          {showBetHistory && allBets && (
-            <BetHistoryList bets={allBets} isMobile={isMobile} />
+            <BetHistoryPanel bets={allBets} isMobile={isMobile} />
           )}
 
           {/* Elite Performance Badge */}
