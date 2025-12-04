@@ -8,12 +8,13 @@ import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useBasketballBetStats } from '../hooks/useBasketballBetStats';
 import BasketballProfitChart from './BasketballProfitChart';
-import { Calendar, TrendingUp, Target, DollarSign, Award, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, TrendingUp, Target, DollarSign, Award, BarChart3, ChevronDown, ChevronUp, List, CheckCircle, XCircle } from 'lucide-react';
 
 export function BasketballPerformanceDashboard() {
   const { stats, loading, dailyStats } = useBasketballBetStats();
   const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
+  const [showBetHistory, setShowBetHistory] = useState(false);
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
 
@@ -549,6 +550,55 @@ export function BasketballPerformanceDashboard() {
             </div>
           )}
 
+          {/* Bet History Toggle Button */}
+          {allBets && allBets.filter(b => b.result?.outcome).length > 0 && (
+            <button
+              onClick={() => setShowBetHistory(!showBetHistory)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isMobile ? '0.875rem 1rem' : '1rem 1.25rem',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.6)',
+                marginBottom: '1.5rem',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)';
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <List size={isMobile ? 18 : 20} color="rgba(59, 130, 246, 0.8)" />
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600', fontSize: isMobile ? '0.875rem' : '0.938rem' }}>
+                  {showBetHistory ? 'Hide' : 'Show'} Bet History
+                </span>
+                <span style={{ 
+                  fontSize: '0.75rem', 
+                  color: 'rgba(255,255,255,0.5)',
+                  background: 'rgba(255,255,255,0.1)',
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '999px'
+                }}>
+                  {allBets.filter(b => b.result?.outcome).length} picks
+                </span>
+              </div>
+              {showBetHistory ? <ChevronUp size={isMobile ? 18 : 20} /> : <ChevronDown size={isMobile ? 18 : 20} />}
+            </button>
+          )}
+
+          {/* Bet History List */}
+          {showBetHistory && allBets && (
+            <BetHistoryList bets={allBets} isMobile={isMobile} />
+          )}
+
           {/* Elite Performance Badge */}
           {roi >= 10 && (
             <div style={{
@@ -842,6 +892,275 @@ function TimePeriodCard({ title, record, profit, winRate, totalBets, color, isMo
             }}>
               {totalBets}
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Bet History List Component - Shows individual picks with clear outcomes
+function BetHistoryList({ bets, isMobile }) {
+  const [visibleCount, setVisibleCount] = useState(20);
+  
+  // Sort by date (newest first) and filter for graded bets only
+  const sortedBets = useMemo(() => {
+    return bets
+      .filter(b => b.result?.outcome)
+      .sort((a, b) => {
+        const timeA = a.timestamp?.toDate?.() || new Date(a.timestamp || 0);
+        const timeB = b.timestamp?.toDate?.() || new Date(b.timestamp || 0);
+        return timeB - timeA;
+      });
+  }, [bets]);
+
+  const visibleBets = sortedBets.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedBets.length;
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate?.() || new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatOdds = (odds) => {
+    if (!odds) return '-';
+    return odds > 0 ? `+${odds}` : odds.toString();
+  };
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: '16px',
+      padding: isMobile ? '1rem' : '1.5rem',
+      marginBottom: '1.5rem'
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1rem',
+        paddingBottom: '0.75rem',
+        borderBottom: '1px solid rgba(255,255,255,0.08)'
+      }}>
+        <div style={{
+          fontSize: isMobile ? '0.938rem' : '1rem',
+          fontWeight: '700',
+          color: 'rgba(255,255,255,0.95)'
+        }}>
+          📋 Recent Picks
+        </div>
+        <div style={{
+          fontSize: '0.75rem',
+          color: 'rgba(255,255,255,0.5)'
+        }}>
+          Showing {visibleBets.length} of {sortedBets.length}
+        </div>
+      </div>
+
+      {/* Column Headers */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr auto auto auto' : '2fr 1fr 1fr 1fr 1fr',
+        gap: isMobile ? '0.5rem' : '1rem',
+        padding: '0.5rem 0',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        marginBottom: '0.5rem'
+      }}>
+        <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Pick
+        </div>
+        {!isMobile && (
+          <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+            Odds
+          </div>
+        )}
+        <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+          Units
+        </div>
+        <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>
+          Result
+        </div>
+        <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>
+          P/L
+        </div>
+      </div>
+
+      {/* Bet Rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        {visibleBets.map((bet, idx) => {
+          const isWin = bet.result?.outcome === 'WIN';
+          const profit = bet.result?.profit || 0;
+          const units = bet.result?.units || bet.prediction?.unitSize || 1;
+          const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
+          const odds = bet.bet?.odds;
+          
+          return (
+            <div
+              key={bet.id || idx}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr auto auto auto' : '2fr 1fr 1fr 1fr 1fr',
+                gap: isMobile ? '0.5rem' : '1rem',
+                padding: isMobile ? '0.625rem 0.5rem' : '0.75rem 0.5rem',
+                background: isWin 
+                  ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)'
+                  : 'linear-gradient(90deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%)',
+                borderRadius: '8px',
+                borderLeft: `3px solid ${isWin ? '#10B981' : '#EF4444'}`,
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {/* Pick/Team */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                minWidth: 0
+              }}>
+                {isWin ? (
+                  <CheckCircle size={isMobile ? 14 : 16} color="#10B981" style={{ flexShrink: 0 }} />
+                ) : (
+                  <XCircle size={isMobile ? 14 : 16} color="#EF4444" style={{ flexShrink: 0 }} />
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: isMobile ? '0.813rem' : '0.875rem',
+                    fontWeight: '600',
+                    color: 'rgba(255,255,255,0.95)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {team}
+                  </div>
+                  <div style={{
+                    fontSize: '0.688rem',
+                    color: 'rgba(255,255,255,0.4)'
+                  }}>
+                    {formatDate(bet.timestamp)}
+                    {isMobile && odds && ` • ${formatOdds(odds)}`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Odds (desktop only) */}
+              {!isMobile && (
+                <div style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: 'rgba(255,255,255,0.7)',
+                  textAlign: 'center',
+                  fontFeatureSettings: "'tnum'"
+                }}>
+                  {formatOdds(odds)}
+                </div>
+              )}
+
+              {/* Units */}
+              <div style={{
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                fontWeight: '700',
+                color: 'rgba(255,255,255,0.8)',
+                textAlign: 'center',
+                fontFeatureSettings: "'tnum'"
+              }}>
+                {units.toFixed(1)}u
+              </div>
+
+              {/* Result Badge */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.625rem',
+                  borderRadius: '6px',
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  fontWeight: '800',
+                  background: isWin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                  color: isWin ? '#10B981' : '#EF4444',
+                  border: `1px solid ${isWin ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                }}>
+                  {isWin ? 'WIN' : 'LOSS'}
+                </span>
+              </div>
+
+              {/* Profit/Loss */}
+              <div style={{
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                fontWeight: '800',
+                color: profit >= 0 ? '#10B981' : '#EF4444',
+                textAlign: 'right',
+                fontFeatureSettings: "'tnum'"
+              }}>
+                {profit >= 0 ? '+' : ''}{profit.toFixed(2)}u
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <button
+          onClick={() => setVisibleCount(prev => prev + 20)}
+          style={{
+            width: '100%',
+            marginTop: '1rem',
+            padding: '0.75rem',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '10px',
+            color: '#3B82F6',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 100%)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%)';
+          }}
+        >
+          Load More ({sortedBets.length - visibleCount} remaining)
+        </button>
+      )}
+
+      {/* Summary Footer */}
+      <div style={{
+        marginTop: '1rem',
+        padding: '0.75rem',
+        background: 'rgba(255,255,255,0.03)',
+        borderRadius: '10px',
+        display: 'flex',
+        justifyContent: 'space-around',
+        gap: '1rem'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>Total Wins</div>
+          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#10B981' }}>
+            {sortedBets.filter(b => b.result?.outcome === 'WIN').length}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>Total Losses</div>
+          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#EF4444' }}>
+            {sortedBets.filter(b => b.result?.outcome === 'LOSS').length}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>Net Profit</div>
+          <div style={{ 
+            fontSize: '1rem', 
+            fontWeight: '800', 
+            color: sortedBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0) >= 0 ? '#10B981' : '#EF4444'
+          }}>
+            {sortedBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0) >= 0 ? '+' : ''}
+            {sortedBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0).toFixed(2)}u
           </div>
         </div>
       </div>
