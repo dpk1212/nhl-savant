@@ -31,9 +31,12 @@ if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccoun
 
 console.log(`✅ Service account loaded: ${serviceAccount.client_email}`);
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// Only initialize if not already initialized (imported modules may have initialized first)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 
 const db = admin.firestore();
 
