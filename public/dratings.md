@@ -36,33 +36,82 @@ Close
 - [Blog](https://www.dratings.com/blog/)
 - [★ PREMIUM](https://www.dratings.com/dratings-premium-with-gamedaymath/)
 
+Menu
+
+[![DRatings](https://www.dratings.com/assets/a19bf740984dfbd342f7f58fac37ff9e.svg)](https://www.dratings.com/) Sports Ratings, Prediction, & Analysis
+
+- [Ratings](https://www.dratings.com/sports/)
+  - [FBS Ratings](https://www.dratings.com/sports/ncaa-fbs-football-ratings/)
+  - [NFL Ratings](https://www.dratings.com/sports/nfl-football-ratings/)
+  - [NHL Ratings](https://www.dratings.com/sports/nhl-hockey-ratings/)
+  - [NBA Ratings](https://www.dratings.com/sports/nba-basketball-ratings/)
+  - [NCAAB Ratings](https://www.dratings.com/sports/ncaa-college-basketball-ratings/)
+- [Predictions](https://www.dratings.com/predictor/)
+  - [NCAAF Predictions](https://www.dratings.com/predictor/ncaa-football-predictions/)
+  - [NFL Predictions](https://www.dratings.com/predictor/nfl-football-predictions/)
+  - [NHL Predictions](https://www.dratings.com/predictor/nhl-hockey-predictions/)
+  - [NBA Predictions](https://www.dratings.com/predictor/nba-basketball-predictions/)
+  - [NCAAB Predictions](https://www.dratings.com/predictor/ncaa-basketball-predictions/)
+  - [UFC Predictions](https://www.dratings.com/predictor/ufc-mma-predictions/)
+- [Tools](https://www.dratings.com/tools/)
+  - [Odds Conversion Calculator](https://www.dratings.com/odds-conversion-calculator/)
+  - [Parlay Calculator](https://www.dratings.com/parlay-calculator/)
+  - [Hold Calculator](https://www.dratings.com/sports-betting-hold-calculator/)
+  - [No-Vig Line](https://www.dratings.com/no-vig-fair-odds-calculator/)
+  - [CLV Calculator](https://www.dratings.com/clv-calculator/)
+  - [Kelly Criterion Calculator](https://www.dratings.com/kelly-criterion-calculator/)
+- [Sportsbooks](https://www.dratings.com/top-5-online-sportsbooks-for-us-gamblers/)
+  - [Bovada Sportsbook Review](https://www.dratings.com/bovada-sportsbook-review/)
+  - [BetOnline Sportsbook Review](https://www.dratings.com/betonline-sportsbook-review/)
+  - [Everygame Sportsbook Review](https://www.dratings.com/intertops-sportsbook-review/)
+  - [bet105 Sportsbook Review](https://www.dratings.com/bet105-sportsbook-review/)
+  - [Nitrobetting Sportsbook Review](https://www.dratings.com/nitrogen-sports-sportsbook-review/)
+  - [SportsBetting Sportsbook Review](https://www.dratings.com/sportsbetting-sportsbook-review/)
+  - [Youwager Sportsbook Review](https://www.dratings.com/youwager-sportsbook-review/)
+  - [BetAnySports Sportsbook Review](https://www.dratings.com/betanysports-sportsbook-review/)
+- [About](https://www.dratings.com/about/)
+  - [Acknowledgments](https://www.dratings.com/acknowledgments/)
+  - [Methodology](https://www.dratings.com/methodology/)
+  - [Predictions Disclaimer](https://www.dratings.com/about/predictions-disclaimer/)
+- [Blog](https://www.dratings.com/blog/)
+- [★ PREMIUM](https://www.dratings.com/dratings-premium-with-gamedaymath/)
+
+Odds FeedOffshore OddsVegas Odds
+
 # NCAA Basketball Predictions
 
-Updated 11 sec ago
+Updated 27 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#scroll-related)
 
-## Upcoming Games for December 1, 2025
+## Upcoming Games for December 4, 2025
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Postponed](https://www.dratings.com/predictor/ncaa-basketball-predictions/606f2ab5-25cf-5100-b505-7dcc74998f70) | [South Carolina State Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3323-south-carolina-state-bulldogs)(0-8)<br>[Chicago State Cougars](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3329-chicago-state-cougars)(1-8) | 47.2%<br>52.8% | +155<br>-180 | +4-110<br>-3½-115<br>+3½-110<br>-3½-110 | 73.8<br>75.1 | 148.9 | o148-115<br>u148-105<br>o146½-110<br>u148½-110 | Overall Bet Value Active<br>All Bet Values Active |  |
+| [12/04/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/d23aaef5-f325-5666-979b-312f16810417) | [Robert Morris Colonials](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3134-robert-morris-colonials)(6-3)<br>[Wisconsin Green Bay Phoenix](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3196-wisconsin-green-bay-phoenix)(4-5) | 76.6%<br>23.4% | -125<br>+105<br>-125<br>+105 | -1½-110<br>+1½-110<br>-1½-109<br>+1½-109 | 79.5<br>71.3 | 150.8 | o140-110<br>u140-110<br>o139-110<br>u140-110 |  |  |
+| [12/04/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/93bb633f-b1aa-5e03-bb19-dc6c245c03d3) | [Rider Broncs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3216-rider-broncs)(1-5)<br>[Merrimack Warriors](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3211-merrimack-warriors)(3-6) | 25.5%<br>74.5% | +310<br>-375<br>+340<br>-420 | +8½-105<br>-8-115<br>+9-109<br>-9-109 | 61.5<br>69.1 | 130.6 | o137½-110<br>u137½-110<br>o137½-110<br>u137½-110 |  |  |
+| [12/04/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/7bca6a72-b3b7-50fd-ab11-61db80505768) | [The Citadel Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3342-the-citadel-bulldogs)(2-6)<br>[Davidson Wildcats](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3109-davidson-wildcats)(6-1) | 1.9%<br>98.1% |  | +20½-115<br>-20-110<br>+20½-109<br>-20-110 | 58.0<br>81.8 | 139.8 | o139½-110<br>u140½-110<br>o140-110<br>u140½-110 |  |  |
+| [12/04/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/be7c8035-78a8-5752-9dbe-13ce8791bbd4) | [Utah State Aggies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3076-utah-state-aggies)(7-0)<br>[South Florida Bulls](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3083-south-florida-bulls)(4-4) | 66.8%<br>33.2% | -120<br>+105 | -1½-110<br>+1½-110<br>-1½-109<br>+2-110 | 78.8<br>73.6 | 152.4 | o162½-110<br>u163½-115<br>o162½-110<br>u163-110 |  |  |
+| [12/04/2025\<br>\<br>09:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/e217a01b-f66b-51c0-9989-ccbe6488ecb6) | [Long Beach State 49ers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3184-long-beach-state-49ers)(2-6)<br>[UC Santa Barbara Gauchos](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3173-uc-santa-barbara-gauchos)(6-2) | 10.8%<br>89.2% | +613<br>-860 | +12½-110<br>-12½-105<br>+12½-109<br>-12½-109 | 64.7<br>77.1 | 141.8 | o144½-110<br>u144½-110<br>o143½-110<br>u145-110 | Overall Bet Value Active |  |
+| [12/04/2025\<br>\<br>10:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/424d07ee-e038-5df4-bb01-878091da2d6e) | [UC Riverside Highlanders](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3335-uc-riverside-highlanders)(4-4)<br>[UC Irvine Anteaters](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3145-uc-irvine-anteaters)(5-4) | 13.1%<br>86.9% | +586<br>-830 | +12½-110<br>-12½-110<br>+13-110<br>-12½-109 | 67.9<br>79.2 | 147.1 | o142½-105<br>u142½-105<br>o142-110<br>u143-110 | Overall Bet Value Active<br>Overall Bet Value Active |  |
+| [12/04/2025\<br>\<br>10:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/0ed40c1d-6e06-5b4c-aceb-1d3f7daf3218) | [Cal Poly Mustangs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3217-cal-poly-mustangs)(4-5)<br>[Cal State Fullerton Titans](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3170-cal-state-fullerton-titans)(3-5) | 67.4%<br>32.6% | -133<br>+115 | -2-110<br>+2-110<br>-1½-110<br>+2-109 | 80.1<br>74.7 | 154.8 | o177-105<br>u177-115<br>o176½-110<br>u177-110 |  |  |
+| [12/04/2025\<br>\<br>10:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/194341c6-4211-53d6-91dd-ab63f61ddde8) | [CSU Bakersfield Roadrunners](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3247-csu-bakersfield-roadrunners)(4-4)<br>[Cal State Northridge Matadors](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3119-cal-state-northridge-matadors)(3-4) | 29.5%<br>70.5% | +165<br>-190 | +4½-117<br>-4-110<br>+4-110<br>-3-109 | 72.4<br>78.3 | 150.7 | o156-110<br>u156-110<br>o155½-110<br>u156-110 | Volatility Bet Value Active |  |
 
-Games for Nov 30, 2025
+[Games for Dec 1, 2025](https://www.dratings.com/predictor/ncaa-basketball-predictions/#scroll-upcoming)
 
-[Games for Dec 4, 2025](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#scroll-upcoming)
+[Games for Dec 5, 2025](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/5#scroll-upcoming)
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -89,7 +138,7 @@ Games for Nov 30, 2025
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1764867054477#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/upcoming/4#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
@@ -116,3 +165,25 @@ Here is our 2025-2026 NFL season preview based on 1,000 simulations.](https://ww
 Discover how prediction markets deliver accurate forecasts.](https://www.dratings.com/the-predictive-power-of-prediction-markets/) [**Creating a Ratings Model with Bradley-Terry** May 28, 2025\\
 \\
 Modeling with the Bradley-Terry model in Python](https://www.dratings.com/creating-a-ratings-model-with-bradley-terry/) [All Blog Posts](https://www.dratings.com/blog)
+
+[![DRatings](https://www.dratings.com/assets/ccd0b9e7970d8daaf1f060892b7426f3.svg)](https://www.dratings.com/) Sports Ratings, Prediction, & Analysis
+
+### Ratings
+
+- [MLB Baseball](https://www.dratings.com/sports/mlb-baseball-ratings/)
+- [NFL Football](https://www.dratings.com/sports/nfl-football-ratings/)
+- [All Ratings](https://www.dratings.com/sports/)
+
+### Predictions
+
+- [MLB Baseball](https://www.dratings.com/predictor/mlb-baseball-predictions/)
+- [NFL Football](https://www.dratings.com/predictor/nfl-football-predictions/)
+- [All Predictions](https://www.dratings.com/predictor/)
+
+### Learn More
+
+- [Sportsbooks](https://www.dratings.com/top-5-online-sportsbooks-for-us-gamblers/)
+- [About](https://www.dratings.com/about/)
+- [Blog](https://www.dratings.com/blog/)
+
+© 2025 DRatings [Tweet us @DRatings](https://twitter.com/dratings)
