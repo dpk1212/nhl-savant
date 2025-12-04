@@ -169,16 +169,25 @@ export function BetHistoryPanel({ bets, isMobile }) {
     const byGrade = {};
 
     sortedBets.forEach(bet => {
-      // Unit field priority:
-      // 1. result.units - stored when bet was graded (source of truth for completed bets)
-      // 2. prediction.unitSize - dynamic units from when bet was written
-      // 3. unitSize at root level - some older bets store it here
-      // 4. Fallback to 1
-      const units = bet.result?.units ?? bet.prediction?.unitSize ?? bet.unitSize ?? 1;
       const odds = bet.bet?.odds;
       const grade = bet.prediction?.grade || bet.prediction?.qualityGrade || 'Unknown';
       const isWin = bet.result?.outcome === 'WIN';
       const profit = bet.result?.profit || 0;
+      
+      // Calculate actual units from profit (most accurate since profit is source of truth)
+      let units;
+      if (bet.result?.units) {
+        units = bet.result.units;
+      } else if (profit !== 0 && odds) {
+        if (!isWin) {
+          units = Math.abs(profit);
+        } else {
+          const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+          units = profit / decimal;
+        }
+      } else {
+        units = bet.prediction?.unitSize ?? bet.unitSize ?? 1;
+      }
 
       const unitTier = getUnitTier(units);
       if (!byUnits[unitTier]) byUnits[unitTier] = { wins: 0, losses: 0, profit: 0, bets: [] };
@@ -416,10 +425,29 @@ export function BetHistoryPanel({ bets, isMobile }) {
               {visibleBets.map((bet, idx) => {
                 const isWin = bet.result?.outcome === 'WIN';
                 const profit = bet.result?.profit || 0;
-                // Use same priority: result.units > prediction.unitSize > root unitSize > 1
-                const units = bet.result?.units ?? bet.prediction?.unitSize ?? bet.unitSize ?? 1;
-                const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
                 const odds = bet.bet?.odds;
+                
+                // Calculate actual units from profit (most accurate since profit is source of truth)
+                // For LOSS: units = -profit (you lose what you bet)
+                // For WIN: units = profit / decimal_odds where decimal = odds > 0 ? odds/100 : 100/|odds|
+                let units;
+                if (bet.result?.units) {
+                  // If result.units exists and matches profit calculation, use it
+                  units = bet.result.units;
+                } else if (profit !== 0 && odds) {
+                  // Back-calculate from profit
+                  if (!isWin) {
+                    units = Math.abs(profit);
+                  } else {
+                    const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+                    units = profit / decimal;
+                  }
+                } else {
+                  // Fallback chain
+                  units = bet.prediction?.unitSize ?? bet.unitSize ?? 1;
+                }
+                
+                const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
                 
                 return (
                   <div
