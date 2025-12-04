@@ -169,9 +169,14 @@ export function BetHistoryPanel({ bets, isMobile }) {
     const byGrade = {};
 
     sortedBets.forEach(bet => {
-      const units = bet.result?.units || bet.prediction?.unitSize || 1;
+      // Unit field priority:
+      // 1. result.units - stored when bet was graded (source of truth for completed bets)
+      // 2. prediction.unitSize - dynamic units from when bet was written
+      // 3. unitSize at root level - some older bets store it here
+      // 4. Fallback to 1
+      const units = bet.result?.units ?? bet.prediction?.unitSize ?? bet.unitSize ?? 1;
       const odds = bet.bet?.odds;
-      const grade = bet.prediction?.grade || 'Unknown';
+      const grade = bet.prediction?.grade || bet.prediction?.qualityGrade || 'Unknown';
       const isWin = bet.result?.outcome === 'WIN';
       const profit = bet.result?.profit || 0;
 
@@ -411,7 +416,8 @@ export function BetHistoryPanel({ bets, isMobile }) {
               {visibleBets.map((bet, idx) => {
                 const isWin = bet.result?.outcome === 'WIN';
                 const profit = bet.result?.profit || 0;
-                const units = bet.result?.units || bet.prediction?.unitSize || 1;
+                // Use same priority: result.units > prediction.unitSize > root unitSize > 1
+                const units = bet.result?.units ?? bet.prediction?.unitSize ?? bet.unitSize ?? 1;
                 const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
                 const odds = bet.bet?.odds;
                 
