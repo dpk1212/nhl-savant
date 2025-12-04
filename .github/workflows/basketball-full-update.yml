@@ -40,6 +40,9 @@ jobs:
           echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
           echo "FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}" >> .env
           echo "FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}" >> .env
+          echo "🔍 Checking which secrets are set..."
+          [ -n "${{ secrets.VITE_FIREBASE_API_KEY }}" ] && echo "✅ VITE_FIREBASE_API_KEY is set" || echo "❌ VITE_FIREBASE_API_KEY is MISSING"
+          [ -n "${{ secrets.VITE_FIREBASE_PROJECT_ID }}" ] && echo "✅ VITE_FIREBASE_PROJECT_ID is set" || echo "❌ VITE_FIREBASE_PROJECT_ID is MISSING"
       
       # Step 1: Grade bets (optional)
       - name: Grade Basketball Bets
