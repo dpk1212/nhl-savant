@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, ChevronDown, ChevronUp, Zap, Lock, Clock } from 'lucide-react';
 
 // Add CSS keyframes for animations
 const style = document.createElement('style');
@@ -54,6 +54,16 @@ function getMarketIcon(market) {
   return '🎲';
 }
 
+function formatTime(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+}
+
 export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, opportunityStats, isFree, hasReachedLimit, isPremium, onUpgradeClick }) {
   const [isExpanded, setIsExpanded] = useState(false); // COLLAPSED BY DEFAULT
   
@@ -90,6 +100,10 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
   };
 
   const totalPicks = gameGroups.reduce((sum, group) => sum + group.bets.length, 0);
+  
+  // Get status counts from opportunityStats or calculate from bets
+  const liveEdgeCount = opportunityStats?.liveEdge || 0;
+  const lockedCount = opportunityStats?.locked || 0;
 
   return (
     <div style={{
@@ -146,20 +160,67 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
           </h3>
         </div>
         
-        {/* Right: Compact Stats + Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1rem', flexShrink: 0 }}>
-          {/* Single Combined Stat */}
-          {opportunityStats && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem',
-              padding: '0.25rem 0.625rem',
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
-              border: '1px solid rgba(212, 175, 55, 0.2)',
-              borderRadius: '6px'
-            }}>
-              {opportunityStats.elite > 0 && (
+        {/* Right: Status Pills + Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem', flexShrink: 0 }}>
+          {/* Status Pills - LIVE EDGE & LOCKED counts */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            {/* Live Edge Count */}
+            {liveEdgeCount > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '6px'
+              }}>
+                <Zap size={11} color="#10B981" />
+                <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: '700', color: '#10B981' }}>
+                  {liveEdgeCount}
+                </span>
+                {!isMobile && (
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(16, 185, 129, 0.8)', fontWeight: '600' }}>
+                    live
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Locked Count */}
+            {lockedCount > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.25)',
+                borderRadius: '6px'
+              }}>
+                <Lock size={10} color="#D4AF37" />
+                <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: '700', color: '#D4AF37' }}>
+                  {lockedCount}
+                </span>
+                {!isMobile && (
+                  <span style={{ fontSize: '0.625rem', color: 'rgba(212, 175, 55, 0.8)', fontWeight: '600' }}>
+                    locked
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Fallback: Show elite count if no status data */}
+            {liveEdgeCount === 0 && lockedCount === 0 && opportunityStats?.elite > 0 && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                padding: '0.25rem 0.625rem',
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.2)',
+                borderRadius: '6px'
+              }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
                   <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '700', color: '#D4AF37' }}>
                     {opportunityStats.elite}
@@ -168,24 +229,9 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
                     elite
                   </span>
                 </div>
-              )}
-              
-              {opportunityStats.elite > 0 && opportunityStats.total > opportunityStats.elite && (
-                <div style={{ width: '1px', height: '10px', background: 'rgba(212, 175, 55, 0.3)' }} />
-              )}
-              
-              {opportunityStats.total > opportunityStats.elite && (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                  <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '700', color: '#94A3B8' }}>
-                    {totalPicks}
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: 'rgba(148, 163, 184, 0.7)', fontWeight: '600', textTransform: 'lowercase' }}>
-                    {totalPicks === 1 ? 'pick' : 'picks'}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
           
           {/* Minimal Toggle Button */}
           <div 
@@ -228,7 +274,7 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
         <div style={{
           animation: 'expandDown 0.3s ease-out'
         }}>
-          {/* Disclaimer */}
+          {/* Legend */}
           <div style={{
             fontSize: '0.6875rem',
             color: '#94A3B8',
@@ -238,9 +284,22 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
             border: '1px solid rgba(100, 116, 139, 0.12)',
             borderRadius: '6px',
             lineHeight: '1.5',
-            letterSpacing: '0.01em'
+            letterSpacing: '0.01em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            flexWrap: 'wrap'
           }}>
-            Algorithm scans live odds throughout the day. Picks shown were flagged at favorable odds—game cards may no longer display these as recommended if odds have shifted.
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Zap size={10} color="#10B981" />
+              <span style={{ color: '#10B981', fontWeight: '600' }}>Live Edge</span>
+              <span>= Still meets standards</span>
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Lock size={9} color="#D4AF37" />
+              <span style={{ color: '#D4AF37', fontWeight: '600' }}>Locked</span>
+              <span>= Recommended earlier</span>
+            </span>
           </div>
 
           {/* Game Groups - Horizontal Scroll */}
@@ -293,73 +352,106 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
                   flexDirection: 'column',
                   gap: '0.625rem'
                 }}>
-                  {gameGroup.bets.map((bet, betIndex) => (
-                    <div
-                      key={betIndex}
-                      style={{
-                        background: `linear-gradient(135deg, ${getGradeColor(bet.grade)}12 0%, ${getGradeColor(bet.grade)}08 100%)`,
-                        border: `1px solid ${getGradeColor(bet.grade)}35`,
-                        borderRadius: '8px',
-                        padding: '0.75rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.625rem',
-                        transition: 'all 0.2s ease'
-                      }}
-                      className="pick-item"
-                    >
-                      {/* Market Icon */}
-                      <span style={{
-                        fontSize: '1.125rem',
-                        flexShrink: 0,
-                        opacity: 0.9
-                      }}>
-                        {getMarketIcon(bet.market)}
-                      </span>
-
-                      {/* Pick Details */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: '600',
-                          color: '#F1F5F9',
-                          marginBottom: '0.25rem',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}>
-                          {bet.pick}
-                        </div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#94A3B8',
+                  {gameGroup.bets.map((bet, betIndex) => {
+                    const isLiveEdge = bet.status === 'LIVE_EDGE';
+                    const statusColor = isLiveEdge ? '#10B981' : '#D4AF37';
+                    
+                    return (
+                      <div
+                        key={betIndex}
+                        style={{
+                          background: isLiveEdge
+                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%)'
+                            : 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
+                          border: isLiveEdge
+                            ? '1px solid rgba(16, 185, 129, 0.3)'
+                            : '1px solid rgba(212, 175, 55, 0.25)',
+                          borderRadius: '8px',
+                          padding: '0.75rem',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem'
+                          gap: '0.625rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        className="pick-item"
+                      >
+                        {/* Status Icon */}
+                        <div style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '6px',
+                          background: isLiveEdge
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : 'rgba(212, 175, 55, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
                         }}>
-                          <span>{bet.odds > 0 ? `+${bet.odds}` : bet.odds}</span>
-                          <span style={{ color: getGradeColor(bet.grade), fontWeight: '700' }}>
-                            {bet.edge}
-                          </span>
+                          {isLiveEdge ? (
+                            <Zap size={12} color="#10B981" />
+                          ) : (
+                            <Lock size={11} color="#D4AF37" />
+                          )}
+                        </div>
+
+                        {/* Pick Details */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '0.875rem',
+                            fontWeight: '600',
+                            color: '#F1F5F9',
+                            marginBottom: '0.25rem',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {bet.pick}
+                          </div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#94A3B8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            flexWrap: 'wrap'
+                          }}>
+                            <span>{bet.odds > 0 ? `+${bet.odds}` : bet.odds}</span>
+                            <span style={{ color: getGradeColor(bet.grade), fontWeight: '700' }}>
+                              {bet.edge}
+                            </span>
+                            {!isLiveEdge && bet.lockedAt && (
+                              <span style={{ 
+                                color: '#D4AF37',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.2rem',
+                                fontSize: '0.6875rem'
+                              }}>
+                                <Clock size={9} />
+                                {formatTime(bet.lockedAt)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Grade Badge */}
+                        <div style={{
+                          background: getGradeColor(bet.grade),
+                          color: '#000',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: '800',
+                          lineHeight: '1',
+                          flexShrink: 0,
+                          boxShadow: `0 2px 8px ${getGradeColor(bet.grade)}40`
+                        }}>
+                          {bet.grade}
                         </div>
                       </div>
-
-                      {/* Grade Badge */}
-                      <div style={{
-                        background: getGradeColor(bet.grade),
-                        color: '#000',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        fontWeight: '800',
-                        lineHeight: '1',
-                        flexShrink: 0,
-                        boxShadow: `0 2px 8px ${getGradeColor(bet.grade)}40`
-                      }}>
-                        {bet.grade}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -403,8 +495,6 @@ export default function CompactPicksBar({ gameGroups, onViewAll, onGameClick, op
 
         .pick-item:hover {
           transform: translateX(3px);
-          border-color: ${getGradeColor('A')}60;
-          background: linear-gradient(135deg, ${getGradeColor('A')}18 0%, ${getGradeColor('A')}12 100%);
         }
 
         @media (max-width: 768px) {

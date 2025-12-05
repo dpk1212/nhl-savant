@@ -2,16 +2,18 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
 
+// Get Stripe config - PREFER process.env (new method), fallback to functions.config() (deprecated)
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || functions.config().stripe?.secret_key;
+
 // Lazy load Stripe
 let stripe = null;
 
 const getStripe = () => {
   if (!stripe) {
-    const secretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
-      throw new Error('Stripe secret key not configured');
+    if (!STRIPE_SECRET_KEY) {
+      throw new Error('Stripe secret key not configured. Add STRIPE_SECRET_KEY to functions/.env');
     }
-    stripe = new Stripe(secretKey);
+    stripe = new Stripe(STRIPE_SECRET_KEY);
   }
   return stripe;
 };

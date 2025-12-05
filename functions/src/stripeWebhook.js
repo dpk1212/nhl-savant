@@ -4,16 +4,26 @@ const Stripe = require('stripe');
 
 const db = admin.firestore();
 
-// Initialize Stripe lazily with correct Firebase config
+// Get Stripe config - PREFER process.env (new method), fallback to functions.config() (deprecated)
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || functions.config().stripe?.secret_key;
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || functions.config().stripe?.webhook_secret;
+
+console.log('Stripe config loaded:', {
+  hasSecretKey: !!STRIPE_SECRET_KEY,
+  hasWebhookSecret: !!STRIPE_WEBHOOK_SECRET,
+  secretKeyPrefix: STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.substring(0, 10) + '...' : 'MISSING',
+  webhookSecretPrefix: STRIPE_WEBHOOK_SECRET ? STRIPE_WEBHOOK_SECRET.substring(0, 10) + '...' : 'MISSING',
+  source: process.env.STRIPE_SECRET_KEY ? 'process.env' : 'functions.config()'
+});
+
+// Initialize Stripe lazily
 let stripe = null;
 const getStripe = () => {
   if (!stripe) {
-    // Use Firebase config (set via: firebase functions:config:set stripe.secret_key="sk_...")
-    const secretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
-      throw new Error('Stripe secret key not configured');
+    if (!STRIPE_SECRET_KEY) {
+      throw new Error('Stripe secret key not configured. Add STRIPE_SECRET_KEY to functions/.env');
     }
-    stripe = new Stripe(secretKey);
+    stripe = new Stripe(STRIPE_SECRET_KEY);
   }
   return stripe;
 };
@@ -24,8 +34,19 @@ const getStripe = () => {
  */
 exports.handleStripeWebhook = functions.https.onRequest(async (req, res) => {
   const sig = req.headers['stripe-signature'];
-  // Use Firebase config for webhook secret
-  const webhookSecret = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET;
+  
+  // Debug logging
+  console.log('Webhook received:', {
+    hasSignature: !!sig,
+    hasWebhookSecret: !!STRIPE_WEBHOOK_SECRET,
+    webhookSecretPrefix: STRIPE_WEBHOOK_SECRET ? STRIPE_WEBHOOK_SECRET.substring(0, 10) + '...' : 'MISSING'
+  });
+
+  if (!STRIPE_WEBHOOK_SECRET) {
+    console.error('❌ CRITICAL: Webhook secret not found!');
+    console.error('Add STRIPE_WEBHOOK_SECRET to functions/.env');
+    return res.status(500).send('Webhook secret not configured');
+  }
 
   let event;
 
@@ -34,7 +55,7 @@ exports.handleStripeWebhook = functions.https.onRequest(async (req, res) => {
     const stripeClient = getStripe();
     
     // Verify webhook signature
-    event = stripeClient.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
+    event = stripeClient.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('⚠️ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -127,10 +148,9 @@ async function handleCheckoutCompleted(session) {
     // Get subscription details from Stripe
     const stripeClient = getStripe();
     const subscription = await stripeClient.subscriptions.retrieve(subscriptionId);
-    const priceId = subscription.items.data[0].price.id;
 
-    // Map price ID to tier
-    const tier = getTierFromPriceId(priceId);
+    // Get tier from subscription (checks metadata, product name, and interval)
+    const tier = await getTierFromSubscription(subscription);
 
     // Calculate trial end date
     let trialEndsAt = null;
@@ -172,8 +192,7 @@ async function handleSubscriptionCreated(subscription) {
   console.log('🆕 Subscription created:', subscription.id);
 
   const customerId = subscription.customer;
-  const priceId = subscription.items.data[0].price.id;
-  const tier = getTierFromPriceId(priceId);
+  const tier = await getTierFromSubscription(subscription);
 
   try {
     // Find user by customer ID
@@ -226,8 +245,7 @@ async function handleSubscriptionUpdated(subscription) {
   console.log('🔄 Subscription updated:', subscription.id, 'status:', subscription.status);
 
   const customerId = subscription.customer;
-  const priceId = subscription.items.data[0].price.id;
-  const tier = getTierFromPriceId(priceId);
+  const tier = await getTierFromSubscription(subscription);
 
   try {
     // Find user by customer ID
@@ -401,29 +419,74 @@ async function handlePaymentFailed(invoice) {
 }
 
 /**
- * Map Stripe Price ID to subscription tier
+ * Get subscription tier from product/price
+ * Tries multiple methods: product metadata, product name, price interval
  */
-function getTierFromPriceId(priceId) {
-  // Map your Stripe price IDs to tiers
-  const priceMap = {
-    // These are the price IDs from your Stripe payment links
-    // You'll need to extract the actual price IDs from your Stripe dashboard
-    'price_scout': 'scout',
-    'price_elite': 'elite',
-    'price_pro': 'pro'
-  };
+async function getTierFromSubscription(subscription) {
+  const stripe = getStripe();
+  
+  try {
+    const priceId = subscription.items.data[0].price.id;
+    const price = subscription.items.data[0].price;
+    const productId = price.product;
+    
+    // Method 1: Check subscription metadata (most reliable if set)
+    if (subscription.metadata?.tier) {
+      console.log(`Tier from subscription metadata: ${subscription.metadata.tier}`);
+      return subscription.metadata.tier;
+    }
+    
+    // Method 2: Fetch product and check metadata
+    const product = await stripe.products.retrieve(productId);
+    
+    if (product.metadata?.tier) {
+      console.log(`Tier from product metadata: ${product.metadata.tier}`);
+      return product.metadata.tier;
+    }
+    
+    // Method 3: Check product name
+    const productName = (product.name || '').toLowerCase();
+    if (productName.includes('scout')) return 'scout';
+    if (productName.includes('elite')) return 'elite';
+    if (productName.includes('pro') || productName.includes('savant')) return 'pro';
+    
+    // Method 4: Use price interval as fallback
+    const interval = price.recurring?.interval;
+    if (interval === 'week') return 'scout';
+    if (interval === 'month') return 'elite';
+    if (interval === 'year') return 'pro';
+    
+    console.warn(`Could not determine tier for price ${priceId}, product ${product.name}`);
+    return 'scout'; // Default to lowest paid tier, not free
+    
+  } catch (error) {
+    console.error('Error determining tier:', error);
+    return 'scout'; // Default to lowest paid tier on error
+  }
+}
 
-  // For now, extract from payment link patterns
-  // You'll need to update this with actual price IDs from Stripe
-  if (priceId.includes('scout') || priceId.includes('7.99') || priceId.includes('week')) {
+// Legacy function for backwards compatibility
+function getTierFromPriceId(priceId) {
+  // Known price IDs - add your actual price IDs here
+  const priceMap = {
+    'price_1SQWCQDHaiZ8TEMOC7GgCaYp': 'elite', // Your Elite monthly price
+    // Add other price IDs as you discover them
+  };
+  
+  if (priceMap[priceId]) {
+    return priceMap[priceId];
+  }
+
+  // Fallback pattern matching
+  if (priceId.includes('scout') || priceId.includes('week')) {
     return 'scout';
-  } else if (priceId.includes('elite') || priceId.includes('25.99') || priceId.includes('month')) {
+  } else if (priceId.includes('elite') || priceId.includes('month')) {
     return 'elite';
-  } else if (priceId.includes('pro') || priceId.includes('150') || priceId.includes('year')) {
+  } else if (priceId.includes('pro') || priceId.includes('year')) {
     return 'pro';
   }
 
   console.warn('Unknown price ID:', priceId);
-  return 'free';
+  return 'scout'; // Default to lowest paid tier
 }
 

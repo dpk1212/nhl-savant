@@ -3234,44 +3234,77 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         </div>
       )}
       
-      {/* Compact Picks Bar - Show quality-filtered ensemble opportunities */}
-      {topEdges && topEdges.length > 0 && (() => {
-        // ENSEMBLE STRATEGY: Use topEdges (quality-filtered) instead of allEdges
-        // This ensures summary bar matches individual game cards (consistency fix)
-        const gameGroups = [];
-        const gameMap = new Map(); // Group bets by game
+      {/* Compact Picks Bar - Source from Firebase bets with LIVE EDGE / LOCKED status */}
+      {firebaseBets && firebaseBets.length > 0 && (() => {
+        // SOURCE: Firebase bets (what was actually recommended)
+        // STATUS: Compare against topEdges to determine LIVE EDGE vs LOCKED
+        const todayET = getETDate();
         
-        topEdges.forEach(edge => {
-          const gameKey = edge.game;
+        // Filter to today's bets only
+        const todaysBets = firebaseBets.filter(bet => 
+          bet.date === todayET && bet.status === 'PENDING'
+        );
+        
+        if (todaysBets.length === 0) return null;
+        
+        // Process each bet with status
+        const processedBets = todaysBets.map(bet => {
+          // Check if this pick still exists in current topEdges
+          const gameMatchup = `${bet.game?.awayTeam} @ ${bet.game?.homeTeam}`;
+          const isLiveEdge = topEdges?.some(edge => 
+            edge.game === gameMatchup && edge.market === bet.bet?.market
+          );
+          
+          return {
+            ...bet,
+            gameMatchup,
+            status: isLiveEdge ? 'LIVE_EDGE' : 'LOCKED',
+            lockedAt: bet.firstRecommendedAt || bet.timestamp
+          };
+        });
+        
+        // Group bets by game
+        const gameMap = new Map();
+        processedBets.forEach(bet => {
+          const gameKey = bet.gameMatchup;
           
           if (!gameMap.has(gameKey)) {
             gameMap.set(gameKey, {
               game: gameKey,
-              gameTime: edge.gameTime,
+              gameTime: bet.game?.gameTime,
               bets: []
             });
           }
           
-          // Use ensemble qualityGrade instead of EV-based getRating()
           gameMap.get(gameKey).bets.push({
-            pick: edge.pick,
-            market: edge.market,
-            grade: edge.qualityGrade || 'B', // Ensemble quality grade (A/B/C/D)
-            odds: edge.odds,
-            edge: `+${edge.evPercent.toFixed(1)}%`
+            pick: bet.bet?.pick,
+            market: bet.bet?.market,
+            grade: bet.prediction?.qualityGrade || bet.prediction?.rating || 'B',
+            odds: bet.bet?.odds,
+            edge: `+${bet.prediction?.evPercent?.toFixed(1) || '0.0'}%`,
+            status: bet.status,
+            lockedAt: bet.lockedAt
           });
         });
         
-        // Convert map to array
-        gameGroups.push(...gameMap.values());
+        const gameGroups = [...gameMap.values()];
+        
+        // Calculate stats
+        const liveEdgeCount = processedBets.filter(b => b.status === 'LIVE_EDGE').length;
+        const lockedCount = processedBets.filter(b => b.status === 'LOCKED').length;
+        const eliteCount = processedBets.filter(b => 
+          b.prediction?.qualityGrade === 'A+' || b.prediction?.qualityGrade === 'A'
+        ).length;
         
         return gameGroups.length > 0 ? (
           <div style={{ marginBottom: '1.5rem' }}>
             <CompactPicksBar 
               gameGroups={gameGroups}
               opportunityStats={{
-                total: opportunityCounts.total,
-                elite: opportunityCounts.highValue
+                total: processedBets.length,
+                elite: eliteCount,
+                liveEdge: liveEdgeCount,
+                locked: lockedCount
               }}
               isFree={isFree}
               hasReachedLimit={hasReachedLimit}
