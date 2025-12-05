@@ -4,18 +4,22 @@
  * 
  * Calculates betting edges and assigns quality grades
  * 
- * OPTIMIZED UNIT ALLOCATION:
- * Uses Grade×Odds matrix for optimal unit sizing based on historical performance
- * Projected ROI: +16.60% (vs previous -2.54%)
+ * DYNAMIC CONFIDENCE UNIT ALLOCATION:
+ * Uses live-weighted confidence scoring based on historical ROI performance
+ * Factors: Grade, Odds Range, Model Probability, EV, Side (Home/Away)
  */
 
 import { 
-  getOptimizedUnitSize, 
   getOddsRange, 
   getPerformanceContext,
   getBetQualityEmoji,
   simplifyGrade
 } from './abcUnits.js';
+
+import {
+  calculateDynamicUnits,
+  getConfidenceDisplay
+} from './dynamicConfidenceUnits.js';
 
 /**
  * Basketball Edge Calculator Class
@@ -34,6 +38,20 @@ export class BasketballEdgeCalculator {
       'B': 1.5,   // Medium EV (≥1.5%)
       'C': 0      // Low/Negative EV
     };
+    
+    // Dynamic confidence weights (loaded from JSON)
+    // Will use defaults if not set
+    this.confidenceData = null;
+  }
+  
+  /**
+   * Set the confidence weights for dynamic unit calculation
+   * Call this after loading weights from basketball_confidence_weights.json
+   * @param {object} confidenceData - Weights object from loadConfidenceWeights()
+   */
+  setConfidenceWeights(confidenceData) {
+    this.confidenceData = confidenceData;
+    console.log('✅ Dynamic confidence weights loaded into calculator');
   }
   
   /**
@@ -108,11 +126,36 @@ export class BasketballEdgeCalculator {
     const grade = this.getGrade(bestEV);
     const bestOdds = bestBet === 'away' ? odds.awayOdds : odds.homeOdds;
     
-    // Get optimized unit size using Grade×Odds matrix
-    const unitSize = getOptimizedUnitSize(grade, bestOdds);
+    // Get odds range for display
     const oddsRange = getOddsRange(bestOdds);
     const perfContext = getPerformanceContext(grade, bestOdds);
     const qualityEmoji = getBetQualityEmoji(grade, bestOdds);
+    
+    // DYNAMIC CONFIDENCE UNIT CALCULATION
+    // Build bet object for dynamic scoring
+    const betForScoring = {
+      prediction: {
+        grade: grade,
+        bestEV: bestEV,
+        ensembleAwayProb: ensembleAwayProb,
+        ensembleHomeProb: ensembleHomeProb
+      },
+      bet: {
+        odds: bestOdds,
+        team: bestBet === 'away' ? matchedGame.awayTeam : matchedGame.homeTeam
+      },
+      awayTeam: matchedGame.awayTeam,
+      homeTeam: matchedGame.homeTeam
+    };
+    
+    // Calculate dynamic units using live confidence weights
+    // Uses confidence weights from public/basketball_confidence_weights.json (loaded by page)
+    // Falls back to default weights if not loaded
+    const dynamicResult = calculateDynamicUnits(betForScoring, this.confidenceData);
+    const unitSize = dynamicResult.units;
+    const confidenceTier = dynamicResult.tier;
+    const confidenceScore = dynamicResult.score;
+    const confidenceFactors = dynamicResult.factors;
     
     // Cap EV display at 25% for realistic presentation (extreme outliers skew perception)
     const cappedBestEV = Math.min(bestEV, 25);
@@ -152,8 +195,11 @@ export class BasketballEdgeCalculator {
       simplifiedGrade: perfContext.grade, // A, B, or C
       confidence: confidence,
       
-      // OPTIMIZED UNIT ALLOCATION
+      // DYNAMIC CONFIDENCE UNIT ALLOCATION
       unitSize: unitSize,
+      confidenceTier: confidenceTier,      // ELITE, HIGH, GOOD, MODERATE, LOW, F-CAP
+      confidenceScore: confidenceScore,    // Raw score (0-7 range)
+      confidenceFactors: confidenceFactors, // Breakdown of contributing factors
       oddsRange: oddsRange,
       oddsRangeName: perfContext.oddsRangeName,
       historicalROI: perfContext.historicalROI,

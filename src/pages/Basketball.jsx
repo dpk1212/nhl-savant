@@ -16,7 +16,7 @@ import { BasketballPerformanceDashboard } from '../components/BasketballPerforma
 import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
-import { getDynamicTierInfo, getDynamicConfidenceRating } from '../utils/dynamicConfidenceUnits';
+import { getDynamicTierInfo, getDynamicConfidenceRating, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -214,8 +214,16 @@ const Basketball = () => {
         verificationStatus: game.dratings ? 'MATCHED' : 'MISSING'
       }));
       
+      // Load dynamic confidence weights for unit calculation
+      const confidenceData = await loadConfidenceWeights();
+      console.log(`📊 Loaded confidence weights (${confidenceData.totalBets} bets analyzed)`);
+      
       // Calculate predictions for TODAY'S games (even if they fail, we still show the game)
       const calculator = new BasketballEdgeCalculator();
+      
+      // Set confidence weights for dynamic unit calculation
+      calculator.setConfidenceWeights(confidenceData);
+      
       const gamesWithPredictions = todaysGames.map(game => {
         // Try to calculate prediction, but keep game even if it fails
         try {
