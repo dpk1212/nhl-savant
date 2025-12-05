@@ -94,17 +94,33 @@ exports.checkSubscription = functions.https.onCall(async (data, context) => {
     const customer = activeCustomer || customers.data[0];
 
     if (!activeSubscription) {
-      console.log('No active subscription found');
-      // Has customer account but no active subscription
-      return {
+      console.log('No active subscription found - updating Firestore to reflect cancellation');
+      
+      // Build inactive subscription data
+      const inactiveData = {
         tier: 'free',
         status: 'inactive',
         isActive: false,
         isTrial: false,
         daysRemaining: 0,
         stripeCustomerId: customer.id,
-        source: 'stripe_api'
+        source: 'stripe_api',
+        checkedAt: new Date().toISOString()
       };
+      
+      // ✅ FIX: Actually update Firestore when subscription is cancelled/expired!
+      await admin.firestore().collection('users').doc(userId).set({
+        ...inactiveData,
+        email: userEmail,
+        subscriptionId: null,  // Clear old subscription ID
+        cancelAtPeriodEnd: false,
+        currentPeriodEnd: null,
+        lastSubscriptionCheck: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      
+      console.log(`✅ User ${userId} marked as inactive (no active Stripe subscription)`);
+      
+      return inactiveData;
     }
 
     console.log(`Found active subscription: ${activeSubscription.id}, status: ${activeSubscription.status}`);

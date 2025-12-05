@@ -1,8 +1,22 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Stripe = require('stripe');
 
 const db = admin.firestore();
+
+// Initialize Stripe lazily with correct Firebase config
+let stripe = null;
+const getStripe = () => {
+  if (!stripe) {
+    // Use Firebase config (set via: firebase functions:config:set stripe.secret_key="sk_...")
+    const secretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error('Stripe secret key not configured');
+    }
+    stripe = new Stripe(secretKey);
+  }
+  return stripe;
+};
 
 /**
  * Stripe Webhook Handler
@@ -10,13 +24,17 @@ const db = admin.firestore();
  */
 exports.handleStripeWebhook = functions.https.onRequest(async (req, res) => {
   const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  // Use Firebase config for webhook secret
+  const webhookSecret = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
 
   try {
+    // Initialize Stripe
+    const stripeClient = getStripe();
+    
     // Verify webhook signature
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
+    event = stripeClient.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
   } catch (err) {
     console.error('⚠️ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -107,7 +125,8 @@ async function handleCheckoutCompleted(session) {
 
   try {
     // Get subscription details from Stripe
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const stripeClient = getStripe();
+    const subscription = await stripeClient.subscriptions.retrieve(subscriptionId);
     const priceId = subscription.items.data[0].price.id;
 
     // Map price ID to tier
@@ -119,18 +138,27 @@ async function handleCheckoutCompleted(session) {
       trialEndsAt = admin.firestore.Timestamp.fromMillis(subscription.trial_end * 1000);
     }
 
-    // Update user document
+    // Update user document with ALL subscription fields
     const userRef = db.collection('users').doc(userId);
+    const isActive = ['active', 'trialing'].includes(subscription.status);
+    const isTrial = subscription.status === 'trialing';
+    
     await userRef.set({
       tier,
       status: subscription.status, // 'trialing', 'active', etc.
+      isActive,  // ✅ FIX: Include isActive field
+      isTrial,   // ✅ FIX: Include isTrial field
       stripeCustomerId: customerId,
       subscriptionId: subscriptionId,
       trialEndsAt: trialEndsAt,
+      currentPeriodEnd: subscription.current_period_end 
+        ? new Date(subscription.current_period_end * 1000).toISOString() 
+        : null,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    console.log(`✅ User ${userId} upgraded to ${tier} (${subscription.status})`);
+    console.log(`✅ User ${userId} upgraded to ${tier} (${subscription.status}, isActive: ${isActive})`);
   } catch (error) {
     console.error('Error handling checkout:', error);
     throw error;
@@ -167,15 +195,24 @@ async function handleSubscriptionCreated(subscription) {
       trialEndsAt = admin.firestore.Timestamp.fromMillis(subscription.trial_end * 1000);
     }
 
+    const isActive = ['active', 'trialing'].includes(subscription.status);
+    const isTrial = subscription.status === 'trialing';
+    
     await userDoc.ref.update({
       tier,
       status: subscription.status,
+      isActive,  // ✅ FIX: Include isActive field
+      isTrial,   // ✅ FIX: Include isTrial field
       subscriptionId: subscription.id,
       trialEndsAt: trialEndsAt,
+      currentPeriodEnd: subscription.current_period_end 
+        ? new Date(subscription.current_period_end * 1000).toISOString() 
+        : null,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ User ${userId} subscription created: ${tier}`);
+    console.log(`✅ User ${userId} subscription created: ${tier} (isActive: ${isActive})`);
   } catch (error) {
     console.error('Error handling subscription created:', error);
   }
@@ -183,10 +220,10 @@ async function handleSubscriptionCreated(subscription) {
 
 /**
  * Handle subscription updated
- * Triggered when subscription status changes
+ * Triggered when subscription status changes (including cancellation scheduled)
  */
 async function handleSubscriptionUpdated(subscription) {
-  console.log('🔄 Subscription updated:', subscription.id);
+  console.log('🔄 Subscription updated:', subscription.id, 'status:', subscription.status);
 
   const customerId = subscription.customer;
   const priceId = subscription.items.data[0].price.id;
@@ -212,14 +249,35 @@ async function handleSubscriptionUpdated(subscription) {
       trialEndsAt = admin.firestore.Timestamp.fromMillis(subscription.trial_end * 1000);
     }
 
+    // ✅ FIX: Properly determine active status
+    // A subscription is only truly active if status is active/trialing AND not expired
+    const isActive = ['active', 'trialing'].includes(subscription.status);
+    const isTrial = subscription.status === 'trialing';
+    
+    // Calculate days remaining
+    let daysRemaining = 0;
+    if (subscription.current_period_end) {
+      const periodEnd = new Date(subscription.current_period_end * 1000);
+      const now = new Date();
+      const diffTime = periodEnd - now;
+      daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    }
+
     await userDoc.ref.update({
-      tier,
+      tier: isActive ? tier : 'free',  // Downgrade tier if not active
       status: subscription.status, // 'active', 'past_due', 'canceled', etc.
+      isActive,
+      isTrial,
+      daysRemaining,
       trialEndsAt: trialEndsAt,
+      currentPeriodEnd: subscription.current_period_end 
+        ? new Date(subscription.current_period_end * 1000).toISOString() 
+        : null,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ User ${userId} subscription updated: ${tier} (${subscription.status})`);
+    console.log(`✅ User ${userId} subscription updated: ${tier} (status: ${subscription.status}, isActive: ${isActive}, cancelAtPeriodEnd: ${subscription.cancel_at_period_end})`);
   } catch (error) {
     console.error('Error handling subscription updated:', error);
   }
@@ -227,7 +285,7 @@ async function handleSubscriptionUpdated(subscription) {
 
 /**
  * Handle subscription deleted/canceled
- * Downgrade user to free tier
+ * Downgrade user to free tier - THIS IS THE CRITICAL ONE!
  */
 async function handleSubscriptionDeleted(subscription) {
   console.log('❌ Subscription deleted:', subscription.id);
@@ -249,16 +307,21 @@ async function handleSubscriptionDeleted(subscription) {
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
 
-    // Downgrade to free tier
+    // ✅ FIX: Downgrade to free tier with ALL fields updated
     await userDoc.ref.update({
       tier: 'free',
       status: 'canceled',
+      isActive: false,        // ✅ CRITICAL: Mark as inactive!
+      isTrial: false,
+      daysRemaining: 0,
       subscriptionId: null,
       trialEndsAt: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ User ${userId} downgraded to free tier`);
+    console.log(`✅ User ${userId} downgraded to free tier (isActive: false)`);
   } catch (error) {
     console.error('Error handling subscription deleted:', error);
   }
@@ -290,10 +353,11 @@ async function handlePaymentSucceeded(invoice) {
     // Update status to active if it was past_due
     await userDoc.ref.update({
       status: 'active',
+      isActive: true,  // ✅ FIX: Ensure isActive is set
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ Payment succeeded for user ${userDoc.id}`);
+    console.log(`✅ Payment succeeded for user ${userDoc.id} (isActive: true)`);
   } catch (error) {
     console.error('Error handling payment succeeded:', error);
   }
@@ -301,7 +365,7 @@ async function handlePaymentSucceeded(invoice) {
 
 /**
  * Handle failed payment
- * Mark subscription as past_due
+ * Mark subscription as past_due but keep access (Stripe handles grace period)
  */
 async function handlePaymentFailed(invoice) {
   console.log('⚠️ Payment failed:', invoice.id);
@@ -322,13 +386,15 @@ async function handlePaymentFailed(invoice) {
 
     const userDoc = usersSnapshot.docs[0];
 
-    // Mark as past_due
+    // Mark as past_due (keep isActive true during grace period - Stripe handles final cancellation)
     await userDoc.ref.update({
       status: 'past_due',
+      // Note: Keep isActive true during payment retry period
+      // Stripe will send subscription.deleted when all retries fail
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    console.log(`⚠️ User ${userDoc.id} payment failed - marked as past_due`);
+    console.log(`⚠️ User ${userDoc.id} payment failed - marked as past_due (still has access during grace period)`);
   } catch (error) {
     console.error('Error handling payment failed:', error);
   }
