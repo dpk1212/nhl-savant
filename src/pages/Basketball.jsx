@@ -17,6 +17,7 @@ import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { getDynamicTierInfo, getDynamicConfidenceRating, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
+import { basketballBetTracker } from '../firebase/basketballBetTracker';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -339,6 +340,14 @@ const Basketball = () => {
           ? (sortedGames.reduce((sum, g) => sum + (g.prediction?.bestEV || 0), 0) / sortedGames.length).toFixed(1)
           : '0.0'
       });
+      
+      // 💾 SAVE BETS TO FIREBASE (Single source of truth)
+      // This ensures Firebase always has the EXACT same data as the UI
+      if (sortedGames.length > 0) {
+        basketballBetTracker.saveBets(sortedGames).catch(err => {
+          console.error('Failed to save bets to Firebase:', err);
+        });
+      }
       
       setLoading(false);
     } catch (err) {

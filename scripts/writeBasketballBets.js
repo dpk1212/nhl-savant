@@ -1,10 +1,20 @@
 /**
- * Basketball Bet Writing Script
+ * ⚠️ DEPRECATED - DO NOT USE
  * 
- * Runs via GitHub Actions after fetching basketball data
- * Processes all quality bets (2%+ EV) and writes to Firebase
+ * This script has been replaced by UI-driven bet saving.
+ * Bets are now saved directly from Basketball.jsx when predictions are calculated.
+ * This ensures a single source of truth - what you see in the UI is what's in Firebase.
  * 
- * Usage: npm run write-basketball-bets
+ * The UI calls basketballBetTracker.saveBets() automatically.
+ * See: src/firebase/basketballBetTracker.js
+ *      src/pages/Basketball.jsx (loadBasketballData function)
+ * 
+ * Keeping this file for reference/debugging only.
+ * 
+ * OLD DESCRIPTION:
+ * Basketball Bet Writing Script - Ran via GitHub Actions after fetching basketball data
+ * 
+ * Usage: npm run write-basketball-bets (DEPRECATED)
  */
 
 import { initializeApp } from 'firebase/app';
@@ -95,13 +105,13 @@ async function saveBetToFirebase(db, game, prediction) {
         grade: prediction.grade,
         qualityGrade: prediction.grade,
         rating: prediction.grade,
-        // Dynamic confidence-based units
+        // Dynamic confidence-based units (matches UI calculation)
         unitSize: dynamicUnits,
         confidenceTier: confidenceTier,
         confidenceScore: confidenceScore,
-        staticUnitSize: prediction.unitSize, // Keep old method for comparison
+        patternROI: dynamicResult.patternROI, // NEW: from dynamic weights
         oddsRangeName: prediction.oddsRangeName,
-        historicalROI: prediction.historicalROI
+        historicalROI: prediction.historicalROI // Also from dynamic weights now
       },
       barttorvik: prediction.barttorvik || null
     }, { merge: true });
@@ -236,6 +246,11 @@ async function writeBasketballBets() {
     // 4. Calculate ensemble predictions (80% D-Ratings, 20% Haslametrics)
     console.log('\n🧮 Calculating ensemble predictions...');
     const calculator = new BasketballEdgeCalculator();
+    
+    // CRITICAL: Pass confidence weights to calculator so it uses live ROI data
+    // This ensures predictions match the UI calculation exactly
+    calculator.setConfidenceWeights(confidenceWeights);
+    
     const gamesWithPredictions = matchedGames.map(game => {
       const prediction = calculator.calculateEnsemblePrediction(game);
       return { ...game, prediction };
