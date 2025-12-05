@@ -275,8 +275,8 @@ export class BetTracker {
     const betRef = doc(db, 'bets', betId);
     
     const outcome = this.calculateOutcome(result, betData.bet);
-    // Use Kelly-sized units (quarter Kelly) from saved recommendation
-    const units = betData.prediction?.recommendedUnit || 1;
+    // Use dynamic units (priority) or Kelly-sized units or fallback to 1
+    const units = betData.prediction?.dynamicUnits || betData.prediction?.recommendedUnit || 1;
     const profit = this.calculateProfit(outcome, betData.bet.odds, units);
     
     await updateDoc(betRef, {
@@ -286,13 +286,14 @@ export class BetTracker {
       'result.winner': result.awayScore > result.homeScore ? 'AWAY' : 'HOME',
       'result.outcome': outcome,
       'result.profit': profit,
+      'result.units': units,  // Store actual units used for grading
       'result.fetched': true,
       'result.fetchedAt': Date.now(),
       'result.source': result.source || 'API',
       'status': 'COMPLETED'
     });
     
-    console.log(`✅ Updated bet result: ${betId} → ${outcome} (${profit} units)`);
+    console.log(`✅ Updated bet result: ${betId} → ${outcome} (${profit.toFixed(2)}u @ ${units}u stake)`);
   }
   
   // Get all pending bets
