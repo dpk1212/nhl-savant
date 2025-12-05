@@ -1,14 +1,13 @@
 /**
  * Basketball Bet Tracker
  * Handles saving basketball bets to Firebase (basketball_bets collection)
- * Uses Firebase transactions for atomic operations
  * 
- * NOW: Called directly from UI when predictions are calculated
- * This ensures Firebase data always matches what's displayed
+ * OPTIMIZED: Only writes NEW bets that don't exist yet
+ * Uses existing betsMap to avoid redundant Firebase calls
  */
 
 import { db } from './config';
-import { doc, runTransaction, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 export class BasketballBetTracker {
   
@@ -17,11 +16,9 @@ export class BasketballBetTracker {
    * Format: 2025-11-24_TOLEDO_TROY_MONEYLINE_TROY_(HOME)
    */
   generateBetId(date, awayTeam, homeTeam, market, prediction) {
-    // Determine which team we're betting on
     const pickTeam = prediction.bestTeam;
     const side = pickTeam === awayTeam ? 'AWAY' : 'HOME';
     
-    // Normalize team names (remove spaces, uppercase)
     const awayNorm = awayTeam.replace(/\s+/g, '_').toUpperCase();
     const homeNorm = homeTeam.replace(/\s+/g, '_').toUpperCase();
     const teamNorm = pickTeam.replace(/\s+/g, '_').toUpperCase();
@@ -30,14 +27,18 @@ export class BasketballBetTracker {
   }
   
   /**
-   * Save basketball bet with Firebase transaction
-   * NOW INCLUDES: Dynamic confidence-based unit sizing (matches UI exactly)
-   * 
-   * @param {object} game - Matched game object with all data
-   * @param {object} prediction - Ensemble prediction with EV, grade, dynamic units, etc.
+   * Generate the normalized key used in betsMap
+   */
+  generateBetKey(awayTeam, homeTeam) {
+    const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `${normalizeTeam(awayTeam)}_${normalizeTeam(homeTeam)}`;
+  }
+  
+  /**
+   * Save a single NEW bet to Firebase
+   * Only called for bets that don't exist yet
    */
   async saveBet(game, prediction) {
-    // Get current date in YYYY-MM-DD format
     const date = new Date().toISOString().split('T')[0];
     const betId = this.generateBetId(date, game.awayTeam, game.homeTeam, 'MONEYLINE', prediction);
     
@@ -68,14 +69,13 @@ export class BasketballBetTracker {
         simplifiedGrade: prediction.simplifiedGrade,
         confidence: prediction.confidence,
         
-        // === DYNAMIC CONFIDENCE-BASED UNIT SIZING ===
-        // These come directly from the UI calculation (single source of truth)
+        // Dynamic confidence-based unit sizing
         unitSize: prediction.unitSize,
         confidenceTier: prediction.confidenceTier,
         confidenceScore: prediction.confidenceScore,
         confidenceFactors: prediction.confidenceFactors || null,
         
-        // Pattern ROI from 325-bet dynamic analysis
+        // Pattern ROI from dynamic analysis
         historicalROI: prediction.historicalROI,
         oddsRange: prediction.oddsRange,
         oddsRangeName: prediction.oddsRangeName,
@@ -92,7 +92,7 @@ export class BasketballBetTracker {
         ensembleHomeScore: prediction.ensembleHomeScore || null,
         ensembleTotal: prediction.ensembleTotal || null,
         
-        // Model breakdown (80% D-Ratings, 20% Haslametrics)
+        // Model breakdown
         dratingsAwayProb: prediction.dratingsAwayProb || null,
         dratingsHomeProb: prediction.dratingsHomeProb || null,
         dratingsAwayScore: prediction.dratingsAwayScore || null,
@@ -109,76 +109,65 @@ export class BasketballBetTracker {
         homeScore: null,
         totalScore: null,
         winner: null,
-        outcome: null, // WIN/LOSS/PUSH
+        outcome: null,
         profit: null,
         fetched: false,
         fetchedAt: null,
         source: null
       },
       
-      status: 'PENDING'
+      status: 'PENDING',
+      firstRecommendedAt: Date.now(),
+      initialOdds: prediction.bestOdds,
+      initialEV: prediction.bestEV
     };
     
     try {
-      await runTransaction(db, async (transaction) => {
-        const existingBet = await transaction.get(betRef);
-        
-        if (existingBet.exists()) {
-          // Bet exists - update prediction data to latest calculation
-          // (In case odds changed, or weights updated)
-          const existing = existingBet.data();
-          
-          // Only update if bet is still PENDING (don't overwrite graded bets)
-          if (existing.status === 'PENDING') {
-            transaction.update(betRef, {
-              prediction: betData.prediction,
-              'bet.odds': prediction.bestOdds,
-              lastUpdated: Date.now()
-            });
-            console.log(`🔄 Updated pending bet: ${betId} (${prediction.unitSize}u - ${prediction.confidenceTier})`);
-          } else {
-            console.log(`⏭️ Bet already graded, skipping: ${betId}`);
-          }
-        } else {
-          // New bet - create it
-          transaction.set(betRef, {
-            ...betData,
-            firstRecommendedAt: Date.now(),
-            initialOdds: prediction.bestOdds,
-            initialEV: prediction.bestEV
-          });
-          console.log(`✅ Saved basketball bet: ${betId}`);
-          console.log(`   ${prediction.bestOdds} | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade}`);
-          console.log(`   🎯 ${prediction.unitSize}u (${prediction.confidenceTier}) | Score: ${prediction.confidenceScore}`);
-        }
-      });
-      
+      await setDoc(betRef, betData);
+      console.log(`✅ NEW bet saved: ${game.awayTeam} @ ${game.homeTeam}`);
+      console.log(`   ${prediction.bestOdds} | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade} | ${prediction.unitSize}u`);
       return betId;
     } catch (error) {
-      console.error('❌ Error saving basketball bet:', error);
+      console.error('❌ Error saving bet:', error);
       throw error;
     }
   }
   
   /**
-   * Batch save multiple bets (called from UI after predictions load)
-   * Saves all quality picks in parallel
+   * SMART SAVE: Only writes NEW bets that don't exist in betsMap
+   * 
+   * @param {Array} games - Games with predictions
+   * @param {Map} existingBetsMap - Already loaded from Firebase (avoids extra reads!)
+   * @returns {Object} { saved, skipped }
    */
-  async saveBets(games) {
-    console.log(`\n💾 Saving ${games.length} bets to Firebase...`);
+  async saveNewBetsOnly(games, existingBetsMap) {
+    // Filter to only NEW games (not in betsMap)
+    const newGames = games.filter(game => {
+      const key = this.generateBetKey(game.awayTeam, game.homeTeam);
+      return !existingBetsMap.has(key);
+    });
+    
+    if (newGames.length === 0) {
+      console.log('📋 All bets already exist in Firebase - no writes needed');
+      return { saved: 0, skipped: games.length };
+    }
+    
+    console.log(`\n💾 Saving ${newGames.length} NEW bets (${games.length - newGames.length} already exist)...`);
     
     const results = await Promise.allSettled(
-      games.map(game => this.saveBet(game, game.prediction))
+      newGames.map(game => this.saveBet(game, game.prediction))
     );
     
     const saved = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
     
-    console.log(`✅ Saved: ${saved} | ❌ Failed: ${failed}`);
+    if (failed > 0) {
+      console.log(`⚠️ ${failed} bets failed to save`);
+    }
     
-    return { saved, failed };
+    return { saved, skipped: games.length - newGames.length, failed };
   }
 }
 
-// Singleton instance for easy imports
+// Singleton instance
 export const basketballBetTracker = new BasketballBetTracker();
