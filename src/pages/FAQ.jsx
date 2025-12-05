@@ -45,50 +45,50 @@ const FAQ = () => {
         {
           id: 'nhl-1',
           question: 'How do I find +EV NHL picks?',
-          answer: 'Use a model that calculates true win probability using xGF per 60, PDO regression, and goalie analytics, then compare to market odds. NHL Savant does this daily and publishes picks with exact EV percentages.',
-          link: { text: 'Learn how our NHL model works', url: '/methodology' }
+          answer: 'Finding +EV (positive expected value) NHL picks requires comparing your calculated win probability against what the odds imply. NHL Savant does this automatically—we calculate true win probability using our proprietary model, then flag picks where we see meaningful edge over the market.',
+          link: { text: 'See today\'s +EV picks', url: '/' }
         },
         {
           id: 'nhl-2',
           question: 'What is PDO regression in hockey betting?',
-          answer: 'PDO = shooting % + save %. League average is 1.000. Teams above 1.02 are "lucky" and due for negative regression; teams below 0.98 are "unlucky" and due for positive regression. Markets don\'t adjust fast enough, creating betting edge.',
-          link: { text: 'Full PDO guide', url: '/guides/pdo-regression-nhl-betting' }
+          answer: 'PDO = shooting % + save %. League average is 1.000. Teams above 1.02 are "lucky" and due for negative regression; teams below 0.98 are "unlucky" and due for positive regression. Markets don\'t always adjust fast enough, creating potential betting edges.',
+          link: { text: 'Learn about PDO', url: '/guides/pdo-regression-nhl-betting' }
         },
         {
           id: 'nhl-3',
-          question: 'What metrics does the NHL Savant model use?',
-          answer: 'xGF per 60 (expected goals for per 60 minutes), PDO regression, goalie GSAE (Goals Saved Above Expected), back-to-back penalties, rest advantage, and MoneyPuck ensemble calibration.',
-          link: { text: 'Full methodology', url: '/methodology' }
+          question: 'What makes NHL Savant\'s model different?',
+          answer: 'We use a proprietary ensemble approach that combines multiple prediction models with our own adjustments for goalie matchups, rest advantage, and situational factors. This multi-model approach reduces variance and catches edges that single-model systems miss.',
+          link: { text: 'View methodology', url: '/methodology' }
         },
         {
           id: 'nhl-4',
           question: 'Do you recommend NHL parlays?',
-          answer: 'No. Parlays are -EV by design due to compounding juice. We only recommend +EV single plays (moneylines). No props, no teasers, no hype.',
+          answer: 'No. Parlays are -EV by design due to compounding juice. We only recommend +EV single plays (moneylines). No props, no teasers, no hype—just mathematically sound bets.',
           link: null
         },
         {
           id: 'nhl-5',
           question: 'How much does NHL Savant cost?',
-          answer: '$25.99/month (Elite plan) or $150/year (Pro plan, best value at $12.50/month). Weekly Scout plan is $7.99. All plans include both NHL and college basketball. Free trial included: 2-5 days depending on plan.',
+          answer: '$25.99/month (Elite plan) or $150/year (Pro plan, best value at $12.50/month). Weekly Scout plan is $7.99. All plans include both NHL and college basketball. Free trial included: 5-10 days depending on plan.',
           link: { text: 'See all pricing options', url: '/pricing' }
         },
         {
           id: 'nhl-6',
           question: 'What happens during a losing streak?',
-          answer: 'Variance is inevitable in sports betting. The model will have cold stretches. What matters is long-term EV, not any single week. We communicate losses honestly and track everything publicly.',
+          answer: 'Variance is inevitable in sports betting. Even the best models have cold stretches. What matters is long-term EV, not any single week. We communicate losses honestly and track everything publicly on our performance dashboard.',
           link: { text: 'View our live performance', url: '/performance' }
         },
         {
           id: 'nhl-7',
           question: 'Can I try NHL Savant before paying?',
-          answer: 'Yes. Free trial is 2-5 days depending on plan (Scout: 2 days, Elite: 3 days, Pro: 5 days). Full access to all features during trial. See the picks, verify the methodology, then decide.',
+          answer: 'Yes. Free trial is 5-10 days depending on plan (Scout: 5 days, Elite: 7 days, Pro: 10 days). Full access to all features during trial. See the picks, verify the results, then decide.',
           link: { text: 'Start free trial', url: '/pricing' }
         },
         {
           id: 'nhl-8',
-          question: 'How is NHL Savant different from MoneyPuck?',
-          answer: 'We use MoneyPuck\'s predictions as one input (70% weight) in our ensemble model, blended with our own xGF/PDO analysis (30% weight). We also add goalie matchups, rest advantage, and unit sizing that MoneyPuck doesn\'t provide.',
-          link: null
+          question: 'What types of NHL bets does the model recommend?',
+          answer: 'We focus primarily on moneylines because that\'s where our model shows the strongest edge. We grade each pick (A+ through C) based on confidence level, and provide recommended unit sizes. No parlays, no props—just clean, +EV moneyline plays.',
+          link: { text: 'See today\'s picks', url: '/' }
         },
         {
           id: 'nhl-9',
@@ -101,6 +101,18 @@ const FAQ = () => {
           question: 'How accurate are NHL betting models?',
           answer: 'Even the best models predict winners at 52-58% accuracy. That\'s all you need for profitability when betting +EV plays. Win rate alone doesn\'t matter—ROI is what counts.',
           link: { text: 'See our current accuracy', url: '/performance' }
+        },
+        {
+          id: 'nhl-11',
+          question: 'How often do you release NHL picks?',
+          answer: 'We release picks daily during the NHL season, typically by early afternoon ET. Every game on the slate is analyzed, and we highlight the ones with positive expected value.',
+          link: null
+        },
+        {
+          id: 'nhl-12',
+          question: 'Do you factor in starting goalies?',
+          answer: 'Yes. Goalie matchups are a critical part of our model. We factor in each goalie\'s performance metrics and adjust our predictions accordingly. When starting goalies are confirmed, our predictions update automatically.',
+          link: null
         }
       ]
     },
@@ -110,61 +122,61 @@ const FAQ = () => {
         {
           id: 'cbb-1',
           question: 'How do I find +EV college basketball picks?',
-          answer: 'Use adjusted efficiency ratings (offensive minus defensive), compare to market odds, and calculate EV %. NHL Savant uses a D-Ratings and Haslametrics ensemble model, updated daily with exact EV % for every pick.',
-          link: { text: 'Learn how', url: '/guides/how-to-find-ev-college-basketball-picks' }
+          answer: 'College basketball requires analyzing adjusted efficiency ratings and comparing them to market odds. NHL Savant uses a proprietary ensemble model that combines multiple prediction systems to find games where the market has mispriced win probability.',
+          link: { text: 'See CBB picks', url: '/basketball' }
         },
         {
           id: 'cbb-2',
           question: 'Why is college basketball better for +EV betting than the NBA?',
-          answer: 'More games (350+ teams vs 30 NBA teams), fewer sharp bettors, lines move slower, and more data inefficiency. This creates more mispriced opportunities.',
+          answer: 'More games (350+ teams vs 30 NBA teams), fewer sharp bettors, lines move slower, and more data inefficiency. This creates more mispriced opportunities than you\'d find in the heavily-analyzed NBA market.',
           link: null
         },
         {
           id: 'cbb-3',
           question: 'What\'s the best March Madness betting strategy?',
-          answer: 'Use regular season efficiency data to find mispriced seeds. Avoid emotional Cinderella picks. Focus on mid-seed matchups (5-12 upset opportunities) and teams whose efficiency doesn\'t match their seed.',
+          answer: 'Use efficiency data to find mispriced seeds. Avoid emotional Cinderella picks. Focus on mid-seed matchups (5-12 upset opportunities) and teams whose underlying metrics don\'t match their seed. We publish tournament picks throughout March.',
           link: null
         },
         {
           id: 'cbb-4',
-          question: 'What\'s D-Ratings?',
-          answer: 'D-Ratings is a college basketball prediction system we integrate into our ensemble model. It provides daily game predictions that we blend with Haslametrics for improved accuracy.',
+          question: 'What makes your college basketball model accurate?',
+          answer: 'We use an ensemble approach that combines multiple respected prediction systems with our own proprietary adjustments. This multi-source validation means we only recommend picks where multiple models agree there\'s value.',
           link: null
         },
         {
           id: 'cbb-5',
-          question: 'What\'s Haslametrics?',
-          answer: 'Haslametrics is a college basketball efficiency rating system we use as part of our ensemble model. It measures adjusted offensive and defensive efficiency per 100 possessions.',
+          question: 'How do injuries impact college basketball EV?',
+          answer: 'Much more than NBA/NHL. Thinner rosters mean star player injuries can reduce win probability by 8-12%. Markets often adjust slowly to these changes, creating +EV opportunities when you\'re tracking lineup news.',
           link: null
         },
         {
           id: 'cbb-6',
-          question: 'How do injuries impact college basketball EV?',
-          answer: 'Much more than NBA/NHL. Thinner rosters mean star player injuries can reduce win probability by 8-12%. Markets adjust slowly, creating +EV opportunities when you track lineup changes.',
+          question: 'Should I bet college basketball props?',
+          answer: 'No. Props typically have 5-7% hold (worse than sides), making them -EV. We stick to moneylines and spreads only where the math actually works in your favor.',
           link: null
         },
         {
           id: 'cbb-7',
-          question: 'Should I bet college basketball props?',
-          answer: 'No. Props typically have 5-7% hold (worse than sides), making them -EV. We stick to moneylines and spreads only.',
+          question: 'What\'s home court advantage worth in college basketball?',
+          answer: '2.5-3.5 points depending on arena and atmosphere. Small school gyms typically carry less advantage than hostile environments like Duke\'s Cameron Indoor. We factor venue into every prediction.',
           link: null
         },
         {
           id: 'cbb-8',
-          question: 'What\'s home court advantage worth in college basketball?',
-          answer: '2.5-3.5 points depending on arena. Small school gyms (2.5 pts), major arenas like Duke\'s Cameron Indoor (3.5 pts). We factor this into every prediction.',
+          question: 'How many college basketball picks do you release daily?',
+          answer: 'It varies based on where we see value. Some days we might have 10+ picks, other days just 2-3. We only release picks where our model shows positive expected value—we\'d rather miss games than force bad bets.',
           link: null
         },
         {
           id: 'cbb-9',
-          question: 'How does NHL Savant match team names for college basketball?',
-          answer: 'We use a comprehensive CSV mapping system that matches OddsTrader names, D-Ratings names, Haslametrics names, and NCAA API names. This ensures accurate data alignment across all sources.',
+          question: 'Do you cover mid-major and small conference games?',
+          answer: 'Yes. In fact, smaller conferences often have more betting value because they\'re less efficiently priced by the market. Our model covers all D1 games where we have sufficient data.',
           link: null
         },
         {
           id: 'cbb-10',
           question: 'Do you have college basketball picks during March Madness?',
-          answer: 'Yes. We publish picks for all tournament games. Note that tournament variance is extreme (single-elimination). We focus on +EV moneylines in early rounds and avoid props/parlays.',
+          answer: 'Yes. We publish picks for all tournament games. Note that tournament variance is extreme (single-elimination). We focus on +EV plays and avoid parlays even when it\'s tempting.',
           link: null
         }
       ]
@@ -175,49 +187,61 @@ const FAQ = () => {
         {
           id: 'meth-1',
           question: 'How does the NHL Savant model work?',
-          answer: 'We calculate true win probability using xGF per 60, PDO regression, goalie GSAE, and rest factors. For NHL, we blend our model (30%) with MoneyPuck (70%) for ensemble accuracy. For CBB, we ensemble D-Ratings and Haslametrics. Then we compare to market odds to find +EV opportunities.',
-          link: { text: 'Full methodology', url: '/methodology' }
+          answer: 'We use a proprietary ensemble approach that combines multiple prediction models, then applies our own adjustments for goalie matchups, rest advantage, and other situational factors. We compare our calculated win probability to market odds to identify +EV opportunities.',
+          link: { text: 'View methodology', url: '/methodology' }
         },
         {
           id: 'meth-2',
           question: 'What is expected goals (xG)?',
-          answer: 'xG measures the quality of scoring chances, not just shot count. A slot shot has higher xG than a point shot. xG per 60 minutes is the most predictive offensive metric in hockey.',
+          answer: 'xG measures the quality of scoring chances, not just shot count. A slot shot has higher xG than a point shot. xG per 60 minutes is one of the most predictive offensive metrics in hockey analytics.',
           link: null
         },
         {
           id: 'meth-3',
           question: 'What is GSAE?',
-          answer: 'Goals Saved Above Expected. Measures how many goals a goalie prevents compared to league average. Positive GSAE = elite goalie. Negative GSAE = struggling goalie (favorable for opposing scorers).',
+          answer: 'Goals Saved Above Expected. Measures how many goals a goalie prevents compared to what an average goalie would allow on those same shots. Positive GSAE = elite goalie. Negative GSAE = struggling goalie.',
           link: null
         },
         {
           id: 'meth-4',
-          question: 'How does ensemble modeling work?',
-          answer: 'We blend multiple prediction sources (your model + established models like MoneyPuck or D-Ratings) to reduce variance and improve accuracy. Ensemble models consistently outperform single-source models.',
+          question: 'What does "ensemble model" mean?',
+          answer: 'An ensemble model combines multiple prediction sources rather than relying on just one. By blending different approaches, we reduce variance and improve accuracy. Our picks only hit when multiple models agree there\'s value.',
           link: null
         },
         {
           id: 'meth-5',
           question: 'What\'s the Top Scorers feature?',
-          answer: 'We analyze NHL player props using 7 matchup factors: opponent defense rank, shot blocking, pace, PP opportunity, goalie quality, rebound control, and player shot volume. Shows which players have the best scoring matchups tonight.',
+          answer: 'Our premium feature analyzes NHL player matchups using multiple factors including opponent defense quality, pace, goalie performance, and player shot volume. Shows which players have favorable scoring matchups tonight.',
           link: { text: 'See Top Scorers', url: '/top-scorers' }
         },
         {
           id: 'meth-6',
           question: 'What\'s the Hot Takes feature?',
-          answer: 'AI-generated expert analysis for every NHL game. Provides 3 structured insights per game: model prediction, scoring outlook, and betting angles. Combines our model output with narrative generation.',
+          answer: 'AI-generated expert analysis for every NHL game. Provides structured insights including model prediction, scoring outlook, and betting angles. Combines our quantitative analysis with readable narrative.',
           link: { text: 'See Hot Takes', url: '/matchup-insights' }
         },
         {
           id: 'meth-7',
           question: 'How do you track live win probability?',
-          answer: 'During games, we calculate real-time win probability based on current score, period, and pre-game prediction. Shows how your bet is performing live.',
+          answer: 'During games, we calculate real-time win probability based on current score, period, and pre-game prediction. Shows how your bet is performing live so you can follow along.',
           link: null
         },
         {
           id: 'meth-8',
           question: 'How are bets graded automatically?',
-          answer: 'Firebase Cloud Functions fetch game results from NCAA API (CBB) and NHL API, match to our bet database, and calculate profit/loss automatically. No manual entry required.',
+          answer: 'Our system automatically fetches final scores, matches them to our picks, and calculates profit/loss. Everything updates on the performance dashboard without any manual entry required.',
+          link: null
+        },
+        {
+          id: 'meth-9',
+          question: 'What does each grade (A+, A, B+, etc.) mean?',
+          answer: 'Grades reflect our confidence in each pick based on the strength of the edge. A+ and A grades indicate high-confidence plays where multiple factors align. B+ and B are solid plays with good value. C grades are lower confidence but still positive EV.',
+          link: null
+        },
+        {
+          id: 'meth-10',
+          question: 'How do you calculate recommended unit size?',
+          answer: 'Unit sizing is based on our confidence level and historical performance patterns. Higher-graded picks with stronger edges get larger unit recommendations. We cap maximum exposure to protect against variance.',
           link: null
         }
       ]
@@ -228,38 +252,50 @@ const FAQ = () => {
         {
           id: 'price-1',
           question: 'What\'s included in each plan?',
-          answer: 'All plans include the same features: full NHL and CBB picks, Hot Takes, Top Scorers, performance tracking, live win probability. The only difference is commitment level (weekly vs monthly vs annual).',
+          answer: 'All plans include the same features: full NHL and college basketball picks, AI Hot Takes, Top Scorers analysis, performance tracking, and live win probability. The only difference is commitment level—weekly, monthly, or annual.',
           link: { text: 'Compare plans', url: '/pricing' }
         },
         {
           id: 'price-2',
           question: 'How does the free trial work?',
-          answer: 'Sign up for any plan and get 2-5 days free (Scout: 2, Elite: 3, Pro: 5). Full access during trial. If you love it, continue. If not, cancel before trial ends with zero charge.',
+          answer: 'Sign up for any plan and get 5-10 days free (Scout: 5 days, Elite: 7 days, Pro: 10 days). Full access to every feature during trial. If you love it, continue. If not, cancel before trial ends with zero charge.',
           link: { text: 'Start free trial', url: '/pricing' }
         },
         {
           id: 'price-3',
           question: 'Can I cancel anytime?',
-          answer: 'Yes. All subscriptions are managed through Stripe. You can cancel, change plans, or update payment method anytime via the Account page or Stripe Customer Portal.',
+          answer: 'Yes. All subscriptions are managed through Stripe. You can cancel, change plans, or update payment method anytime via the Account page. No questions asked, no cancellation fees.',
           link: { text: 'Manage account', url: '/account' }
         },
         {
           id: 'price-4',
           question: 'What payment methods do you accept?',
-          answer: 'All major credit cards via Stripe. Secure, encrypted, PCI-compliant payment processing.',
+          answer: 'All major credit cards via Stripe. Secure, encrypted, PCI-compliant payment processing. Your payment information is never stored on our servers.',
           link: null
         },
         {
           id: 'price-5',
           question: 'Is there a money-back guarantee?',
-          answer: 'The free trial IS your guarantee. Test the picks for 2-5 days before paying. If the model performs as advertised, upgrade. If not, walk away with zero risk.',
+          answer: 'The free trial IS your guarantee. Test all the picks for 5-10 days before paying a cent. See the results, verify the transparency, then decide. If it\'s not for you, cancel before trial ends—zero risk.',
           link: null
         },
         {
           id: 'price-6',
-          question: 'Can I get a discount?',
-          answer: 'The annual Pro plan ($150/year) is already 52% cheaper than monthly ($25.99 × 12 = $311.88). That\'s the best value we offer.',
+          question: 'What\'s the best value plan?',
+          answer: 'The annual Pro plan ($150/year) saves you 52% vs monthly pricing. That\'s just $12.50/month—less than the cost of one losing bet. Plus you get the longest free trial (10 days).',
           link: { text: 'View annual plan', url: '/pricing' }
+        },
+        {
+          id: 'price-7',
+          question: 'Do you offer refunds?',
+          answer: 'We offer a generous free trial instead of refunds. This lets you fully test the service before any charge. If you forget to cancel during trial, contact us and we\'ll work with you.',
+          link: null
+        },
+        {
+          id: 'price-8',
+          question: 'Can I upgrade or downgrade my plan?',
+          answer: 'Yes. You can switch plans anytime from your Account page. Upgrades take effect immediately, downgrades take effect at your next billing cycle.',
+          link: { text: 'Manage subscription', url: '/account' }
         }
       ]
     },
@@ -269,38 +305,50 @@ const FAQ = () => {
         {
           id: 'perf-1',
           question: 'Where can I see your track record?',
-          answer: 'Every bet is tracked publicly on the Performance Dashboard. Updated daily with win/loss records, ROI, units, and profit. We show every loss—nothing hidden.',
+          answer: 'Every bet is tracked publicly on the Performance Dashboard. Updated daily with win/loss records, ROI, units, and profit. We show every loss—nothing is hidden or deleted.',
           link: { text: 'View live performance', url: '/performance' }
         },
         {
           id: 'perf-2',
           question: 'Do you delete losing picks?',
-          answer: 'Never. Every pick stays in the database forever. We track everything in Firebase, and you can export the full CSV. Transparency is our competitive advantage.',
+          answer: 'Never. Every pick stays in the database forever. Full transparency is our competitive advantage—we\'re not Twitter touts who delete losses. You can export the complete history anytime.',
           link: null
         },
         {
           id: 'perf-3',
           question: 'What\'s your current season ROI?',
-          answer: 'Check the Performance Dashboard for real-time numbers. We update daily. ROI will fluctuate—what matters is long-term EV, not any single week.',
+          answer: 'Check the Performance Dashboard for real-time numbers updated daily. ROI will fluctuate week to week—that\'s normal variance. What matters is long-term positive expected value.',
           link: { text: 'Live performance data', url: '/performance' }
         },
         {
           id: 'perf-4',
-          question: 'How do you handle variance?',
-          answer: 'We communicate it honestly. Cold streaks happen. Hot streaks happen. Over 100+ bets, variance smooths out. We focus on process (finding +EV) over short-term outcomes.',
+          question: 'How do you handle losing streaks?',
+          answer: 'We communicate them honestly. Cold streaks happen to every model—it\'s variance, not a broken system. Over 100+ bets, variance smooths out. We focus on process (finding +EV) over short-term outcomes.',
           link: null
         },
         {
           id: 'perf-5',
           question: 'Can I download your historical picks?',
-          answer: 'Yes. Public CSV exports are available at /data/picks-nhl-2025-26.csv and /data/picks-cbb-2025-26.csv. Updated weekly with all historical picks, results, and profit/loss.',
-          link: null
+          answer: 'Yes. CSV exports with all historical picks, results, and profit/loss are available. Complete transparency so you can audit our performance yourself.',
+          link: { text: 'View data exports', url: '/data' }
         },
         {
           id: 'perf-6',
-          question: 'How is NHL Savant not a scam?',
-          answer: 'Every pick is tracked publicly. We publish full methodology. We show every loss. We offer a free trial so you can verify before paying. If we were scamming, we\'d hide losses and overpromise. We don\'t.',
-          link: { text: 'See our transparency policy', url: '/methodology' }
+          question: 'How do I know NHL Savant is legitimate?',
+          answer: 'Every pick is timestamped and tracked publicly before game time. We show every loss alongside every win. We offer a free trial so you can verify our results before paying anything. Unlike shady cappers, we have nothing to hide.',
+          link: { text: 'Start free trial', url: '/pricing' }
+        },
+        {
+          id: 'perf-7',
+          question: 'What\'s your win rate?',
+          answer: 'Win rate varies by sport and grade level, typically 50-60%. But win rate alone is misleading—what matters is ROI. A 52% win rate on +EV bets is profitable. Check our dashboard for current numbers.',
+          link: { text: 'View performance', url: '/performance' }
+        },
+        {
+          id: 'perf-8',
+          question: 'How do you compare to other betting services?',
+          answer: 'Unlike most services, we: (1) track every pick publicly, (2) show every loss, (3) never recommend parlays, (4) focus only on +EV plays, (5) offer a free trial to verify before paying. We compete on transparency, not hype.',
+          link: null
         }
       ]
     }
@@ -674,7 +722,7 @@ const FAQ = () => {
           color: 'var(--color-text-muted)',
           marginBottom: '0.5rem'
         }}>
-          Last Updated: December 1, 2025
+          Last Updated: December 5, 2025
         </p>
         <p style={{
           fontSize: '0.875rem',
