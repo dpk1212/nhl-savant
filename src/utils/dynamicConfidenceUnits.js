@@ -294,14 +294,75 @@ export function calculateDynamicUnits(bet, confidenceData) {
     tierLabel = '⚠️ LOW (1u)';
   }
   
+  // ═══════════════════════════════════════════════════════════════
+  // GRADE HARD CAPS - Apply after score calculation
+  // Grade C/D have negative historical ROI, cap their max units
+  // ═══════════════════════════════════════════════════════════════
+  if (classification.grade === 'C') {
+    if (units > 1) {
+      factors.push(`⚠️ Grade C cap: ${units}u → 1u (negative historical ROI)`);
+      units = 1;
+      tier = 'LOW';
+      tierLabel = '⚠️ LOW (1u) [C-CAP]';
+    }
+  } else if (classification.grade === 'D') {
+    if (units > 1) {
+      factors.push(`⚠️ Grade D cap: ${units}u → 1u (marginal historical ROI)`);
+      units = 1;
+      tier = 'LOW';
+      tierLabel = '⚠️ LOW (1u) [D-CAP]';
+    }
+  }
+  
+  // Calculate pattern ROI from the weights (for display)
+  const gradeROI = getGradeROI(classification.grade, weights);
+  const oddsROI = getOddsROI(classification.oddsRange, weights);
+  // Combined pattern ROI estimate (weighted average)
+  const patternROI = (gradeROI * 0.6) + (oddsROI * 0.4);
+  
   return {
     units,
     score: parseFloat(score.toFixed(2)),
     tier,
     tierLabel,
     factors,
-    classification
+    classification,
+    patternROI: parseFloat(patternROI.toFixed(1))
   };
+}
+
+/**
+ * Get historical ROI for a grade from weights
+ */
+function getGradeROI(grade, weights) {
+  // ROI values from the 325-bet analysis
+  const gradeROIs = {
+    'A': 12.4,
+    'A+': -7.6,
+    'B': 6.2,
+    'B+': 32.9,
+    'C': -10.8,
+    'D': 2.3,
+    'F': -5.6
+  };
+  return gradeROIs[grade] || 0;
+}
+
+/**
+ * Get historical ROI for an odds range from weights
+ */
+function getOddsROI(oddsRange, weights) {
+  // ROI values from the 325-bet analysis
+  const oddsROIs = {
+    'HEAVY_FAV': -6.8,
+    'BIG_FAV': -12.7,
+    'MOD_FAV': 8.1,
+    'SLIGHT_FAV': 14.0,
+    'PICKEM': -22.6,
+    'SLIGHT_DOG': -11.9,
+    'BIG_DOG': -100.0
+  };
+  return oddsROIs[oddsRange] || 0;
 }
 
 /**

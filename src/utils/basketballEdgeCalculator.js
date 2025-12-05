@@ -156,6 +156,7 @@ export class BasketballEdgeCalculator {
     const confidenceTier = dynamicResult.tier;
     const confidenceScore = dynamicResult.score;
     const confidenceFactors = dynamicResult.factors;
+    const dynamicPatternROI = dynamicResult.patternROI; // NEW: ROI from dynamic weights
     
     // Cap EV display at 25% for realistic presentation (extreme outliers skew perception)
     const cappedBestEV = Math.min(bestEV, 25);
@@ -202,7 +203,7 @@ export class BasketballEdgeCalculator {
       confidenceFactors: confidenceFactors, // Breakdown of contributing factors
       oddsRange: oddsRange,
       oddsRangeName: perfContext.oddsRangeName,
-      historicalROI: perfContext.historicalROI,
+      historicalROI: dynamicPatternROI,    // NEW: Use dynamic pattern ROI from 325-bet analysis
       qualityEmoji: qualityEmoji,
       
       // Transparency: Show component predictions for best bet
