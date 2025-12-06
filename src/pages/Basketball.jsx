@@ -172,9 +172,23 @@ const Basketball = () => {
           const bet = betsMap.get(betKey);
           
           if (bet && bet.result?.outcome) {
+            // 🔧 FIX: Recalculate profit from ACTUAL units (not stored profit which may be wrong)
+            const actualUnits = bet.bet?.units || bet.prediction?.unitSize || 1;
+            const odds = bet.bet?.odds;
+            const isWin = bet.result.outcome === 'WIN';
+            
+            let calculatedProfit;
+            if (isWin && odds) {
+              const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+              calculatedProfit = actualUnits * decimal;
+            } else {
+              calculatedProfit = -actualUnits;
+            }
+            
             gameData.betOutcome = {
               outcome: bet.result.outcome,
-              profit: bet.result.profit
+              profit: calculatedProfit,
+              units: actualUnits
             };
           }
           

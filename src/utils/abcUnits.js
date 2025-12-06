@@ -149,15 +149,22 @@ export function getUnitColor(units) {
 }
 
 /**
- * Calculate profit for a bet outcome using optimized units
+ * Calculate profit for a bet outcome
+ * 
+ * @param {string} grade - Letter grade (used if actualUnits not provided)
+ * @param {number} odds - American odds (e.g., -150, +200)
+ * @param {boolean} isWin - Whether the bet won
+ * @param {number} [actualUnits] - OPTIONAL: Actual units bet (overrides matrix lookup)
+ * @returns {number} Profit in units (positive for wins, negative for losses)
  */
-export function calculateUnitProfit(grade, odds, isWin) {
-  const units = getOptimizedUnitSize(grade, odds);
+export function calculateUnitProfit(grade, odds, isWin, actualUnits = null) {
+  // Use actual units if provided, otherwise lookup from matrix
+  const units = actualUnits !== null ? actualUnits : getOptimizedUnitSize(grade, odds);
   
   if (units === 0) return 0;
   
   if (isWin) {
-    // American odds to decimal
+    // American odds to decimal payout
     const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
     return units * decimal;
   } else {

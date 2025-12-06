@@ -5,7 +5,7 @@
 
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { getUnitSize, calculateUnitProfit } from './staggeredUnits';
+// Note: We use actual bet units from Firebase, not recalculated from matrix
 
 /**
  * Grade a basketball bet instantly when game goes final
@@ -76,9 +76,22 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     const winnerNorm = normalizeTeam(winnerTeam);
     const outcome = betTeamNorm === winnerNorm ? 'WIN' : 'LOSS';
     
-    // Calculate profit using CURRENT grade
+    // Calculate profit using ACTUAL BET UNITS (not recalculated from matrix!)
+    // The unit size stored in Firebase is the source of truth
+    const actualUnits = gradedBet.bet?.units || gradedBet.prediction?.unitSize || 1;
+    const odds = gradedBet.bet.odds;
+    
+    let profit;
+    if (outcome === 'WIN') {
+      // American odds to decimal payout
+      const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+      profit = actualUnits * decimal;
+    } else {
+      // Loss = lose the staked amount
+      profit = -actualUnits;
+    }
+    
     const currentGrade = currentPrediction?.grade || gradedBet.prediction?.grade || 'B';
-    const profit = calculateUnitProfit(currentGrade, gradedBet.bet.odds, outcome === 'WIN');
     
     // Update bet in Firebase
     const betRef = doc(db, 'basketball_bets', betId);

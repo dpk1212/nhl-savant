@@ -76,11 +76,12 @@ export function getUnitColor(units) {
  * @param {string} grade - Quality grade
  * @param {number} odds - Moneyline odds (REQUIRED for profit calculation)
  * @param {boolean} isWin - Whether the bet won
+ * @param {number} [actualUnits] - OPTIONAL: Actual units bet (overrides matrix lookup)
  * @returns {number} - Profit in units
  */
-export function calculateUnitProfit(grade, odds, isWin) {
+export function calculateUnitProfit(grade, odds, isWin, actualUnits = null) {
   if (!odds) return 0;
-  return calculateAbcUnitProfit(grade, odds, isWin);
+  return calculateAbcUnitProfit(grade, odds, isWin, actualUnits);
 }
 
 // Export for backward compatibility
