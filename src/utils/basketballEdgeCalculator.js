@@ -32,11 +32,13 @@ export class BasketballEdgeCalculator {
       haslametrics: 0.20  // Tempo-free validation
     };
     
-    // Grading thresholds (EV%) - Simplified to A-B-C
+    // Grading thresholds (EV%) - Full A-F scale for proper distribution
     this.grades = {
-      'A': 3.5,   // High EV (≥3.5%)
-      'B': 1.5,   // Medium EV (≥1.5%)
-      'C': 0      // Low/Negative EV
+      'A': 3.5,    // Strong edge (≥3.5% EV)
+      'B': 1.5,    // Good edge (≥1.5% EV)
+      'C': 0,      // Marginal/breakeven (≥0% EV)
+      'D': -3,     // Slight negative (≥-3% EV)
+      'F': -100    // Bad value (<-3% EV)
     };
     
     // Dynamic confidence weights (loaded from JSON)
@@ -264,15 +266,17 @@ export class BasketballEdgeCalculator {
   /**
    * Assign quality grade based on EV%
    * @param {number} evPercent - Expected value percentage
-   * @returns {string} - Grade (A, B, or C)
+   * @returns {string} - Grade (A, B, C, D, or F)
    */
   getGrade(evPercent) {
-    // SIMPLIFIED A-B-C GRADING SYSTEM
-    // Grade based on predicted EV, then odds context adjusts unit size
+    // FULL A-F GRADING SYSTEM
+    // Properly distributes picks across quality tiers
     
-    if (evPercent >= this.grades['A']) return 'A';    // ≥3.5% positive edge (high confidence)
-    if (evPercent >= this.grades['B']) return 'B';    // ≥1.5% positive edge (medium confidence)
-    return 'C';  // <1.5% edge (low confidence or negative)
+    if (evPercent >= this.grades['A']) return 'A';    // ≥3.5% (strong edge)
+    if (evPercent >= this.grades['B']) return 'B';    // ≥1.5% (good edge)
+    if (evPercent >= this.grades['C']) return 'C';    // ≥0% (marginal/breakeven)
+    if (evPercent >= this.grades['D']) return 'D';    // ≥-3% (slight negative)
+    return 'F';  // <-3% (bad value)
   }
   
   /**
@@ -282,7 +286,7 @@ export class BasketballEdgeCalculator {
    * @returns {array} - Filtered recommendations
    */
   filterRecommendations(games, minGrade = 'B+') {
-    const gradeOrder = ['A+', 'A', 'B+', 'B', 'C'];
+    const gradeOrder = ['A+', 'A', 'B+', 'B', 'C', 'D', 'F'];
     const minIndex = gradeOrder.indexOf(minGrade);
     
     return games
