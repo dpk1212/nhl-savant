@@ -295,24 +295,11 @@ export function calculateDynamicUnits(bet, confidenceData) {
   }
   
   // ═══════════════════════════════════════════════════════════════
-  // GRADE HARD CAPS - Apply after score calculation
-  // Grade C/D have negative historical ROI, cap their max units
+  // GRADE HARD CAPS - REMOVED
+  // Now letting dynamic weights fully determine unit sizing
+  // C/D grades will naturally get lower scores from their weights
   // ═══════════════════════════════════════════════════════════════
-  if (classification.grade === 'C') {
-    if (units > 1) {
-      factors.push(`⚠️ Grade C cap: ${units}u → 1u (negative historical ROI)`);
-      units = 1;
-      tier = 'LOW';
-      tierLabel = '⚠️ LOW (1u) [C-CAP]';
-    }
-  } else if (classification.grade === 'D') {
-    if (units > 1) {
-      factors.push(`⚠️ Grade D cap: ${units}u → 1u (marginal historical ROI)`);
-      units = 1;
-      tier = 'LOW';
-      tierLabel = '⚠️ LOW (1u) [D-CAP]';
-    }
-  }
+  // Grade caps removed - dynamic weighting handles risk management
   
   // Calculate pattern ROI from the weights (for display)
   const gradeROI = getGradeROI(classification.grade, weights);
