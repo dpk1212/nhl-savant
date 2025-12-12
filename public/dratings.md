@@ -38,30 +38,30 @@ Close
 
 # NCAA Basketball Predictions
 
-Updated 24 sec ago
+Updated 34 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#scroll-related)
 
 ## Upcoming Games for December 12, 2025
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [12/12/2025\<br>\<br>06:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/967c2382-7234-5037-86e9-0654248fc34c) | [Army Black Knights](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3208-army-black-knights)(4-7)<br>[UMBC Retrievers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3336-umbc-retrievers)(6-4) | 28.5%<br>71.5% | +250<br>-300<br>+295<br>-265 | +7-108<br>-7-110<br>+7½-109<br>-6-110 | 70.9<br>77.5 | 148.4 | o146½-110<br>u147-105<br>o146-110<br>u146½-110 | Volatility Bet Value Active |  |
-| [12/12/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/472c88bc-fa72-5ea1-bb70-091d91215fb2) | [MD E Shore Fighting Hawks](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3345-md-e-shore-fighting-hawks)(4-9)<br>[North Carolina A&T Aggies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3246-north-carolina-a-t-aggies)(4-4) | 25.1%<br>74.9% | +250<br>-300<br>+275<br>-325 | +7-110<br>-7-104<br>+7-109<br>-7-109 | 64.0<br>71.7 | 135.7 | o128½-110<br>u129-115<br>o127½-110<br>u129-110 |  |  |
-| [12/12/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/5b6612b2-4cc4-5382-bb5c-8270b0031b53) | [Missouri State Bears](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3299-missouri-state-bears)(4-4)<br>[Xavier Musketeers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3088-xavier-musketeers)(7-3) | 6.0%<br>94.0% | +1156<br>-2500<br>+1300<br>-2500 | +18½-110<br>-18½-105<br>+19-110<br>-18-109 | 65.3<br>81.6 | 146.9 | o148½-115<br>u149½-110<br>o148½-110<br>u149½-110 |  |  |
+| [12/12/2025\<br>\<br>06:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/967c2382-7234-5037-86e9-0654248fc34c) | [Army Black Knights](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3208-army-black-knights)(4-7)<br>[UMBC Retrievers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3336-umbc-retrievers)(6-4) | 28.5%<br>71.5% | +250<br>-300<br>+300<br>-360 | +7-108<br>-7-110<br>+7½-109<br>-7-110 | 70.9<br>77.5 | 148.4 | o146½-110<br>u147-105<br>o146-110<br>u146½-110 |  |  |
+| [12/12/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/472c88bc-fa72-5ea1-bb70-091d91215fb2) | [MD E Shore Fighting Hawks](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3345-md-e-shore-fighting-hawks)(4-9)<br>[North Carolina A&T Aggies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3246-north-carolina-a-t-aggies)(4-4) | 25.1%<br>74.9% | +250<br>-300<br>+300<br>-360 | +7-110<br>-7½+100<br>+7½-109<br>-7½-105 | 64.0<br>71.7 | 135.7 | o128½-110<br>u129-110<br>o128½-110<br>u129-110 |  |  |
+| [12/12/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/5b6612b2-4cc4-5382-bb5c-8270b0031b53) | [Missouri State Bears](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3299-missouri-state-bears)(4-4)<br>[Xavier Musketeers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3088-xavier-musketeers)(7-3) | 6.0%<br>94.0% | +1156<br>-2500<br>+1300<br>-2500 | +18½-110<br>-18½-105<br>+18-109<br>-18-109 | 65.3<br>81.6 | 146.9 | o148½-115<br>u149½-110<br>o149-110<br>u149½-110 |  |  |
 | [12/12/2025\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/44753f83-8220-5a84-a566-be6a0e08bff7) | [South Carolina State Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3323-south-carolina-state-bulldogs)(0-10)<br>[Queens Royals](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3360-queens-royals)(4-5) | 7.2%<br>92.8% | +1100<br>-1800 | +17-110<br>-16-115<br>+17-109<br>-16½-110 | 72.5<br>87.6 | 160.1 | o158-110<br>u158½-110<br>o158-110<br>u158-110 |  |  |
-| [12/12/2025\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/19f72b53-8bf6-501f-a7bb-e22676a6cfc9) | [ETSU Buccaneers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3317-etsu-buccaneers)(8-2)<br>[Austin Peay Governors](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3305-austin-peay-governors)(4-5) | 65.5%<br>34.5% | -195<br>+165<br>-185<br>+170 | -4-110<br>+4-105<br>-4½-109<br>+4½-109 | 74.0<br>69.1 | 143.1 | o142½-110<br>u143-110<br>o141½-110<br>u144-110 | Volatility Bet Value Active |  |
-| [12/12/2025\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/b9188478-a97e-5a73-8d78-c2ab72c01904) | [Texas Longhorns](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3084-texas-longhorns)(7-3)<br>[Connecticut Huskies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3040-connecticut-huskies)(9-1) | 7.7%<br>92.3% | +910<br>-1600<br>+950<br>-1500 | +15-109<br>-14½-110<br>+15½-110<br>-14½-110 | 67.2<br>82.0 | 149.2 | o145½-110<br>u146-110<br>o145½-110<br>u146-110 |  |  |
-| [12/12/2025\<br>\<br>08:30 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/033068fd-b67c-57a9-9531-4c21d8ddc632) | [Texas A&M Commerce Lions](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3363-texas-a-m-commerce-lions)(5-4)<br>[McNeese State Cowboys](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3186-mcneese-state-cowboys)(8-2) | 5.6%<br>94.4% | +1600<br>-3500 | +20½-110<br>-19½-110<br>+20-109<br>-20-109 | 62.9<br>79.4 | 142.3 | o142-110<br>u142½-110<br>o141-110<br>u142½-110 | Overall Bet Value Active |  |
-| [12/12/2025\<br>\<br>09:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/2350d66d-aac1-5d83-903f-3e759b506902) | [California Baptist Lancers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3353-california-baptist-lancers)(7-3)<br>[Eastern Washington Eagles](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3292-eastern-washington-eagles)(2-7) | 76.7%<br>23.3% | -170<br>+155<br>-165<br>+150 | -3½-110<br>+4-110<br>-3½-109<br>+4-110 | 78.6<br>70.4 | 149.0 | o152-110<br>u152½-108<br>o150½-110<br>u152½-110 | Volatility Bet Value Active |  |
+| [12/12/2025\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/19f72b53-8bf6-501f-a7bb-e22676a6cfc9) | [ETSU Buccaneers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3317-etsu-buccaneers)(8-2)<br>[Austin Peay Governors](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3305-austin-peay-governors)(4-5) | 65.5%<br>34.5% | -195<br>+165<br>-185<br>+170 | -4-110<br>+4½-115<br>-4½-109<br>+4½-109 | 74.0<br>69.1 | 143.1 | o143-105<br>u144-110<br>o143½-110<br>u144-110 |  |  |
+| [12/12/2025\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/b9188478-a97e-5a73-8d78-c2ab72c01904) | [Texas Longhorns](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3084-texas-longhorns)(7-3)<br>[Connecticut Huskies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3040-connecticut-huskies)(9-1) | 7.7%<br>92.3% | +910<br>-1600<br>+950<br>-1500 | +14½+101<br>-14½-110<br>+15-109<br>-14½-110 | 67.2<br>82.0 | 149.2 | o145½-110<br>u146-110<br>o145½-110<br>u146-110 |  |  |
+| [12/12/2025\<br>\<br>08:30 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/033068fd-b67c-57a9-9531-4c21d8ddc632) | [Texas A&M Commerce Lions](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3363-texas-a-m-commerce-lions)(5-4)<br>[McNeese State Cowboys](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3186-mcneese-state-cowboys)(8-2) | 5.6%<br>94.4% | +1600<br>-3500 | +20-107<br>-19½-110<br>+20-109<br>-20-109 | 62.9<br>79.4 | 142.3 | o141½-110<br>u142½-110<br>o142-110<br>u142½-110 |  |  |
+| [12/12/2025\<br>\<br>09:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/2350d66d-aac1-5d83-903f-3e759b506902) | [California Baptist Lancers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3353-california-baptist-lancers)(7-3)<br>[Eastern Washington Eagles](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3292-eastern-washington-eagles)(2-7) | 76.7%<br>23.3% | -170<br>+155<br>-165<br>+150 | -3½-110<br>+4-110<br>-3½-109<br>+3½-109 | 78.6<br>70.4 | 149.0 | o152-110<br>u152½-108<br>o152-110<br>u152½-110 |  |  |
 
 Games for Dec 11, 2025
 
@@ -69,7 +69,7 @@ Games for Dec 11, 2025
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -96,7 +96,7 @@ Games for Dec 11, 2025
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765553274194#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1765554243468#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
