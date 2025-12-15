@@ -117,23 +117,23 @@ export class BasketballEdgeCalculator {
     const marketAwayProb = this.oddsToProb(odds.awayOdds);
     const marketHomeProb = this.oddsToProb(odds.homeOdds);
     
-    // PHASE 2: Apply market calibration to prevent overconfidence
-    // Blend 75% model + 25% market (prevents extreme edges)
-    const calibratedAwayProb = this.calibrateWithMarket(ensembleAwayProb, marketAwayProb, 0.75);
-    const calibratedHomeProb = this.calibrateWithMarket(ensembleHomeProb, marketHomeProb, 0.75);
+    // Use RAW ensemble probabilities (NO calibration - model is already calibrated via 80/20 blend)
+    // Market calibration was killing all edge - D-Ratings + Haslametrics already provides balance
+    const calibratedAwayProb = ensembleAwayProb;
+    const calibratedHomeProb = ensembleHomeProb;
     
-    // Calculate edge using CALIBRATED probabilities
+    // Calculate edge using model probabilities
     const awayEdge = calibratedAwayProb - marketAwayProb;
     const homeEdge = calibratedHomeProb - marketHomeProb;
     
-    // PHASE 1 FIX: Calculate EV using CORRECT formula (NHL-style)
+    // Calculate EV using CORRECT formula (NHL-style)
     const awayEV = this.calculateEV(calibratedAwayProb, odds.awayOdds);
     const homeEV = this.calculateEV(calibratedHomeProb, odds.homeOdds);
     
-    // CRITICAL FIX: Pick the side with HIGHEST EV (not just >50% probability)
-    // This ensures we always bet on the side with positive expected value
-    const bestBet = awayEV > homeEV ? 'away' : 'home';
-    const bestEV = Math.max(awayEV, homeEV);
+    // Pick the side with BEST EV (could be away, home, or neither if both negative)
+    // We'll let the filter handle removing negative EV bets
+    const bestBet = awayEV >= homeEV ? 'away' : 'home';
+    const bestEV = bestBet === 'away' ? awayEV : homeEV;
     const bestEdge = bestBet === 'away' ? awayEdge : homeEdge;
     
     // Assign grade based on EV
