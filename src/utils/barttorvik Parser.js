@@ -22,7 +22,7 @@ export function parseBarttorvik(markdown) {
     // Parse table row: | rank | [TeamName](...) | [Conf](...) | stats... |
     const cells = line.split('|').map(c => c.trim()).filter(c => c);
     
-    if (cells.length < 22) continue; // Need 22 columns for complete data (added GP + Record)
+    if (cells.length < 24) continue; // Need 24 columns for complete data (RK through WAB)
     
     try {
       // Extract rank (column 0)
@@ -52,24 +52,27 @@ export function parseBarttorvik(markdown) {
         };
       };
       
-      // Column indices for key stats (cells[3]=GP, cells[4]=Record, stats start at cells[5])
-      const adjOff = parseStatCell(cells[5]);      // Adj. Off Efficiency
-      const adjDef = parseStatCell(cells[6]);      // Adj. Def Efficiency
-      const bartholomew = parseStatCell(cells[7]); // Bartholomew Rating (ignore)
-      const eFG_off = parseStatCell(cells[8]);     // eFG% Offense
-      const eFG_def = parseStatCell(cells[9]);     // eFG% Defense
-      const to_off = parseStatCell(cells[10]);     // Turnover% Offense
-      const to_def = parseStatCell(cells[11]);     // Turnover% Defense
-      const oreb_off = parseStatCell(cells[12]);   // Off Reb% Offense
-      const oreb_def = parseStatCell(cells[13]);   // Off Reb% Defense
-      const ftRate_off = parseStatCell(cells[14]); // FT Rate Offense
-      const ftRate_def = parseStatCell(cells[15]); // FT Rate Defense
-      const ft_off = parseStatCell(cells[16]);     // FT% Offense
-      const ft_def = parseStatCell(cells[17]);     // FT% Defense
-      const twoP_off = parseStatCell(cells[18]);   // 2P% Offense
-      const twoP_def = parseStatCell(cells[19]);   // 2P% Defense
-      const threeP_off = parseStatCell(cells[20]); // 3P% Offense
-      const threeP_def = parseStatCell(cells[21]); // 3P% Defense
+      // Column indices based on actual Barttorvik table structure
+      // RK | TEAM | CONF | G | REC | ADJOE | ADJDE | BARTHAG | EFG% | EFG%D | TOR | TORD | ORB | DRB | FTR | FTRD | 2P% | 2P%D | 3P% | 3P%D | 3PR | 3PRD | ADJ T | WAB
+      const adjOff = parseStatCell(cells[5]);      // ADJOE - Adjusted Offensive Efficiency
+      const adjDef = parseStatCell(cells[6]);      // ADJDE - Adjusted Defensive Efficiency
+      const bartholomew = parseStatCell(cells[7]); // BARTHAG - Bartholomew Rating
+      const eFG_off = parseStatCell(cells[8]);     // EFG% - Effective FG% Offense
+      const eFG_def = parseStatCell(cells[9]);     // EFG%D - Effective FG% Defense
+      const to_off = parseStatCell(cells[10]);     // TOR - Turnover Rate Offense
+      const to_def = parseStatCell(cells[11]);     // TORD - Turnover Rate Defense
+      const oreb_off = parseStatCell(cells[12]);   // ORB - Offensive Rebound %
+      const oreb_def = parseStatCell(cells[13]);   // DRB - Defensive Rebound %
+      const ftRate_off = parseStatCell(cells[14]); // FTR - Free Throw Rate Offense
+      const ftRate_def = parseStatCell(cells[15]); // FTRD - Free Throw Rate Defense
+      const twoP_off = parseStatCell(cells[16]);   // 2P% - Two Point % Offense
+      const twoP_def = parseStatCell(cells[17]);   // 2P%D - Two Point % Defense
+      const threeP_off = parseStatCell(cells[18]); // 3P% - Three Point % Offense
+      const threeP_def = parseStatCell(cells[19]); // 3P%D - Three Point % Defense
+      const threeP_rate_off = parseStatCell(cells[20]); // 3PR - Three Point Rate Offense
+      const threeP_rate_def = parseStatCell(cells[21]); // 3PRD - Three Point Rate Defense
+      const adjTempo = parseStatCell(cells[22]);   // ADJ T - Adjusted Tempo
+      const wab = parseStatCell(cells[23]);        // WAB - Wins Above Bubble
       
       // Store comprehensive team data
       teams[teamName] = {
@@ -82,8 +85,9 @@ export function parseBarttorvik(markdown) {
         adjOff_rank: adjOff.rank,
         adjDef: adjDef.value,
         adjDef_rank: adjDef.rank,
+        bartholomew: bartholomew.value,
         
-        // Shooting efficiency
+        // Shooting efficiency (eFG%)
         eFG_off: eFG_off.value,
         eFG_off_rank: eFG_off.rank,
         eFG_def: eFG_def.value,
@@ -101,25 +105,35 @@ export function parseBarttorvik(markdown) {
         oreb_def: oreb_def.value,
         oreb_def_rank: oreb_def.rank,
         
-        // Free throws
+        // Free throw rate (not percentage - rate of getting to the line)
         ftRate_off: ftRate_off.value,
         ftRate_off_rank: ftRate_off.rank,
         ftRate_def: ftRate_def.value,
         ftRate_def_rank: ftRate_def.rank,
-        ft_off: ft_off.value,
-        ft_off_rank: ft_off.rank,
-        ft_def: ft_def.value,
-        ft_def_rank: ft_def.rank,
         
-        // Shooting splits
+        // Two-point shooting percentage
         twoP_off: twoP_off.value,
         twoP_off_rank: twoP_off.rank,
         twoP_def: twoP_def.value,
         twoP_def_rank: twoP_def.rank,
+        
+        // Three-point shooting percentage
         threeP_off: threeP_off.value,
         threeP_off_rank: threeP_off.rank,
         threeP_def: threeP_def.value,
-        threeP_def_rank: threeP_def.rank
+        threeP_def_rank: threeP_def.rank,
+        
+        // Three-point rate (how often they shoot 3s)
+        threeP_rate_off: threeP_rate_off.value,
+        threeP_rate_off_rank: threeP_rate_off.rank,
+        threeP_rate_def: threeP_rate_def.value,
+        threeP_rate_def_rank: threeP_rate_def.rank,
+        
+        // Tempo and overall rating
+        adjTempo: adjTempo.value,
+        adjTempo_rank: adjTempo.rank,
+        wab: wab.value,
+        wab_rank: wab.rank
       };
       
     } catch (error) {
