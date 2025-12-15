@@ -130,9 +130,10 @@ export class BasketballEdgeCalculator {
     const awayEV = this.calculateEV(calibratedAwayProb, odds.awayOdds);
     const homeEV = this.calculateEV(calibratedHomeProb, odds.homeOdds);
     
-    // PICK-TO-WIN STRATEGY: Pick the team we predict will win (>50% probability)
-    const bestBet = ensembleAwayProb > 0.5 ? 'away' : 'home';
-    const bestEV = bestBet === 'away' ? awayEV : homeEV;
+    // CRITICAL FIX: Pick the side with HIGHEST EV (not just >50% probability)
+    // This ensures we always bet on the side with positive expected value
+    const bestBet = awayEV > homeEV ? 'away' : 'home';
+    const bestEV = Math.max(awayEV, homeEV);
     const bestEdge = bestBet === 'away' ? awayEdge : homeEdge;
     
     // Assign grade based on EV
