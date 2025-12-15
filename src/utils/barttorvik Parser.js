@@ -128,6 +128,21 @@ export function parseBarttorvik(markdown) {
   }
   
   console.log(`📊 Parsed Barttorvik data for ${Object.keys(teams).length} teams`);
+  
+  // DEBUG: Log sample teams for troubleshooting
+  const sampleTeams = ['East Texas A&M', 'Southeastern Louisiana', 'Alabama A&M', 'North Alabama'];
+  sampleTeams.forEach(team => {
+    if (teams[team]) {
+      console.log(`✅ Found ${team}:`, {
+        rank: teams[team].rank,
+        adjOff: teams[team].adjOff,
+        adjDef: teams[team].adjDef
+      });
+    } else {
+      console.log(`❌ Missing ${team}`);
+    }
+  });
+  
   return teams;
 }
 
