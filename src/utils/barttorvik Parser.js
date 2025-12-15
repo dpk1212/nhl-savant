@@ -22,7 +22,7 @@ export function parseBarttorvik(markdown) {
     // Parse table row: | rank | [TeamName](...) | [Conf](...) | stats... |
     const cells = line.split('|').map(c => c.trim()).filter(c => c);
     
-    if (cells.length < 19) continue; // Need 19 columns for complete data
+    if (cells.length < 22) continue; // Need 22 columns for complete data (added GP + Record)
     
     try {
       // Extract rank (column 0)
@@ -52,23 +52,24 @@ export function parseBarttorvik(markdown) {
         };
       };
       
-      // Column indices for key stats
-      const adjOff = parseStatCell(cells[3]);      // Adj. Off Efficiency
-      const adjDef = parseStatCell(cells[4]);      // Adj. Def Efficiency
-      const eFG_off = parseStatCell(cells[5]);     // eFG% Offense
-      const eFG_def = parseStatCell(cells[6]);     // eFG% Defense
-      const to_off = parseStatCell(cells[7]);      // Turnover% Offense
-      const to_def = parseStatCell(cells[8]);      // Turnover% Defense
-      const oreb_off = parseStatCell(cells[9]);    // Off Reb% Offense
-      const oreb_def = parseStatCell(cells[10]);   // Off Reb% Defense
-      const ftRate_off = parseStatCell(cells[11]); // FT Rate Offense
-      const ftRate_def = parseStatCell(cells[12]); // FT Rate Defense
-      const ft_off = parseStatCell(cells[13]);     // FT% Offense
-      const ft_def = parseStatCell(cells[14]);     // FT% Defense
-      const twoP_off = parseStatCell(cells[15]);   // 2P% Offense
-      const twoP_def = parseStatCell(cells[16]);   // 2P% Defense
-      const threeP_off = parseStatCell(cells[17]); // 3P% Offense
-      const threeP_def = parseStatCell(cells[18]); // 3P% Defense
+      // Column indices for key stats (cells[3]=GP, cells[4]=Record, stats start at cells[5])
+      const adjOff = parseStatCell(cells[5]);      // Adj. Off Efficiency
+      const adjDef = parseStatCell(cells[6]);      // Adj. Def Efficiency
+      const bartholomew = parseStatCell(cells[7]); // Bartholomew Rating (ignore)
+      const eFG_off = parseStatCell(cells[8]);     // eFG% Offense
+      const eFG_def = parseStatCell(cells[9]);     // eFG% Defense
+      const to_off = parseStatCell(cells[10]);     // Turnover% Offense
+      const to_def = parseStatCell(cells[11]);     // Turnover% Defense
+      const oreb_off = parseStatCell(cells[12]);   // Off Reb% Offense
+      const oreb_def = parseStatCell(cells[13]);   // Off Reb% Defense
+      const ftRate_off = parseStatCell(cells[14]); // FT Rate Offense
+      const ftRate_def = parseStatCell(cells[15]); // FT Rate Defense
+      const ft_off = parseStatCell(cells[16]);     // FT% Offense
+      const ft_def = parseStatCell(cells[17]);     // FT% Defense
+      const twoP_off = parseStatCell(cells[18]);   // 2P% Offense
+      const twoP_def = parseStatCell(cells[19]);   // 2P% Defense
+      const threeP_off = parseStatCell(cells[20]); // 3P% Offense
+      const threeP_def = parseStatCell(cells[21]); // 3P% Defense
       
       // Store comprehensive team data
       teams[teamName] = {
@@ -128,21 +129,6 @@ export function parseBarttorvik(markdown) {
   }
   
   console.log(`📊 Parsed Barttorvik data for ${Object.keys(teams).length} teams`);
-  
-  // DEBUG: Log sample teams for troubleshooting
-  const sampleTeams = ['East Texas A&M', 'Southeastern Louisiana', 'Alabama A&M', 'North Alabama'];
-  sampleTeams.forEach(team => {
-    if (teams[team]) {
-      console.log(`✅ Found ${team}:`, {
-        rank: teams[team].rank,
-        adjOff: teams[team].adjOff,
-        adjDef: teams[team].adjDef
-      });
-    } else {
-      console.log(`❌ Missing ${team}`);
-    }
-  });
-  
   return teams;
 }
 
