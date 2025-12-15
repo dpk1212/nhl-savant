@@ -32,14 +32,20 @@ export class BasketballEdgeCalculator {
       haslametrics: 0.20  // Tempo-free validation
     };
     
-    // Grading thresholds (EV%) - Full A-F scale for proper distribution
+    // PHASE 3: Updated grading thresholds (stricter for profitability)
     this.grades = {
-      'A': 3.5,    // Strong edge (≥3.5% EV)
-      'B': 1.5,    // Good edge (≥1.5% EV)
-      'C': 0,      // Marginal/breakeven (≥0% EV)
-      'D': -3,     // Slight negative (≥-3% EV)
-      'F': -100    // Bad value (<-3% EV)
+      'A': 5.0,    // Strong edge (≥5.0% EV) - RAISED from 3.5%
+      'B': 3.0,    // Good edge (≥3.0% EV) - RAISED from 1.5%
+      'C': 1.0,    // Marginal (≥1.0% EV) - RAISED from 0%
+      'D': -3,     // Slight negative (≥-3% EV) - NEVER BET
+      'F': -100    // Bad value (<-3% EV) - NEVER BET
     };
+    
+    // PHASE 3: Minimum betting thresholds
+    this.minEV = 3.0;           // Minimum 3% EV to bet
+    this.minProbability = 0.35;  // Minimum 35% win probability
+    this.maxOdds = 300;          // No extreme underdogs
+    this.minOdds = -1000;        // No extreme favorites
     
     // Dynamic confidence weights (loaded from JSON)
     // Will use defaults if not set
@@ -111,13 +117,18 @@ export class BasketballEdgeCalculator {
     const marketAwayProb = this.oddsToProb(odds.awayOdds);
     const marketHomeProb = this.oddsToProb(odds.homeOdds);
     
-    // Calculate edge
-    const awayEdge = ensembleAwayProb - marketAwayProb;
-    const homeEdge = ensembleHomeProb - marketHomeProb;
+    // PHASE 2: Apply market calibration to prevent overconfidence
+    // Blend 75% model + 25% market (prevents extreme edges)
+    const calibratedAwayProb = this.calibrateWithMarket(ensembleAwayProb, marketAwayProb, 0.75);
+    const calibratedHomeProb = this.calibrateWithMarket(ensembleHomeProb, marketHomeProb, 0.75);
     
-    // Calculate EV% (Expected Value percentage)
-    const awayEV = (awayEdge / marketAwayProb) * 100;
-    const homeEV = (homeEdge / marketHomeProb) * 100;
+    // Calculate edge using CALIBRATED probabilities
+    const awayEdge = calibratedAwayProb - marketAwayProb;
+    const homeEdge = calibratedHomeProb - marketHomeProb;
+    
+    // PHASE 1 FIX: Calculate EV using CORRECT formula (NHL-style)
+    const awayEV = this.calculateEV(calibratedAwayProb, odds.awayOdds);
+    const homeEV = this.calculateEV(calibratedHomeProb, odds.homeOdds);
     
     // PICK-TO-WIN STRATEGY: Pick the team we predict will win (>50% probability)
     const bestBet = ensembleAwayProb > 0.5 ? 'away' : 'home';
@@ -134,13 +145,13 @@ export class BasketballEdgeCalculator {
     const qualityEmoji = getBetQualityEmoji(grade, bestOdds);
     
     // DYNAMIC CONFIDENCE UNIT CALCULATION
-    // Build bet object for dynamic scoring
+    // Build bet object for dynamic scoring (using CALIBRATED probabilities)
     const betForScoring = {
       prediction: {
         grade: grade,
         bestEV: bestEV,
-        ensembleAwayProb: ensembleAwayProb,
-        ensembleHomeProb: ensembleHomeProb
+        ensembleAwayProb: calibratedAwayProb,  // Use calibrated
+        ensembleHomeProb: calibratedHomeProb   // Use calibrated
       },
       bet: {
         odds: bestOdds,
@@ -150,23 +161,31 @@ export class BasketballEdgeCalculator {
       homeTeam: matchedGame.homeTeam
     };
     
-    // Calculate dynamic units using live confidence weights
-    // Uses confidence weights from public/basketball_confidence_weights.json (loaded by page)
-    // Falls back to default weights if not loaded
+    // PHASE 4: Calculate Kelly-inspired unit sizing
+    const bestProb = bestBet === 'away' ? calibratedAwayProb : calibratedHomeProb;
+    const kellyUnits = this.calculateOptimalUnits(bestEV, bestProb, bestOdds);
+    
+    // Also calculate dynamic units for comparison (legacy system)
     const dynamicResult = calculateDynamicUnits(betForScoring, this.confidenceData);
-    const unitSize = dynamicResult.units;
+    
+    // Use Kelly units as primary, store dynamic for reference
+    const unitSize = kellyUnits;
     const confidenceTier = dynamicResult.tier;
     const confidenceScore = dynamicResult.score;
     const confidenceFactors = dynamicResult.factors;
-    const dynamicPatternROI = dynamicResult.patternROI; // NEW: ROI from dynamic weights
+    const dynamicPatternROI = dynamicResult.patternROI;
     
     // Cap EV display at 25% for realistic presentation (extreme outliers skew perception)
     const cappedBestEV = Math.min(bestEV, 25);
     
     return {
-      // Ensemble probabilities
+      // Raw ensemble probabilities (for transparency)
       ensembleAwayProb: Math.round(ensembleAwayProb * 1000) / 1000,
       ensembleHomeProb: Math.round(ensembleHomeProb * 1000) / 1000,
+      
+      // Calibrated probabilities (used for betting decisions)
+      calibratedAwayProb: Math.round(calibratedAwayProb * 1000) / 1000,
+      calibratedHomeProb: Math.round(calibratedHomeProb * 1000) / 1000,
       
       // Ensemble predicted scores
       ensembleAwayScore: ensembleAwayScore ? Math.round(ensembleAwayScore * 10) / 10 : null,
@@ -177,11 +196,11 @@ export class BasketballEdgeCalculator {
       marketAwayProb: Math.round(marketAwayProb * 1000) / 1000,
       marketHomeProb: Math.round(marketHomeProb * 1000) / 1000,
       
-      // Edges
+      // Edges (now using calibrated probabilities)
       awayEdge: Math.round(awayEdge * 1000) / 1000,
       homeEdge: Math.round(homeEdge * 1000) / 1000,
       
-      // Expected Value
+      // Expected Value (CORRECTED FORMULA - NHL-style)
       awayEV: Math.round(awayEV * 10) / 10,
       homeEV: Math.round(homeEV * 10) / 10,
       
@@ -212,6 +231,7 @@ export class BasketballEdgeCalculator {
       dratingsProb: bestBet === 'away' ? dratings?.awayWinProb : dratings?.homeWinProb,
       haslametricsProb: haslametrics ? (bestBet === 'away' ? this.estimateHaslaProbability(matchedGame, 'away') : this.estimateHaslaProbability(matchedGame, 'home')) : null,
       ensembleProb: bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb,
+      calibratedProb: bestBet === 'away' ? calibratedAwayProb : calibratedHomeProb,
       marketProb: bestBet === 'away' ? marketAwayProb : marketHomeProb,
       
       // Metadata
@@ -264,6 +284,85 @@ export class BasketballEdgeCalculator {
   }
   
   /**
+   * Calculate Expected Value (NHL-style, CORRECT formula)
+   * @param {number} modelProbability - Model's win probability (0-1)
+   * @param {number} marketOdds - American odds (e.g., -150, +200)
+   * @param {number} stake - Stake amount (default 100)
+   * @returns {number} Expected value in dollars (represents EV%)
+   */
+  calculateEV(modelProbability, marketOdds, stake = 100) {
+    // Convert American odds to decimal odds
+    let decimalOdds;
+    if (marketOdds > 0) {
+      // Positive odds: +150 → 2.50
+      decimalOdds = 1 + (marketOdds / 100);
+    } else {
+      // Negative odds: -150 → 1.667
+      decimalOdds = 1 + (100 / Math.abs(marketOdds));
+    }
+    
+    // Calculate expected value
+    // EV = (P_win × total_return) - stake
+    const totalReturn = stake * decimalOdds;
+    const ev = (modelProbability * totalReturn) - stake;
+    
+    return ev; // Already in dollars, represents EV%
+  }
+  
+  /**
+   * Apply market regression to ensemble probability
+   * Prevents overconfidence by blending with market wisdom
+   * @param {number} modelProb - Raw model probability
+   * @param {number} marketProb - Market implied probability
+   * @param {number} confidence - Confidence level (0-1, default 0.75)
+   * @returns {number} Calibrated probability
+   */
+  calibrateWithMarket(modelProb, marketProb, confidence = 0.75) {
+    // Blend model with market (similar to NHL's approach)
+    // confidence = 1.0 means trust model 100%
+    // confidence = 0.5 means 50/50 blend
+    // confidence = 0.75 means 75% model, 25% market (RECOMMENDED)
+    
+    const calibrated = (modelProb * confidence) + (marketProb * (1 - confidence));
+    
+    return calibrated;
+  }
+  
+  /**
+   * PHASE 4: Calculate optimal unit size based on EV and probability
+   * Uses fractional Kelly (1/4 Kelly for safety)
+   * @param {number} ev - Expected value percentage
+   * @param {number} modelProb - Calibrated model probability
+   * @param {number} odds - American odds
+   * @returns {number} Recommended units (0.5 - 5.0)
+   */
+  calculateOptimalUnits(ev, modelProb, odds) {
+    // Convert odds to decimal
+    const decimalOdds = odds > 0 
+      ? 1 + (odds / 100)
+      : 1 + (100 / Math.abs(odds));
+    
+    // Kelly fraction = (modelProb * (decimalOdds - 1) - (1 - modelProb)) / (decimalOdds - 1)
+    const kellyFraction = (modelProb * (decimalOdds - 1) - (1 - modelProb)) / (decimalOdds - 1);
+    
+    // Use 1/4 Kelly for safety (fractional Kelly)
+    const fractionalKelly = kellyFraction / 4;
+    
+    // Convert to unit scale (0.5 - 5.0)
+    // Kelly of 0.10 (10%) → 5.0 units
+    // Kelly of 0.02 (2%) → 1.0 unit
+    let units = fractionalKelly * 50;
+    
+    // Apply bounds
+    units = Math.max(0.5, Math.min(5.0, units));
+    
+    // Round to nearest 0.5
+    units = Math.round(units * 2) / 2;
+    
+    return units;
+  }
+  
+  /**
    * Assign quality grade based on EV%
    * @param {number} evPercent - Expected value percentage
    * @returns {string} - Grade (A, B, C, D, or F)
@@ -272,11 +371,54 @@ export class BasketballEdgeCalculator {
     // FULL A-F GRADING SYSTEM
     // Properly distributes picks across quality tiers
     
-    if (evPercent >= this.grades['A']) return 'A';    // ≥3.5% (strong edge)
-    if (evPercent >= this.grades['B']) return 'B';    // ≥1.5% (good edge)
-    if (evPercent >= this.grades['C']) return 'C';    // ≥0% (marginal/breakeven)
+    if (evPercent >= this.grades['A']) return 'A';    // ≥5.0% (strong edge)
+    if (evPercent >= this.grades['B']) return 'B';    // ≥3.0% (good edge)
+    if (evPercent >= this.grades['C']) return 'C';    // ≥1.0% (marginal)
     if (evPercent >= this.grades['D']) return 'D';    // ≥-3% (slight negative)
     return 'F';  // <-3% (bad value)
+  }
+  
+  /**
+   * PHASE 3: Filter bets to only profitable opportunities
+   * @param {object} prediction - Prediction object
+   * @returns {boolean} True if bet passes filters
+   */
+  shouldBet(prediction) {
+    // FILTER 1: Minimum EV threshold (3% minimum)
+    if (prediction.bestEV < this.minEV) {
+      console.log(`   ❌ Filtered: EV too low (${prediction.bestEV.toFixed(1)}% < ${this.minEV}%)`);
+      return false;
+    }
+    
+    // FILTER 2: No D or F grades (negative EV)
+    if (prediction.grade === 'D' || prediction.grade === 'F') {
+      console.log(`   ❌ Filtered: Grade ${prediction.grade} (never bet negative EV)`);
+      return false;
+    }
+    
+    // FILTER 3: Minimum calibrated probability (anti-extreme-odds)
+    const bestProb = prediction.bestBet === 'away' 
+      ? prediction.calibratedAwayProb 
+      : prediction.calibratedHomeProb;
+      
+    if (bestProb < this.minProbability) {
+      console.log(`   ❌ Filtered: Probability too low (${(bestProb * 100).toFixed(1)}% < ${this.minProbability * 100}%)`);
+      return false;
+    }
+    
+    // FILTER 4: No extreme odds (they never hit profitably)
+    if (prediction.bestOdds < this.minOdds) {
+      console.log(`   ❌ Filtered: Extreme favorite (${prediction.bestOdds} < ${this.minOdds})`);
+      return false;
+    }
+    
+    if (prediction.bestOdds > this.maxOdds) {
+      console.log(`   ❌ Filtered: Extreme underdog (${prediction.bestOdds} > ${this.maxOdds})`);
+      return false;
+    }
+    
+    // Passed all filters
+    return true;
   }
   
   /**
@@ -309,14 +451,45 @@ export class BasketballEdgeCalculator {
   
   /**
    * Process all games and add predictions
+   * PHASE 3: Now filters out unprofitable bets
    * @param {array} matchedGames - Array of matched games
-   * @returns {array} - Games with predictions
+   * @returns {array} - Games with predictions (filtered)
    */
   processGames(matchedGames) {
-    return matchedGames.map(game => ({
+    console.log(`\n🏀 Processing ${matchedGames.length} basketball games...`);
+    
+    const gamesWithPredictions = matchedGames.map(game => ({
       ...game,
       prediction: this.calculateEnsemblePrediction(game)
     }));
+    
+    // PHASE 3: Apply betting filters
+    const beforeFilter = gamesWithPredictions.length;
+    const filteredGames = gamesWithPredictions.filter(game => {
+      // Skip games with errors
+      if (game.prediction.error) {
+        console.log(`   ⚠️  ${game.awayTeam} @ ${game.homeTeam}: ${game.prediction.error}`);
+        return false;
+      }
+      
+      // Apply betting filters
+      const passes = this.shouldBet(game.prediction);
+      if (passes) {
+        console.log(`   ✅ ${game.awayTeam} @ ${game.homeTeam}: ${game.prediction.bestTeam} ${game.prediction.bestOdds} (${game.prediction.grade} grade, ${game.prediction.bestEV.toFixed(1)}% EV)`);
+      }
+      return passes;
+    });
+    
+    const afterFilter = filteredGames.length;
+    const filtered = beforeFilter - afterFilter;
+    
+    console.log(`\n📊 FILTER RESULTS:`);
+    console.log(`   Total games: ${beforeFilter}`);
+    console.log(`   Quality bets: ${afterFilter} ✅`);
+    console.log(`   Filtered out: ${filtered} ❌`);
+    console.log(`   Filter rate: ${((filtered / beforeFilter) * 100).toFixed(1)}%\n`);
+    
+    return filteredGames;
   }
 }
 

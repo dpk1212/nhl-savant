@@ -64,7 +64,9 @@ exports.updateBetResults = onSchedule({
       logger.info(`Updating bet ${betId}: ${bet.bet.pick} for ${matchingGame.awayTeam} @ ${matchingGame.homeTeam} (${matchingGame.awayScore}-${matchingGame.homeScore})`);
 
       const outcome = calculateOutcome(matchingGame, bet.bet);
-      const profit = calculateProfit(outcome, bet.bet.odds);
+      // Use actual dynamic units from the bet (priority), then recommendedUnit, then fallback to 1
+      const units = bet.prediction?.dynamicUnits || bet.prediction?.recommendedUnit || 1;
+      const profit = calculateProfit(outcome, bet.bet.odds, units);
 
       await admin.firestore()
           .collection("bets")
@@ -76,6 +78,7 @@ exports.updateBetResults = onSchedule({
             "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "AWAY" : "HOME",
             "result.outcome": outcome,
             "result.profit": profit,
+            "result.units": units,  // Store actual units used for grading
             "result.fetched": true,
             "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
             "result.source": "NHL_API",
@@ -84,7 +87,7 @@ exports.updateBetResults = onSchedule({
           });
 
       updatedCount++;
-      logger.info(`✅ Updated ${betId}: ${outcome} → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`);
+      logger.info(`✅ Updated ${betId}: ${outcome} @ ${units}u → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`);
     }
 
     logger.info(`Finished: Updated ${updatedCount} bets`);
@@ -160,15 +163,21 @@ function calculateOutcome(game, bet) {
 
 /**
  * Helper: Calculate profit in units
+ * @param {string} outcome - WIN, LOSS, or PUSH
+ * @param {number} odds - American odds
+ * @param {number} units - Actual units staked (from dynamicUnits)
  */
-function calculateProfit(outcome, odds) {
+function calculateProfit(outcome, odds, units = 1) {
   if (outcome === "PUSH") return 0;
-  if (outcome === "LOSS") return -1;
+  if (outcome === "LOSS") return -units;  // Lose actual units staked
 
+  // WIN: Calculate profit based on actual units staked
   if (odds < 0) {
-    return 100 / Math.abs(odds);
+    // Favorite: profit = units * (100 / |odds|)
+    return units * (100 / Math.abs(odds));
   } else {
-    return odds / 100;
+    // Underdog: profit = units * (odds / 100)
+    return units * (odds / 100);
   }
 }
 
