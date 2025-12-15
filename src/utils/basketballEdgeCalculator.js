@@ -170,9 +170,9 @@ export class BasketballEdgeCalculator {
     
     // Use Kelly units as primary, store dynamic for reference
     const unitSize = kellyUnits;
-    const confidenceTier = dynamicResult.tier;
-    const confidenceScore = dynamicResult.score;
-    const confidenceFactors = dynamicResult.factors;
+    const confidenceTier = dynamicResult.tier || 'MODERATE';
+    const confidenceScore = dynamicResult.score || 0;
+    const confidenceFactors = dynamicResult.factors || [];
     const dynamicPatternROI = dynamicResult.patternROI;
     
     // Cap EV display at 25% for realistic presentation (extreme outliers skew perception)
@@ -224,7 +224,7 @@ export class BasketballEdgeCalculator {
       confidenceFactors: confidenceFactors, // Breakdown of contributing factors
       oddsRange: oddsRange,
       oddsRangeName: perfContext.oddsRangeName,
-      historicalROI: dynamicPatternROI,    // NEW: Use dynamic pattern ROI from 325-bet analysis
+      historicalROI: dynamicPatternROI || perfContext.historicalROI || 0,    // Use dynamic ROI, fallback to static, then 0
       qualityEmoji: qualityEmoji,
       
       // Transparency: Show component predictions for best bet

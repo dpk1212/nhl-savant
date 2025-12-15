@@ -205,13 +205,18 @@ export function calculateDynamicUnits(bet, confidenceData) {
   // F GRADE HARD CAP - Check first
   // ═══════════════════════════════════════════════════════════════
   if (classification.grade === 'F') {
+    const fGradeROI = getGradeROI('F', weights);
+    const fOddsROI = getOddsROI(classification.oddsRange, weights);
+    const fPatternROI = (fGradeROI * 0.6) + (fOddsROI * 0.4);
+    
     return {
       units: config.fGradeCap || 0.5,
       score: 0,
       tier: 'F-CAP',
       tierLabel: '🔴 F-CAP (0.5u)',
       factors: ['🔴 Grade F → HARD CAP at 0.5u'],
-      classification
+      classification,
+      patternROI: parseFloat(fPatternROI.toFixed(1))
     };
   }
   
