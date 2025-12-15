@@ -258,52 +258,14 @@ const Basketball = () => {
       const confidenceData = await loadConfidenceWeights();
       console.log(`📊 Loaded confidence weights (${confidenceData.totalBets} bets analyzed)`);
       
-      // Calculate predictions for TODAY'S games (even if they fail, we still show the game)
+      // Calculate predictions for TODAY'S games using the new profitable filter system
       const calculator = new BasketballEdgeCalculator();
       
       // Set confidence weights for dynamic unit calculation
       calculator.setConfidenceWeights(confidenceData);
       
-      const gamesWithPredictions = todaysGames.map(game => {
-        // Try to calculate prediction, but keep game even if it fails
-        try {
-          const prediction = calculator.calculateEnsemblePrediction(game);
-          return { ...game, prediction };
-        } catch (err) {
-          // Keep the game, just mark prediction as failed
-          return { 
-            ...game, 
-            prediction: { 
-              error: 'Prediction failed',
-              grade: 'N/A' 
-            } 
-          };
-        }
-      });
-      
-      // CRITICAL FILTER: Only show games with BOTH Haslametrics AND D-Ratings
-      // Include ALL games where our model predicts a WIN (>50% win probability)
-      // Grading reflects whether we're MORE confident than market (positive EV = good grades)
-      const qualityGames = gamesWithPredictions.filter(game => {
-        // Must have a valid prediction (no error)
-        if (game.prediction?.error) return false;
-        
-        // Must have HIGH confidence (only happens with BOTH sources)
-        if (game.prediction?.confidence !== 'HIGH') return false;
-        
-        // Must have a grade
-        if (!game.prediction?.grade || game.prediction.grade === 'N/A') return false;
-        
-        // INCLUDE if our model predicts this team will WIN (>50%)
-        // This includes BOTH:
-        // - Positive EV picks (we're MORE confident than market) → A+, A, B+, B, C grades
-        // - Negative EV picks (market MORE confident than us) → D, F grades
-        // Sorting will prioritize positive EV picks at the top
-        const modelProb = game.prediction?.ensembleProb || 0;
-        if (modelProb <= 0.5) return false;  // Skip if model doesn't predict a win
-        
-        return true;
-      });
+      // Use processGames() which includes the shouldBet() filters (blocks D/F grades, <3% EV, etc.)
+      const qualityGames = calculator.processGames(todaysGames);
       
       // SORT BY VALUE: Prioritize games where our model is MORE CONFIDENT than market
       // This ensures we recommend teams we believe in more than the market does
