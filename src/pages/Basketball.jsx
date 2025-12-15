@@ -216,13 +216,8 @@ const Basketball = () => {
       const drateResponse = await fetch(`/dratings.md${cacheBuster}`);
       const csvResponse = await fetch(`/basketball_teams.csv${cacheBuster}`);
       
-      // Find the latest Barttorvik file
-      const barttorvikFiles = await fetch(`/`).then(r => r.text()).then(html => {
-        const matches = html.match(/barttorvik\.com_teamstats[^"]+\.md/g);
-        return matches || [];
-      });
-      const latestBarttorvik = barttorvikFiles.sort().reverse()[0] || 'barttorvik.com_teamstats.php_year=2026&sort=2.2025-12-02T14_29_36.275Z.md';
-      const barttorvikResponse = await fetch(`/${latestBarttorvik}${cacheBuster}`);
+      // Load Barttorvik data (using Bart.md - updated daily by scraper)
+      const barttorvikResponse = await fetch(`/Bart.md${cacheBuster}`);
       
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();

@@ -221,7 +221,7 @@ async function writeBasketballBets() {
     const oddsMarkdown = await fs.readFile(join(__dirname, '../public/basketball_odds.md'), 'utf8');
     const haslaMarkdown = await fs.readFile(join(__dirname, '../public/haslametrics.md'), 'utf8');
     const drateMarkdown = await fs.readFile(join(__dirname, '../public/dratings.md'), 'utf8');
-    const barttMarkdown = await fs.readFile(join(__dirname, '../public/barttorvik.com_teamstats.php_year=2026&sort=2.2025-12-02T14_29_36.275Z.md'), 'utf8');
+    const barttMarkdown = await fs.readFile(join(__dirname, '../public/Bart.md'), 'utf8');
     const csvContent = await fs.readFile(join(__dirname, '../public/basketball_teams.csv'), 'utf8');
     
     console.log('✅ Loaded scraped data files');
