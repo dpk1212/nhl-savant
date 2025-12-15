@@ -349,10 +349,11 @@ export class BasketballEdgeCalculator {
     // Use 1/4 Kelly for safety (fractional Kelly)
     const fractionalKelly = kellyFraction / 4;
     
-    // Convert to unit scale (0.5 - 5.0)
-    // Kelly of 0.10 (10%) → 5.0 units
-    // Kelly of 0.02 (2%) → 1.0 unit
-    let units = fractionalKelly * 50;
+    // Convert to unit scale (0.5 - 5.0) with more aggressive scaling
+    // Kelly of 0.05 (5%) → 2.5 units
+    // Kelly of 0.10 (10%) → 5.0 units (capped)
+    // CHANGED: Multiplier from 50 to 100 for better differentiation
+    let units = fractionalKelly * 100;
     
     // Apply bounds
     units = Math.max(0.5, Math.min(5.0, units));

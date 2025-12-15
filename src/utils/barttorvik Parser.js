@@ -29,12 +29,14 @@ export function parseBarttorvik(markdown) {
       const rank = parseInt(cells[0].trim());
       if (isNaN(rank)) continue;
       
-      // Extract team name from markdown link
+      // Extract team name from URL parameter (cleaner than markdown text which includes next opponent)
       const teamCell = cells[1].trim();
-      const teamMatch = teamCell.match(/\[([^\]]+)\]/);
-      if (!teamMatch) continue;
+      // Match team name from URL: team.php?team=North+Alabama
+      const urlMatch = teamCell.match(/team=([^&\)]+)/);
+      if (!urlMatch) continue;
       
-      const teamName = teamMatch[1];
+      // Decode URL encoding (+ to space, %26 to &)
+      const teamName = decodeURIComponent(urlMatch[1].replace(/\+/g, ' '));
       
       // Extract conference
       const confCell = cells[2].trim();
