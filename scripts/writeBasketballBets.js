@@ -251,15 +251,9 @@ async function writeBasketballBets() {
     // This ensures predictions match the UI calculation exactly
     calculator.setConfidenceWeights(confidenceWeights);
     
-    const gamesWithPredictions = matchedGames.map(game => {
-      const prediction = calculator.calculateEnsemblePrediction(game);
-      return { ...game, prediction };
-    });
-    
-    // 5. Filter for valid predictions (pick-to-win strategy)
-    const qualityBets = gamesWithPredictions.filter(game => 
-      game.prediction && !game.prediction.error
-    );
+    // 5. Use processGames() which includes shouldBet() filters (blocks D/F grades, <3% EV, etc.)
+    // This ensures we only write QUALITY bets, not all predictions
+    const qualityBets = calculator.processGames(matchedGames);
     
     console.log(`\n🎯 Found ${qualityBets.length} picks (pick-to-win strategy):`);
     qualityBets.forEach((game, i) => {
