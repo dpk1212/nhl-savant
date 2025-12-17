@@ -241,28 +241,48 @@ const NHLMatchupIntelligence = ({
   ];
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, rgba(16, 24, 40, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
-      border: '1px solid rgba(16, 185, 129, 0.2)',
-      borderRadius: '12px',
-      overflow: 'hidden'
+    <>
+      {/* Animations */}
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes shine {
+          0% { left: -100%; }
+          20% { left: 100%; }
+          100% { left: 100%; }
+        }
+      `}</style>
+      
+      <div style={{
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 50%, rgba(17, 24, 39, 0.98) 100%)',
+      border: '1px solid rgba(16, 185, 129, 0.25)',
+      borderRadius: '14px',
+      overflow: 'hidden',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1) inset'
     }}>
       {/* Header */}
       <div style={{
-        padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: isMobile ? '0.875rem 1rem' : '1.125rem 1.5rem',
+        borderBottom: '1px solid rgba(16, 185, 129, 0.15)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'rgba(16, 185, 129, 0.08)'
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.125rem' }}>⚡</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <span style={{ 
+            fontSize: '1.25rem',
+            filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))'
+          }}>⚡</span>
           <span style={{
-            fontSize: isMobile ? '0.813rem' : '0.875rem',
-            fontWeight: '700',
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            fontWeight: '800',
             color: 'var(--color-text-primary)',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.08em',
+            textShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
           }}>
             MATCHUP INTELLIGENCE
           </span>
@@ -291,34 +311,51 @@ const NHLMatchupIntelligence = ({
         </button>
       </div>
 
-      {/* Team Headers - COMPACT */}
+      {/* Team Headers - ENHANCED */}
       <div style={{
-        padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
+        padding: isMobile ? '0.875rem 1rem' : '1.125rem 1.5rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'rgba(0, 0, 0, 0.2)'
+        background: 'rgba(0, 0, 0, 0.3)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
       }}>
         <div style={{
-          fontSize: isMobile ? '0.938rem' : '1.063rem',
-          fontWeight: '800',
-          color: '#0EA5E9'
+          fontSize: isMobile ? '1rem' : '1.125rem',
+          fontWeight: '900',
+          color: '#0EA5E9',
+          textShadow: '0 0 20px rgba(14, 165, 233, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)',
+          letterSpacing: '0.02em'
         }}>
-          {awayTeam} {awayXGF.toFixed(2)}
+          {awayTeam} <span style={{ 
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            fontWeight: '700',
+            opacity: 0.9
+          }}>{awayXGF.toFixed(2)}</span>
         </div>
         <div style={{
-          fontSize: '0.813rem',
+          fontSize: '0.938rem',
           color: 'var(--color-text-muted)',
-          fontWeight: '700'
+          fontWeight: '800',
+          padding: '0.25rem 0.5rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '6px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           🆚
         </div>
         <div style={{
-          fontSize: isMobile ? '0.938rem' : '1.063rem',
-          fontWeight: '800',
-          color: '#10B981'
+          fontSize: isMobile ? '1rem' : '1.125rem',
+          fontWeight: '900',
+          color: '#10B981',
+          textShadow: '0 0 20px rgba(16, 185, 129, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)',
+          letterSpacing: '0.02em'
         }}>
-          {homeTeam} {homeXGF.toFixed(2)}
+          {homeTeam} <span style={{ 
+            fontSize: isMobile ? '0.875rem' : '0.938rem',
+            fontWeight: '700',
+            opacity: 0.9
+          }}>{homeXGF.toFixed(2)}</span>
         </div>
       </div>
 
@@ -333,98 +370,177 @@ const NHLMatchupIntelligence = ({
             paddingBottom: idx < factors.length - 1 ? '1.25rem' : 0,
             borderBottom: idx < factors.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'
           }}>
-            {/* Header Row */}
+            {/* Header Row - ENHANCED */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '0.5rem'
+              marginBottom: '0.625rem'
             }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.375rem',
+                gap: '0.5rem',
                 fontSize: isMobile ? '0.75rem' : '0.813rem',
-                fontWeight: '700',
+                fontWeight: '800',
                 color: 'var(--color-text-primary)'
               }}>
-                <span style={{ fontSize: '0.938rem' }}>{factor.icon}</span>
-                <span>{factor.name}</span>
+                <span style={{ 
+                  fontSize: '1.063rem',
+                  filter: `drop-shadow(0 0 6px ${
+                    factor.icon === '🎯' ? 'rgba(14, 165, 233, 0.5)' :
+                    factor.icon === '🛡️' ? 'rgba(239, 68, 68, 0.5)' :
+                    factor.icon === '🔥' ? 'rgba(251, 146, 60, 0.5)' :
+                    'rgba(16, 185, 129, 0.5)'
+                  })`
+                }}>{factor.icon}</span>
+                <span style={{ letterSpacing: '0.05em' }}>{factor.name}</span>
                 {factor.subtitle && (
                   <span style={{
                     fontSize: '0.625rem',
                     color: 'var(--color-text-muted)',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    opacity: 0.8
                   }}>
                     ({factor.subtitle})
                   </span>
                 )}
               </div>
               <div style={{
-                fontSize: '0.688rem',
-                fontWeight: '700',
+                fontSize: '0.75rem',
+                fontWeight: '800',
                 color: factor.significance === 'high' ? '#10B981' : factor.significance === 'moderate' ? '#F59E0B' : 'var(--color-text-muted)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem'
+                gap: '0.375rem',
+                padding: factor.advantage ? '0.25rem 0.5rem' : '0',
+                background: factor.advantage && factor.significance === 'high' ? 'rgba(16, 185, 129, 0.15)' : 
+                           factor.advantage && factor.significance === 'moderate' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                borderRadius: '6px',
+                border: factor.advantage && factor.significance === 'high' ? '1px solid rgba(16, 185, 129, 0.3)' : 
+                        factor.advantage && factor.significance === 'moderate' ? '1px solid rgba(245, 158, 11, 0.3)' : 'none',
+                textShadow: factor.significance === 'high' ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none'
               }}>
                 {factor.advantage && `+${factor.percentDiff}%`}
-                {factor.significance === 'high' && <span style={{ fontSize: '0.875rem' }}>⚡</span>}
+                {factor.significance === 'high' && <span style={{ 
+                  fontSize: '0.938rem',
+                  filter: 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.6))'
+                }}>⚡</span>}
               </div>
             </div>
 
-            {/* Center-Diverging Bar - COMPACT */}
+            {/* Center-Diverging Bar - ENHANCED */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr auto 1fr',
-              gap: '0.375rem',
+              gap: '0.5rem',
               alignItems: 'center',
-              marginBottom: '0.5rem'
+              marginBottom: '0.625rem'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.375rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
+                  fontSize: '0.813rem',
+                  fontWeight: '800',
                   color: factor.advantage === awayTeam ? '#0EA5E9' : 'var(--color-text-secondary)',
-                  minWidth: '45px',
-                  textAlign: 'right'
+                  minWidth: '50px',
+                  textAlign: 'right',
+                  textShadow: factor.advantage === awayTeam ? '0 0 12px rgba(14, 165, 233, 0.5)' : 'none'
                 }}>
                   {factor.format(factor.awayValue)}
                 </span>
-                <div style={{ height: '20px', width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ 
+                  height: '24px', 
+                  width: '100%', 
+                  display: 'flex', 
+                  justifyContent: 'flex-end',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '6px',
+                  padding: '2px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <div style={{
                     height: '100%',
                     width: `${Math.min(100, (factor.awayValue / (factor.leagueAvg * 2)) * 100)}%`,
                     background: factor.advantage === awayTeam
-                      ? 'linear-gradient(90deg, #0EA5E9 0%, #3B82F6 100%)'
-                      : 'rgba(14, 165, 233, 0.3)',
+                      ? 'linear-gradient(90deg, #0EA5E9 0%, #06B6D4 50%, #0EA5E9 100%)'
+                      : 'linear-gradient(90deg, rgba(14, 165, 233, 0.35) 0%, rgba(14, 165, 233, 0.25) 100%)',
                     borderRadius: '4px 0 0 4px',
-                    boxShadow: factor.advantage === awayTeam ? '0 0 8px rgba(14, 165, 233, 0.4)' : 'none',
-                    border: factor.advantage === awayTeam ? '1px solid #60A5FA' : 'none',
-                    transition: 'all 0.3s ease'
-                  }} />
+                    boxShadow: factor.advantage === awayTeam 
+                      ? '0 0 16px rgba(14, 165, 233, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
+                      : 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                    border: factor.advantage === awayTeam ? '1px solid rgba(96, 165, 250, 0.5)' : 'none',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {factor.advantage === awayTeam && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
+                        animation: 'shimmer 2s infinite'
+                      }} />
+                    )}
+                  </div>
                 </div>
               </div>
-              <div style={{ minWidth: '30px', textAlign: 'center', fontSize: '0.75rem' }}>⚖️</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                <div style={{ height: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
+              <div style={{ 
+                minWidth: '32px', 
+                textAlign: 'center', 
+                fontSize: '0.875rem',
+                padding: '0.25rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '6px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>⚖️</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ 
+                  height: '24px', 
+                  width: '100%', 
+                  display: 'flex', 
+                  justifyContent: 'flex-start',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '6px',
+                  padding: '2px',
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <div style={{
                     height: '100%',
                     width: `${Math.min(100, (factor.homeValue / (factor.leagueAvg * 2)) * 100)}%`,
                     background: factor.advantage === homeTeam
-                      ? 'linear-gradient(90deg, #10B981 0%, #059669 100%)'
-                      : 'rgba(16, 185, 129, 0.3)',
+                      ? 'linear-gradient(90deg, #10B981 0%, #059669 50%, #10B981 100%)'
+                      : 'linear-gradient(90deg, rgba(16, 185, 129, 0.35) 0%, rgba(16, 185, 129, 0.25) 100%)',
                     borderRadius: '0 4px 4px 0',
-                    boxShadow: factor.advantage === homeTeam ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none',
-                    border: factor.advantage === homeTeam ? '1px solid #34D399' : 'none',
-                    transition: 'all 0.3s ease'
-                  }} />
+                    boxShadow: factor.advantage === homeTeam 
+                      ? '0 0 16px rgba(16, 185, 129, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
+                      : 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                    border: factor.advantage === homeTeam ? '1px solid rgba(52, 211, 153, 0.5)' : 'none',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {factor.advantage === homeTeam && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
+                        animation: 'shimmer 2s infinite'
+                      }} />
+                    )}
+                  </div>
                 </div>
                 <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
+                  fontSize: '0.813rem',
+                  fontWeight: '800',
                   color: factor.advantage === homeTeam ? '#10B981' : 'var(--color-text-secondary)',
-                  minWidth: '45px'
+                  minWidth: '50px',
+                  textShadow: factor.advantage === homeTeam ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none'
                 }}>
                   {factor.format(factor.homeValue)}
                 </span>
@@ -465,19 +581,27 @@ const NHLMatchupIntelligence = ({
               </div>
             )}
 
-            {/* Context - SMART STORYTELLING */}
+            {/* Context - ENHANCED STORYTELLING */}
             {factor.context && (
               <div style={{
                 fontSize: '0.688rem',
-                color: 'rgba(16, 185, 129, 0.9)',
+                color: 'rgba(16, 185, 129, 0.95)',
                 fontStyle: 'italic',
-                paddingLeft: '1.25rem',
-                position: 'relative'
+                paddingLeft: '1.5rem',
+                position: 'relative',
+                marginTop: '0.25rem',
+                padding: '0.5rem 0.75rem 0.5rem 1.75rem',
+                background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+                borderLeft: '2px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '0 4px 4px 0'
               }}>
                 <span style={{
                   position: 'absolute',
-                  left: 0,
-                  top: 0
+                  left: '0.5rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '0.75rem',
+                  filter: 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.5))'
                 }}>→</span>
                 {factor.context}
               </div>
@@ -488,20 +612,26 @@ const NHLMatchupIntelligence = ({
 
       {/* HIDDEN FACTORS - POSSESSION & CONTROL */}
       <div style={{
-        padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
-        background: 'rgba(59, 130, 246, 0.08)',
-        borderTop: '1px solid rgba(59, 130, 246, 0.2)'
+        padding: isMobile ? '0.875rem 1rem' : '1.125rem 1.5rem',
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(96, 165, 250, 0.08) 100%)',
+        borderTop: '1px solid rgba(59, 130, 246, 0.25)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
       }}>
         <div style={{
-          fontSize: '0.75rem',
-          fontWeight: '700',
+          fontSize: '0.813rem',
+          fontWeight: '800',
           color: '#3B82F6',
-          marginBottom: '0.625rem',
+          marginBottom: '0.75rem',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.375rem'
+          gap: '0.5rem',
+          textShadow: '0 0 16px rgba(59, 130, 246, 0.5)',
+          letterSpacing: '0.05em'
         }}>
-          <span>🔍</span>
+          <span style={{
+            fontSize: '1.063rem',
+            filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.7))'
+          }}>🔍</span>
           <span>CONTROL & POSSESSION</span>
         </div>
 
@@ -731,32 +861,64 @@ const NHLMatchupIntelligence = ({
         </div>
       )}
 
-      {/* THE EDGE - COMPACT WITH DYNAMIC CONTEXT */}
+      {/* THE EDGE - ENHANCED HERO SECTION */}
       {totalEdge > 0.2 && (
         <div style={{
-          padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
-          background: isValuePlay ? 'rgba(212, 175, 55, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-          borderTop: isValuePlay ? '1px solid rgba(212, 175, 55, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)'
+          padding: isMobile ? '1rem 1rem' : '1.25rem 1.5rem',
+          background: isValuePlay 
+            ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(251, 191, 36, 0.10) 50%, rgba(212, 175, 55, 0.08) 100%)' 
+            : 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.10) 50%, rgba(16, 185, 129, 0.08) 100%)',
+          borderTop: isValuePlay ? '2px solid rgba(212, 175, 55, 0.4)' : '2px solid rgba(16, 185, 129, 0.4)',
+          boxShadow: isValuePlay 
+            ? '0 -4px 20px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+            : '0 -4px 20px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
+          {/* Subtle background pattern */}
           <div style={{
-            fontSize: '0.75rem',
-            fontWeight: '700',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle at top right, rgba(255, 255, 255, 0.05) 0%, transparent 70%)',
+            pointerEvents: 'none'
+          }} />
+          
+          <div style={{
+            fontSize: '0.875rem',
+            fontWeight: '900',
             color: isValuePlay ? '#D4AF37' : '#10B981',
-            marginBottom: '0.625rem',
+            marginBottom: '0.875rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.375rem'
+            gap: '0.625rem',
+            textShadow: isValuePlay 
+              ? '0 0 24px rgba(212, 175, 55, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3)' 
+              : '0 0 24px rgba(16, 185, 129, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3)',
+            letterSpacing: '0.08em',
+            position: 'relative'
           }}>
-            <span>💡</span>
+            <span style={{
+              fontSize: '1.25rem',
+              filter: isValuePlay 
+                ? 'drop-shadow(0 0 12px rgba(212, 175, 55, 0.8))' 
+                : 'drop-shadow(0 0 12px rgba(16, 185, 129, 0.8))'
+            }}>💡</span>
             <span>THE PLAY</span>
             {isValuePlay && (
               <span style={{
-                fontSize: '0.625rem',
-                padding: '0.125rem 0.375rem',
-                background: 'rgba(212, 175, 55, 0.2)',
-                border: '1px solid rgba(212, 175, 55, 0.4)',
-                borderRadius: '4px',
-                color: '#D4AF37'
+                fontSize: '0.688rem',
+                padding: '0.25rem 0.625rem',
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(251, 191, 36, 0.2) 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.5)',
+                borderRadius: '6px',
+                color: '#FCD34D',
+                fontWeight: '800',
+                textShadow: '0 0 12px rgba(212, 175, 55, 0.8)',
+                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                letterSpacing: '0.1em'
               }}>
                 VALUE
               </span>
@@ -845,36 +1007,84 @@ const NHLMatchupIntelligence = ({
             )}
           </div>
 
-          {/* Net edge */}
+          {/* Net edge - HERO BOX */}
           <div style={{
-            padding: '0.625rem',
-            background: isValuePlay ? 'rgba(212, 175, 55, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-            borderRadius: '6px',
-            border: isValuePlay ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
-            marginBottom: '0.5rem'
+            padding: '0.875rem 1rem',
+            background: isValuePlay 
+              ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(251, 191, 36, 0.15) 100%)' 
+              : 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%)',
+            borderRadius: '10px',
+            border: isValuePlay ? '2px solid rgba(212, 175, 55, 0.5)' : '2px solid rgba(16, 185, 129, 0.5)',
+            marginBottom: '0.75rem',
+            boxShadow: isValuePlay 
+              ? '0 4px 20px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
+              : '0 4px 20px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
+            {/* Shine effect */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: '-100%',
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%)',
+              animation: 'shine 3s infinite'
+            }} />
+            
             {recommendedPlay ? (
-              <div>
+              <div style={{ position: 'relative' }}>
                 <div style={{
-                  fontSize: '0.813rem',
+                  fontSize: '0.938rem',
                   fontWeight: '900',
-                  color: isValuePlay ? '#D4AF37' : '#10B981',
-                  marginBottom: '0.375rem'
+                  color: isValuePlay ? '#FCD34D' : '#10B981',
+                  marginBottom: '0.5rem',
+                  textShadow: isValuePlay 
+                    ? '0 0 20px rgba(212, 175, 55, 0.8), 0 2px 4px rgba(0, 0, 0, 0.4)' 
+                    : '0 0 20px rgba(16, 185, 129, 0.8), 0 2px 4px rgba(0, 0, 0, 0.4)',
+                  letterSpacing: '0.02em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}>
-                  🎯 {recommendedPlay.team} {recommendedPlay.type === 'moneyline' ? 'ML' : recommendedPlay.type === 'spread' ? recommendedPlay.line : `${recommendedPlay.type.toUpperCase()} ${recommendedPlay.line}`} ({recommendedPlay.odds > 0 ? '+' : ''}{recommendedPlay.odds})
+                  <span style={{
+                    fontSize: '1.125rem',
+                    filter: isValuePlay 
+                      ? 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.8))' 
+                      : 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.8))'
+                  }}>🎯</span>
+                  <span>{recommendedPlay.team} {recommendedPlay.type === 'moneyline' ? 'ML' : recommendedPlay.type === 'spread' ? recommendedPlay.line : `${recommendedPlay.type.toUpperCase()} ${recommendedPlay.line}`}</span>
+                  <span style={{
+                    padding: '0.25rem 0.5rem',
+                    background: isValuePlay 
+                      ? 'rgba(212, 175, 55, 0.3)' 
+                      : 'rgba(16, 185, 129, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '0.813rem',
+                    border: isValuePlay 
+                      ? '1px solid rgba(212, 175, 55, 0.5)' 
+                      : '1px solid rgba(16, 185, 129, 0.5)'
+                  }}>
+                    ({recommendedPlay.odds > 0 ? '+' : ''}{recommendedPlay.odds})
+                  </span>
                 </div>
                 <div style={{
-                  fontSize: '0.688rem',
-                  color: 'var(--color-text-secondary)'
+                  fontSize: '0.75rem',
+                  color: 'var(--color-text-secondary)',
+                  fontWeight: '600',
+                  opacity: 0.9
                 }}>
                   {isValuePlay ? `Market inefficiency: +${(bestEdge.evPercent * 0.1).toFixed(2)} value edge` : `Analytical edge: +${totalEdge.toFixed(2)} goals`}
                 </div>
               </div>
             ) : (
               <div style={{
-                fontSize: '0.813rem',
+                fontSize: '0.938rem',
                 fontWeight: '900',
-                color: '#10B981'
+                color: '#10B981',
+                textShadow: '0 0 20px rgba(16, 185, 129, 0.8)',
+                position: 'relative'
               }}>
                 {edgeFavoredTeam} +{totalEdge.toFixed(2)} goals
               </div>
@@ -929,7 +1139,8 @@ const NHLMatchupIntelligence = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
