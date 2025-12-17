@@ -10,6 +10,8 @@ const NHLMatchupIntelligence = ({
   statsAnalyzer,
   bestEdge,
   firebaseBets,
+  awayGoalie,
+  homeGoalie,
   isMobile = false 
 }) => {
   if (!game || !dataProcessor || !statsAnalyzer) {
@@ -109,11 +111,9 @@ const NHLMatchupIntelligence = ({
   const awayPPRank = statsAnalyzer.getLeagueRank(awayTeam, 'highDangerxGoalsFor', '5on4', true);
   const homePPRank = statsAnalyzer.getLeagueRank(homeTeam, 'highDangerxGoalsFor', '5on4', true);
 
-  // Goalie data
-  const awayGoalie = game.goalies?.away;
-  const homeGoalie = game.goalies?.home;
-  const awayGSAE = awayGoalie?.gsae || 0;
-  const homeGSAE = homeGoalie?.gsae || 0;
+  // Goalie data (now passed as props)
+  const awayGSAE = awayGoalie?.gsae ? parseFloat(awayGoalie.gsae) : 0;
+  const homeGSAE = homeGoalie?.gsae ? parseFloat(homeGoalie.gsae) : 0;
   const goalieEdge = awayGSAE - homeGSAE;
   const leagueGSAE = 1.00;
 

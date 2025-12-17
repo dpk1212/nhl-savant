@@ -3913,6 +3913,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 statsAnalyzer={statsAnalyzer}
                 bestEdge={bestEdge}
                 firebaseBets={firebaseBets}
+                awayGoalie={getGoalieForTeam(game.awayTeam)}
+                homeGoalie={getGoalieForTeam(game.homeTeam)}
                 isMobile={isMobile}
               />
               </StepSection>
