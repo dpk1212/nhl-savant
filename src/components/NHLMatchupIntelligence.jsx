@@ -1235,23 +1235,74 @@ const NHLMatchupIntelligence = ({
                   </span>
                 </div>
                 <div style={{
-                  fontSize: '0.75rem',
+                  fontSize: '0.688rem',
                   color: 'var(--color-text-secondary)',
                   fontWeight: '600',
-                  opacity: 0.9
+                  opacity: 0.9,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '0.5rem'
                 }}>
-                  {isValuePlay ? `Market inefficiency: +${(bestEdge.evPercent * 0.1).toFixed(2)} value edge` : `Analytical edge: +${totalEdge.toFixed(2)} goals`}
+                  TYPE: {isValuePlay ? 'Value Play (Market Mispricing)' : 'Quality Play (Analytical Dominance)'}
+                </div>
+                
+                {/* KEY FACTORS */}
+                <div style={{
+                  fontSize: '0.688rem',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  lineHeight: '1.6',
+                  paddingTop: '0.5rem',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div style={{ fontWeight: '700', marginBottom: '0.375rem', color: 'rgba(255, 255, 255, 0.9)' }}>KEY FACTORS:</div>
+                  {isValuePlay ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <div>• Market undervalues {recommendedPlay.team} at {recommendedPlay.odds > 0 ? '+' : ''}{recommendedPlay.odds}</div>
+                      {Math.abs(regressionEdge) > 0.1 && (
+                        <div>• {edgeFavoredTeam} shooting {regressionEdge > 0 ? 'above' : 'below'} talent (regression risk)</div>
+                      )}
+                      {possessionEdgeTeam === recommendedPlay.team && possessionEdge > 0.05 && (
+                        <div>• {recommendedPlay.team} controls possession ({(possessionEdgeTeam === awayTeam ? awayCorsi : homeCorsi).toFixed(1)}% Corsi)</div>
+                      )}
+                      {offenseEdgeTeam !== recommendedPlay.team && offenseEdge > 0.1 && (
+                        <div>• {edgeFavoredTeam} has +{offenseEdge.toFixed(2)}g offensive edge</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {offenseEdgeTeam === recommendedPlay.team && offenseEdge > 0.05 && (
+                        <div>• Superior offense (+{offenseEdge.toFixed(2)}g advantage)</div>
+                      )}
+                      {specialTeamsEdgeTeam === recommendedPlay.team && specialTeamsEdge > 0.05 && (
+                        <div>• Elite special teams (+{specialTeamsEdge.toFixed(2)}g advantage)</div>
+                      )}
+                      {goalieEdgeTeam === recommendedPlay.team && goalieEdgeImpact > 0.03 && (
+                        <div>• Superior goaltending (+{goalieEdgeImpact.toFixed(2)}g advantage)</div>
+                      )}
+                      <div>• Total analytical edge: +{totalEdge.toFixed(2)} goals</div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
-              <div style={{
-                fontSize: '0.938rem',
-                fontWeight: '900',
-                color: '#10B981',
-                textShadow: '0 0 20px rgba(16, 185, 129, 0.8)',
-                position: 'relative'
-              }}>
-                {edgeFavoredTeam} +{totalEdge.toFixed(2)} goals
+              // No recommendation - show neutral analytical edge
+              <div style={{ position: 'relative' }}>
+                <div style={{
+                  fontSize: '0.938rem',
+                  fontWeight: '900',
+                  color: '#10B981',
+                  textShadow: '0 0 20px rgba(16, 185, 129, 0.8)',
+                  marginBottom: '0.5rem'
+                }}>
+                  {edgeFavoredTeam} +{totalEdge.toFixed(2)} goals
+                </div>
+                <div style={{
+                  fontSize: '0.688rem',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  fontWeight: '600'
+                }}>
+                  Analytical favorite based on matchup factors
+                </div>
               </div>
             )}
           </div>
