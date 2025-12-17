@@ -44,30 +44,49 @@ const NHLMatchupIntelligence = ({
   // Get high-danger metrics for shot quality
   const awayHighDanger = statsAnalyzer.getHighDangerMetrics(awayTeam, '5on5');
   const homeHighDanger = statsAnalyzer.getHighDangerMetrics(homeTeam, '5on5');
-  const awayHDPercent = awayHighDanger?.highDangerShotAttemptsPercent || 0;
-  const homeHDPercent = homeHighDanger?.highDangerShotAttemptsPercent || 0;
-  const shotQualityDiff = ((awayHDPercent - homeHDPercent) / ((awayHDPercent + homeHDPercent) / 2)) * 100;
+  
+  // Calculate high-danger shot percentage (HD shots / total shots)
+  const awayTotalShots = away5v5.shotAttemptsFor || 1;
+  const homeTotalShots = home5v5.shotAttemptsFor || 1;
+  const awayHDPercent = ((awayHighDanger?.hdShotsFor || 0) / awayTotalShots) * 100;
+  const homeHDPercent = ((homeHighDanger?.hdShotsFor || 0) / homeTotalShots) * 100;
+  const shotQualityDiff = awayHDPercent - homeHDPercent;
 
   // Get possession metrics for shot volume
-  const awayCorsi = away5v5.corsiForPercent || 50;
-  const homeCorsi = home5v5.corsiForPercent || 50;
+  // CSV stores corsiPercentage as a percentage (e.g., 51.5 = 51.5%)
+  const awayCorsi = away5v5.corsiPercentage || 50;
+  const homeCorsi = home5v5.corsiPercentage || 50;
   const shotVolumeDiff = awayCorsi - homeCorsi;
 
-  // Get special teams
+  // Get special teams - use high-danger xG per 60
   const awayPP = statsAnalyzer.getHighDangerMetrics(awayTeam, '5on4');
   const homePP = statsAnalyzer.getHighDangerMetrics(homeTeam, '5on4');
   const awayPK = statsAnalyzer.getHighDangerMetrics(awayTeam, '4on5');
   const homePK = statsAnalyzer.getHighDangerMetrics(homeTeam, '4on5');
   
-  const awayPPPercent = awayPP?.goalsPer60 || 0;
-  const homePPPercent = homePP?.goalsPer60 || 0;
-  const awayPKPercent = awayPK?.xGoalsAgainstPer60 || 0;
-  const homePKPercent = homePK?.xGoalsAgainstPer60 || 0;
+  // Use hdXgfPer60 for power play offense and hdXgaPer60 for penalty kill defense
+  const awayPPScore = awayPP?.hdXgfPer60 || 0;
+  const homePPScore = homePP?.hdXgfPer60 || 0;
+  const awayPKScore = awayPK?.hdXgaPer60 || 0;
+  const homePKScore = homePK?.hdXgaPer60 || 0;
   
-  // Special teams score: (PP + PK defense)
-  const awaySTScore = awayPPPercent - awayPKPercent;
-  const homeSTScore = homePPPercent - homePKPercent;
-  const specialTeamsDiff = ((awaySTScore - homeSTScore) / ((Math.abs(awaySTScore) + Math.abs(homeSTScore)) / 2)) * 100;
+  // Special teams score: (PP offense) - (PK goals against)
+  const awaySTScore = awayPPScore - awayPKScore;
+  const homeSTScore = homePPScore - homePKScore;
+  const specialTeamsDiff = awaySTScore - homeSTScore;
+
+  // Debug logging
+  console.log('🔍 NHL Matchup Intelligence Data:', {
+    awayTeam,
+    homeTeam,
+    xGF: { away: awayXGF.toFixed(2), home: homeXGF.toFixed(2) },
+    xGA: { away: awayXGA.toFixed(2), home: homeXGA.toFixed(2) },
+    shotQuality: { away: awayHDPercent.toFixed(1) + '%', home: homeHDPercent.toFixed(1) + '%', diff: shotQualityDiff.toFixed(1) },
+    shotVolume: { away: awayCorsi.toFixed(1) + '%', home: homeCorsi.toFixed(1) + '%', diff: shotVolumeDiff.toFixed(1) },
+    specialTeams: { away: awaySTScore.toFixed(1), home: homeSTScore.toFixed(1), diff: specialTeamsDiff.toFixed(1) },
+    goalie: { away: awayGSAE.toFixed(1), home: homeGSAE.toFixed(1), diff: goalieEdge.toFixed(1) },
+    edgeScore: calculateEdgeScore()
+  });
 
   // Get goalie data
   const awayGoalie = game.goalies?.away;
