@@ -129,7 +129,7 @@ export class EdgeCalculator {
    * @param {number} marketOdds - American odds (e.g., +150, -180)
    * @returns {object} Calibrated data with quality metrics
    */
-  calibrateWithMoneyPuckAndDRatings(moneyPuckProb, dratingsProb, marketOdds) {
+  calibrateWithDRatings(moneyPuckProb, dratingsProb, marketOdds) {
     const marketProb = this.dataProcessor.oddsToProbability(marketOdds);
     
     // Calculate how much the two models disagree
