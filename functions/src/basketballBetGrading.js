@@ -237,10 +237,13 @@ exports.updateBasketballBetResults = onSchedule({
 
         // Calculate outcome (WIN/LOSS) using the CORRECTED scores
         const outcome = calculateOutcome(bet.game, betAwayScore, betHomeScore, bet.bet);
-        const profit = calculateProfit(outcome, bet.bet.odds);
+        
+        // ✅ USE STORED KELLY UNITS from prediction
+        const units = bet.prediction?.unitSize || 1.0;
+        const profit = calculateProfit(outcome, bet.bet.odds, units);
 
         logger.info(
-          `   RESULT: ${bet.bet.pick} → ${outcome} (${profit > 0 ? "+" : ""}${profit.toFixed(2)}u)`
+          `   RESULT: ${bet.bet.pick} → ${outcome} (${profit > 0 ? "+" : ""}${profit.toFixed(2)}u on ${units}u risked)`
         );
 
         // Update bet in Firestore with CORRECTED scores
@@ -254,6 +257,7 @@ exports.updateBasketballBetResults = onSchedule({
             "result.winner": betAwayScore > betHomeScore ? bet.game.awayTeam : bet.game.homeTeam,
             "result.outcome": outcome,
             "result.profit": profit,
+            "result.units": units, // ✅ Store units risked
             "result.fetched": true,
             "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
             "result.source": "NCAA_API",
@@ -353,34 +357,37 @@ function calculateOutcome(betGameInfo, awayScore, homeScore, bet) {
 }
 
 /**
- * Helper: Calculate profit (1 unit flat bet)
+ * Helper: Calculate profit based on units risked
  * 
  * @param {string} outcome - 'WIN', 'LOSS', or 'PUSH'
  * @param {number} odds - American odds (e.g. -110, +150)
+ * @param {number} units - Units risked (default 1.0)
  * @returns {number} - Profit in units
  */
-function calculateProfit(outcome, odds) {
+function calculateProfit(outcome, odds, units = 1.0) {
   // ROBUSTNESS: Validate inputs
   if (!outcome || typeof odds !== 'number') {
     logger.error(`❌ Invalid profit calculation: outcome="${outcome}", odds=${odds}`);
-    return -1;
+    return -units;
   }
   
-  if (outcome === "LOSS") return -1;
+  if (outcome === "LOSS") return -units;
   if (outcome === "PUSH") return 0;
 
-  // WIN
+  // WIN - Calculate profit based on actual units risked
   if (odds < 0) {
     // Negative odds: Risk |odds| to win 100
-    // Profit = 100 / |odds|
-    return 100 / Math.abs(odds);
+    // Profit per unit = 100 / |odds|
+    const profitPerUnit = 100 / Math.abs(odds);
+    return units * profitPerUnit;
   } else if (odds > 0) {
     // Positive odds: Risk 100 to win odds
-    // Profit = odds / 100
-    return odds / 100;
+    // Profit per unit = odds / 100
+    const profitPerUnit = odds / 100;
+    return units * profitPerUnit;
   } else {
     logger.error(`❌ Invalid odds: ${odds}`);
-    return -1;
+    return -units;
   }
 }
 

@@ -66,15 +66,17 @@ let confidenceWeights = null;
  * Now includes dynamic confidence-based unit sizing
  */
 async function saveBetToFirebase(db, game, prediction) {
-  // Calculate dynamic units using live ROI weights
+  // ✅ USE KELLY UNITS from prediction (calculated by BasketballEdgeCalculator)
+  // The calculator already computed optimal Kelly units based on EV and probability
+  const kellyUnits = prediction.unitSize || 1.0;
+  
+  // Also calculate dynamic units for reference/comparison
   const dynamicResult = calculateDynamicUnits({
     prediction: prediction,
     game: game,
     bet: { odds: prediction.bestOdds, team: prediction.bestTeam }
   }, confidenceWeights);
   
-  // Use dynamic units instead of static
-  const dynamicUnits = dynamicResult.units;
   const confidenceTier = dynamicResult.tier;
   const confidenceScore = dynamicResult.score;
   const date = new Date().toISOString().split('T')[0];
@@ -105,17 +107,18 @@ async function saveBetToFirebase(db, game, prediction) {
         grade: prediction.grade,
         qualityGrade: prediction.grade,
         rating: prediction.grade,
-        // Dynamic confidence-based units (matches UI calculation)
-        unitSize: dynamicUnits,
+        // ✅ KELLY UNITS (mathematically optimal based on edge/probability)
+        unitSize: kellyUnits,
         confidenceTier: confidenceTier,
         confidenceScore: confidenceScore,
-        patternROI: dynamicResult.patternROI, // NEW: from dynamic weights
+        dynamicUnits: dynamicResult.units, // Store dynamic for reference
+        patternROI: dynamicResult.patternROI,
         oddsRangeName: prediction.oddsRangeName,
-        historicalROI: prediction.historicalROI // Also from dynamic weights now
+        historicalROI: prediction.historicalROI
       },
       barttorvik: prediction.barttorvik || null
     }, { merge: true });
-    console.log(`   ✅ Updated: ${betId} (${dynamicUnits}u - ${confidenceTier})`);
+    console.log(`   ✅ Updated: ${betId} (${kellyUnits}u Kelly) [Dynamic: ${dynamicResult.units}u]`);
     return betId;
   }
   
@@ -145,11 +148,11 @@ async function saveBetToFirebase(db, game, prediction) {
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // DYNAMIC CONFIDENCE-BASED UNIT ALLOCATION
-      unitSize: dynamicUnits,
+      // ✅ KELLY UNITS (mathematically optimal)
+      unitSize: kellyUnits,
       confidenceTier: confidenceTier,
       confidenceScore: confidenceScore,
-      staticUnitSize: prediction.unitSize, // Keep old method for comparison
+      dynamicUnits: dynamicResult.units, // Store dynamic for comparison
       oddsRange: prediction.oddsRange,
       oddsRangeName: prediction.oddsRangeName,
       historicalROI: prediction.historicalROI,
@@ -196,7 +199,7 @@ async function saveBetToFirebase(db, game, prediction) {
   await setDoc(betRef, betData);
   console.log(`   ✅ Saved: ${betId}`);
   console.log(`      ${prediction.bestOdds} (${prediction.oddsRangeName}) | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade}`);
-  console.log(`      🎯 Dynamic Units: ${dynamicUnits}u (${confidenceTier}) | Score: ${confidenceScore}`);
+  console.log(`      🎯 Kelly Units: ${kellyUnits}u (${confidenceTier}) | Dynamic: ${dynamicResult.units}u | Score: ${confidenceScore}`);
   
   return betId;
 }
