@@ -365,7 +365,7 @@ async function fetchAllData() {
     if (results.playerProps) {
       console.log('  ✓ public/player_props.json (for Top Scorers page)');
     }
-    console.log(`\nGoalie Status: ${countConfirmedGoalies(startingGoalies)}`);
+    console.log(`\nGoalie Status: ${countConfirmedGoalies(finalGoalies)}`);
     console.log(`MoneyPuck Predictions: ${moneyPuckPredictions.length} games`);
     const finalDratingsPredictions = results.dratingsPredictions ? JSON.parse(await fs.readFile(join(__dirname, '../public/dratings_predictions.json'), 'utf8')).predictions : [];
     console.log(`DRatings Predictions: ${finalDratingsPredictions.length} games`);
