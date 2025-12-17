@@ -182,6 +182,7 @@ export class EdgeCalculator {
       
       // For transparency and learning
       yourModelProb: moneyPuckProb,        // MoneyPuck prediction (70% weight)
+      moneyPuckProb: moneyPuckProb,        // MoneyPuck probability (for isPreliminary flag)
       dratingsProb: dratingsProb,          // DRatings' prediction (30% weight)
       marketProb: marketProb,              // Market's implied probability
       correction: correction,              // How much the models disagreed
