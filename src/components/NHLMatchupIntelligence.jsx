@@ -202,6 +202,17 @@ const NHLMatchupIntelligence = ({
   const confidenceLevel = getConfidenceLevel();
 
   // The Four Factors - ENHANCED WITH STORYTELLING
+  //  Goalie Metrics - OPTION C ENHANCED
+  const awayGoalieRank = awayGSAE > 10 ? 'Elite' : awayGSAE > 3 ? 'Above Average' : awayGSAE > -3 ? 'Average' : 'Below Average';
+  const homeGoalieRank = homeGSAE > 10 ? 'Elite' : homeGSAE > 3 ? 'Above Average' : homeGSAE > -3 ? 'Average' : 'Below Average';
+  const goalieAdvantageTeam = Math.abs(goalieEdge) > 0.3 ? (goalieEdge > 0 ? awayTeam : homeTeam) : null;
+  const goalieImpactGoals = Math.abs(goalieEdge * 0.1).toFixed(2); // 0.1 multiplier for goal impact
+  
+  // HD Save % difference
+  const awayHDSv = awayGoalie?.hdSavePct ? parseFloat(awayGoalie.hdSavePct) : 0;
+  const homeHDSv = homeGoalie?.hdSavePct ? parseFloat(homeGoalie.hdSavePct) : 0;
+  const hdSvDiff = Math.abs(awayHDSv - homeHDSv);
+  
   const factors = [
     {
       icon: '🎯',
@@ -279,26 +290,7 @@ const NHLMatchupIntelligence = ({
         { label: '📊 Quality', away: `${awayPPHDPercent.toFixed(0)}%`, home: `${homePPHDPercent.toFixed(0)}%`, suffix: 'HD shots' },
         { label: '🎯 Impact', value: `= ${Math.abs(specialTeamsDiff * 0.15).toFixed(2)} goals` }
       ]
-    },
-    {
-      icon: '🥅',
-      name: 'WHO HAS THE BETTER NETMINDER?',
-      subtitle: '',
-      awayValue: awayGSAE,
-      homeValue: homeGSAE,
-      leagueAvg: leagueGSAE,
-      percentDiff: ((Math.abs(goalieEdge) / leagueGSAE) * 100).toFixed(1),
-      advantage: Math.abs(goalieEdge) > 0.3 ? (goalieEdge > 0 ? awayTeam : homeTeam) : null,
-      significance: Math.abs(goalieEdge) > 0.5 ? 'high' : Math.abs(goalieEdge) > 0.3 ? 'moderate' : 'low',
-      format: (val) => val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2),
-      keyInsight: Math.abs(goalieEdge) > 0.3
-        ? `${goalieEdge > 0 ? awayGoalie?.name || awayTeam : homeGoalie?.name || homeTeam} (${Math.max(awayGSAE, homeGSAE).toFixed(2)} GSAx) saves +${Math.abs(goalieEdge * 0.15).toFixed(2)}g vs average`
-        : 'Even goaltending - not a deciding factor',
-      context: Math.abs(goalieEdge) > 0.3
-        ? `${goalieEdge > 0 ? awayGoalie?.name || awayTeam : homeGoalie?.name || homeTeam} stops ${((Math.abs(goalieEdge) / leagueGSAE) * 100).toFixed(0)}% more shots than average goalie = +${Math.abs(goalieEdge * 0.15).toFixed(2)} goals saved`
-        : 'Evenly matched goaltending - no clear advantage in net',
-      stats: []
-    }
+    // GOALTENDING - Removed from factors array, will be custom rendered
   ];
 
   return (
@@ -689,6 +681,235 @@ const NHLMatchupIntelligence = ({
             )}
           </div>
         ))}
+
+        {/* GOALTENDING - OPTION C CUSTOM SECTION */}
+        {(awayGoalie || homeGoalie) && (
+          <div style={{ 
+            marginTop: '1.25rem',
+            paddingTop: '1.25rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.05)'
+          }}>
+            {/* Header Row */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.625rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                fontWeight: '800',
+                color: 'var(--color-text-primary)'
+              }}>
+                <span style={{ 
+                  fontSize: '1.063rem',
+                  filter: 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))'
+                }}>🥅</span>
+                <span style={{ letterSpacing: '0.05em' }}>WHO HAS THE BETTER NETMINDER?</span>
+              </div>
+              {goalieAdvantageTeam && (
+                <div style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  color: Math.abs(goalieEdge) > 0.5 ? '#10B981' : '#F59E0B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.25rem 0.5rem',
+                  background: Math.abs(goalieEdge) > 0.5 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                  borderRadius: '6px',
+                  border: Math.abs(goalieEdge) > 0.5 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+                  textShadow: Math.abs(goalieEdge) > 0.5 ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none'
+                }}>
+                  {goalieAdvantageTeam} +{Math.abs(goalieEdge).toFixed(1)}
+                  {Math.abs(goalieEdge) > 0.5 && <span style={{ 
+                    fontSize: '0.938rem',
+                    filter: 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.6))'
+                  }}>⚡</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Goalie Comparison Bars */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '0.625rem'
+            }}>
+              <span style={{
+                fontSize: '0.813rem',
+                fontWeight: '800',
+                color: goalieEdge > 0 ? '#0EA5E9' : 'var(--color-text-secondary)',
+                minWidth: '50px',
+                textAlign: 'right',
+                textShadow: goalieEdge > 0 ? '0 0 12px rgba(14, 165, 233, 0.5)' : 'none'
+              }}>
+                +{awayGSAE.toFixed(2)}
+              </span>
+              
+              <div style={{ flex: 1, position: 'relative', height: '32px' }}>
+                {/* Center line */}
+                <div style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: 0,
+                  bottom: 0,
+                  width: '2px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  transform: 'translateX(-50%)'
+                }} />
+                
+                {/* Away bar (left side) */}
+                <div style={{
+                  position: 'absolute',
+                  right: '50%',
+                  top: '2px',
+                  height: '28px',
+                  width: awayGSAE && homeGSAE ? `${(Math.abs(awayGSAE) / (Math.abs(awayGSAE) + Math.abs(homeGSAE)) * 50)}%` : '0%',
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(14, 165, 233, 0.3) 50%, rgba(14, 165, 233, 0.5) 100%)',
+                  border: '1px solid rgba(14, 165, 233, 0.4)',
+                  borderRadius: '6px 0 0 6px',
+                  borderRight: 'none',
+                  boxShadow: goalieEdge > 0 ? '0 0 16px rgba(14, 165, 233, 0.4)' : 'none',
+                  transition: 'all 0.4s ease-out'
+                }}>
+                  {goalieEdge > 0 && Math.abs(goalieEdge) > 0.5 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
+                      animation: 'shimmer 2s infinite'
+                    }} />
+                  )}
+                </div>
+
+                {/* Home bar (right side) */}
+                <div style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '2px',
+                  height: '28px',
+                  width: awayGSAE && homeGSAE ? `${(Math.abs(homeGSAE) / (Math.abs(awayGSAE) + Math.abs(homeGSAE)) * 50)}%` : '0%',
+                  background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.5) 0%, rgba(16, 185, 129, 0.3) 50%, transparent 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  borderRadius: '0 6px 6px 0',
+                  borderLeft: 'none',
+                  boxShadow: goalieEdge < 0 ? '0 0 16px rgba(16, 185, 129, 0.4)' : 'none',
+                  transition: 'all 0.4s ease-out'
+                }}>
+                  {goalieEdge < 0 && Math.abs(goalieEdge) > 0.5 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
+                      animation: 'shimmer 2s infinite'
+                    }} />
+                  )}
+                </div>
+              </div>
+
+              <span style={{
+                fontSize: '0.813rem',
+                fontWeight: '800',
+                color: goalieEdge < 0 ? '#10B981' : 'var(--color-text-secondary)',
+                minWidth: '50px',
+                textShadow: goalieEdge < 0 ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none'
+              }}>
+                +{homeGSAE.toFixed(2)}
+              </span>
+            </div>
+
+            {/* Goalie Details */}
+            <div style={{
+              fontSize: '0.688rem',
+              color: 'var(--color-text-secondary)',
+              marginBottom: '0.5rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: '1rem'
+            }}>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={{ fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '0.25rem' }}>
+                  {awayGoalie?.name || awayTeam} ({awayTeam})
+                </div>
+                {awayGoalie?.gamesPlayed && (
+                  <div>{awayGoalie.gamesPlayed} GP • #{awayGoalieRank} • {awayGoalie.savePct || '0.0'}% Sv%</div>
+                )}
+              </div>
+              <div style={{ flex: 1, textAlign: 'right' }}>
+                <div style={{ fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '0.25rem' }}>
+                  {homeGoalie?.name || homeTeam} ({homeTeam})
+                </div>
+                {homeGoalie?.gamesPlayed && (
+                  <div>{homeGoalie.gamesPlayed} GP • #{homeGoalieRank} • {homeGoalie.savePct || '0.0'}% Sv%</div>
+                )}
+              </div>
+            </div>
+
+            {/* Key Insight */}
+            {Math.abs(goalieEdge) > 0.3 && (
+              <div style={{
+                fontSize: '0.688rem',
+                color: '#FCD34D',
+                fontWeight: '700',
+                padding: '0.5rem 0.75rem',
+                background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.12) 0%, rgba(251, 191, 36, 0.08) 100%)',
+                borderLeft: '2px solid rgba(212, 175, 55, 0.5)',
+                borderRadius: '0 6px 6px 0',
+                marginBottom: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                textShadow: '0 0 10px rgba(212, 175, 55, 0.3)'
+              }}>
+                <span style={{
+                  fontSize: '0.813rem',
+                  filter: 'drop-shadow(0 0 6px rgba(212, 175, 55, 0.6))'
+                }}>⭐</span>
+                <span style={{ flex: 1 }}>
+                  {goalieEdge > 0 ? awayGoalie?.name : homeGoalie?.name} ({goalieEdge > 0 ? awayTeam : homeTeam}, #{goalieEdge > 0 ? awayGoalieRank : homeGoalieRank}) 
+                  {' '}+{Math.abs(goalieEdge).toFixed(1)} GSAE vs opponent = +{goalieImpactGoals}g impact
+                </span>
+              </div>
+            )}
+
+            {/* Context with HD Save % */}
+            {Math.abs(goalieEdge) > 0.3 && hdSvDiff > 5 && (
+              <div style={{
+                fontSize: '0.688rem',
+                color: 'rgba(16, 185, 129, 0.95)',
+                fontStyle: 'italic',
+                paddingLeft: '1.5rem',
+                position: 'relative',
+                marginTop: '0.25rem',
+                padding: '0.5rem 0.75rem 0.5rem 1.75rem',
+                background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+                borderLeft: '2px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '0 4px 4px 0'
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  left: '0.5rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '0.75rem'
+                }}>→</span>
+                {goalieEdge > 0 ? awayGoalie?.name : homeGoalie?.name} stops {hdSvDiff.toFixed(1)}% more high-danger shots 
+                ({goalieEdge > 0 ? awayHDSv.toFixed(1) : homeHDSv.toFixed(1)}% vs {goalieEdge > 0 ? homeHDSv.toFixed(1) : awayHDSv.toFixed(1)}% HD Sv%) = huge advantage in net
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* HIDDEN FACTORS - POSSESSION & CONTROL */}
