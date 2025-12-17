@@ -2378,8 +2378,10 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const { scores: liveScores} = useLiveScores(); // Real-time live scores from Firestore
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
   const [goalieProcessor, setGoalieProcessor] = useState(null);
-  const [moneyPuckPredictions, setMoneyPuckPredictions] = useState(null); // MoneyPuck calibration data
+  const [moneyPuckPredictions, setMoneyPuckPredictions] = useState(null); // MoneyPuck calibration data (DEPRECATED)
   const [moneyPuckLoading, setMoneyPuckLoading] = useState(true); // Track MoneyPuck loading state
+  const [dratingsPredictions, setDRatingsPredictions] = useState(null); // DRatings calibration data (PRIMARY)
+  const [dratingsLoading, setDRatingsLoading] = useState(true); // Track DRatings loading state
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
@@ -2580,7 +2582,24 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load MoneyPuck predictions for model calibration
+  // Load DRatings predictions for model calibration (PRIMARY)
+  useEffect(() => {
+    setDRatingsLoading(true);
+    fetch('/dratings_predictions.json')
+      .then(res => res.json())
+      .then(data => {
+        setDRatingsPredictions(data || null);
+        setDRatingsLoading(false);
+        console.log(`✅ Loaded ${data?.predictions?.length || 0} DRatings predictions for calibration`);
+      })
+      .catch(err => {
+        console.warn('⚠️ DRatings predictions not available - using fallback ensemble:', err.message);
+        setDRatingsPredictions(null);  // Null to trigger fallback
+        setDRatingsLoading(false);  // Mark complete even on error
+      });
+  }, []);
+
+  // Load MoneyPuck predictions for comparison (DEPRECATED - kept for comparison only)
   useEffect(() => {
     setMoneyPuckLoading(true);
     fetch('/moneypuck_predictions.json')
@@ -2588,33 +2607,40 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       .then(data => {
         setMoneyPuckPredictions(data || []);
         setMoneyPuckLoading(false);
-        console.log(`✅ Loaded ${data?.length || 0} MoneyPuck predictions for calibration`);
+        console.log(`✅ Loaded ${data?.length || 0} MoneyPuck predictions (comparison only)`);
       })
       .catch(err => {
-        console.warn('⚠️ MoneyPuck predictions not available - using fallback ensemble:', err.message);
+        console.warn('⚠️ MoneyPuck predictions not available:', err.message);
         setMoneyPuckPredictions([]);  // Empty array (not null) to avoid repeated fetches
         setMoneyPuckLoading(false);  // Mark complete even on error
       });
   }, []);
 
-  // Initialize edge calculator with MoneyPuck calibration
-  // CRITICAL: Wait for MoneyPuck data to load before calculating edges
+  // Initialize edge calculator with DRatings calibration
+  // CRITICAL: Wait for DRatings data to load before calculating edges
   useEffect(() => {
-    if (dataProcessor && oddsData && !moneyPuckLoading) {
-      // DEBUG: Log MoneyPuck integration status
-      console.log('🔍 ==================== MONEYPUCK DEBUG ====================');
-      console.log('🔍 MoneyPuck predictions loaded:', moneyPuckPredictions?.length || 0, 'games');
-      if (moneyPuckPredictions && moneyPuckPredictions.length > 0) {
-        console.log('🔍 MoneyPuck data:', moneyPuckPredictions);
-        moneyPuckPredictions.forEach(pred => {
+    if (dataProcessor && oddsData && !dratingsLoading) {
+      // DEBUG: Log DRatings integration status
+      console.log('🔍 ==================== DRATINGS DEBUG ====================');
+      console.log('🔍 DRatings predictions loaded:', dratingsPredictions?.predictions?.length || 0, 'games');
+      if (dratingsPredictions?.predictions && dratingsPredictions.predictions.length > 0) {
+        console.log('🔍 DRatings data:', dratingsPredictions);
+        dratingsPredictions.predictions.forEach(pred => {
           console.log(`   - ${pred.awayTeam} @ ${pred.homeTeam}: ${(pred.awayProb * 100).toFixed(1)}% / ${(pred.homeProb * 100).toFixed(1)}%`);
         });
       } else {
-        console.log('🔍 ⚠️ No MoneyPuck predictions available - will use market ensemble fallback');
+        console.log('🔍 ⚠️ No DRatings predictions available - will use market ensemble fallback');
       }
       
-      // Pass MoneyPuck predictions for calibration (falls back to market ensemble if unavailable)
-      const calculator = new EdgeCalculator(dataProcessor, oddsData, startingGoalies, moneyPuckPredictions);
+      // Pass DRatings predictions for calibration (falls back to market ensemble if unavailable)
+      const calculator = new EdgeCalculator(
+        dataProcessor, 
+        oddsData, 
+        startingGoalies, 
+        moneyPuckPredictions,  // DEPRECATED - kept for comparison
+        {},  // config object
+        dratingsPredictions    // DRatings predictions (PRIMARY)
+      );
       setEdgeCalculator(calculator);
       
       const edges = calculator.calculateAllEdges();
@@ -2635,7 +2661,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const topOpportunities = calculator.getTopEdges(0.025); // 2.5% minimum (B+ or higher)
       setTopEdges(topOpportunities);
     }
-  }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions, moneyPuckLoading]);
+  }, [dataProcessor, oddsData, startingGoalies, dratingsPredictions, dratingsLoading, moneyPuckPredictions]);
   
   // CRITICAL FIX: Merge live/final games that may not have odds into allEdges
   // This ensures games don't disappear when they go live

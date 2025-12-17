@@ -2,17 +2,18 @@
 import { parseBothFiles } from './oddsTraderParser.js';
 
 export class EdgeCalculator {
-  constructor(dataProcessor, oddsFiles, startingGoalies = null, moneyPuckPredictions = null, config = {}) {
+  constructor(dataProcessor, oddsFiles, startingGoalies = null, moneyPuckPredictions = null, config = {}, dratingsPredictions = null) {
     this.dataProcessor = dataProcessor;
     this.startingGoalies = startingGoalies;
-    this.moneyPuckPredictions = moneyPuckPredictions;
+    this.moneyPuckPredictions = moneyPuckPredictions; // DEPRECATED - Still loaded for comparison
+    this.dratingsPredictions = dratingsPredictions;    // NEW - Primary calibration source
     
-    // MONEYPUCK CALIBRATION CONFIG - November 2025
-    // Use MoneyPuck (established model) to calibrate your predictions
+    // DRATINGS CALIBRATION CONFIG - December 2025
+    // Use DRatings (established model) to calibrate your predictions
     this.config = {
-      // Calibration weights (when MoneyPuck available)
+      // Calibration weights (when DRatings available)
       yourModelWeight: config.yourModelWeight || 0.30,      // 30% your model (new, learning)
-      moneyPuckWeight: config.moneyPuckWeight || 0.70,      // 70% MoneyPuck (established, trusted)
+      dratingsWeight: config.dratingsWeight || 0.70,        // 70% DRatings (established, trusted)
       
       // Fallback ensemble (when MoneyPuck unavailable)
       modelWeight: config.modelWeight || 0.65,              // 65% model vs market
@@ -118,27 +119,27 @@ export class EdgeCalculator {
   }
 
   /**
-   * MONEYPUCK CALIBRATION - Blend your model with MoneyPuck's established predictions
+   * DRATINGS CALIBRATION - Blend your model with DRatings' established predictions
    * 
-   * Strategy: Use MoneyPuck (proven model with years of data) as a reality check
+   * Strategy: Use DRatings (proven model with years of data) as a reality check
    * to calibrate your model's predictions, then find market edges.
    * 
    * @param {number} yourModelProb - Your model's win probability (0-1)
-   * @param {number} moneyPuckProb - MoneyPuck's win probability (0-1)
+   * @param {number} dratingsProb - DRatings' win probability (0-1)
    * @param {number} marketOdds - American odds (e.g., +150, -180)
    * @returns {object} Calibrated data with quality metrics
    */
-  calibrateWithMoneyPuck(yourModelProb, moneyPuckProb, marketOdds) {
+  calibrateWithDRatings(yourModelProb, dratingsProb, marketOdds) {
     const marketProb = this.dataProcessor.oddsToProbability(marketOdds);
     
-    // Calculate how much correction MoneyPuck provides
-    const correction = Math.abs(yourModelProb - moneyPuckProb);
+    // Calculate how much correction DRatings provides
+    const correction = Math.abs(yourModelProb - dratingsProb);
     
-    // ALWAYS blend - MoneyPuck pulls your model towards reality
-    // 70% MoneyPuck (established, trusted) + 30% your model (new, learning)
+    // ALWAYS blend - DRatings pulls your model towards reality
+    // 70% DRatings (established, trusted) + 30% your model (new, learning)
     const calibratedProb = 
       (yourModelProb * this.config.yourModelWeight) + 
-      (moneyPuckProb * this.config.moneyPuckWeight);
+      (dratingsProb * this.config.dratingsWeight);
     
     // Market edge using calibrated prediction
     const marketEdge = calibratedProb - marketProb;
@@ -147,9 +148,9 @@ export class EdgeCalculator {
     const expectedValue = (calibratedProb / marketProb) - 1;
     const evPercent = expectedValue * 100;
     
-    // ENSEMBLE-OPTIMIZED GRADING (Option B: Aggressive for MoneyPuck)
+    // ENSEMBLE-OPTIMIZED GRADING (Option B: Aggressive for DRatings)
     // Grade based on EV% (accounts for odds differences correctly)
-    // Lowered from raw model thresholds to account for MoneyPuck compression (~30-40%)
+    // Lowered from raw model thresholds to account for DRatings compression (~30-40%)
     let qualityGrade;
     if (evPercent >= 5.0) {
       qualityGrade = 'A+';     // ≥5% EV → ELITE (top 10-15% of bets)
@@ -181,30 +182,30 @@ export class EdgeCalculator {
       
       // For transparency and learning
       yourModelProb: yourModelProb,        // Your raw prediction
-      moneyPuckProb: moneyPuckProb,        // MoneyPuck's prediction (QUALITY GATE FLAG)
+      dratingsProb: dratingsProb,          // DRatings' prediction (QUALITY GATE FLAG)
       marketProb: marketProb,              // Market's implied probability
-      correction: correction,              // How much MoneyPuck corrected you
+      correction: correction,              // How much DRatings corrected you
       
       // Backward compatibility aliases
       ensembleProb: calibratedProb,        // Alias for UI
       modelProb: calibratedProb,           // Use calibrated for display
-      agreement: correction                 // "Correction" = "disagreement with MoneyPuck"
+      agreement: correction                 // "Correction" = "disagreement with DRatings"
     };
   }
 
   /**
-   * Find MoneyPuck prediction for a specific game
+   * Find DRatings prediction for a specific game
    * 
    * @param {string} awayTeam - Away team code (e.g., "TOR")
    * @param {string} homeTeam - Home team code (e.g., "BOS")
-   * @returns {object|null} MoneyPuck prediction or null if not found
+   * @returns {object|null} DRatings prediction or null if not found
    */
-  findMoneyPuckPrediction(awayTeam, homeTeam) {
-    if (!this.moneyPuckPredictions || this.moneyPuckPredictions.length === 0) {
+  findDRatingsPrediction(awayTeam, homeTeam) {
+    if (!this.dratingsPredictions || !this.dratingsPredictions.predictions || this.dratingsPredictions.predictions.length === 0) {
       return null;
     }
     
-    return this.moneyPuckPredictions.find(pred => 
+    return this.dratingsPredictions.predictions.find(pred => 
       pred.awayTeam === awayTeam && 
       pred.homeTeam === homeTeam
     );
@@ -304,7 +305,7 @@ export class EdgeCalculator {
   }
 
   // Calculate moneyline edge
-  // MONEYPUCK CALIBRATION: Use MoneyPuck to calibrate predictions, then find market edges
+  // DRATINGS CALIBRATION: Use DRatings to calibrate predictions, then find market edges
   calculateMoneylineEdge(game, awayScore, homeScore) {
     if (!game.moneyline.away || !game.moneyline.home) {
       return { away: null, home: null };
@@ -314,27 +315,27 @@ export class EdgeCalculator {
     const homeWinProb = this.dataProcessor.calculatePoissonWinProb(homeScore, awayScore);
     const awayWinProb = this.dataProcessor.calculatePoissonWinProb(awayScore, homeScore);
     
-    // Find MoneyPuck prediction for this game
-    const moneyPuckPrediction = this.findMoneyPuckPrediction(
+    // Find DRatings prediction for this game
+    const dratingsPrediction = this.findDRatingsPrediction(
       game.awayTeam, 
       game.homeTeam
     );
     
-    // AWAY TEAM: Use MoneyPuck calibration if available
+    // AWAY TEAM: Use DRatings calibration if available
     let awayEnsemble;
-    if (moneyPuckPrediction && this.config.useEnsemble) {
-      // Use MoneyPuck calibration (blend your model with MoneyPuck)
-      awayEnsemble = this.calibrateWithMoneyPuck(
+    if (dratingsPrediction && this.config.useEnsemble) {
+      // Use DRatings calibration (blend your model with DRatings)
+      awayEnsemble = this.calibrateWithDRatings(
         awayWinProb,
-        moneyPuckPrediction.awayProb,
+        dratingsPrediction.awayProb,
         game.moneyline.away
       );
-      console.log(`🎯 ${game.awayTeam}: Your ${(awayWinProb * 100).toFixed(1)}% → MP ${(moneyPuckPrediction.awayProb * 100).toFixed(1)}% → Cal ${(awayEnsemble.calibratedProb * 100).toFixed(1)}%`);
+      console.log(`🎯 ${game.awayTeam}: Your ${(awayWinProb * 100).toFixed(1)}% → DR ${(dratingsPrediction.awayProb * 100).toFixed(1)}% → Cal ${(awayEnsemble.calibratedProb * 100).toFixed(1)}%`);
     } else if (this.config.useEnsemble) {
-      // Fallback: Use market-based ensemble (no MoneyPuck available)
+      // Fallback: Use market-based ensemble (no DRatings available)
       awayEnsemble = this.calculateEnsembleProbability(awayWinProb, game.moneyline.away);
-      if (!moneyPuckPrediction) {
-        console.warn(`⚠️ No MoneyPuck prediction for ${game.awayTeam} @ ${game.homeTeam} - using market ensemble`);
+      if (!dratingsPrediction) {
+        console.warn(`⚠️ No DRatings prediction for ${game.awayTeam} @ ${game.homeTeam} - using market ensemble`);
       }
     } else {
       // No ensemble - use raw model
@@ -348,16 +349,16 @@ export class EdgeCalculator {
       };
     }
     
-    // HOME TEAM: Use MoneyPuck calibration if available
+    // HOME TEAM: Use DRatings calibration if available
     let homeEnsemble;
-    if (moneyPuckPrediction && this.config.useEnsemble) {
-      // Use MoneyPuck calibration
-      homeEnsemble = this.calibrateWithMoneyPuck(
+    if (dratingsPrediction && this.config.useEnsemble) {
+      // Use DRatings calibration
+      homeEnsemble = this.calibrateWithDRatings(
         homeWinProb,
-        moneyPuckPrediction.homeProb,
+        dratingsPrediction.homeProb,
         game.moneyline.home
       );
-      console.log(`🏠 ${game.homeTeam}: Your ${(homeWinProb * 100).toFixed(1)}% → MP ${(moneyPuckPrediction.homeProb * 100).toFixed(1)}% → Cal ${(homeEnsemble.calibratedProb * 100).toFixed(1)}%`);
+      console.log(`🏠 ${game.homeTeam}: Your ${(homeWinProb * 100).toFixed(1)}% → DR ${(dratingsPrediction.homeProb * 100).toFixed(1)}% → Cal ${(homeEnsemble.calibratedProb * 100).toFixed(1)}%`);
     } else if (this.config.useEnsemble) {
       // Fallback: Use market-based ensemble
       homeEnsemble = this.calculateEnsembleProbability(homeWinProb, game.moneyline.home);

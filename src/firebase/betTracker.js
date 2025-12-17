@@ -31,11 +31,11 @@ export class BetTracker {
       return;
     }
     
-    // 🎯 QUALITY GATE: Only save MONEYLINE bets with MoneyPuck calibration
-    // MoneyPuck data becomes available at 11 AM ET
+    // 🎯 QUALITY GATE: Only save MONEYLINE bets with DRatings calibration
+    // DRatings data becomes available when odds are fetched
     // This ensures we never save inferior market-ensemble bets
-    // Note: Puck line bets don't have MoneyPuck calibration yet, so skip this check for them
-    if (bestEdge.market === 'MONEYLINE' && !bestEdge.moneyPuckProb && !bestEdge.calibratedProb) {
+    // Note: Puck line bets don't have DRatings calibration yet, so skip this check for them
+    if (bestEdge.market === 'MONEYLINE' && !bestEdge.dratingsProb && !bestEdge.calibratedProb) {
       return null;
     }
     

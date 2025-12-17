@@ -49,7 +49,8 @@ async function fetchAllData() {
     moneyline: false,
     goalies: false,
     moneyPuckGoalies: false,
-    playerProps: false
+    playerProps: false,
+    dratingsPredictions: false
   };
   
   const fetchTimestamp = new Date().toISOString();
@@ -188,7 +189,59 @@ async function fetchAllData() {
       results.moneyPuckPredictions = true;
     }
     
-    // 4. Fetch Player Props (Player Total Goals) from OddsTrader
+    // 4. Fetch DRatings NHL Predictions
+    console.log('🎯 Fetching DRatings NHL predictions...');
+    console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
+    
+    try {
+      const dratingsResult = await retryWithBackoff(async () => {
+        return await firecrawl.scrape(`https://www.dratings.com/predictor/nhl-hockey-predictions/?_=${cacheBuster}`, {
+          formats: ['markdown'],
+          onlyMainContent: true,
+          waitFor: 2000,
+          timeout: 300000,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+      });
+      
+      console.log('   - Scraped DRatings predictions page');
+      console.log(`   - Size: ${dratingsResult.markdown?.length || 0} characters`);
+      
+      const dratingsPredictions = parseDRatingsPredictions(dratingsResult.markdown);
+      console.log(`   - Parsed ${dratingsPredictions.length} DRatings predictions`);
+      
+      if (dratingsPredictions.length === 0) {
+        console.log('   ⚠️  WARNING: No predictions found in DRatings scrape');
+        console.log('   ⚠️  Keeping existing dratings_predictions.json file');
+        results.dratingsPredictions = false;
+      } else {
+        await fs.writeFile(
+          join(__dirname, '../public/dratings_predictions.json'),
+          JSON.stringify({
+            lastUpdated: fetchTimestamp,
+            source: 'DRatings',
+            url: 'https://www.dratings.com/predictor/nhl-hockey-predictions/',
+            count: dratingsPredictions.length,
+            predictions: dratingsPredictions
+          }, null, 2),
+          'utf8'
+        );
+        
+        console.log(`✅ DRatings predictions saved`);
+        console.log(`   - Predictions: ${dratingsPredictions.length} games`);
+        console.log(`   - File: public/dratings_predictions.json\n`);
+        results.dratingsPredictions = true;
+      }
+    } catch (error) {
+      console.log('   ⚠️  WARNING: DRatings fetch failed:', error.message);
+      console.log('   ⚠️  Keeping existing dratings_predictions.json file');
+      results.dratingsPredictions = false;
+    }
+    
+    // 5. Fetch Player Props (Player Total Goals) from OddsTrader
     console.log('🎯 Fetching NHL Player Props from OddsTrader...');
     console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
     try {
@@ -247,24 +300,28 @@ async function fetchAllData() {
     console.log('========================================');
     console.log('✅ ALL DATA FETCHED SUCCESSFULLY!');
     console.log('========================================');
-    console.log('\nUpdated files:');
+    console.log('\nUpdated files (NHL ONLY):');
     console.log('  ✓ public/odds_money.md');
     console.log('  ✓ public/starting_goalies.json (from MoneyPuck)');
     console.log('  ✓ public/moneypuck_predictions.json (for calibration)');
+    console.log('  ✓ public/dratings_predictions.json (for calibration)');
     if (results.playerProps) {
       console.log('  ✓ public/player_props.json (for Top Scorers page)');
     }
     console.log(`\nGoalie Status: ${countConfirmedGoalies(startingGoalies)}`);
     console.log(`MoneyPuck Predictions: ${moneyPuckPredictions.length} games`);
+    const finalDratingsPredictions = results.dratingsPredictions ? JSON.parse(await fs.readFile(join(__dirname, '../public/dratings_predictions.json'), 'utf8')).predictions : [];
+    console.log(`DRatings Predictions: ${finalDratingsPredictions.length} games`);
     if (results.playerProps) {
       const playerPropsFile = JSON.parse(await fs.readFile(join(__dirname, '../public/player_props.json'), 'utf8'));
       console.log(`Player Props: ${playerPropsFile.count || 0} players`);
     }
     console.log(`Odds Updated: ${new Date(fetchTimestamp).toLocaleString()}`);
+    console.log('\n⚠️  NO BASKETBALL FILES TOUCHED - NHL data only');
     console.log('\nNext steps:');
     console.log('  1. Review the files to ensure data looks good');
     console.log('  2. git add public/*.md public/*.json');
-    console.log('  3. git commit -m "Auto-update: Odds, goalies, predictions, and player props"');
+    console.log('  3. git commit -m "Auto-update: NHL odds, goalies, and predictions"');
     console.log('  4. git push && npm run deploy\n');
     
     return results;
@@ -279,6 +336,123 @@ async function fetchAllData() {
     console.error('\nPartial results:', results);
     throw error;
   }
+}
+
+/**
+ * Parse DRatings predictions from scraped markdown
+ * Extracts win percentages from upcoming games table
+ */
+function parseDRatingsPredictions(markdown) {
+  const predictions = [];
+  
+  if (!markdown) {
+    console.log('   ⚠️  Warning: No markdown content from DRatings');
+    return predictions;
+  }
+  
+  const lines = markdown.split('\n');
+  let inUpcomingTable = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line.includes('Upcoming Games for')) {
+      inUpcomingTable = true;
+      continue;
+    }
+    
+    if (line.includes('Completed Games') || line.includes('Games for Dec')) {
+      break;
+    }
+    
+    if (!inUpcomingTable) continue;
+    
+    const teamPattern = /\[([^\]]+)\]\([^)]+\)\([\d-]+\)[^\[]*\[([^\]]+)\]\([^)]+\)\([\d-]+\)/;
+    const teamMatch = line.match(teamPattern);
+    
+    if (teamMatch) {
+      const awayTeamName = teamMatch[1].trim();
+      const homeTeamName = teamMatch[2].trim();
+      
+      const awayTeam = mapDRatingsTeamName(awayTeamName);
+      const homeTeam = mapDRatingsTeamName(homeTeamName);
+      
+      const winPattern = /(\d+\.\d+)%[^0-9]*(\d+\.\d+)%/;
+      const winMatch = line.match(winPattern);
+      
+      if (winMatch && awayTeam && homeTeam) {
+        const awayProb = parseFloat(winMatch[1]) / 100;
+        const homeProb = parseFloat(winMatch[2]) / 100;
+        
+        const totalProb = awayProb + homeProb;
+        if (totalProb < 0.95 || totalProb > 1.05) {
+          console.log(`   ⚠️ Invalid probabilities for ${awayTeam} @ ${homeTeam}: ${(totalProb * 100).toFixed(1)}%`);
+          continue;
+        }
+        
+        const isDuplicate = predictions.some(p => 
+          p.awayTeam === awayTeam && p.homeTeam === homeTeam
+        );
+        if (isDuplicate) continue;
+        
+        predictions.push({
+          awayTeam,
+          homeTeam,
+          awayProb,
+          homeProb,
+          source: 'DRatings',
+          scrapedAt: Date.now()
+        });
+        
+        console.log(`   🎯 Parsed: ${awayTeam} (${(awayProb * 100).toFixed(1)}%) @ ${homeTeam} (${(homeProb * 100).toFixed(1)}%)`);
+      }
+    }
+  }
+  
+  return predictions;
+}
+
+/**
+ * Map DRatings team names to 3-letter codes
+ */
+function mapDRatingsTeamName(dratingsName) {
+  const mapping = {
+    'Anaheim Ducks': 'ANA',
+    'Arizona Coyotes': 'ARI',
+    'Boston Bruins': 'BOS',
+    'Buffalo Sabres': 'BUF',
+    'Calgary Flames': 'CGY',
+    'Carolina Hurricanes': 'CAR',
+    'Chicago Blackhawks': 'CHI',
+    'Colorado Avalanche': 'COL',
+    'Columbus Blue Jackets': 'CBJ',
+    'Dallas Stars': 'DAL',
+    'Detroit Red Wings': 'DET',
+    'Edmonton Oilers': 'EDM',
+    'Florida Panthers': 'FLA',
+    'Los Angeles Kings': 'LAK',
+    'Minnesota Wild': 'MIN',
+    'Montreal Canadiens': 'MTL',
+    'Nashville Predators': 'NSH',
+    'New Jersey Devils': 'NJD',
+    'New York Islanders': 'NYI',
+    'New York Rangers': 'NYR',
+    'Ottawa Senators': 'OTT',
+    'Philadelphia Flyers': 'PHI',
+    'Pittsburgh Penguins': 'PIT',
+    'San Jose Sharks': 'SJS',
+    'Seattle Kraken': 'SEA',
+    'St. Louis Blues': 'STL',
+    'Tampa Bay Lightning': 'TBL',
+    'Toronto Maple Leafs': 'TOR',
+    'Utah Mammoth': 'UTA',
+    'Vancouver Canucks': 'VAN',
+    'Vegas Golden Knights': 'VGK',
+    'Washington Capitals': 'WSH',
+    'Winnipeg Jets': 'WPG'
+  };
+  
+  return mapping[dratingsName] || null;
 }
 
 /**
