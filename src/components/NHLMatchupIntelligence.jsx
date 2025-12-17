@@ -1,7 +1,7 @@
 /**
- * NHL Matchup Intelligence Component
- * Side-by-side comparison showing edge score, offense vs defense, and four key factors
- * Inspired by CBB Matchup Intelligence with NHL-specific metrics
+ * NHL Matchup Intelligence Component - ENHANCED CENTER-DIVERGING LAYOUT
+ * Shows offense vs defense collision with visual dominance indicators
+ * Uses center-line bars that pull toward the winning side
  */
 
 import { useState } from 'react';
@@ -34,11 +34,9 @@ const NHLMatchupIntelligence = ({
   const awayXGA = (away5v5.xGoalsAgainst / away5v5.gamesPlayed) || 0;
   const homeXGA = (home5v5.xGoalsAgainst / home5v5.gamesPlayed) || 0;
 
-  // Offense vs Defense matchup
-  const awayOffenseVsHomeDefense = awayXGF - homeXGA;
-  const homeOffenseVsAwayDefense = homeXGF - awayXGA;
-  const offenseFavored = awayOffenseVsHomeDefense > homeOffenseVsAwayDefense ? awayTeam : homeTeam;
-  const offenseEdge = Math.abs(awayOffenseVsHomeDefense - homeOffenseVsAwayDefense);
+  // League averages for context
+  const leagueXGF = 2.18; // League average xGF per game
+  const leagueXGA = 2.18; // League average xGA per game
 
   // Get high-danger metrics for shot quality
   const awayHighDanger = statsAnalyzer.getHighDangerMetrics(awayTeam, '5on5');
@@ -50,29 +48,22 @@ const NHLMatchupIntelligence = ({
   const awayHDPercent = ((awayHighDanger?.hdShotsFor || 0) / awayTotalShots) * 100;
   const homeHDPercent = ((homeHighDanger?.hdShotsFor || 0) / homeTotalShots) * 100;
   const shotQualityDiff = awayHDPercent - homeHDPercent;
+  const leagueHDPercent = 4.1; // League average HD%
 
   // Get possession metrics for shot volume
-  // CSV stores corsiPercentage as a decimal (0.515 = 51.5%), so multiply by 100
   const awayCorsi = (away5v5.corsiPercentage || 0.5) * 100;
   const homeCorsi = (home5v5.corsiPercentage || 0.5) * 100;
   const shotVolumeDiff = awayCorsi - homeCorsi;
+  const leagueCorsi = 50.0; // By definition, league average CF% is 50%
 
   // Get special teams - use high-danger xG per 60
   const awayPP = statsAnalyzer.getHighDangerMetrics(awayTeam, '5on4');
   const homePP = statsAnalyzer.getHighDangerMetrics(homeTeam, '5on4');
-  const awayPK = statsAnalyzer.getHighDangerMetrics(awayTeam, '4on5');
-  const homePK = statsAnalyzer.getHighDangerMetrics(homeTeam, '4on5');
   
-  // Use hdXgfPer60 for power play offense and hdXgaPer60 for penalty kill defense
   const awayPPScore = awayPP?.hdXgfPer60 || 0;
   const homePPScore = homePP?.hdXgfPer60 || 0;
-  const awayPKScore = awayPK?.hdXgaPer60 || 0;
-  const homePKScore = homePK?.hdXgaPer60 || 0;
-  
-  // Special teams score: (PP offense) - (PK goals against)
-  const awaySTScore = awayPPScore - awayPKScore;
-  const homeSTScore = homePPScore - homePKScore;
-  const specialTeamsDiff = awaySTScore - homeSTScore;
+  const specialTeamsDiff = awayPPScore - homePPScore;
+  const leaguePPScore = 2.95; // League average HD xG/60 on PP
 
   // Get goalie data
   const awayGoalie = game.goalies?.away;
@@ -80,92 +71,63 @@ const NHLMatchupIntelligence = ({
   const awayGSAE = awayGoalie?.gsae || 0;
   const homeGSAE = homeGoalie?.gsae || 0;
   const goalieEdge = awayGSAE - homeGSAE;
+  const leagueGSAE = 1.00; // League average GSAE
 
-  // TEMPORARILY DISABLED: Rest advantage calculation
-  // TODO: Re-enable when scheduleHelper is properly passed
-  const restAdvantage = null;
-  const restBonus = 0;
+  // Calculate projected goals (offense vs defense collisions)
+  const awayProjected = ((awayXGF + homeXGA) / 2) + (specialTeamsDiff * 0.15) + (goalieEdge * 0.1);
+  const homeProjected = ((homeXGF + awayXGA) / 2) - (specialTeamsDiff * 0.15) - (goalieEdge * 0.1);
+  const netEdge = Math.abs(awayProjected - homeProjected);
+  const edgeFavoredTeam = awayProjected > homeProjected ? awayTeam : homeTeam;
 
-  // EDGE SCORE CALCULATION (0-100)
-  const calculateEdgeScore = () => {
-    let score = 50; // Start at neutral
-
-    // Expected Goals differential (30% weight) - ±15 points
-    const xgDiff = offenseEdge;
-    if (!isNaN(xgDiff) && isFinite(xgDiff)) {
-      score += (xgDiff / 1.0) * 15; // ±1.0 xG = ±15 points
-    }
-
-    // Shot Quality differential (20% weight) - ±10 points
-    if (!isNaN(shotQualityDiff) && isFinite(shotQualityDiff)) {
-      score += (shotQualityDiff / 20) * 10; // ±20% = ±10 points
-    }
-
-    // Special Teams differential (20% weight) - ±10 points
-    if (!isNaN(specialTeamsDiff) && isFinite(specialTeamsDiff)) {
-      score += (specialTeamsDiff / 30) * 10; // ±30% = ±10 points
-    }
-
-    // Goalie Edge (15% weight) - ±7.5 points
-    if (!isNaN(goalieEdge) && isFinite(goalieEdge)) {
-      score += (goalieEdge / 5) * 7.5; // ±5 GSAE = ±7.5 points
-    }
-
-    // Rest advantage (15% weight) - ±7.5 points
-    if (!isNaN(restBonus) && isFinite(restBonus)) {
-      score += (restBonus / 5) * 7.5; // ±5% = ±7.5 points
-    }
-
-    // Clamp between 0-100
-    const finalScore = Math.max(0, Math.min(100, Math.round(score)));
-    return isNaN(finalScore) ? 50 : finalScore; // Default to 50 if still NaN
+  // Calculate confidence (0-100%)
+  const calculateConfidence = () => {
+    let confidence = 50;
+    
+    // Factor 1: Net edge magnitude (bigger edge = higher confidence)
+    confidence += Math.min(20, netEdge * 10);
+    
+    // Factor 2: Consistency (if multiple factors agree)
+    const agreements = [
+      shotQualityDiff > 0 === (awayProjected > homeProjected),
+      shotVolumeDiff > 0 === (awayProjected > homeProjected),
+      specialTeamsDiff > 0 === (awayProjected > homeProjected),
+      goalieEdge > 0 === (awayProjected > homeProjected)
+    ].filter(Boolean).length;
+    
+    confidence += agreements * 5;
+    
+    return Math.min(90, Math.max(50, Math.round(confidence)));
   };
 
-  const edgeScore = calculateEdgeScore();
+  const confidenceLevel = calculateConfidence();
 
-  // Determine edge description
-  const getEdgeDescription = (score) => {
-    if (score >= 65) return { text: 'Strong Advantage', icon: '🔥', color: '#10B981' };
-    if (score >= 55) return { text: 'Slight Edge', icon: '⚡', color: '#3B82F6' };
-    if (score >= 45) return { text: 'Balanced', icon: '⚖️', color: '#64748B' };
-    if (score >= 35) return { text: 'Slight Edge', icon: '⚡', color: '#F59E0B' };
-    return { text: 'Strong Advantage', icon: '🔥', color: '#EF4444' };
-  };
-
-  const edgeDesc = getEdgeDescription(edgeScore);
-
-  // Calculate actual team records (W-L-OTL)
-  const getTeamRecord = (teamData) => {
-    if (!teamData) return '0-0-0';
-    const wins = teamData.goalsFor > teamData.goalsAgainst ? Math.floor(teamData.gamesPlayed * 0.6) : Math.floor(teamData.gamesPlayed * 0.4);
-    const losses = teamData.gamesPlayed - wins;
-    return `${wins}-${losses}`;
-  };
-
-  const awayRecord = getTeamRecord(away5v5);
-  const homeRecord = getTeamRecord(home5v5);
-
-  // The Four Factors
+  // The Four Factors with enhanced significance calculation
   const factors = [
     {
       icon: '🎯',
-      name: 'Shot Quality',
-      subtitle: 'High-Danger %',
-      awayValue: awayHDPercent,
-      homeValue: homeHDPercent,
-      advantage: Math.abs(shotQualityDiff) > 5 ? (shotQualityDiff > 0 ? awayTeam : homeTeam) : null,
-      diff: Math.abs(shotQualityDiff).toFixed(1),
-      format: (val) => `${val.toFixed(1)}%`
+      name: 'Offense',
+      subtitle: 'xGF per game',
+      awayValue: awayXGF,
+      homeValue: homeXGF,
+      leagueAvg: leagueXGF,
+      diff: Math.abs(awayXGF - homeXGF),
+      percentDiff: ((Math.abs(awayXGF - homeXGF) / leagueXGF) * 100).toFixed(1),
+      advantage: Math.abs(awayXGF - homeXGF) > 0.15 ? (awayXGF > homeXGF ? awayTeam : homeTeam) : null,
+      significance: Math.abs(awayXGF - homeXGF) > 0.25 ? 'high' : Math.abs(awayXGF - homeXGF) > 0.15 ? 'moderate' : 'low',
+      format: (val) => val.toFixed(2)
     },
     {
-      icon: '📈',
-      name: 'Shot Volume',
-      subtitle: 'Corsi For %',
-      awayValue: awayCorsi,
-      homeValue: homeCorsi,
-      advantage: Math.abs(shotVolumeDiff) > 2 ? (shotVolumeDiff > 0 ? awayTeam : homeTeam) : null,
-      diff: Math.abs(shotVolumeDiff).toFixed(1),
-      format: (val) => `${val.toFixed(1)}%`
+      icon: '🛡️',
+      name: 'Defense',
+      subtitle: 'xGA per game',
+      awayValue: awayXGA,
+      homeValue: homeXGA,
+      leagueAvg: leagueXGA,
+      diff: Math.abs(awayXGA - homeXGA),
+      percentDiff: ((Math.abs(awayXGA - homeXGA) / leagueXGA) * 100).toFixed(1),
+      advantage: Math.abs(awayXGA - homeXGA) > 0.15 ? (awayXGA < homeXGA ? awayTeam : homeTeam) : null, // Lower is better
+      significance: Math.abs(awayXGA - homeXGA) > 0.25 ? 'high' : Math.abs(awayXGA - homeXGA) > 0.15 ? 'moderate' : 'low',
+      format: (val) => val.toFixed(2)
     },
     {
       icon: '🔥',
@@ -173,21 +135,40 @@ const NHLMatchupIntelligence = ({
       subtitle: 'HD xG/60',
       awayValue: awayPPScore,
       homeValue: homePPScore,
-      advantage: Math.abs(awayPPScore - homePPScore) > 0.5 ? (awayPPScore > homePPScore ? awayTeam : homeTeam) : null,
-      diff: Math.abs(awayPPScore - homePPScore).toFixed(2),
-      format: (val) => `${val.toFixed(2)}`
+      leagueAvg: leaguePPScore,
+      diff: Math.abs(specialTeamsDiff),
+      percentDiff: ((Math.abs(specialTeamsDiff) / leaguePPScore) * 100).toFixed(1),
+      advantage: Math.abs(specialTeamsDiff) > 0.5 ? (specialTeamsDiff > 0 ? awayTeam : homeTeam) : null,
+      significance: Math.abs(specialTeamsDiff) > 1.0 ? 'high' : Math.abs(specialTeamsDiff) > 0.5 ? 'moderate' : 'low',
+      format: (val) => val.toFixed(2)
     },
     {
-      icon: '🛡️',
-      name: 'Goalie Edge',
-      subtitle: 'GSAE',
+      icon: '🥅',
+      name: 'Goalie',
+      subtitle: 'GSAx per 60',
       awayValue: awayGSAE,
       homeValue: homeGSAE,
-      advantage: Math.abs(goalieEdge) > 1 ? (goalieEdge > 0 ? awayTeam : homeTeam) : null,
-      diff: Math.abs(goalieEdge).toFixed(1),
-      format: (val) => val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)
+      leagueAvg: leagueGSAE,
+      diff: Math.abs(goalieEdge),
+      percentDiff: ((Math.abs(goalieEdge) / leagueGSAE) * 100).toFixed(1),
+      advantage: Math.abs(goalieEdge) > 0.3 ? (goalieEdge > 0 ? awayTeam : homeTeam) : null,
+      significance: Math.abs(goalieEdge) > 0.5 ? 'high' : Math.abs(goalieEdge) > 0.3 ? 'moderate' : 'low',
+      format: (val) => val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2)
     }
   ];
+
+  // Get significance label
+  const getSignificanceLabel = (sig) => {
+    if (sig === 'high') return 'HUGE EDGE';
+    if (sig === 'moderate') return 'moderate edge';
+    return 'even';
+  };
+
+  // Get significance emoji
+  const getSignificanceEmoji = (sig) => {
+    if (sig === 'high') return '⚡';
+    return '';
+  };
 
   return (
     <div style={{
@@ -240,7 +221,7 @@ const NHLMatchupIntelligence = ({
         </button>
       </div>
 
-      {/* Team Matchup Header */}
+      {/* Team Headers (NO RECORDS) */}
       <div style={{
         padding: isMobile ? '1rem' : '1.5rem',
         display: 'flex',
@@ -253,21 +234,13 @@ const NHLMatchupIntelligence = ({
             fontSize: isMobile ? '1.125rem' : '1.5rem',
             fontWeight: '800',
             color: '#0EA5E9',
-            marginBottom: '0.5rem'
+            marginBottom: '0.25rem'
           }}>
             {awayTeam}
           </div>
           <div style={{
-            fontSize: isMobile ? '0.875rem' : '1rem',
-            color: 'var(--color-text-secondary)',
-            fontWeight: '600'
-          }}>
-            {awayRecord}
-          </div>
-          <div style={{
             fontSize: '0.75rem',
-            color: 'var(--color-text-muted)',
-            marginTop: '0.25rem'
+            color: 'var(--color-text-muted)'
           }}>
             {awayXGF.toFixed(2)} xGF/gm
           </div>
@@ -286,385 +259,398 @@ const NHLMatchupIntelligence = ({
             fontSize: isMobile ? '1.125rem' : '1.5rem',
             fontWeight: '800',
             color: '#10B981',
-            marginBottom: '0.5rem'
+            marginBottom: '0.25rem'
           }}>
             {homeTeam}
           </div>
           <div style={{
-            fontSize: isMobile ? '0.875rem' : '1rem',
-            color: 'var(--color-text-secondary)',
-            fontWeight: '600'
-          }}>
-            {homeRecord}
-          </div>
-          <div style={{
             fontSize: '0.75rem',
-            color: 'var(--color-text-muted)',
-            marginTop: '0.25rem'
+            color: 'var(--color-text-muted)'
           }}>
             {homeXGF.toFixed(2)} xGF/gm
           </div>
         </div>
       </div>
 
-      {/* Edge Score */}
+      {/* CENTER-DIVERGING COMPARISON BARS */}
       <div style={{
         padding: isMobile ? '1.5rem 1rem' : '2rem 1.5rem',
-        textAlign: 'center',
         background: 'rgba(0, 0, 0, 0.15)'
       }}>
-        {/* Circular Progress */}
-        <div style={{
-          position: 'relative',
-          width: isMobile ? '100px' : '120px',
-          height: isMobile ? '100px' : '120px',
-          margin: '0 auto 1rem'
-        }}>
-          <svg width="100%" height="100%" viewBox="0 0 120 120">
-            {/* Background circle */}
-            <circle
-              cx="60"
-              cy="60"
-              r="50"
-              fill="none"
-              stroke="rgba(255, 255, 255, 0.1)"
-              strokeWidth="10"
-            />
-            {/* Progress circle */}
-            <circle
-              cx="60"
-              cy="60"
-              r="50"
-              fill="none"
-              stroke={edgeDesc.color}
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray={`${(edgeScore / 100) * 314} 314`}
-              transform="rotate(-90 60 60)"
-              style={{ transition: 'stroke-dasharray 0.5s ease' }}
-            />
-          </svg>
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center'
-          }}>
+        {factors.map((factor, idx) => (
+          <div key={idx} style={{ marginBottom: idx < factors.length - 1 ? '2rem' : 0 }}>
+            {/* Factor Header */}
             <div style={{
-              fontSize: isMobile ? '2rem' : '2.5rem',
-              fontWeight: '900',
-              color: edgeDesc.color
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.75rem'
             }}>
-              {edgeScore}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                fontWeight: '700',
+                color: 'var(--color-text-primary)'
+              }}>
+                <span style={{ fontSize: '1rem' }}>{factor.icon}</span>
+                <span>{factor.name}</span>
+                <span style={{
+                  fontSize: '0.688rem',
+                  color: 'var(--color-text-muted)',
+                  fontWeight: '600'
+                }}>
+                  {factor.subtitle}
+                </span>
+              </div>
+              <div style={{
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                color: factor.significance === 'high' ? '#10B981' : factor.significance === 'moderate' ? '#F59E0B' : 'var(--color-text-muted)'
+              }}>
+                {factor.advantage && `+${factor.percentDiff}%`}
+                {factor.significance === 'high' && ' ⚡'}
+              </div>
             </div>
-            <div style={{
-              fontSize: '0.75rem',
-              color: 'var(--color-text-muted)',
-              fontWeight: '700',
-              letterSpacing: '0.05em'
-            }}>
-              EDGE SCORE
-            </div>
-          </div>
-        </div>
 
-        {/* Edge Description */}
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.5rem 1rem',
-          background: `${edgeDesc.color}20`,
-          border: `1px solid ${edgeDesc.color}`,
-          borderRadius: '8px',
-          fontSize: isMobile ? '0.813rem' : '0.875rem',
-          fontWeight: '700',
-          color: edgeDesc.color
-        }}>
-          <span>{edgeDesc.icon}</span>
-          <span>{edgeDesc.text}</span>
-        </div>
+            {/* Center-Diverging Bar */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: '0.5rem',
+              alignItems: 'center',
+              marginBottom: '0.5rem'
+            }}>
+              {/* Away Bar (pulls left from center) */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span style={{
+                  fontSize: '0.813rem',
+                  fontWeight: '700',
+                  color: factor.advantage === awayTeam ? '#0EA5E9' : 'var(--color-text-secondary)',
+                  minWidth: '50px',
+                  textAlign: 'right'
+                }}>
+                  {factor.format(factor.awayValue)}
+                </span>
+                <div style={{
+                  height: '24px',
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(100, (factor.awayValue / (factor.leagueAvg * 2)) * 100)}%`,
+                    background: factor.advantage === awayTeam
+                      ? 'linear-gradient(90deg, #0EA5E9 0%, #3B82F6 100%)'
+                      : 'rgba(14, 165, 233, 0.4)',
+                    borderRadius: '4px 0 0 4px',
+                    boxShadow: factor.advantage === awayTeam ? '0 0 12px rgba(14, 165, 233, 0.5)' : 'none',
+                    border: factor.advantage === awayTeam ? '2px solid #60A5FA' : 'none',
+                    transition: 'all 0.4s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    padding: '0 0.5rem'
+                  }}>
+                    {factor.advantage === awayTeam && (
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        fontWeight: '700',
+                        color: '#fff'
+                      }}>
+                        {awayTeam}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-        {/* Offense Favored */}
-        <div style={{
-          marginTop: '1rem',
-          fontSize: '0.813rem',
-          color: 'var(--color-text-secondary)'
-        }}>
-          {offenseFavored} offense creates +{offenseEdge.toFixed(2)} xG/game edge
-        </div>
-      </div>
+              {/* Center Line with League Average */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                minWidth: '40px'
+              }}>
+                <div style={{
+                  width: '2px',
+                  height: '32px',
+                  background: 'linear-gradient(to bottom, transparent 0%, rgba(212, 175, 55, 0.6) 20%, rgba(212, 175, 55, 0.6) 80%, transparent 100%)',
+                  marginBottom: '0.25rem'
+                }} />
+                <span style={{
+                  fontSize: '0.688rem',
+                  color: 'rgba(212, 175, 55, 0.8)',
+                  fontWeight: '600'
+                }}>
+                  ⚖️
+                </span>
+              </div>
 
-      {/* Offense vs Defense Comparison */}
-      <div style={{
-        padding: isMobile ? '1rem' : '1.5rem',
-        background: 'rgba(0, 0, 0, 0.2)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          gap: isMobile ? '0.75rem' : '1rem',
-          alignItems: 'center'
-        }}>
-          {/* Away Offense */}
-          <div>
-            <div style={{
-              fontSize: '0.75rem',
-              color: 'var(--color-text-muted)',
-              marginBottom: '0.25rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              OFFENSE
+              {/* Home Bar (pulls right from center) */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <div style={{
+                  height: '24px',
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(100, (factor.homeValue / (factor.leagueAvg * 2)) * 100)}%`,
+                    background: factor.advantage === homeTeam
+                      ? 'linear-gradient(90deg, #10B981 0%, #059669 100%)'
+                      : 'rgba(16, 185, 129, 0.4)',
+                    borderRadius: '0 4px 4px 0',
+                    boxShadow: factor.advantage === homeTeam ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
+                    border: factor.advantage === homeTeam ? '2px solid #34D399' : 'none',
+                    transition: 'all 0.4s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    padding: '0 0.5rem'
+                  }}>
+                    {factor.advantage === homeTeam && (
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        fontWeight: '700',
+                        color: '#fff'
+                      }}>
+                        {homeTeam}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: '0.813rem',
+                  fontWeight: '700',
+                  color: factor.advantage === homeTeam ? '#10B981' : 'var(--color-text-secondary)',
+                  minWidth: '50px'
+                }}>
+                  {factor.format(factor.homeValue)}
+                </span>
+              </div>
             </div>
-            <div style={{
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              fontWeight: '700',
-              color: '#0EA5E9',
-              marginBottom: '0.125rem'
-            }}>
-              {awayTeam}
-            </div>
-            <div style={{
-              fontSize: isMobile ? '1.25rem' : '1.5rem',
-              fontWeight: '900',
-              color: 'var(--color-text-primary)',
-              marginBottom: '0.25rem'
-            }}>
-              {awayXGF.toFixed(2)}
-            </div>
+
+            {/* League Average Context */}
             <div style={{
               fontSize: '0.688rem',
-              color: 'var(--color-text-muted)'
+              color: 'rgba(212, 175, 55, 0.7)',
+              textAlign: 'center',
+              marginBottom: '0.375rem'
             }}>
-              xGF per game
+              League: {factor.format(factor.leagueAvg)}
+            </div>
+
+            {/* Significance Label */}
+            <div style={{
+              fontSize: '0.75rem',
+              color: factor.significance === 'high' ? '#10B981' : factor.significance === 'moderate' ? '#F59E0B' : 'var(--color-text-muted)',
+              textAlign: 'center',
+              fontWeight: '600',
+              borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              paddingTop: '0.5rem',
+              fontStyle: 'italic'
+            }}>
+              {getSignificanceLabel(factor.significance)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* PROJECTED OUTCOME (ENHANCED) */}
+      <div style={{
+        padding: isMobile ? '1.5rem 1rem' : '2rem 1.5rem',
+        background: 'rgba(0, 0, 0, 0.25)',
+        borderTop: '2px solid rgba(16, 185, 129, 0.3)'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+          border: '2px solid rgba(16, 185, 129, 0.4)',
+          borderRadius: '12px',
+          padding: isMobile ? '1.25rem' : '1.5rem'
+        }}>
+          <div style={{
+            fontSize: isMobile ? '0.875rem' : '1rem',
+            fontWeight: '800',
+            color: '#10B981',
+            marginBottom: '1rem',
+            textAlign: 'center',
+            letterSpacing: '0.05em'
+          }}>
+            🎯 PROJECTED OUTCOME
+          </div>
+
+          {/* Projected Scores */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            gap: '1rem',
+            marginBottom: '1rem'
+          }}>
+            <div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem'
+              }}>
+                {awayTeam}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontWeight: '900',
+                color: awayProjected > homeProjected ? '#10B981' : 'var(--color-text-secondary)'
+              }}>
+                {awayProjected.toFixed(1)}
+              </div>
+              <div style={{
+                height: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                marginTop: '0.5rem'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${(awayProjected / (awayProjected + homeProjected)) * 100}%`,
+                  background: 'linear-gradient(90deg, #0EA5E9 0%, #3B82F6 100%)',
+                  transition: 'width 0.5s ease'
+                }} />
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: '1.5rem'
+            }}>
+              ⚔️
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem'
+              }}>
+                {homeTeam}
+              </div>
+              <div style={{
+                fontSize: isMobile ? '1.5rem' : '2rem',
+                fontWeight: '900',
+                color: homeProjected > awayProjected ? '#10B981' : 'var(--color-text-secondary)'
+              }}>
+                {homeProjected.toFixed(1)}
+              </div>
+              <div style={{
+                height: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                marginTop: '0.5rem'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${(homeProjected / (awayProjected + homeProjected)) * 100}%`,
+                  background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
+                  transition: 'width 0.5s ease'
+                }} />
+              </div>
             </div>
           </div>
 
-          {/* Center Edge */}
+          {/* Net Edge */}
           <div style={{
-            padding: '0.5rem 1rem',
-            background: offenseEdge > 0.2 
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))'
-              : 'rgba(255, 255, 255, 0.05)',
-            border: `1px solid ${offenseEdge > 0.2 ? '#10B981' : 'rgba(255, 255, 255, 0.1)'}`,
-            borderRadius: '8px',
             textAlign: 'center',
-            minWidth: '80px'
+            padding: '0.75rem',
+            background: 'rgba(16, 185, 129, 0.15)',
+            borderRadius: '8px',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            marginBottom: '0.75rem'
           }}>
             <div style={{
               fontSize: isMobile ? '1rem' : '1.125rem',
               fontWeight: '900',
-              color: offenseEdge > 0.2 ? '#10B981' : 'var(--color-text-muted)'
+              color: '#10B981',
+              marginBottom: '0.25rem'
             }}>
-              {offenseEdge > 0 ? '+' : ''}{offenseEdge.toFixed(2)}
-            </div>
-            <div style={{
-              fontSize: '0.688rem',
-              color: 'var(--color-text-muted)',
-              marginTop: '0.125rem'
-            }}>
-              xG edge
+              ⚡ EDGE: {edgeFavoredTeam} +{netEdge.toFixed(1)} goals
             </div>
           </div>
 
-          {/* Home Defense */}
-          <div style={{ textAlign: 'right' }}>
+          {/* Confidence Bar */}
+          <div>
             <div style={{
-              fontSize: '0.75rem',
-              color: 'var(--color-text-muted)',
-              marginBottom: '0.25rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem'
             }}>
-              DEFENSE
+              <span style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-secondary)',
+                fontWeight: '600'
+              }}>
+                Confidence
+              </span>
+              <span style={{
+                fontSize: '0.813rem',
+                fontWeight: '800',
+                color: confidenceLevel >= 70 ? '#10B981' : '#F59E0B'
+              }}>
+                {confidenceLevel}%
+              </span>
             </div>
             <div style={{
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              fontWeight: '700',
-              color: '#10B981',
-              marginBottom: '0.125rem'
+              height: '6px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '3px',
+              overflow: 'hidden'
             }}>
-              {homeTeam}
-            </div>
-            <div style={{
-              fontSize: isMobile ? '1.25rem' : '1.5rem',
-              fontWeight: '900',
-              color: 'var(--color-text-primary)',
-              marginBottom: '0.25rem'
-            }}>
-              {homeXGA.toFixed(2)}
-            </div>
-            <div style={{
-              fontSize: '0.688rem',
-              color: 'var(--color-text-muted)'
-            }}>
-              xGA per game
+              <div style={{
+                height: '100%',
+                width: `${confidenceLevel}%`,
+                background: confidenceLevel >= 70
+                  ? 'linear-gradient(90deg, #10B981 0%, #059669 100%)'
+                  : 'linear-gradient(90deg, #F59E0B 0%, #D97706 100%)',
+                transition: 'width 0.5s ease'
+              }} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Rest Advantage Banner */}
-      {restAdvantage && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          background: `linear-gradient(135deg, ${restAdvantage.boost ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}, ${restAdvantage.boost ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)'})`,
-          border: `1px solid ${restAdvantage.boost ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-          borderLeft: `4px solid ${restAdvantage.boost ? '#10B981' : '#EF4444'}`,
-          fontSize: '0.813rem',
-          fontWeight: '600',
-          color: restAdvantage.boost ? '#10B981' : '#EF4444',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          <span>{restAdvantage.boost ? '⚡' : '⚠️'}</span>
-          <span>{restAdvantage.message}</span>
-          <span style={{ marginLeft: 'auto', fontWeight: '800' }}>
-            {restAdvantage.boost ? `+${restAdvantage.boost}%` : `${restAdvantage.penalty}%`}
-          </span>
-        </div>
-      )}
-
-      {/* The Four Factors */}
+      {/* Key Driver Insight */}
       <div style={{
-        padding: isMobile ? '1rem' : '1.5rem'
+        padding: isMobile ? '1rem' : '1.25rem',
+        background: 'rgba(16, 185, 129, 0.08)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        fontSize: '0.813rem',
+        color: 'var(--color-text-secondary)',
+        fontWeight: '600',
+        textAlign: 'center',
+        lineHeight: '1.6'
       }}>
-        <div style={{
-          fontSize: isMobile ? '0.75rem' : '0.813rem',
-          fontWeight: '800',
-          color: 'var(--color-text-muted)',
-          marginBottom: '1rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          <span>📊</span>
-          <span>THE FOUR FACTORS</span>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gap: '1rem'
-        }}>
-          {factors.map((factor, idx) => (
-            <div key={idx}>
-              {/* Factor Header */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '0.5rem'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.813rem',
-                  fontWeight: '700',
-                  color: 'var(--color-text-primary)'
-                }}>
-                  <span style={{ color: '#10B981' }}>{factor.icon}</span>
-                  <span>{factor.name}</span>
-                  <span style={{
-                    fontSize: '0.688rem',
-                    color: 'var(--color-text-muted)',
-                    fontWeight: '600'
-                  }}>
-                    {factor.subtitle}
-                  </span>
-                </div>
-                {factor.advantage && (
-                  <div style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '800',
-                    color: factor.advantage === awayTeam ? '#0EA5E9' : '#10B981',
-                    padding: '0.25rem 0.5rem',
-                    background: factor.advantage === awayTeam 
-                      ? 'rgba(14, 165, 233, 0.15)' 
-                      : 'rgba(16, 185, 129, 0.15)',
-                    borderRadius: '6px'
-                  }}>
-                    {factor.advantage} +{factor.diff}
-                  </div>
-                )}
-              </div>
-
-              {/* Progress Bars */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '0.5rem'
-              }}>
-                {/* Away */}
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '0.25rem',
-                    fontSize: '0.75rem'
-                  }}>
-                    <span style={{ color: '#0EA5E9', fontWeight: '700' }}>{awayTeam}</span>
-                    <span style={{ color: 'var(--color-text-primary)', fontWeight: '800' }}>
-                      {factor.format(factor.awayValue)}
-                    </span>
-                  </div>
-                  <div style={{
-                    height: '6px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '3px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${Math.min(100, Math.abs(factor.awayValue))}%`,
-                      background: 'linear-gradient(90deg, #0EA5E9, #06B6D4)',
-                      transition: 'width 0.5s ease'
-                    }} />
-                  </div>
-                </div>
-
-                {/* Home */}
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '0.25rem',
-                    fontSize: '0.75rem'
-                  }}>
-                    <span style={{ color: '#10B981', fontWeight: '700' }}>{homeTeam}</span>
-                    <span style={{ color: 'var(--color-text-primary)', fontWeight: '800' }}>
-                      {factor.format(factor.homeValue)}
-                    </span>
-                  </div>
-                  <div style={{
-                    height: '6px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '3px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${Math.min(100, Math.abs(factor.homeValue))}%`,
-                      background: 'linear-gradient(90deg, #10B981, #059669)',
-                      transition: 'width 0.5s ease'
-                    }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        💡 {edgeFavoredTeam} wins in {factors.filter(f => f.advantage === edgeFavoredTeam).length} of 4 categories
+        {factors.find(f => f.significance === 'high') && 
+          ` — ${factors.find(f => f.significance === 'high').name.toLowerCase()} is the dominant factor`
+        }
       </div>
     </div>
   );
 };
 
 export default NHLMatchupIntelligence;
-
