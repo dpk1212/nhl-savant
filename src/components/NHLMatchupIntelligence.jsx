@@ -11,6 +11,7 @@ const NHLMatchupIntelligence = ({
   dataProcessor, 
   statsAnalyzer,
   bestEdge,
+  firebaseBets,
   isMobile = false 
 }) => {
   if (!game || !dataProcessor || !statsAnalyzer) {
@@ -19,6 +20,15 @@ const NHLMatchupIntelligence = ({
 
   const awayTeam = game.awayTeam;
   const homeTeam = game.homeTeam;
+
+  // Check for locked pick
+  const lockedBet = firebaseBets?.find(bet => {
+    const betGame = bet.game || bet;
+    return (betGame.awayTeam === awayTeam && betGame.homeTeam === homeTeam) ||
+           (betGame.away === awayTeam && betGame.home === homeTeam);
+  });
+
+  const isLockedPick = lockedBet && (!bestEdge || bestEdge.evPercent < 5);
 
   // Get team data
   const away5v5 = dataProcessor.getTeamData(awayTeam, '5on5');
@@ -179,6 +189,19 @@ const NHLMatchupIntelligence = ({
   };
 
   const matchupStory = generateMatchupStory();
+
+  // CONFIDENCE LEVEL ASSESSMENT
+  const getConfidenceLevel = () => {
+    if (isLockedPick) return 'LOCKED';
+    if (totalEdge > 0.5) return 'VERY_HIGH';
+    if (totalEdge > 0.35) return 'HIGH';
+    if (totalEdge > 0.2) return 'MODERATE';
+    if (isValuePlay && recommendedPlay) return 'VALUE';
+    if (totalEdge > 0.1) return 'LOW';
+    return 'MINIMAL';
+  };
+
+  const confidenceLevel = getConfidenceLevel();
 
   // The Four Factors - ENHANCED WITH STORYTELLING
   const factors = [
@@ -951,8 +974,8 @@ const NHLMatchupIntelligence = ({
         </div>
       )}
 
-      {/* THE EDGE - ENHANCED HERO SECTION */}
-      {totalEdge > 0.2 && (
+      {/* THE EDGE - ENHANCED HERO SECTION - ALWAYS SHOW WHEN RELEVANT */}
+      {(isLockedPick || recommendedPlay || totalEdge > 0.15 || edgeFavoredTeam) && (
         <div style={{
           padding: isMobile ? '1rem 1rem' : '1.25rem 1.5rem',
           background: isValuePlay 
@@ -979,12 +1002,14 @@ const NHLMatchupIntelligence = ({
           <div style={{
             fontSize: '0.875rem',
             fontWeight: '900',
-            color: isValuePlay ? '#D4AF37' : '#10B981',
+            color: isLockedPick ? '#D4AF37' : isValuePlay ? '#D4AF37' : confidenceLevel === 'MINIMAL' || confidenceLevel === 'LOW' ? '#F59E0B' : '#10B981',
             marginBottom: '0.875rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.625rem',
-            textShadow: isValuePlay 
+            textShadow: isLockedPick 
+              ? '0 0 24px rgba(212, 175, 55, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3)'
+              : isValuePlay 
               ? '0 0 24px rgba(212, 175, 55, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3)' 
               : '0 0 24px rgba(16, 185, 129, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3)',
             letterSpacing: '0.08em',
@@ -992,12 +1017,30 @@ const NHLMatchupIntelligence = ({
           }}>
             <span style={{
               fontSize: '1.25rem',
-              filter: isValuePlay 
+              filter: isLockedPick 
+                ? 'drop-shadow(0 0 12px rgba(212, 175, 55, 0.8))'
+                : isValuePlay 
                 ? 'drop-shadow(0 0 12px rgba(212, 175, 55, 0.8))' 
                 : 'drop-shadow(0 0 12px rgba(16, 185, 129, 0.8))'
-            }}>💡</span>
+            }}>{isLockedPick ? '🔒' : '💡'}</span>
             <span>THE PLAY</span>
-            {isValuePlay && (
+            {isLockedPick && (
+              <span style={{
+                fontSize: '0.688rem',
+                padding: '0.25rem 0.625rem',
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(251, 191, 36, 0.2) 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.5)',
+                borderRadius: '6px',
+                color: '#FCD34D',
+                fontWeight: '800',
+                textShadow: '0 0 12px rgba(212, 175, 55, 0.8)',
+                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                letterSpacing: '0.1em'
+              }}>
+                LOCKED
+              </span>
+            )}
+            {!isLockedPick && isValuePlay && (
               <span style={{
                 fontSize: '0.688rem',
                 padding: '0.25rem 0.625rem',
@@ -1011,6 +1054,38 @@ const NHLMatchupIntelligence = ({
                 letterSpacing: '0.1em'
               }}>
                 VALUE
+              </span>
+            )}
+            {!isLockedPick && !isValuePlay && (confidenceLevel === 'VERY_HIGH' || confidenceLevel === 'HIGH') && (
+              <span style={{
+                fontSize: '0.688rem',
+                padding: '0.25rem 0.625rem',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.2) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.5)',
+                borderRadius: '6px',
+                color: '#10B981',
+                fontWeight: '800',
+                textShadow: '0 0 12px rgba(16, 185, 129, 0.8)',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                letterSpacing: '0.1em'
+              }}>
+                {confidenceLevel === 'VERY_HIGH' ? 'VERY HIGH' : 'HIGH'} CONFIDENCE
+              </span>
+            )}
+            {!isLockedPick && !isValuePlay && (confidenceLevel === 'MINIMAL' || confidenceLevel === 'LOW') && (
+              <span style={{
+                fontSize: '0.688rem',
+                padding: '0.25rem 0.625rem',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(251, 146, 60, 0.2) 100%)',
+                border: '1px solid rgba(245, 158, 11, 0.5)',
+                borderRadius: '6px',
+                color: '#F59E0B',
+                fontWeight: '800',
+                textShadow: '0 0 12px rgba(245, 158, 11, 0.8)',
+                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                letterSpacing: '0.1em'
+              }}>
+                ⚠️ LOW CONFIDENCE
               </span>
             )}
           </div>
@@ -1184,11 +1259,63 @@ const NHLMatchupIntelligence = ({
           {/* The Story - COMPLETE NARRATIVE ARC */}
           <div style={{
             fontSize: '0.75rem',
-            color: isValuePlay ? 'rgba(212, 175, 55, 0.95)' : 'rgba(16, 185, 129, 0.95)',
+            color: isLockedPick ? 'rgba(212, 175, 55, 0.95)' : isValuePlay ? 'rgba(212, 175, 55, 0.95)' : confidenceLevel === 'MINIMAL' || confidenceLevel === 'LOW' ? 'rgba(245, 158, 11, 0.95)' : 'rgba(16, 185, 129, 0.95)',
             lineHeight: '1.5',
             position: 'relative'
           }}>
             {(() => {
+              // LOCKED PICK NARRATIVE
+              if (isLockedPick && lockedBet) {
+                const betDetails = lockedBet.bet || lockedBet;
+                const pickTeam = betDetails.pick ? betDetails.pick.split(' ')[0] : betDetails.team;
+                const odds = betDetails.odds;
+                const lockedTime = lockedBet.firstRecommendedAt || lockedBet.timestamp;
+                
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{
+                      fontSize: '0.938rem',
+                      fontWeight: '900',
+                      color: '#FCD34D',
+                      textShadow: '0 0 20px rgba(212, 175, 55, 0.8)',
+                      marginBottom: '0.5rem'
+                    }}>
+                      🔒 {pickTeam} {odds > 0 ? '+' : ''}{odds}
+                    </div>
+                    
+                    <div style={{ paddingLeft: '1rem', position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#FCD34D' }}>📍</span>
+                      <span style={{ fontWeight: '700', opacity: 0.9 }}>RECOMMENDATION LOCKED</span>
+                    </div>
+                    
+                    <div style={{ paddingLeft: '1rem', position: 'relative', fontSize: '0.688rem', opacity: 0.85, lineHeight: '1.4' }}>
+                      This pick was identified when odds offered strong expected value. Line may have moved since lock, but original analysis remains valid.
+                    </div>
+                    
+                    <div style={{
+                      marginTop: '0.5rem',
+                      padding: '0.75rem 1rem',
+                      background: 'rgba(212, 175, 55, 0.15)',
+                      border: '1px solid rgba(212, 175, 55, 0.3)',
+                      borderRadius: '8px'
+                    }}>
+                      <div style={{ fontSize: '0.688rem', fontWeight: '700', marginBottom: '0.375rem', color: '#FCD34D' }}>
+                        💡 VIEW FULL ANALYSIS
+                      </div>
+                      <div style={{ fontSize: '0.625rem', opacity: 0.8 }}>
+                        Check "Hot Takes" section above for complete matchup breakdown and betting rationale.
+                      </div>
+                    </div>
+                    
+                    <div style={{ paddingLeft: '1rem', position: 'relative', fontSize: '0.625rem', opacity: 0.7, fontStyle: 'italic' }}>
+                      <span style={{ position: 'absolute', left: 0 }}>⚠️</span>
+                      <span style={{ paddingLeft: '0.25rem' }}>Always check current odds at your sportsbook before placing bet</span>
+                    </div>
+                  </div>
+                );
+              }
+
+              // VALUE PLAY NARRATIVE
               if (isValuePlay && recommendedPlay) {
                 // VALUE PLAY: 3-ACT STRUCTURE
                 const winningFactors = [];
@@ -1225,7 +1352,7 @@ const NHLMatchupIntelligence = ({
                   </div>
                 );
               } else {
-                // QUALITY PLAY: MULTI-FACTOR DOMINANCE
+                // QUALITY PLAY: CONFIDENCE-BASED NARRATIVE
                 const advantages = [];
                 if (offenseEdge > 0) advantages.push({ name: 'offense', value: offenseEdge, team: offenseEdgeTeam });
                 if (specialTeamsEdge > 0) advantages.push({ name: 'PP', value: specialTeamsEdge, team: specialTeamsEdgeTeam });
@@ -1235,34 +1362,98 @@ const NHLMatchupIntelligence = ({
                 
                 const teamAdvantages = advantages.filter(a => a.team === (recommendedPlay?.team || edgeFavoredTeam));
                 
-                if (teamAdvantages.length >= 3) {
+                // VERY HIGH / HIGH CONFIDENCE
+                if (confidenceLevel === 'VERY_HIGH' || confidenceLevel === 'HIGH') {
                   return (
-                    <div style={{ paddingLeft: '1rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>🎯</span>
-                      <span style={{ fontWeight: '700' }}>{recommendedPlay?.team || edgeFavoredTeam} dominates {teamAdvantages.length} key factors:</span>
-                      <span style={{ opacity: 0.9 }}> {teamAdvantages.map(a => `${a.name} (+${a.value.toFixed(2)}g)`).join(', ')}. </span>
-                      {awayPDO > 102 || homePDO > 102 
-                        ? 'Luck regression adds to the edge.' 
-                        : 'Multi-factor advantage = high confidence.'}
-                    </div>
-                  );
-                } else if (specialTeamsEdge > 0.15) {
-                  return (
-                    <div style={{ paddingLeft: '1rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>🔥</span>
-                      <span style={{ fontWeight: '700' }}>PP dominance is decisive:</span>
-                      <span style={{ opacity: 0.9 }}> {specialTeamsEdgeTeam}'s power play (+{specialTeamsEdge.toFixed(2)}g advantage) should capitalize on weak PK. Expected impact: +0.4 goals.</span>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div style={{ paddingLeft: '1rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>⚖️</span>
-                      <span style={{ fontWeight: '700' }}>Close matchup with slight edge:</span>
-                      <span style={{ opacity: 0.9 }}> {recommendedPlay?.team || edgeFavoredTeam} has narrow advantages in {teamAdvantages.map(a => a.name).join(' and ')}. Not a high-confidence play.</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                      <div style={{ paddingLeft: '1rem', position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>🎯</span>
+                        <span style={{ fontWeight: '700', color: '#10B981' }}>{recommendedPlay?.team || edgeFavoredTeam} DOMINATES {teamAdvantages.length} KEY FACTORS:</span>
+                      </div>
+                      {teamAdvantages.map((adv, i) => (
+                        <div key={i} style={{ paddingLeft: '1rem', position: 'relative', fontSize: '0.688rem' }}>
+                          <span style={{ position: 'absolute', left: 0, opacity: 0.7 }}>•</span>
+                          <span style={{ paddingLeft: '0.25rem', opacity: 0.9 }}>
+                            {adv.name.toUpperCase()} (+{adv.value.toFixed(2)}g) - {
+                              adv.name === 'offense' ? 'Superior shot quality and volume' :
+                              adv.name === 'PP' ? 'Elite power play vs weak PK' :
+                              adv.name === 'goalie' ? 'Netminder stops more shots' :
+                              adv.name === 'regression' ? 'PDO due for correction' :
+                              'Controls pace and possession'
+                            }
+                          </span>
+                        </div>
+                      ))}
+                      <div style={{ paddingLeft: '1rem', marginTop: '0.25rem', fontSize: '0.688rem', fontWeight: '700', color: '#10B981' }}>
+                        Total Edge: +{totalEdge.toFixed(2)} goals | Confidence: {confidenceLevel === 'VERY_HIGH' ? 'VERY HIGH ✅✅' : 'HIGH ✅'}
+                      </div>
                     </div>
                   );
                 }
+                
+                // MODERATE CONFIDENCE
+                if (confidenceLevel === 'MODERATE') {
+                  if (specialTeamsEdge > 0.15) {
+                    return (
+                      <div style={{ paddingLeft: '1rem', position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>🔥</span>
+                        <span style={{ fontWeight: '700' }}>PP dominance is the key factor:</span>
+                        <span style={{ opacity: 0.9 }}> {specialTeamsEdgeTeam}'s elite power play (+{specialTeamsEdge.toFixed(2)}g advantage) should capitalize on weak PK. Expected impact: +{(specialTeamsEdge * 0.8).toFixed(2)} goals.</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ paddingLeft: '1rem', position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>✅</span>
+                      <span style={{ fontWeight: '700' }}>{recommendedPlay?.team || edgeFavoredTeam} has clear advantages:</span>
+                      <span style={{ opacity: 0.9 }}> {teamAdvantages.map(a => `${a.name} (+${a.value.toFixed(2)}g)`).join(', ')}. Total edge: +{totalEdge.toFixed(2)} goals.</span>
+                    </div>
+                  );
+                }
+                
+                // LOW / MINIMAL CONFIDENCE
+                if (confidenceLevel === 'LOW' || confidenceLevel === 'MINIMAL') {
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                      <div style={{ paddingLeft: '1rem', position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#F59E0B' }}>⚠️</span>
+                        <span style={{ fontWeight: '700', color: '#F59E0B' }}>CLOSE MATCHUP - LOW CONFIDENCE</span>
+                      </div>
+                      <div style={{ paddingLeft: '1rem', fontSize: '0.688rem', opacity: 0.9 }}>
+                        {teamAdvantages.length > 0 
+                          ? `${recommendedPlay?.team || edgeFavoredTeam} has slim advantages in ${teamAdvantages.map(a => a.name).join(' and ')} (+${totalEdge.toFixed(2)}g total).`
+                          : `Evenly matched teams with minimal analytical edge (+${totalEdge.toFixed(2)}g).`}
+                      </div>
+                      <div style={{
+                        marginTop: '0.25rem',
+                        padding: '0.625rem 0.875rem',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: '6px',
+                        fontSize: '0.688rem'
+                      }}>
+                        <div style={{ fontWeight: '700', color: '#F59E0B', marginBottom: '0.25rem' }}>⚠️ CAUTION</div>
+                        <div style={{ opacity: 0.85 }}>
+                          This is a low-confidence play with slim margins. Consider:
+                          <ul style={{ marginTop: '0.375rem', marginLeft: '1rem', marginBottom: 0 }}>
+                            <li>Smaller unit size (0.5u or less)</li>
+                            <li>Passing on this game entirely</li>
+                            <li>Waiting for better spots</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // FALLBACK (shouldn't reach here)
+                return (
+                  <div style={{ paddingLeft: '1rem', position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 0, fontWeight: '800', color: '#10B981' }}>⚖️</span>
+                    <span style={{ fontWeight: '700' }}>Moderate edge:</span>
+                    <span style={{ opacity: 0.9 }}> {recommendedPlay?.team || edgeFavoredTeam} has advantages totaling +{totalEdge.toFixed(2)} goals.</span>
+                  </div>
+                );
               }
             })()}
           </div>

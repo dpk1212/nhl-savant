@@ -3742,6 +3742,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 dataProcessor={dataProcessor}
                 statsAnalyzer={statsAnalyzer}
                 bestEdge={bestEdge}
+                firebaseBets={firebaseBets}
                 isMobile={isMobile}
               />
               </StepSection>
