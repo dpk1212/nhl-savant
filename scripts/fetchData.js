@@ -86,7 +86,94 @@ async function fetchAllData() {
     console.log(`   - File: public/odds_money.md\n`);
     results.moneyline = true;
     
-    // 2. Fetch Starting Goalies from MoneyPuck Homepage (with retry logic)
+    // 2. Fetch DRatings NHL Predictions + Goalies (FIRST for baseline coverage)
+    console.log('🎯 Fetching DRatings NHL predictions + goalies...');
+    console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
+    
+    let dratingsGoalies = [];
+    try {
+      const dratingsResult = await retryWithBackoff(async () => {
+        return await firecrawl.scrape(`https://www.dratings.com/predictor/nhl-hockey-predictions/?_=${cacheBuster}`, {
+          formats: ['markdown'],
+          onlyMainContent: true,
+          waitFor: 2000,
+          timeout: 300000,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+      });
+      
+      console.log('   - Scraped DRatings predictions page');
+      console.log(`   - Size: ${dratingsResult.markdown?.length || 0} characters`);
+      
+      // Parse BOTH predictions AND goalies from DRatings
+      const dratingsPredictions = parseDRatingsPredictions(dratingsResult.markdown);
+      dratingsGoalies = parseDRatingsGoalies(dratingsResult.markdown);
+      
+      console.log(`   - Parsed ${dratingsPredictions.length} DRatings predictions`);
+      console.log(`   - Parsed ${dratingsGoalies.length} DRatings projected goalies`);
+      
+      if (dratingsPredictions.length === 0) {
+        console.log('   ⚠️  WARNING: No predictions found in DRatings scrape');
+        console.log('   ⚠️  Keeping existing dratings_predictions.json file');
+        results.dratingsPredictions = false;
+      } else {
+        await fs.writeFile(
+          join(__dirname, '../public/dratings_predictions.json'),
+          JSON.stringify({
+            lastUpdated: fetchTimestamp,
+            source: 'DRatings',
+            url: 'https://www.dratings.com/predictor/nhl-hockey-predictions/',
+            count: dratingsPredictions.length,
+            predictions: dratingsPredictions
+          }, null, 2),
+          'utf8'
+        );
+        
+        console.log(`✅ DRatings predictions saved`);
+        console.log(`   - Predictions: ${dratingsPredictions.length} games`);
+        console.log(`   - File: public/dratings_predictions.json`);
+        results.dratingsPredictions = true;
+      }
+      
+      // Write DRatings goalies as INITIAL baseline (will be merged with MoneyPuck)
+      if (dratingsGoalies.length > 0) {
+        const etDateStr = new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const [month, day, year] = etDateStr.split('/');
+        const etDate = `${year}-${month}-${day}`;
+        
+        const dratingsGoaliesData = {
+          date: etDate,
+          lastUpdated: fetchTimestamp,
+          oddsLastUpdated: fetchTimestamp,
+          source: 'DRatings (Projected - will be merged with MoneyPuck)',
+          games: dratingsGoalies
+        };
+        
+        await fs.writeFile(
+          join(__dirname, '../public/starting_goalies.json'),
+          JSON.stringify(dratingsGoaliesData, null, 2),
+          'utf8'
+        );
+        
+        console.log(`✅ DRatings goalies saved as baseline`);
+        console.log(`   - Goalies projected: ${countConfirmedGoalies(dratingsGoalies)}`);
+        console.log(`   - File: public/starting_goalies.json (will be merged with MoneyPuck)\n`);
+      }
+    } catch (error) {
+      console.log('   ⚠️  WARNING: DRatings fetch failed:', error.message);
+      console.log('   ⚠️  Continuing without DRatings baseline\n');
+      results.dratingsPredictions = false;
+    }
+    
+    // 3. Fetch Starting Goalies from MoneyPuck Homepage + MERGE with DRatings
     console.log('🥅 Fetching starting goalies from MoneyPuck...');
     console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
     
@@ -119,7 +206,7 @@ async function fetchAllData() {
     const scheduledGames = getTodaysScheduledGames();
     console.log(`   - Schedule shows ${scheduledGames.length} games today`);
     
-    const startingGoalies = scrapedGoalies.filter(game => {
+    const moneyPuckGoalies = scrapedGoalies.filter(game => {
       const awayTeam = game.matchup.split(' @ ')[0];
       const homeTeam = game.matchup.split(' @ ')[1];
       
@@ -128,20 +215,41 @@ async function fetchAllData() {
       );
     });
     
-    if (startingGoalies.length < scrapedGoalies.length) {
-      console.log(`   ⚠️  Filtered out ${scrapedGoalies.length - startingGoalies.length} games (not scheduled today)`);
+    if (moneyPuckGoalies.length < scrapedGoalies.length) {
+      console.log(`   ⚠️  Filtered out ${scrapedGoalies.length - moneyPuckGoalies.length} games (not scheduled today)`);
     }
     
-    console.log(`   ✅ ${startingGoalies.length} games match today's schedule`);
+    console.log(`   ✅ ${moneyPuckGoalies.length} games match today's schedule`);
     
-    // CRITICAL: Don't overwrite with empty data!
-    if (startingGoalies.length === 0) {
-      console.log('   ⚠️  WARNING: No games found in MoneyPuck scrape');
+    // MERGE DRatings baseline with MoneyPuck confirmed goalies
+    console.log('\n🔀 MERGING DRATINGS → MONEYPUCK...');
+    const finalGoalies = mergeGoalies(dratingsGoalies, moneyPuckGoalies);
+    console.log(`   - Final games: ${finalGoalies.length}`);
+    console.log(`   - Total goalies: ${countConfirmedGoalies(finalGoalies)}`);
+    
+    // Count by source
+    const mpConfirmed = finalGoalies.reduce((count, g) => {
+      return count + 
+        (g.away.source === 'MoneyPuck' ? 1 : 0) + 
+        (g.home.source === 'MoneyPuck' ? 1 : 0);
+    }, 0);
+    const drProjected = finalGoalies.reduce((count, g) => {
+      return count + 
+        (g.away.source === 'DRatings' ? 1 : 0) + 
+        (g.home.source === 'DRatings' ? 1 : 0);
+    }, 0);
+    
+    console.log(`   - MoneyPuck confirmed: ${mpConfirmed}`);
+    console.log(`   - DRatings projected: ${drProjected}`);
+    
+    // CRITICAL: Only write if we have data
+    if (finalGoalies.length === 0) {
+      console.log('   ⚠️  WARNING: No games found after merge');
       console.log('   ⚠️  Keeping existing starting_goalies.json file');
       console.log('   ⚠️  Manual update may be required\n');
       results.goalies = false;
     } else {
-      // CRITICAL FIX: Use ET date (import at top would fail in Node.js, so inline)
+      // CRITICAL FIX: Use ET date
       const etDateStr = new Date().toLocaleString('en-US', {
         timeZone: 'America/New_York',
         year: 'numeric',
@@ -155,7 +263,7 @@ async function fetchAllData() {
         date: etDate,
         lastUpdated: fetchTimestamp,
         oddsLastUpdated: fetchTimestamp,
-        games: startingGoalies
+        games: finalGoalies
       };
       
       await fs.writeFile(
@@ -164,13 +272,14 @@ async function fetchAllData() {
         'utf8'
       );
       
-      console.log(`✅ Starting goalies saved`);
-      console.log(`   - Goalies confirmed: ${countConfirmedGoalies(startingGoalies)}`);
+      console.log(`✅ Merged goalies saved`);
+      console.log(`   - Total goalies: ${countConfirmedGoalies(finalGoalies)}`);
+      console.log(`   - MoneyPuck: ${mpConfirmed} | DRatings: ${drProjected}`);
       console.log(`   - File: public/starting_goalies.json\n`);
       results.goalies = true;
     }
     
-    // 3. Save MoneyPuck predictions for model calibration
+    // 4. Save MoneyPuck predictions for model calibration
     console.log('🎯 Saving MoneyPuck predictions for model calibration...');
     if (moneyPuckPredictions.length === 0) {
       console.log('   ⚠️  WARNING: No predictions found in MoneyPuck scrape');
@@ -187,58 +296,6 @@ async function fetchAllData() {
       console.log(`   - Predictions: ${moneyPuckPredictions.length} games`);
       console.log(`   - File: public/moneypuck_predictions.json\n`);
       results.moneyPuckPredictions = true;
-    }
-    
-    // 4. Fetch DRatings NHL Predictions
-    console.log('🎯 Fetching DRatings NHL predictions...');
-    console.log('   ⏳ Timeout set to 5 minutes (Firecrawl may be slow)');
-    
-    try {
-      const dratingsResult = await retryWithBackoff(async () => {
-        return await firecrawl.scrape(`https://www.dratings.com/predictor/nhl-hockey-predictions/?_=${cacheBuster}`, {
-          formats: ['markdown'],
-          onlyMainContent: true,
-          waitFor: 2000,
-          timeout: 300000,
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        });
-      });
-      
-      console.log('   - Scraped DRatings predictions page');
-      console.log(`   - Size: ${dratingsResult.markdown?.length || 0} characters`);
-      
-      const dratingsPredictions = parseDRatingsPredictions(dratingsResult.markdown);
-      console.log(`   - Parsed ${dratingsPredictions.length} DRatings predictions`);
-      
-      if (dratingsPredictions.length === 0) {
-        console.log('   ⚠️  WARNING: No predictions found in DRatings scrape');
-        console.log('   ⚠️  Keeping existing dratings_predictions.json file');
-        results.dratingsPredictions = false;
-      } else {
-        await fs.writeFile(
-          join(__dirname, '../public/dratings_predictions.json'),
-          JSON.stringify({
-            lastUpdated: fetchTimestamp,
-            source: 'DRatings',
-            url: 'https://www.dratings.com/predictor/nhl-hockey-predictions/',
-            count: dratingsPredictions.length,
-            predictions: dratingsPredictions
-          }, null, 2),
-          'utf8'
-        );
-        
-        console.log(`✅ DRatings predictions saved`);
-        console.log(`   - Predictions: ${dratingsPredictions.length} games`);
-        console.log(`   - File: public/dratings_predictions.json\n`);
-        results.dratingsPredictions = true;
-      }
-    } catch (error) {
-      console.log('   ⚠️  WARNING: DRatings fetch failed:', error.message);
-      console.log('   ⚠️  Keeping existing dratings_predictions.json file');
-      results.dratingsPredictions = false;
     }
     
     // 5. Fetch Player Props (Player Total Goals) from OddsTrader
@@ -453,6 +510,147 @@ function mapDRatingsTeamName(dratingsName) {
   };
   
   return mapping[dratingsName] || null;
+}
+
+/**
+ * Parse DRatings goalies from scraped markdown
+ * Extracts projected starting goalies from upcoming games table
+ */
+function parseDRatingsGoalies(markdown) {
+  const games = [];
+  
+  if (!markdown) {
+    console.log('   ⚠️  Warning: No markdown content from DRatings for goalies');
+    return games;
+  }
+  
+  const lines = markdown.split('\n');
+  let inUpcomingTable = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Check if we're in the upcoming games section
+    if (line.includes('Upcoming Games for')) {
+      inUpcomingTable = true;
+      continue;
+    }
+    
+    // Stop at completed games
+    if (line.includes('Completed Games') || line.includes('Games for Dec')) {
+      break;
+    }
+    
+    if (!inUpcomingTable) continue;
+    
+    // Look for game rows (start with | and contain time)
+    if (line.startsWith('| [') && line.includes('PM]')) {
+      try {
+        // Split by pipes
+        const columns = line.split('|').map(c => c.trim()).filter(c => c);
+        
+        // Column 0 = Time
+        // Column 1 = Teams
+        // Column 2 = Goalies
+        // Column 3+ = Other stats
+        
+        if (columns.length < 3) continue;
+        
+        const teamsColumn = columns[1];
+        const goaliesColumn = columns[2];
+        
+        // Extract teams using regex
+        // Format: [Los Angeles Kings](link)(14-9-9)<br>[Florida Panthers](link)(17-13-2)
+        const teamsMatch = teamsColumn.match(/\[([^\]]+)\]\([^)]+\)\([^)]+\)<br>\[([^\]]+)\]\([^)]+\)\([^)]+\)/);
+        
+        if (!teamsMatch) continue;
+        
+        const awayTeamName = teamsMatch[1].trim();
+        const homeTeamName = teamsMatch[2].trim();
+        
+        const awayTeam = mapDRatingsTeamName(awayTeamName);
+        const homeTeam = mapDRatingsTeamName(homeTeamName);
+        
+        if (!awayTeam || !homeTeam) continue;
+        
+        // Extract goalies
+        // Format: "Darcy Kuemper<br>Sergei Bobrovsky"
+        const goalies = goaliesColumn.split('<br>').map(g => g.trim()).filter(g => g);
+        
+        const awayGoalie = goalies[0] || null;
+        const homeGoalie = goalies[1] || null;
+        
+        games.push({
+          matchup: `${awayTeam} @ ${homeTeam}`,
+          away: {
+            team: awayTeam,
+            goalie: awayGoalie,
+            confirmed: !!awayGoalie,
+            source: 'DRatings'
+          },
+          home: {
+            team: homeTeam,
+            goalie: homeGoalie,
+            confirmed: !!homeGoalie,
+            source: 'DRatings'
+          }
+        });
+        
+        console.log(`   🥅 DRatings: ${awayTeam} @ ${homeTeam} (${awayGoalie || 'TBD'} vs ${homeGoalie || 'TBD'})`);
+        
+      } catch (error) {
+        console.log(`   ⚠️  Error parsing DRatings goalie at line ${i}: ${error.message}`);
+      }
+    }
+  }
+  
+  return games;
+}
+
+/**
+ * Merge DRatings projected goalies with MoneyPuck confirmed goalies
+ * MoneyPuck takes priority when confirmed, DRatings fills gaps
+ */
+function mergeGoalies(dratingsGoalies, moneyPuckGoalies) {
+  const merged = [];
+  
+  // If no DRatings baseline, just use MoneyPuck
+  if (!dratingsGoalies || dratingsGoalies.length === 0) {
+    return moneyPuckGoalies.map(g => ({
+      ...g,
+      away: { ...g.away, source: g.away.confirmed ? 'MoneyPuck' : null },
+      home: { ...g.home, source: g.home.confirmed ? 'MoneyPuck' : null }
+    }));
+  }
+  
+  for (const dr of dratingsGoalies) {
+    const mp = moneyPuckGoalies.find(g => g.matchup === dr.matchup);
+    
+    if (!mp) {
+      // No MoneyPuck data for this game - use DRatings
+      merged.push(dr);
+      continue;
+    }
+    
+    // Merge: Prefer MoneyPuck if confirmed, else use DRatings
+    merged.push({
+      matchup: dr.matchup,
+      away: {
+        team: dr.away.team,
+        goalie: mp.away.confirmed ? mp.away.goalie : dr.away.goalie,
+        confirmed: mp.away.confirmed || dr.away.confirmed,
+        source: mp.away.confirmed ? 'MoneyPuck' : 'DRatings'
+      },
+      home: {
+        team: dr.home.team,
+        goalie: mp.home.confirmed ? mp.home.goalie : dr.home.goalie,
+        confirmed: mp.home.confirmed || dr.home.confirmed,
+        source: mp.home.confirmed ? 'MoneyPuck' : 'DRatings'
+      }
+    });
+  }
+  
+  return merged;
 }
 
 /**
