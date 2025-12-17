@@ -929,10 +929,38 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 );
 
 // Hero Bet Card - Main value proposition
-const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
+const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges }) => {
+  
+  // 🔒 Check if this game has a LOCKED pick from Firebase
+  const firebaseBet = firebaseBets?.find(bet => 
+    bet.game?.awayTeam === game.awayTeam && 
+    bet.game?.homeTeam === game.homeTeam &&
+    bet.status === 'PENDING'
+  );
+  
+  // Determine if the Firebase bet is LOCKED (not in current topEdges)
+  const gameMatchup = `${game.awayTeam} @ ${game.homeTeam}`;
+  const isLockedPick = firebaseBet && !topEdges?.some(edge => 
+    edge.game === gameMatchup && edge.market === firebaseBet.bet?.market
+  );
+  
+  // If no bestEdge but we have a locked pick, use that
+  if (!bestEdge && isLockedPick && firebaseBet) {
+    // Convert Firebase bet to bestEdge format for display
+    bestEdge = {
+      pick: firebaseBet.bet?.pick,
+      odds: firebaseBet.bet?.odds,
+      evPercent: firebaseBet.prediction?.evPercent || 0,
+      modelProb: firebaseBet.prediction?.modelProb || 0.5,
+      market: firebaseBet.bet?.market,
+      team: firebaseBet.bet?.pick?.split(' ')[0], // Extract team name
+      qualityGrade: firebaseBet.prediction?.qualityGrade || 'B+',
+      isLocked: true // Flag to show locked styling
+    };
+  }
   
   if (!bestEdge) {
-    // Premium CTA when no bet recommendation
+    // Premium CTA when no bet recommendation AND no locked pick
     return (
       <Link 
         to="/matchup-insights" 
@@ -1035,6 +1063,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
     );
   }
   
+  // Determine if this is a locked pick for styling
+  const isLocked = bestEdge.isLocked || false;
+  
   const marketProb = calculateImpliedProb(bestEdge.odds);
   const modelTotal = game.edges.total?.predictedTotal || 0;
   const marketTotal = game.edges.total?.marketTotal || 0;
@@ -1082,9 +1113,15 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   
   return (
     <div style={{ 
-      background: GRADIENTS.hero,
-      border: ELEVATION.elevated.border,
-      boxShadow: ELEVATION.elevated.shadow,
+      background: isLocked 
+        ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)'
+        : GRADIENTS.hero,
+      border: isLocked 
+        ? '1px solid rgba(212, 175, 55, 0.3)'
+        : ELEVATION.elevated.border,
+      boxShadow: isLocked
+        ? '0 4px 12px rgba(212, 175, 55, 0.2)'
+        : ELEVATION.elevated.shadow,
       borderRadius: '10px',
       padding: isMobile ? '0.75rem' : '0.875rem', // REDUCED from 1.5rem
       margin: 0, // Removed margin since StepSection handles it
@@ -1092,7 +1129,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
       overflow: 'hidden'
     }}>
       {/* Shimmer effect for high value bets */}
-      {bestEdge.evPercent > 10 && (
+      {!isLocked && bestEdge.evPercent > 10 && (
         <div className="shimmer-overlay" />
       )}
       
@@ -1101,13 +1138,39 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
         fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.25rem', 
         fontWeight: TYPOGRAPHY.heading.weight, 
         marginBottom: '1rem',
-        color: 'var(--color-text-primary)',
+        color: isLocked ? '#D4AF37' : 'var(--color-text-primary)',
         position: 'relative',
         zIndex: 1,
-        letterSpacing: TYPOGRAPHY.heading.letterSpacing
+        letterSpacing: TYPOGRAPHY.heading.letterSpacing,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem'
       }}>
-        💰 BEST VALUE: {bestEdge.pick}
+        {isLocked ? (
+          <>
+            <Lock size={isMobile ? 18 : 22} color="#D4AF37" />
+            <span>LOCKED PICK: {bestEdge.pick}</span>
+          </>
+        ) : (
+          <>💰 BEST VALUE: {bestEdge.pick}</>
+        )}
       </div>
+      
+      {/* Locked pick notice */}
+      {isLocked && (
+        <div style={{
+          fontSize: '0.813rem',
+          color: 'rgba(212, 175, 55, 0.8)',
+          marginBottom: '1rem',
+          padding: '0.5rem 0.75rem',
+          background: 'rgba(212, 175, 55, 0.1)',
+          borderRadius: '6px',
+          border: '1px solid rgba(212, 175, 55, 0.2)',
+          lineHeight: '1.5'
+        }}>
+          🔒 <strong>Locked In:</strong> This pick was recommended earlier when odds were favorable. Current odds may have moved. Check live markets before placing.
+        </div>
+      )}
       
       {/* Edge display */}
       <div style={{ 
@@ -3780,6 +3843,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 game={game}
                 isMobile={isMobile}
                     factors={analyticsData?.factors || []}
+                    firebaseBets={firebaseBets}
+                    topEdges={topEdges}
               />
                   </StepSection>
                 );
