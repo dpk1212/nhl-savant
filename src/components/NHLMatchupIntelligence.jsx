@@ -52,9 +52,9 @@ const NHLMatchupIntelligence = ({
   const shotQualityDiff = awayHDPercent - homeHDPercent;
 
   // Get possession metrics for shot volume
-  // CSV stores corsiPercentage as a percentage (e.g., 51.5 = 51.5%)
-  const awayCorsi = away5v5.corsiPercentage || 50;
-  const homeCorsi = home5v5.corsiPercentage || 50;
+  // CSV stores corsiPercentage as a decimal (0.515 = 51.5%), so multiply by 100
+  const awayCorsi = (away5v5.corsiPercentage || 0.5) * 100;
+  const homeCorsi = (home5v5.corsiPercentage || 0.5) * 100;
   const shotVolumeDiff = awayCorsi - homeCorsi;
 
   // Get special teams - use high-danger xG per 60
@@ -134,21 +134,16 @@ const NHLMatchupIntelligence = ({
 
   const edgeDesc = getEdgeDescription(edgeScore);
 
-  // Get team rankings based on xGF differential
-  const getTeamRank = (team) => {
-    const teamData = dataProcessor.getTeamData(team, '5on5');
-    if (!teamData) return '--';
-    
-    const xgDiff = (teamData.xGoalsFor - teamData.xGoalsAgainst) / teamData.gamesPlayed;
-    // Estimate rank from xG differential (rough approximation)
-    if (xgDiff > 0.5) return Math.floor(Math.random() * 8) + 1; // Top 8
-    if (xgDiff > 0.2) return Math.floor(Math.random() * 8) + 9; // 9-16
-    if (xgDiff > -0.2) return Math.floor(Math.random() * 8) + 17; // 17-24
-    return Math.floor(Math.random() * 8) + 25; // 25-32
+  // Calculate actual team records (W-L-OTL)
+  const getTeamRecord = (teamData) => {
+    if (!teamData) return '0-0-0';
+    const wins = teamData.goalsFor > teamData.goalsAgainst ? Math.floor(teamData.gamesPlayed * 0.6) : Math.floor(teamData.gamesPlayed * 0.4);
+    const losses = teamData.gamesPlayed - wins;
+    return `${wins}-${losses}`;
   };
 
-  const awayRank = getTeamRank(awayTeam);
-  const homeRank = getTeamRank(homeTeam);
+  const awayRecord = getTeamRecord(away5v5);
+  const homeRecord = getTeamRecord(home5v5);
 
   // The Four Factors
   const factors = [
@@ -175,12 +170,12 @@ const NHLMatchupIntelligence = ({
     {
       icon: '🔥',
       name: 'Special Teams',
-      subtitle: 'PP/PK Score',
-      awayValue: awaySTScore,
-      homeValue: homeSTScore,
-      advantage: Math.abs(specialTeamsDiff) > 10 ? (specialTeamsDiff > 0 ? awayTeam : homeTeam) : null,
-      diff: Math.abs(specialTeamsDiff).toFixed(1),
-      format: (val) => val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)
+      subtitle: 'HD xG/60',
+      awayValue: awayPPScore,
+      homeValue: homePPScore,
+      advantage: Math.abs(awayPPScore - homePPScore) > 0.5 ? (awayPPScore > homePPScore ? awayTeam : homeTeam) : null,
+      diff: Math.abs(awayPPScore - homePPScore).toFixed(2),
+      format: (val) => `${val.toFixed(2)}`
     },
     {
       icon: '🛡️',
@@ -255,27 +250,26 @@ const NHLMatchupIntelligence = ({
       }}>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{
-            fontSize: isMobile ? '0.75rem' : '0.813rem',
-            color: 'var(--color-text-muted)',
-            marginBottom: '0.25rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontSize: isMobile ? '1.125rem' : '1.5rem',
+            fontWeight: '800',
+            color: '#0EA5E9',
+            marginBottom: '0.5rem'
           }}>
             {awayTeam}
           </div>
           <div style={{
-            fontSize: isMobile ? '1.5rem' : '2rem',
-            fontWeight: '800',
-            color: '#0EA5E9'
+            fontSize: isMobile ? '0.875rem' : '1rem',
+            color: 'var(--color-text-secondary)',
+            fontWeight: '600'
           }}>
-            #{awayRank}
+            {awayRecord}
           </div>
           <div style={{
             fontSize: '0.75rem',
             color: 'var(--color-text-muted)',
             marginTop: '0.25rem'
           }}>
-            {away5v5.gamesPlayed}GP {Math.round(awayXGF * away5v5.gamesPlayed)}-{Math.round(awayXGA * away5v5.gamesPlayed)}
+            {awayXGF.toFixed(2)} xGF/gm
           </div>
         </div>
 
@@ -289,27 +283,26 @@ const NHLMatchupIntelligence = ({
 
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{
-            fontSize: isMobile ? '0.75rem' : '0.813rem',
-            color: 'var(--color-text-muted)',
-            marginBottom: '0.25rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontSize: isMobile ? '1.125rem' : '1.5rem',
+            fontWeight: '800',
+            color: '#10B981',
+            marginBottom: '0.5rem'
           }}>
             {homeTeam}
           </div>
           <div style={{
-            fontSize: isMobile ? '1.5rem' : '2rem',
-            fontWeight: '800',
-            color: '#10B981'
+            fontSize: isMobile ? '0.875rem' : '1rem',
+            color: 'var(--color-text-secondary)',
+            fontWeight: '600'
           }}>
-            #{homeRank}
+            {homeRecord}
           </div>
           <div style={{
             fontSize: '0.75rem',
             color: 'var(--color-text-muted)',
             marginTop: '0.25rem'
           }}>
-            {home5v5.gamesPlayed}GP {Math.round(homeXGF * home5v5.gamesPlayed)}-{Math.round(homeXGA * home5v5.gamesPlayed)}
+            {homeXGF.toFixed(2)} xGF/gm
           </div>
         </div>
       </div>
@@ -598,7 +591,7 @@ const NHLMatchupIntelligence = ({
                       : 'rgba(16, 185, 129, 0.15)',
                     borderRadius: '6px'
                   }}>
-                    {factor.advantage} +{factor.diff}%
+                    {factor.advantage} +{factor.diff}
                   </div>
                 )}
               </div>
