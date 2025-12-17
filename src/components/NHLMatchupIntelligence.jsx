@@ -79,10 +79,14 @@ const NHLMatchupIntelligence = ({
 
   // Get rest advantage
   const getRestAdvantage = () => {
-    if (!scheduleHelper) return null;
+    // DEFENSIVE: Return null if scheduleHelper not available
+    if (!scheduleHelper || typeof scheduleHelper.getDaysSinceLastGame !== 'function') {
+      return null;
+    }
 
-    const awayRest = scheduleHelper.getDaysSinceLastGame(awayTeam, game.date);
-    const homeRest = scheduleHelper.getDaysSinceLastGame(homeTeam, game.date);
+    try {
+      const awayRest = scheduleHelper.getDaysSinceLastGame(awayTeam, game.date);
+      const homeRest = scheduleHelper.getDaysSinceLastGame(homeTeam, game.date);
 
     // Check for B2B
     if (awayRest === 0) {
@@ -101,12 +105,18 @@ const NHLMatchupIntelligence = ({
     }
 
     // Check for homecoming after road trip
-    const homeTrip = scheduleHelper.getRoadTripLength(homeTeam, game.date);
-    if (homeTrip >= 3) {
-      return { team: homeTeam, message: `${homeTeam} homecoming after ${homeTrip}-game trip`, boost: 5 };
+    if (typeof scheduleHelper.getRoadTripLength === 'function') {
+      const homeTrip = scheduleHelper.getRoadTripLength(homeTeam, game.date);
+      if (homeTrip >= 3) {
+        return { team: homeTeam, message: `${homeTeam} homecoming after ${homeTrip}-game trip`, boost: 5 };
+      }
     }
 
     return null;
+    } catch (error) {
+      console.error('Error calculating rest advantage:', error);
+      return null;
+    }
   };
 
   const restAdvantage = getRestAdvantage();
