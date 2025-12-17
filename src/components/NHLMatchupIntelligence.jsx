@@ -290,6 +290,7 @@ const NHLMatchupIntelligence = ({
         { label: '📊 Quality', away: `${awayPPHDPercent.toFixed(0)}%`, home: `${homePPHDPercent.toFixed(0)}%`, suffix: 'HD shots' },
         { label: '🎯 Impact', value: `= ${Math.abs(specialTeamsDiff * 0.15).toFixed(2)} goals` }
       ]
+    }
     // GOALTENDING - Removed from factors array, will be custom rendered
   ];
 
