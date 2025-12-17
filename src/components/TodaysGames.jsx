@@ -42,6 +42,7 @@ import AIFullStory from './AIFullStory';
 import CollapsibleGameCard from './CollapsibleGameCard';
 import StepSection from './StepSection';
 import QuickStatsBar from './QuickStatsBar';
+import NHLMatchupIntelligence from './NHLMatchupIntelligence';
 import DisclaimerModal from './DisclaimerModal';
 import CompactPicksBar from './CompactPicksBar';
 import { getRating } from './RatingBadge';
@@ -3723,47 +3724,33 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 return null;
               })()}
               
-              {/* STEP 4: THE FULL STORY */}
-              {(() => {
-                const analyticsData = generateAnalyticsData(game, bestEdge);
-                return (
-                  <StepSection
-                    stepNumber={4}
-                    title="THE FULL STORY"
-                    emoji="📚"
-                    accentColor="#F59E0B"
-                    isMobile={isMobile}
-                  >
-                  <AIFullStory 
-                    game={game}
-                    bestEdge={bestEdge}
-                    isMobile={isMobile}
-                  />
-                  </StepSection>
-                );
-              })()}
-              
-              {/* STEP 5: ALL MARKETS */}
+              {/* STEP 4: MATCHUP INTELLIGENCE */}
               <StepSection
-                stepNumber={5}
-                title="COMPLETE ODDS BOARD"
-                emoji="📈"
-                accentColor="#64748B"
+                stepNumber={4}
+                title="MATCHUP INTELLIGENCE"
+                emoji="⚡"
+                accentColor="#10B981"
                 isMobile={isMobile}
               >
-              <MarketsGrid game={game} isMobile={isMobile} />
+              <NHLMatchupIntelligence
+                game={game}
+                dataProcessor={dataProcessor}
+                statsAnalyzer={statsAnalyzer}
+                bestEdge={bestEdge}
+                isMobile={isMobile}
+              />
               </StepSection>
               
-              {/* STEP 6: DEEP ANALYTICS */}
+              {/* STEP 5: DEEP ANALYTICS */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (analyticsData) {
                   return (
                     <StepSection
-                      stepNumber={6}
+                      stepNumber={5}
                       title="ADVANCED MATCHUP ANALYSIS"
                       emoji="🔬"
-                      accentColor="#10B981"
+                      accentColor="#8B5CF6"
                       isMobile={isMobile}
                     >
                     <AdvancedMatchupDetails
