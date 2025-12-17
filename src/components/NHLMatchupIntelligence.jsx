@@ -5,7 +5,6 @@
  */
 
 import { useState } from 'react';
-import { TrendingUp, Flame, Shield, Zap, Target } from 'lucide-react';
 
 const NHLMatchupIntelligence = ({ 
   game, 
@@ -167,7 +166,7 @@ const NHLMatchupIntelligence = ({
   // The Four Factors
   const factors = [
     {
-      icon: <Target size={16} />,
+      icon: '🎯',
       name: 'Shot Quality',
       subtitle: 'High-Danger %',
       awayValue: awayHDPercent,
@@ -177,7 +176,7 @@ const NHLMatchupIntelligence = ({
       format: (val) => `${val.toFixed(1)}%`
     },
     {
-      icon: <TrendingUp size={16} />,
+      icon: '📈',
       name: 'Shot Volume',
       subtitle: 'Corsi For %',
       awayValue: awayCorsi,
@@ -187,7 +186,7 @@ const NHLMatchupIntelligence = ({
       format: (val) => `${val.toFixed(1)}%`
     },
     {
-      icon: <Flame size={16} />,
+      icon: '🔥',
       name: 'Special Teams',
       subtitle: 'PP/PK Score',
       awayValue: awaySTScore,
@@ -197,7 +196,7 @@ const NHLMatchupIntelligence = ({
       format: (val) => val > 0 ? `+${val.toFixed(1)}` : val.toFixed(1)
     },
     {
-      icon: <Shield size={16} />,
+      icon: '🛡️',
       name: 'Goalie Edge',
       subtitle: 'GSAE',
       awayValue: awayGSAE,
