@@ -3741,7 +3741,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 game={game}
                 dataProcessor={dataProcessor}
                 statsAnalyzer={statsAnalyzer}
-                scheduleHelper={scheduleHelper}
                 bestEdge={bestEdge}
                 isMobile={isMobile}
               />

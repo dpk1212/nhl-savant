@@ -11,7 +11,6 @@ const NHLMatchupIntelligence = ({
   game, 
   dataProcessor, 
   statsAnalyzer,
-  scheduleHelper,
   bestEdge,
   isMobile = false 
 }) => {
