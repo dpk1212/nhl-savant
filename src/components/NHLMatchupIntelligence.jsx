@@ -1,7 +1,7 @@
 /**
- * NHL Matchup Intelligence Component - COMPACT + VISUAL + ACCESSIBLE
- * Dense, scrollable layout with smart context that explains the "why"
- * Beginner-friendly with advanced depth
+ * NHL Matchup Intelligence Component - ULTRA-COMPACT + VISUAL + SMART CONTEXT
+ * Explains VALUE plays vs QUALITY plays with exploitable angles
+ * Includes possession, shot blocking, and physical play metrics
  */
 
 import { useState } from 'react';
@@ -28,7 +28,7 @@ const NHLMatchupIntelligence = ({
   
   if (!away5v5 || !home5v5) return null;
 
-  // Calculate metrics
+  // Core metrics
   const awayXGF = (away5v5.xGoalsFor / away5v5.gamesPlayed) || 0;
   const homeXGF = (home5v5.xGoalsFor / home5v5.gamesPlayed) || 0;
   const awayXGA = (away5v5.xGoalsAgainst / away5v5.gamesPlayed) || 0;
@@ -37,7 +37,7 @@ const NHLMatchupIntelligence = ({
   const leagueXGF = 2.18;
   const leagueXGA = 2.18;
 
-  // Get high-danger metrics
+  // High-danger metrics
   const awayHighDanger = statsAnalyzer.getHighDangerMetrics(awayTeam, '5on5');
   const homeHighDanger = statsAnalyzer.getHighDangerMetrics(homeTeam, '5on5');
   
@@ -49,6 +49,36 @@ const NHLMatchupIntelligence = ({
 
   const awayDZGiveaways = (away5v5.dZoneGiveawaysFor || 0) / (away5v5.gamesPlayed || 1);
   const homeDZGiveaways = (home5v5.dZoneGiveawaysFor || 0) / (home5v5.gamesPlayed || 1);
+
+  // POSSESSION METRICS
+  const awayCorsi = away5v5.corsiPercentage || 0.5;
+  const homeCorsi = home5v5.corsiPercentage || 0.5;
+  const awayFenwick = away5v5.fenwickPercentage || 0.5;
+  const homeFenwick = home5v5.fenwickPercentage || 0.5;
+  
+  // Faceoff %
+  const awayFaceoffWins = away5v5.faceOffsWonFor || 0;
+  const awayFaceoffTotal = (away5v5.faceOffsWonFor || 0) + (away5v5.faceOffsWonAgainst || 0);
+  const awayFaceoffPct = awayFaceoffTotal > 0 ? awayFaceoffWins / awayFaceoffTotal : 0.5;
+  
+  const homeFaceoffWins = home5v5.faceOffsWonFor || 0;
+  const homeFaceoffTotal = (home5v5.faceOffsWonFor || 0) + (home5v5.faceOffsWonAgainst || 0);
+  const homeFaceoffPct = homeFaceoffTotal > 0 ? homeFaceoffWins / homeFaceoffTotal : 0.5;
+
+  // PHYSICAL PLAY
+  const awayHits = (away5v5.hitsFor || 0) / (away5v5.gamesPlayed || 1);
+  const homeHits = (home5v5.hitsFor || 0) / (home5v5.gamesPlayed || 1);
+  const awayTakeaways = (away5v5.takeawaysFor || 0) / (away5v5.gamesPlayed || 1);
+  const homeTakeaways = (home5v5.takeawaysFor || 0) / (home5v5.gamesPlayed || 1);
+
+  // SHOT BLOCKING
+  const awayBlockedShots = (away5v5.blockedShotAttemptsAgainst || 0);
+  const awayShotAttempts = (away5v5.shotAttemptsAgainst || 1);
+  const awayBlockPct = (awayBlockedShots / awayShotAttempts) * 100;
+  
+  const homeBlockedShots = (home5v5.blockedShotAttemptsAgainst || 0);
+  const homeShotAttempts = (home5v5.shotAttemptsAgainst || 1);
+  const homeBlockPct = (homeBlockedShots / homeShotAttempts) * 100;
 
   // Special teams
   const awayPP = statsAnalyzer.getHighDangerMetrics(awayTeam, '5on4');
@@ -72,8 +102,6 @@ const NHLMatchupIntelligence = ({
   // Get rank for context
   const awayPPRank = statsAnalyzer.getLeagueRank(awayTeam, 'highDangerxGoalsFor', '5on4', true);
   const homePPRank = statsAnalyzer.getLeagueRank(homeTeam, 'highDangerxGoalsFor', '5on4', true);
-  const awayPKRank = statsAnalyzer.getLeagueRank(awayTeam, 'highDangerxGoalsAgainst', '4on5', false);
-  const homePKRank = statsAnalyzer.getLeagueRank(homeTeam, 'highDangerxGoalsAgainst', '4on5', false);
 
   // Goalie data
   const awayGoalie = game.goalies?.away;
@@ -95,13 +123,38 @@ const NHLMatchupIntelligence = ({
 
   // Calculate edges
   const offenseEdge = Math.abs(awayXGF - homeXGF) > 0.15 ? Math.abs(awayXGF - homeXGF) * 0.4 : 0;
-  const defenseEdge = Math.abs(awayXGA - homeXGA) > 0.15 ? Math.abs(awayXGA - homeXGA) * 0.4 : 0;
-  const specialTeamsEdge = Math.abs(specialTeamsDiff) > 0.5 ? Math.abs(specialTeamsDiff) * 0.15 : 0;
-  const goalieEdgeImpact = Math.abs(goalieEdge) > 0.3 ? Math.abs(goalieEdge) * 0.15 : 0;
-  const regressionEdge = Math.abs(awayRegressionImpact - homeRegressionImpact);
+  const offenseEdgeTeam = awayXGF > homeXGF ? awayTeam : homeTeam;
   
-  const totalEdge = offenseEdge + defenseEdge + specialTeamsEdge + goalieEdgeImpact + regressionEdge;
-  const edgeFavoredTeam = (awayXGF - awayXGA + awayRegressionImpact) > (homeXGF - homeXGA + homeRegressionImpact) ? awayTeam : homeTeam;
+  const defenseEdge = Math.abs(awayXGA - homeXGA) > 0.15 ? Math.abs(awayXGA - homeXGA) * 0.4 : 0;
+  const defenseEdgeTeam = awayXGA < homeXGA ? awayTeam : homeTeam;
+  
+  const specialTeamsEdge = Math.abs(specialTeamsDiff) > 0.5 ? Math.abs(specialTeamsDiff) * 0.15 : 0;
+  const specialTeamsEdgeTeam = specialTeamsDiff > 0 ? awayTeam : homeTeam;
+  
+  const goalieEdgeImpact = Math.abs(goalieEdge) > 0.3 ? Math.abs(goalieEdge) * 0.15 : 0;
+  const goalieEdgeTeam = goalieEdge > 0 ? awayTeam : homeTeam;
+  
+  const regressionEdge = Math.abs(awayRegressionImpact - homeRegressionImpact);
+  const regressionEdgeTeam = (homeRegressionImpact - awayRegressionImpact) > 0 ? homeTeam : awayTeam;
+  
+  // Possession edge
+  const possessionEdge = Math.abs(awayCorsi - homeCorsi) > 0.03 ? Math.abs(awayCorsi - homeCorsi) * 0.3 : 0;
+  const possessionEdgeTeam = awayCorsi > homeCorsi ? awayTeam : homeTeam;
+  
+  // Exploitable angle: Turnovers vs Forecheck
+  const turnoverExploitEdge = awayDZGiveaways > 7 && homeTakeaways > 3 ? 0.25 :
+                               homeDZGiveaways > 7 && awayTakeaways > 3 ? 0.25 : 0;
+  const turnoverExploitTeam = awayDZGiveaways > 7 && homeTakeaways > 3 ? homeTeam : awayTeam;
+  
+  const totalEdge = offenseEdge + defenseEdge + specialTeamsEdge + goalieEdgeImpact + regressionEdge + possessionEdge + turnoverExploitEdge;
+  const edgeFavoredTeam = (awayXGF - awayXGA + awayRegressionImpact + (awayCorsi - 0.5) * 0.5) > (homeXGF - homeXGA + homeRegressionImpact + (homeCorsi - 0.5) * 0.5) ? awayTeam : homeTeam;
+
+  // Get best bet recommendation
+  const recommendedPlay = bestEdge && bestEdge.evPercent > 5 ? bestEdge : null;
+  
+  // DETERMINE PLAY TYPE: VALUE vs QUALITY
+  const isValuePlay = recommendedPlay && recommendedPlay.team !== edgeFavoredTeam;
+  const playType = isValuePlay ? 'VALUE' : 'QUALITY';
 
   // The Four Factors
   const factors = [
@@ -157,16 +210,16 @@ const NHLMatchupIntelligence = ({
       advantage: Math.abs(specialTeamsDiff) > 0.5 ? (specialTeamsDiff > 0 ? awayTeam : homeTeam) : null,
       significance: Math.abs(specialTeamsDiff) > 1.0 ? 'high' : Math.abs(specialTeamsDiff) > 0.5 ? 'moderate' : 'low',
       format: (val) => val.toFixed(2),
-      context: specialTeamsDiff > 0.8 && awayPPRank <= 10 && homePKRank >= 20
-        ? `${awayTeam}'s elite PP vs weak penalty kill`
-        : specialTeamsDiff < -0.8 && homePPRank <= 10 && awayPKRank >= 20
-        ? `${homeTeam}'s elite PP vs weak penalty kill`
+      context: specialTeamsDiff > 0.8 && awayPPRank <= 10
+        ? `${awayTeam}'s elite PP is a game-changer`
+        : specialTeamsDiff < -0.8 && homePPRank <= 10
+        ? `${homeTeam}'s elite PP is a game-changer`
         : Math.abs(specialTeamsDiff) > 0.5
-        ? `${Math.abs(specialTeamsDiff) > 0.8 ? 'Huge' : 'Clear'} special teams mismatch`
+        ? 'Clear special teams mismatch'
         : 'Special teams evenly matched',
       stats: [
-        { label: '📊 Quality', away: `${awayPPHDPercent.toFixed(0)}%`, home: `${homePPHDPercent.toFixed(0)}%`, suffix: 'high-danger' },
-        { label: '🎯 Impact', value: `~${Math.abs(specialTeamsDiff * 0.15).toFixed(1)} extra goals` }
+        { label: '📊 Quality', away: `${awayPPHDPercent.toFixed(0)}%`, home: `${homePPHDPercent.toFixed(0)}%`, suffix: 'HD shots' },
+        { label: '🎯 Impact', value: `~${Math.abs(specialTeamsDiff * 0.15).toFixed(2)} goals` }
       ]
     },
     {
@@ -181,14 +234,11 @@ const NHLMatchupIntelligence = ({
       significance: Math.abs(goalieEdge) > 0.5 ? 'high' : Math.abs(goalieEdge) > 0.3 ? 'moderate' : 'low',
       format: (val) => val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2),
       context: Math.abs(goalieEdge) > 0.3
-        ? `${goalieEdge > 0 ? awayGoalie?.name || awayTeam : homeGoalie?.name || homeTeam} saves ${Math.abs(goalieEdge * 0.15).toFixed(1)}+ more goals`
+        ? `${goalieEdge > 0 ? awayGoalie?.name || awayTeam : homeGoalie?.name || homeTeam} saves ${Math.abs(goalieEdge * 0.15).toFixed(2)}+ more goals`
         : 'Goaltending evenly matched',
       stats: []
     }
   ];
-
-  // Get best bet recommendation
-  const recommendedPlay = bestEdge && bestEdge.evPercent > 5 ? bestEdge : null;
 
   return (
     <div style={{
@@ -436,6 +486,165 @@ const NHLMatchupIntelligence = ({
         ))}
       </div>
 
+      {/* HIDDEN FACTORS - POSSESSION & CONTROL */}
+      <div style={{
+        padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
+        background: 'rgba(59, 130, 246, 0.08)',
+        borderTop: '1px solid rgba(59, 130, 246, 0.2)'
+      }}>
+        <div style={{
+          fontSize: '0.75rem',
+          fontWeight: '700',
+          color: '#3B82F6',
+          marginBottom: '0.625rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.375rem'
+        }}>
+          <span>🔍</span>
+          <span>CONTROL & POSSESSION</span>
+        </div>
+
+        {/* Compact metrics */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {/* Corsi */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.688rem', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--color-text-secondary)' }}>📊 Corsi %</span>
+              <span style={{ color: Math.abs(awayCorsi - homeCorsi) > 0.03 ? (awayCorsi > homeCorsi ? '#0EA5E9' : '#10B981') : 'var(--color-text-muted)' }}>
+                {(awayCorsi * 100).toFixed(1)}% vs {(homeCorsi * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: `${awayCorsi * 100}%`,
+                background: awayCorsi > homeCorsi ? '#0EA5E9' : 'rgba(14, 165, 233, 0.5)'
+              }} />
+            </div>
+          </div>
+
+          {/* Faceoffs */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.688rem', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--color-text-secondary)' }}>🏒 Faceoffs</span>
+              <span style={{ color: Math.abs(awayFaceoffPct - homeFaceoffPct) > 0.03 ? (awayFaceoffPct > homeFaceoffPct ? '#0EA5E9' : '#10B981') : 'var(--color-text-muted)' }}>
+                {(awayFaceoffPct * 100).toFixed(1)}% vs {(homeFaceoffPct * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: `${awayFaceoffPct * 100}%`,
+                background: awayFaceoffPct > homeFaceoffPct ? '#0EA5E9' : 'rgba(14, 165, 233, 0.5)'
+              }} />
+            </div>
+          </div>
+
+          {/* Shot Blocking */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.688rem', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--color-text-secondary)' }}>🛡️ Shot Block %</span>
+              <span style={{ color: Math.abs(awayBlockPct - homeBlockPct) > 2 ? (awayBlockPct > homeBlockPct ? '#0EA5E9' : '#10B981') : 'var(--color-text-muted)' }}>
+                {awayBlockPct.toFixed(1)}% vs {homeBlockPct.toFixed(1)}%
+              </span>
+            </div>
+            <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: `${Math.min(100, awayBlockPct)}%`,
+                background: awayBlockPct > homeBlockPct ? '#0EA5E9' : 'rgba(14, 165, 233, 0.5)'
+              }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Context */}
+        <div style={{
+          fontSize: '0.688rem',
+          color: 'rgba(59, 130, 246, 0.9)',
+          fontStyle: 'italic',
+          paddingLeft: '1.25rem',
+          position: 'relative',
+          marginTop: '0.5rem'
+        }}>
+          <span style={{ position: 'absolute', left: 0 }}>→</span>
+          {possessionEdgeTeam === awayTeam 
+            ? `${awayTeam} controls the pace and zone time`
+            : possessionEdgeTeam === homeTeam 
+            ? `${homeTeam} controls the pace and zone time`
+            : 'Possession metrics evenly matched'}
+        </div>
+      </div>
+
+      {/* EXPLOITABLE ANGLES */}
+      {(turnoverExploitEdge > 0.15 || Math.abs(awayDZGiveaways - homeDZGiveaways) > 2) && (
+        <div style={{
+          padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
+          background: 'rgba(239, 68, 68, 0.08)',
+          borderTop: '1px solid rgba(239, 68, 68, 0.2)'
+        }}>
+          <div style={{
+            fontSize: '0.75rem',
+            fontWeight: '700',
+            color: '#EF4444',
+            marginBottom: '0.625rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
+          }}>
+            <span>💀</span>
+            <span>EXPLOITABLE WEAKNESSES</span>
+          </div>
+
+          {awayDZGiveaways > 7 && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                <span style={{ color: '#EF4444', fontWeight: '700' }}>{awayTeam} turnovers:</span> {awayDZGiveaways.toFixed(1)}/gm ⚠️
+              </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(239, 68, 68, 0.9)', fontStyle: 'italic', paddingLeft: '1rem' }}>
+                → {homeTeam}'s forecheck generates {homeTakeaways.toFixed(1)} takeaways/gm
+              </div>
+            </div>
+          )}
+
+          {homeDZGiveaways > 7 && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                <span style={{ color: '#EF4444', fontWeight: '700' }}>{homeTeam} turnovers:</span> {homeDZGiveaways.toFixed(1)}/gm ⚠️
+              </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(239, 68, 68, 0.9)', fontStyle: 'italic', paddingLeft: '1rem' }}>
+                → {awayTeam}'s forecheck generates {awayTakeaways.toFixed(1)} takeaways/gm
+              </div>
+            </div>
+          )}
+
+          {/* Context */}
+          <div style={{
+            fontSize: '0.688rem',
+            color: 'rgba(239, 68, 68, 0.9)',
+            fontStyle: 'italic',
+            paddingLeft: '1.25rem',
+            position: 'relative',
+            marginTop: '0.5rem'
+          }}>
+            <span style={{ position: 'absolute', left: 0 }}>→</span>
+            {turnoverExploitTeam === awayTeam 
+              ? `${awayTeam} exploits ${homeTeam}'s mistakes for +${turnoverExploitEdge.toFixed(2)} goals`
+              : `${homeTeam} exploits ${awayTeam}'s mistakes for +${turnoverExploitEdge.toFixed(2)} goals`}
+          </div>
+        </div>
+      )}
+
       {/* PDO REGRESSION - COMPACT */}
       {(Math.abs(awayPDO - 100) > 2 || Math.abs(homePDO - 100) > 2) && (
         <div style={{
@@ -522,69 +731,115 @@ const NHLMatchupIntelligence = ({
         </div>
       )}
 
-      {/* THE EDGE - COMPACT */}
+      {/* THE EDGE - COMPACT WITH DYNAMIC CONTEXT */}
       {totalEdge > 0.2 && (
         <div style={{
           padding: isMobile ? '0.75rem 1rem' : '1rem 1.25rem',
-          background: 'rgba(16, 185, 129, 0.08)',
-          borderTop: '1px solid rgba(16, 185, 129, 0.2)'
+          background: isValuePlay ? 'rgba(212, 175, 55, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+          borderTop: isValuePlay ? '1px solid rgba(212, 175, 55, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)'
         }}>
           <div style={{
             fontSize: '0.75rem',
             fontWeight: '700',
-            color: '#10B981',
+            color: isValuePlay ? '#D4AF37' : '#10B981',
             marginBottom: '0.625rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.375rem'
           }}>
             <span>💡</span>
-            <span>THE EDGE</span>
+            <span>THE PLAY</span>
+            {isValuePlay && (
+              <span style={{
+                fontSize: '0.625rem',
+                padding: '0.125rem 0.375rem',
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+                borderRadius: '4px',
+                color: '#D4AF37'
+              }}>
+                VALUE
+              </span>
+            )}
           </div>
 
           {/* Edge bars - inline */}
           <div style={{ marginBottom: '0.75rem' }}>
             {offenseEdge > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '80px' }}>✅ Offense</span>
+                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '90px' }}>
+                  {offenseEdgeTeam === recommendedPlay?.team ? '✅' : '○'} Offense
+                </span>
                 <div style={{ flex: 1, height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(offenseEdge / totalEdge) * 100}%`, height: '100%', background: '#10B981' }} />
+                  <div style={{ width: `${(offenseEdge / totalEdge) * 100}%`, height: '100%', background: offenseEdgeTeam === recommendedPlay?.team ? '#10B981' : 'rgba(16, 185, 129, 0.5)' }} />
                 </div>
-                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: '#10B981', minWidth: '35px', textAlign: 'right' }}>
-                  +{offenseEdge.toFixed(2)}
+                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: offenseEdgeTeam === recommendedPlay?.team ? '#10B981' : 'var(--color-text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                  {offenseEdgeTeam === recommendedPlay?.team ? '+' : ''}{offenseEdge.toFixed(2)}
                 </span>
               </div>
             )}
             {specialTeamsEdge > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '80px' }}>✅ Power Play</span>
+                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '90px' }}>
+                  {specialTeamsEdgeTeam === recommendedPlay?.team ? '✅' : '○'} Power Play
+                </span>
                 <div style={{ flex: 1, height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(specialTeamsEdge / totalEdge) * 100}%`, height: '100%', background: '#10B981' }} />
+                  <div style={{ width: `${(specialTeamsEdge / totalEdge) * 100}%`, height: '100%', background: specialTeamsEdgeTeam === recommendedPlay?.team ? '#10B981' : 'rgba(16, 185, 129, 0.5)' }} />
                 </div>
-                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: '#10B981', minWidth: '35px', textAlign: 'right' }}>
-                  +{specialTeamsEdge.toFixed(2)}
+                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: specialTeamsEdgeTeam === recommendedPlay?.team ? '#10B981' : 'var(--color-text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                  {specialTeamsEdgeTeam === recommendedPlay?.team ? '+' : ''}{specialTeamsEdge.toFixed(2)}
                 </span>
               </div>
             )}
             {goalieEdgeImpact > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '80px' }}>✅ Goalie</span>
+                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '90px' }}>
+                  {goalieEdgeTeam === recommendedPlay?.team ? '✅' : '○'} Goalie
+                </span>
                 <div style={{ flex: 1, height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(goalieEdgeImpact / totalEdge) * 100}%`, height: '100%', background: '#10B981' }} />
+                  <div style={{ width: `${(goalieEdgeImpact / totalEdge) * 100}%`, height: '100%', background: goalieEdgeTeam === recommendedPlay?.team ? '#10B981' : 'rgba(16, 185, 129, 0.5)' }} />
                 </div>
-                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: '#10B981', minWidth: '35px', textAlign: 'right' }}>
-                  +{goalieEdgeImpact.toFixed(2)}
+                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: goalieEdgeTeam === recommendedPlay?.team ? '#10B981' : 'var(--color-text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                  {goalieEdgeTeam === recommendedPlay?.team ? '+' : ''}{goalieEdgeImpact.toFixed(2)}
                 </span>
               </div>
             )}
             {regressionEdge > 0.1 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '80px' }}>✅ Regression</span>
+                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '90px' }}>
+                  {regressionEdgeTeam === recommendedPlay?.team ? '✅' : '○'} Regression
+                </span>
                 <div style={{ flex: 1, height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(regressionEdge / totalEdge) * 100}%`, height: '100%', background: '#10B981' }} />
+                  <div style={{ width: `${(regressionEdge / totalEdge) * 100}%`, height: '100%', background: regressionEdgeTeam === recommendedPlay?.team ? '#10B981' : 'rgba(16, 185, 129, 0.5)' }} />
                 </div>
-                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: '#10B981', minWidth: '35px', textAlign: 'right' }}>
-                  +{regressionEdge.toFixed(2)}
+                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: regressionEdgeTeam === recommendedPlay?.team ? '#10B981' : 'var(--color-text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                  {regressionEdgeTeam === recommendedPlay?.team ? '+' : ''}{regressionEdge.toFixed(2)}
+                </span>
+              </div>
+            )}
+            {possessionEdge > 0.05 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '90px' }}>
+                  {possessionEdgeTeam === recommendedPlay?.team ? '✅' : '○'} Possession
+                </span>
+                <div style={{ flex: 1, height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${(possessionEdge / totalEdge) * 100}%`, height: '100%', background: possessionEdgeTeam === recommendedPlay?.team ? '#10B981' : 'rgba(16, 185, 129, 0.5)' }} />
+                </div>
+                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: possessionEdgeTeam === recommendedPlay?.team ? '#10B981' : 'var(--color-text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                  {possessionEdgeTeam === recommendedPlay?.team ? '+' : ''}{possessionEdge.toFixed(2)}
+                </span>
+              </div>
+            )}
+            {turnoverExploitEdge > 0.15 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.688rem', color: 'var(--color-text-secondary)', minWidth: '90px' }}>
+                  {turnoverExploitTeam === recommendedPlay?.team ? '✅' : '○'} Turnovers
+                </span>
+                <div style={{ flex: 1, height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${(turnoverExploitEdge / totalEdge) * 100}%`, height: '100%', background: turnoverExploitTeam === recommendedPlay?.team ? '#10B981' : 'rgba(16, 185, 129, 0.5)' }} />
+                </div>
+                <span style={{ fontSize: '0.688rem', fontWeight: '700', color: turnoverExploitTeam === recommendedPlay?.team ? '#10B981' : 'var(--color-text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                  {turnoverExploitTeam === recommendedPlay?.team ? '+' : ''}{turnoverExploitEdge.toFixed(2)}
                 </span>
               </div>
             )}
@@ -593,9 +848,9 @@ const NHLMatchupIntelligence = ({
           {/* Net edge */}
           <div style={{
             padding: '0.625rem',
-            background: 'rgba(16, 185, 129, 0.15)',
+            background: isValuePlay ? 'rgba(212, 175, 55, 0.15)' : 'rgba(16, 185, 129, 0.15)',
             borderRadius: '6px',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            border: isValuePlay ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
             marginBottom: '0.5rem'
           }}>
             {recommendedPlay ? (
@@ -603,7 +858,7 @@ const NHLMatchupIntelligence = ({
                 <div style={{
                   fontSize: '0.813rem',
                   fontWeight: '900',
-                  color: '#10B981',
+                  color: isValuePlay ? '#D4AF37' : '#10B981',
                   marginBottom: '0.375rem'
                 }}>
                   🎯 {recommendedPlay.team} {recommendedPlay.type === 'moneyline' ? 'ML' : recommendedPlay.type === 'spread' ? recommendedPlay.line : `${recommendedPlay.type.toUpperCase()} ${recommendedPlay.line}`} ({recommendedPlay.odds > 0 ? '+' : ''}{recommendedPlay.odds})
@@ -612,7 +867,7 @@ const NHLMatchupIntelligence = ({
                   fontSize: '0.688rem',
                   color: 'var(--color-text-secondary)'
                 }}>
-                  Net advantage: +{totalEdge.toFixed(2)} goals
+                  {isValuePlay ? `Market inefficiency: +${(bestEdge.evPercent * 0.1).toFixed(2)} value edge` : `Analytical edge: +${totalEdge.toFixed(2)} goals`}
                 </div>
               </div>
             ) : (
@@ -626,10 +881,10 @@ const NHLMatchupIntelligence = ({
             )}
           </div>
 
-          {/* Final context - WHY */}
+          {/* Final context - DYNAMIC WHY */}
           <div style={{
             fontSize: '0.688rem',
-            color: 'rgba(16, 185, 129, 0.9)',
+            color: isValuePlay ? 'rgba(212, 175, 55, 0.9)' : 'rgba(16, 185, 129, 0.9)',
             fontStyle: 'italic',
             paddingLeft: '1.25rem',
             position: 'relative',
@@ -637,20 +892,38 @@ const NHLMatchupIntelligence = ({
           }}>
             <span style={{ position: 'absolute', left: 0 }}>→</span>
             {(() => {
-              const advantages = [];
-              if (specialTeamsEdge > 0) advantages.push('PP');
-              if (goalieEdgeImpact > 0) advantages.push('goalie');
-              if (regressionEdge > 0.1) advantages.push('regression');
-              if (offenseEdge > 0) advantages.push('offense');
-              
-              if (advantages.length >= 3) {
-                return `${edgeFavoredTeam} wins ${advantages.length} key battles (${advantages.slice(0, 3).join(', ')}). ${awayPDO > 102 || homePDO > 102 ? 'Luck regression tilts the outcome.' : 'Clear multi-factor edge.'}`;
-              } else if (specialTeamsEdge > 0.15) {
-                return `Power play dominance is the decisive factor. ${edgeFavoredTeam} should capitalize.`;
-              } else if (advantages.length > 0) {
-                return `${edgeFavoredTeam} has the edge in ${advantages.join(' and ')}.`;
+              if (isValuePlay && recommendedPlay) {
+                // VALUE PLAY: Explain the market inefficiency or exploitable angle
+                const winningFactors = [];
+                if (possessionEdgeTeam === recommendedPlay.team) winningFactors.push('possession');
+                if (turnoverExploitTeam === recommendedPlay.team) winningFactors.push('turnover exploitation');
+                if (regressionEdgeTeam === recommendedPlay.team) winningFactors.push('regression');
+                
+                if (winningFactors.length > 0) {
+                  return `VALUE play: Market undervalues ${recommendedPlay.team}'s ${winningFactors.join(' and ')}. ${Math.abs((awayCorsi - homeCorsi) * 100) > 3 ? 'Possession metrics tell the story.' : ''}`;
+                } else if (specialTeamsEdge > 0.15 && specialTeamsEdgeTeam !== recommendedPlay.team) {
+                  return `VALUE play: ${recommendedPlay.team} +${recommendedPlay.odds} offers value despite ${edgeFavoredTeam}'s PP edge. Close matchup, market overreacts.`;
+                } else {
+                  return `VALUE play: Odds undervalue ${recommendedPlay.team}. Exploitable market inefficiency at +${recommendedPlay.odds}.`;
+                }
               } else {
-                return `${edgeFavoredTeam} is favored but it's a close matchup.`;
+                // QUALITY PLAY: Reinforce the edges
+                const advantages = [];
+                if (specialTeamsEdge > 0) advantages.push('PP');
+                if (goalieEdgeImpact > 0) advantages.push('goalie');
+                if (regressionEdge > 0.1) advantages.push('regression');
+                if (possessionEdge > 0.05) advantages.push('possession');
+                if (offenseEdge > 0) advantages.push('offense');
+                
+                if (advantages.length >= 3) {
+                  return `${recommendedPlay?.team || edgeFavoredTeam} wins ${advantages.length} key battles (${advantages.slice(0, 3).join(', ')}). ${awayPDO > 102 || homePDO > 102 ? 'Luck regression tilts the outcome.' : 'Clear multi-factor edge.'}`;
+                } else if (specialTeamsEdge > 0.15) {
+                  return `Power play dominance is the decisive factor. ${recommendedPlay?.team || edgeFavoredTeam} should capitalize.`;
+                } else if (advantages.length > 0) {
+                  return `${recommendedPlay?.team || edgeFavoredTeam} has the edge in ${advantages.join(' and ')}.`;
+                } else {
+                  return `${recommendedPlay?.team || edgeFavoredTeam} is favored but it's a close matchup.`;
+                }
               }
             })()}
           </div>
