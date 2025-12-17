@@ -158,7 +158,13 @@ const NHLMatchupIntelligence = ({
   const edgeFavoredTeam = (awayXGF - awayXGA + awayRegressionImpact + (awayCorsi - 0.5) * 0.5) > (homeXGF - homeXGA + homeRegressionImpact + (homeCorsi - 0.5) * 0.5) ? awayTeam : homeTeam;
 
   // Get best bet recommendation
-  const recommendedPlay = bestEdge && bestEdge.evPercent > 5 ? bestEdge : null;
+  // Include locked picks even if EV < 5%
+  const recommendedPlay = (bestEdge && bestEdge.evPercent > 5) || isLockedPick ? (bestEdge || {
+    team: lockedBet?.bet?.pick?.split(' ')[0],
+    evPercent: lockedBet?.prediction?.evPercent || 0,
+    odds: lockedBet?.bet?.odds || 0,
+    modelProb: lockedBet?.prediction?.modelProb || 0.5
+  }) : null;
   
   // DETERMINE PLAY TYPE: VALUE vs QUALITY
   const isValuePlay = recommendedPlay && recommendedPlay.team !== edgeFavoredTeam;
