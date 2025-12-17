@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, ChevronRight } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, ChevronRight, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -163,7 +163,7 @@ const getDynamicUnitTier = (edge) => {
 // ========================================
 
 // Compact Header - REDESIGNED for density and scannability
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets }) => {
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets, topEdges }) => {
   // Check if there's a live score for this game
   const liveScore = liveScores?.find(score => 
     (score.awayTeam === awayTeam && score.homeTeam === homeTeam) ||
@@ -172,6 +172,19 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
   
   const isLive = liveScore && (liveScore.status === 'LIVE' || liveScore.status === 'In Progress');
   const isFinal = liveScore && (liveScore.status === 'FINAL' || liveScore.status === 'Final');
+  
+  // 🔒 Check if this game has a LOCKED pick from Firebase
+  const firebaseBet = firebaseBets?.find(bet => 
+    bet.game?.awayTeam === awayTeam && 
+    bet.game?.homeTeam === homeTeam &&
+    bet.status === 'PENDING'
+  );
+  
+  // Determine if the Firebase bet is LOCKED (not in current topEdges)
+  const gameMatchup = `${awayTeam} @ ${homeTeam}`;
+  const isLockedPick = firebaseBet && !topEdges?.some(edge => 
+    edge.game === gameMatchup && edge.market === firebaseBet.bet?.market
+  );
   
   // If game is live or final, show sleek compact score + prediction layout
   if (isLive || isFinal) {
@@ -600,7 +613,47 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         }}>
             {awayTeam} <span style={{ color: 'var(--color-text-muted)', fontWeight: '400' }}>@</span> {homeTeam}
         </span>
-          {bestEdge && bestEdge.qualityGrade && (
+          {/* Show LOCKED badge if Firebase bet exists but is no longer live */}
+          {isLockedPick && firebaseBet && (
+            <div style={{
+              display: 'inline-flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <div style={{
+                padding: '0.25rem 0.5rem',
+                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+                borderRadius: '6px',
+                fontWeight: '800',
+                fontSize: '0.75rem',
+                color: '#D4AF37',
+                letterSpacing: '-0.01em',
+                minWidth: '36px',
+                textAlign: 'center',
+                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                <Lock size={10} />
+                {firebaseBet.prediction?.qualityGrade || 'B+'}
+              </div>
+              <div style={{
+                fontSize: '0.563rem',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: '#D4AF37',
+                opacity: 0.9
+              }}>
+                LOCKED
+              </div>
+            </div>
+          )}
+          {/* Show LIVE EDGE badge if bestEdge exists */}
+          {!isLockedPick && bestEdge && bestEdge.qualityGrade && (
             <div style={{
               display: 'inline-flex',
               flexDirection: 'column',
@@ -702,7 +755,58 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     </div>
     
     {/* Best bet preview - SINGLE LINE when collapsed */}
-    {isCollapsed && bestEdge && (
+    {/* Show LOCKED pick if no live edge but Firebase bet exists */}
+    {isCollapsed && isLockedPick && firebaseBet && (
+      <div style={{
+        padding: isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem',
+        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+        borderRadius: '6px',
+        border: '1px solid rgba(212, 175, 55, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem'
+      }}>
+        <div style={{
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          flex: 1,
+          minWidth: 0,
+          fontSize: isMobile ? '0.75rem' : '0.813rem',
+          fontWeight: '700'
+        }}>
+          <Lock size={14} color="#D4AF37" />
+          <span style={{ 
+            color: '#D4AF37',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {firebaseBet.bet?.pick}
+          </span>
+          <span style={{ color: 'rgba(212, 175, 55, 0.7)', fontWeight: '600', fontSize: '0.688rem' }}>
+            {firebaseBet.bet?.odds > 0 ? '+' : ''}{firebaseBet.bet?.odds}
+          </span>
+        </div>
+        <div style={{
+          padding: '0.25rem 0.5rem',
+          background: 'rgba(212, 175, 55, 0.2)',
+          border: '1px solid rgba(212, 175, 55, 0.4)',
+          borderRadius: '6px',
+          fontSize: '0.688rem',
+          fontWeight: '700',
+          color: '#D4AF37',
+          whiteSpace: 'nowrap',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>
+          LOCKED
+        </div>
+      </div>
+    )}
+    {/* Show LIVE EDGE pick if bestEdge exists */}
+    {isCollapsed && !isLockedPick && bestEdge && (
       <div style={{
         padding: isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem',
         background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
@@ -713,7 +817,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         justifyContent: 'space-between',
         gap: '0.75rem'
       }}>
-            <div style={{
+        <div style={{
           display: 'flex', 
           alignItems: 'center', 
           gap: '0.5rem',
@@ -724,28 +828,28 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         }}>
           <span style={{ fontSize: '1rem' }}>💰</span>
           <span style={{ 
-              color: 'var(--color-text-primary)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {bestEdge.pick}
+            color: 'var(--color-text-primary)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {bestEdge.pick}
           </span>
           <span style={{ color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.688rem' }}>
-              {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+            {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
           </span>
         </div>
         <div style={{
           padding: '0.25rem 0.5rem',
-            background: getEVColorScale(bestEdge.evPercent).background,
-            border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
-            borderRadius: '6px',
+          background: getEVColorScale(bestEdge.evPercent).background,
+          border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
+          borderRadius: '6px',
           fontSize: '0.813rem',
-              fontWeight: '800',
-              color: getEVColorScale(bestEdge.evPercent).color,
+          fontWeight: '800',
+          color: getEVColorScale(bestEdge.evPercent).color,
           whiteSpace: 'nowrap'
-            }}>
-              +{bestEdge.evPercent.toFixed(1)}%
+        }}>
+          +{bestEdge.evPercent.toFixed(1)}%
         </div>
       </div>
     )}
@@ -3572,6 +3676,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           dataProcessor={dataProcessor}
                           liveScores={liveScores}
                           firebaseBets={firebaseBets}
+                          topEdges={topEdges}
                         />
                         {/* Quick Stats Bar - only show when collapsed AND pre-game (hide during live/final) */}
                         {(() => {
