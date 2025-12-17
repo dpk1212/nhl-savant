@@ -74,19 +74,6 @@ const NHLMatchupIntelligence = ({
   const homeSTScore = homePPScore - homePKScore;
   const specialTeamsDiff = awaySTScore - homeSTScore;
 
-  // Debug logging
-  console.log('🔍 NHL Matchup Intelligence Data:', {
-    awayTeam,
-    homeTeam,
-    xGF: { away: awayXGF.toFixed(2), home: homeXGF.toFixed(2) },
-    xGA: { away: awayXGA.toFixed(2), home: homeXGA.toFixed(2) },
-    shotQuality: { away: awayHDPercent.toFixed(1) + '%', home: homeHDPercent.toFixed(1) + '%', diff: shotQualityDiff.toFixed(1) },
-    shotVolume: { away: awayCorsi.toFixed(1) + '%', home: homeCorsi.toFixed(1) + '%', diff: shotVolumeDiff.toFixed(1) },
-    specialTeams: { away: awaySTScore.toFixed(1), home: homeSTScore.toFixed(1), diff: specialTeamsDiff.toFixed(1) },
-    goalie: { away: awayGSAE.toFixed(1), home: homeGSAE.toFixed(1), diff: goalieEdge.toFixed(1) },
-    edgeScore: calculateEdgeScore()
-  });
-
   // Get goalie data
   const awayGoalie = game.goalies?.away;
   const homeGoalie = game.goalies?.home;
@@ -224,7 +211,7 @@ const NHLMatchupIntelligence = ({
         background: 'rgba(16, 185, 129, 0.08)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Zap size={20} color="#10B981" />
+          <span style={{ fontSize: '1.25rem' }}>⚡</span>
           <span style={{
             fontSize: isMobile ? '0.875rem' : '1rem',
             fontWeight: '700',
