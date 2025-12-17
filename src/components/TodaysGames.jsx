@@ -2587,7 +2587,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   useEffect(() => {
     setDRatingsLoading(true);
     fetch('/dratings_predictions.json')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         setDRatingsPredictions(data || null);
         setDRatingsLoading(false);
@@ -2595,7 +2600,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       })
       .catch(err => {
         console.warn('⚠️ DRatings predictions not available - using fallback ensemble:', err.message);
-        setDRatingsPredictions(null);  // Null to trigger fallback
+        setDRatingsPredictions({ predictions: [] });  // Empty array to trigger fallback
         setDRatingsLoading(false);  // Mark complete even on error
       });
   }, []);
