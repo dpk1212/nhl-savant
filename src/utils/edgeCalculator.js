@@ -21,7 +21,7 @@ export class EdgeCalculator {
       
       // Filtering thresholds
       maxAgreement: config.maxAgreement || 0.05,            // 5% max disagreement (legacy)
-      minEV: config.minEV || 0.025,                         // 2.5% minimum EV threshold  
+      minEV: config.minEV || 0.015,                         // 1.5% minimum EV threshold (lowered for sharper model)
       minQuality: config.minQuality || 'B+',                // Minimum quality grade (B+ or higher - B-rated bets excluded)
       kellyFraction: config.kellyFraction || 0.25,          // Quarter Kelly sizing
       maxKelly: config.maxKelly || 0.05,                    // 5% max bet
@@ -88,8 +88,9 @@ export class EdgeCalculator {
     const expectedValue = (ensembleProb / marketProb) - 1;
     const evPercent = expectedValue * 100;
     
-    // ENSEMBLE-OPTIMIZED GRADING (Option B: Aggressive - matches MoneyPuck calibration)
+    // ENSEMBLE-OPTIMIZED GRADING (Aggressive - DRatings + MoneyPuck sharper model)
     // Grade based on EV% to handle underdogs correctly
+    // Lowered thresholds to capture more opportunities with sharper model
     let confidence, qualityGrade;
     if (evPercent >= 5.0) {
       qualityGrade = 'A+';
@@ -97,10 +98,10 @@ export class EdgeCalculator {
     } else if (evPercent >= 3.5) {
       qualityGrade = 'A';
       confidence = 'HIGH';
-    } else if (evPercent >= 2.5) {
+    } else if (evPercent >= 1.5) {
       qualityGrade = 'B+';
       confidence = 'HIGH';
-    } else if (evPercent >= 1.5) {
+    } else if (evPercent >= 0.5) {
       qualityGrade = 'B';
       confidence = 'MEDIUM';
     } else {

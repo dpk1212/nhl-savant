@@ -90,7 +90,7 @@ function getOddsRange(odds) {
 function getEVRange(evPercent) {
   if (evPercent >= 10) return 'elite';
   if (evPercent >= 5) return 'strong';
-  if (evPercent >= 2.5) return 'good';
+  if (evPercent >= 1.5) return 'good';
   return 'low';
 }
 

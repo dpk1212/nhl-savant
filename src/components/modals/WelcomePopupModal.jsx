@@ -118,17 +118,17 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
   const dollarGrowth = calculateDollarGrowth(1000, roi);
   const roiDisplay = `${roi.toFixed(1)}%`;
 
-  // Get picks EXACTLY like TodaysGames does - filter games with edges >= 2.5%
+  // Get picks EXACTLY like TodaysGames does - filter games with edges >= 1.5%
   const picksToday = (todaysGames || []).filter(game => {
     if (!game.edges) return false;
     
     // Check moneyline edges
-    if (game.edges.moneyline?.away?.evPercent >= 2.5 || game.edges.moneyline?.home?.evPercent >= 2.5) {
+    if (game.edges.moneyline?.away?.evPercent >= 1.5 || game.edges.moneyline?.home?.evPercent >= 1.5) {
       return true;
     }
     
     // Check total edges
-    if (game.edges.total?.over?.evPercent >= 2.5 || game.edges.total?.under?.evPercent >= 2.5) {
+    if (game.edges.total?.over?.evPercent >= 1.5 || game.edges.total?.under?.evPercent >= 1.5) {
       return true;
     }
     
@@ -189,11 +189,13 @@ const WelcomePopupModal = ({ isOpen, onClose, todaysGames, isMobile }) => {
     return { ...game, bestEdge };
   });
 
-  // Helper function to get rating grade
+  // Helper function to get rating grade (matches edgeCalculator.js grading)
   const getRatingGrade = (evPercent) => {
     if (evPercent >= 10) return 'A+';
     if (evPercent >= 7) return 'A';
-    if (evPercent >= 5) return 'B+';
+    if (evPercent >= 5) return 'A';
+    if (evPercent >= 3.5) return 'A';
+    if (evPercent >= 1.5) return 'B+';
     return 'B';
   };
 

@@ -34,7 +34,7 @@ export async function getPerformanceStats() {
     
     console.log(`📊 Fetched ${bets.length} completed bets`);
     
-    // FILTER: Only include B+ or higher bets (>= 2.5% EV) AND exclude totals
+    // FILTER: Only include B+ or higher bets (>= 1.5% EV) AND exclude totals
     // (EXACT SAME filter as Performance Dashboard)
     const qualityBets = bets.filter(b => 
       b.prediction?.rating !== 'C' && 

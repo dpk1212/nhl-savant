@@ -101,7 +101,7 @@ const calculateDynamicUnits = (edge) => {
   const evPercent = edge.evPercent || 0;
   if (evPercent >= 10) score += -0.07;      // Elite EV actually loses (-2.9% ROI)
   else if (evPercent >= 5) score += 0.25;   // Strong EV wins (+10.2% ROI)
-  else if (evPercent >= 2.5) score += 0.16; // Good EV wins (+6.3% ROI)
+  else if (evPercent >= 1.5) score += 0.16; // Good EV wins (+6.3% ROI) - lowered from 2.5% for sharper model
   
   // Factor 4: Confidence (HIGH is best at +35.5% ROI)
   const confWeights = { 'HIGH': 0.60, 'MEDIUM': 0.39, 'LOW': -0.26 };
