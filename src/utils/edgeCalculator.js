@@ -133,7 +133,7 @@ export class EdgeCalculator {
     const marketProb = this.dataProcessor.oddsToProbability(marketOdds);
     
     // Calculate how much the two models disagree
-    const modelDisagreement = Math.abs(moneyPuckProb - dratingsProb);
+    const correction = Math.abs(moneyPuckProb - dratingsProb);
     
     // ENSEMBLE: 70% MoneyPuck + 30% DRatings
     // MoneyPuck gets higher weight as it's more granular and updates more frequently
@@ -181,10 +181,10 @@ export class EdgeCalculator {
       confidence: confidence,               // HIGH/MEDIUM/LOW based on correction
       
       // For transparency and learning
-      yourModelProb: yourModelProb,        // Your raw prediction
-      dratingsProb: dratingsProb,          // DRatings' prediction (QUALITY GATE FLAG)
+      yourModelProb: moneyPuckProb,        // MoneyPuck prediction (70% weight)
+      dratingsProb: dratingsProb,          // DRatings' prediction (30% weight)
       marketProb: marketProb,              // Market's implied probability
-      correction: correction,              // How much DRatings corrected you
+      correction: correction,              // How much the models disagreed
       
       // Backward compatibility aliases
       ensembleProb: calibratedProb,        // Alias for UI
