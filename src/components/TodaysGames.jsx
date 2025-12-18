@@ -2571,11 +2571,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
   const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
   
-  // ⏰ TIME-BASED PRELIMINARY BANNER (shows before 11:00 AM ET)
-  const [isBefore11AM, setIsBefore11AM] = useState(() => {
+  // ⏰ TIME-BASED PRELIMINARY BANNER (shows 7:00 AM - 11:00 AM ET)
+  const [showPreliminaryBanner, setShowPreliminaryBanner] = useState(() => {
     const now = new Date();
     const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    return etTime.getHours() < 11;
+    const hour = etTime.getHours();
+    return hour >= 7 && hour < 11;
   });
   
   // Track page load time for Stripe check timing
@@ -2590,8 +2591,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const checkTime = () => {
       const now = new Date();
       const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-      const before11 = etTime.getHours() < 11;
-      setIsBefore11AM(before11);
+      const hour = etTime.getHours();
+      const shouldShow = hour >= 7 && hour < 11;
+      setShowPreliminaryBanner(shouldShow);
     };
     
     // Check every minute
@@ -3378,8 +3380,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* 🆕 PRELIMINARY PICKS BANNER - TIME-BASED (Shows before 11:00 AM ET, auto-disappears) */}
-      {isBefore11AM && topEdges && topEdges.length > 0 && (
+      {/* 🆕 PRELIMINARY PICKS BANNER - TIME-BASED (Shows 7:00 AM - 11:00 AM ET, auto-disappears) */}
+      {showPreliminaryBanner && topEdges && topEdges.length > 0 && (
         <div style={{
           margin: '0 auto 24px',
           maxWidth: '900px',
