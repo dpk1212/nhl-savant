@@ -2576,7 +2576,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     const now = new Date();
     const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
     const hour = etTime.getHours();
-    return hour >= 7 && hour < 11;
+    const shouldShow = hour >= 7 && hour < 11;
+    console.log(`🕐 Banner check: ET hour=${hour}, shouldShow=${shouldShow}`);
+    return shouldShow;
   });
   
   // Track page load time for Stripe check timing
@@ -3381,6 +3383,15 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
       {/* 🆕 PRELIMINARY PICKS BANNER - TIME-BASED (Shows 7:00 AM - 11:00 AM ET, auto-disappears) */}
+      {(() => {
+        console.log(`🎯 Banner render check:`, {
+          showPreliminaryBanner,
+          topEdgesExists: !!topEdges,
+          topEdgesLength: topEdges?.length || 0,
+          willShow: showPreliminaryBanner && topEdges && topEdges.length > 0
+        });
+        return null;
+      })()}
       {showPreliminaryBanner && topEdges && topEdges.length > 0 && (
         <div style={{
           margin: '0 auto 24px',
