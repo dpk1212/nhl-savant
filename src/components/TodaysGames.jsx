@@ -2571,11 +2571,32 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
   const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
   
+  // ⏰ TIME-BASED PRELIMINARY BANNER (shows before 11:00 AM ET)
+  const [isBefore11AM, setIsBefore11AM] = useState(() => {
+    const now = new Date();
+    const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    return etTime.getHours() < 11;
+  });
+  
   // Track page load time for Stripe check timing
   useEffect(() => {
     if (!window.pageLoadTime) {
       window.pageLoadTime = Date.now();
     }
+  }, []);
+  
+  // Update preliminary banner state every minute
+  useEffect(() => {
+    const checkTime = () => {
+      const now = new Date();
+      const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      const before11 = etTime.getHours() < 11;
+      setIsBefore11AM(before11);
+    };
+    
+    // Check every minute
+    const interval = setInterval(checkTime, 60000);
+    return () => clearInterval(interval);
   }, []);
   
   // Check if user has previously acknowledged disclaimer
@@ -3357,8 +3378,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* 🆕 PRELIMINARY PICKS BANNER */}
-      {topEdges && topEdges.length > 0 && topEdges.some(edge => edge.isPreliminary) && (
+      {/* 🆕 PRELIMINARY PICKS BANNER - TIME-BASED (Shows before 11:00 AM ET, auto-disappears) */}
+      {isBefore11AM && topEdges && topEdges.length > 0 && (
         <div style={{
           margin: '0 auto 24px',
           maxWidth: '900px',
