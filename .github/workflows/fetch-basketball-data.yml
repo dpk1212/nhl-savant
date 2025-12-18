@@ -1,9 +1,10 @@
 name: Fetch Basketball Data
 
 on:
-  schedule:
-    # Morning scrape: 11:30 AM ET (3:30 PM UTC) - 30 min after NHL fetch
-    - cron: '30 15 * * *'
+  # DISABLED: Auto-fetch turned off - run manually only
+  # schedule:
+  #   # Morning scrape: 11:30 AM ET (3:30 PM UTC) - 30 min after NHL fetch
+  #   - cron: '30 15 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
