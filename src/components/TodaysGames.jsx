@@ -3386,13 +3386,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       {(() => {
         console.log(`🎯 Banner render check:`, {
           showPreliminaryBanner,
-          topEdgesExists: !!topEdges,
-          topEdgesLength: topEdges?.length || 0,
-          willShow: showPreliminaryBanner && topEdges && topEdges.length > 0
+          allEdgesExists: !!allEdges,
+          allEdgesLength: allEdges?.length || 0,
+          willShow: showPreliminaryBanner && allEdges && allEdges.length > 0
         });
         return null;
       })()}
-      {showPreliminaryBanner && topEdges && topEdges.length > 0 && (
+      {showPreliminaryBanner && allEdges && allEdges.length > 0 && (
         <div style={{
           margin: '0 auto 24px',
           maxWidth: '900px',
