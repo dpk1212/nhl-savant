@@ -1,20 +1,10 @@
 /**
- * ⚠️ DEPRECATED - DO NOT USE
+ * Basketball Bet Writing Script
  * 
- * This script has been replaced by UI-driven bet saving.
- * Bets are now saved directly from Basketball.jsx when predictions are calculated.
- * This ensures a single source of truth - what you see in the UI is what's in Firebase.
+ * Runs via GitHub Actions after fetching basketball data
+ * Processes all quality bets (2%+ EV) and writes to Firebase
  * 
- * The UI calls basketballBetTracker.saveBets() automatically.
- * See: src/firebase/basketballBetTracker.js
- *      src/pages/Basketball.jsx (loadBasketballData function)
- * 
- * Keeping this file for reference/debugging only.
- * 
- * OLD DESCRIPTION:
- * Basketball Bet Writing Script - Ran via GitHub Actions after fetching basketball data
- * 
- * Usage: npm run write-basketball-bets (DEPRECATED)
+ * Usage: npm run write-basketball-bets
  */
 
 import { initializeApp } from 'firebase/app';
@@ -66,17 +56,15 @@ let confidenceWeights = null;
  * Now includes dynamic confidence-based unit sizing
  */
 async function saveBetToFirebase(db, game, prediction) {
-  // ✅ USE KELLY UNITS from prediction (calculated by BasketballEdgeCalculator)
-  // The calculator already computed optimal Kelly units based on EV and probability
-  const kellyUnits = prediction.unitSize || 1.0;
-  
-  // Also calculate dynamic units for reference/comparison
+  // Calculate dynamic units using live ROI weights
   const dynamicResult = calculateDynamicUnits({
     prediction: prediction,
     game: game,
     bet: { odds: prediction.bestOdds, team: prediction.bestTeam }
   }, confidenceWeights);
   
+  // Use dynamic units instead of static
+  const dynamicUnits = dynamicResult.units;
   const confidenceTier = dynamicResult.tier;
   const confidenceScore = dynamicResult.score;
   const date = new Date().toISOString().split('T')[0];
@@ -107,18 +95,17 @@ async function saveBetToFirebase(db, game, prediction) {
         grade: prediction.grade,
         qualityGrade: prediction.grade,
         rating: prediction.grade,
-        // ✅ KELLY UNITS (mathematically optimal based on edge/probability)
-        unitSize: kellyUnits,
+        // Dynamic confidence-based units
+        unitSize: dynamicUnits,
         confidenceTier: confidenceTier,
         confidenceScore: confidenceScore,
-        dynamicUnits: dynamicResult.units, // Store dynamic for reference
-        patternROI: dynamicResult.patternROI,
+        staticUnitSize: prediction.unitSize, // Keep old method for comparison
         oddsRangeName: prediction.oddsRangeName,
         historicalROI: prediction.historicalROI
       },
       barttorvik: prediction.barttorvik || null
     }, { merge: true });
-    console.log(`   ✅ Updated: ${betId} (${kellyUnits}u Kelly) [Dynamic: ${dynamicResult.units}u]`);
+    console.log(`   ✅ Updated: ${betId} (${dynamicUnits}u - ${confidenceTier})`);
     return betId;
   }
   
@@ -148,11 +135,11 @@ async function saveBetToFirebase(db, game, prediction) {
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // ✅ KELLY UNITS (mathematically optimal)
-      unitSize: kellyUnits,
+      // DYNAMIC CONFIDENCE-BASED UNIT ALLOCATION
+      unitSize: dynamicUnits,
       confidenceTier: confidenceTier,
       confidenceScore: confidenceScore,
-      dynamicUnits: dynamicResult.units, // Store dynamic for comparison
+      staticUnitSize: prediction.unitSize, // Keep old method for comparison
       oddsRange: prediction.oddsRange,
       oddsRangeName: prediction.oddsRangeName,
       historicalROI: prediction.historicalROI,
@@ -199,7 +186,7 @@ async function saveBetToFirebase(db, game, prediction) {
   await setDoc(betRef, betData);
   console.log(`   ✅ Saved: ${betId}`);
   console.log(`      ${prediction.bestOdds} (${prediction.oddsRangeName}) | +${prediction.bestEV.toFixed(1)}% EV | Grade: ${prediction.grade}`);
-  console.log(`      🎯 Kelly Units: ${kellyUnits}u (${confidenceTier}) | Dynamic: ${dynamicResult.units}u | Score: ${confidenceScore}`);
+  console.log(`      🎯 Dynamic Units: ${dynamicUnits}u (${confidenceTier}) | Score: ${confidenceScore}`);
   
   return betId;
 }
@@ -224,7 +211,7 @@ async function writeBasketballBets() {
     const oddsMarkdown = await fs.readFile(join(__dirname, '../public/basketball_odds.md'), 'utf8');
     const haslaMarkdown = await fs.readFile(join(__dirname, '../public/haslametrics.md'), 'utf8');
     const drateMarkdown = await fs.readFile(join(__dirname, '../public/dratings.md'), 'utf8');
-    const barttMarkdown = await fs.readFile(join(__dirname, '../public/Bart.md'), 'utf8');
+    const barttMarkdown = await fs.readFile(join(__dirname, '../public/barttorvik.com_teamstats.php_year=2026&sort=2.2025-12-02T14_29_36.275Z.md'), 'utf8');
     const csvContent = await fs.readFile(join(__dirname, '../public/basketball_teams.csv'), 'utf8');
     
     console.log('✅ Loaded scraped data files');
@@ -249,14 +236,15 @@ async function writeBasketballBets() {
     // 4. Calculate ensemble predictions (80% D-Ratings, 20% Haslametrics)
     console.log('\n🧮 Calculating ensemble predictions...');
     const calculator = new BasketballEdgeCalculator();
+    const gamesWithPredictions = matchedGames.map(game => {
+      const prediction = calculator.calculateEnsemblePrediction(game);
+      return { ...game, prediction };
+    });
     
-    // CRITICAL: Pass confidence weights to calculator so it uses live ROI data
-    // This ensures predictions match the UI calculation exactly
-    calculator.setConfidenceWeights(confidenceWeights);
-    
-    // 5. Use processGames() which includes shouldBet() filters (blocks D/F grades, <3% EV, etc.)
-    // This ensures we only write QUALITY bets, not all predictions
-    const qualityBets = calculator.processGames(matchedGames);
+    // 5. Filter for valid predictions (pick-to-win strategy)
+    const qualityBets = gamesWithPredictions.filter(game => 
+      game.prediction && !game.prediction.error
+    );
     
     console.log(`\n🎯 Found ${qualityBets.length} picks (pick-to-win strategy):`);
     qualityBets.forEach((game, i) => {

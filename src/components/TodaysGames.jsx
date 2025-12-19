@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, ChevronRight, Lock } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Activity, Sparkles, ArrowRight, Target, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -42,7 +42,6 @@ import AIFullStory from './AIFullStory';
 import CollapsibleGameCard from './CollapsibleGameCard';
 import StepSection from './StepSection';
 import QuickStatsBar from './QuickStatsBar';
-import NHLMatchupIntelligence from './NHLMatchupIntelligence';
 import DisclaimerModal from './DisclaimerModal';
 import CompactPicksBar from './CompactPicksBar';
 import { getRating } from './RatingBadge';
@@ -101,7 +100,7 @@ const calculateDynamicUnits = (edge) => {
   const evPercent = edge.evPercent || 0;
   if (evPercent >= 10) score += -0.07;      // Elite EV actually loses (-2.9% ROI)
   else if (evPercent >= 5) score += 0.25;   // Strong EV wins (+10.2% ROI)
-  else if (evPercent >= 1.5) score += 0.16; // Good EV wins (+6.3% ROI) - lowered from 2.5% for sharper model
+  else if (evPercent >= 2.5) score += 0.16; // Good EV wins (+6.3% ROI)
   
   // Factor 4: Confidence (HIGH is best at +35.5% ROI)
   const confWeights = { 'HIGH': 0.60, 'MEDIUM': 0.39, 'LOW': -0.26 };
@@ -163,7 +162,7 @@ const getDynamicUnitTier = (edge) => {
 // ========================================
 
 // Compact Header - REDESIGNED for density and scannability
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets, topEdges }) => {
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets }) => {
   // Check if there's a live score for this game
   const liveScore = liveScores?.find(score => 
     (score.awayTeam === awayTeam && score.homeTeam === homeTeam) ||
@@ -172,19 +171,6 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
   
   const isLive = liveScore && (liveScore.status === 'LIVE' || liveScore.status === 'In Progress');
   const isFinal = liveScore && (liveScore.status === 'FINAL' || liveScore.status === 'Final');
-  
-  // 🔒 Check if this game has a LOCKED pick from Firebase
-  const firebaseBet = firebaseBets?.find(bet => 
-    bet.game?.awayTeam === awayTeam && 
-    bet.game?.homeTeam === homeTeam &&
-    bet.status === 'PENDING'
-  );
-  
-  // Determine if the Firebase bet is LOCKED (not in current topEdges)
-  const gameMatchup = `${awayTeam} @ ${homeTeam}`;
-  const isLockedPick = firebaseBet && !topEdges?.some(edge => 
-    edge.game === gameMatchup && edge.market === firebaseBet.bet?.market
-  );
   
   // If game is live or final, show sleek compact score + prediction layout
   if (isLive || isFinal) {
@@ -613,47 +599,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         }}>
             {awayTeam} <span style={{ color: 'var(--color-text-muted)', fontWeight: '400' }}>@</span> {homeTeam}
         </span>
-          {/* Show LOCKED badge if Firebase bet exists but is no longer live */}
-          {isLockedPick && firebaseBet && (
-            <div style={{
-              display: 'inline-flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}>
-              <div style={{
-                padding: '0.25rem 0.5rem',
-                background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%)',
-                border: '1px solid rgba(212, 175, 55, 0.4)',
-                borderRadius: '6px',
-                fontWeight: '800',
-                fontSize: '0.75rem',
-                color: '#D4AF37',
-                letterSpacing: '-0.01em',
-                minWidth: '36px',
-                textAlign: 'center',
-                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}>
-                <Lock size={10} />
-                {firebaseBet.prediction?.qualityGrade || 'B+'}
-              </div>
-              <div style={{
-                fontSize: '0.563rem',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: '#D4AF37',
-                opacity: 0.9
-              }}>
-                LOCKED
-              </div>
-            </div>
-          )}
-          {/* Show LIVE EDGE badge if bestEdge exists */}
-          {!isLockedPick && bestEdge && bestEdge.qualityGrade && (
+          {bestEdge && bestEdge.qualityGrade && (
             <div style={{
               display: 'inline-flex',
               flexDirection: 'column',
@@ -755,58 +701,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     </div>
     
     {/* Best bet preview - SINGLE LINE when collapsed */}
-    {/* Show LOCKED pick if no live edge but Firebase bet exists */}
-    {isCollapsed && isLockedPick && firebaseBet && (
-      <div style={{
-        padding: isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem',
-        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
-        borderRadius: '6px',
-        border: '1px solid rgba(212, 175, 55, 0.3)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem'
-      }}>
-        <div style={{
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.5rem',
-          flex: 1,
-          minWidth: 0,
-          fontSize: isMobile ? '0.75rem' : '0.813rem',
-          fontWeight: '700'
-        }}>
-          <Lock size={14} color="#D4AF37" />
-          <span style={{ 
-            color: '#D4AF37',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {firebaseBet.bet?.pick}
-          </span>
-          <span style={{ color: 'rgba(212, 175, 55, 0.7)', fontWeight: '600', fontSize: '0.688rem' }}>
-            {firebaseBet.bet?.odds > 0 ? '+' : ''}{firebaseBet.bet?.odds}
-          </span>
-        </div>
-        <div style={{
-          padding: '0.25rem 0.5rem',
-          background: 'rgba(212, 175, 55, 0.2)',
-          border: '1px solid rgba(212, 175, 55, 0.4)',
-          borderRadius: '6px',
-          fontSize: '0.688rem',
-          fontWeight: '700',
-          color: '#D4AF37',
-          whiteSpace: 'nowrap',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
-        }}>
-          LOCKED
-        </div>
-      </div>
-    )}
-    {/* Show LIVE EDGE pick if bestEdge exists */}
-    {isCollapsed && !isLockedPick && bestEdge && (
+    {isCollapsed && bestEdge && (
       <div style={{
         padding: isMobile ? '0.5rem 0.625rem' : '0.5rem 0.75rem',
         background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
@@ -817,7 +712,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         justifyContent: 'space-between',
         gap: '0.75rem'
       }}>
-        <div style={{
+            <div style={{
           display: 'flex', 
           alignItems: 'center', 
           gap: '0.5rem',
@@ -828,28 +723,28 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
         }}>
           <span style={{ fontSize: '1rem' }}>💰</span>
           <span style={{ 
-            color: 'var(--color-text-primary)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {bestEdge.pick}
+              color: 'var(--color-text-primary)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {bestEdge.pick}
           </span>
           <span style={{ color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.688rem' }}>
-            {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
+              {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
           </span>
         </div>
         <div style={{
           padding: '0.25rem 0.5rem',
-          background: getEVColorScale(bestEdge.evPercent).background,
-          border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
-          borderRadius: '6px',
+            background: getEVColorScale(bestEdge.evPercent).background,
+            border: `1px solid ${getEVColorScale(bestEdge.evPercent).border}`,
+            borderRadius: '6px',
           fontSize: '0.813rem',
-          fontWeight: '800',
-          color: getEVColorScale(bestEdge.evPercent).color,
+              fontWeight: '800',
+              color: getEVColorScale(bestEdge.evPercent).color,
           whiteSpace: 'nowrap'
-        }}>
-          +{bestEdge.evPercent.toFixed(1)}%
+            }}>
+              +{bestEdge.evPercent.toFixed(1)}%
         </div>
       </div>
     )}
@@ -929,38 +824,10 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 );
 
 // Hero Bet Card - Main value proposition
-const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges }) => {
-  
-  // 🔒 Check if this game has a LOCKED pick from Firebase
-  const firebaseBet = firebaseBets?.find(bet => 
-    bet.game?.awayTeam === game.awayTeam && 
-    bet.game?.homeTeam === game.homeTeam &&
-    bet.status === 'PENDING'
-  );
-  
-  // Determine if the Firebase bet is LOCKED (not in current topEdges)
-  const gameMatchup = `${game.awayTeam} @ ${game.homeTeam}`;
-  const isLockedPick = firebaseBet && !topEdges?.some(edge => 
-    edge.game === gameMatchup && edge.market === firebaseBet.bet?.market
-  );
-  
-  // If no bestEdge but we have a locked pick, use that
-  if (!bestEdge && isLockedPick && firebaseBet) {
-    // Convert Firebase bet to bestEdge format for display
-    bestEdge = {
-      pick: firebaseBet.bet?.pick,
-      odds: firebaseBet.bet?.odds,
-      evPercent: firebaseBet.prediction?.evPercent || 0,
-      modelProb: firebaseBet.prediction?.modelProb || 0.5,
-      market: firebaseBet.bet?.market,
-      team: firebaseBet.bet?.pick?.split(' ')[0], // Extract team name
-      qualityGrade: firebaseBet.prediction?.qualityGrade || 'B+',
-      isLocked: true // Flag to show locked styling
-    };
-  }
+const HeroBetCard = ({ bestEdge, game, isMobile, factors }) => {
   
   if (!bestEdge) {
-    // Premium CTA when no bet recommendation AND no locked pick
+    // Premium CTA when no bet recommendation
     return (
       <Link 
         to="/matchup-insights" 
@@ -1063,9 +930,6 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
     );
   }
   
-  // Determine if this is a locked pick for styling
-  const isLocked = bestEdge.isLocked || false;
-  
   const marketProb = calculateImpliedProb(bestEdge.odds);
   const modelTotal = game.edges.total?.predictedTotal || 0;
   const marketTotal = game.edges.total?.marketTotal || 0;
@@ -1113,15 +977,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
   
   return (
     <div style={{ 
-      background: isLocked 
-        ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)'
-        : GRADIENTS.hero,
-      border: isLocked 
-        ? '1px solid rgba(212, 175, 55, 0.3)'
-        : ELEVATION.elevated.border,
-      boxShadow: isLocked
-        ? '0 4px 12px rgba(212, 175, 55, 0.2)'
-        : ELEVATION.elevated.shadow,
+      background: GRADIENTS.hero,
+      border: ELEVATION.elevated.border,
+      boxShadow: ELEVATION.elevated.shadow,
       borderRadius: '10px',
       padding: isMobile ? '0.75rem' : '0.875rem', // REDUCED from 1.5rem
       margin: 0, // Removed margin since StepSection handles it
@@ -1129,7 +987,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
       overflow: 'hidden'
     }}>
       {/* Shimmer effect for high value bets */}
-      {!isLocked && bestEdge.evPercent > 10 && (
+      {bestEdge.evPercent > 10 && (
         <div className="shimmer-overlay" />
       )}
       
@@ -1138,39 +996,13 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
         fontSize: isMobile ? TYPOGRAPHY.heading.size : '1.25rem', 
         fontWeight: TYPOGRAPHY.heading.weight, 
         marginBottom: '1rem',
-        color: isLocked ? '#D4AF37' : 'var(--color-text-primary)',
+        color: 'var(--color-text-primary)',
         position: 'relative',
         zIndex: 1,
-        letterSpacing: TYPOGRAPHY.heading.letterSpacing,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem'
+        letterSpacing: TYPOGRAPHY.heading.letterSpacing
       }}>
-        {isLocked ? (
-          <>
-            <Lock size={isMobile ? 18 : 22} color="#D4AF37" />
-            <span>LOCKED PICK: {bestEdge.pick}</span>
-          </>
-        ) : (
-          <>💰 BEST VALUE: {bestEdge.pick}</>
-        )}
+        💰 BEST VALUE: {bestEdge.pick}
       </div>
-      
-      {/* Locked pick notice */}
-      {isLocked && (
-        <div style={{
-          fontSize: '0.813rem',
-          color: 'rgba(212, 175, 55, 0.8)',
-          marginBottom: '1rem',
-          padding: '0.5rem 0.75rem',
-          background: 'rgba(212, 175, 55, 0.1)',
-          borderRadius: '6px',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
-          lineHeight: '1.5'
-        }}>
-          🔒 <strong>Locked In:</strong> This pick was recommended earlier when odds were favorable. Current odds may have moved. Check live markets before placing.
-        </div>
-      )}
       
       {/* Edge display */}
       <div style={{ 
@@ -2546,10 +2378,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const { scores: liveScores} = useLiveScores(); // Real-time live scores from Firestore
   const { bets: firebaseBets } = useFirebaseBets(); // Fetch today's bets from Firebase
   const [goalieProcessor, setGoalieProcessor] = useState(null);
-  const [moneyPuckPredictions, setMoneyPuckPredictions] = useState(null); // MoneyPuck calibration data (DEPRECATED)
+  const [moneyPuckPredictions, setMoneyPuckPredictions] = useState(null); // MoneyPuck calibration data
   const [moneyPuckLoading, setMoneyPuckLoading] = useState(true); // Track MoneyPuck loading state
-  const [dratingsPredictions, setDRatingsPredictions] = useState(null); // DRatings calibration data (PRIMARY)
-  const [dratingsLoading, setDRatingsLoading] = useState(true); // Track DRatings loading state
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
@@ -2571,36 +2401,11 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
   const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
   
-  // ⏰ TIME-BASED PRELIMINARY BANNER (shows 7:00 AM - 11:00 AM ET)
-  const [showPreliminaryBanner, setShowPreliminaryBanner] = useState(() => {
-    const now = new Date();
-    const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const hour = etTime.getHours();
-    const shouldShow = hour >= 7 && hour < 11;
-    console.log(`🕐 Banner check: ET hour=${hour}, shouldShow=${shouldShow}`);
-    return shouldShow;
-  });
-  
   // Track page load time for Stripe check timing
   useEffect(() => {
     if (!window.pageLoadTime) {
       window.pageLoadTime = Date.now();
     }
-  }, []);
-  
-  // Update preliminary banner state every minute
-  useEffect(() => {
-    const checkTime = () => {
-      const now = new Date();
-      const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-      const hour = etTime.getHours();
-      const shouldShow = hour >= 7 && hour < 11;
-      setShowPreliminaryBanner(shouldShow);
-    };
-    
-    // Check every minute
-    const interval = setInterval(checkTime, 60000);
-    return () => clearInterval(interval);
   }, []);
   
   // Check if user has previously acknowledged disclaimer
@@ -2775,29 +2580,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load DRatings predictions for model calibration (PRIMARY)
-  useEffect(() => {
-    setDRatingsLoading(true);
-    fetch('/dratings_predictions.json')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setDRatingsPredictions(data || null);
-        setDRatingsLoading(false);
-        console.log(`✅ Loaded ${data?.predictions?.length || 0} DRatings predictions for calibration`);
-      })
-      .catch(err => {
-        console.warn('⚠️ DRatings predictions not available - using fallback ensemble:', err.message);
-        setDRatingsPredictions({ predictions: [] });  // Empty array to trigger fallback
-        setDRatingsLoading(false);  // Mark complete even on error
-      });
-  }, []);
-
-  // Load MoneyPuck predictions for comparison (DEPRECATED - kept for comparison only)
+  // Load MoneyPuck predictions for model calibration
   useEffect(() => {
     setMoneyPuckLoading(true);
     fetch('/moneypuck_predictions.json')
@@ -2805,40 +2588,33 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       .then(data => {
         setMoneyPuckPredictions(data || []);
         setMoneyPuckLoading(false);
-        console.log(`✅ Loaded ${data?.length || 0} MoneyPuck predictions (comparison only)`);
+        console.log(`✅ Loaded ${data?.length || 0} MoneyPuck predictions for calibration`);
       })
       .catch(err => {
-        console.warn('⚠️ MoneyPuck predictions not available:', err.message);
+        console.warn('⚠️ MoneyPuck predictions not available - using fallback ensemble:', err.message);
         setMoneyPuckPredictions([]);  // Empty array (not null) to avoid repeated fetches
         setMoneyPuckLoading(false);  // Mark complete even on error
       });
   }, []);
 
-  // Initialize edge calculator with DRatings calibration
-  // CRITICAL: Wait for DRatings data to load before calculating edges
+  // Initialize edge calculator with MoneyPuck calibration
+  // CRITICAL: Wait for MoneyPuck data to load before calculating edges
   useEffect(() => {
-    if (dataProcessor && oddsData && !dratingsLoading) {
-      // DEBUG: Log DRatings integration status
-      console.log('🔍 ==================== DRATINGS DEBUG ====================');
-      console.log('🔍 DRatings predictions loaded:', dratingsPredictions?.predictions?.length || 0, 'games');
-      if (dratingsPredictions?.predictions && dratingsPredictions.predictions.length > 0) {
-        console.log('🔍 DRatings data:', dratingsPredictions);
-        dratingsPredictions.predictions.forEach(pred => {
+    if (dataProcessor && oddsData && !moneyPuckLoading) {
+      // DEBUG: Log MoneyPuck integration status
+      console.log('🔍 ==================== MONEYPUCK DEBUG ====================');
+      console.log('🔍 MoneyPuck predictions loaded:', moneyPuckPredictions?.length || 0, 'games');
+      if (moneyPuckPredictions && moneyPuckPredictions.length > 0) {
+        console.log('🔍 MoneyPuck data:', moneyPuckPredictions);
+        moneyPuckPredictions.forEach(pred => {
           console.log(`   - ${pred.awayTeam} @ ${pred.homeTeam}: ${(pred.awayProb * 100).toFixed(1)}% / ${(pred.homeProb * 100).toFixed(1)}%`);
         });
       } else {
-        console.log('🔍 ⚠️ No DRatings predictions available - will use market ensemble fallback');
+        console.log('🔍 ⚠️ No MoneyPuck predictions available - will use market ensemble fallback');
       }
       
-      // Pass DRatings predictions for calibration (falls back to market ensemble if unavailable)
-      const calculator = new EdgeCalculator(
-        dataProcessor, 
-        oddsData, 
-        startingGoalies, 
-        moneyPuckPredictions,  // DEPRECATED - kept for comparison
-        {},  // config object
-        dratingsPredictions    // DRatings predictions (PRIMARY)
-      );
+      // Pass MoneyPuck predictions for calibration (falls back to market ensemble if unavailable)
+      const calculator = new EdgeCalculator(dataProcessor, oddsData, startingGoalies, moneyPuckPredictions);
       setEdgeCalculator(calculator);
       
       const edges = calculator.calculateAllEdges();
@@ -2859,7 +2635,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const topOpportunities = calculator.getTopEdges(0.025); // 2.5% minimum (B+ or higher)
       setTopEdges(topOpportunities);
     }
-  }, [dataProcessor, oddsData, startingGoalies, dratingsPredictions, dratingsLoading, moneyPuckPredictions]);
+  }, [dataProcessor, oddsData, startingGoalies, moneyPuckPredictions, moneyPuckLoading]);
   
   // CRITICAL FIX: Merge live/final games that may not have odds into allEdges
   // This ensures games don't disappear when they go live
@@ -3382,17 +3158,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
 
       {/* Quick Summary Table - REMOVED for cleaner mobile experience */}
 
-      {/* 🆕 PRELIMINARY PICKS BANNER - TIME-BASED (Shows 7:00 AM - 11:00 AM ET, auto-disappears) */}
-      {(() => {
-        console.log(`🎯 Banner render check:`, {
-          showPreliminaryBanner,
-          allEdgesExists: !!allEdges,
-          allEdgesLength: allEdges?.length || 0,
-          willShow: showPreliminaryBanner && allEdges && allEdges.length > 0
-        });
-        return null;
-      })()}
-      {showPreliminaryBanner && allEdges && allEdges.length > 0 && (
+      {/* 🆕 PRELIMINARY PICKS BANNER */}
+      {topEdges && topEdges.length > 0 && topEdges.some(edge => edge.isPreliminary) && (
         <div style={{
           margin: '0 auto 24px',
           maxWidth: '900px',
@@ -3467,77 +3234,44 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         </div>
       )}
       
-      {/* Compact Picks Bar - Source from Firebase bets with LIVE EDGE / LOCKED status */}
-      {firebaseBets && firebaseBets.length > 0 && (() => {
-        // SOURCE: Firebase bets (what was actually recommended)
-        // STATUS: Compare against topEdges to determine LIVE EDGE vs LOCKED
-        const todayET = getETDate();
+      {/* Compact Picks Bar - Show quality-filtered ensemble opportunities */}
+      {topEdges && topEdges.length > 0 && (() => {
+        // ENSEMBLE STRATEGY: Use topEdges (quality-filtered) instead of allEdges
+        // This ensures summary bar matches individual game cards (consistency fix)
+        const gameGroups = [];
+        const gameMap = new Map(); // Group bets by game
         
-        // Filter to today's bets only
-        const todaysBets = firebaseBets.filter(bet => 
-          bet.date === todayET && bet.status === 'PENDING'
-        );
-        
-        if (todaysBets.length === 0) return null;
-        
-        // Process each bet with status
-        const processedBets = todaysBets.map(bet => {
-          // Check if this pick still exists in current topEdges
-          const gameMatchup = `${bet.game?.awayTeam} @ ${bet.game?.homeTeam}`;
-          const isLiveEdge = topEdges?.some(edge => 
-            edge.game === gameMatchup && edge.market === bet.bet?.market
-          );
-          
-          return {
-            ...bet,
-            gameMatchup,
-            status: isLiveEdge ? 'LIVE_EDGE' : 'LOCKED',
-            lockedAt: bet.firstRecommendedAt || bet.timestamp
-          };
-        });
-        
-        // Group bets by game
-        const gameMap = new Map();
-        processedBets.forEach(bet => {
-          const gameKey = bet.gameMatchup;
+        topEdges.forEach(edge => {
+          const gameKey = edge.game;
           
           if (!gameMap.has(gameKey)) {
             gameMap.set(gameKey, {
               game: gameKey,
-              gameTime: bet.game?.gameTime,
+              gameTime: edge.gameTime,
               bets: []
             });
           }
           
+          // Use ensemble qualityGrade instead of EV-based getRating()
           gameMap.get(gameKey).bets.push({
-            pick: bet.bet?.pick,
-            market: bet.bet?.market,
-            grade: bet.prediction?.qualityGrade || bet.prediction?.rating || 'B',
-            odds: bet.bet?.odds,
-            edge: `+${bet.prediction?.evPercent?.toFixed(1) || '0.0'}%`,
-            status: bet.status,
-            lockedAt: bet.lockedAt
+            pick: edge.pick,
+            market: edge.market,
+            grade: edge.qualityGrade || 'B', // Ensemble quality grade (A/B/C/D)
+            odds: edge.odds,
+            edge: `+${edge.evPercent.toFixed(1)}%`
           });
         });
         
-        const gameGroups = [...gameMap.values()];
-        
-        // Calculate stats
-        const liveEdgeCount = processedBets.filter(b => b.status === 'LIVE_EDGE').length;
-        const lockedCount = processedBets.filter(b => b.status === 'LOCKED').length;
-        const eliteCount = processedBets.filter(b => 
-          b.prediction?.qualityGrade === 'A+' || b.prediction?.qualityGrade === 'A'
-        ).length;
+        // Convert map to array
+        gameGroups.push(...gameMap.values());
         
         return gameGroups.length > 0 ? (
           <div style={{ marginBottom: '1.5rem' }}>
             <CompactPicksBar 
               gameGroups={gameGroups}
               opportunityStats={{
-                total: processedBets.length,
-                elite: eliteCount,
-                liveEdge: liveEdgeCount,
-                locked: lockedCount
+                total: opportunityCounts.total,
+                elite: opportunityCounts.highValue
               }}
               isFree={isFree}
               hasReachedLimit={hasReachedLimit}
@@ -3773,7 +3507,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           dataProcessor={dataProcessor}
                           liveScores={liveScores}
                           firebaseBets={firebaseBets}
-                          topEdges={topEdges}
                         />
                         {/* Quick Stats Bar - only show when collapsed AND pre-game (hide during live/final) */}
                         {(() => {
@@ -3877,8 +3610,6 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 game={game}
                 isMobile={isMobile}
                     factors={analyticsData?.factors || []}
-                    firebaseBets={firebaseBets}
-                    topEdges={topEdges}
               />
                   </StepSection>
                 );
@@ -3933,36 +3664,47 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                 return null;
               })()}
               
-              {/* STEP 4: MATCHUP INTELLIGENCE */}
+              {/* STEP 4: THE FULL STORY */}
+              {(() => {
+                const analyticsData = generateAnalyticsData(game, bestEdge);
+                return (
+                  <StepSection
+                    stepNumber={4}
+                    title="THE FULL STORY"
+                    emoji="📚"
+                    accentColor="#F59E0B"
+                    isMobile={isMobile}
+                  >
+                  <AIFullStory 
+                    game={game}
+                    bestEdge={bestEdge}
+                    isMobile={isMobile}
+                  />
+                  </StepSection>
+                );
+              })()}
+              
+              {/* STEP 5: ALL MARKETS */}
               <StepSection
-                stepNumber={4}
-                title="MATCHUP INTELLIGENCE"
-                emoji="⚡"
-                accentColor="#10B981"
+                stepNumber={5}
+                title="COMPLETE ODDS BOARD"
+                emoji="📈"
+                accentColor="#64748B"
                 isMobile={isMobile}
               >
-              <NHLMatchupIntelligence
-                game={game}
-                dataProcessor={dataProcessor}
-                statsAnalyzer={statsAnalyzer}
-                bestEdge={bestEdge}
-                firebaseBets={firebaseBets}
-                awayGoalie={getGoalieForTeam(game.awayTeam)}
-                homeGoalie={getGoalieForTeam(game.homeTeam)}
-                isMobile={isMobile}
-              />
+              <MarketsGrid game={game} isMobile={isMobile} />
               </StepSection>
               
-              {/* STEP 5: DEEP ANALYTICS */}
+              {/* STEP 6: DEEP ANALYTICS */}
               {(() => {
                 const analyticsData = generateAnalyticsData(game, bestEdge);
                 if (analyticsData) {
                   return (
                     <StepSection
-                      stepNumber={5}
+                      stepNumber={6}
                       title="ADVANCED MATCHUP ANALYSIS"
                       emoji="🔬"
-                      accentColor="#8B5CF6"
+                      accentColor="#10B981"
                       isMobile={isMobile}
                     >
                     <AdvancedMatchupDetails
