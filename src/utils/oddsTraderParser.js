@@ -1,7 +1,8 @@
-// NEW OddsTrader Parser for Table Format (Dec 2024)
+// OddsTrader Parser - Simple parser for OddsTrader markdown format
+
 import { getETDate } from './dateUtils.js';
 
-// Team name mapping
+// Team name mapping from OddsTrader to our CSV codes
 const TEAM_NAME_MAP = {
   'Minnesota': 'MIN',
   'N.Y. Rangers': 'NYR',
@@ -38,8 +39,8 @@ const TEAM_NAME_MAP = {
 };
 
 /**
- * Parse OddsTrader NEW TABLE FORMAT (Dec 2024)
- * Format: | ...FRI 12/197:00 PM<br>...Carolina<br>... | -115 | -135 | ...
+ * Parse OddsTrader markdown to extract game data
+ * Format: Table rows with <br> separators containing date, teams, and odds
  */
 export function parseOddsTrader(markdownText) {
   if (!markdownText || markdownText.trim() === '') {
@@ -50,121 +51,226 @@ export function parseOddsTrader(markdownText) {
   const games = [];
   const lines = markdownText.split('\n');
   
-  // Generate today's date pattern
+  // Generate today's date pattern dynamically (e.g., "WED 10/22" or "WED 10/2")
   const today = new Date();
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const dayOfWeek = dayNames[today.getDay()];
-  const month = today.getMonth() + 1;
+  const month = today.getMonth() + 1; // 0-indexed
   const day = today.getDate();
   const todayPattern = `${dayOfWeek} ${month}/${day}`;
+  const todayPatternPadded = `${dayOfWeek} ${month}/${day.toString().padStart(2, '0')}`; // With leading zero
   
-  console.log(`🏒 NEW TABLE PARSER - Looking for: ${todayPattern}`);
+  // Also include yesterday's games - this handles when today's games are live/finished
+  // and OddsTrader has moved them off the main page
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayDayOfWeek = dayNames[yesterday.getDay()];
+  const yesterdayMonth = yesterday.getMonth() + 1;
+  const yesterdayDay = yesterday.getDate();
+  const yesterdayPattern = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`;
+  const yesterdayPatternPadded = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay.toString().padStart(2, '0')}`;
+  
+  // Only include yesterday's games before 6 AM ET (for late night games)
+  const currentHour = today.getHours();
+  const includeYesterday = currentHour < 6;
+  
+  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} or ${todayPatternPadded}`);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Find rows with today's date
-    if (!line.startsWith('|') || !line.includes(todayPattern)) {
-      continue;
-    }
+    // Look for today's games (and yesterday's if before 6 AM)
+    // Note: LIVE games are now included for Hot Takes and analysis (even if betting markets are closed)
+    // CRITICAL: Also include "STARTS IN" countdown format for games starting soon
+    // Check both padded and non-padded date formats (e.g., "SAT 11/1" and "SAT 11/01")
+    const isMatchingDate = line.includes(todayPattern) || line.includes(todayPatternPadded) || 
+                          (includeYesterday && (line.includes(yesterdayPattern) || line.includes(yesterdayPatternPadded))) || 
+                          line.includes('LIVE') ||
+                          line.includes('STARTS IN');  // NEW: Handle countdown format
     
-    console.log(`\n📅 Found game at line ${i}`);
-    
-    // Extract time
-    const timeMatch = line.match(/(\d+:\d+\s*[AP]M)/);
-    if (!timeMatch) {
-      console.log('  ⚠️ No time found');
-      continue;
-    }
-    const gameTime = timeMatch[1];
-    console.log(`  ⏰ ${gameTime}`);
-    
-    // Extract away team
-    let awayTeam = null;
-    for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
-      if (line.includes(`<br>${fullName}<br>`)) {
-        awayTeam = code;
-        console.log(`  🏒 Away: ${fullName} (${code})`);
-        break;
+    if (isMatchingDate) {
+      console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
+      
+      // Extract time from the current line
+      let gameTime;
+      
+      // Check if it's a LIVE game
+      if (line.includes('LIVE')) {
+        gameTime = 'LIVE';
+        console.log(`  🔴 LIVE GAME - Including with status LIVE`);
+      } else if (line.includes('STARTS IN')) {
+        // NEW: Handle "STARTS IN 01:10:03" countdown format
+        gameTime = 'STARTING SOON';
+        console.log(`  ⏰ STARTING SOON (countdown detected)`);
+      } else {
+        // Pattern matches time that comes AFTER the date (e.g., "11/077:00 PM" -> "7:00 PM")
+        // FIXED: Handle date immediately followed by time with no space
+        // Look for pattern like "11/077:00 PM" or "11/07 7:00 PM" or just "7:00 PM"
+        const timeMatch = line.match(/\/\d{1,2}(\d{1,2}:\d{2}\s*[AP]M)|(\d{1,2}:\d{2}\s*[AP]M)/);
+        if (!timeMatch) {
+          console.log('  ⚠️ No time found in line, skipping');
+          console.log(`  📄 Line content: ${line.substring(0, 200)}`);
+          continue;
+        }
+        // Use group 1 if it matches (date+time), otherwise group 2 (time only)
+        gameTime = (timeMatch[1] || timeMatch[2]).trim();
+        console.log(`  ⏰ Time: ${gameTime}`);
+      }
+      
+      // CREATE currentGame object IMMEDIATELY
+      const currentGame = {
+        gameTime: gameTime,
+        awayTeam: null,
+        homeTeam: null,
+        moneyline: { away: null, home: null },
+        puckLine: {
+          away: { spread: null, odds: null },
+          home: { spread: null, odds: null }
+        },
+        total: { 
+          line: null,  // Will use average of over/under lines if different
+          overLine: null,  // Specific line for OVER
+          underLine: null,  // Specific line for UNDER
+          over: null, 
+          under: null 
+        }
+      };
+      
+      // Parse AWAY team from current line (i)
+      for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
+        if (line.includes(fullName)) {
+          currentGame.awayTeam = code;
+          console.log(`  🏒 Away team: ${fullName} (${code})`);
+          break;
+        }
+      }
+      
+      // Check for totals first (o5½ -110 or u5½ +100)
+      const totalMatch = line.match(/(o|u)(\d+(?:½)?)\s*([-+]\d{3,})[A-Za-z]/);
+      if (totalMatch) {
+        const overOrUnder = totalMatch[1]; // 'o' or 'u'
+        const lineValue = totalMatch[2].replace('½', '.5'); // "5½" -> "5.5"
+        const odds = parseInt(totalMatch[3]);
+        
+        if (overOrUnder === 'o') {
+          currentGame.total.overLine = parseFloat(lineValue);
+          currentGame.total.over = odds;
+          console.log(`  📊 OVER ${lineValue} ${odds}`);
+        } else {
+          currentGame.total.underLine = parseFloat(lineValue);
+          currentGame.total.under = odds;
+          console.log(`  📊 UNDER ${lineValue} ${odds}`);
+        }
+      } else {
+        // If not a total, try moneyline (match odds immediately before sportsbook name)
+        const awayOddsMatch = line.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel)/);
+        if (awayOddsMatch) {
+          currentGame.moneyline.away = parseInt(awayOddsMatch[1]);
+          console.log(`  💰 Away odds: ${currentGame.moneyline.away} (from ${awayOddsMatch[2]})`);
+        }
+      }
+      
+      // Parse HOME team from NEXT line (i+1)
+      const nextLine = lines[i + 1];
+      if (!nextLine) {
+        console.log('  ⚠️ No next line found for home team, skipping');
+        continue;
+      }
+      
+      for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
+        if (nextLine.includes(fullName)) {
+          currentGame.homeTeam = code;
+          console.log(`  🏒 Home team: ${fullName} (${code})`);
+          break;
+        }
+      }
+      
+      // Check for totals first (under line for home team row)
+      const homeTotalMatch = nextLine.match(/(o|u)(\d+(?:½)?)\s*([-+]\d{3,})[A-Za-z]/);
+      if (homeTotalMatch) {
+        const overOrUnder = homeTotalMatch[1];
+        const lineValue = homeTotalMatch[2].replace('½', '.5');
+        const odds = parseInt(homeTotalMatch[3]);
+        
+        if (overOrUnder === 'o') {
+          currentGame.total.overLine = parseFloat(lineValue);
+          currentGame.total.over = odds;
+          console.log(`  📊 OVER ${lineValue} ${odds}`);
+        } else {
+          currentGame.total.underLine = parseFloat(lineValue);
+          currentGame.total.under = odds;
+          console.log(`  📊 UNDER ${lineValue} ${odds}`);
+        }
+      } else {
+        // If not a total, try moneyline (match odds immediately before sportsbook name)
+        const homeOddsMatch = nextLine.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel)/);
+        if (homeOddsMatch) {
+          currentGame.moneyline.home = parseInt(homeOddsMatch[1]);
+          console.log(`  💰 Home odds: ${currentGame.moneyline.home} (from ${homeOddsMatch[2]})`);
+        }
+      }
+      
+      // Add game if we have team data
+      if (currentGame.awayTeam && currentGame.homeTeam) {
+        // Set the main 'line' value: use overLine if same, otherwise use average
+        if (currentGame.total.overLine && currentGame.total.underLine) {
+          if (currentGame.total.overLine === currentGame.total.underLine) {
+            currentGame.total.line = currentGame.total.overLine;
+          } else {
+            // Different lines - use the OVER line as the primary line
+            currentGame.total.line = currentGame.total.overLine;
+          }
+        } else if (currentGame.total.overLine) {
+          currentGame.total.line = currentGame.total.overLine;
+        } else if (currentGame.total.underLine) {
+          currentGame.total.line = currentGame.total.underLine;
+        }
+        
+        // Add date to game for Firebase tracking (YYYY-MM-DD format)
+        // CRITICAL FIX: Use ET date to match other systems
+        currentGame.date = getETDate();
+        
+        games.push(currentGame);
+        console.log(`  ✅ Added game: ${currentGame.awayTeam} @ ${currentGame.homeTeam}`);
+        console.log(`     Moneyline: ${currentGame.moneyline.away}/${currentGame.moneyline.home}`);
+        console.log(`     Total: ${currentGame.total.line ? `O/U ${currentGame.total.line} (${currentGame.total.over}/${currentGame.total.under})` : 'N/A'}`);
+      } else {
+        console.log(`  ❌ Missing team data - away: ${currentGame.awayTeam}, home: ${currentGame.homeTeam}`);
       }
     }
     
-    if (!awayTeam) {
-      console.log('  ❌ Away team not found');
-      continue;
-    }
+    // Stop when we hit tomorrow's games (calculate dynamically)
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDayOfWeek = dayNames[tomorrow.getDay()];
+    const tomorrowMonth = tomorrow.getMonth() + 1;
+    const tomorrowDay = tomorrow.getDate();
+    const tomorrowPattern = `${tomorrowDayOfWeek} ${tomorrowMonth}/${tomorrowDay}`;
     
-    // Extract away odds (first column with just a number)
-    const cols = line.split('|').map(c => c.trim()).filter(c => c);
-    let awayOdds = null;
-    for (let j = 1; j < cols.length; j++) {
-      if (/^[-+]\d{3,}$/.test(cols[j])) {
-        awayOdds = parseInt(cols[j]);
-        console.log(`  💰 Away odds: ${awayOdds}`);
-        break;
-      }
+    if (line.includes(tomorrowPattern)) {
+      console.log(`\n🛑 Reached tomorrow's games (${tomorrowPattern}), stopping parser`);
+      break;
     }
-    
-    // HOME TEAM (next line)
-    const nextLine = lines[i + 1];
-    if (!nextLine || !nextLine.startsWith('|')) {
-      console.log('  ⚠️ No home line');
-      continue;
-    }
-    
-    // Extract home team
-    let homeTeam = null;
-    for (const [fullName, code] of Object.entries(TEAM_NAME_MAP)) {
-      if (nextLine.includes(`<br>${fullName}<br>`)) {
-        homeTeam = code;
-        console.log(`  🏒 Home: ${fullName} (${code})`);
-        break;
-      }
-    }
-    
-    if (!homeTeam) {
-      console.log('  ❌ Home team not found');
-      continue;
-    }
-    
-    // Extract home odds
-    const homeCols = nextLine.split('|').map(c => c.trim()).filter(c => c);
-    let homeOdds = null;
-    for (let j = 1; j < homeCols.length; j++) {
-      if (/^[-+]\d{3,}$/.test(homeCols[j])) {
-        homeOdds = parseInt(homeCols[j]);
-        console.log(`  💰 Home odds: ${homeOdds}`);
-        break;
-      }
-    }
-    
-    // Create game
-    if (awayTeam && homeTeam && awayOdds && homeOdds) {
-      games.push({
-        gameTime,
-        awayTeam,
-        homeTeam,
-        moneyline: { away: awayOdds, home: homeOdds },
-        puckLine: { away: { spread: null, odds: null }, home: { spread: null, odds: null } },
-        total: { line: null, over: null, under: null },
-        date: getETDate()
-      });
-      console.log(`  ✅ ${awayTeam} @ ${homeTeam} (${awayOdds}/${homeOdds})`);
-    }
-    
-    // Skip home line
-    i++;
   }
   
-  console.log(`\n✅ Parsed ${games.length} games`);
+  console.log(`\n✅ Parsed ${games.length} games from OddsTrader`);
+  if (games.length > 0) {
+    console.log('📋 Games:', games.map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', '));
+  }
+  
   return games;
 }
 
-// Export other needed functions
+/**
+ * Get team code from full name
+ */
 export function getTeamCode(teamName) {
   return TEAM_NAME_MAP[teamName] || null;
 }
 
+/**
+ * Get full team name from code
+ */
 export function getTeamName(code) {
   for (const [name, teamCode] of Object.entries(TEAM_NAME_MAP)) {
     if (teamCode === code) return name;
@@ -172,9 +278,40 @@ export function getTeamName(code) {
   return null;
 }
 
+/**
+ * Parse BOTH Money and Total files and merge the data
+ * @param {string} moneyText - Markdown from Money tab (has moneylines)
+ * @param {string} totalText - Markdown from Total tab (has totals)
+ * @returns {Array} Merged game objects with both moneylines and totals
+ */
 export function parseBothFiles(moneyText, totalText) {
-  // For now, just parse money file (totals disabled anyway)
-  return parseOddsTrader(moneyText);
+  console.log('🔄 Merging moneylines + totals...');
+  
+  // Parse money file for moneylines
+  const moneyGames = parseOddsTrader(moneyText);
+  console.log(`✅ Parsed ${moneyGames.length} games from Money file`);
+  
+  // Parse total file for totals
+  const totalGames = parseOddsTrader(totalText);
+  console.log(`✅ Parsed ${totalGames.length} games from Total file`);
+  
+  // Merge: moneylines from money file + totals from total file
+  const mergedGames = moneyGames.map((moneyGame, index) => {
+    const totalGame = totalGames[index];
+    
+    if (totalGame && totalGame.total && totalGame.total.line) {
+      return {
+        ...moneyGame,
+        total: totalGame.total
+      };
+    }
+    
+    return moneyGame;
+  });
+  
+  console.log(`📋 Final merged games: ${mergedGames.map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', ')}`);
+  
+  return mergedGames;
 }
 
 /**
@@ -189,7 +326,7 @@ export function extractGamesListFromOdds(mergedGames) {
   return mergedGames.map(game => ({
     away: game.awayTeam,
     home: game.homeTeam,
-    time: game.gameTime || 'TBD'
+    time: game.gameTime || 'TBD' // FIX: Changed from game.time to game.gameTime
   }));
 }
 

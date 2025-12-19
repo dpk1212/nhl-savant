@@ -115,4 +115,3 @@ export function summarizePredictions(games) {
   console.log('');
 }
 
-

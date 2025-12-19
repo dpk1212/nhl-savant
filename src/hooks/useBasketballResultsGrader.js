@@ -120,15 +120,13 @@ export function useBasketballResultsGrader() {
         const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
         const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
         
-        // Calculate profit using OPTIMIZED UNIT ALLOCATION
+        // ✅ USE STORED KELLY UNITS from prediction
         const grade = bet.prediction?.grade;
         const odds = bet.bet?.odds;
-        
-        // Use stored units from prediction, or calculate if missing (fallback)
-        const units = bet.prediction?.unitSize || getOptimizedUnitSize(grade, odds);
+        const units = bet.prediction?.unitSize || 1.0;
         
         // Calculate profit based on actual units risked
-        const profit = calculateUnitProfit(grade, odds, outcome === 'WIN');
+        const profit = calculateUnitProfit(grade, odds, outcome === 'WIN', units);
         
         // Update bet in Firebase (CLIENT SDK - already works!)
         await updateDoc(doc(db, 'basketball_bets', betId), {

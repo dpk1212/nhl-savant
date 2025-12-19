@@ -1,9 +1,10 @@
 name: Fetch Basketball Data
 
 on:
-  schedule:
-    # Morning scrape: 11:30 AM ET (3:30 PM UTC) - 30 min after NHL fetch
-    - cron: '30 15 * * *'
+  # DISABLED: Auto-fetch turned off - run manually only
+  # schedule:
+  #   # Morning scrape: 11:30 AM ET (3:30 PM UTC) - 30 min after NHL fetch
+  #   - cron: '30 15 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -12,28 +13,35 @@ jobs:
     permissions:
       contents: write  # Allow workflow to push changes
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
       
+      # Create .env file for scripts that use dotenv
+      - name: Create .env file
+        run: |
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
+          echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
+          echo "FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}" >> .env
+          echo "FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}" >> .env
+          echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
+      
       - name: Fetch basketball data
-        env:
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: npm run fetch-basketball
       
       - name: Write basketball bets to Firebase
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
-          npm run write-basketball-bets
-          rm service-account.json
+        run: npm run write-basketball-bets
       
       - name: Commit and push if changed
         run: |
@@ -42,16 +50,23 @@ jobs:
           git add public/basketball_odds.md public/haslametrics.md public/dratings.md
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Basketball data [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
+      # Build and deploy to ensure site stays updated with fresh data
       - name: Build site
-        if: success()
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
         run: npm run build
       
       - name: Deploy to GitHub Pages
-        if: success()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          cname: nhlsavant.com
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-
