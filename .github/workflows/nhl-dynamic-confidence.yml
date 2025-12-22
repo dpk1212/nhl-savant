@@ -63,7 +63,9 @@ jobs:
       - name: 🚀 Deploy to GitHub Pages
         run: |
           npm run build
-          npx gh-pages -d dist
+          git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          npx gh-pages -d dist -u "github-actions-bot <support+actions@github.com>"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
