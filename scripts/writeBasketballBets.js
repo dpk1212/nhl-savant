@@ -91,34 +91,11 @@ async function saveBetToFirebase(db, game, prediction) {
   
   const betRef = doc(db, 'basketball_bets', betId);
   
-  // Check if bet already exists - FORCE UPDATE predictions
+  // Check if bet already exists - SKIP IT (locked at original values)
   const existingBet = await getDoc(betRef);
   if (existingBet.exists()) {
-    // ALWAYS update prediction data to ensure latest calculations
-    await setDoc(betRef, {
-      prediction: {
-        ensembleAwayProb: prediction.ensembleAwayProb,
-        ensembleHomeProb: prediction.ensembleHomeProb,
-        bestTeam: prediction.bestTeam,
-        bestBet: prediction.bestBet,
-        bestOdds: prediction.bestOdds,
-        bestEV: prediction.bestEV,
-        evPercent: prediction.bestEV,
-        grade: prediction.grade,
-        qualityGrade: prediction.grade,
-        rating: prediction.grade,
-        // ✅ KELLY UNITS (mathematically optimal based on edge/probability)
-        unitSize: kellyUnits,
-        confidenceTier: confidenceTier,
-        confidenceScore: confidenceScore,
-        dynamicUnits: dynamicResult.units, // Store dynamic for reference
-        patternROI: dynamicResult.patternROI,
-        oddsRangeName: prediction.oddsRangeName,
-        historicalROI: prediction.historicalROI
-      },
-      barttorvik: prediction.barttorvik || null
-    }, { merge: true });
-    console.log(`   ✅ Updated: ${betId} (${kellyUnits}u Kelly) [Dynamic: ${dynamicResult.units}u]`);
+    // 🔒 LOCKED: Original bets are never updated to preserve closing line value
+    console.log(`   🔒 Skipped: ${betId} (locked at original values)`);
     return betId;
   }
   
