@@ -281,7 +281,7 @@ const Basketball = () => {
       
       console.log(`🔒 Found ${lockedPicks.length} locked picks for today`);
       
-      // Merge: Add locked picks that aren't already in qualityGames
+      // Merge: Replace games in qualityGames with locked picks, or add new locked picks
       const mergedGames = [...qualityGames];
       const normalizeForMatch = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
       
@@ -289,42 +289,49 @@ const Basketball = () => {
         const betKey = `${normalizeForMatch(lockedBet.game.awayTeam)}_${normalizeForMatch(lockedBet.game.homeTeam)}`;
         
         // Check if this game already exists in qualityGames
-        const existsInFiltered = qualityGames.some(g => 
+        const existingIndex = mergedGames.findIndex(g => 
           `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
         );
         
-        if (!existsInFiltered) {
-          // Add locked pick with original bet data
+        // Build locked pick object
+        const lockedGameObj = {
+          awayTeam: lockedBet.game.awayTeam,
+          homeTeam: lockedBet.game.homeTeam,
+          odds: { 
+            gameTime: lockedBet.game.gameTime,
+            awayOdds: lockedBet.bet.team === lockedBet.game.awayTeam ? lockedBet.bet.odds : null,
+            homeOdds: lockedBet.bet.team === lockedBet.game.homeTeam ? lockedBet.bet.odds : null
+          },
+          prediction: {
+            ...lockedBet.prediction,
+            bestTeam: lockedBet.bet.team,
+            bestOdds: lockedBet.bet.odds,
+            bestEV: lockedBet.prediction?.evPercent || lockedBet.initialEV || 0,
+            bestBet: lockedBet.bet.team === lockedBet.game.awayTeam ? 'away' : 'home',
+            grade: lockedBet.prediction?.grade || lockedBet.prediction?.qualityGrade || 'B',
+            unitSize: lockedBet.prediction?.unitSize || 1.0,
+            ensembleAwayProb: lockedBet.prediction?.ensembleAwayProb || 0.5,
+            ensembleHomeProb: lockedBet.prediction?.ensembleHomeProb || 0.5,
+            marketAwayProb: lockedBet.prediction?.marketAwayProb || 0.5,
+            marketHomeProb: lockedBet.prediction?.marketHomeProb || 0.5,
+            isLockedPick: true, // 🔒 Flag for UI display
+            lockedAt: lockedBet.firstRecommendedAt,
+            initialOdds: lockedBet.initialOdds,
+            initialEV: lockedBet.initialEV
+          },
+          dratings: null,
+          haslametrics: null,
+          barttorvik: lockedBet.barttorvik || null
+        };
+        
+        if (existingIndex >= 0) {
+          // 🔒 REPLACE fresh calculation with locked pick
+          console.log(`   🔒 Replacing with locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
+          mergedGames[existingIndex] = lockedGameObj;
+        } else {
+          // Add locked pick (game no longer in today's scraped data)
           console.log(`   🔒 Adding locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
-          mergedGames.push({
-            awayTeam: lockedBet.game.awayTeam,
-            homeTeam: lockedBet.game.homeTeam,
-            odds: { 
-              gameTime: lockedBet.game.gameTime,
-              awayOdds: lockedBet.bet.team === lockedBet.game.awayTeam ? lockedBet.bet.odds : null,
-              homeOdds: lockedBet.bet.team === lockedBet.game.homeTeam ? lockedBet.bet.odds : null
-            },
-            prediction: {
-              ...lockedBet.prediction,
-              bestTeam: lockedBet.bet.team,
-              bestOdds: lockedBet.bet.odds,
-              bestEV: lockedBet.prediction?.evPercent || lockedBet.initialEV || 0, // Firebase stores as evPercent
-              bestBet: lockedBet.bet.team === lockedBet.game.awayTeam ? 'away' : 'home',
-              grade: lockedBet.prediction?.grade || lockedBet.prediction?.qualityGrade || 'B',
-              unitSize: lockedBet.prediction?.unitSize || 1.0,
-              ensembleAwayProb: lockedBet.prediction?.ensembleAwayProb || 0.5,
-              ensembleHomeProb: lockedBet.prediction?.ensembleHomeProb || 0.5,
-              marketAwayProb: lockedBet.prediction?.marketAwayProb || 0.5,
-              marketHomeProb: lockedBet.prediction?.marketHomeProb || 0.5,
-              isLockedPick: true, // 🔒 Flag for UI display
-              lockedAt: lockedBet.firstRecommendedAt,
-              initialOdds: lockedBet.initialOdds,
-              initialEV: lockedBet.initialEV
-            },
-            dratings: null,
-            haslametrics: null,
-            barttorvik: lockedBet.barttorvik || null
-          });
+          mergedGames.push(lockedGameObj);
         }
       }
       
