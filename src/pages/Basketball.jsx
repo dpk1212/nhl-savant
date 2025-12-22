@@ -325,9 +325,14 @@ const Basketball = () => {
         };
         
         if (existingIndex >= 0) {
-          // 🔒 REPLACE fresh calculation with locked pick
+          // 🔒 REPLACE prediction with locked version, but KEEP fresh model data
           console.log(`   🔒 Replacing with locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
-          mergedGames[existingIndex] = lockedGameObj;
+          const freshGame = mergedGames[existingIndex];
+          mergedGames[existingIndex] = {
+            ...freshGame, // Keep fresh dratings, haslametrics, barttorvik for insights
+            prediction: lockedGameObj.prediction, // Override with locked prediction
+            odds: lockedGameObj.odds // Use locked odds
+          };
         } else {
           // Add locked pick (game no longer in today's scraped data)
           console.log(`   🔒 Adding locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
