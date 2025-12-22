@@ -2815,9 +2815,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   }, []);
 
   // Initialize edge calculator with DRatings calibration
-  // CRITICAL: Wait for DRatings data to load before calculating edges
+  // CRITICAL: Wait for DRatings AND MoneyPuck data to load before calculating edges
   useEffect(() => {
-    if (dataProcessor && oddsData && !dratingsLoading) {
+    if (dataProcessor && oddsData && !dratingsLoading && !moneyPuckLoading) {
       // DEBUG: Log DRatings integration status
       console.log('🔍 ==================== DRATINGS DEBUG ====================');
       console.log('🔍 DRatings predictions loaded:', dratingsPredictions?.predictions?.length || 0, 'games');
@@ -2859,7 +2859,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const topOpportunities = calculator.getTopEdges(0.025); // 2.5% minimum (B+ or higher)
       setTopEdges(topOpportunities);
     }
-  }, [dataProcessor, oddsData, startingGoalies, dratingsPredictions, dratingsLoading, moneyPuckPredictions]);
+  }, [dataProcessor, oddsData, startingGoalies, dratingsPredictions, dratingsLoading, moneyPuckPredictions, moneyPuckLoading]);
   
   // CRITICAL FIX: Merge live/final games that may not have odds into allEdges
   // This ensures games don't disappear when they go live
