@@ -817,3 +817,4 @@ Your NHL model is **production-ready and profitable**. The 64.7% win rate on mon
 *Document prepared by: NHL Savant AI*  
 *For questions, see: MODEL_CONSTRUCTION_EXPLAINED.md, MODEL_TECHNICAL_SPECIFICATION.md*
 
+
