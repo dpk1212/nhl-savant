@@ -18,7 +18,7 @@ import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUni
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { getDynamicTierInfo, getDynamicConfidenceRating, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
 import { basketballBetTracker } from '../firebase/basketballBetTracker';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
   ELEVATION, 
@@ -262,9 +262,78 @@ const Basketball = () => {
       // Use processGames() which includes the shouldBet() filters (blocks D/F grades, <3% EV, etc.)
       const qualityGames = calculator.processGames(todaysGames);
       
+      // 🔒 MERGE LOCKED PICKS: Always display today's Firebase bets (like NHL workflow)
+      // Original picks stay visible even if odds change and they no longer pass filters
+      const today = new Date().toISOString().split('T')[0];
+      const firebaseBetsSnapshot = await getDocs(
+        query(
+          collection(db, 'basketball_bets'),
+          where('date', '==', today),
+          where('status', '==', 'PENDING')
+        )
+      );
+      
+      const lockedPicks = [];
+      firebaseBetsSnapshot.forEach((doc) => {
+        const bet = doc.data();
+        lockedPicks.push(bet);
+      });
+      
+      console.log(`🔒 Found ${lockedPicks.length} locked picks for today`);
+      
+      // Merge: Add locked picks that aren't already in qualityGames
+      const mergedGames = [...qualityGames];
+      const normalizeForMatch = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      for (const lockedBet of lockedPicks) {
+        const betKey = `${normalizeForMatch(lockedBet.game.awayTeam)}_${normalizeForMatch(lockedBet.game.homeTeam)}`;
+        
+        // Check if this game already exists in qualityGames
+        const existsInFiltered = qualityGames.some(g => 
+          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
+        );
+        
+        if (!existsInFiltered) {
+          // Add locked pick with original bet data
+          console.log(`   🔒 Adding locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
+          mergedGames.push({
+            awayTeam: lockedBet.game.awayTeam,
+            homeTeam: lockedBet.game.homeTeam,
+            odds: { 
+              gameTime: lockedBet.game.gameTime,
+              awayOdds: lockedBet.bet.team === lockedBet.game.awayTeam ? lockedBet.bet.odds : null,
+              homeOdds: lockedBet.bet.team === lockedBet.game.homeTeam ? lockedBet.bet.odds : null
+            },
+            prediction: {
+              ...lockedBet.prediction,
+              bestTeam: lockedBet.bet.team,
+              bestOdds: lockedBet.bet.odds,
+              bestBet: lockedBet.bet.team === lockedBet.game.awayTeam ? 'away' : 'home',
+              isLockedPick: true, // 🔒 Flag for UI display
+              lockedAt: lockedBet.firstRecommendedAt,
+              initialOdds: lockedBet.initialOdds,
+              initialEV: lockedBet.initialEV
+            },
+            dratings: null,
+            haslametrics: null,
+            barttorvik: lockedBet.barttorvik || null
+          });
+        }
+      }
+      
+      console.log(`📊 Total games: ${mergedGames.length} (${qualityGames.length} current + ${mergedGames.length - qualityGames.length} locked)`);
+      
       // SORT BY VALUE: Prioritize games where our model is MORE CONFIDENT than market
       // This ensures we recommend teams we believe in more than the market does
-      const sortedGames = qualityGames.sort((a, b) => {
+      const sortedGames = mergedGames.sort((a, b) => {
+        // 🔒 PRIORITY 0: Locked picks always at top
+        const aLocked = a.prediction?.isLockedPick || false;
+        const bLocked = b.prediction?.isLockedPick || false;
+        
+        if (aLocked !== bLocked) {
+          return bLocked ? 1 : -1; // Locked picks first
+        }
+        
         // Calculate "model advantage" - how much more confident we are than market
         const getModelAdvantage = (game) => {
           const pred = game.prediction;
@@ -325,9 +394,16 @@ const Basketball = () => {
       });
       
       setRecommendations(sortedGames);
+      
+      // Calculate stats including locked picks
+      const lockedCount = sortedGames.filter(g => g.prediction?.isLockedPick).length;
+      const freshCount = sortedGames.length - lockedCount;
+      
       setStats({
         totalGames: oddsGames.length,
         qualityPicks: sortedGames.length,
+        lockedPicks: lockedCount,
+        freshPicks: freshCount,
         displayedGames: sortedGames.length,
         gamesWithDRatings: todaysGames.filter(g => g.hasDRatings).length,
         gamesWithHasla: todaysGames.filter(g => g.hasHaslametrics).length,
@@ -1831,6 +1907,36 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
         position: 'relative',
         zIndex: 2
       }}>
+        {/* 🔒 LOCKED PICK BADGE (if from original bet) */}
+        {pred.isLockedPick && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            padding: '0.375rem 0.75rem',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%)',
+            border: '1.5px solid rgba(212, 175, 55, 0.4)',
+            fontSize: '0.75rem',
+            fontWeight: '700',
+            color: '#D4AF37',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: '0.75rem',
+            boxShadow: '0 2px 8px rgba(212, 175, 55, 0.2)'
+          }}>
+            <span>🔒</span>
+            <span>ORIGINAL PICK</span>
+            <span style={{ 
+              color: 'rgba(212, 175, 55, 0.7)', 
+              fontSize: '0.7rem',
+              marginLeft: '0.25rem'
+            }}>
+              {pred.initialOdds ? `@ ${pred.initialOdds}` : ''}
+            </span>
+          </div>
+        )}
+        
         {/* 🎯 UNIT SIZE HERO + CONFIDENCE BADGE */}
         {(() => {
           // Use dynamic tier from stored Firebase data when available
