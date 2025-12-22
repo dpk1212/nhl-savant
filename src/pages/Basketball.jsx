@@ -308,7 +308,14 @@ const Basketball = () => {
               ...lockedBet.prediction,
               bestTeam: lockedBet.bet.team,
               bestOdds: lockedBet.bet.odds,
+              bestEV: lockedBet.prediction?.evPercent || lockedBet.initialEV || 0, // Firebase stores as evPercent
               bestBet: lockedBet.bet.team === lockedBet.game.awayTeam ? 'away' : 'home',
+              grade: lockedBet.prediction?.grade || lockedBet.prediction?.qualityGrade || 'B',
+              unitSize: lockedBet.prediction?.unitSize || 1.0,
+              ensembleAwayProb: lockedBet.prediction?.ensembleAwayProb || 0.5,
+              ensembleHomeProb: lockedBet.prediction?.ensembleHomeProb || 0.5,
+              marketAwayProb: lockedBet.prediction?.marketAwayProb || 0.5,
+              marketHomeProb: lockedBet.prediction?.marketHomeProb || 0.5,
               isLockedPick: true, // 🔒 Flag for UI display
               lockedAt: lockedBet.firstRecommendedAt,
               initialOdds: lockedBet.initialOdds,
