@@ -41,8 +41,8 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/*.md public/*.json public/data/*.csv public/data/*.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Odds and goalies [$(date +'%Y-%m-%d %H:%M')]" && git push)
+          git add public/odds_money.md public/starting_goalies.json public/moneypuck_predictions.json public/dratings_nhl.md public/player_props.json public/player_props_raw.md public/data/*.csv public/data/*.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: NHL odds and goalies [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
       # Build and deploy to ensure site stays updated with fresh data
       - name: Build site
