@@ -264,12 +264,13 @@ const Basketball = () => {
       
       // 🔒 MERGE LOCKED PICKS: Always display today's Firebase bets (like NHL workflow)
       // Original picks stay visible even if odds change and they no longer pass filters
+      // SHOW ALL BETS (pending AND completed) so users see their wins!
       const today = new Date().toISOString().split('T')[0];
       const firebaseBetsSnapshot = await getDocs(
         query(
           collection(db, 'basketball_bets'),
-          where('date', '==', today),
-          where('status', '==', 'PENDING')
+          where('date', '==', today)
+          // NO STATUS FILTER - show both pending and completed
         )
       );
       
