@@ -265,7 +265,11 @@ const Basketball = () => {
       // 🔒 MERGE LOCKED PICKS: Always display today's Firebase bets (like NHL workflow)
       // Original picks stay visible even if odds change and they no longer pass filters
       // SHOW ALL BETS (pending AND completed) so users see their wins!
-      const today = new Date().toISOString().split('T')[0];
+      // CRITICAL: Use ET date (bets stored in ET timezone)
+      const now = new Date();
+      const etDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      const today = `${etDate.getFullYear()}-${String(etDate.getMonth() + 1).padStart(2, '0')}-${String(etDate.getDate()).padStart(2, '0')}`;
+      
       const firebaseBetsSnapshot = await getDocs(
         query(
           collection(db, 'basketball_bets'),
