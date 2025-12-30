@@ -2816,12 +2816,18 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         return res.json();
       })
       .then(data => {
-        setConfidenceWeights(data);
-        console.log(`✅ Loaded NHL confidence weights (${data.totalBets} bets analyzed, updated: ${data.lastUpdated})`);
+        // Only set if data has factors
+        if (data && data.factors && Object.keys(data.factors).length > 0) {
+          setConfidenceWeights(data);
+          console.log(`✅ Loaded NHL confidence weights (${data.totalBets} bets analyzed, updated: ${data.lastUpdated})`);
+        } else {
+          console.warn('⚠️ Confidence weights file is empty - using defaults');
+          setConfidenceWeights(null); // Keep null = use defaults
+        }
       })
       .catch(err => {
         console.warn('⚠️ Confidence weights not available - using defaults:', err.message);
-        setConfidenceWeights({ factors: {}, totalBets: 0 }); // Empty weights = 1.0u default
+        setConfidenceWeights(null); // Keep null = use defaults (NOT empty object)
       });
   }, []);
 
