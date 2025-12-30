@@ -153,7 +153,7 @@ const Pricing = () => {
                 {statsLoading ? (
                   'Loading performance...'
                 ) : (
-                  `${combinedStats.roi >= 0 ? '+' : ''}${combinedStats.roi.toFixed(1)}% ROI (${combinedStats.totalBets} picks tracked)`
+                  `NHL: ${combinedStats.nhl.roi >= 0 ? '+' : ''}${combinedStats.nhl.roi.toFixed(1)}% ROI | CBB: ${combinedStats.cbb.roi >= 0 ? '+' : ''}${combinedStats.cbb.roi.toFixed(1)}% ROI`
                 )}
               </span>
             </div>

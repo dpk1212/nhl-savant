@@ -22,16 +22,16 @@ export function CBBEarlyAccessBanner() {
   return (
     <div className="cbb-early-access-banner">
       <div className="banner-content">
-        <span className="banner-icon">⚠️</span>
+        <span className="banner-icon">🏆</span>
         <span className="banner-text">
-          <strong>OFFER EXPIRES EOD JAN 1:</strong> Lock $29/mo forever (40% off future price). 
-          Use code <strong>HEREFIRST</strong> at checkout.
+          <strong>Founding Member Rate:</strong> You're here first. Lock $29/mo forever while others pay full price. 
+          Use code <strong>HEREFIRST</strong> (expires EOD Jan 1).
         </span>
         <button 
           className="banner-cta"
           onClick={() => navigate('/pricing')}
         >
-          View Pricing →
+          Claim Forever Rate →
         </button>
       </div>
     </div>
@@ -152,12 +152,6 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
             >
               Start Free Trial
             </button>
-            <button 
-              className="cta-secondary"
-              onClick={() => window.open('/data/cbb-picks-completed.csv', '_blank')}
-            >
-              View All Verified Picks →
-            </button>
           </div>
           
           <div className="paywall-footer">
@@ -274,8 +268,8 @@ export function CBBUpgradeModal({ show, onClose }) {
             </div>
             
             <div className="limited-access-note">
-              ⚠️ <strong>OFFER EXPIRES EOD JAN 1:</strong> Early adopter rate locks your price forever at $29/mo. 
-              New subscribers after Jan 1 pay $39-49/mo. Use code <strong>HEREFIRST</strong> at checkout.
+              🏆 <strong>Founding Member Pricing:</strong> You found us first. Lock $29/mo for life—a rate reserved only for early believers. 
+              Future members pay full price. Code: <strong>HEREFIRST</strong> (expires EOD Jan 1).
             </div>
             
             <button 
