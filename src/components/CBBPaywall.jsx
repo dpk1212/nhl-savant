@@ -79,27 +79,34 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
         
         {/* Unlock Panel */}
         <div className="unlock-panel">
+          {/* Urgency Banner */}
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '8px',
+            padding: '0.5rem 1rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>⏰</span>
+            <span style={{ color: '#F87171', fontWeight: '600', fontSize: '0.875rem' }}>
+              Free preview ending soon
+            </span>
+          </div>
+          
           <div className="lock-icon">🔒</div>
           
           <h2 className="unlock-title">
             {lockedGames.length} More {lockedGames.length === 1 ? 'Play' : 'Plays'} Hidden
           </h2>
           
-          <div className="locked-value-stats">
-            <div className="value-stat">
-              <div className="value-number">+{lockedEV.toFixed(1)}%</div>
-              <div className="value-label">Total EV Locked</div>
-            </div>
-            <div className="value-stat">
-              <div className="value-number">{avgGrade}%</div>
-              <div className="value-label">High-Grade Picks</div>
-            </div>
-          </div>
-          
-          {/* Real Performance Data */}
+          {/* Verified Results - Live Data */}
           {!stats.loading && stats.totalPicks > 0 && (
             <div className="performance-proof">
-              <div className="proof-title">📈 Verified Performance</div>
+              <div className="proof-title">📈 VERIFIED RESULTS</div>
               <div className="proof-stats">
                 <div className="proof-stat">
                   <span className="proof-value">+{stats.profit.toFixed(1)}u</span>
@@ -110,36 +117,21 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
                   <span className="proof-label">Win Rate</span>
                 </div>
                 <div className="proof-stat">
-                  <span className="proof-value">+{stats.roi.toFixed(1)}%</span>
-                  <span className="proof-label">ROI</span>
+                  <span className="proof-value">${Math.round(stats.profit * 100).toLocaleString()}</span>
+                  <span className="proof-label">on $100 bets</span>
                 </div>
               </div>
-              
-              {stats.last7Days.picks > 0 && (
-                <div className="recent-performance">
-                  <strong>Last 7 Days:</strong> {stats.last7Days.picks} picks, 
-                  +{stats.last7Days.profit.toFixed(1)}u profit 
-                  ({stats.last7Days.winRate.toFixed(0)}% win rate)
-                </div>
-              )}
             </div>
           )}
           
-          {/* Value Calculation */}
+          {/* Founding Rate */}
           <div className="value-calculation">
-            <div className="calc-row">
-              <span>Premium Cost:</span>
-              <span><strong>$15.99/mo</strong> <s style={{opacity: 0.6, fontSize: '0.85em'}}>$25.99</s></span>
+            <div className="calc-row" style={{ justifyContent: 'center', gap: '0.5rem' }}>
+              <span style={{ fontWeight: '600' }}>Founding Rate:</span>
+              <span><strong style={{ color: '#10B981' }}>$15.99/mo</strong> <s style={{opacity: 0.5, fontSize: '0.85em'}}>$25.99</s></span>
             </div>
-            <div className="calc-row">
-              <span>Avg. Daily Picks:</span>
-              <span>4-6 games</span>
-            </div>
-            <div className="calc-row highlight">
-              <span>ROI (betting $100/pick):</span>
-              <span className="roi-value">
-                {!stats.loading && stats.roi > 0 ? `+${(stats.roi * 100).toFixed(0)}%` : '+2,500%'}
-              </span>
+            <div style={{ textAlign: 'center', fontSize: '0.813rem', color: 'rgba(255,255,255,0.7)', marginTop: '0.25rem' }}>
+              40% off locked forever
             </div>
           </div>
           
@@ -151,12 +143,33 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
             >
               Start Free Trial
             </button>
+            
+            {/* Soft Dismiss */}
+            <button 
+              onClick={() => {
+                // Find the paywall element and hide it
+                const paywall = document.querySelector('.cbb-soft-paywall');
+                if (paywall) paywall.style.display = 'none';
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                marginTop: '0.75rem',
+                padding: '0.5rem',
+                textDecoration: 'underline',
+                textUnderlineOffset: '2px'
+              }}
+            >
+              Continue with free preview →
+            </button>
           </div>
           
           <div className="paywall-footer">
             <div className="trust-badge">✓ Cancel anytime</div>
             <div className="trust-badge">✓ All picks verified</div>
-            <div className="trust-badge">✓ Full refund if unprofitable</div>
           </div>
         </div>
       </div>
@@ -279,7 +292,7 @@ export function CBBUpgradeModal({ show, onClose }) {
             </button>
             
             <div className="trial-details">
-              Full access • Cancel anytime • Refund if unprofitable
+              Full access • Cancel anytime • All picks verified
             </div>
           </div>
         </div>
