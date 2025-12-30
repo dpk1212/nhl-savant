@@ -28,6 +28,14 @@ import {
   getGradeColorScale
 } from '../utils/designSystem';
 import { getBasketballContext } from '../utils/basketballContextGenerator';
+// 🎯 CBB SOFT PAYWALL IMPORTS
+import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
+import { 
+  CBBEarlyAccessBanner, 
+  CBBSoftPaywall, 
+  CBBUpgradeModal 
+} from '../components/CBBPaywall';
 
 const Basketball = () => {
   const [loading, setLoading] = useState(true);
@@ -53,6 +61,11 @@ const Basketball = () => {
   
   // Auto-grade bets when results are available (CLIENT-SIDE!)
   const { grading, gradedCount } = useBasketballResultsGrader();
+  
+  // 🎯 CBB SOFT PAYWALL: Auth & subscription state
+  const { user } = useAuth();
+  const { isPremium, isFree, loading: subscriptionLoading } = useSubscription(user);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     loadBasketballData();
@@ -464,19 +477,23 @@ const Basketball = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: isMobile ? '1rem' : '20px' }}>
-      {/* Header - NHL Standard */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', marginBottom: isMobile ? '1.5rem' : '2rem', padding: isMobile ? '1rem' : '0' }}>
-        {/* Back to NHL Button */}
-        <Link
-          to="/"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.625rem 1rem',
-            marginBottom: '1.5rem',
-            borderRadius: '10px',
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: '0' }}>
+      {/* 🎯 CBB EARLY ACCESS BANNER - Only for free users */}
+      <CBBEarlyAccessBanner />
+      
+      <div style={{ padding: isMobile ? '1rem' : '20px' }}>
+        {/* Header - NHL Standard */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', marginBottom: isMobile ? '1.5rem' : '2rem', padding: isMobile ? '1rem' : '0' }}>
+          {/* Back to NHL Button */}
+          <Link
+            to="/"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.625rem 1rem',
+              marginBottom: '1.5rem',
+              borderRadius: '10px',
             fontSize: '0.875rem',
             fontWeight: '600',
             textDecoration: 'none',
@@ -861,6 +878,18 @@ const Basketball = () => {
               }
               // Default 'confidence' keeps the tier grouping below
               
+              // 🎯 CBB SOFT PAYWALL: Split games for free users
+              // ⚠️ CRITICAL: Premium users must see ALL games!
+              const shouldShowPaywall = isFree && !subscriptionLoading && filteredGames.length > 1;
+              const freePreviewGames = shouldShowPaywall ? filteredGames.slice(0, 1) : filteredGames;
+              const lockedGames = shouldShowPaywall ? filteredGames.slice(1) : [];
+              
+              // Use freePreviewGames for display (premium users get all games in this variable)
+              const gamesToDisplay = freePreviewGames;
+              
+              console.log(`🎯 PAYWALL CHECK: isPremium=${isPremium}, isFree=${isFree}, shouldShowPaywall=${shouldShowPaywall}`);
+              console.log(`📊 GAMES: total=${filteredGames.length}, displaying=${gamesToDisplay.length}, locked=${lockedGames.length}`);
+              
               // 🎯 GROUP BY CONVICTION TIER (all are bets!) - only for confidence sort
               const gamesByTier = {
                 max: [],
@@ -868,7 +897,7 @@ const Basketball = () => {
                 small: []
               };
               
-              filteredGames.forEach(game => {
+              gamesToDisplay.forEach(game => {
                 if (!game.prediction?.grade || !game.bet?.odds) {
                   gamesByTier.moderate.push(game); // Default to moderate if no tier data
                   return;
@@ -1032,8 +1061,33 @@ const Basketball = () => {
                 </>
               );
             })()}
+            
+            {/* 🎯 CBB SOFT PAYWALL - Shows blurred locked games for free users */}
+            {(() => {
+              // Check if we should show the paywall
+              const gamesToShow = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
+              const showPaywall = isFree && !subscriptionLoading && gamesToShow.length > 1;
+              
+              if (showPaywall) {
+                console.log(`🔒 RENDERING SOFT PAYWALL: ${gamesToShow.length - 1} games locked`);
+                return (
+                  <CBBSoftPaywall 
+                    games={gamesToShow}
+                    onUpgradeClick={() => setShowUpgradeModal(true)}
+                  />
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
+        
+        {/* 🎯 CBB UPGRADE MODAL */}
+        <CBBUpgradeModal 
+          show={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+        />
+      </div>
       </div>
     </div>
   );
