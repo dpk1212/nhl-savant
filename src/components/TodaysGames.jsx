@@ -937,7 +937,7 @@ const ProbabilityBars = ({ modelProb, marketProb }) => (
 );
 
 // Hero Bet Card - Main value proposition
-const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges }) => {
+const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges, confidenceWeights }) => {
   
   // 🔒 Check if this game has a LOCKED pick from Firebase
   const firebaseBet = firebaseBets?.find(bet => 
@@ -3914,6 +3914,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                     factors={analyticsData?.factors || []}
                     firebaseBets={firebaseBets}
                     topEdges={topEdges}
+                    confidenceWeights={confidenceWeights}
               />
                   </StepSection>
                 );
