@@ -24,14 +24,13 @@ export function CBBEarlyAccessBanner() {
       <div className="banner-content">
         <span className="banner-icon">🏆</span>
         <span className="banner-text">
-          <strong>Founding Member Rate:</strong> You're here first. Lock $29/mo forever while others pay full price. 
-          Use code <strong>HEREFIRST</strong> (expires EOD Jan 1).
+          <strong>Thanks for being early.</strong> Lock <strong>40% off for life</strong> — <strong>$15.99/mo</strong> <s style={{opacity: 0.7}}>$25.99</s> • Code: <strong>HEREFIRST</strong>
         </span>
         <button 
           className="banner-cta"
           onClick={() => navigate('/pricing')}
         >
-          Claim Forever Rate →
+          Lock 40% Off →
         </button>
       </div>
     </div>
@@ -130,7 +129,7 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
           <div className="value-calculation">
             <div className="calc-row">
               <span>Premium Cost:</span>
-              <span>$29/month</span>
+              <span><strong>$15.99/mo</strong> <s style={{opacity: 0.6, fontSize: '0.85em'}}>$25.99</s></span>
             </div>
             <div className="calc-row">
               <span>Avg. Daily Picks:</span>
@@ -245,16 +244,17 @@ export function CBBUpgradeModal({ show, onClose }) {
         <div className="modal-pricing">
           <div className="pricing-card featured">
             <div className="early-access-badge">
-              ⚡ EARLY ADOPTER RATE
+              🏆 40% OFF FOR LIFE
             </div>
             
             <div className="price-display">
               <div className="price-main">
-                <span className="price-amount">$29</span>
+                <span className="price-amount">$15.99</span>
                 <span className="price-period">/month</span>
+                <span style={{marginLeft: '0.5rem', opacity: 0.6, textDecoration: 'line-through', fontSize: '1.25rem'}}>$25.99</span>
               </div>
               <div className="price-lock">
-                🔒 Rate locked forever • Immune to price increases
+                🔒 Locked forever — thanks for being early
               </div>
             </div>
             
@@ -268,8 +268,7 @@ export function CBBUpgradeModal({ show, onClose }) {
             </div>
             
             <div className="limited-access-note">
-              🏆 <strong>Founding Member Pricing:</strong> You found us first. Lock $29/mo for life—a rate reserved only for early believers. 
-              Future members pay full price. Code: <strong>HEREFIRST</strong> (expires EOD Jan 1).
+              🏆 <strong>Thanks for being early.</strong> Lock 40% off for life — $15.99/mo while founding slots last. Code: <strong>HEREFIRST</strong>
             </div>
             
             <button 
