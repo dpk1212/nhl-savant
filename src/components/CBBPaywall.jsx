@@ -37,10 +37,11 @@ export function CBBEarlyAccessBanner() {
   );
 }
 
-export function CBBSoftPaywall({ games, onUpgradeClick }) {
+export function CBBSoftPaywall({ games, onUpgradeClick, onDismiss }) {
   const { user } = useAuth();
   const { isPremium, isFree } = useSubscription(user);
   const { stats, loading: statsLoading } = useBasketballBetStats();
+  const navigate = useNavigate();
   
   // Premium users see everything
   if (isPremium) {
@@ -201,7 +202,7 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
             </div>
           )}
           
-          {/* Founding Rate */}
+          {/* Founding Rate + Promo Code */}
           <div className="value-calculation">
             <div className="calc-row" style={{ justifyContent: 'center', gap: '0.5rem' }}>
               <span style={{ fontWeight: '600' }}>Founding Rate:</span>
@@ -210,23 +211,36 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
             <div style={{ textAlign: 'center', fontSize: '0.813rem', color: 'rgba(255,255,255,0.7)', marginTop: '0.25rem' }}>
               40% off locked forever
             </div>
+            {/* Promo code reminder */}
+            <div style={{ 
+              marginTop: '0.75rem',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(212, 175, 55, 0.15)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: '6px',
+              textAlign: 'center',
+              fontSize: '0.813rem'
+            }}>
+              <span style={{ color: '#D4AF37' }}>💰 Use code <strong>HEREFIRST</strong> at checkout</span>
+            </div>
           </div>
           
           {/* CTA Buttons */}
           <div className="paywall-actions">
             <button 
               className="cta-primary"
-              onClick={onUpgradeClick}
+              onClick={() => navigate('/pricing')}
             >
-              Start Free Trial
+              Start Free Trial →
             </button>
             
-            {/* Soft Dismiss */}
+            {/* Soft Dismiss - Full Access Preview */}
             <button 
               onClick={() => {
-                // Find the paywall element and hide it
-                const paywall = document.querySelector('.cbb-soft-paywall');
-                if (paywall) paywall.style.display = 'none';
+                // Call parent dismiss handler to show full content
+                if (onDismiss) {
+                  onDismiss();
+                }
               }}
               style={{
                 background: 'transparent',

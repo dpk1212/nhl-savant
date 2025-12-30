@@ -66,6 +66,7 @@ const Basketball = () => {
   const { user } = useAuth();
   const { isPremium, isFree, loading: subscriptionLoading } = useSubscription(user);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [paywallDismissed, setPaywallDismissed] = useState(false); // Track if user dismissed paywall for free preview
 
   useEffect(() => {
     loadBasketballData();
@@ -1066,7 +1067,7 @@ const Basketball = () => {
             {(() => {
               // Check if we should show the paywall
               const gamesToShow = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
-              const showPaywall = isFree && !subscriptionLoading && gamesToShow.length > 1;
+              const showPaywall = isFree && !subscriptionLoading && gamesToShow.length > 1 && !paywallDismissed;
               
               if (showPaywall) {
                 console.log(`🔒 RENDERING SOFT PAYWALL: ${gamesToShow.length - 1} games locked`);
@@ -1074,6 +1075,10 @@ const Basketball = () => {
                   <CBBSoftPaywall 
                     games={gamesToShow}
                     onUpgradeClick={() => setShowUpgradeModal(true)}
+                    onDismiss={() => {
+                      console.log('👁️ User dismissed paywall - showing full preview');
+                      setPaywallDismissed(true);
+                    }}
                   />
                 );
               }
