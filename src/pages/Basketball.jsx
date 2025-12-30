@@ -29,7 +29,7 @@ import {
 } from '../utils/designSystem';
 import { getBasketballContext } from '../utils/basketballContextGenerator';
 // 🎯 CBB SOFT PAYWALL IMPORTS
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { 
   CBBEarlyAccessBanner, 
