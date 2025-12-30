@@ -133,12 +133,14 @@ const calculateDynamicUnits = (edge, weights) => {
 
 // Get display string for dynamic units
 const getDynamicUnitDisplay = (edge, weights) => {
+  if (!weights) return '1.00u'; // Default while loading
   const result = calculateDynamicUnits(edge, weights);
   return `${result.units.toFixed(2)}u`;
 };
 
 // Get color for dynamic units
 const getDynamicUnitColor = (edge, weights) => {
+  if (!weights) return '#a855f7'; // Default purple while loading
   const result = calculateDynamicUnits(edge, weights);
   if (result.units >= 1.5) return '#22c55e';  // MAX - green
   if (result.units >= 1.25) return '#3b82f6'; // HIGH - blue
@@ -149,6 +151,7 @@ const getDynamicUnitColor = (edge, weights) => {
 
 // Get tier label for dynamic units
 const getDynamicUnitTier = (edge, weights) => {
+  if (!weights) return '✅ Std'; // Default while loading
   const result = calculateDynamicUnits(edge, weights);
   const tierLabels = {
     'MAX': '🔥 Max',
