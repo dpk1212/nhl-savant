@@ -81,8 +81,11 @@ const getOddsRangeCategory = (odds) => {
 
 // Calculate dynamic units based on ROI patterns from live Firebase data
 const calculateDynamicUnits = (edge, weights) => {
-  if (!edge) return { units: 1.0, tier: 'STANDARD', score: 0 };
-  if (!weights?.factors) return { units: 1.0, tier: 'STANDARD', score: 0 };
+  // DEFENSIVE: Return defaults if edge is missing
+  if (!edge) return { units: 1.0, tier: 'STD', score: 0 };
+  
+  // DEFENSIVE: Return defaults if weights haven't loaded yet
+  if (!weights || !weights.factors) return { units: 1.0, tier: 'STD', score: 0 };
   
   let score = 0;
   
