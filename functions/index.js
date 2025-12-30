@@ -210,7 +210,11 @@ exports.updateBetResults = onSchedule({
 
       // Calculate outcome
       const outcome = calculateOutcome(matchingGame, bet.bet);
-      const profit = calculateProfit(outcome, bet.bet.odds);
+      
+      // 🎯 USE STORED DYNAMIC UNITS from when bet was written
+      // Priority: prediction.dynamicUnits > fallback to 1.0u
+      const units = bet.prediction?.dynamicUnits || 1.0;
+      const profit = calculateProfit(outcome, bet.bet.odds, units);
 
       // Update bet in Firestore
       await admin.firestore()
@@ -223,6 +227,7 @@ exports.updateBetResults = onSchedule({
             "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "AWAY" : "HOME",
             "result.outcome": outcome,
             "result.profit": profit,
+            "result.unitsRisked": units, // Store units used for tracking
             "result.fetched": true,
             "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
             "result.source": "NHL_API",
@@ -231,7 +236,7 @@ exports.updateBetResults = onSchedule({
           });
 
       updatedCount++;
-      logger.info(`✅ Updated ${betId}: ${outcome} → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`);
+      logger.info(`✅ Updated ${betId}: ${outcome} → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u (${units}u risked)`);
     }
 
     logger.info(`Finished: Updated ${updatedCount} bets`);
@@ -306,17 +311,20 @@ function calculateOutcome(game, bet) {
 }
 
 /**
- * Helper: Calculate profit in units (assumes 1 unit flat bet)
+ * Helper: Calculate profit based on outcome, odds, and units risked
+ * @param {string} outcome - WIN/LOSS/PUSH
+ * @param {number} odds - American odds
+ * @param {number} units - Units risked (default 1.0 for backwards compatibility)
  */
-function calculateProfit(outcome, odds) {
+function calculateProfit(outcome, odds, units = 1.0) {
   if (outcome === "PUSH") return 0;
-  if (outcome === "LOSS") return -1;
+  if (outcome === "LOSS") return -units; // Lose the amount risked
 
-  // WIN
+  // WIN - profit based on odds and units risked
   if (odds < 0) {
-    return 100 / Math.abs(odds); // e.g., -110 → 0.909 units
+    return units * (100 / Math.abs(odds)); // e.g., -110 with 1.5u → 1.36u profit
   } else {
-    return odds / 100; // e.g., +150 → 1.5 units
+    return units * (odds / 100); // e.g., +150 with 1.5u → 2.25u profit
   }
 }
 

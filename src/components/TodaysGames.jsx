@@ -79,39 +79,41 @@ const getOddsRangeCategory = (odds) => {
   return 'big_dog';
 };
 
-// Calculate dynamic units based on ROI patterns
-const calculateDynamicUnits = (edge) => {
+// Calculate dynamic units based on ROI patterns from live Firebase data
+const calculateDynamicUnits = (edge, weights) => {
   if (!edge) return { units: 1.0, tier: 'STANDARD', score: 0 };
+  if (!weights?.factors) return { units: 1.0, tier: 'STANDARD', score: 0 };
   
   let score = 0;
   
-  // Factor 1: Rating (B+ is best at +20.9% ROI)
-  const ratingWeights = { 'A+': 0.1, 'A': 0.12, 'B+': 0.48, 'B': -0.24, 'C': -0.67 };
-  score += ratingWeights[edge.rating] || 0;
+  // Factor 1: Rating weight from actual ROI data
+  const rating = edge.rating || 'B';
+  score += weights.factors.rating?.[rating]?.weight || 0;
   
-  // Factor 2: Odds Range (moderate dogs best at +23.6% ROI)
+  // Factor 2: Odds Range weight from actual ROI data
   const oddsRange = getOddsRangeCategory(edge.odds || 0);
-  const oddsWeights = {
-    heavy_favorite: 0, moderate_favorite: 0, slight_favorite: -0.36,
-    pickem: -0.62, slight_dog: 0.35, moderate_dog: 0.53, big_dog: -0.25
-  };
-  score += oddsWeights[oddsRange] || 0;
+  score += weights.factors.oddsRange?.[oddsRange]?.weight || 0;
   
-  // Factor 3: EV Range (5-9.9% is best at +10.2% ROI)
+  // Factor 3: EV Range weight from actual ROI data
   const evPercent = edge.evPercent || 0;
-  if (evPercent >= 10) score += -0.07;      // Elite EV actually loses (-2.9% ROI)
-  else if (evPercent >= 5) score += 0.25;   // Strong EV wins (+10.2% ROI)
-  else if (evPercent >= 1.5) score += 0.16; // Good EV wins (+6.3% ROI) - lowered from 2.5% for sharper model
+  let evRange;
+  if (evPercent >= 10) evRange = 'elite';
+  else if (evPercent >= 5) evRange = 'strong';
+  else evRange = 'good';
+  score += weights.factors.evRange?.[evRange]?.weight || 0;
   
-  // Factor 4: Confidence (HIGH is best at +35.5% ROI)
-  const confWeights = { 'HIGH': 0.60, 'MEDIUM': 0.39, 'LOW': -0.26 };
-  score += confWeights[edge.confidence] || 0;
+  // Factor 4: Confidence weight from actual ROI data
+  const confidence = edge.confidence || 'MEDIUM';
+  score += weights.factors.confidence?.[confidence]?.weight || 0;
   
-  // Factor 5: Model Probability (<50% is best at +14.1% ROI - value bets)
+  // Factor 5: Model Probability weight from actual ROI data
   const modelProb = edge.modelProb || 0.5;
-  if (modelProb >= 0.60) score += -0.30;     // High prob loses (-17.5% ROI)
-  else if (modelProb >= 0.50) score += -0.21; // Medium prob loses (-8.6% ROI)
-  else score += 0.34;                          // Low prob wins (+14.1% ROI)
+  let modelProbRange;
+  if (modelProb >= 0.70) modelProbRange = 'very_high';
+  else if (modelProb >= 0.60) modelProbRange = 'high';
+  else if (modelProb >= 0.50) modelProbRange = 'medium';
+  else modelProbRange = 'low';
+  score += weights.factors.modelProb?.[modelProbRange]?.weight || 0;
   
   // Normalize to -1 to +1 and map to 0.5u - 1.5u
   const normalizedScore = Math.max(-1, Math.min(1, score));
@@ -130,14 +132,14 @@ const calculateDynamicUnits = (edge) => {
 };
 
 // Get display string for dynamic units
-const getDynamicUnitDisplay = (edge) => {
-  const result = calculateDynamicUnits(edge);
+const getDynamicUnitDisplay = (edge, weights) => {
+  const result = calculateDynamicUnits(edge, weights);
   return `${result.units.toFixed(2)}u`;
 };
 
 // Get color for dynamic units
-const getDynamicUnitColor = (edge) => {
-  const result = calculateDynamicUnits(edge);
+const getDynamicUnitColor = (edge, weights) => {
+  const result = calculateDynamicUnits(edge, weights);
   if (result.units >= 1.5) return '#22c55e';  // MAX - green
   if (result.units >= 1.25) return '#3b82f6'; // HIGH - blue
   if (result.units >= 1.0) return '#a855f7';  // STD - purple
@@ -146,8 +148,8 @@ const getDynamicUnitColor = (edge) => {
 };
 
 // Get tier label for dynamic units
-const getDynamicUnitTier = (edge) => {
-  const result = calculateDynamicUnits(edge);
+const getDynamicUnitTier = (edge, weights) => {
+  const result = calculateDynamicUnits(edge, weights);
   const tierLabels = {
     'MAX': '🔥 Max',
     'HIGH': '💪 High',
@@ -163,7 +165,7 @@ const getDynamicUnitTier = (edge) => {
 // ========================================
 
 // Compact Header - REDESIGNED for density and scannability
-const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets, topEdges }) => {
+const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, homeWinProb, isMobile, bestEdge, isCollapsed, game, dataProcessor, liveScores, firebaseBets, topEdges, confidenceWeights }) => {
   // Check if there's a live score for this game
   const liveScore = liveScores?.find(score => 
     (score.awayTeam === awayTeam && score.homeTeam === homeTeam) ||
@@ -1266,26 +1268,26 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
           <div style={{ 
             fontSize: isMobile ? '1.25rem' : TYPOGRAPHY.subheading.size, 
             fontWeight: '800', 
-            color: getDynamicUnitColor(bestEdge), 
+            color: getDynamicUnitColor(bestEdge, confidenceWeights), 
             lineHeight: TYPOGRAPHY.hero.lineHeight,
             display: 'flex',
             alignItems: 'center',
             gap: '0.375rem',
             padding: isMobile ? '0.25rem 0.75rem' : '0',
-            background: isMobile ? `${getDynamicUnitColor(bestEdge)}15` : 'transparent',
+            background: isMobile ? `${getDynamicUnitColor(bestEdge, confidenceWeights)}15` : 'transparent',
             borderRadius: isMobile ? '8px' : '0',
-            border: isMobile ? `1px solid ${getDynamicUnitColor(bestEdge)}40` : 'none'
+            border: isMobile ? `1px solid ${getDynamicUnitColor(bestEdge, confidenceWeights)}40` : 'none'
           }}>
-            {getDynamicUnitDisplay(bestEdge)}
+            {getDynamicUnitDisplay(bestEdge, confidenceWeights)}
             {isMobile && (
               <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                {getDynamicUnitTier(bestEdge).split(' ')[0]}
+                {getDynamicUnitTier(bestEdge, confidenceWeights).split(' ')[0]}
               </span>
             )}
           </div>
           {!isMobile && (
             <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
-              {getDynamicUnitTier(bestEdge)}
+              {getDynamicUnitTier(bestEdge, confidenceWeights)}
             </div>
           )}
         </div>
@@ -2550,6 +2552,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [moneyPuckLoading, setMoneyPuckLoading] = useState(true); // Track MoneyPuck loading state
   const [dratingsPredictions, setDRatingsPredictions] = useState(null); // DRatings calibration data (PRIMARY)
   const [dratingsLoading, setDRatingsLoading] = useState(true); // Track DRatings loading state
+  const [confidenceWeights, setConfidenceWeights] = useState(null); // Dynamic confidence weights from Firebase
   
   // PREMIUM: Authentication and subscription state
   const { user } = useAuth();
@@ -2794,6 +2797,25 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         console.warn('⚠️ DRatings predictions not available - using fallback ensemble:', err.message);
         setDRatingsPredictions({ predictions: [] });  // Empty array to trigger fallback
         setDRatingsLoading(false);  // Mark complete even on error
+      });
+  }, []);
+
+  // Load dynamic confidence weights for unit sizing
+  useEffect(() => {
+    fetch('/nhl_confidence_weights.json')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        setConfidenceWeights(data);
+        console.log(`✅ Loaded NHL confidence weights (${data.totalBets} bets analyzed, updated: ${data.lastUpdated})`);
+      })
+      .catch(err => {
+        console.warn('⚠️ Confidence weights not available - using defaults:', err.message);
+        setConfidenceWeights({ factors: {}, totalBets: 0 }); // Empty weights = 1.0u default
       });
   }, []);
 
@@ -3774,6 +3796,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                           liveScores={liveScores}
                           firebaseBets={firebaseBets}
                           topEdges={topEdges}
+                          confidenceWeights={confidenceWeights}
                         />
                         {/* Quick Stats Bar - only show when collapsed AND pre-game (hide during live/final) */}
                         {(() => {

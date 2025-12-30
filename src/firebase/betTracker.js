@@ -4,6 +4,10 @@ import { getETDate, getETGameDate } from '../utils/dateUtils';
 import { calculateNHLDynamicUnits, loadNHLConfidenceWeights } from '../utils/nhlDynamicConfidence';
 
 export class BetTracker {
+  constructor() {
+    // Pre-load confidence weights on initialization
+    this.weightsPromise = loadNHLConfidenceWeights();
+  }
   
   // Generate deterministic bet ID that's stable across odds/line changes
   // CRITICAL: Do NOT use date in ID - odds can be scraped on different days for same game
@@ -141,11 +145,12 @@ export class BetTracker {
     // 🎯 Calculate Dynamic Confidence-Based Units
     // Uses ROI patterns from historical bets to optimize unit sizing
     try {
-      const dynamicResult = calculateNHLDynamicUnits(betData);
+      const weights = await this.weightsPromise; // Ensure weights are loaded
+      const dynamicResult = calculateNHLDynamicUnits(betData, weights);
       betData.prediction.dynamicUnits = dynamicResult.units;
       betData.prediction.dynamicTier = dynamicResult.tier;
       betData.prediction.dynamicScore = dynamicResult.score;
-      console.log(`🎯 Dynamic Units: ${dynamicResult.units}u (${dynamicResult.tier})`);
+      console.log(`🎯 Dynamic Units: ${dynamicResult.units}u (${dynamicResult.tier}) - Score: ${dynamicResult.rawScore.toFixed(2)}`);
     } catch (err) {
       console.warn('⚠️ Could not calculate dynamic units:', err.message);
       betData.prediction.dynamicUnits = 1.0; // Default
