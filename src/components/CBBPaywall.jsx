@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
-import { useCBBPaywallStats } from '../hooks/useCBBPaywallStats';
+import { useBasketballBetStats } from '../hooks/useBasketballBetStats';
 import './CBBPaywall.css';
 
 export function CBBEarlyAccessBanner() {
@@ -40,7 +40,7 @@ export function CBBEarlyAccessBanner() {
 export function CBBSoftPaywall({ games, onUpgradeClick }) {
   const { user } = useAuth();
   const { isPremium, isFree } = useSubscription(user);
-  const stats = useCBBPaywallStats();
+  const { stats, loading: statsLoading } = useBasketballBetStats();
   
   // Premium users see everything
   if (isPremium) {
@@ -103,23 +103,100 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
             {lockedGames.length} More {lockedGames.length === 1 ? 'Play' : 'Plays'} Hidden
           </h2>
           
-          {/* Verified Results - Live Data */}
-          {!stats.loading && stats.totalPicks > 0 && (
-            <div className="performance-proof">
-              <div className="proof-title">📈 VERIFIED RESULTS</div>
-              <div className="proof-stats">
-                <div className="proof-stat">
-                  <span className="proof-value">+{stats.profit.toFixed(1)}u</span>
-                  <span className="proof-label">Season Profit</span>
+          {/* Verified Results - Live Data - Premium Visual */}
+          {!statsLoading && stats.gradedBets > 0 && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              marginBottom: '1.25rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                color: '#10B981',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}>
+                <span>📈</span> VERIFIED RESULTS • LIVE
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.75rem',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                  padding: '0.75rem 0.5rem'
+                }}>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '900',
+                    color: '#10B981',
+                    fontFeatureSettings: "'tnum'",
+                    textShadow: '0 0 20px rgba(16, 185, 129, 0.4)'
+                  }}>
+                    +{stats.unitsWon.toFixed(1)}u
+                  </div>
+                  <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Season Profit
+                  </div>
                 </div>
-                <div className="proof-stat">
-                  <span className="proof-value">{stats.winRate.toFixed(1)}%</span>
-                  <span className="proof-label">Win Rate</span>
+                
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                  padding: '0.75rem 0.5rem'
+                }}>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '900',
+                    color: '#60A5FA',
+                    fontFeatureSettings: "'tnum'"
+                  }}>
+                    {stats.winRate.toFixed(1)}%
+                  </div>
+                  <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Win Rate
+                  </div>
                 </div>
-                <div className="proof-stat">
-                  <span className="proof-value">${Math.round(stats.profit * 100).toLocaleString()}</span>
-                  <span className="proof-label">on $100 bets</span>
+                
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px',
+                  padding: '0.75rem 0.5rem'
+                }}>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '900',
+                    color: '#FBBF24',
+                    fontFeatureSettings: "'tnum'"
+                  }}>
+                    ${Math.round(stats.unitsWon * 100).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    on $100 bets
+                  </div>
                 </div>
+              </div>
+              
+              {/* Record badge */}
+              <div style={{
+                marginTop: '0.75rem',
+                textAlign: 'center',
+                fontSize: '0.75rem',
+                color: 'rgba(255,255,255,0.7)'
+              }}>
+                <span style={{ fontWeight: '700', color: '#10B981' }}>{stats.wins}-{stats.losses}</span> record • <span style={{ fontWeight: '600' }}>{stats.gradedBets}</span> verified picks
               </div>
             </div>
           )}
@@ -179,7 +256,7 @@ export function CBBSoftPaywall({ games, onUpgradeClick }) {
 
 export function CBBUpgradeModal({ show, onClose }) {
   const navigate = useNavigate();
-  const stats = useCBBPaywallStats();
+  const { stats, loading: statsLoading } = useBasketballBetStats();
   const [showingFullStats, setShowingFullStats] = useState(false);
   
   if (!show) return null;
@@ -201,16 +278,16 @@ export function CBBUpgradeModal({ show, onClose }) {
         <div className="modal-performance">
           <div className="performance-header">
             <h3>Our Verified Track Record</h3>
-            {!stats.loading && (
-              <span className="picks-count">{stats.totalPicks} Completed Picks</span>
+            {!statsLoading && (
+              <span className="picks-count">{stats.gradedBets} Verified Picks</span>
             )}
           </div>
           
-          {!stats.loading && stats.totalPicks > 0 ? (
+          {!statsLoading && stats.gradedBets > 0 ? (
             <>
               <div className="performance-grid">
                 <div className="perf-card">
-                  <div className="perf-value profit">+{stats.profit.toFixed(1)}u</div>
+                  <div className="perf-value profit">+{stats.unitsWon.toFixed(1)}u</div>
                   <div className="perf-label">Season Profit</div>
                 </div>
                 <div className="perf-card">
@@ -218,12 +295,13 @@ export function CBBUpgradeModal({ show, onClose }) {
                   <div className="perf-label">Win Rate</div>
                 </div>
                 <div className="perf-card">
-                  <div className="perf-value roi">+{stats.roi.toFixed(1)}%</div>
-                  <div className="perf-label">ROI</div>
+                  <div className="perf-value roi">{stats.wins}-{stats.losses}</div>
+                  <div className="perf-label">Record</div>
                 </div>
               </div>
               
-              {stats.topGrades.aPlus.total > 0 && (
+              {/* Remove grade breakdown since useBasketballBetStats doesn't have topGrades */}
+              {false && (
                 <div className="grade-breakdown">
                   <div className="grade-stat">
                     <span className="grade-badge aplus">A+</span>
@@ -308,10 +386,9 @@ export function CBBUpgradeModal({ show, onClose }) {
             </div>
           </div>
           
-          {!stats.loading && stats.last7Days.picks > 0 && (
+          {!statsLoading && stats.gradedBets > 0 && (
             <div className="recent-results">
-              <strong>Recent Performance:</strong> Last 7 days - {stats.last7Days.picks} picks, 
-              +{stats.last7Days.profit.toFixed(1)}u profit, {stats.last7Days.winRate.toFixed(0)}% win rate
+              <strong>Season Record:</strong> {stats.wins}-{stats.losses} ({stats.winRate.toFixed(1)}% win rate) • +{stats.unitsWon.toFixed(1)}u profit
             </div>
           )}
         </div>
@@ -319,7 +396,7 @@ export function CBBUpgradeModal({ show, onClose }) {
         {/* Footer */}
         <div className="modal-footer-actions">
           <button className="stay-free-btn" onClick={onClose}>
-            I'll stay on free tier (1 pick/day)
+            Continue with free preview →
           </button>
         </div>
       </div>
