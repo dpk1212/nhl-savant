@@ -67,14 +67,16 @@ export function useCombinedStats() {
       const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
 
       // Calculate NHL stats (MATCH PerformanceDashboard.jsx calculation)
-      // NHL Performance Dashboard shows **ML ROI** (MONEYLINE BETS ONLY!)
+      // NHL Performance Dashboard shows **ML ROI** for B+ or higher quality bets
       // NHL uses BANKROLL-BASED ROI: (profit * 10 / 500) * 100
       const STARTING_BANKROLL = 500;
       
-      // FILTER FOR MONEYLINE BETS ONLY (like the dashboard does!)
+      // FILTER FOR MONEYLINE BETS + B+ OR HIGHER QUALITY (like the dashboard!)
+      const qualityGrades = ['A+', 'A', 'B+'];
       const nhlGradedBets = nhlBets.filter(bet => 
         bet.result?.outcome && 
-        (bet.bet?.market === 'MONEYLINE' || bet.bet?.market === 'ML')
+        (bet.bet?.market === 'MONEYLINE' || bet.bet?.market === 'ML') &&
+        (qualityGrades.includes(bet.prediction?.rating) || qualityGrades.includes(bet.prediction?.grade) || qualityGrades.includes(bet.prediction?.qualityGrade))
       );
       
       const nhlWins = nhlGradedBets.filter(bet => bet.result.outcome === 'WIN').length;
