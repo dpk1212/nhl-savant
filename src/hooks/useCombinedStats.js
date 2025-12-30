@@ -66,26 +66,26 @@ export function useCombinedStats() {
       const roi = totalRisked > 0 ? (totalProfit / totalRisked) * 100 : 0;
       const winRate = gradedBets.length > 0 ? (wins / gradedBets.length) * 100 : 0;
 
-      // Calculate NHL stats
+      // Calculate NHL stats (MATCH PerformanceDashboard.jsx calculation)
+      // NHL uses BANKROLL-BASED ROI: (profit * 10 / 500) * 100
+      const STARTING_BANKROLL = 500;
       const nhlGradedBets = nhlBets.filter(bet => bet.result?.outcome);
       const nhlWins = nhlGradedBets.filter(bet => bet.result.outcome === 'WIN').length;
-      const nhlRisked = nhlGradedBets.reduce((sum, bet) => {
-        const units = bet.result?.unitsRisked || 
-                     bet.prediction?.dynamicUnits || 
-                     1.0;
-        return sum + units;
-      }, 0);
       const nhlProfit = nhlGradedBets.reduce((sum, bet) => 
         sum + (bet.result?.profit || 0), 0
       );
-      const nhlROI = nhlRisked > 0 ? (nhlProfit / nhlRisked) * 100 : 0;
+      // NHL ROI = (profit in units * $10 / $500 starting bankroll) * 100
+      const nhlFlatProfit = nhlProfit * 10;
+      const nhlROI = (nhlFlatProfit / STARTING_BANKROLL) * 100;
       const nhlWinRate = nhlGradedBets.length > 0 ? (nhlWins / nhlGradedBets.length) * 100 : 0;
 
-      // Calculate CBB stats
+      // Calculate CBB stats (MATCH BasketballPerformanceDashboard.jsx calculation)
+      // CBB uses UNITS-BASED ROI: (profit / totalRisked) * 100
       const cbbGradedBets = cbbBets.filter(bet => bet.result?.outcome);
       const cbbWins = cbbGradedBets.filter(bet => bet.result.outcome === 'WIN').length;
       const cbbRisked = cbbGradedBets.reduce((sum, bet) => {
         const units = bet.result?.unitsRisked || 
+                     bet.result?.units ||
                      bet.prediction?.dynamicUnits || 
                      bet.prediction?.unitSize || 
                      1.0;
@@ -94,6 +94,7 @@ export function useCombinedStats() {
       const cbbProfit = cbbGradedBets.reduce((sum, bet) => 
         sum + (bet.result?.profit || 0), 0
       );
+      // CBB ROI = (profit / units risked) * 100
       const cbbROI = cbbRisked > 0 ? (cbbProfit / cbbRisked) * 100 : 0;
       const cbbWinRate = cbbGradedBets.length > 0 ? (cbbWins / cbbGradedBets.length) * 100 : 0;
 
