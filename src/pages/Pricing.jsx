@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Crown, Zap, Target, TrendingUp, Shield } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { useCombinedStats } from '../hooks/useCombinedStats';
 import { redirectToCheckout } from '../utils/stripe';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 import AuthModal from '../components/AuthModal';
@@ -18,6 +19,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { tier: currentTier, isPremium } = useSubscription(user);
+  const { stats: combinedStats, loading: statsLoading } = useCombinedStats();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState(null);
 
@@ -148,7 +150,11 @@ const Pricing = () => {
                 fontWeight: '600', 
                 fontSize: window.innerWidth < 640 ? '0.813rem' : '0.938rem' 
               }}>
-                26% ROI (38% Kelly) as of Nov 6
+                {statsLoading ? (
+                  'Loading performance...'
+                ) : (
+                  `${combinedStats.roi >= 0 ? '+' : ''}${combinedStats.roi.toFixed(1)}% ROI (${combinedStats.totalBets} picks tracked)`
+                )}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

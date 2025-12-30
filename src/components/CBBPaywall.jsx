@@ -22,10 +22,10 @@ export function CBBEarlyAccessBanner() {
   return (
     <div className="cbb-early-access-banner">
       <div className="banner-content">
-        <span className="banner-icon">⚡</span>
+        <span className="banner-icon">⚠️</span>
         <span className="banner-text">
-          <strong>Early Access Pricing:</strong> Full CBB dashboard access ends soon. 
-          Lock 40% lifetime discount before Jan 1.
+          <strong>OFFER EXPIRES EOD JAN 1:</strong> Lock $29/mo forever (40% off future price). 
+          Use code <strong>HEREFIRST</strong> at checkout.
         </span>
         <button 
           className="banner-cta"
@@ -245,15 +245,6 @@ export function CBBUpgradeModal({ show, onClose }) {
           ) : (
             <div className="loading-stats">Loading performance data...</div>
           )}
-          
-          <a 
-            href="/data/cbb-picks-completed.csv" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="verify-link"
-          >
-            Download Full Pick History (CSV) →
-          </a>
         </div>
         
         {/* Pricing Section */}
@@ -283,8 +274,8 @@ export function CBBUpgradeModal({ show, onClose }) {
             </div>
             
             <div className="limited-access-note">
-              ⏰ <strong>Limited Early Access:</strong> Early adopter rate ending soon. 
-              New subscribers after Jan 1 will pay $39-49/mo.
+              ⚠️ <strong>OFFER EXPIRES EOD JAN 1:</strong> Early adopter rate locks your price forever at $29/mo. 
+              New subscribers after Jan 1 pay $39-49/mo. Use code <strong>HEREFIRST</strong> at checkout.
             </div>
             
             <button 
