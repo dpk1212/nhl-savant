@@ -60,7 +60,7 @@ async function generatePublicExports() {
           odds: bet.bet?.odds || bet.odds || 'N/A',
           grade: bet.prediction?.qualityGrade || bet.prediction?.rating || bet.qualityGrade || bet.grade || 'N/A',
           ev: bet.prediction?.evPercent ? `${parseFloat(bet.prediction.evPercent).toFixed(1)}%` : (bet.ev ? `${parseFloat(bet.ev).toFixed(1)}%` : 'N/A'),
-          units: bet.prediction?.recommendedUnit || bet.units || 'N/A',
+          units: bet.result?.unitsRisked || bet.prediction?.dynamicUnits || bet.prediction?.recommendedUnit || bet.units || 1.0,
           result: isWin ? 'WIN' : 'LOSS',
           profit: `${parseFloat(profit).toFixed(2)}u`
         };
