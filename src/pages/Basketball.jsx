@@ -880,8 +880,8 @@ const Basketball = () => {
               // Default 'confidence' keeps the tier grouping below
               
               // 🎯 CBB SOFT PAYWALL: Split games for free users
-              // ⚠️ CRITICAL: Premium users must see ALL games!
-              const shouldShowPaywall = isFree && !subscriptionLoading && filteredGames.length > 1;
+              // ⚠️ CRITICAL: Premium users OR users who dismissed paywall must see ALL games!
+              const shouldShowPaywall = isFree && !subscriptionLoading && filteredGames.length > 1 && !paywallDismissed;
               const freePreviewGames = shouldShowPaywall ? filteredGames.slice(0, 1) : filteredGames;
               const lockedGames = shouldShowPaywall ? filteredGames.slice(1) : [];
               
@@ -971,8 +971,8 @@ const Basketball = () => {
                       </div>
                     </div>
                     
-                    {/* Flat list of all games */}
-                    {filteredGames.map((game) => (
+                    {/* Flat list of all games - respects paywall state */}
+                    {gamesToDisplay.map((game) => (
                       <BasketballGameCard 
                         key={rankCounter} 
                         game={game} 
