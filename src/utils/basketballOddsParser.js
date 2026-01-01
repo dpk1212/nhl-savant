@@ -16,13 +16,25 @@ function getTodayDayAbbr() {
 }
 
 /**
- * Get today's month/day with leading zeros (e.g., "12/01")
+ * Get today's month/day patterns (handles both formats OddsTrader uses)
+ * OddsTrader uses: "01/01" (with leading zeros) in some cases, "1/01" in others
+ * Returns array of possible patterns to match
  */
-function getTodayMonthDay() {
+function getTodayMonthDayPatterns() {
   const now = new Date();
   const month = now.getMonth() + 1;
   const day = now.getDate();
-  return `${month}/${day.toString().padStart(2, '0')}`;
+  
+  // Generate both formats: with and without leading zero on month
+  const withLeadingZero = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`; // "01/01"
+  const withoutLeadingZero = `${month}/${day.toString().padStart(2, '0')}`; // "1/01"
+  
+  return [withLeadingZero, withoutLeadingZero];
+}
+
+// Keep for backward compatibility
+function getTodayMonthDay() {
+  return getTodayMonthDayPatterns()[1]; // Return the pattern without leading zero
 }
 
 /**
@@ -34,12 +46,20 @@ function isTodayGame(line) {
     return true;
   }
   
-  // Check if date matches today (e.g., "THU 11/27")
+  // Check if date matches today (e.g., "THU 11/27" or "THU 01/01")
+  // Handle both formats: with and without leading zero on month
   const todayDay = getTodayDayAbbr();
-  const todayDate = getTodayMonthDay();
-  const datePattern = `${todayDay} ${todayDate}`;
+  const datePatterns = getTodayMonthDayPatterns();
   
-  return line.includes(datePattern);
+  // Check both patterns
+  for (const datePattern of datePatterns) {
+    const fullPattern = `${todayDay} ${datePattern}`;
+    if (line.includes(fullPattern)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**
@@ -56,7 +76,9 @@ export function parseBasketballOdds(markdown) {
   const games = [];
   const lines = markdown.split('\n');
   
-  console.log(`📅 Filtering for TODAY: ${getTodayDayAbbr()} ${getTodayMonthDay()}`);
+  const patterns = getTodayMonthDayPatterns();
+  console.log(`📅 Filtering for TODAY: ${getTodayDayAbbr()} ${patterns.join(' or ')}`);
+  console.log(`   Looking for patterns: "${getTodayDayAbbr()} ${patterns[0]}" OR "${getTodayDayAbbr()} ${patterns[1]}"`);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
