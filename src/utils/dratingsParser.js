@@ -27,7 +27,11 @@ export function parseDRatings(markdown) {
     // Look for game rows: starts with |, contains date/time AND team links AND probabilities
     // Format: | [11/24/2025\<br>\<br>11:00 AM](...) | [Rhode Island Rams](...)(4-1)<br>[Towson Tigers](...)(3-2) | 55.0%<br>45.0% | ...
     // Skip header rows (contain | --- | or no date)
-    if (line.startsWith('|') && line.includes('/2025') && line.includes('%<br>')) {
+    // DYNAMIC: Check for current year OR next year (handles year transition)
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+    const hasValidYear = line.includes(`/${currentYear}`) || line.includes(`/${nextYear}`);
+    if (line.startsWith('|') && hasValidYear && line.includes('%<br>')) {
       const cells = line.split('|').map(c => c.trim()).filter(c => c);
       
       // Must have at least: time, teams, win%, odds, spread, points
