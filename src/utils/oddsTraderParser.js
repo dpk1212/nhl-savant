@@ -52,13 +52,21 @@ export function parseOddsTrader(markdownText) {
   const lines = markdownText.split('\n');
   
   // Generate today's date pattern dynamically (e.g., "WED 10/22" or "WED 10/2")
+  // CRITICAL: OddsTrader uses BOTH formats - with and without leading zeros on MONTH and DAY
   const today = new Date();
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const dayOfWeek = dayNames[today.getDay()];
   const month = today.getMonth() + 1; // 0-indexed
   const day = today.getDate();
-  const todayPattern = `${dayOfWeek} ${month}/${day}`;
-  const todayPatternPadded = `${dayOfWeek} ${month}/${day.toString().padStart(2, '0')}`; // With leading zero
+  
+  // Generate ALL possible date formats OddsTrader might use:
+  // THU 1/1, THU 1/01, THU 01/1, THU 01/01
+  const todayPatterns = [
+    `${dayOfWeek} ${month}/${day}`,                                              // THU 1/1
+    `${dayOfWeek} ${month}/${day.toString().padStart(2, '0')}`,                   // THU 1/01
+    `${dayOfWeek} ${month.toString().padStart(2, '0')}/${day}`,                   // THU 01/1
+    `${dayOfWeek} ${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}` // THU 01/01
+  ];
   
   // Also include yesterday's games - this handles when today's games are live/finished
   // and OddsTrader has moved them off the main page
@@ -67,14 +75,18 @@ export function parseOddsTrader(markdownText) {
   const yesterdayDayOfWeek = dayNames[yesterday.getDay()];
   const yesterdayMonth = yesterday.getMonth() + 1;
   const yesterdayDay = yesterday.getDate();
-  const yesterdayPattern = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`;
-  const yesterdayPatternPadded = `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay.toString().padStart(2, '0')}`;
+  const yesterdayPatterns = [
+    `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay}`,
+    `${yesterdayDayOfWeek} ${yesterdayMonth}/${yesterdayDay.toString().padStart(2, '0')}`,
+    `${yesterdayDayOfWeek} ${yesterdayMonth.toString().padStart(2, '0')}/${yesterdayDay}`,
+    `${yesterdayDayOfWeek} ${yesterdayMonth.toString().padStart(2, '0')}/${yesterdayDay.toString().padStart(2, '0')}`
+  ];
   
   // Only include yesterday's games before 6 AM ET (for late night games)
   const currentHour = today.getHours();
   const includeYesterday = currentHour < 6;
   
-  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPattern} or ${todayPatternPadded}`);
+  console.log(`🏒 Starting OddsTrader parser... Looking for: ${todayPatterns.join(' or ')}`);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -82,11 +94,12 @@ export function parseOddsTrader(markdownText) {
     // Look for today's games (and yesterday's if before 6 AM)
     // Note: LIVE games are now included for Hot Takes and analysis (even if betting markets are closed)
     // CRITICAL: Also include "STARTS IN" countdown format for games starting soon
-    // Check both padded and non-padded date formats (e.g., "SAT 11/1" and "SAT 11/01")
-    const isMatchingDate = line.includes(todayPattern) || line.includes(todayPatternPadded) || 
-                          (includeYesterday && (line.includes(yesterdayPattern) || line.includes(yesterdayPatternPadded))) || 
+    // Check ALL date formats (with/without leading zeros on month AND day)
+    const matchesToday = todayPatterns.some(pattern => line.includes(pattern));
+    const matchesYesterday = includeYesterday && yesterdayPatterns.some(pattern => line.includes(pattern));
+    const isMatchingDate = matchesToday || matchesYesterday || 
                           line.includes('LIVE') ||
-                          line.includes('STARTS IN');  // NEW: Handle countdown format
+                          line.includes('STARTS IN');  // Handle countdown format
     
     if (isMatchingDate) {
       console.log(`\n📅 Found game line at ${i}: ${line.substring(0, 100)}...`);
@@ -245,10 +258,16 @@ export function parseOddsTrader(markdownText) {
     const tomorrowDayOfWeek = dayNames[tomorrow.getDay()];
     const tomorrowMonth = tomorrow.getMonth() + 1;
     const tomorrowDay = tomorrow.getDate();
-    const tomorrowPattern = `${tomorrowDayOfWeek} ${tomorrowMonth}/${tomorrowDay}`;
+    // Check all possible tomorrow date formats
+    const tomorrowPatterns = [
+      `${tomorrowDayOfWeek} ${tomorrowMonth}/${tomorrowDay}`,
+      `${tomorrowDayOfWeek} ${tomorrowMonth}/${tomorrowDay.toString().padStart(2, '0')}`,
+      `${tomorrowDayOfWeek} ${tomorrowMonth.toString().padStart(2, '0')}/${tomorrowDay}`,
+      `${tomorrowDayOfWeek} ${tomorrowMonth.toString().padStart(2, '0')}/${tomorrowDay.toString().padStart(2, '0')}`
+    ];
     
-    if (line.includes(tomorrowPattern)) {
-      console.log(`\n🛑 Reached tomorrow's games (${tomorrowPattern}), stopping parser`);
+    if (tomorrowPatterns.some(pattern => line.includes(pattern))) {
+      console.log(`\n🛑 Reached tomorrow's games, stopping parser`);
       break;
     }
   }
