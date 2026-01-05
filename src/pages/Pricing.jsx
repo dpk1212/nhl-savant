@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Crown, Zap, Target, TrendingUp, Shield } from 'lucide-react';
+import { Check, Crown, Zap, Target, TrendingUp, Shield, Gift, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { useCombinedStats } from '../hooks/useCombinedStats';
 import { redirectToCheckout } from '../utils/stripe';
 import { analytics, logEvent as firebaseLogEvent } from '../firebase/config';
 import AuthModal from '../components/AuthModal';
+import DiscountLottery from '../components/DiscountLottery';
 
 // Wrapper for analytics logging
 const logEvent = (eventName, params) => {
@@ -22,6 +23,37 @@ const Pricing = () => {
   const { stats: combinedStats, loading: statsLoading } = useCombinedStats();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState(null);
+  const [showSpinModal, setShowSpinModal] = useState(false);
+  const [spinsRemaining, setSpinsRemaining] = useState(2);
+
+  // Load spins remaining on mount
+  useEffect(() => {
+    const loadSpins = async () => {
+      try {
+        const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
+        checkAndResetDaily();
+        const spinsData = await getDailySpins(user?.uid || null);
+        setSpinsRemaining(spinsData.remaining);
+      } catch (error) {
+        console.error('Error loading spins:', error);
+      }
+    };
+    loadSpins();
+  }, [user]);
+
+  const handleSpinComplete = async (prizeCode) => {
+    try {
+      const { recordSpin } = await import('../utils/spinTracker');
+      await recordSpin(user?.uid || null, prizeCode);
+      setSpinsRemaining(prev => Math.max(0, prev - 1));
+      logEvent('pricing_spin_used', {
+        code: prizeCode,
+        spins_remaining: spinsRemaining - 1
+      });
+    } catch (error) {
+      console.error('Error recording spin:', error);
+    }
+  };
 
   const handleSelectPlan = (tier) => {
     logEvent('pricing_page_click', { tier });
@@ -179,6 +211,107 @@ const Pricing = () => {
             </div>
           </div>
         </div>
+
+        {/* Spin for Discount Section - Only show for non-premium users with spins */}
+        {!isPremium && spinsRemaining > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+            border: '2px solid rgba(212, 175, 55, 0.4)',
+            borderRadius: '16px',
+            padding: window.innerWidth < 640 ? '1.5rem' : '2rem',
+            marginBottom: '3rem',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Animated shimmer */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)',
+              animation: 'shimmer 2s ease-in-out infinite'
+            }} />
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.75rem',
+              marginBottom: '0.75rem'
+            }}>
+              <Gift size={24} color="#D4AF37" />
+              <h3 style={{
+                fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #F59E0B 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                margin: 0
+              }}>
+                🎰 Spin for an Exclusive Discount!
+              </h3>
+            </div>
+            
+            <p style={{
+              fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
+              color: 'rgba(241, 245, 249, 0.8)',
+              marginBottom: '1rem',
+              lineHeight: '1.5'
+            }}>
+              Try your luck! Win up to 55% off your subscription.
+            </p>
+            
+            <button
+              onClick={() => {
+                logEvent('pricing_spin_button_click', { spins_remaining: spinsRemaining });
+                setShowSpinModal(true);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                padding: window.innerWidth < 640 ? '0.875rem 1.5rem' : '1rem 2rem',
+                fontSize: window.innerWidth < 640 ? '1rem' : '1.125rem',
+                fontWeight: '700',
+                color: '#0A0E27',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 14px rgba(212, 175, 55, 0.4)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 14px rgba(212, 175, 55, 0.4)';
+              }}
+            >
+              🎲 Spin the Wheel ({spinsRemaining} {spinsRemaining === 1 ? 'spin' : 'spins'} left)
+            </button>
+            
+            <p style={{
+              fontSize: '0.813rem',
+              color: 'rgba(241, 245, 249, 0.5)',
+              marginTop: '0.75rem'
+            }}>
+              {spinsRemaining} spins remaining today • Codes expire in 10 minutes
+            </p>
+            
+            <style>{`
+              @keyframes shimmer {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+              }
+            `}</style>
+          </div>
+        )}
 
         {/* Pricing Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
@@ -615,6 +748,146 @@ const Pricing = () => {
         }} 
         tier={selectedTier}
       />
+
+      {/* Spin for Discount Modal */}
+      {showSpinModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+            borderRadius: '20px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            position: 'relative',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(212, 175, 55, 0.2)',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            animation: 'slideUp 0.3s ease-out'
+          }}>
+            {/* Close Button */}
+            <button
+              onClick={() => setShowSpinModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#94A3B8',
+                transition: 'all 0.2s',
+                zIndex: 10
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                e.currentTarget.style.color = '#EF4444';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.color = '#94A3B8';
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Content */}
+            <div style={{ padding: '32px 24px' }}>
+              {/* Header */}
+              <div style={{
+                textAlign: 'center',
+                marginBottom: '24px'
+              }}>
+                <h2 style={{
+                  fontSize: '28px',
+                  fontWeight: '800',
+                  background: 'linear-gradient(135deg, #D4AF37 0%, #F59E0B 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  marginBottom: '12px',
+                  lineHeight: '1.2'
+                }}>
+                  Spin for Your Discount! 🎰
+                </h2>
+                <p style={{
+                  fontSize: '16px',
+                  color: '#94A3B8',
+                  lineHeight: '1.5'
+                }}>
+                  Win up to 55% off your premium subscription!
+                </p>
+              </div>
+
+              {/* Spin Wheel */}
+              <DiscountLottery 
+                variant="daily-return"
+                spinsRemaining={spinsRemaining}
+                onSpinComplete={handleSpinComplete}
+                onCodeRevealed={(code) => {
+                  logEvent('pricing_spin_code_won', { code });
+                }}
+              />
+
+              {/* Out of Spins Message */}
+              {spinsRemaining === 0 && (
+                <div style={{
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginTop: '20px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#60A5FA',
+                    lineHeight: '1.5'
+                  }}>
+                    Out of spins today! Come back tomorrow for 2 more chances.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            @keyframes slideUp {
+              from { 
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to { 
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 };
