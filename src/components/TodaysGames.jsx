@@ -2580,12 +2580,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
   const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
   
-  // ⏰ TIME-BASED PRELIMINARY BANNER (shows 7:00 AM - 11:00 AM ET)
+  // ⏰ TIME-BASED PRELIMINARY BANNER (shows 5:00 AM - 11:00 AM ET)
   const [showPreliminaryBanner, setShowPreliminaryBanner] = useState(() => {
     const now = new Date();
     const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
     const hour = etTime.getHours();
-    const shouldShow = hour >= 7 && hour < 11;
+    const shouldShow = hour >= 5 && hour < 11; // Start at 5 AM to catch early risers
     console.log(`🕐 Banner check: ET hour=${hour}, shouldShow=${shouldShow}`);
     return shouldShow;
   });
@@ -2603,7 +2603,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       const now = new Date();
       const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
       const hour = etTime.getHours();
-      const shouldShow = hour >= 7 && hour < 11;
+      const shouldShow = hour >= 5 && hour < 11; // Start at 5 AM to catch early risers
       setShowPreliminaryBanner(shouldShow);
     };
     
