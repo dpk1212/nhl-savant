@@ -119,7 +119,10 @@ export class BasketballBetTracker {
       status: 'PENDING',
       firstRecommendedAt: Date.now(),
       initialOdds: prediction.bestOdds,
-      initialEV: prediction.bestEV
+      initialEV: prediction.bestEV,
+      
+      // ⭐ Savant Pick - set to true in Firebase to mark as analyst-enhanced
+      savantPick: false
     };
     
     try {
