@@ -147,7 +147,7 @@ const SavantPickInfo = ({ isMobile = false }) => {
                   lineHeight: 1.6,
                   margin: 0,
                 }}>
-                  Powered by multi-source algorithmic analysis. Our models synthesize advanced metrics from KenPom, Haslametrics, D-Ratings, and Barttorvik—cross-referencing real-time odds movements to surface <strong style={{ color: '#60A5FA' }}>statistically significant edges</strong>.
+                  Powered by proprietary multi-source algorithmic analysis. Our models synthesize advanced metrics and real-time market data to identify <strong style={{ color: '#60A5FA' }}>statistically significant edges</strong>.
                 </p>
               </div>
               
