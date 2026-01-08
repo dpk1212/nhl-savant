@@ -51,7 +51,6 @@ const Basketball = () => {
   const [gameStatusFilter, setGameStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('confidence'); // 'confidence' | 'time' | 'edge' | 'savant'
   const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
-  const [savantPicksMap, setSavantPicksMap] = useState(new Map()); // Track which games are Savant Picks
   const [teamMappings, setTeamMappings] = useState(null);
   
   // Bet outcomes state
@@ -110,38 +109,6 @@ const Basketball = () => {
     return () => clearInterval(interval);
   }, [gradedCount]); // Re-fetch when bets are graded
   
-  // 🏆 FETCH SAVANT PICKS from Firebase
-  useEffect(() => {
-    async function fetchSavantPicks() {
-      try {
-        const savantSnapshot = await getDocs(collection(db, 'savant_picks'));
-        const savantData = new Map();
-        
-        savantSnapshot.forEach((doc) => {
-          const pick = doc.data();
-          // Store by normalized game key
-          const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
-          const key = `${normalizeTeam(pick.awayTeam)}_${normalizeTeam(pick.homeTeam)}`;
-          savantData.set(key, {
-            ...pick,
-            docId: doc.id,
-            isActive: pick.isActive !== false // Default to active if not specified
-          });
-        });
-        
-        console.log(`⭐ Loaded ${savantData.size} Savant Picks from Firebase`);
-        setSavantPicksMap(savantData);
-      } catch (err) {
-        console.error('Error fetching savant picks:', err);
-      }
-    }
-    
-    fetchSavantPicks();
-    
-    // Refresh every 60 seconds to catch new savant picks
-    const interval = setInterval(fetchSavantPicks, 60000);
-    return () => clearInterval(interval);
-  }, []);
   
   // 💾 SMART BET SAVING: Only write NEW bets, only once per session
   // Waits for both recommendations AND betsMap to be loaded
@@ -800,8 +767,8 @@ const Basketball = () => {
                     const gamesToCount = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
                     return gamesToCount.filter(g => {
                       const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
-                      const savantPick = savantPicksMap.get(key);
-                      return savantPick?.isActive;
+                      const bet = betsMap.get(key);
+                      return bet?.savantPick === true;
                     }).length;
                   })()}
                 </span>
@@ -926,12 +893,12 @@ const Basketball = () => {
               // Use gamesWithLiveScores if available, otherwise use recommendations
               const gamesToShow = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
               
-              // Helper to check if a game is a Savant Pick
+              // Helper to check if a game is a Savant Pick (reads from betsMap)
               const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
               const isGameSavantPick = (game) => {
                 const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
-                const savantPick = savantPicksMap.get(key);
-                return savantPick?.isActive === true;
+                const bet = betsMap.get(key);
+                return bet?.savantPick === true;
               };
               
               // Apply status filter
