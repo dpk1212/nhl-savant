@@ -36,6 +36,8 @@ import {
   CBBSoftPaywall, 
   CBBUpgradeModal 
 } from '../components/CBBPaywall';
+import SavantPickBadge from '../components/SavantPickBadge';
+import SavantPickInfo from '../components/SavantPickInfo';
 
 const Basketball = () => {
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,9 @@ const Basketball = () => {
   // Live scoring state
   const [gamesWithLiveScores, setGamesWithLiveScores] = useState([]);
   const [gameStatusFilter, setGameStatusFilter] = useState('all');
-  const [sortOrder, setSortOrder] = useState('confidence'); // 'confidence' | 'time' | 'edge'
+  const [sortOrder, setSortOrder] = useState('confidence'); // 'confidence' | 'time' | 'edge' | 'savant'
+  const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
+  const [savantPicksMap, setSavantPicksMap] = useState(new Map()); // Track which games are Savant Picks
   const [teamMappings, setTeamMappings] = useState(null);
   
   // Bet outcomes state
@@ -105,6 +109,39 @@ const Basketball = () => {
     const interval = setInterval(fetchBets, 15000);
     return () => clearInterval(interval);
   }, [gradedCount]); // Re-fetch when bets are graded
+  
+  // 🏆 FETCH SAVANT PICKS from Firebase
+  useEffect(() => {
+    async function fetchSavantPicks() {
+      try {
+        const savantSnapshot = await getDocs(collection(db, 'savant_picks'));
+        const savantData = new Map();
+        
+        savantSnapshot.forEach((doc) => {
+          const pick = doc.data();
+          // Store by normalized game key
+          const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+          const key = `${normalizeTeam(pick.awayTeam)}_${normalizeTeam(pick.homeTeam)}`;
+          savantData.set(key, {
+            ...pick,
+            docId: doc.id,
+            isActive: pick.isActive !== false // Default to active if not specified
+          });
+        });
+        
+        console.log(`⭐ Loaded ${savantData.size} Savant Picks from Firebase`);
+        setSavantPicksMap(savantData);
+      } catch (err) {
+        console.error('Error fetching savant picks:', err);
+      }
+    }
+    
+    fetchSavantPicks();
+    
+    // Refresh every 60 seconds to catch new savant picks
+    const interval = setInterval(fetchSavantPicks, 60000);
+    return () => clearInterval(interval);
+  }, []);
   
   // 💾 SMART BET SAVING: Only write NEW bets, only once per session
   // Waits for both recommendations AND betsMap to be loaded
@@ -718,6 +755,60 @@ const Basketball = () => {
               }}
             />
             
+            {/* Savant Picks Toggle Filter */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <button
+                onClick={() => setShowSavantOnly(!showSavantOnly)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: showSavantOnly 
+                    ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(245, 158, 11, 0.15) 100%)'
+                    : 'rgba(15, 23, 42, 0.5)',
+                  border: showSavantOnly 
+                    ? '2px solid rgba(251, 191, 36, 0.5)'
+                    : '1px solid rgba(71, 85, 105, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{ fontSize: '12px' }}>⭐</span>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: showSavantOnly ? 'rgba(251, 191, 36, 0.95)' : '#cbd5e1',
+                }}>
+                  Savant Only
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  color: showSavantOnly ? 'rgba(251, 191, 36, 0.8)' : 'rgba(255,255,255,0.5)',
+                  background: showSavantOnly ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.1)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}>
+                  {(() => {
+                    const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+                    const gamesToCount = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
+                    return gamesToCount.filter(g => {
+                      const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
+                      const savantPick = savantPicksMap.get(key);
+                      return savantPick?.isActive;
+                    }).length;
+                  })()}
+                </span>
+              </button>
+              <SavantPickInfo isMobile={isMobile} />
+            </div>
+            
             {/* Sort Order Selector */}
             <div style={{
               display: 'flex',
@@ -736,6 +827,7 @@ const Basketball = () => {
               </span>
               {[
                 { value: 'confidence', label: 'Confidence', icon: '🎯' },
+                { value: 'savant', label: 'Savant Picks', icon: '⭐' },
                 { value: 'time', label: 'Start Time', icon: '🕐' },
                 { value: 'edge', label: 'Edge %', icon: '📈' }
               ].map(option => {
@@ -834,12 +926,25 @@ const Basketball = () => {
               // Use gamesWithLiveScores if available, otherwise use recommendations
               const gamesToShow = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
               
+              // Helper to check if a game is a Savant Pick
+              const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+              const isGameSavantPick = (game) => {
+                const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
+                const savantPick = savantPicksMap.get(key);
+                return savantPick?.isActive === true;
+              };
+              
               // Apply status filter
               let filteredGames = gamesToShow.filter(game => {
                 if (gameStatusFilter === 'all') return true;
                 if (!game.liveScore) return gameStatusFilter === 'pre';
                 return game.liveScore.status === gameStatusFilter;
               });
+              
+              // 🏆 Apply Savant Picks filter (if showSavantOnly is enabled)
+              if (showSavantOnly) {
+                filteredGames = filteredGames.filter(game => isGameSavantPick(game));
+              }
               
               // 🎯 APPLY SORT ORDER
               // Helper to get game time from various possible locations
@@ -851,7 +956,19 @@ const Basketball = () => {
                        '';
               };
               
-              if (sortOrder === 'time') {
+              if (sortOrder === 'savant') {
+                // Sort by Savant Pick status (Savant Picks first, then by confidence)
+                filteredGames = [...filteredGames].sort((a, b) => {
+                  const aIsSavant = isGameSavantPick(a);
+                  const bIsSavant = isGameSavantPick(b);
+                  if (aIsSavant && !bIsSavant) return -1;
+                  if (!aIsSavant && bIsSavant) return 1;
+                  // If both same savant status, sort by unit size (confidence)
+                  const unitA = a.prediction?.unitSize || 0;
+                  const unitB = b.prediction?.unitSize || 0;
+                  return unitB - unitA;
+                });
+              } else if (sortOrder === 'time') {
                 // Sort by start time (parse from gameTime string like "7:00 PM ET")
                 filteredGames = [...filteredGames].sort((a, b) => {
                   const parseTime = (timeStr) => {
@@ -932,10 +1049,17 @@ const Basketball = () => {
               
               let rankCounter = 1;
               
-              // 🕐 TIME or 📈 EDGE SORT: Flat list without tier grouping
-              if (sortOrder === 'time' || sortOrder === 'edge') {
-                const sortLabel = sortOrder === 'time' ? 'Start Time' : 'Edge %';
-                const sortIcon = sortOrder === 'time' ? '🕐' : '📈';
+              // 🕐 TIME, 📈 EDGE, or ⭐ SAVANT SORT: Flat list without tier grouping
+              if (sortOrder === 'time' || sortOrder === 'edge' || sortOrder === 'savant') {
+                const sortConfig = {
+                  time: { label: 'Start Time', icon: '🕐', desc: 'Earliest games first', color: '#a78bfa' },
+                  edge: { label: 'Edge %', icon: '📈', desc: 'Highest edge first', color: '#a78bfa' },
+                  savant: { label: 'Savant Picks', icon: '⭐', desc: 'Analyst picks first', color: 'rgba(251, 191, 36, 0.95)' }
+                };
+                const { label: sortLabel, icon: sortIcon, desc: sortDesc, color: sortColor } = sortConfig[sortOrder];
+                
+                // Count savant picks for header display
+                const savantCount = gamesToDisplay.filter(g => isGameSavantPick(g)).length;
                 
                 return (
                   <>
@@ -945,8 +1069,12 @@ const Basketball = () => {
                       alignItems: 'center',
                       gap: '10px',
                       padding: isMobile ? '12px 14px' : '14px 20px',
-                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05))',
-                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      background: sortOrder === 'savant' 
+                        ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.05))'
+                        : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05))',
+                      border: sortOrder === 'savant'
+                        ? '1px solid rgba(251, 191, 36, 0.25)'
+                        : '1px solid rgba(139, 92, 246, 0.3)',
                       borderRadius: '12px',
                       marginBottom: '12px'
                     }}>
@@ -955,7 +1083,7 @@ const Basketball = () => {
                         <div style={{
                           fontSize: isMobile ? '14px' : '15px',
                           fontWeight: '700',
-                          color: '#a78bfa',
+                          color: sortColor,
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em'
                         }}>
@@ -966,7 +1094,10 @@ const Basketball = () => {
                           color: 'rgba(255,255,255,0.6)'
                         }}>
                           {filteredGames.length} game{filteredGames.length !== 1 ? 's' : ''} • 
-                          {sortOrder === 'time' ? ' Earliest games first' : ' Highest edge first'}
+                          {sortOrder === 'savant' 
+                            ? ` ${savantCount} Savant Pick${savantCount !== 1 ? 's' : ''}`
+                            : ` ${sortDesc}`
+                          }
                         </div>
                       </div>
                     </div>
@@ -979,6 +1110,7 @@ const Basketball = () => {
                         rank={rankCounter++} 
                         isMobile={isMobile}
                         hasLiveScore={!!game.liveScore}
+                        isSavantPick={isGameSavantPick(game)}
                         displayTime={sortOrder === 'time' ? getGameTime(game) : null}
                       />
                     ))}
@@ -1007,6 +1139,7 @@ const Basketball = () => {
                           rank={rankCounter++} 
                           isMobile={isMobile}
                           hasLiveScore={!!game.liveScore}
+                          isSavantPick={isGameSavantPick(game)}
                         />
                       ))}
                     </>
@@ -1032,6 +1165,7 @@ const Basketball = () => {
                           rank={rankCounter++} 
                           isMobile={isMobile}
                           hasLiveScore={!!game.liveScore}
+                          isSavantPick={isGameSavantPick(game)}
                         />
                       ))}
                     </>
@@ -1055,6 +1189,7 @@ const Basketball = () => {
                           rank={rankCounter++} 
                           isMobile={isMobile}
                           hasLiveScore={!!game.liveScore}
+                          isSavantPick={isGameSavantPick(game)}
                         />
                       ))}
                     </>
@@ -1903,7 +2038,7 @@ const TierHeader = ({ emoji, title, subtitle, color, unitRange, isMobile }) => {
   );
 };
 
-const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
+const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false }) => {
   const [showDetails, setShowDetails] = useState(false);
   const pred = game.prediction;
   const odds = game.odds;
@@ -1945,16 +2080,36 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
     return time.replace(/\s+ET$/i, '').trim();
   };
 
+  // Determine border and shadow based on A+ grade OR Savant Pick status
+  const getCardStyles = () => {
+    if (pred.grade === 'A+') {
+      return {
+        border: `2px solid ${gradeColors.borderColor}`,
+        boxShadow: `0 8px 32px ${gradeColors.borderColor}40, 0 0 60px ${gradeColors.borderColor}15`
+      };
+    }
+    if (isSavantPick) {
+      return {
+        border: '1.5px solid rgba(251, 191, 36, 0.35)',
+        boxShadow: '0 6px 24px rgba(251, 191, 36, 0.12), 0 0 40px rgba(251, 191, 36, 0.06)'
+      };
+    }
+    return {
+      border: ELEVATION.elevated.border,
+      boxShadow: ELEVATION.elevated.shadow
+    };
+  };
+  
+  const cardStyles = getCardStyles();
+
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+      background: isSavantPick 
+        ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 35, 50, 0.95) 100%)'
+        : 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
       borderRadius: isMobile ? MOBILE_SPACING.borderRadius : '20px',
-      border: pred.grade === 'A+' 
-        ? `2px solid ${gradeColors.borderColor}` 
-        : ELEVATION.elevated.border,
-      boxShadow: pred.grade === 'A+' 
-        ? `0 8px 32px ${gradeColors.borderColor}40, 0 0 60px ${gradeColors.borderColor}15`
-        : ELEVATION.elevated.shadow,
+      border: cardStyles.border,
+      boxShadow: cardStyles.boxShadow,
       overflow: 'hidden',
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       position: 'relative'
@@ -1986,10 +2141,24 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore }) => {
       <div style={{ 
         padding: isMobile ? '1rem' : '1.125rem',
         borderBottom: ELEVATION.flat.border,
-        background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%)',
+        background: isSavantPick 
+          ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.06) 0%, rgba(0,0,0,0.15) 100%)'
+          : 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 100%)',
         position: 'relative',
         zIndex: 2
       }}>
+        {/* ⭐ SAVANT PICK BADGE - positioned in top-right */}
+        {isSavantPick && (
+          <div style={{
+            position: 'absolute',
+            top: isMobile ? '0.75rem' : '0.875rem',
+            right: isMobile ? '0.75rem' : '1rem',
+            zIndex: 10
+          }}>
+            <SavantPickBadge isMobile={isMobile} showTooltip={true} />
+          </div>
+        )}
+        
         {/* 🔒 LOCKED PICK BADGE (if from original bet) */}
         {pred.isLockedPick && (
           <div style={{
