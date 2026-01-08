@@ -98,7 +98,7 @@ const SavantPickBadge = ({ isMobile = false, showTooltip = true }) => {
             color: 'rgba(255, 255, 255, 0.75)',
             lineHeight: 1.5,
           }}>
-            Hand-selected by our analysts who go beyond the math to find sharper edges.
+            Analyst-enhanced selection with additional situational conviction layered on our quantitative models.
           </div>
           
           <style>{`

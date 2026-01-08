@@ -132,13 +132,13 @@ const SavantPickInfo = ({ isMobile = false }) => {
                   <span style={{
                     fontSize: '0.875rem',
                     color: '#60A5FA',
-                  }}>🤖</span>
+                  }}>📊</span>
                   <span style={{
                     fontSize: '0.813rem',
                     fontWeight: '700',
                     color: '#60A5FA',
                   }}>
-                    Model Picks
+                    Model-Generated Picks
                   </span>
                 </div>
                 <p style={{
@@ -147,7 +147,7 @@ const SavantPickInfo = ({ isMobile = false }) => {
                   lineHeight: 1.6,
                   margin: 0,
                 }}>
-                  Pure math-driven analysis. Our algorithms process team stats, odds movements, and historical patterns to identify value plays automatically.
+                  Powered by multi-source algorithmic analysis. Our models synthesize advanced metrics from KenPom, Haslametrics, D-Ratings, and Barttorvik—cross-referencing real-time odds movements to surface <strong style={{ color: '#60A5FA' }}>statistically significant edges</strong>.
                 </p>
               </div>
               
@@ -176,7 +176,7 @@ const SavantPickInfo = ({ isMobile = false }) => {
                   lineHeight: 1.6,
                   margin: 0,
                 }}>
-                  Human-curated selections. Our analysts layer in context the models can't see—injuries, matchups, motivation, weather—to find the <strong style={{ color: 'rgba(251, 191, 36, 0.9)' }}>sharpest edges</strong>.
+                  Analyst-enhanced selections. These picks layer qualitative intelligence—lineup changes, injury reports, situational factors—on top of our quantitative models. <strong style={{ color: 'rgba(251, 191, 36, 0.9)' }}>Extra conviction, same methodology.</strong>
                 </p>
               </div>
               
@@ -184,18 +184,18 @@ const SavantPickInfo = ({ isMobile = false }) => {
               <div style={{
                 marginTop: '0.5rem',
                 padding: '0.625rem 0.75rem',
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
+                background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.08) 0%, rgba(139, 92, 246, 0.06) 100%)',
+                border: '1px solid rgba(96, 165, 250, 0.15)',
                 borderRadius: '8px',
               }}>
                 <p style={{
                   fontSize: '0.688rem',
-                  color: 'rgba(16, 185, 129, 0.9)',
+                  color: 'rgba(148, 163, 184, 0.95)',
                   lineHeight: 1.5,
                   margin: 0,
                   fontWeight: '500',
                 }}>
-                  💡 Tip: Savant Picks are designed to complement model picks with human insight for an extra edge.
+                  Every play is tracked and verified. Savant Picks highlight where our analysts see <span style={{ color: '#60A5FA' }}>additional confluence</span> worth noting.
                 </p>
               </div>
             </div>
