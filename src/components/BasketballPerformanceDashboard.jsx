@@ -17,6 +17,7 @@ export function BasketballPerformanceDashboard() {
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
+  const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
 
   // Fetch ALL bets from Firebase for chart and time calculations
   useEffect(() => {
@@ -109,17 +110,20 @@ export function BasketballPerformanceDashboard() {
     };
   }, [allBets]);
 
-  // Filter stats based on selected time period
+  // Filter stats based on selected time period and savant filter
   const filteredStats = useMemo(() => {
-    if (!stats || timeFilter === 'all') return stats;
+    if (!stats && !allBets.length) return stats;
     
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    const gradedBets = allBets.filter(b => {
+    let gradedBets = allBets.filter(b => {
       if (!b.result || !b.result.outcome) return false;
+      
+      // Apply Savant filter
+      if (showSavantOnly && !b.savantPick) return false;
       
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
       
@@ -156,7 +160,12 @@ export function BasketballPerformanceDashboard() {
       gradedBets: gradedBets.length,
       totalBets: gradedBets.length
     };
-  }, [stats, allBets, timeFilter]);
+  }, [stats, allBets, timeFilter, showSavantOnly]);
+  
+  // Count Savant Picks for display
+  const savantCount = useMemo(() => {
+    return allBets.filter(b => b.savantPick && b.result?.outcome).length;
+  }, [allBets]);
 
   if (loading) {
     return (
@@ -343,44 +352,125 @@ export function BasketballPerformanceDashboard() {
           {/* Premium Time Filters */}
           <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
             <div style={{ 
-              fontSize: isMobile ? '0.625rem' : '0.688rem', 
-              color: 'rgba(255,255,255,0.55)', 
-              marginBottom: '0.875rem', 
-              fontWeight: '700', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.12em',
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              flexWrap: 'wrap',
+              gap: '1rem'
             }}>
-              <div style={{
-                width: '2px',
-                height: '12px',
-                background: 'linear-gradient(180deg, #10B981 0%, transparent 100%)',
-                borderRadius: '1px'
-              }} />
-              TIME PERIOD
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {[
-                { value: 'all', label: 'All Time', color: '#10B981' },
-                { value: 'today', label: 'Today', color: '#14B8A6' },
-                { value: 'yesterday', label: 'Yesterday', color: '#3B82F6' },
-                { value: 'week', label: 'This Week', color: '#8B5CF6' }
-              ].map(filter => {
-                const isSelected = timeFilter === filter.value;
-                return (
+              {/* Time Period Filters */}
+              <div>
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                  color: 'rgba(255,255,255,0.55)', 
+                  marginBottom: '0.875rem', 
+                  fontWeight: '700', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.12em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '2px',
+                    height: '12px',
+                    background: 'linear-gradient(180deg, #10B981 0%, transparent 100%)',
+                    borderRadius: '1px'
+                  }} />
+                  TIME PERIOD
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { value: 'all', label: 'All Time', color: '#10B981' },
+                    { value: 'today', label: 'Today', color: '#14B8A6' },
+                    { value: 'yesterday', label: 'Yesterday', color: '#3B82F6' },
+                    { value: 'week', label: 'This Week', color: '#8B5CF6' }
+                  ].map(filter => {
+                    const isSelected = timeFilter === filter.value;
+                    return (
+                      <button
+                        key={filter.value}
+                        onClick={() => setTimeFilter(filter.value)}
+                        style={{
+                          background: isSelected 
+                            ? `linear-gradient(135deg, ${filter.color}22 0%, ${filter.color}12 100%)`
+                            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                          border: isSelected 
+                            ? `1px solid ${filter.color}50`
+                            : '1px solid rgba(255,255,255,0.08)',
+                          color: isSelected ? filter.color : 'rgba(255,255,255,0.7)',
+                          padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '0.75rem' : '0.813rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          outline: 'none',
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          boxShadow: isSelected
+                            ? `0 4px 12px ${filter.color}20, inset 0 1px 0 rgba(255, 255, 255, 0.08)`
+                            : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                          letterSpacing: '-0.01em',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected && !isMobile) {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%)';
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)';
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }
+                        }}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Savant Picks Filter */}
+              {savantCount > 0 && (
+                <div>
+                  <div style={{ 
+                    fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                    color: 'rgba(255,255,255,0.55)', 
+                    marginBottom: '0.875rem', 
+                    fontWeight: '700', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.12em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <div style={{
+                      width: '2px',
+                      height: '12px',
+                      background: 'linear-gradient(180deg, #FBBF24 0%, transparent 100%)',
+                      borderRadius: '1px'
+                    }} />
+                    FILTER
+                  </div>
                   <button
-                    key={filter.value}
-                    onClick={() => setTimeFilter(filter.value)}
+                    onClick={() => setShowSavantOnly(!showSavantOnly)}
                     style={{
-                      background: isSelected 
-                        ? `linear-gradient(135deg, ${filter.color}22 0%, ${filter.color}12 100%)`
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      background: showSavantOnly 
+                        ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.12) 100%)'
                         : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
-                      border: isSelected 
-                        ? `1px solid ${filter.color}50`
+                      border: showSavantOnly 
+                        ? '1px solid rgba(251, 191, 36, 0.5)'
                         : '1px solid rgba(255,255,255,0.08)',
-                      color: isSelected ? filter.color : 'rgba(255,255,255,0.7)',
+                      color: showSavantOnly ? 'rgba(251, 191, 36, 0.95)' : 'rgba(255,255,255,0.7)',
                       padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
                       borderRadius: '8px',
                       fontSize: isMobile ? '0.75rem' : '0.813rem',
@@ -390,31 +480,26 @@ export function BasketballPerformanceDashboard() {
                       outline: 'none',
                       backdropFilter: 'blur(8px)',
                       WebkitBackdropFilter: 'blur(8px)',
-                      boxShadow: isSelected
-                        ? `0 4px 12px ${filter.color}20, inset 0 1px 0 rgba(255, 255, 255, 0.08)`
+                      boxShadow: showSavantOnly
+                        ? '0 4px 12px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
                         : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                      letterSpacing: '-0.01em',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected && !isMobile) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%)';
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)';
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }
                     }}
                   >
-                    {filter.label}
+                    <span>⭐</span>
+                    <span>Savant Only</span>
+                    <span style={{
+                      fontSize: '0.688rem',
+                      fontWeight: '800',
+                      color: showSavantOnly ? 'rgba(251, 191, 36, 0.8)' : 'rgba(255,255,255,0.5)',
+                      background: showSavantOnly ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.1)',
+                      padding: '0.125rem 0.375rem',
+                      borderRadius: '4px',
+                    }}>
+                      {savantCount}
+                    </span>
                   </button>
-                );
-              })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -573,7 +658,11 @@ export function BasketballPerformanceDashboard() {
 
           {/* Profit Timeline Chart */}
           {allBets && allBets.length > 0 && (
-            <BasketballProfitChart bets={allBets} timeFilter={timeFilter} />
+            <BasketballProfitChart 
+              bets={allBets} 
+              timeFilter={timeFilter} 
+              showSavantLine={savantCount > 0}
+            />
           )}
         </div>
       )}
