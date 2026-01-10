@@ -8,22 +8,40 @@
 import { normalizeTeamName } from './teamNameNormalizer.js';
 
 /**
- * Get today's day abbreviation (MON, TUE, WED, etc.)
+ * Get current hour in Eastern Time (0-23)
  */
-function getTodayDayAbbr() {
-  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-  return days[new Date().getDay()];
+function getETHour() {
+  const etTimeStr = new Date().toLocaleString('en-US', {
+    timeZone: 'America/New_York',
+    hour: '2-digit',
+    hour12: false
+  });
+  return parseInt(etTimeStr);
 }
 
 /**
- * Get today's month/day patterns (handles both formats OddsTrader uses)
+ * Get day abbreviation (MON, TUE, WED, etc.) for a given date
+ */
+function getDayAbbr(date) {
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  return days[date.getDay()];
+}
+
+/**
+ * Get today's day abbreviation (MON, TUE, WED, etc.)
+ */
+function getTodayDayAbbr() {
+  return getDayAbbr(new Date());
+}
+
+/**
+ * Get month/day patterns for a given date (handles both formats OddsTrader uses)
  * OddsTrader uses: "01/01" (with leading zeros) in some cases, "1/01" in others
  * Returns array of possible patterns to match
  */
-function getTodayMonthDayPatterns() {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
+function getMonthDayPatterns(date) {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
   
   // Generate both formats: with and without leading zero on month
   const withLeadingZero = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`; // "01/01"
@@ -32,30 +50,66 @@ function getTodayMonthDayPatterns() {
   return [withLeadingZero, withoutLeadingZero];
 }
 
+/**
+ * Get today's month/day patterns (handles both formats OddsTrader uses)
+ * OddsTrader uses: "01/01" (with leading zeros) in some cases, "1/01" in others
+ * Returns array of possible patterns to match
+ */
+function getTodayMonthDayPatterns() {
+  return getMonthDayPatterns(new Date());
+}
+
+/**
+ * Get yesterday's date
+ */
+function getYesterdayDate() {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday;
+}
+
 // Keep for backward compatibility
 function getTodayMonthDay() {
   return getTodayMonthDayPatterns()[1]; // Return the pattern without leading zero
 }
 
 /**
- * Check if a game line is for TODAY
+ * Check if a game line is for TODAY (or YESTERDAY if before 4 AM ET)
+ * Games from the previous day stay visible until 4 AM ET the next morning
+ * This allows users to review results overnight
  */
 function isTodayGame(line) {
-  // LIVE games or "STARTS IN" are always today
+  // LIVE games or "STARTS IN" are always shown
   if (line.includes('LIVE') || line.includes('STARTS IN')) {
     return true;
   }
   
-  // Check if date matches today (e.g., "THU 11/27" or "THU 01/01")
-  // Handle both formats: with and without leading zero on month
-  const todayDay = getTodayDayAbbr();
-  const datePatterns = getTodayMonthDayPatterns();
+  const etHour = getETHour();
+  const isBefore4AM = etHour < 4;
   
-  // Check both patterns
-  for (const datePattern of datePatterns) {
+  // Check if date matches TODAY
+  const todayDay = getTodayDayAbbr();
+  const todayPatterns = getTodayMonthDayPatterns();
+  
+  for (const datePattern of todayPatterns) {
     const fullPattern = `${todayDay} ${datePattern}`;
     if (line.includes(fullPattern)) {
       return true;
+    }
+  }
+  
+  // 🌙 OVERNIGHT VIEWING: Before 4 AM ET, also show YESTERDAY's games
+  if (isBefore4AM) {
+    const yesterday = getYesterdayDate();
+    const yesterdayDay = getDayAbbr(yesterday);
+    const yesterdayPatterns = getMonthDayPatterns(yesterday);
+    
+    for (const datePattern of yesterdayPatterns) {
+      const fullPattern = `${yesterdayDay} ${datePattern}`;
+      if (line.includes(fullPattern)) {
+        console.log(`🌙 Including yesterday's game (before 4 AM ET): ${line.substring(0, 50)}...`);
+        return true;
+      }
     }
   }
   
@@ -77,7 +131,17 @@ export function parseBasketballOdds(markdown) {
   const lines = markdown.split('\n');
   
   const patterns = getTodayMonthDayPatterns();
-  console.log(`📅 Filtering for TODAY: ${getTodayDayAbbr()} ${patterns.join(' or ')}`);
+  const etHour = getETHour();
+  const isBefore4AM = etHour < 4;
+  
+  if (isBefore4AM) {
+    const yesterday = getYesterdayDate();
+    const yesterdayPatterns = getMonthDayPatterns(yesterday);
+    console.log(`📅 Filtering for TODAY: ${getTodayDayAbbr()} ${patterns.join(' or ')}`);
+    console.log(`🌙 Also including YESTERDAY (before 4 AM ET): ${getDayAbbr(yesterday)} ${yesterdayPatterns.join(' or ')}`);
+  } else {
+    console.log(`📅 Filtering for TODAY: ${getTodayDayAbbr()} ${patterns.join(' or ')}`);
+  }
   console.log(`   Looking for patterns: "${getTodayDayAbbr()} ${patterns[0]}" OR "${getTodayDayAbbr()} ${patterns[1]}"`);
   
   for (let i = 0; i < lines.length; i++) {
