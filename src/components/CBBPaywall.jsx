@@ -4,53 +4,17 @@
  * Uses real performance data for conversion messaging
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { useBasketballBetStats } from '../hooks/useBasketballBetStats';
 import './CBBPaywall.css';
 
-// Helper to calculate time until Friday 11:59 PM ET
-function getTimeUntilFriday() {
-  const now = new Date();
-  // Get current time in ET
-  const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  
-  // Find the next Friday (or current Friday if before 11:59 PM)
-  const friday = new Date(etNow);
-  const dayOfWeek = friday.getDay();
-  const daysUntilFriday = dayOfWeek <= 5 ? (5 - dayOfWeek) : (5 + 7 - dayOfWeek);
-  friday.setDate(friday.getDate() + daysUntilFriday);
-  friday.setHours(23, 59, 59, 999);
-  
-  // If it's already past Friday 11:59 PM, show next Friday
-  if (etNow > friday) {
-    friday.setDate(friday.getDate() + 7);
-  }
-  
-  const diff = friday - etNow;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
-  return { days, hours, minutes, seconds, total: diff };
-}
-
 export function CBBEarlyAccessBanner() {
   const { user } = useAuth();
   const { isPremium, isFree } = useSubscription(user);
   const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(getTimeUntilFriday());
-  
-  // Update countdown every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(getTimeUntilFriday());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
   
   // Only show to free users
   if (!isFree) return null;
@@ -60,10 +24,7 @@ export function CBBEarlyAccessBanner() {
       <div className="banner-content">
         <span className="banner-icon">🏆</span>
         <span className="banner-text">
-          <strong>Free access ends Friday 11:59 PM ET!</strong> Lock <strong>40% off for life</strong> — <strong>$15.99/mo</strong> <s style={{opacity: 0.7}}>$25.99</s> • Code: <strong>HEREFIRST</strong>
-          <span style={{ marginLeft: '8px', color: '#F59E0B', fontWeight: '700' }}>
-            ⏰ {countdown.days}d {countdown.hours}h {countdown.minutes}m left
-          </span>
+          <strong>Lock 40% off for life</strong> — <strong>$15.99/mo</strong> <s style={{opacity: 0.7}}>$25.99</s> • Code: <strong>HEREFIRST</strong>
         </span>
         <button 
           className="banner-cta"
@@ -81,15 +42,6 @@ export function CBBSoftPaywall({ games, onUpgradeClick, onDismiss }) {
   const { isPremium, isFree } = useSubscription(user);
   const { stats, loading: statsLoading } = useBasketballBetStats();
   const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(getTimeUntilFriday());
-  
-  // Update countdown every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(getTimeUntilFriday());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
   
   // Premium users see everything
   if (isPremium) {
@@ -126,52 +78,8 @@ export function CBBSoftPaywall({ games, onUpgradeClick, onDismiss }) {
           ))}
         </div>
         
-        {/* Unlock Panel */}
+{/* Unlock Panel */}
         <div className="unlock-panel">
-          {/* Urgency Banner with Countdown */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            borderRadius: '8px',
-            padding: '0.75rem 1rem',
-            marginBottom: '1rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ 
-              color: '#F87171', 
-              fontWeight: '700', 
-              fontSize: '0.938rem',
-              marginBottom: '0.25rem'
-            }}>
-              🚨 Free access ends Friday 11:59 PM ET
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              fontSize: '0.875rem'
-            }}>
-              <span>⏰</span>
-              <span style={{ 
-                color: '#FBBF24', 
-                fontWeight: '800',
-                fontFamily: 'ui-monospace, monospace',
-                letterSpacing: '0.05em'
-              }}>
-                {countdown.days}d {String(countdown.hours).padStart(2, '0')}h {String(countdown.minutes).padStart(2, '0')}m {String(countdown.seconds).padStart(2, '0')}s
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.7)' }}>remaining</span>
-            </div>
-            <div style={{ 
-              fontSize: '0.75rem', 
-              color: 'rgba(255,255,255,0.6)', 
-              marginTop: '0.375rem' 
-            }}>
-              Lock in <strong style={{ color: '#10B981' }}>40% off for life</strong> before it's gone!
-            </div>
-          </div>
-          
           <div className="lock-icon">🔒</div>
           
           <h2 className="unlock-title">
@@ -283,7 +191,7 @@ export function CBBSoftPaywall({ games, onUpgradeClick, onDismiss }) {
               <span><strong style={{ color: '#10B981' }}>$15.99/mo</strong> <s style={{opacity: 0.5, fontSize: '0.85em'}}>$25.99</s></span>
             </div>
             <div style={{ textAlign: 'center', fontSize: '0.813rem', color: 'rgba(255,255,255,0.7)', marginTop: '0.25rem' }}>
-              40% off locked forever — <strong style={{ color: '#F59E0B' }}>ends Friday!</strong>
+              <strong style={{ color: '#10B981' }}>40% off locked forever</strong> for founding members
             </div>
             {/* Promo code reminder */}
             <div style={{ 
@@ -296,9 +204,6 @@ export function CBBSoftPaywall({ games, onUpgradeClick, onDismiss }) {
               fontSize: '0.875rem'
             }}>
               <span style={{ color: '#D4AF37' }}>💰 Use code <strong>HEREFIRST</strong> at checkout</span>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', marginTop: '0.25rem' }}>
-                Sign up now before free access ends!
-              </div>
             </div>
           </div>
           
@@ -309,29 +214,6 @@ export function CBBSoftPaywall({ games, onUpgradeClick, onDismiss }) {
               onClick={() => navigate('/pricing')}
             >
               Start Free Trial →
-            </button>
-            
-            {/* Soft Dismiss - Full Access Preview */}
-            <button 
-              onClick={() => {
-                // Call parent dismiss handler to show full content
-                if (onDismiss) {
-                  onDismiss();
-                }
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                marginTop: '0.75rem',
-                padding: '0.5rem',
-                textDecoration: 'underline',
-                textUnderlineOffset: '2px'
-              }}
-            >
-              Continue with free preview →
             </button>
           </div>
           
@@ -349,16 +231,6 @@ export function CBBUpgradeModal({ show, onClose }) {
   const navigate = useNavigate();
   const { stats, loading: statsLoading } = useBasketballBetStats();
   const [showingFullStats, setShowingFullStats] = useState(false);
-  const [countdown, setCountdown] = useState(getTimeUntilFriday());
-  
-  // Update countdown every second
-  useEffect(() => {
-    if (!show) return;
-    const timer = setInterval(() => {
-      setCountdown(getTimeUntilFriday());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [show]);
   
   if (!show) return null;
   
@@ -460,24 +332,13 @@ export function CBBUpgradeModal({ show, onClose }) {
             </div>
             
             <div className="limited-access-note" style={{ 
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(212, 175, 55, 0.1) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
               borderRadius: '8px',
               padding: '0.75rem'
             }}>
-              <div style={{ marginBottom: '0.375rem' }}>
-                🚨 <strong>Free access ends Friday 11:59 PM ET!</strong>
-              </div>
               <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
                 Lock <strong style={{ color: '#10B981' }}>40% off for life</strong> — $15.99/mo • Code: <strong style={{ color: '#D4AF37' }}>HEREFIRST</strong>
-              </div>
-              <div style={{ 
-                marginTop: '0.5rem',
-                fontSize: '0.813rem',
-                color: '#FBBF24',
-                fontWeight: '700'
-              }}>
-                ⏰ {countdown.days}d {countdown.hours}h {countdown.minutes}m remaining
               </div>
             </div>
             
@@ -512,13 +373,7 @@ export function CBBUpgradeModal({ show, onClose }) {
           )}
         </div>
         
-        {/* Footer */}
-        <div className="modal-footer-actions">
-          <button className="stay-free-btn" onClick={onClose}>
-            Continue with free preview →
-          </button>
         </div>
-      </div>
     </div>
   );
 }
