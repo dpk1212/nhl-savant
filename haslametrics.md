@@ -603,48 +603,84 @@ Away teams firstProjected winners first
 
 |  |  |  |  |  |  |  |  |  |  |  |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Iowa State](https://haslametrics.com/ratings2.php?yr=&tid=155) 2[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=155&tid2=4633&neut=0) | 77.44 |  | [Virginia](https://haslametrics.com/ratings2.php?yr=&tid=539) 7[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=539&tid2=217&neut=0) | 77.48 |  | [UConn](https://haslametrics.com/ratings2.php?yr=&tid=105) 10[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=105&tid2=5123&neut=0) | 68.11 |  | [West Virginia](https://haslametrics.com/ratings2.php?yr=&tid=577) 56[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=577&tid2=519&neut=0) | 56.54 |
-| [Kansas](https://haslametrics.com/ratings2.php?yr=&tid=4633) 27 | 70.21 |  | [Louisville](https://haslametrics.com/ratings2.php?yr=&tid=217) 23 | 75.21 |  | [Seton Hall](https://haslametrics.com/ratings2.php?yr=&tid=5123) 45 | 62.48 |  | [Houston](https://haslametrics.com/ratings2.php?yr=&tid=519) 11 | 68.80 |
-| 9:00pm ET -- ESPN |  |  | 7:00pm ET -- ESPN2 |  |  | 8:00pm ET -- truTV |  |  | 8:30pm ET -- FS1 |  |
+| [Michigan](https://haslametrics.com/ratings2.php?yr=&tid=0) 1[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 87.30 |  | [Iowa](https://haslametrics.com/ratings2.php?yr=&tid=0) 18[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 66.56 |  | [Arizona State](https://haslametrics.com/ratings2.php?yr=&tid=0) 97[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 66.87 |  | [Illinois](https://haslametrics.com/ratings2.php?yr=&tid=0) 5[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 79.97 |  |
+| [Washington](https://haslametrics.com/ratings2.php?yr=&tid=0) 52 | 70.45 |  | [Purdue](https://haslametrics.com/ratings2.php?yr=&tid=0) 3 | 76.17 |  | [Arizona](https://haslametrics.com/ratings2.php?yr=&tid=0) 4 | 91.36 |  | [Northwestern](https://haslametrics.com/ratings2.php?yr=&tid=0) 61 | 69.53 |  |
+| 10:30pm ET -- BTN |  |  | 6:30pm ET -- BTN |  |  | 10:30pm ET -- FS1 |  |  | 8:30pm ET -- BTN |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Indiana](https://haslametrics.com/ratings2.php?yr=&tid=191) 21[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=191&tid2=277&neut=0) | 67.47 |  | [Florida](https://haslametrics.com/ratings2.php?yr=&tid=137) 14[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=137&tid2=425&neut=0) | 81.15 |  | [Alabama](https://haslametrics.com/ratings2.php?yr=&tid=689) 15[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=689&tid2=711&neut=0) | 88.33 |  | [Marquette](https://haslametrics.com/ratings2.php?yr=&tid=561) 128[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=561&tid2=5221&neut=0) | 64.56 |
-| [Michigan State](https://haslametrics.com/ratings2.php?yr=&tid=277) 12 | 73.02 |  | [Oklahoma](https://haslametrics.com/ratings2.php?yr=&tid=425) 62 | 74.72 |  | [Mississippi St.](https://haslametrics.com/ratings2.php?yr=&tid=711) 82 | 79.14 |  | [St. John's](https://haslametrics.com/ratings2.php?yr=&tid=5221) 16 | 85.47 |
-| 7:00pm ET -- Peacock |  |  | 9:00pm ET -- ESPN2 |  |  | 9:00pm ET -- SECN |  |  | 6:30pm ET -- Peacock |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Vanderbilt](https://haslametrics.com/ratings2.php?yr=&tid=0) 6[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 86.82 |  | [Duke](https://haslametrics.com/ratings2.php?yr=&tid=0) 9[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 78.78 |  | [TCU](https://haslametrics.com/ratings2.php?yr=&tid=0) 49[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 70.82 |  | [Fordham](https://haslametrics.com/ratings2.php?yr=&tid=0) 201[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 61.51 |  |
+| [Texas](https://haslametrics.com/ratings2.php?yr=&tid=0) 48 | 77.94 |  | [California](https://haslametrics.com/ratings2.php?yr=&tid=0) 83 | 67.24 |  | [BYU](https://haslametrics.com/ratings2.php?yr=&tid=0) 13 | 83.13 |  | [Saint Louis](https://haslametrics.com/ratings2.php?yr=&tid=0) 19 | 85.40 |  |
+| 9:00pm ET -- ESPN2 |  |  | 11:00pm ET -- ACCN |  |  | 11:00pm ET -- ESPN2 |  |  | 8:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Oregon](https://haslametrics.com/ratings2.php?yr=&tid=4989) 75[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4989&tid2=339&neut=0) | 64.31 |  | [Texas A&M](https://haslametrics.com/ratings2.php?yr=&tid=513) 40[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=513&tid2=5289&neut=0) | 74.22 |  | [Boston College](https://haslametrics.com/ratings2.php?yr=&tid=229) 185[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=229&tid2=479&neut=0) | 54.38 |  | [Wisconsin](https://haslametrics.com/ratings2.php?yr=&tid=573) 32[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=573&tid2=293&neut=0) | 72.78 |
-| [Nebraska](https://haslametrics.com/ratings2.php?yr=&tid=339) 17 | 78.29 |  | [Tennessee](https://haslametrics.com/ratings2.php?yr=&tid=5289) 20 | 82.63 |  | [Clemson](https://haslametrics.com/ratings2.php?yr=&tid=479) 31 | 73.14 |  | [Minnesota](https://haslametrics.com/ratings2.php?yr=&tid=293) 101 | 67.47 |
-| 9:00pm ET -- BTN |  |  | 7:00pm ET -- SECN |  |  | 7:00pm ET -- ACCN |  |  | 7:00pm ET -- BTN |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Auburn](https://haslametrics.com/ratings2.php?yr=&tid=0) 22[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 79.91 |  | [Nevada](https://haslametrics.com/ratings2.php?yr=&tid=0) 67[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 69.91 |  | [Kentucky](https://haslametrics.com/ratings2.php?yr=&tid=0) 25[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 76.14 |  | [Utah](https://haslametrics.com/ratings2.php?yr=&tid=0) 129[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 71.27 |  |
+| [Missouri](https://haslametrics.com/ratings2.php?yr=&tid=0) 64 | 75.47 |  | [Utah State](https://haslametrics.com/ratings2.php?yr=&tid=0) 24 | 80.89 |  | [LSU](https://haslametrics.com/ratings2.php?yr=&tid=0) 42 | 74.12 |  | [Texas Tech](https://haslametrics.com/ratings2.php?yr=&tid=0) 26 | 88.80 |  |
+| 7:00pm ET -- ESPN2 |  |  | 10:00pm ET -- CBSSN |  |  | 7:00pm ET -- SECN |  |  | 9:00pm ET -- Peacock |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Saint Mary's](https://haslametrics.com/ratings2.php?yr=&tid=5239) 35[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=5239&tid2=5101&neut=0) | 73.49 |  | [Grand Canyon](https://haslametrics.com/ratings2.php?yr=&tid=4529) 89[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4529&tid2=357&neut=0) | 63.66 |  | [Villanova](https://haslametrics.com/ratings2.php?yr=&tid=467) 38[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=467&tid2=5037&neut=0) | 79.94 |  | [Georgetown](https://haslametrics.com/ratings2.php?yr=&tid=115) 124[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=115&tid2=335&neut=0) | 67.81 |
-| [San Francisco](https://haslametrics.com/ratings2.php?yr=&tid=5101) 105 | 68.06 |  | [New Mexico](https://haslametrics.com/ratings2.php?yr=&tid=357) 36 | 75.04 |  | [Providence](https://haslametrics.com/ratings2.php?yr=&tid=5037) 66 | 78.28 |  | [Creighton](https://haslametrics.com/ratings2.php?yr=&tid=335) 44 | 79.80 |
-| 11:00pm ET -- ESPN2 |  |  | 9:00pm ET -- MWN |  |  | 6:30pm ET -- FS1 |  |  | 9:00pm ET -- Peacock |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [South Carolina](https://haslametrics.com/ratings2.php?yr=&tid=0) 76[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 72.91 |  | [North Carolina](https://haslametrics.com/ratings2.php?yr=&tid=0) 30[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 73.35 |  | [Ole Miss](https://haslametrics.com/ratings2.php?yr=&tid=0) 100[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 72.35 |  | [Virginia Tech](https://haslametrics.com/ratings2.php?yr=&tid=0) 71[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 72.57 |  |
+| [Arkansas](https://haslametrics.com/ratings2.php?yr=&tid=0) 29 | 84.34 |  | [Stanford](https://haslametrics.com/ratings2.php?yr=&tid=0) 63 | 70.76 |  | [Georgia](https://haslametrics.com/ratings2.php?yr=&tid=0) 33 | 85.40 |  | [SMU](https://haslametrics.com/ratings2.php?yr=&tid=0) 37 | 81.43 |  |
+| 9:00pm ET -- SECN |  |  | 9:00pm ET -- ACCN |  |  | 7:00pm ET -- ESPNU |  |  | 9:00pm ET -- ESPNU |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Miami](https://haslametrics.com/ratings2.php?yr=&tid=4803) 46[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4803&tid2=197&neut=0) | 73.00 |  | [Baylor](https://haslametrics.com/ratings2.php?yr=&tid=501) 50[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=501&tid2=417&neut=0) | 82.34 |  | [Maryland](https://haslametrics.com/ratings2.php?yr=&tid=263) 140[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=263&tid2=83&neut=0) | 67.32 |  | [Ball State](https://haslametrics.com/ratings2.php?yr=&tid=4123) 320[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4123&tid2=4035&neut=0) | 63.66 |
-| [Notre Dame](https://haslametrics.com/ratings2.php?yr=&tid=197) 72 | 73.13 |  | [Oklahoma State](https://haslametrics.com/ratings2.php?yr=&tid=417) 57 | 85.08 |  | [USC](https://haslametrics.com/ratings2.php?yr=&tid=83) 53 | 80.23 |  | [Akron](https://haslametrics.com/ratings2.php?yr=&tid=4035) 54 | 88.10 |
-| 7:00pm ET -- ESPNU |  |  | 9:00pm ET -- CBSSN |  |  | 10:30pm ET -- FS1 |  |  | 7:00pm ET -- ESPN+ |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Pacific](https://haslametrics.com/ratings2.php?yr=&tid=0) 121[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 67.66 |  | [UCF](https://haslametrics.com/ratings2.php?yr=&tid=0) 41[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 83.84 |  | [UCLA](https://haslametrics.com/ratings2.php?yr=&tid=0) 43[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 76.05 |  | [VCU](https://haslametrics.com/ratings2.php?yr=&tid=0) 51[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 75.56 |  |
+| [Santa Clara](https://haslametrics.com/ratings2.php?yr=&tid=0) 39 | 81.24 |  | [Kansas State](https://haslametrics.com/ratings2.php?yr=&tid=0) 88 | 81.99 |  | [Penn State](https://haslametrics.com/ratings2.php?yr=&tid=0) 99 | 73.74 |  | [URI](https://haslametrics.com/ratings2.php?yr=&tid=0) 144 | 69.11 |  |
+| 10:00pm ET -- ESPN+ |  |  | 8:00pm ET -- Peacock |  |  | 8:30pm ET -- FS1 |  |  | 6:00pm ET -- CBSSN |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Valparaiso](https://haslametrics.com/ratings2.php?yr=&tid=5371) 172[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=5371&tid2=4137&neut=0) | 67.97 |  | [Florida State](https://haslametrics.com/ratings2.php?yr=&tid=127) 114[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=127&tid2=389&neut=0) | 72.62 |  | [Dayton](https://haslametrics.com/ratings2.php?yr=&tid=4359) 79[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4359&tid2=4391&neut=0) | 78.86 |  | [Cent. Michigan](https://haslametrics.com/ratings2.php?yr=&tid=4257) 322[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4257&tid2=409&neut=0) | 66.60 |
-| [Belmont](https://haslametrics.com/ratings2.php?yr=&tid=4137) 65 | 80.68 |  | [Syracuse](https://haslametrics.com/ratings2.php?yr=&tid=389) 69 | 81.38 |  | [Duquesne](https://haslametrics.com/ratings2.php?yr=&tid=4391) 157 | 74.43 |  | [Miami (OH)](https://haslametrics.com/ratings2.php?yr=&tid=409) 80 | 90.03 |
-| 7:30pm ET -- ESPN+ |  |  | 9:00pm ET -- ACCN |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Butler](https://haslametrics.com/ratings2.php?yr=&tid=0) 55[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 80.59 |  | [San Diego State](https://haslametrics.com/ratings2.php?yr=&tid=0) 58[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 73.93 |  | [Davidson](https://haslametrics.com/ratings2.php?yr=&tid=0) 158[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 67.32 |  | [Tulsa](https://haslametrics.com/ratings2.php?yr=&tid=0) 70[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 78.44 |  |
+| [Xavier](https://haslametrics.com/ratings2.php?yr=&tid=0) 106 | 78.23 |  | [Wyoming](https://haslametrics.com/ratings2.php?yr=&tid=0) 90 | 73.66 |  | [G. Washington](https://haslametrics.com/ratings2.php?yr=&tid=0) 59 | 80.33 |  | [Charlotte](https://haslametrics.com/ratings2.php?yr=&tid=0) 176 | 72.53 |  |
+| 6:30pm ET -- FS1 |  |  | 8:00pm ET -- CBSSN |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Colorado State](https://haslametrics.com/ratings2.php?yr=&tid=95) 81[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=95&tid2=579&neut=0) | 71.22 |  | [Boise State](https://haslametrics.com/ratings2.php?yr=&tid=159) 86[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=159&tid2=4901&neut=0) | 76.76 |  | [George Mason](https://haslametrics.com/ratings2.php?yr=&tid=4511) 93[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4511&tid2=4723&neut=0) | 76.92 |  | [UIC](https://haslametrics.com/ratings2.php?yr=&tid=187) 137[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=187&tid2=4943&neut=0) | 57.25 |
-| [Fresno State](https://haslametrics.com/ratings2.php?yr=&tid=579) 149 | 68.33 |  | [UNLV](https://haslametrics.com/ratings2.php?yr=&tid=4901) 181 | 71.68 |  | [Loyola-Chicago](https://haslametrics.com/ratings2.php?yr=&tid=4723) 275 | 67.04 |  | [Northern Iowa](https://haslametrics.com/ratings2.php?yr=&tid=4943) 95 | 64.41 |
-| 9:00pm ET -- MWN |  |  | 11:00pm ET -- CBSSN |  |  | 7:00pm ET -- CBSSN |  |  | 7:00pm ET -- ESPN+ |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [High Point](https://haslametrics.com/ratings2.php?yr=&tid=0) 73[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 86.17 |  | [Illinois State](https://haslametrics.com/ratings2.php?yr=&tid=0) 74[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 75.72 |  | [Colorado](https://haslametrics.com/ratings2.php?yr=&tid=0) 87[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 72.22 |  | [ECU](https://haslametrics.com/ratings2.php?yr=&tid=0) 290[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 66.61 |  |
+| [Winthrop](https://haslametrics.com/ratings2.php?yr=&tid=0) 162 | 80.60 |  | [Indiana State](https://haslametrics.com/ratings2.php?yr=&tid=0) 223 | 67.40 |  | [Cincinnati](https://haslametrics.com/ratings2.php?yr=&tid=0) 77 | 76.94 |  | [USF](https://haslametrics.com/ratings2.php?yr=&tid=0) 84 | 87.61 |  |
+| 6:30pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- Peacock |  |  | 7:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [Bradley](https://haslametrics.com/ratings2.php?yr=&tid=165) 110[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=165&tid2=701&neut=0) | 73.44 |  | [Kent State](https://haslametrics.com/ratings2.php?yr=&tid=4641) 180[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4641&tid2=4191&neut=0) | 79.60 |  | [UMass](https://haslametrics.com/ratings2.php?yr=&tid=249) 187[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=249&tid2=5445&neut=0) | 79.01 |  | [Ohio](https://haslametrics.com/ratings2.php?yr=&tid=413) 207[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=413&tid2=5321&neut=0) | 76.97 |
-| [Evansville](https://haslametrics.com/ratings2.php?yr=&tid=701) 251 | 66.87 |  | [Buffalo](https://haslametrics.com/ratings2.php?yr=&tid=4191) 155 | 84.74 |  | [W. Michigan](https://haslametrics.com/ratings2.php?yr=&tid=5445) 262 | 77.11 |  | [Toledo](https://haslametrics.com/ratings2.php?yr=&tid=5321) 200 | 80.46 |
-| 8:00pm ET -- ESPN+ |  |  | 6:30pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Pittsburgh](https://haslametrics.com/ratings2.php?yr=&tid=0) 92[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 73.04 |  | [Temple](https://haslametrics.com/ratings2.php?yr=&tid=0) 178[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 69.21 |  | [Drake](https://haslametrics.com/ratings2.php?yr=&tid=0) 208[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 67.01 |  | [MTSU](https://haslametrics.com/ratings2.php?yr=&tid=0) 113[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 67.47 |  |
+| [Georgia Tech](https://haslametrics.com/ratings2.php?yr=&tid=0) 132 | 72.13 |  | [Memphis](https://haslametrics.com/ratings2.php?yr=&tid=0) 96 | 79.77 |  | [S. Illinois](https://haslametrics.com/ratings2.php?yr=&tid=0) 108 | 76.81 |  | [LA Tech](https://haslametrics.com/ratings2.php?yr=&tid=0) 286 | 59.56 |  |
+| 7:00pm ET -- ACCN |  |  | 8:00pm ET -- ESPN+ |  |  | 8:00pm ET -- ESPN+ |  |  | 7:30pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [N. Illinois](https://haslametrics.com/ratings2.php?yr=&tid=4941) 317[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4941&tid2=4421&neut=0) | 62.02 |  | [Air Force](https://haslametrics.com/ratings2.php?yr=&tid=4033) 333[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4033&tid2=69&neut=0) | 61.22 |  | [W. Illinois](https://haslametrics.com/ratings2.php?yr=&tid=5443) 354[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=5443&tid2=4417&neut=0) | 57.49 |  |  |  |
-| [E. Michigan](https://haslametrics.com/ratings2.php?yr=&tid=4421) 209 | 73.14 |  | [San Jose State](https://haslametrics.com/ratings2.php?yr=&tid=69) 217 | 73.50 |  | [E. Illinois](https://haslametrics.com/ratings2.php?yr=&tid=4417) 281 | 69.55 |  |  |  |
-| 6:30pm ET -- ESPN+ |  |  | 10:00pm ET -- MWN |  |  | 8:30pm ET -- ESPN+ | DUD |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [ETSU](https://haslametrics.com/ratings2.php?yr=&tid=0) 115[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 76.72 |  | [UAB](https://haslametrics.com/ratings2.php?yr=&tid=0) 117[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 75.82 |  | [South Dakota St.](https://haslametrics.com/ratings2.php?yr=&tid=0) 167[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 69.10 |  | [St. Bonaventure](https://haslametrics.com/ratings2.php?yr=&tid=0) 123[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 75.79 |  |
+| [W. Carolina](https://haslametrics.com/ratings2.php?yr=&tid=0) 302 | 67.15 |  | [Tulane](https://haslametrics.com/ratings2.php?yr=&tid=0) 204 | 73.55 |  | [North Dakota St.](https://haslametrics.com/ratings2.php?yr=&tid=0) 118 | 76.07 |  | [Saint Joe's](https://haslametrics.com/ratings2.php?yr=&tid=0) 238 | 71.59 |  |
+| 6:00pm ET -- ESPN+ |  |  | 7:30pm ET -- ESPN+ |  |  | 8:00pm ET |  |  | 7:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [La Salle](https://haslametrics.com/ratings2.php?yr=&tid=0) 232[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 68.04 |  | [Sam Houston](https://haslametrics.com/ratings2.php?yr=&tid=0) 134[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 73.79 |  | [Southern Miss](https://haslametrics.com/ratings2.php?yr=&tid=0) 211[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 68.34 |  | [Loyola Marymount](https://haslametrics.com/ratings2.php?yr=&tid=0) 147[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 69.31 |  |
+| [Richmond](https://haslametrics.com/ratings2.php?yr=&tid=0) 130 | 77.54 |  | [Jacksonville St.](https://haslametrics.com/ratings2.php?yr=&tid=0) 212 | 72.15 |  | [Troy](https://haslametrics.com/ratings2.php?yr=&tid=0) 146 | 75.68 |  | [Oregon State](https://haslametrics.com/ratings2.php?yr=&tid=0) 184 | 70.11 |  |
+| 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 10:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [FIU](https://haslametrics.com/ratings2.php?yr=&tid=0) 153[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 82.18 |  | [St. Peter's](https://haslametrics.com/ratings2.php?yr=&tid=0) 234[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 65.93 |  | [Missouri State](https://haslametrics.com/ratings2.php?yr=&tid=0) 206[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 69.85 |  | [Coast. Carolina](https://haslametrics.com/ratings2.php?yr=&tid=0) 267[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 69.15 |  |
+| [Kennesaw State](https://haslametrics.com/ratings2.php?yr=&tid=0) 195 | 83.62 |  | [Quinnipiac](https://haslametrics.com/ratings2.php?yr=&tid=0) 154 | 73.74 |  | [W. Kentucky](https://haslametrics.com/ratings2.php?yr=&tid=0) 160 | 75.58 |  | [Marshall](https://haslametrics.com/ratings2.php?yr=&tid=0) 174 | 79.30 |  |
+| 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 7:30pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Furman](https://haslametrics.com/ratings2.php?yr=&tid=0) 175[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 72.21 |  | [Sacred Heart](https://haslametrics.com/ratings2.php?yr=&tid=0) 318[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 63.27 |  | [Iona](https://haslametrics.com/ratings2.php?yr=&tid=0) 193[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 77.47 |  | [USC Upstate](https://haslametrics.com/ratings2.php?yr=&tid=0) 301[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 68.12 |  |
+| [Samford](https://haslametrics.com/ratings2.php?yr=&tid=0) 261 | 70.06 |  | [Siena](https://haslametrics.com/ratings2.php?yr=&tid=0) 179 | 75.72 |  | [Rider](https://haslametrics.com/ratings2.php?yr=&tid=0) 358 | 63.93 |  | [Charleston So.](https://haslametrics.com/ratings2.php?yr=&tid=0) 196 | 79.38 |  |
+| 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Portland](https://haslametrics.com/ratings2.php?yr=&tid=0) 199[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 71.49 |  | [Colgate](https://haslametrics.com/ratings2.php?yr=&tid=0) 222[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 81.00 |  | [Rice](https://haslametrics.com/ratings2.php?yr=&tid=0) 224[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 73.93 |  | [Chattanooga](https://haslametrics.com/ratings2.php?yr=&tid=0) 271[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 71.55 |  |
+| [Pepperdine](https://haslametrics.com/ratings2.php?yr=&tid=0) 253 | 70.87 |  | [Loyola (MD)](https://haslametrics.com/ratings2.php?yr=&tid=0) 350 | 71.67 |  | [UTSA](https://haslametrics.com/ratings2.php?yr=&tid=0) 356 | 63.03 |  | [Wofford](https://haslametrics.com/ratings2.php?yr=&tid=0) 229 | 78.62 |  |
+| 9:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 8:00pm ET -- ESPN+ |  |  | 6:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Oral Roberts](https://haslametrics.com/ratings2.php?yr=&tid=0) 263[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 75.68 |  | [UNC Asheville](https://haslametrics.com/ratings2.php?yr=&tid=0) 244[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 68.54 |  | [Louisiana](https://haslametrics.com/ratings2.php?yr=&tid=0) 336[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 60.81 |  | [Lehigh](https://haslametrics.com/ratings2.php?yr=&tid=0) 294[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 70.88 |  |
+| [Denver](https://haslametrics.com/ratings2.php?yr=&tid=0) 239 | 81.33 |  | [Presbyterian](https://haslametrics.com/ratings2.php?yr=&tid=0) 324 | 65.21 |  | [Texas State](https://haslametrics.com/ratings2.php?yr=&tid=0) 258 | 70.48 |  | [Boston U](https://haslametrics.com/ratings2.php?yr=&tid=0) 280 | 74.91 |  |
+| 9:00pm ET |  |  | 7:00pm ET -- ESPN+ |  |  | 8:00pm ET -- ESPN+ |  |  | 6:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Manhattan](https://haslametrics.com/ratings2.php?yr=&tid=0) 326[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 74.06 |  | [Radford](https://haslametrics.com/ratings2.php?yr=&tid=0) 293[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 84.93 |  | [Army](https://haslametrics.com/ratings2.php?yr=&tid=0) 331[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 66.30 |  | [Lafayette](https://haslametrics.com/ratings2.php?yr=&tid=0) 334[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 67.80 |  |
+| [Fairfield](https://haslametrics.com/ratings2.php?yr=&tid=0) 285 | 81.27 |  | [Gardner-Webb](https://haslametrics.com/ratings2.php?yr=&tid=0) 361 | 75.30 |  | [Holy Cross](https://haslametrics.com/ratings2.php?yr=&tid=0) 295 | 73.12 |  | [Bucknell](https://haslametrics.com/ratings2.php?yr=&tid=0) 325 | 72.42 |  |
+| 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPN+ |  |  | 6:00pm ET -- ESPN+ |  |  | 7:30pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [Niagara](https://haslametrics.com/ratings2.php?yr=&tid=0) 357[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=0&tid2=0&neut=0) | 58.70 |  |
+| [Canisius](https://haslametrics.com/ratings2.php?yr=&tid=0) 335 | 65.75 |  |
+| 7:00pm ET -- ESPN+ |  | |
 |  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
@@ -657,205 +693,3 @@ Away teams firstProjected winners first
 |  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  |
-|  |  |  |  |  |  |  |  |  |  |  | |
