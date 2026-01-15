@@ -51,7 +51,7 @@ Yesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLWed 01/14
+NHLThu 01/15
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -70,49 +70,37 @@ NHLWed 01/14
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 01/147:00 PM<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>21-23<br>44%<br>+145Everygame | +141 | +123 | +120 | +125 | +126 | +122 | +122 |
-| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>23-23<br>56%<br>-140BetOnline | -160 | -140 | -140 | -145 | -142 | -142 | -142 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>26-21<br>50%<br>-108BetAnything | -104 | -114 | -108 | -115 | -111 | -121 | -121 |
+| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>25-20<br>50%<br>+101Bookmaker | -110 | +100 | -104 | -105 | -105 | +101 | +101 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 01/147:30 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>22-22<br>25%<br>+126Heritage | +128 | +117 | +115 | +112 | +126 | +116 | +116 |
-| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>24-20<br>75%<br>-133BetOnline | -145 | -133 | -135 | -133 | -142 | -136 | -136 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>22-23<br>0%<br>+138BetOnline | +132 | +138 | +128 | +135 | +135 | +134 | +134 |
+| ![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>21-24<br>100%<br>-148BetAnything | -150 | -157 | -148 | -160 | -151 | -154 | -154 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 01/147:30 PM<br>![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>21-24<br>43%<br>-112Heritage | -107 | -115 | -115 | -117 | -112 | -113 | -113 |
-| ![](https://logos.oddstrader.com/logos-original/2b914c97-fab4-4d52-820e-a63fc28f1fe6-original.png?d=100x100)<br>N.Y. Rangers<br>20-27<br>57%<br>+101BetOnline | -107 | +101 | -105 | -103 | -104 | -106 | -106 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>16-30<br>0%<br>+150Heritage | +149 | +138 | +140 | +140 | +150 | +144 | +144 |
+| ![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>20-26<br>100%<br>-157BetOnline | -170 | -157 | -165 | -165 | -166 | -165 | -165 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 01/1410:00 PM<br>![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>21-23<br>80%<br>-114BetOnline | -107 | -114 | -115 | -115 | -114 | -115 | -115 |
-| ![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>19-26<br>20%<br>+100BetOnline | -107 | +100 | -105 | -105 | -102 | -106 | -106 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>23-22<br>67%<br>+167Heritage | +166 | +162 | +165 | +165 | +167 | +163 | +163 |
+| ![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>24-23<br>33%<br>-185BetOnline | -190 | -185 | -195 | -195 | -187 | -191 | -191 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>26-21<br>-<br>- | - | - | - | - | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>24-20<br>-<br>- | - | - | - | - | - | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/158:00 PM<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>21-24<br>0%<br>+145Everygame | +145 | +142 | +140 | +137 | +144 | +142 | +142 |
+| ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>26-21<br>100%<br>-160Heritage | -165 | -162 | -165 | -163 | -160 | -163 | -163 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>22-22<br>-<br>+110MyBookie | - | - | - | - | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>21-24<br>-<br>-140MyBookie | - | - | - | - | - | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/158:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>18-27<br>40%<br>+136BetOnline | +132 | +136 | +130 | +130 | +135 | +134 | +134 |
+| ![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>26-21<br>60%<br>-150BetAnything | -150 | -154 | -150 | -150 | -151 | -154 | -154 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>16-30<br>-<br>+149BetOnline | +149 | +149 | - | - | - | +148 | +148 |
-| ![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>20-26<br>-<br>-170BetOnline | -170 | -170 | - | - | - | -170 | -170 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/158:30 PM<br>![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>19-27<br>100%<br>+102BetOnline | +106 | +102 | -105 | -103 | -104 | -103 | -103 |
+| ![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>19-27<br>0%<br>-112Heritage | -120 | -116 | -115 | -117 | -112 | -117 | -117 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>23-22<br>-<br>+166BetOnline | +166 | +166 | - | - | - | +166 | +166 |
-| ![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>24-23<br>-<br>-190BetOnline | -190 | -190 | - | - | - | -195 | -195 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/159:00 PM<br>![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>25-21<br>25%<br>+155Everygame | +153 | +150 | +150 | +150 | +153 | +154 | +154 |
+| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>23-24<br>75%<br>-169Heritage | -175 | -171 | -170 | -175 | -169 | -179 | -179 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/158:00 PM<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>21-23<br>-<br>+134MyBookie | - | - | - | - | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>26-21<br>-<br>-172MyBookie | - | - | - | - | - | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/159:00 PM<br>![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>27-20<br>33%<br>-105BetAnything | -106 | -107 | -105 | -112 | -106 | -110 | -110 |
+| ![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>23-24<br>67%<br>-107BetOnline | -108 | -107 | -115 | -108 | -110 | -110 | -110 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/158:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>18-27<br>-<br>+132BetOnline | +132 | +132 | - | - | - | +130 | +130 |
-| ![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>26-21<br>-<br>-150BetOnline | -150 | -150 | - | - | - | -150 | -150 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/159:30 PM<br>![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>23-23<br>50%<br>+117Heritage | +119 | +115 | +115 | +115 | +117 | +115 | +115 |
+| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>22-23<br>50%<br>-130BetOnline | -135 | -130 | -135 | -135 | -133 | -135 | -135 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/158:30 PM<br>![](https://logos.oddstrader.com/logos-original/3e689bd8-9b9d-4d02-ac49-cd5942e18007-original.png?d=100x100)<br>Calgary<br>19-27<br>-<br>-112MyBookie | - | - | - | - | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/57746aad-944c-4746-a88e-276959c6ed99-original.PNG?d=100x100)<br>Chicago<br>19-27<br>-<br>-113MyBookie | - | - | - | - | - | - | - |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/159:00 PM<br>![](https://logos.oddstrader.com/logos-original/c30f689c-1201-478a-8d34-f52feba31072-original.PNG?d=100x100)<br>N.Y. Islanders<br>25-21<br>-<br>+153BetOnline | +153 | +153 | - | - | - | +151 | +151 |
-| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>23-24<br>-<br>-175BetOnline | -175 | -175 | - | - | - | -175 | -175 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/159:00 PM<br>![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>27-20<br>-<br>-106BetOnline | -106 | -106 | - | - | - | -110 | -110 |
-| ![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>23-24<br>-<br>-108BetOnline | -108 | -108 | - | - | - | -110 | -110 |
-
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 01/159:30 PM<br>![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>23-23<br>-<br>+122MyBookie | - | - | - | - | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>21-23<br>-<br>-156MyBookie | - | - | - | - | - | - | - |
-
-## **Best NHL Betting Odds and Spreads for Tonight’s Games**
+## Best NHL Betting Odds and Spreads for Tonight’s Games
 
 When you’re checking **NHL betting odds**, the spread (or puck line) is often the first thing bettors look at. In hockey, the puck line usually sits at 1.5 goals, but the **odds** attached to each side can shift depending on the matchup.
 
@@ -126,19 +114,19 @@ The easiest way to stay ahead is by using a **live NHL odds grid**. Instead of h
 
 Example: If one book lists -110 and another has -120 for the same spread, grabbing the better number over time increases your edge.
 
-## **Vegas NHL Betting Odds vs Offshore**
+## Vegas NHL Betting Odds vs Offshore
 
 Vegas books still carry weight when it comes to **hockey odds**, but offshore sportsbooks often post sharper numbers or adjust faster to market moves. Sometimes Vegas is more conservative, other times offshore offers better value.
 
-That reputation gives Vegas odds a lot of weight, even for [sportsbooks outside Nevada](https://www.oddstrader.com/betting).
+That reputation gives Vegas odds a lot of weight, even for sportsbooks outside Nevada.
 
 But influential doesn’t always mean better. While Vegas books may release the first line, that number often shifts as public money comes in or other sportsbooks take a different position. That’s why comparing Vegas odds to what other books are offering gives you more context and a better read on where the value is.
 
 The smart play is comparison. With the OddsTrader grid, you can see Vegas NHL betting odds side by side with other books to spot value instantly.
 
-### **Smarter NHL Betting Odds with OddsTrader Tools**
+### Smarter NHL Betting Odds with OddsTrader Tools
 
-Knowing what to bet is one thing. Catching the right number before it moves is another. That’s where [OddsTrader’s tools](https://www.oddstrader.com/sports-betting-app) come in.
+Knowing what to bet is one thing. Catching the right number before it moves is another. That’s where OddsTrader’s tools come in.
 
 You can set alerts that ping you when odds shift, so you never miss a good price. Whether you’re tracking spreads, puck lines, or totals, getting notified in real time helps you make faster, sharper decisions.
 
@@ -150,7 +138,7 @@ Getting the right price matters more than just picking the right side. OddsTrade
 
 These features make it easier to catch value and react before the market shifts.
 
-## **Why NHL Betting Odds Differ by Sportsbook**
+## Why NHL Betting Odds Differ by Sportsbook
 
 Different books move differently. Some react instantly to sharp money, while others lag behind. That means two bettors can place the same puck line wager and get completely different odds.
 
@@ -160,21 +148,21 @@ Some sportsbooks adjust quickly when injury reports drop or betting volume spike
 
 There’s also a difference in how books weigh public money versus sharp action. Some follow the crowd and shift quickly. Others are more aggressive with pricing to balance risk.
 
-This is why comparing odds across multiple books before placing a bet is so important. You’re not just looking at who has the best number. You’re learning [how each sportsbook](http://why%20nhl%20odds%20vary%20based%20on%20where%20you%20bet/) behaves and how to time your bet for the most value.
+This is why comparing odds across multiple books before placing a bet is so important. You’re not just looking at who has the best number. You’re learning how each sportsbook behaves and how to time your bet for the most value.
 
 Why do NHL odds differ between sportsbooks? It’s often due to how each book responds to betting action, sharp money, and real-time market changes.
 
-## **Frequently Asked Questions** On NHL Betting Odds
+## Frequently Asked Questions On NHL Betting Odds
 
-### **What is the NHL puck line and how does it work?**
+### What is the NHL puck line and how does it work?
 
 The puck line is a 1.5-goal spread. You’re betting on whether the favorite wins by two or more, or the underdog keeps it close. It’s hockey’s version of a point spread.
 
-### **How do I compare NHL Vegas odds across sportsbooks?**
+### How do I compare NHL Vegas odds across sportsbooks?
 
 Use a live odds feed that pulls prices from multiple books in real time. This lets you spot better lines and avoid overpaying on bets.
 
-### **What’s the best way to find NHL spreads for today’s games?**
+### What’s the best way to find NHL spreads for today’s games?
 
 Check the live odds grid at the top of the page. It updates automatically with current spreads and prices for every matchup.
 
@@ -186,19 +174,19 @@ They show the price for moneyline, puck line, and totals bets. Odds tell you how
 
 Odds shift based on injuries, goalie updates, sharp action, and public betting.
 
-### **Where can I compare live NHL betting odds?**
+### Where can I compare live NHL betting odds?
 
-Use a live odds grid like OddsTrader that updates automatically with multiple sportsbooks..
+Use a live odds grid like OddsTrader that updates automatically with multiple sportsbooks.
 
-### **What’s the safest way to bet NHL odds?**
+### What’s the safest way to bet NHL odds?
 
 Moneyline bets are safer for close games, while puck line wagers offer better value when favorites are expected to dominate.
 
-### **Why do Vegas odds change during the day?**
+### Why do Vegas odds change during the day?
 
 Line movement usually comes from injuries, goalie updates, sharp betting action, or public money pouring in. Books shift the odds to manage risk.
 
-### **Should I bet the moneyline or the puck line?**
+### Should I bet the moneyline or the puck line?
 
 It depends on the matchup. If the favorite is strong but overpriced, puck line bets may offer better value. If you expect a tight game, the moneyline is safer.
 
@@ -208,7 +196,7 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-Why are Sabres favored over Flyers?Generate
+Is the total projected to go over in Canadiens-Sabres?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
