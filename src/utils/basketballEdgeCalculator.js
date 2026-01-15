@@ -235,6 +235,19 @@ export class BasketballEdgeCalculator {
       calibratedProb: bestBet === 'away' ? calibratedAwayProb : calibratedHomeProb,
       marketProb: bestBet === 'away' ? marketAwayProb : marketHomeProb,
       
+      // 📊 INDIVIDUAL MODEL DATA (for accuracy analysis)
+      // D-Ratings: Primary model (80% weight)
+      dratingsAwayProb: dratings?.awayWinProb ? Math.round(dratings.awayWinProb * 1000) / 1000 : null,
+      dratingsHomeProb: dratings?.homeWinProb ? Math.round(dratings.homeWinProb * 1000) / 1000 : null,
+      dratingsAwayScore: dratings?.awayScore ? Math.round(dratings.awayScore * 10) / 10 : null,
+      dratingsHomeScore: dratings?.homeScore ? Math.round(dratings.homeScore * 10) / 10 : null,
+      
+      // Haslametrics: Secondary model (20% weight)
+      haslametricsAwayProb: haslametrics ? Math.round(this.estimateHaslaProbability(matchedGame, 'away') * 1000) / 1000 : null,
+      haslametricsHomeProb: haslametrics ? Math.round(this.estimateHaslaProbability(matchedGame, 'home') * 1000) / 1000 : null,
+      haslametricsAwayScore: haslametrics?.awayScore ? Math.round(haslametrics.awayScore * 10) / 10 : null,
+      haslametricsHomeScore: haslametrics?.homeScore ? Math.round(haslametrics.homeScore * 10) / 10 : null,
+      
       // Metadata
       dataQuality: matchedGame.dataQuality
     };
