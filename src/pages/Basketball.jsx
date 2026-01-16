@@ -317,12 +317,6 @@ const Basketball = () => {
           `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
         );
         
-        // 🔧 FIX: Look up fresh model data from matchedGames even if game was filtered out
-        // This ensures barttorvik/dratings/haslametrics data is preserved for locked picks
-        const freshDataFromMatched = matchedGames.find(g =>
-          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
-        );
-        
         // Build locked pick object
         const lockedGameObj = {
           awayTeam: lockedBet.game.awayTeam,
@@ -349,10 +343,9 @@ const Basketball = () => {
             initialOdds: lockedBet.initialOdds,
             initialEV: lockedBet.initialEV
           },
-          // 🔧 FIX: Use fresh model data from matchedGames, not Firebase (which doesn't have barttorvik)
-          dratings: freshDataFromMatched?.dratings || null,
-          haslametrics: freshDataFromMatched?.haslametrics || null,
-          barttorvik: freshDataFromMatched?.barttorvik || null,
+          dratings: null,
+          haslametrics: null,
+          barttorvik: lockedBet.barttorvik || null,
           // 📈 CLV data from Firebase
           clv: lockedBet.clv || null
         };
