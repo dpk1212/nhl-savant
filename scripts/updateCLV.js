@@ -149,7 +149,7 @@ async function updateCLV() {
     
     // 3. Load team mappings
     console.log('🗺️  Step 3: Loading team mappings...');
-    const csvPath = join(__dirname, '../public/team_mapping.csv');
+    const csvPath = join(__dirname, '../public/basketball_teams.csv');
     const csvContent = await fs.readFile(csvPath, 'utf8');
     const teamMappings = loadTeamMappings(csvContent);
     console.log(`   ✅ Loaded ${teamMappings.size} team mappings\n`);
