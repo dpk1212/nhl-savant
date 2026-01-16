@@ -183,40 +183,45 @@ async function updateCLV() {
     let matchedCount = 0;
     
     for (const bet of pendingBets) {
-      const betTeam = bet.bet?.team || bet.bet?.pick;
+      const betTeam = bet.bet?.team || bet.bet?.pick || '';
       const originalOdds = bet.bet?.odds;
-      const awayTeam = bet.game?.awayTeam || bet.awayTeam;
-      const homeTeam = bet.game?.homeTeam || bet.homeTeam;
+      const awayTeam = String(bet.game?.awayTeam || bet.awayTeam || '');
+      const homeTeam = String(bet.game?.homeTeam || bet.homeTeam || '');
       
-      if (!betTeam || !originalOdds) {
+      if (!betTeam || !originalOdds || !awayTeam || !homeTeam) {
         continue;
       }
       
       // Find matching current game
-      const matchedGame = currentGames.find(game => {
+      let matchedGame = currentGames.find(game => {
+        const gameAway = String(game.awayTeam || '');
+        const gameHome = String(game.homeTeam || '');
+        
         // Try direct match first
-        if (game.awayTeam === awayTeam && game.homeTeam === homeTeam) return true;
-        if (game.awayTeam.includes(awayTeam) || awayTeam.includes(game.awayTeam)) {
-          if (game.homeTeam.includes(homeTeam) || homeTeam.includes(game.homeTeam)) return true;
+        if (gameAway === awayTeam && gameHome === homeTeam) return true;
+        
+        // Try partial match
+        if (gameAway && awayTeam && gameHome && homeTeam) {
+          if ((gameAway.includes(awayTeam) || awayTeam.includes(gameAway)) &&
+              (gameHome.includes(homeTeam) || homeTeam.includes(gameHome))) {
+            return true;
+          }
         }
         return false;
       });
       
       if (!matchedGame) {
-        // Try with normalized names
-        const normalizedAway = findTeamMapping(awayTeam, teamMappings);
-        const normalizedHome = findTeamMapping(homeTeam, teamMappings);
-        
-        // Skip if no match found
+        // Skip if no match found - game might not be today
         continue;
       }
       
       matchedCount++;
       
       // Determine which side we bet (away or home)
-      const isAwayBet = betTeam === awayTeam || 
-                        awayTeam?.includes(betTeam) || 
-                        betTeam?.includes(awayTeam);
+      const betTeamStr = String(betTeam);
+      const isAwayBet = betTeamStr === awayTeam || 
+                        awayTeam.includes(betTeamStr) || 
+                        betTeamStr.includes(awayTeam);
       
       const currentOdds = isAwayBet ? matchedGame.awayOdds : matchedGame.homeOdds;
       
@@ -228,7 +233,7 @@ async function updateCLV() {
       const tierInfo = getCLVTier(clv);
       
       // Display result
-      const gameDisplay = `${awayTeam?.substring(0, 15)} @ ${homeTeam?.substring(0, 15)}`.padEnd(35);
+      const gameDisplay = `${awayTeam.substring(0, 15)} @ ${homeTeam.substring(0, 15)}`.padEnd(35);
       const originalDisplay = (originalOdds > 0 ? '+' : '') + originalOdds;
       const currentDisplay = (currentOdds > 0 ? '+' : '') + currentOdds;
       const clvDisplay = (clv >= 0 ? '+' : '') + clv.toFixed(1) + '%';
