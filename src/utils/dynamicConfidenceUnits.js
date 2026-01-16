@@ -195,19 +195,99 @@ function classifyBet(bet) {
  * @returns {Object} { units, score, tier, factors, classification }
  */
 export function calculateDynamicUnits(bet, confidenceData) {
-  const { weights, config } = confidenceData || { weights: DEFAULT_WEIGHTS, config: DEFAULT_CONFIG };
+  const { weights, config, performance } = confidenceData || { weights: DEFAULT_WEIGHTS, config: DEFAULT_CONFIG, performance: {} };
   const classification = classifyBet(bet);
   const factors = [];
   
   let score = 0;
   
   // ═══════════════════════════════════════════════════════════════
+  // 🚨 BLEEDING MONEY DETECTOR - Check LIVE ROI from performance data
+  // Patterns with significantly negative ROI get HARD CAPPED
+  // ═══════════════════════════════════════════════════════════════
+  const MIN_SAMPLE_SIZE = 25;  // Need enough data to trust
+  const BLEEDING_ROI_THRESHOLD = -5;  // Anything below -5% ROI
+  const SEVERE_BLEEDING_THRESHOLD = -10;  // Severe loss pattern
+  
+  // Get live ROI from performance data
+  const gradePerf = performance?.grade?.[classification.grade];
+  const oddsPerf = performance?.odds?.[classification.oddsRange];
+  const evPerf = performance?.ev?.[classification.evRange];
+  
+  const gradeROI = gradePerf?.roi || 0;
+  const oddsROI = oddsPerf?.roi || 0;
+  const evROI = evPerf?.roi || 0;
+  
+  const gradeSample = gradePerf?.total || 0;
+  const oddsSample = oddsPerf?.total || 0;
+  const evSample = evPerf?.total || 0;
+  
+  // Check for SEVERE bleeding patterns (any single factor with terrible ROI)
+  const bleedingFactors = [];
+  
+  if (gradeSample >= MIN_SAMPLE_SIZE && gradeROI < SEVERE_BLEEDING_THRESHOLD) {
+    bleedingFactors.push(`🩸 Grade ${classification.grade}: ${gradeROI.toFixed(1)}% ROI (${gradeSample} bets)`);
+  }
+  if (oddsSample >= MIN_SAMPLE_SIZE && oddsROI < SEVERE_BLEEDING_THRESHOLD) {
+    bleedingFactors.push(`🩸 Odds ${classification.oddsRange}: ${oddsROI.toFixed(1)}% ROI (${oddsSample} bets)`);
+  }
+  if (evSample >= MIN_SAMPLE_SIZE && evROI < SEVERE_BLEEDING_THRESHOLD) {
+    bleedingFactors.push(`🩸 EV ${classification.evRange}: ${evROI.toFixed(1)}% ROI (${evSample} bets)`);
+  }
+  
+  // If ANY factor is severely bleeding, cap at 0.5u
+  if (bleedingFactors.length > 0) {
+    const avgROI = (gradeROI + oddsROI + evROI) / 3;
+    return {
+      units: 0.5,
+      score: 0,
+      tier: 'BLEEDING',
+      tierLabel: '🩸 BLEEDING (0.5u)',
+      factors: ['🩸 SEVERE LOSS PATTERN DETECTED - HARD CAP 0.5u', ...bleedingFactors],
+      classification,
+      patternROI: parseFloat(avgROI.toFixed(1))
+    };
+  }
+  
+  // Check for MODERATE bleeding (multiple factors with negative ROI)
+  let negativeCount = 0;
+  let totalNegativeROI = 0;
+  
+  if (gradeSample >= MIN_SAMPLE_SIZE && gradeROI < BLEEDING_ROI_THRESHOLD) {
+    negativeCount++;
+    totalNegativeROI += gradeROI;
+  }
+  if (oddsSample >= MIN_SAMPLE_SIZE && oddsROI < BLEEDING_ROI_THRESHOLD) {
+    negativeCount++;
+    totalNegativeROI += oddsROI;
+  }
+  if (evSample >= MIN_SAMPLE_SIZE && evROI < BLEEDING_ROI_THRESHOLD) {
+    negativeCount++;
+    totalNegativeROI += evROI;
+  }
+  
+  // If 2+ factors are bleeding, cap at 1u
+  if (negativeCount >= 2) {
+    const avgROI = totalNegativeROI / negativeCount;
+    return {
+      units: 1,
+      score: 1,
+      tier: 'CAUTION',
+      tierLabel: '⚠️ CAUTION (1u)',
+      factors: [
+        `⚠️ MULTIPLE LOSS PATTERNS (${negativeCount}) - CAPPED at 1u`,
+        `📉 Combined negative ROI: ${avgROI.toFixed(1)}%`
+      ],
+      classification,
+      patternROI: parseFloat(avgROI.toFixed(1))
+    };
+  }
+  
+  // ═══════════════════════════════════════════════════════════════
   // F GRADE HARD CAP - Check first
   // ═══════════════════════════════════════════════════════════════
   if (classification.grade === 'F') {
-    const fGradeROI = getGradeROI('F', weights);
-    const fOddsROI = getOddsROI(classification.oddsRange, weights);
-    const fPatternROI = (fGradeROI * 0.6) + (fOddsROI * 0.4);
+    const fPatternROI = (gradeROI * 0.6) + (oddsROI * 0.4);
     
     return {
       units: config.fGradeCap || 0.5,
@@ -222,53 +302,104 @@ export function calculateDynamicUnits(bet, confidenceData) {
   
   // ═══════════════════════════════════════════════════════════════
   // FACTOR 1: GRADE (max 2.0 contribution)
+  // 🆕 PENALTY: If grade ROI is negative with sample, apply ROI penalty
   // ═══════════════════════════════════════════════════════════════
   const gradeWeight = weights.grade?.[classification.grade] || 1.0;
-  const gradeContribution = Math.min(gradeWeight, config.maxWeightContribution?.grade || 2.0);
-  score += gradeContribution;
+  let gradeContribution = Math.min(gradeWeight, config.maxWeightContribution?.grade || 2.0);
   
-  const gradeEmoji = gradeWeight >= 1.5 ? '✅' : gradeWeight >= 1.0 ? '🟡' : '⚠️';
-  factors.push(`${gradeEmoji} Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (weight: ${gradeWeight.toFixed(2)})`);
+  // Apply ROI penalty for negative ROI grades
+  if (gradeSample >= MIN_SAMPLE_SIZE && gradeROI < 0) {
+    const roiPenalty = Math.max(0.5, 1 + (gradeROI / 50)); // -10% ROI → 0.8x multiplier
+    gradeContribution *= roiPenalty;
+    const gradeEmoji = '📉';
+    factors.push(`${gradeEmoji} Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (${gradeROI.toFixed(1)}% ROI penalty)`);
+  } else {
+    const gradeEmoji = gradeWeight >= 1.5 ? '✅' : gradeWeight >= 1.0 ? '🟡' : '⚠️';
+    factors.push(`${gradeEmoji} Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (weight: ${gradeWeight.toFixed(2)})`);
+  }
+  score += gradeContribution;
   
   // ═══════════════════════════════════════════════════════════════
   // FACTOR 2: ODDS (max 2.0 contribution)
+  // 🆕 PENALTY: If odds ROI is negative with sample, apply ROI penalty
   // ═══════════════════════════════════════════════════════════════
   const oddsWeight = weights.odds?.[classification.oddsRange] || 1.0;
-  const oddsContribution = Math.min(oddsWeight, config.maxWeightContribution?.odds || 2.0);
-  score += oddsContribution;
+  let oddsContribution = Math.min(oddsWeight, config.maxWeightContribution?.odds || 2.0);
   
-  const oddsEmoji = oddsWeight >= 1.5 ? '✅' : oddsWeight >= 1.0 ? '🟡' : '⚠️';
-  factors.push(`${oddsEmoji} Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (weight: ${oddsWeight.toFixed(2)})`);
+  // Apply ROI penalty for negative ROI odds ranges
+  if (oddsSample >= MIN_SAMPLE_SIZE && oddsROI < 0) {
+    const roiPenalty = Math.max(0.5, 1 + (oddsROI / 50)); // -10% ROI → 0.8x multiplier
+    oddsContribution *= roiPenalty;
+    const oddsEmoji = '📉';
+    factors.push(`${oddsEmoji} Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (${oddsROI.toFixed(1)}% ROI penalty)`);
+  } else {
+    const oddsEmoji = oddsWeight >= 1.5 ? '✅' : oddsWeight >= 1.0 ? '🟡' : '⚠️';
+    factors.push(`${oddsEmoji} Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (weight: ${oddsWeight.toFixed(2)})`);
+  }
+  score += oddsContribution;
   
   // ═══════════════════════════════════════════════════════════════
   // FACTOR 3: MODEL PROBABILITY (max 1.5 contribution)
   // ═══════════════════════════════════════════════════════════════
-  const probWeight = weights.probability?.[classification.probRange] || 1.0;
-  const probContribution = Math.min(probWeight, config.maxWeightContribution?.probability || 1.5);
-  score += probContribution;
+  const probPerf = performance?.probability?.[classification.probRange];
+  const probROI = probPerf?.roi || 0;
+  const probSample = probPerf?.total || 0;
   
-  const probEmoji = probWeight >= 1.3 ? '✅' : probWeight >= 1.0 ? '🟡' : '⚠️';
-  factors.push(`${probEmoji} Model Prob ${classification.probRange}: +${probContribution.toFixed(2)} (weight: ${probWeight.toFixed(2)})`);
+  const probWeight = weights.probability?.[classification.probRange] || 1.0;
+  let probContribution = Math.min(probWeight, config.maxWeightContribution?.probability || 1.5);
+  
+  // Apply ROI penalty for negative ROI probability ranges
+  if (probSample >= MIN_SAMPLE_SIZE && probROI < 0) {
+    const roiPenalty = Math.max(0.5, 1 + (probROI / 50));
+    probContribution *= roiPenalty;
+    const probEmoji = '📉';
+    factors.push(`${probEmoji} Prob ${classification.probRange}: +${probContribution.toFixed(2)} (${probROI.toFixed(1)}% ROI penalty)`);
+  } else {
+    const probEmoji = probWeight >= 1.3 ? '✅' : probWeight >= 1.0 ? '🟡' : '⚠️';
+    factors.push(`${probEmoji} Prob ${classification.probRange}: +${probContribution.toFixed(2)} (weight: ${probWeight.toFixed(2)})`);
+  }
+  score += probContribution;
   
   // ═══════════════════════════════════════════════════════════════
   // FACTOR 4: EV (max 1.0 contribution)
+  // 🆕 AGGRESSIVE PENALTY: EV patterns bleeding money get CRUSHED
   // ═══════════════════════════════════════════════════════════════
   const evWeight = weights.ev?.[classification.evRange] || 1.0;
-  const evContribution = Math.min(evWeight, config.maxWeightContribution?.ev || 1.0);
-  score += evContribution;
+  let evContribution = Math.min(evWeight, config.maxWeightContribution?.ev || 1.0);
   
-  const evEmoji = evWeight >= 1.2 ? '✅' : evWeight >= 0.9 ? '🟡' : '⚠️';
-  factors.push(`${evEmoji} EV ${classification.evRange}: +${evContribution.toFixed(2)} (weight: ${evWeight.toFixed(2)})`);
+  // Apply AGGRESSIVE ROI penalty for negative ROI EV ranges
+  if (evSample >= MIN_SAMPLE_SIZE && evROI < 0) {
+    const roiPenalty = Math.max(0.3, 1 + (evROI / 30)); // More aggressive: -10% ROI → 0.67x
+    evContribution *= roiPenalty;
+    const evEmoji = '📉';
+    factors.push(`${evEmoji} EV ${classification.evRange}: +${evContribution.toFixed(2)} (${evROI.toFixed(1)}% ROI PENALTY)`);
+  } else {
+    const evEmoji = evWeight >= 1.2 ? '✅' : evWeight >= 0.9 ? '🟡' : '⚠️';
+    factors.push(`${evEmoji} EV ${classification.evRange}: +${evContribution.toFixed(2)} (weight: ${evWeight.toFixed(2)})`);
+  }
+  score += evContribution;
   
   // ═══════════════════════════════════════════════════════════════
   // FACTOR 5: SIDE (max 0.5 contribution)
   // ═══════════════════════════════════════════════════════════════
-  const sideWeight = weights.side?.[classification.side] || 1.0;
-  const sideContribution = Math.min(sideWeight * 0.5, config.maxWeightContribution?.side || 0.5);
-  score += sideContribution;
+  const sidePerf = performance?.side?.[classification.side];
+  const sideROI = sidePerf?.roi || 0;
+  const sideSample = sidePerf?.total || 0;
   
-  const sideEmoji = sideWeight >= 1.1 ? '✅' : '🟡';
-  factors.push(`${sideEmoji} ${classification.side}: +${sideContribution.toFixed(2)} (weight: ${sideWeight.toFixed(2)})`);
+  const sideWeight = weights.side?.[classification.side] || 1.0;
+  let sideContribution = Math.min(sideWeight * 0.5, config.maxWeightContribution?.side || 0.5);
+  
+  // Apply ROI penalty for negative ROI sides
+  if (sideSample >= MIN_SAMPLE_SIZE && sideROI < 0) {
+    const roiPenalty = Math.max(0.5, 1 + (sideROI / 50));
+    sideContribution *= roiPenalty;
+    const sideEmoji = '📉';
+    factors.push(`${sideEmoji} ${classification.side}: +${sideContribution.toFixed(2)} (${sideROI.toFixed(1)}% ROI penalty)`);
+  } else {
+    const sideEmoji = sideWeight >= 1.1 ? '✅' : '🟡';
+    factors.push(`${sideEmoji} ${classification.side}: +${sideContribution.toFixed(2)} (weight: ${sideWeight.toFixed(2)})`);
+  }
+  score += sideContribution;
   
   // ═══════════════════════════════════════════════════════════════
   // CALCULATE FINAL UNITS FROM SCORE
@@ -306,11 +437,11 @@ export function calculateDynamicUnits(bet, confidenceData) {
   // ═══════════════════════════════════════════════════════════════
   // Grade caps removed - dynamic weighting handles risk management
   
-  // Calculate pattern ROI from the weights (for display)
-  const gradeROI = getGradeROI(classification.grade, weights);
-  const oddsROI = getOddsROI(classification.oddsRange, weights);
+  // Calculate pattern ROI from LIVE performance data (for display)
+  const displayGradeROI = getGradeROI(classification.grade, confidenceData);
+  const displayOddsROI = getOddsROI(classification.oddsRange, confidenceData);
   // Combined pattern ROI estimate (weighted average)
-  const patternROI = (gradeROI * 0.6) + (oddsROI * 0.4);
+  const patternROI = (displayGradeROI * 0.6) + (displayOddsROI * 0.4);
   
   return {
     units,
@@ -324,35 +455,49 @@ export function calculateDynamicUnits(bet, confidenceData) {
 }
 
 /**
- * Get historical ROI for a grade from weights
+ * Get historical ROI for a grade from performance data
+ * 🆕 Now uses LIVE data instead of hard-coded values
  */
-function getGradeROI(grade, weights) {
-  // ROI values from the 325-bet analysis
+function getGradeROI(grade, confidenceData) {
+  // Try to get from live performance data first
+  const perf = confidenceData?.performance?.grade?.[grade];
+  if (perf?.roi !== undefined) {
+    return perf.roi;
+  }
+  
+  // Fallback to static values (will be updated by daily ROI script)
   const gradeROIs = {
-    'A': 12.4,
-    'A+': -7.6,
-    'B': 6.2,
+    'A': 4.2,
+    'A+': -9.1,
+    'B': 0.0,
     'B+': 32.9,
-    'C': -10.8,
-    'D': 2.3,
-    'F': -5.6
+    'C': -2.0,
+    'D': 1.8,
+    'F': -5.3
   };
   return gradeROIs[grade] || 0;
 }
 
 /**
- * Get historical ROI for an odds range from weights
+ * Get historical ROI for an odds range from performance data
+ * 🆕 Now uses LIVE data instead of hard-coded values
  */
-function getOddsROI(oddsRange, weights) {
-  // ROI values from the 325-bet analysis
+function getOddsROI(oddsRange, confidenceData) {
+  // Try to get from live performance data first
+  const perf = confidenceData?.performance?.odds?.[oddsRange];
+  if (perf?.roi !== undefined) {
+    return perf.roi;
+  }
+  
+  // Fallback to static values (will be updated by daily ROI script)
   const oddsROIs = {
-    'HEAVY_FAV': -6.8,
-    'BIG_FAV': -12.7,
-    'MOD_FAV': 8.1,
-    'SLIGHT_FAV': 14.0,
-    'PICKEM': -22.6,
-    'SLIGHT_DOG': -11.9,
-    'BIG_DOG': -100.0
+    'HEAVY_FAV': 0.4,
+    'BIG_FAV': -2.5,
+    'MOD_FAV': -1.0,
+    'SLIGHT_FAV': 8.2,
+    'PICKEM': -6.2,
+    'SLIGHT_DOG': 1.4,
+    'BIG_DOG': -8.9
   };
   return oddsROIs[oddsRange] || 0;
 }
