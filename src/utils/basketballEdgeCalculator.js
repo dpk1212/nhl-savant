@@ -162,15 +162,17 @@ export class BasketballEdgeCalculator {
       homeTeam: matchedGame.homeTeam
     };
     
-    // PHASE 4: Calculate Kelly-inspired unit sizing
+    // PHASE 4: Calculate unit sizing using DYNAMIC CONFIDENCE SYSTEM
+    // (Kelly units deprecated - ignored historical pattern performance)
     const bestProb = bestBet === 'away' ? calibratedAwayProb : calibratedHomeProb;
     const kellyUnits = this.calculateOptimalUnits(bestEV, bestProb, bestOdds);
     
-    // Also calculate dynamic units for comparison (legacy system)
+    // Calculate dynamic units with BLEEDING DETECTION and pattern ROI analysis
     const dynamicResult = calculateDynamicUnits(betForScoring, this.confidenceData);
     
-    // Use Kelly units as primary, store dynamic for reference
-    const unitSize = kellyUnits;
+    // 🩸 USE DYNAMIC UNITS - respects bleeding patterns and historical ROI
+    // Kelly is kept for reference only (pure math, ignores pattern performance)
+    const unitSize = dynamicResult.units;
     const confidenceTier = dynamicResult.tier || 'MODERATE';
     const confidenceScore = dynamicResult.score || 0;
     const confidenceFactors = dynamicResult.factors || [];
