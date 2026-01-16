@@ -168,11 +168,11 @@ export const CLVBadge = ({ clvData, compact = false, showDetails = false }) => {
             fontSize: '0.625rem',
             fontWeight: '600',
             color: clvData.movement === 'STEAM' ? '#10B981' : 
-                   clvData.movement === 'FADE' ? '#F59E0B' : '#94A3B8',
+                   clvData.movement === 'FADE' ? '#EF4444' : '#94A3B8',
             letterSpacing: '0.03em'
           }}>
-            {clvData.movement === 'STEAM' && '🔥 STEAM'}
-            {clvData.movement === 'FADE' && '📉 FADE'}
+            {clvData.movement === 'STEAM' && '✅ STEAM'}
+            {clvData.movement === 'FADE' && '🔴 FADE'}
             {clvData.movement === 'UNCHANGED' && '➖ HOLD'}
           </div>
         )}

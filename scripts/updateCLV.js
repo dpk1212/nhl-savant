@@ -48,9 +48,18 @@ const firecrawl = new Firecrawl({
 
 /**
  * Calculate CLV from original and current odds
- * Returns percentage value (positive = line moved in our favor)
+ * 
+ * CORRECT LOGIC:
+ * - Positive CLV = Current implied prob > Original implied prob
+ *   = More people now betting our side = We got VALUE before the move
+ * 
+ * Examples:
+ * - Bet +285, now +250: implied went 26% → 28.6% = +2.6% CLV (GOOD! Got in early)
+ * - Bet +285, now +300: implied went 26% → 25% = -1.0% CLV (BAD! Could've waited)
+ * - Bet -150, now -180: implied went 60% → 64.3% = +4.3% CLV (GOOD! Line moved our way)
+ * - Bet -190, now -190: implied same = 0% CLV (NEUTRAL)
  */
-function calculateCLV(originalOdds, currentOdds, betSide) {
+function calculateCLV(originalOdds, currentOdds) {
   // Convert American odds to implied probability
   const toImplied = (odds) => {
     if (odds > 0) return 100 / (odds + 100);
@@ -60,46 +69,33 @@ function calculateCLV(originalOdds, currentOdds, betSide) {
   const originalProb = toImplied(originalOdds);
   const currentProb = toImplied(currentOdds);
   
-  // CLV = current implied prob - original implied prob
-  // If we bet underdog and line moved toward them = positive CLV
-  // If we bet favorite and line moved toward them = positive CLV
-  const clv = (originalProb - currentProb) * 100;
+  // If currentProb > originalProb, more money is now on our side = POSITIVE CLV
+  // We captured value BEFORE the line moved toward us
+  const clv = (currentProb - originalProb) * 100;
   
   return parseFloat(clv.toFixed(2));
 }
 
 /**
- * Determine line movement direction
+ * Determine line movement direction based on CLV
+ * STEAM = Line moved IN our favor (positive CLV) - green
+ * FADE = Line moved AGAINST us (negative CLV) - red/amber
  */
-function getLineMovement(originalOdds, currentOdds) {
-  if (currentOdds === originalOdds) return 'UNCHANGED';
-  
-  // For positive odds (underdogs): lower number = line moved toward us
-  // For negative odds (favorites): higher number (less negative) = line moved toward us
-  
-  const originalAbsValue = originalOdds > 0 ? originalOdds : -originalOdds;
-  const currentAbsValue = currentOdds > 0 ? currentOdds : -currentOdds;
-  
-  // Check if we were underdog or favorite
-  const wasUnderdog = originalOdds > 0;
-  
-  if (wasUnderdog) {
-    // Underdog: line moving from +200 to +150 = moved in our favor
-    return currentOdds < originalOdds ? 'STEAM' : 'FADE';
-  } else {
-    // Favorite: line moving from -150 to -180 = moved in our favor
-    return currentOdds < originalOdds ? 'STEAM' : 'FADE';
-  }
+function getLineMovement(clv) {
+  if (clv === 0) return 'UNCHANGED';
+  return clv > 0 ? 'STEAM' : 'FADE';
 }
 
 /**
  * Get CLV tier based on value
+ * Positive CLV = GOOD (green shades) - we got in before the line moved our way
+ * Negative CLV = BAD (red/amber shades) - line moved against us
  */
 function getCLVTier(clv) {
   if (clv >= 5) return { tier: 'ELITE', emoji: '🔥', label: 'Elite CLV' };
   if (clv >= 3) return { tier: 'GREAT', emoji: '💪', label: 'Great CLV' };
   if (clv >= 1) return { tier: 'GOOD', emoji: '✅', label: 'Good CLV' };
-  if (clv >= 0) return { tier: 'NEUTRAL', emoji: '➖', label: 'Neutral' };
+  if (clv > -0.5) return { tier: 'NEUTRAL', emoji: '➖', label: 'Neutral' };
   if (clv >= -2) return { tier: 'SLIGHT_FADE', emoji: '📉', label: 'Slight Fade' };
   return { tier: 'FADE', emoji: '🔴', label: 'Faded' };
 }
@@ -222,8 +218,8 @@ async function updateCLV() {
       if (!currentOdds) continue;
       
       // Calculate CLV
-      const clv = calculateCLV(originalOdds, currentOdds, isAwayBet ? 'away' : 'home');
-      const movement = getLineMovement(originalOdds, currentOdds);
+      const clv = calculateCLV(originalOdds, currentOdds);
+      const movement = getLineMovement(clv);
       const tierInfo = getCLVTier(clv);
       
       // Display result
