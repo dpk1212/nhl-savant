@@ -39,17 +39,31 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /**
- * Calculate stats for a group of bets
+ * Calculate stats for a group of bets (including calibration)
  */
 function calculateStats(bets) {
   let wins = 0;
   let losses = 0;
   let profit = 0;
   let risked = 0;
+  let modelProbSum = 0;
+  let betsWithProb = 0;
 
   bets.forEach(bet => {
     const units = bet.result?.units || 1;
     risked += units;
+    
+    // Get model probability for calibration
+    const pickTeam = bet.bet?.team || bet.bet?.pick;
+    const isAway = pickTeam === bet.game?.awayTeam || pickTeam === bet.awayTeam;
+    const modelProb = isAway 
+      ? (bet.prediction?.ensembleAwayProb || 0)
+      : (bet.prediction?.ensembleHomeProb || 0);
+    
+    if (modelProb > 0) {
+      modelProbSum += modelProb;
+      betsWithProb++;
+    }
     
     if (bet.result?.outcome === 'WIN') {
       wins++;
@@ -64,8 +78,25 @@ function calculateStats(bets) {
   const total = wins + losses;
   const winRate = total > 0 ? (wins / total * 100) : 0;
   const roi = risked > 0 ? (profit / risked * 100) : 0;
+  
+  // CALIBRATION: Compare actual win rate to model's average prediction
+  const avgModelProb = betsWithProb > 0 ? modelProbSum / betsWithProb : 0.5;
+  const actualWinRate = total > 0 ? wins / total : 0.5;
+  const calibError = actualWinRate - avgModelProb; // Positive = underconfident, Negative = overconfident
 
-  return { wins, losses, total, winRate, profit, risked, roi };
+  return { 
+    wins, 
+    losses, 
+    total, 
+    winRate, 
+    profit, 
+    risked, 
+    roi,
+    // NEW: Calibration metrics
+    avgModelProb: parseFloat(avgModelProb.toFixed(4)),
+    actualWinRate: parseFloat(actualWinRate.toFixed(4)),
+    calibError: parseFloat(calibError.toFixed(4))
+  };
 }
 
 /**
@@ -213,9 +244,9 @@ export async function updateDynamicConfidence() {
     side: {}
   };
 
-  console.log('┌─────────────────────────────────────────────────────────────────────────────┐');
-  console.log('│ GRADE FACTOR PERFORMANCE                                                    │');
-  console.log('└─────────────────────────────────────────────────────────────────────────────┘\n');
+  console.log('┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ GRADE FACTOR PERFORMANCE + CALIBRATION                                                     │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
 
   for (const [grade, gradeBets] of Object.entries(byGrade)) {
     const stats = calculateStats(gradeBets);
@@ -224,13 +255,14 @@ export async function updateDynamicConfidence() {
     factorWeights.grade[grade] = weight;
     factorPerformance.grade[grade] = stats;
     
-    const emoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
-    console.log(`   ${emoji} ${grade.padEnd(4)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Weight: ${weight.toFixed(2)}`);
+    const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+    const calibEmoji = stats.calibError > 0.05 ? '📈' : stats.calibError < -0.05 ? '📉' : '✅';
+    console.log(`   ${roiEmoji} ${grade.padEnd(4)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | ${calibEmoji} Calib: ${stats.calibError >= 0 ? '+' : ''}${(stats.calibError * 100).toFixed(1)}% | Wt: ${weight.toFixed(2)}`);
   }
 
-  console.log('\n┌─────────────────────────────────────────────────────────────────────────────┐');
-  console.log('│ ODDS FACTOR PERFORMANCE                                                     │');
-  console.log('└─────────────────────────────────────────────────────────────────────────────┘\n');
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ ODDS FACTOR PERFORMANCE + CALIBRATION                                                      │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
 
   for (const [odds, oddsBets] of Object.entries(byOdds)) {
     const stats = calculateStats(oddsBets);
@@ -239,13 +271,14 @@ export async function updateDynamicConfidence() {
     factorWeights.odds[odds] = weight;
     factorPerformance.odds[odds] = stats;
     
-    const emoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
-    console.log(`   ${emoji} ${odds.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Weight: ${weight.toFixed(2)}`);
+    const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+    const calibEmoji = stats.calibError > 0.05 ? '📈' : stats.calibError < -0.05 ? '📉' : '✅';
+    console.log(`   ${roiEmoji} ${odds.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | ${calibEmoji} Calib: ${stats.calibError >= 0 ? '+' : ''}${(stats.calibError * 100).toFixed(1)}% | Wt: ${weight.toFixed(2)}`);
   }
 
-  console.log('\n┌─────────────────────────────────────────────────────────────────────────────┐');
-  console.log('│ MODEL PROBABILITY FACTOR PERFORMANCE                                        │');
-  console.log('└─────────────────────────────────────────────────────────────────────────────┘\n');
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ PROBABILITY FACTOR PERFORMANCE + CALIBRATION                                               │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
 
   for (const [prob, probBets] of Object.entries(byProb)) {
     const stats = calculateStats(probBets);
@@ -254,13 +287,14 @@ export async function updateDynamicConfidence() {
     factorWeights.probability[prob] = weight;
     factorPerformance.probability[prob] = stats;
     
-    const emoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
-    console.log(`   ${emoji} ${prob.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Weight: ${weight.toFixed(2)}`);
+    const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+    const calibEmoji = stats.calibError > 0.05 ? '📈' : stats.calibError < -0.05 ? '📉' : '✅';
+    console.log(`   ${roiEmoji} ${prob.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | ${calibEmoji} Calib: ${stats.calibError >= 0 ? '+' : ''}${(stats.calibError * 100).toFixed(1)}% | Wt: ${weight.toFixed(2)}`);
   }
 
-  console.log('\n┌─────────────────────────────────────────────────────────────────────────────┐');
-  console.log('│ EV FACTOR PERFORMANCE                                                       │');
-  console.log('└─────────────────────────────────────────────────────────────────────────────┘\n');
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ EV FACTOR PERFORMANCE + CALIBRATION                                                        │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
 
   for (const [ev, evBets] of Object.entries(byEV)) {
     const stats = calculateStats(evBets);
@@ -269,13 +303,14 @@ export async function updateDynamicConfidence() {
     factorWeights.ev[ev] = weight;
     factorPerformance.ev[ev] = stats;
     
-    const emoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
-    console.log(`   ${emoji} ${ev.padEnd(14)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Weight: ${weight.toFixed(2)}`);
+    const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+    const calibEmoji = stats.calibError > 0.05 ? '📈' : stats.calibError < -0.05 ? '📉' : '✅';
+    console.log(`   ${roiEmoji} ${ev.padEnd(14)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | ${calibEmoji} Calib: ${stats.calibError >= 0 ? '+' : ''}${(stats.calibError * 100).toFixed(1)}% | Wt: ${weight.toFixed(2)}`);
   }
 
-  console.log('\n┌─────────────────────────────────────────────────────────────────────────────┐');
-  console.log('│ SIDE FACTOR PERFORMANCE                                                     │');
-  console.log('└─────────────────────────────────────────────────────────────────────────────┘\n');
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ SIDE FACTOR PERFORMANCE + CALIBRATION                                                      │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
 
   for (const [side, sideBets] of Object.entries(bySide)) {
     const stats = calculateStats(sideBets);
@@ -284,8 +319,9 @@ export async function updateDynamicConfidence() {
     factorWeights.side[side] = weight;
     factorPerformance.side[side] = stats;
     
-    const emoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
-    console.log(`   ${emoji} ${side.padEnd(6)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Weight: ${weight.toFixed(2)}`);
+    const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+    const calibEmoji = stats.calibError > 0.05 ? '📈' : stats.calibError < -0.05 ? '📉' : '✅';
+    console.log(`   ${roiEmoji} ${side.padEnd(6)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | ${calibEmoji} Calib: ${stats.calibError >= 0 ? '+' : ''}${(stats.calibError * 100).toFixed(1)}% | Wt: ${weight.toFixed(2)}`);
   }
 
   // Save to local JSON file (public folder for frontend access)

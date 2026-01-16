@@ -188,7 +188,49 @@ function classifyBet(bet) {
 }
 
 /**
- * Calculate dynamic unit size based on live weights
+ * 📊 CALIBRATION MULTIPLIER
+ * Converts calibration error to a multiplier
+ * 
+ * calibError = actualWinRate - avgModelProb
+ *   Positive = model underconfident (betting more is OK)
+ *   Negative = model overconfident (REDUCE betting)
+ */
+function getCalibrationMultiplier(calibError, sampleSize, minSample = 25) {
+  if (sampleSize < minSample) return 1.0; // Not enough data
+  
+  // Sigmoid-like: maps calibError to 0.5 - 1.5 range
+  // +10% calibError → 1.25 multiplier (model underconfident, bet more)
+  // -10% calibError → 0.75 multiplier (model overconfident, bet less)
+  // -25% calibError → 0.5 multiplier (severely overconfident)
+  const multiplier = 1 + (calibError * 2.5);
+  
+  // Clamp to reasonable range
+  return Math.max(0.3, Math.min(1.5, multiplier));
+}
+
+/**
+ * 📈 ROI MULTIPLIER
+ * Converts ROI to a multiplier
+ */
+function getROIMultiplier(roi, sampleSize, minSample = 25) {
+  if (sampleSize < minSample) return 1.0; // Not enough data
+  
+  // More aggressive: ROI has stronger effect
+  // +20% ROI → 1.4 multiplier
+  // 0% ROI → 1.0 multiplier
+  // -10% ROI → 0.7 multiplier
+  // -20% ROI → 0.4 multiplier
+  const multiplier = 1 + (roi / 33);
+  
+  return Math.max(0.3, Math.min(1.5, multiplier));
+}
+
+/**
+ * Calculate dynamic unit size based on live weights + CALIBRATION
+ * 
+ * NEW SYSTEM: No hard caps. Uses continuous multipliers based on:
+ * 1. ROI (is the pattern profitable?)
+ * 2. Calibration (is the model accurate for this pattern?)
  * 
  * @param {Object} bet - The bet object with prediction, game, bet properties
  * @param {Object} confidenceData - From loadConfidenceWeights()
@@ -199,258 +241,211 @@ export function calculateDynamicUnits(bet, confidenceData) {
   const classification = classifyBet(bet);
   const factors = [];
   
+  const MIN_SAMPLE_SIZE = 25;
+  
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 1: GATHER PERFORMANCE DATA FOR ALL FACTORS
+  // ═══════════════════════════════════════════════════════════════
+  const gradePerf = performance?.grade?.[classification.grade] || {};
+  const oddsPerf = performance?.odds?.[classification.oddsRange] || {};
+  const probPerf = performance?.probability?.[classification.probRange] || {};
+  const evPerf = performance?.ev?.[classification.evRange] || {};
+  const sidePerf = performance?.side?.[classification.side] || {};
+  
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 2: CALCULATE COMBINED MULTIPLIER FROM ALL PATTERNS
+  // This replaces hard caps with continuous scaling
+  // ═══════════════════════════════════════════════════════════════
+  const multiplierFactors = [];
+  let combinedMultiplier = 1.0;
+  
+  // Grade calibration + ROI
+  const gradeCalibMult = getCalibrationMultiplier(gradePerf.calibError || 0, gradePerf.total || 0, MIN_SAMPLE_SIZE);
+  const gradeROIMult = getROIMultiplier(gradePerf.roi || 0, gradePerf.total || 0, MIN_SAMPLE_SIZE);
+  const gradeMultiplier = (gradeCalibMult + gradeROIMult) / 2;
+  if (gradePerf.total >= MIN_SAMPLE_SIZE) {
+    multiplierFactors.push({
+      factor: 'Grade',
+      value: classification.grade,
+      calibError: gradePerf.calibError,
+      roi: gradePerf.roi,
+      multiplier: gradeMultiplier
+    });
+    combinedMultiplier *= Math.pow(gradeMultiplier, 0.35); // Grade has 35% weight
+  }
+  
+  // Odds calibration + ROI
+  const oddsCalibMult = getCalibrationMultiplier(oddsPerf.calibError || 0, oddsPerf.total || 0, MIN_SAMPLE_SIZE);
+  const oddsROIMult = getROIMultiplier(oddsPerf.roi || 0, oddsPerf.total || 0, MIN_SAMPLE_SIZE);
+  const oddsMultiplier = (oddsCalibMult + oddsROIMult) / 2;
+  if (oddsPerf.total >= MIN_SAMPLE_SIZE) {
+    multiplierFactors.push({
+      factor: 'Odds',
+      value: classification.oddsRange,
+      calibError: oddsPerf.calibError,
+      roi: oddsPerf.roi,
+      multiplier: oddsMultiplier
+    });
+    combinedMultiplier *= Math.pow(oddsMultiplier, 0.30); // Odds has 30% weight
+  }
+  
+  // Probability calibration + ROI
+  const probCalibMult = getCalibrationMultiplier(probPerf.calibError || 0, probPerf.total || 0, MIN_SAMPLE_SIZE);
+  const probROIMult = getROIMultiplier(probPerf.roi || 0, probPerf.total || 0, MIN_SAMPLE_SIZE);
+  const probMultiplier = (probCalibMult + probROIMult) / 2;
+  if (probPerf.total >= MIN_SAMPLE_SIZE) {
+    multiplierFactors.push({
+      factor: 'Prob',
+      value: classification.probRange,
+      calibError: probPerf.calibError,
+      roi: probPerf.roi,
+      multiplier: probMultiplier
+    });
+    combinedMultiplier *= Math.pow(probMultiplier, 0.20); // Prob has 20% weight
+  }
+  
+  // EV calibration + ROI (important for catching overconfident high EV bets)
+  const evCalibMult = getCalibrationMultiplier(evPerf.calibError || 0, evPerf.total || 0, MIN_SAMPLE_SIZE);
+  const evROIMult = getROIMultiplier(evPerf.roi || 0, evPerf.total || 0, MIN_SAMPLE_SIZE);
+  const evMultiplier = (evCalibMult + evROIMult) / 2;
+  if (evPerf.total >= MIN_SAMPLE_SIZE) {
+    multiplierFactors.push({
+      factor: 'EV',
+      value: classification.evRange,
+      calibError: evPerf.calibError,
+      roi: evPerf.roi,
+      multiplier: evMultiplier
+    });
+    combinedMultiplier *= Math.pow(evMultiplier, 0.15); // EV has 15% weight
+  }
+  
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 3: BUILD BASE SCORE FROM WEIGHTS
+  // (Legacy additive system, but multiplier modifies the final units)
+  // ═══════════════════════════════════════════════════════════════
   let score = 0;
   
-  // ═══════════════════════════════════════════════════════════════
-  // 🚨 BLEEDING MONEY DETECTOR - Check LIVE ROI from performance data
-  // Patterns with significantly negative ROI get HARD CAPPED
-  // ═══════════════════════════════════════════════════════════════
-  const MIN_SAMPLE_SIZE = 25;  // Need enough data to trust
-  const BLEEDING_ROI_THRESHOLD = -5;  // Anything below -5% ROI
-  const SEVERE_BLEEDING_THRESHOLD = -10;  // Severe loss pattern
-  
-  // Get live ROI from performance data
-  const gradePerf = performance?.grade?.[classification.grade];
-  const oddsPerf = performance?.odds?.[classification.oddsRange];
-  const evPerf = performance?.ev?.[classification.evRange];
-  
-  const gradeROI = gradePerf?.roi || 0;
-  const oddsROI = oddsPerf?.roi || 0;
-  const evROI = evPerf?.roi || 0;
-  
-  const gradeSample = gradePerf?.total || 0;
-  const oddsSample = oddsPerf?.total || 0;
-  const evSample = evPerf?.total || 0;
-  
-  // Check for SEVERE bleeding patterns (any single factor with terrible ROI)
-  const bleedingFactors = [];
-  
-  if (gradeSample >= MIN_SAMPLE_SIZE && gradeROI < SEVERE_BLEEDING_THRESHOLD) {
-    bleedingFactors.push(`🩸 Grade ${classification.grade}: ${gradeROI.toFixed(1)}% ROI (${gradeSample} bets)`);
-  }
-  if (oddsSample >= MIN_SAMPLE_SIZE && oddsROI < SEVERE_BLEEDING_THRESHOLD) {
-    bleedingFactors.push(`🩸 Odds ${classification.oddsRange}: ${oddsROI.toFixed(1)}% ROI (${oddsSample} bets)`);
-  }
-  if (evSample >= MIN_SAMPLE_SIZE && evROI < SEVERE_BLEEDING_THRESHOLD) {
-    bleedingFactors.push(`🩸 EV ${classification.evRange}: ${evROI.toFixed(1)}% ROI (${evSample} bets)`);
-  }
-  
-  // If ANY factor is severely bleeding, cap at 0.5u
-  if (bleedingFactors.length > 0) {
-    const avgROI = (gradeROI + oddsROI + evROI) / 3;
-    return {
-      units: 0.5,
-      score: 0,
-      tier: 'BLEEDING',
-      tierLabel: '🩸 BLEEDING (0.5u)',
-      factors: ['🩸 SEVERE LOSS PATTERN DETECTED - HARD CAP 0.5u', ...bleedingFactors],
-      classification,
-      patternROI: parseFloat(avgROI.toFixed(1))
-    };
-  }
-  
-  // Check for MODERATE bleeding (multiple factors with negative ROI)
-  let negativeCount = 0;
-  let totalNegativeROI = 0;
-  
-  if (gradeSample >= MIN_SAMPLE_SIZE && gradeROI < BLEEDING_ROI_THRESHOLD) {
-    negativeCount++;
-    totalNegativeROI += gradeROI;
-  }
-  if (oddsSample >= MIN_SAMPLE_SIZE && oddsROI < BLEEDING_ROI_THRESHOLD) {
-    negativeCount++;
-    totalNegativeROI += oddsROI;
-  }
-  if (evSample >= MIN_SAMPLE_SIZE && evROI < BLEEDING_ROI_THRESHOLD) {
-    negativeCount++;
-    totalNegativeROI += evROI;
-  }
-  
-  // If 2+ factors are bleeding, cap at 1u
-  if (negativeCount >= 2) {
-    const avgROI = totalNegativeROI / negativeCount;
-    return {
-      units: 1,
-      score: 1,
-      tier: 'CAUTION',
-      tierLabel: '⚠️ CAUTION (1u)',
-      factors: [
-        `⚠️ MULTIPLE LOSS PATTERNS (${negativeCount}) - CAPPED at 1u`,
-        `📉 Combined negative ROI: ${avgROI.toFixed(1)}%`
-      ],
-      classification,
-      patternROI: parseFloat(avgROI.toFixed(1))
-    };
-  }
-  
-  // ═══════════════════════════════════════════════════════════════
-  // F GRADE HARD CAP - Check first
-  // ═══════════════════════════════════════════════════════════════
-  if (classification.grade === 'F') {
-    const fPatternROI = (gradeROI * 0.6) + (oddsROI * 0.4);
-    
-    return {
-      units: config.fGradeCap || 0.5,
-      score: 0,
-      tier: 'F-CAP',
-      tierLabel: '🔴 F-CAP (0.5u)',
-      factors: ['🔴 Grade F → HARD CAP at 0.5u'],
-      classification,
-      patternROI: parseFloat(fPatternROI.toFixed(1))
-    };
-  }
-  
-  // ═══════════════════════════════════════════════════════════════
-  // FACTOR 1: GRADE (max 2.0 contribution)
-  // 🆕 PENALTY: If grade ROI is negative with sample, apply ROI penalty
-  // ═══════════════════════════════════════════════════════════════
+  // FACTOR 1: GRADE
   const gradeWeight = weights.grade?.[classification.grade] || 1.0;
-  let gradeContribution = Math.min(gradeWeight, config.maxWeightContribution?.grade || 2.0);
-  
-  // Apply ROI penalty for negative ROI grades
-  if (gradeSample >= MIN_SAMPLE_SIZE && gradeROI < 0) {
-    const roiPenalty = Math.max(0.5, 1 + (gradeROI / 50)); // -10% ROI → 0.8x multiplier
-    gradeContribution *= roiPenalty;
-    const gradeEmoji = '📉';
-    factors.push(`${gradeEmoji} Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (${gradeROI.toFixed(1)}% ROI penalty)`);
+  const gradeContribution = Math.min(gradeWeight, config.maxWeightContribution?.grade || 2.0);
+  const gradeEmoji = gradeMultiplier >= 1.0 ? '✅' : gradeMultiplier >= 0.7 ? '🟡' : '📉';
+  if (gradePerf.total >= MIN_SAMPLE_SIZE) {
+    factors.push(`${gradeEmoji} Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (${(gradePerf.calibError * 100).toFixed(0)}% calib, ${gradePerf.roi.toFixed(0)}% ROI → ${gradeMultiplier.toFixed(2)}x)`);
   } else {
-    const gradeEmoji = gradeWeight >= 1.5 ? '✅' : gradeWeight >= 1.0 ? '🟡' : '⚠️';
-    factors.push(`${gradeEmoji} Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (weight: ${gradeWeight.toFixed(2)})`);
+    factors.push(`🔵 Grade ${classification.grade}: +${gradeContribution.toFixed(2)} (wt: ${gradeWeight.toFixed(2)})`);
   }
   score += gradeContribution;
   
-  // ═══════════════════════════════════════════════════════════════
-  // FACTOR 2: ODDS (max 2.0 contribution)
-  // 🆕 PENALTY: If odds ROI is negative with sample, apply ROI penalty
-  // ═══════════════════════════════════════════════════════════════
+  // FACTOR 2: ODDS
   const oddsWeight = weights.odds?.[classification.oddsRange] || 1.0;
-  let oddsContribution = Math.min(oddsWeight, config.maxWeightContribution?.odds || 2.0);
-  
-  // Apply ROI penalty for negative ROI odds ranges
-  if (oddsSample >= MIN_SAMPLE_SIZE && oddsROI < 0) {
-    const roiPenalty = Math.max(0.5, 1 + (oddsROI / 50)); // -10% ROI → 0.8x multiplier
-    oddsContribution *= roiPenalty;
-    const oddsEmoji = '📉';
-    factors.push(`${oddsEmoji} Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (${oddsROI.toFixed(1)}% ROI penalty)`);
+  const oddsContribution = Math.min(oddsWeight, config.maxWeightContribution?.odds || 2.0);
+  const oddsEmoji = oddsMultiplier >= 1.0 ? '✅' : oddsMultiplier >= 0.7 ? '🟡' : '📉';
+  if (oddsPerf.total >= MIN_SAMPLE_SIZE) {
+    factors.push(`${oddsEmoji} Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (${(oddsPerf.calibError * 100).toFixed(0)}% calib, ${oddsPerf.roi.toFixed(0)}% ROI → ${oddsMultiplier.toFixed(2)}x)`);
   } else {
-    const oddsEmoji = oddsWeight >= 1.5 ? '✅' : oddsWeight >= 1.0 ? '🟡' : '⚠️';
-    factors.push(`${oddsEmoji} Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (weight: ${oddsWeight.toFixed(2)})`);
+    factors.push(`🔵 Odds ${classification.oddsRange}: +${oddsContribution.toFixed(2)} (wt: ${oddsWeight.toFixed(2)})`);
   }
   score += oddsContribution;
   
-  // ═══════════════════════════════════════════════════════════════
-  // FACTOR 3: MODEL PROBABILITY (max 1.5 contribution)
-  // ═══════════════════════════════════════════════════════════════
-  const probPerf = performance?.probability?.[classification.probRange];
-  const probROI = probPerf?.roi || 0;
-  const probSample = probPerf?.total || 0;
-  
+  // FACTOR 3: PROBABILITY
   const probWeight = weights.probability?.[classification.probRange] || 1.0;
-  let probContribution = Math.min(probWeight, config.maxWeightContribution?.probability || 1.5);
-  
-  // Apply ROI penalty for negative ROI probability ranges
-  if (probSample >= MIN_SAMPLE_SIZE && probROI < 0) {
-    const roiPenalty = Math.max(0.5, 1 + (probROI / 50));
-    probContribution *= roiPenalty;
-    const probEmoji = '📉';
-    factors.push(`${probEmoji} Prob ${classification.probRange}: +${probContribution.toFixed(2)} (${probROI.toFixed(1)}% ROI penalty)`);
+  const probContribution = Math.min(probWeight, config.maxWeightContribution?.probability || 1.5);
+  const probEmoji = probMultiplier >= 1.0 ? '✅' : probMultiplier >= 0.7 ? '🟡' : '📉';
+  if (probPerf.total >= MIN_SAMPLE_SIZE) {
+    factors.push(`${probEmoji} Prob ${classification.probRange}: +${probContribution.toFixed(2)} (${(probPerf.calibError * 100).toFixed(0)}% calib, ${probPerf.roi.toFixed(0)}% ROI → ${probMultiplier.toFixed(2)}x)`);
   } else {
-    const probEmoji = probWeight >= 1.3 ? '✅' : probWeight >= 1.0 ? '🟡' : '⚠️';
-    factors.push(`${probEmoji} Prob ${classification.probRange}: +${probContribution.toFixed(2)} (weight: ${probWeight.toFixed(2)})`);
+    factors.push(`🔵 Prob ${classification.probRange}: +${probContribution.toFixed(2)} (wt: ${probWeight.toFixed(2)})`);
   }
   score += probContribution;
   
-  // ═══════════════════════════════════════════════════════════════
-  // FACTOR 4: EV (max 1.0 contribution)
-  // 🆕 AGGRESSIVE PENALTY: EV patterns bleeding money get CRUSHED
-  // ═══════════════════════════════════════════════════════════════
+  // FACTOR 4: EV
   const evWeight = weights.ev?.[classification.evRange] || 1.0;
-  let evContribution = Math.min(evWeight, config.maxWeightContribution?.ev || 1.0);
-  
-  // Apply AGGRESSIVE ROI penalty for negative ROI EV ranges
-  if (evSample >= MIN_SAMPLE_SIZE && evROI < 0) {
-    const roiPenalty = Math.max(0.3, 1 + (evROI / 30)); // More aggressive: -10% ROI → 0.67x
-    evContribution *= roiPenalty;
-    const evEmoji = '📉';
-    factors.push(`${evEmoji} EV ${classification.evRange}: +${evContribution.toFixed(2)} (${evROI.toFixed(1)}% ROI PENALTY)`);
+  const evContribution = Math.min(evWeight, config.maxWeightContribution?.ev || 1.0);
+  const evEmoji = evMultiplier >= 1.0 ? '✅' : evMultiplier >= 0.7 ? '🟡' : '📉';
+  if (evPerf.total >= MIN_SAMPLE_SIZE) {
+    factors.push(`${evEmoji} EV ${classification.evRange}: +${evContribution.toFixed(2)} (${(evPerf.calibError * 100).toFixed(0)}% calib, ${evPerf.roi.toFixed(0)}% ROI → ${evMultiplier.toFixed(2)}x)`);
   } else {
-    const evEmoji = evWeight >= 1.2 ? '✅' : evWeight >= 0.9 ? '🟡' : '⚠️';
-    factors.push(`${evEmoji} EV ${classification.evRange}: +${evContribution.toFixed(2)} (weight: ${evWeight.toFixed(2)})`);
+    factors.push(`🔵 EV ${classification.evRange}: +${evContribution.toFixed(2)} (wt: ${evWeight.toFixed(2)})`);
   }
   score += evContribution;
   
   // ═══════════════════════════════════════════════════════════════
-  // FACTOR 5: SIDE (max 0.5 contribution)
+  // FACTOR 5: SIDE (smaller contribution)
   // ═══════════════════════════════════════════════════════════════
-  const sidePerf = performance?.side?.[classification.side];
-  const sideROI = sidePerf?.roi || 0;
-  const sideSample = sidePerf?.total || 0;
-  
   const sideWeight = weights.side?.[classification.side] || 1.0;
-  let sideContribution = Math.min(sideWeight * 0.5, config.maxWeightContribution?.side || 0.5);
-  
-  // Apply ROI penalty for negative ROI sides
-  if (sideSample >= MIN_SAMPLE_SIZE && sideROI < 0) {
-    const roiPenalty = Math.max(0.5, 1 + (sideROI / 50));
-    sideContribution *= roiPenalty;
-    const sideEmoji = '📉';
-    factors.push(`${sideEmoji} ${classification.side}: +${sideContribution.toFixed(2)} (${sideROI.toFixed(1)}% ROI penalty)`);
-  } else {
-    const sideEmoji = sideWeight >= 1.1 ? '✅' : '🟡';
-    factors.push(`${sideEmoji} ${classification.side}: +${sideContribution.toFixed(2)} (weight: ${sideWeight.toFixed(2)})`);
-  }
+  const sideContribution = Math.min(sideWeight * 0.5, config.maxWeightContribution?.side || 0.5);
+  factors.push(`🔵 ${classification.side}: +${sideContribution.toFixed(2)}`);
   score += sideContribution;
   
   // ═══════════════════════════════════════════════════════════════
-  // CALCULATE FINAL UNITS FROM SCORE
+  // STEP 4: CALCULATE BASE UNITS FROM SCORE
   // ═══════════════════════════════════════════════════════════════
   const thresholds = config.unitThresholds || DEFAULT_CONFIG.unitThresholds;
   
-  let units, tier, tierLabel;
+  let baseUnits;
+  if (score >= thresholds.elite) baseUnits = 5;
+  else if (score >= thresholds.high) baseUnits = 4;
+  else if (score >= thresholds.good) baseUnits = 3;
+  else if (score >= thresholds.moderate) baseUnits = 2;
+  else baseUnits = 1;
   
-  if (score >= thresholds.elite) {
-    units = 5;
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 5: APPLY CALIBRATION MULTIPLIER TO BASE UNITS
+  // This is the KEY change - continuous scaling instead of hard caps
+  // ═══════════════════════════════════════════════════════════════
+  const adjustedUnits = baseUnits * combinedMultiplier;
+  
+  // Round to 0.5 increments (0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)
+  const finalUnits = Math.max(0.5, Math.min(5, Math.round(adjustedUnits * 2) / 2));
+  
+  // Add multiplier summary to factors
+  factors.push(`📊 Combined multiplier: ${combinedMultiplier.toFixed(2)}x → ${baseUnits}u → ${finalUnits}u`);
+  
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 6: DETERMINE TIER FROM FINAL UNITS
+  // ═══════════════════════════════════════════════════════════════
+  let tier, tierLabel;
+  
+  if (finalUnits >= 4.5) {
     tier = 'ELITE';
-    tierLabel = '🔥 ELITE (5u)';
-  } else if (score >= thresholds.high) {
-    units = 4;
+    tierLabel = `🔥 ELITE (${finalUnits}u)`;
+  } else if (finalUnits >= 3.5) {
     tier = 'HIGH';
-    tierLabel = '💪 HIGH (4u)';
-  } else if (score >= thresholds.good) {
-    units = 3;
+    tierLabel = `💪 HIGH (${finalUnits}u)`;
+  } else if (finalUnits >= 2.5) {
     tier = 'GOOD';
-    tierLabel = '✅ GOOD (3u)';
-  } else if (score >= thresholds.moderate) {
-    units = 2;
+    tierLabel = `✅ GOOD (${finalUnits}u)`;
+  } else if (finalUnits >= 1.5) {
     tier = 'MODERATE';
-    tierLabel = '🟡 MODERATE (2u)';
-  } else {
-    units = 1;
+    tierLabel = `🟡 MODERATE (${finalUnits}u)`;
+  } else if (finalUnits >= 1) {
     tier = 'LOW';
-    tierLabel = '⚠️ LOW (1u)';
+    tierLabel = `⚠️ LOW (${finalUnits}u)`;
+  } else {
+    tier = 'MINIMAL';
+    tierLabel = `📉 MINIMAL (${finalUnits}u)`;
   }
-  
-  // ═══════════════════════════════════════════════════════════════
-  // GRADE HARD CAPS - REMOVED
-  // Now letting dynamic weights fully determine unit sizing
-  // C/D grades will naturally get lower scores from their weights
-  // ═══════════════════════════════════════════════════════════════
-  // Grade caps removed - dynamic weighting handles risk management
   
   // Calculate pattern ROI from LIVE performance data (for display)
   const displayGradeROI = getGradeROI(classification.grade, confidenceData);
   const displayOddsROI = getOddsROI(classification.oddsRange, confidenceData);
-  // Combined pattern ROI estimate (weighted average)
   const patternROI = (displayGradeROI * 0.6) + (displayOddsROI * 0.4);
   
   return {
-    units,
+    units: finalUnits,
     score: parseFloat(score.toFixed(2)),
     tier,
     tierLabel,
     factors,
     classification,
-    patternROI: parseFloat(patternROI.toFixed(1))
+    patternROI: parseFloat(patternROI.toFixed(1)),
+    // NEW: Include multiplier info for transparency
+    multiplierDetails: {
+      combined: parseFloat(combinedMultiplier.toFixed(3)),
+      factors: multiplierFactors,
+      baseUnits,
+      adjustedUnits: parseFloat(adjustedUnits.toFixed(2))
+    }
   };
 }
 
@@ -656,6 +651,17 @@ export function getDynamicTierInfo(prediction) {
       bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.10) 0%, rgba(217, 119, 6, 0.06) 100%)',
       borderColor: 'rgba(245, 158, 11, 0.25)',
       description: 'Multiple loss patterns - conservative allocation'
+    },
+    // 📉 MINIMAL - calibration-reduced allocation (< 1u)
+    'MINIMAL': {
+      tier: 8,
+      name: 'MINIMAL',
+      shortName: 'Min',
+      emoji: '📉',
+      color: '#94A3B8',
+      bgGradient: 'linear-gradient(135deg, rgba(148, 163, 184, 0.08) 0%, rgba(100, 116, 139, 0.04) 100%)',
+      borderColor: 'rgba(148, 163, 184, 0.20)',
+      description: 'Calibration-adjusted minimal allocation'
     }
   };
   
@@ -671,12 +677,12 @@ export function getDynamicTierInfo(prediction) {
   
   // Fallback: derive tier from unit size (backward compatibility)
   let derivedTier;
-  if (units >= 5) derivedTier = 'ELITE';
-  else if (units >= 4) derivedTier = 'HIGH';
-  else if (units >= 3) derivedTier = 'GOOD';
-  else if (units >= 2) derivedTier = 'MODERATE';
+  if (units >= 4.5) derivedTier = 'ELITE';
+  else if (units >= 3.5) derivedTier = 'HIGH';
+  else if (units >= 2.5) derivedTier = 'GOOD';
+  else if (units >= 1.5) derivedTier = 'MODERATE';
   else if (units >= 1) derivedTier = 'LOW';
-  else derivedTier = 'F-CAP';
+  else derivedTier = 'MINIMAL';
   
   const config = tierConfigs[derivedTier];
   return {
