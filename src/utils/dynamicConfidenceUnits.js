@@ -629,11 +629,33 @@ export function getDynamicTierInfo(prediction) {
       tier: 6,
       name: 'CAPPED',
       shortName: 'Capped',
-      emoji: '🔴',
-      color: '#EF4444',
-      bgGradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.10) 0%, rgba(220, 38, 38, 0.06) 100%)',
-      borderColor: 'rgba(239, 68, 68, 0.25)',
-      description: 'F grade - hard cap at 0.5u'
+      emoji: '⚡',
+      color: '#94A3B8',
+      bgGradient: 'linear-gradient(135deg, rgba(148, 163, 184, 0.10) 0%, rgba(100, 116, 139, 0.06) 100%)',
+      borderColor: 'rgba(148, 163, 184, 0.25)',
+      description: 'F grade - reduced allocation'
+    },
+    // 🩸 BLEEDING patterns - loss patterns detected, soft cap applied
+    'BLEEDING': {
+      tier: 7,
+      name: 'REDUCED',
+      shortName: 'Reduced',
+      emoji: '📉',
+      color: '#F59E0B',
+      bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.04) 100%)',
+      borderColor: 'rgba(245, 158, 11, 0.20)',
+      description: 'Pattern underperforming - reduced allocation'
+    },
+    // ⚠️ CAUTION patterns - multiple warning signs
+    'CAUTION': {
+      tier: 6,
+      name: 'CAUTION',
+      shortName: 'Caution',
+      emoji: '⚠️',
+      color: '#F59E0B',
+      bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.10) 0%, rgba(217, 119, 6, 0.06) 100%)',
+      borderColor: 'rgba(245, 158, 11, 0.25)',
+      description: 'Multiple loss patterns - conservative allocation'
     }
   };
   
