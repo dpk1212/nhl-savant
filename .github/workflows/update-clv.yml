@@ -1,0 +1,63 @@
+name: Update CLV (Closing Line Value)
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      reason:
+        description: 'Reason for running CLV check'
+        required: false
+        default: 'Pre-game line check'
+        type: string
+
+jobs:
+  update-clv:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Create .env file
+        run: |
+          echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
+          echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
+          echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}" >> .env
+          echo "VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}" >> .env
+          echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
+          echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
+          echo "FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}" >> .env
+          echo "FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}" >> .env
+          echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
+      
+      - name: Update CLV
+        run: |
+          echo "📈 Updating CLV (Closing Line Value)..."
+          echo "   Reason: ${{ inputs.reason }}"
+          echo ""
+          npm run update-clv
+      
+      - name: Summary
+        run: |
+          echo "╔═══════════════════════════════════════════════════════════════╗"
+          echo "║              ✅ CLV UPDATE COMPLETE ✅                        ║"
+          echo "╚═══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "📈 CLV data has been stored in Firebase for all pending bets"
+          echo ""
+          echo "Next steps:"
+          echo "  • View CLV badges on the Basketball page"
+          echo "  • Analyze CLV patterns in Firebase"
+          echo ""

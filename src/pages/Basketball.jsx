@@ -17,6 +17,7 @@ import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { getDynamicTierInfo, getDynamicConfidenceRating, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
+import { CLVIndicator } from '../components/CLVBadge';
 import { basketballBetTracker } from '../firebase/basketballBetTracker';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -2451,6 +2452,11 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   Pattern ROI: {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}%
                 </div>
               </div>
+              
+              {/* CLV Badge - Shows when available */}
+              {game.clv && (
+                <CLVIndicator clvData={game.clv} />
+              )}
             </div>
             
             {/* Rationale - TERTIARY INFO */}
