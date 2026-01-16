@@ -18,7 +18,8 @@ import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
-import { loadTeamMappings, findTeamMapping } from '../src/utils/teamCSVLoader.js';
+
+// No longer using teamCSVLoader - matching by name directly
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -147,15 +148,8 @@ async function updateCLV() {
     const currentGames = parseBasketballOdds(oddsResult.markdown);
     console.log(`   ✅ Found ${currentGames.length} games with current odds\n`);
     
-    // 3. Load team mappings
-    console.log('🗺️  Step 3: Loading team mappings...');
-    const csvPath = join(__dirname, '../public/basketball_teams.csv');
-    const csvContent = await fs.readFile(csvPath, 'utf8');
-    const teamMappings = loadTeamMappings(csvContent);
-    console.log(`   ✅ Loaded ${teamMappings.size} team mappings\n`);
-    
-    // 4. Get pending bets from Firebase
-    console.log('🔥 Step 4: Fetching pending bets from Firebase...');
+    // 3. Get pending bets from Firebase
+    console.log('🔥 Step 3: Fetching pending bets from Firebase...');
     const pendingBetsSnapshot = await db.collection('basketball_bets')
       .where('status', '==', 'PENDING')
       .get();
@@ -172,8 +166,8 @@ async function updateCLV() {
       return;
     }
     
-    // 5. Match and calculate CLV
-    console.log('📈 Step 5: Calculating CLV for each bet...\n');
+    // 4. Match and calculate CLV
+    console.log('📈 Step 4: Calculating CLV for each bet...\n');
     console.log('┌─────────────────────────────────────────────────────────────────────────────────┐');
     console.log('│ GAME                              │ ORIGINAL │ CURRENT  │   CLV   │ MOVEMENT   │');
     console.log('├─────────────────────────────────────────────────────────────────────────────────┤');
