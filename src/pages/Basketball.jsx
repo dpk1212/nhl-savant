@@ -345,7 +345,9 @@ const Basketball = () => {
           },
           dratings: null,
           haslametrics: null,
-          barttorvik: lockedBet.barttorvik || null
+          barttorvik: lockedBet.barttorvik || null,
+          // 📈 CLV data from Firebase
+          clv: lockedBet.clv || null
         };
         
         if (existingIndex >= 0) {
@@ -355,7 +357,8 @@ const Basketball = () => {
           mergedGames[existingIndex] = {
             ...freshGame, // Keep fresh dratings, haslametrics, barttorvik for insights
             prediction: lockedGameObj.prediction, // Override with locked prediction
-            odds: lockedGameObj.odds // Use locked odds
+            odds: lockedGameObj.odds, // Use locked odds
+            clv: lockedBet.clv || null // 📈 Include CLV data
           };
         } else {
           // Add locked pick (game no longer in today's scraped data)
