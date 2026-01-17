@@ -2824,13 +2824,23 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           const hs = game.haslametrics;
           if (!dr?.awayScore || !dr?.homeScore || !hs?.awayScore || !hs?.homeScore) return null;
           
-          // Calculate margins (positive = away favored, negative = home favored)
-          const drMargin = dr.awayScore - dr.homeScore;
-          const hsMargin = hs.awayScore - hs.homeScore;
-          const modelsAgree = (drMargin > 0) === (hsMargin > 0);
+          // Calculate margins FOR THE PICKED TEAM
+          // pred.bestBet is 'away' or 'home'
+          const pickIsAway = pred.bestBet === 'away';
           
-          // Conviction = sum of absolute margins (total model conviction regardless of direction)
-          const convictionScore = Math.round((Math.abs(drMargin) + Math.abs(hsMargin)) * 10) / 10;
+          // Margin from picked team's perspective (positive = picked team favored)
+          const drMargin = pickIsAway 
+            ? (dr.awayScore - dr.homeScore) 
+            : (dr.homeScore - dr.awayScore);
+          const hsMargin = pickIsAway 
+            ? (hs.awayScore - hs.homeScore) 
+            : (hs.homeScore - hs.awayScore);
+          
+          // Both models agree if both margins are positive (both favor our pick)
+          const modelsAgree = drMargin > 0 && hsMargin > 0;
+          
+          // Conviction = combined margin for the picked team
+          const convictionScore = Math.round((drMargin + hsMargin) * 10) / 10;
           
           return (
             <div style={{ 
