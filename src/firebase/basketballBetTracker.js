@@ -35,6 +35,27 @@ export class BasketballBetTracker {
   }
   
   /**
+   * Calculate conviction score for the picked team
+   * Sum of margins from both models favoring the pick
+   */
+  calculateConvictionScore(game, prediction) {
+    const dr = game.dratings;
+    const hs = game.haslametrics;
+    if (!dr?.awayScore || !dr?.homeScore || !hs?.awayScore || !hs?.homeScore) return null;
+    
+    const pickIsAway = prediction.bestBet === 'away';
+    
+    // Margin from picked team's perspective
+    const drMargin = pickIsAway ? (dr.awayScore - dr.homeScore) : (dr.homeScore - dr.awayScore);
+    const hsMargin = pickIsAway ? (hs.awayScore - hs.homeScore) : (hs.homeScore - hs.awayScore);
+    
+    const modelsAgree = drMargin > 0 && hsMargin > 0;
+    const convictionScore = Math.round((drMargin + hsMargin) * 10) / 10;
+    
+    return { convictionScore, modelsAgree, drMargin: Math.round(drMargin * 10) / 10, hsMargin: Math.round(hsMargin * 10) / 10 };
+  }
+  
+  /**
    * Save a single NEW bet to Firebase
    * Only called for bets that don't exist yet
    */
@@ -43,6 +64,9 @@ export class BasketballBetTracker {
     const betId = this.generateBetId(date, game.awayTeam, game.homeTeam, 'MONEYLINE', prediction);
     
     const betRef = doc(db, 'basketball_bets', betId);
+    
+    // Calculate conviction metrics
+    const conviction = this.calculateConvictionScore(game, prediction);
     
     const betData = {
       id: betId,
@@ -101,7 +125,13 @@ export class BasketballBetTracker {
         haslametricsAwayProb: prediction.haslametricsAwayProb || null,
         haslametricsHomeProb: prediction.haslametricsHomeProb || null,
         haslametricsAwayScore: prediction.haslametricsAwayScore || null,
-        haslametricsHomeScore: prediction.haslametricsHomeScore || null
+        haslametricsHomeScore: prediction.haslametricsHomeScore || null,
+        
+        // Conviction Score (model agreement metric)
+        convictionScore: conviction?.convictionScore || null,
+        modelsAgree: conviction?.modelsAgree || null,
+        dratingMargin: conviction?.drMargin || null,
+        haslametricsMargin: conviction?.hsMargin || null
       },
       
       result: {
