@@ -109,14 +109,19 @@ export class BasketballEdgeCalculator {
       }
     }
     
+    // CASE 2: Missing D-Ratings or Haslametrics - SKIP
+    if (!dratings || !dratings.awayWinProb || !haslametrics) {
+      return { error: 'Requires BOTH D-Ratings AND Haslametrics', grade: 'N/A' };
+    }
+    
     // Calculate Model Confluence metrics
-    // Model 1 winner: based on D-Ratings win probability (>50% = away wins)
+    // Model 1 winner: based on D-Ratings predicted scores
     // Model 2 winner: based on Haslametrics predicted scores
     let modelsAgree = null;
     let modelConfluence = 0;
     let combinedMargin = null;
     
-    if (dratings && haslametrics && dratings.awayScore && dratings.homeScore && haslametrics.awayScore && haslametrics.homeScore) {
+    if (dratings.awayScore && dratings.homeScore && haslametrics.awayScore && haslametrics.homeScore) {
       // Determine who each model picks
       const model1PicksAway = dratings.awayScore > dratings.homeScore;
       const model2PicksAway = haslametrics.awayScore > haslametrics.homeScore;
@@ -132,10 +137,6 @@ export class BasketballEdgeCalculator {
       
       // Combined margin: sum of both (if they agree, it's additive; if they disagree, they partially cancel)
       combinedMargin = drateMargin + haslaMargin;
-    }
-    // CASE 2: Missing D-Ratings or Haslametrics - SKIP
-    else {
-      return { error: 'Requires BOTH D-Ratings AND Haslametrics', grade: 'N/A' };
     }
     
     // Calculate market probability from odds
