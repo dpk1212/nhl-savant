@@ -2819,7 +2819,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         )}
         
         {/* Model Confluence Box - Shows agreement between models */}
-        {pred.modelConfluence > 0 && pred.projectedMargin && (
+        {pred.modelConfluence > 0 && pred.combinedMargin !== null && (
           <div style={{ 
             background: pred.modelsAgree 
               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
@@ -2874,7 +2874,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 background: 'rgba(255,255,255,0.15)'
               }} />
               
-              {/* Projected Margin */}
+              {/* Conviction Score - Total model conviction */}
               <div style={{ flex: 1, textAlign: 'center' }}>
                 <div style={{
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
@@ -2884,7 +2884,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   letterSpacing: '0.06em',
                   marginBottom: '0.25rem'
                 }}>
-                  Projected Margin
+                  Conviction Score
                 </div>
                 <div style={{
                   display: 'flex',
@@ -2895,10 +2895,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   <span style={{
                     fontSize: isMobile ? '1rem' : '1.25rem',
                     fontWeight: '900',
-                    color: 'white',
+                    color: Math.abs(pred.combinedMargin) >= 10 ? '#10b981' : Math.abs(pred.combinedMargin) >= 5 ? '#fbbf24' : 'white',
                     letterSpacing: '-0.02em'
                   }}>
-                    +{pred.projectedMargin}
+                    {pred.combinedMargin > 0 ? '+' : ''}{pred.combinedMargin}
                   </span>
                   <span style={{
                     fontSize: isMobile ? '0.625rem' : '0.75rem',

@@ -114,19 +114,24 @@ export class BasketballEdgeCalculator {
     // Model 2 winner: based on Haslametrics predicted scores
     let modelsAgree = null;
     let modelConfluence = 0;
-    let projectedMargin = null;
+    let combinedMargin = null;
     
-    if (dratings && haslametrics && dratings.awayWinProb && haslametrics.awayScore && haslametrics.homeScore) {
-      const model1PicksAway = dratings.awayWinProb > 0.5;
+    if (dratings && haslametrics && dratings.awayScore && dratings.homeScore && haslametrics.awayScore && haslametrics.homeScore) {
+      // Determine who each model picks
+      const model1PicksAway = dratings.awayScore > dratings.homeScore;
       const model2PicksAway = haslametrics.awayScore > haslametrics.homeScore;
       
       modelsAgree = model1PicksAway === model2PicksAway;
       modelConfluence = modelsAgree ? 2 : 1; // 2 = both agree, 1 = split
       
-      // Calculate projected margin from ensemble scores
-      if (ensembleAwayScore && ensembleHomeScore) {
-        projectedMargin = Math.abs(ensembleAwayScore - ensembleHomeScore);
-      }
+      // Calculate COMBINED margin from both models
+      // D-Ratings margin: positive = away wins, negative = home wins
+      const drateMargin = dratings.awayScore - dratings.homeScore;
+      // Haslametrics margin: positive = away wins, negative = home wins  
+      const haslaMargin = haslametrics.awayScore - haslametrics.homeScore;
+      
+      // Combined margin: sum of both (if they agree, it's additive; if they disagree, they partially cancel)
+      combinedMargin = drateMargin + haslaMargin;
     }
     // CASE 2: Missing D-Ratings or Haslametrics - SKIP
     else {
@@ -218,7 +223,7 @@ export class BasketballEdgeCalculator {
       // Model Confluence metrics (for UI display)
       modelConfluence: modelConfluence, // 2 = both agree, 1 = split, 0 = no data
       modelsAgree: modelsAgree,
-      projectedMargin: projectedMargin ? Math.round(projectedMargin * 10) / 10 : null,
+      combinedMargin: combinedMargin ? Math.round(combinedMargin * 10) / 10 : null,
       
       // Market probabilities
       marketAwayProb: Math.round(marketAwayProb * 1000) / 1000,
