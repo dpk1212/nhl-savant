@@ -2818,100 +2818,112 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           </div>
         )}
         
-        {/* Model Confluence Box - Shows agreement between models */}
-        {pred.modelConfluence > 0 && pred.combinedMargin !== null && (
-          <div style={{ 
-            background: pred.modelsAgree 
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
-              : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)',
-            borderRadius: '8px',
-            padding: isMobile ? '0.5rem 0.625rem' : '0.75rem',
-            border: `1px solid ${pred.modelsAgree ? 'rgba(16, 185, 129, 0.25)' : 'rgba(251, 191, 36, 0.25)'}`,
-            position: 'relative',
-            zIndex: 2
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: isMobile ? '0.5rem' : '1rem'
+        {/* Model Confluence Box - Calculate directly from game data */}
+        {(() => {
+          // Calculate conviction metrics directly from raw game data
+          const dr = game.dratings;
+          const hs = game.haslametrics;
+          if (!dr?.awayScore || !dr?.homeScore || !hs?.awayScore || !hs?.homeScore) return null;
+          
+          const drMargin = dr.awayScore - dr.homeScore;
+          const hsMargin = hs.awayScore - hs.homeScore;
+          const combinedMargin = Math.round((drMargin + hsMargin) * 10) / 10;
+          const modelsAgree = (drMargin > 0) === (hsMargin > 0);
+          
+          return (
+            <div style={{ 
+              background: modelsAgree 
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)',
+              borderRadius: '8px',
+              padding: isMobile ? '0.5rem 0.625rem' : '0.75rem',
+              border: `1px solid ${modelsAgree ? 'rgba(16, 185, 129, 0.25)' : 'rgba(251, 191, 36, 0.25)'}`,
+              position: 'relative',
+              zIndex: 2
             }}>
-              {/* Model Agreement */}
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.5)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: '0.25rem'
-                }}>
-                  Model Agreement
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.375rem'
-                }}>
-                  <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
-                    {pred.modelsAgree ? '🎯' : '⚖️'}
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '0.813rem' : '0.938rem',
-                    fontWeight: '700',
-                    color: pred.modelsAgree ? '#10b981' : '#fbbf24'
-                  }}>
-                    {pred.modelsAgree ? 'Both Aligned' : 'Split Decision'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Divider */}
               <div style={{
-                width: '1px',
-                height: isMobile ? '24px' : '32px',
-                background: 'rgba(255,255,255,0.15)'
-              }} />
-              
-              {/* Conviction Score - Total model conviction */}
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.5)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: '0.25rem'
-                }}>
-                  Conviction Score
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.25rem'
-                }}>
-                  <span style={{
-                    fontSize: isMobile ? '1rem' : '1.25rem',
-                    fontWeight: '900',
-                    color: Math.abs(pred.combinedMargin) >= 10 ? '#10b981' : Math.abs(pred.combinedMargin) >= 5 ? '#fbbf24' : 'white',
-                    letterSpacing: '-0.02em'
-                  }}>
-                    {pred.combinedMargin > 0 ? '+' : ''}{pred.combinedMargin}
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '0.625rem' : '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: isMobile ? '0.5rem' : '1rem'
+              }}>
+                {/* Model Agreement */}
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
                     color: 'rgba(255,255,255,0.5)',
-                    fontWeight: '600'
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: '0.25rem'
                   }}>
-                    pts
-                  </span>
+                    Model Agreement
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.375rem'
+                  }}>
+                    <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                      {modelsAgree ? '🎯' : '⚖️'}
+                    </span>
+                    <span style={{
+                      fontSize: isMobile ? '0.813rem' : '0.938rem',
+                      fontWeight: '700',
+                      color: modelsAgree ? '#10b981' : '#fbbf24'
+                    }}>
+                      {modelsAgree ? 'Both Aligned' : 'Split Decision'}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Divider */}
+                <div style={{
+                  width: '1px',
+                  height: isMobile ? '24px' : '32px',
+                  background: 'rgba(255,255,255,0.15)'
+                }} />
+                
+                {/* Conviction Score */}
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
+                    color: 'rgba(255,255,255,0.5)',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Conviction Score
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span style={{
+                      fontSize: isMobile ? '1rem' : '1.25rem',
+                      fontWeight: '900',
+                      color: Math.abs(combinedMargin) >= 10 ? '#10b981' : Math.abs(combinedMargin) >= 5 ? '#fbbf24' : 'white',
+                      letterSpacing: '-0.02em'
+                    }}>
+                      {combinedMargin > 0 ? '+' : ''}{combinedMargin}
+                    </span>
+                    <span style={{
+                      fontSize: isMobile ? '0.625rem' : '0.75rem',
+                      color: 'rgba(255,255,255,0.5)',
+                      fontWeight: '600'
+                    }}>
+                      pts
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
       
       {/* Collapsible Details - Micro */}
