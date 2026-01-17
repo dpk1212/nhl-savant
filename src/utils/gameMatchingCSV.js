@@ -162,6 +162,19 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     const awayTeamData = haslaTeams[awayMapping.haslametrics];
     const homeTeamData = haslaTeams[homeMapping.haslametrics];
     
+    // Calculate predicted scores from team efficiency when game-specific predictions unavailable
+    // Uses tempo-free efficiency model: score = (offEff * avgPossessions / 100) + homeAdvantage
+    const avgPossessions = 70;
+    const homeAdvantage = 3;
+    
+    // Calculate efficiency-based scores as fallback
+    let effAwayScore = null;
+    let effHomeScore = null;
+    if (awayTeamData?.offensiveEff && homeTeamData?.offensiveEff) {
+      effAwayScore = Math.round((awayTeamData.offensiveEff * avgPossessions / 100) * 10) / 10;
+      effHomeScore = Math.round(((homeTeamData.offensiveEff * avgPossessions / 100) + homeAdvantage) * 10) / 10;
+    }
+    
     // Build matched game object
     const matchedGame = {
       // Teams (using OddsTrader names as canonical)
@@ -170,6 +183,7 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       matchup: `${awayTeam} @ ${homeTeam}`,
       
       // Haslametrics data (40% weight in ensemble)
+      // FALLBACK: If game not in "Expected Outcomes", calculate from team efficiency ratings
       haslametrics: haslaGame ? {
         gameTime: haslaGame.gameTime,
         awayRating: haslaGame.awayRating,  // This IS the predicted score
@@ -180,6 +194,18 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
         homeOffEff: homeTeamData?.offensiveEff || null,
         awayScore: haslaGame.awayRating,  // Alias rating as score
         homeScore: haslaGame.homeRating   // Alias rating as score
+      } : (awayTeamData && homeTeamData) ? {
+        // FALLBACK: No game prediction, but have team efficiency ratings
+        gameTime: null,
+        awayRating: null,
+        homeRating: null,
+        awayRank: null,
+        homeRank: null,
+        awayOffEff: awayTeamData.offensiveEff || null,
+        homeOffEff: homeTeamData.offensiveEff || null,
+        awayScore: effAwayScore,  // Calculated from efficiency
+        homeScore: effHomeScore,  // Calculated from efficiency
+        isEfficiencyBased: true   // Flag for transparency
       } : null,
       
       // D-Ratings data (60% weight - PRIMARY)

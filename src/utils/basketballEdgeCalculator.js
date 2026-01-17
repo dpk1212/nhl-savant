@@ -108,6 +108,26 @@ export class BasketballEdgeCalculator {
         ensembleTotal = ensembleAwayScore + ensembleHomeScore;
       }
     }
+    
+    // Calculate Model Confluence metrics
+    // Model 1 winner: based on D-Ratings win probability (>50% = away wins)
+    // Model 2 winner: based on Haslametrics predicted scores
+    let modelsAgree = null;
+    let modelConfluence = 0;
+    let projectedMargin = null;
+    
+    if (dratings && haslametrics && dratings.awayWinProb && haslametrics.awayScore && haslametrics.homeScore) {
+      const model1PicksAway = dratings.awayWinProb > 0.5;
+      const model2PicksAway = haslametrics.awayScore > haslametrics.homeScore;
+      
+      modelsAgree = model1PicksAway === model2PicksAway;
+      modelConfluence = modelsAgree ? 2 : 1; // 2 = both agree, 1 = split
+      
+      // Calculate projected margin from ensemble scores
+      if (ensembleAwayScore && ensembleHomeScore) {
+        projectedMargin = Math.abs(ensembleAwayScore - ensembleHomeScore);
+      }
+    }
     // CASE 2: Missing D-Ratings or Haslametrics - SKIP
     else {
       return { error: 'Requires BOTH D-Ratings AND Haslametrics', grade: 'N/A' };
@@ -194,6 +214,11 @@ export class BasketballEdgeCalculator {
       ensembleAwayScore: ensembleAwayScore ? Math.round(ensembleAwayScore * 10) / 10 : null,
       ensembleHomeScore: ensembleHomeScore ? Math.round(ensembleHomeScore * 10) / 10 : null,
       ensembleTotal: ensembleTotal ? Math.round(ensembleTotal * 10) / 10 : null,
+      
+      // Model Confluence metrics (for UI display)
+      modelConfluence: modelConfluence, // 2 = both agree, 1 = split, 0 = no data
+      modelsAgree: modelsAgree,
+      projectedMargin: projectedMargin ? Math.round(projectedMargin * 10) / 10 : null,
       
       // Market probabilities
       marketAwayProb: Math.round(marketAwayProb * 1000) / 1000,
