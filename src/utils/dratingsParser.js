@@ -71,16 +71,23 @@ export function parseDRatings(markdown) {
           continue;
         }
         
-        // Extract predicted scores from "Points" column (index 5)
-        // Format: 72.9<br>70.9
+        // Extract predicted scores from "Points" column
+        // Format: 72.9<br>70.9 (two decimal numbers separated by <br>)
+        // NOTE: Column index varies when Best ML is empty, so find by pattern matching
         let awayScore = null;
         let homeScore = null;
         
-        if (cells[5]) {
-          const scoreMatches = cells[5].match(/([\d.]+)/g);
-          if (scoreMatches && scoreMatches.length >= 2) {
-            awayScore = parseFloat(scoreMatches[0]);
-            homeScore = parseFloat(scoreMatches[1]);
+        // Find the Points cell: contains exactly 2 decimal numbers with <br> separator
+        // This distinguishes it from Total Points (single number) and other columns
+        for (let cellIdx = 3; cellIdx < cells.length; cellIdx++) {
+          const cell = cells[cellIdx];
+          // Pattern: two decimal numbers separated by <br> (e.g., "78.5<br>72.8")
+          const pointsPattern = /^([\d.]+)<br>([\d.]+)$/;
+          const match = cell.match(pointsPattern);
+          if (match) {
+            awayScore = parseFloat(match[1]);
+            homeScore = parseFloat(match[2]);
+            break;
           }
         }
         
