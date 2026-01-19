@@ -217,6 +217,8 @@ export async function updateDynamicConfidence() {
   const byProb = {};
   const byEV = {};
   const bySide = {};
+  const byModelsAgree = {};
+  const byConvictionScore = {};
 
   bets.forEach(bet => {
     const factors = classifyBet(bet);
@@ -240,6 +242,28 @@ export async function updateDynamicConfidence() {
     // Side
     if (!bySide[factors.side]) bySide[factors.side] = [];
     bySide[factors.side].push(bet);
+    
+    // Models Agree (NEW TRACKING)
+    const modelsAgree = bet.prediction?.modelsAgree;
+    if (modelsAgree !== undefined) {
+      const agreeKey = modelsAgree ? 'AGREE' : 'DISAGREE';
+      if (!byModelsAgree[agreeKey]) byModelsAgree[agreeKey] = [];
+      byModelsAgree[agreeKey].push(bet);
+    }
+    
+    // Conviction Score (NEW TRACKING)
+    const convictionScore = bet.prediction?.convictionScore;
+    if (convictionScore !== undefined && convictionScore !== null) {
+      // Group into ranges: 1-3 (LOW), 4-5 (MEDIUM), 6-7 (HIGH), 8-10 (ELITE)
+      let convictionRange;
+      if (convictionScore <= 3) convictionRange = 'LOW_1-3';
+      else if (convictionScore <= 5) convictionRange = 'MED_4-5';
+      else if (convictionScore <= 7) convictionRange = 'HIGH_6-7';
+      else convictionRange = 'ELITE_8-10';
+      
+      if (!byConvictionScore[convictionRange]) byConvictionScore[convictionRange] = [];
+      byConvictionScore[convictionRange].push(bet);
+    }
   });
 
   // Calculate performance and weights for each factor
@@ -337,6 +361,57 @@ export async function updateDynamicConfidence() {
     const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
     const calibEmoji = stats.calibError > 0.05 ? '📈' : stats.calibError < -0.05 ? '📉' : '✅';
     console.log(`   ${roiEmoji} ${side.padEnd(6)}: ${stats.total.toString().padStart(3)} bets | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | ${calibEmoji} Calib: ${stats.calibError >= 0 ? '+' : ''}${(stats.calibError * 100).toFixed(1)}% | Wt: ${weight.toFixed(2)}`);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // NEW: MODELS AGREE TRACKING (collecting data - not yet used for unit sizing)
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  
+  factorPerformance.modelsAgree = {};
+  
+  if (Object.keys(byModelsAgree).length > 0) {
+    console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│ 🆕 MODELS AGREE TRACKING (data collection only)                                           │');
+    console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
+
+    for (const [agree, agreeBets] of Object.entries(byModelsAgree)) {
+      const stats = calculateStats(agreeBets);
+      factorPerformance.modelsAgree[agree] = stats;
+      
+      const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+      console.log(`   ${roiEmoji} ${agree.padEnd(10)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+    }
+    console.log(`\n   📊 Total bets with modelsAgree field: ${Object.values(byModelsAgree).reduce((a, b) => a + b.length, 0)}`);
+  } else {
+    console.log('\n   ⏳ MODELS AGREE: No data yet (field not present in completed bets)');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // NEW: CONVICTION SCORE TRACKING (collecting data - not yet used for unit sizing)
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  
+  factorPerformance.convictionScore = {};
+  
+  if (Object.keys(byConvictionScore).length > 0) {
+    console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│ 🆕 CONVICTION SCORE TRACKING (data collection only)                                       │');
+    console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
+
+    // Sort by conviction range
+    const sortOrder = ['LOW_1-3', 'MED_4-5', 'HIGH_6-7', 'ELITE_8-10'];
+    const sortedConviction = Object.entries(byConvictionScore)
+      .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]));
+
+    for (const [range, rangeBets] of sortedConviction) {
+      const stats = calculateStats(rangeBets);
+      factorPerformance.convictionScore[range] = stats;
+      
+      const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+      console.log(`   ${roiEmoji} ${range.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+    }
+    console.log(`\n   📊 Total bets with convictionScore field: ${Object.values(byConvictionScore).reduce((a, b) => a + b.length, 0)}`);
+  } else {
+    console.log('\n   ⏳ CONVICTION SCORE: No data yet (field not present in completed bets)');
   }
 
   // Save to local JSON file (public folder for frontend access)
