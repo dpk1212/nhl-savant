@@ -41,18 +41,56 @@ exports.checkSubscription = functions.https.onCall(async (data, context) => {
 
     const userId = context.auth.uid;
     const userEmail = data.email || context.auth.token.email;
+    
+    // Also accept an alternate email for cases where Stripe checkout used different email
+    const alternateEmail = data.alternateEmail;
 
     if (!userEmail) {
       throw new functions.https.HttpsError('invalid-argument', 'Email is required');
     }
 
-    console.log(`Checking subscription for user: ${userId}, email: ${userEmail}`);
+    console.log(`Checking subscription for user: ${userId}, email: ${userEmail}, alternateEmail: ${alternateEmail || 'none'}`);
 
-    // Step 1: Find ALL Stripe customers by email (user may have multiple from duplicate checkouts)
-    const customers = await stripe.customers.list({
-      email: userEmail,
-      limit: 100  // Get ALL customers with this email
-    });
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 0: Check if user already has a stripeCustomerId in Firestore
+    // This handles cases where they checked out with a different email
+    // ═══════════════════════════════════════════════════════════════════════
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
+    const existingCustomerId = userDoc.exists ? userDoc.data().stripeCustomerId : null;
+    
+    let customers = { data: [] };
+    
+    if (existingCustomerId) {
+      // User already linked to a Stripe customer - use that directly
+      console.log(`✅ User has existing stripeCustomerId: ${existingCustomerId}`);
+      try {
+        const existingCustomer = await stripe.customers.retrieve(existingCustomerId);
+        if (existingCustomer && !existingCustomer.deleted) {
+          customers.data = [existingCustomer];
+          console.log(`Using linked Stripe customer: ${existingCustomer.email}`);
+        }
+      } catch (err) {
+        console.log(`Existing customer ${existingCustomerId} not found, will search by email`);
+      }
+    }
+    
+    // If no linked customer, search by email(s)
+    if (customers.data.length === 0) {
+      // Step 1a: Search by primary email
+      customers = await stripe.customers.list({
+        email: userEmail,
+        limit: 100
+      });
+      
+      // Step 1b: If no results and alternate email provided, try that
+      if (customers.data.length === 0 && alternateEmail) {
+        console.log(`No customer found for ${userEmail}, trying alternate: ${alternateEmail}`);
+        customers = await stripe.customers.list({
+          email: alternateEmail,
+          limit: 100
+        });
+      }
+    }
 
     if (customers.data.length === 0) {
       console.log('No Stripe customer found');
@@ -67,7 +105,7 @@ exports.checkSubscription = functions.https.onCall(async (data, context) => {
       };
     }
 
-    console.log(`Found ${customers.data.length} Stripe customer(s) for ${userEmail}`);
+    console.log(`Found ${customers.data.length} Stripe customer(s)`);
 
     // Step 2: Check ALL customers for active subscriptions (handles duplicate customer issue)
     let activeSubscription = null;

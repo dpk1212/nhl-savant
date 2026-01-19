@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../firebase/config';
 
@@ -32,8 +32,23 @@ export function useSubscription(user) {
         console.log('Checking subscription status from Stripe...');
       }
       
+      // Check if user has an alternate Stripe email linked
+      let alternateEmail = null;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists() && userDoc.data().stripeEmail) {
+          alternateEmail = userDoc.data().stripeEmail;
+          console.log('Found linked Stripe email:', alternateEmail);
+        }
+      } catch (err) {
+        console.warn('Could not fetch alternate email:', err);
+      }
+      
       const checkSubscription = httpsCallable(functions, 'checkSubscription');
-      const result = await checkSubscription({ email: user.email });
+      const result = await checkSubscription({ 
+        email: user.email,
+        alternateEmail: alternateEmail  // Pass the linked Stripe email
+      });
       console.log('Subscription result from Stripe:', result.data);
       
       setSubscription(result.data);

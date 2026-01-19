@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, CreditCard, Crown, Calendar, TrendingUp, LogOut, ArrowLeft, RefreshCw } from 'lucide-react';
+import { User, CreditCard, Crown, Calendar, TrendingUp, LogOut, ArrowLeft, RefreshCw, Mail, Link2 } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase/config';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { functions, db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 
@@ -22,6 +23,57 @@ const Account = () => {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
+  
+  // Stripe email linking state
+  const [stripeEmail, setStripeEmail] = useState('');
+  const [savedStripeEmail, setSavedStripeEmail] = useState('');
+  const [isLinkingEmail, setIsLinkingEmail] = useState(false);
+  const [linkEmailMessage, setLinkEmailMessage] = useState(null);
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  
+  // Load saved Stripe email on mount
+  useEffect(() => {
+    const loadStripeEmail = async () => {
+      if (!user?.uid) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists() && userDoc.data().stripeEmail) {
+          setSavedStripeEmail(userDoc.data().stripeEmail);
+          setStripeEmail(userDoc.data().stripeEmail);
+        }
+      } catch (err) {
+        console.error('Error loading stripe email:', err);
+      }
+    };
+    loadStripeEmail();
+  }, [user?.uid]);
+  
+  // Link a different email for Stripe lookup
+  const handleLinkStripeEmail = async () => {
+    if (!stripeEmail || !stripeEmail.includes('@')) {
+      setLinkEmailMessage({ type: 'error', text: 'Please enter a valid email address' });
+      return;
+    }
+    
+    setIsLinkingEmail(true);
+    setLinkEmailMessage(null);
+    
+    try {
+      // Save the alternate email to Firebase
+      await setDoc(doc(db, 'users', user.uid), {
+        stripeEmail: stripeEmail.toLowerCase().trim()
+      }, { merge: true });
+      
+      setSavedStripeEmail(stripeEmail.toLowerCase().trim());
+      setLinkEmailMessage({ type: 'success', text: '✅ Email linked! Click "Sync" to check for subscription.' });
+      setShowEmailInput(false);
+    } catch (error) {
+      console.error('Error linking email:', error);
+      setLinkEmailMessage({ type: 'error', text: 'Failed to link email. Please try again.' });
+    } finally {
+      setIsLinkingEmail(false);
+    }
+  };
 
   // Sync subscription from Stripe (for users who paid but Firebase wasn't updated)
   const handleSyncSubscription = async () => {
@@ -471,13 +523,134 @@ const Account = () => {
                 </div>
               )}
 
+              {/* Link Stripe Email Section */}
+              <div style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                borderRadius: '10px'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem'
+                }}>
+                  <Mail size={16} color="#60A5FA" />
+                  <span style={{ 
+                    fontSize: '0.875rem', 
+                    fontWeight: '600', 
+                    color: '#60A5FA'
+                  }}>
+                    Paid with a different email?
+                  </span>
+                </div>
+                
+                {savedStripeEmail && !showEmailInput && (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    borderRadius: '6px'
+                  }}>
+                    <Link2 size={14} color="#10B981" />
+                    <span style={{ fontSize: '0.813rem', color: '#10B981' }}>
+                      Linked: {savedStripeEmail}
+                    </span>
+                    <button
+                      onClick={() => setShowEmailInput(true)}
+                      style={{
+                        marginLeft: 'auto',
+                        padding: '0.25rem 0.5rem',
+                        background: 'transparent',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        borderRadius: '4px',
+                        color: '#10B981',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+                
+                {(!savedStripeEmail || showEmailInput) && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <input
+                      type="email"
+                      placeholder="Enter email used at Stripe checkout"
+                      value={stripeEmail}
+                      onChange={(e) => setStripeEmail(e.target.value)}
+                      style={{
+                        flex: '1',
+                        minWidth: '200px',
+                        padding: '0.625rem 0.875rem',
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px solid rgba(148, 163, 184, 0.2)',
+                        borderRadius: '8px',
+                        color: '#F1F5F9',
+                        fontSize: '0.875rem'
+                      }}
+                    />
+                    <button
+                      onClick={handleLinkStripeEmail}
+                      disabled={isLinkingEmail}
+                      style={{
+                        padding: '0.625rem 1rem',
+                        background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: 'white',
+                        fontSize: '0.813rem',
+                        fontWeight: '600',
+                        cursor: isLinkingEmail ? 'not-allowed' : 'pointer',
+                        opacity: isLinkingEmail ? 0.7 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem'
+                      }}
+                    >
+                      <Link2 size={14} />
+                      {isLinkingEmail ? 'Linking...' : 'Link Email'}
+                    </button>
+                  </div>
+                )}
+                
+                {linkEmailMessage && (
+                  <div style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '6px',
+                    fontSize: '0.813rem',
+                    background: linkEmailMessage.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    color: linkEmailMessage.type === 'success' ? '#10B981' : '#EF4444'
+                  }}>
+                    {linkEmailMessage.text}
+                  </div>
+                )}
+                
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: 'rgba(241, 245, 249, 0.5)',
+                  marginTop: '0.75rem',
+                  margin: 0
+                }}>
+                  If you checked out with a Yahoo, Outlook, or other email instead of your Google account email, enter it here.
+                </p>
+              </div>
+
               <p style={{
                 fontSize: '0.75rem',
                 color: 'rgba(241, 245, 249, 0.5)',
                 marginTop: '1rem',
                 fontStyle: 'italic'
               }}>
-                💡 Already paid but showing as Free? Click "Already Subscribed?" to sync your account.
+                💡 Already paid but showing as Free? Link your Stripe email above, then click "Already Subscribed?" to sync.
               </p>
             </>
           )}
