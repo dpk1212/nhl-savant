@@ -194,35 +194,61 @@ function classifyBet(bet) {
  * calibError = actualWinRate - avgModelProb
  *   Positive = model underconfident (betting more is OK)
  *   Negative = model overconfident (REDUCE betting)
+ * 
+ * UPDATED: More aggressive on overconfident patterns
  */
 function getCalibrationMultiplier(calibError, sampleSize, minSample = 25) {
   if (sampleSize < minSample) return 1.0; // Not enough data
   
-  // Sigmoid-like: maps calibError to 0.5 - 1.5 range
-  // +10% calibError → 1.25 multiplier (model underconfident, bet more)
-  // -10% calibError → 0.75 multiplier (model overconfident, bet less)
-  // -25% calibError → 0.5 multiplier (severely overconfident)
-  const multiplier = 1 + (calibError * 2.5);
+  // More aggressive scaling for overconfident patterns
+  // +10% calibError → 1.3 multiplier (model underconfident, bet more)
+  // -5% calibError → 0.8 multiplier  
+  // -10% calibError → 0.5 multiplier (model overconfident, bet less)
+  // -15% calibError → 0.25 multiplier (severely overconfident)
+  let multiplier;
+  if (calibError >= 0) {
+    // Underconfident: gentle boost (1.0 to 1.5)
+    multiplier = 1 + (calibError * 3);
+  } else {
+    // Overconfident: AGGRESSIVE reduction (exponential)
+    // -5% → 0.75, -10% → 0.5, -15% → 0.25
+    multiplier = Math.pow(0.5, Math.abs(calibError) / 0.10);
+  }
   
   // Clamp to reasonable range
-  return Math.max(0.3, Math.min(1.5, multiplier));
+  return Math.max(0.15, Math.min(1.5, multiplier));
 }
 
 /**
  * 📈 ROI MULTIPLIER
  * Converts ROI to a multiplier
+ * 
+ * UPDATED: MUCH more aggressive on negative ROI patterns
+ * Based on Dec 14+ data:
+ *   SLIGHT_FAV: +11.1% ROI → boost
+ *   PICKEM: -11.8% ROI → crush
+ *   HEAVY_FAV: -4.2% ROI → reduce
  */
 function getROIMultiplier(roi, sampleSize, minSample = 25) {
   if (sampleSize < minSample) return 1.0; // Not enough data
   
-  // More aggressive: ROI has stronger effect
-  // +20% ROI → 1.4 multiplier
-  // 0% ROI → 1.0 multiplier
-  // -10% ROI → 0.7 multiplier
-  // -20% ROI → 0.4 multiplier
-  const multiplier = 1 + (roi / 33);
+  let multiplier;
+  if (roi >= 0) {
+    // Profitable patterns: boost proportionally
+    // +5% ROI → 1.25 multiplier
+    // +10% ROI → 1.5 multiplier
+    // +15% ROI → 1.75 multiplier (capped at 2.0)
+    multiplier = 1 + (roi / 20);
+  } else {
+    // LOSING patterns: EXPONENTIAL penalty
+    // -3% ROI → 0.7 multiplier
+    // -6% ROI → 0.5 multiplier
+    // -10% ROI → 0.3 multiplier
+    // -15% ROI → 0.15 multiplier
+    multiplier = Math.pow(0.5, Math.abs(roi) / 6);
+  }
   
-  return Math.max(0.3, Math.min(1.5, multiplier));
+  return Math.max(0.1, Math.min(2.0, multiplier));
 }
 
 /**
@@ -259,6 +285,17 @@ export function calculateDynamicUnits(bet, confidenceData) {
   const multiplierFactors = [];
   let combinedMultiplier = 1.0;
   
+  // ═══════════════════════════════════════════════════════════════
+  // FACTOR WEIGHTS (updated based on Dec 14+ ROI variance analysis)
+  // ODDS has biggest ROI spread (+11% to -12%), so it gets most weight
+  // ═══════════════════════════════════════════════════════════════
+  const FACTOR_WEIGHTS = {
+    odds: 0.50,    // 50% - Biggest ROI variance (22.9% spread)
+    grade: 0.25,   // 25% - Quality grade
+    prob: 0.15,    // 15% - Model probability range
+    ev: 0.10      // 10% - Expected value range
+  };
+
   // Grade calibration + ROI
   const gradeCalibMult = getCalibrationMultiplier(gradePerf.calibError || 0, gradePerf.total || 0, MIN_SAMPLE_SIZE);
   const gradeROIMult = getROIMultiplier(gradePerf.roi || 0, gradePerf.total || 0, MIN_SAMPLE_SIZE);
@@ -271,10 +308,10 @@ export function calculateDynamicUnits(bet, confidenceData) {
       roi: gradePerf.roi,
       multiplier: gradeMultiplier
     });
-    combinedMultiplier *= Math.pow(gradeMultiplier, 0.35); // Grade has 35% weight
+    combinedMultiplier *= Math.pow(gradeMultiplier, FACTOR_WEIGHTS.grade);
   }
   
-  // Odds calibration + ROI
+  // Odds calibration + ROI - MOST IMPORTANT FACTOR
   const oddsCalibMult = getCalibrationMultiplier(oddsPerf.calibError || 0, oddsPerf.total || 0, MIN_SAMPLE_SIZE);
   const oddsROIMult = getROIMultiplier(oddsPerf.roi || 0, oddsPerf.total || 0, MIN_SAMPLE_SIZE);
   const oddsMultiplier = (oddsCalibMult + oddsROIMult) / 2;
@@ -286,7 +323,7 @@ export function calculateDynamicUnits(bet, confidenceData) {
       roi: oddsPerf.roi,
       multiplier: oddsMultiplier
     });
-    combinedMultiplier *= Math.pow(oddsMultiplier, 0.30); // Odds has 30% weight
+    combinedMultiplier *= Math.pow(oddsMultiplier, FACTOR_WEIGHTS.odds);
   }
   
   // Probability calibration + ROI
@@ -301,7 +338,7 @@ export function calculateDynamicUnits(bet, confidenceData) {
       roi: probPerf.roi,
       multiplier: probMultiplier
     });
-    combinedMultiplier *= Math.pow(probMultiplier, 0.20); // Prob has 20% weight
+    combinedMultiplier *= Math.pow(probMultiplier, FACTOR_WEIGHTS.prob);
   }
   
   // EV calibration + ROI (important for catching overconfident high EV bets)
@@ -316,7 +353,7 @@ export function calculateDynamicUnits(bet, confidenceData) {
       roi: evPerf.roi,
       multiplier: evMultiplier
     });
-    combinedMultiplier *= Math.pow(evMultiplier, 0.15); // EV has 15% weight
+    combinedMultiplier *= Math.pow(evMultiplier, FACTOR_WEIGHTS.ev);
   }
   
   // ═══════════════════════════════════════════════════════════════

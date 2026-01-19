@@ -150,24 +150,39 @@ function classifyBet(bet) {
 }
 
 /**
- * Convert ROI to a confidence weight (0-2 scale)
- * Uses sigmoid-like function to normalize
+ * Convert ROI to a confidence weight
+ * 
+ * UPDATED: More aggressive exponential penalty for negative ROI
+ * Based on Dec 14+ data analysis:
+ *   SLIGHT_FAV: +11.1% ROI → boost
+ *   PICKEM: -11.8% ROI → heavy penalty
+ *   HEAVY_FAV: -4.2% ROI → moderate penalty
  */
 function roiToWeight(roi, sampleSize, minSample = 10) {
   // Not enough data? Use neutral weight
   if (sampleSize < minSample) return 1.0;
   
-  // Sigmoid transformation: maps ROI to 0-2 range
-  // ROI of 0% → weight of 1.0
-  // ROI of +30% → weight of ~1.8
-  // ROI of -30% → weight of ~0.2
-  const normalized = roi / 50; // Scale so ±50% ROI maps to ±1
-  const weight = 2 / (1 + Math.exp(-2 * normalized));
+  let weight;
+  if (roi >= 0) {
+    // Profitable patterns: proportional boost (1.0 to 2.0)
+    // +5% ROI → 1.25
+    // +10% ROI → 1.5
+    // +15% ROI → 1.75
+    weight = 1 + (roi / 20);
+    weight = Math.min(2.0, weight);
+  } else {
+    // LOSING patterns: EXPONENTIAL penalty
+    // -3% ROI → 0.7
+    // -6% ROI → 0.5
+    // -10% ROI → 0.3
+    // -15% ROI → 0.15
+    weight = Math.pow(0.5, Math.abs(roi) / 6);
+    weight = Math.max(0.1, weight);
+  }
   
-  // Apply sample size confidence factor
+  // Apply sample size confidence factor (blend toward 1.0 when sample small)
   const confidenceFactor = Math.min(1, sampleSize / 30);
   
-  // Blend towards 1.0 when sample is small
   return 1.0 + (weight - 1.0) * confidenceFactor;
 }
 
