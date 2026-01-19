@@ -52,6 +52,7 @@ const Basketball = () => {
   const [gameStatusFilter, setGameStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('confidence'); // 'confidence' | 'time' | 'edge' | 'savant'
   const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
+  const [showModelsAligned, setShowModelsAligned] = useState(false); // Filter to show only when both models agree
   const [teamMappings, setTeamMappings] = useState(null);
   
   // Bet outcomes state
@@ -777,6 +778,52 @@ const Basketball = () => {
                   })()}
                 </span>
               </button>
+              {/* Models Aligned Filter */}
+              <button
+                onClick={() => setShowModelsAligned(!showModelsAligned)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: showModelsAligned 
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)'
+                    : 'rgba(15, 23, 42, 0.5)',
+                  border: showModelsAligned 
+                    ? '2px solid rgba(16, 185, 129, 0.5)'
+                    : '1px solid rgba(71, 85, 105, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{ fontSize: '12px' }}>🔗</span>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: showModelsAligned ? 'rgba(16, 185, 129, 0.95)' : '#cbd5e1',
+                }}>
+                  Models Aligned
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  color: showModelsAligned ? 'rgba(16, 185, 129, 0.8)' : 'rgba(255,255,255,0.5)',
+                  background: showModelsAligned ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.1)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}>
+                  {(() => {
+                    const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+                    const gamesToCount = gamesWithLiveScores.length > 0 ? gamesWithLiveScores : recommendations;
+                    return gamesToCount.filter(g => {
+                      const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
+                      const bet = betsMap.get(key);
+                      return g.prediction?.modelsAgree === true || bet?.prediction?.modelsAgree === true;
+                    }).length;
+                  })()}
+                </span>
+              </button>
               <SavantPickInfo isMobile={isMobile} />
             </div>
             
@@ -917,6 +964,16 @@ const Basketball = () => {
                 filteredGames = filteredGames.filter(game => isGameSavantPick(game));
               }
               
+              // 🔗 Apply Models Aligned filter (if showModelsAligned is enabled)
+              if (showModelsAligned) {
+                filteredGames = filteredGames.filter(game => {
+                  // Check if models agree from prediction or from Firebase bet
+                  const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
+                  const bet = betsMap.get(key);
+                  return game.prediction?.modelsAgree === true || bet?.prediction?.modelsAgree === true;
+                });
+              }
+              
               // 🎯 APPLY SORT ORDER
               // Helper to get game time from various possible locations
               const getGameTime = (game) => {
@@ -964,8 +1021,19 @@ const Basketball = () => {
                   const edgeB = b.prediction?.ev || b.prediction?.edge || 0;
                   return edgeB - edgeA;
                 });
+              } else if (sortOrder === 'confidence') {
+                // 🎯 CONFIDENCE SORT: Sort by unit size (highest first)
+                filteredGames = [...filteredGames].sort((a, b) => {
+                  const unitA = a.prediction?.unitSize || 0;
+                  const unitB = b.prediction?.unitSize || 0;
+                  if (unitA !== unitB) return unitB - unitA; // Highest units first
+                  // Tie-breaker: sort by EV
+                  const evA = a.prediction?.evPercent || a.prediction?.ev || 0;
+                  const evB = b.prediction?.evPercent || b.prediction?.ev || 0;
+                  return evB - evA;
+                });
               }
-              // Default 'confidence' keeps the tier grouping below
+              // Tier grouping below for confidence view
               
               // 🎯 CBB SOFT PAYWALL: Split games for free users
               // ⚠️ CRITICAL: Premium users OR users who dismissed paywall must see ALL games!
