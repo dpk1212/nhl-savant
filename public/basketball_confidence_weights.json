@@ -435,10 +435,57 @@
         "actualWinRate": 0.6522,
         "calibError": -0.0444
       }
+    },
+    "modelAccuracy": {
+      "haslametrics": {
+        "correct": 44,
+        "total": 68,
+        "accuracy": 64.70588235294117,
+        "byMargin": {
+          "close": {
+            "correct": 18,
+            "total": 28
+          },
+          "medium": {
+            "correct": 26,
+            "total": 39
+          },
+          "blowout": {
+            "correct": 0,
+            "total": 1
+          }
+        }
+      },
+      "dratings": {
+        "correct": 45,
+        "total": 68,
+        "accuracy": 66.17647058823529,
+        "byMargin": {
+          "close": {
+            "correct": 18,
+            "total": 27
+          },
+          "medium": {
+            "correct": 26,
+            "total": 40
+          },
+          "blowout": {
+            "correct": 1,
+            "total": 1
+          }
+        }
+      },
+      "headToHead": {
+        "betsWithBothModels": 68,
+        "bothCorrect": 36,
+        "bothWrong": 15,
+        "haslaOnlyCorrect": 8,
+        "dratingsOnlyCorrect": 9
+      }
     }
   },
   "totalBets": 995,
-  "lastUpdated": "2026-01-20T13:36:48.414Z",
+  "lastUpdated": "2026-01-20T14:44:32.599Z",
   "config": {
     "fGradeCap": 0.5,
     "minSampleSize": 30,
