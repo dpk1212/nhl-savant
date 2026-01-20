@@ -318,6 +318,12 @@ const Basketball = () => {
           `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
         );
         
+        // 🔧 FIX: Try to find fresh barttorvik data from todaysGames (pre-filter)
+        // This preserves Matchup Intelligence even when a bet drops off qualityGames
+        const freshGameData = todaysGames.find(g => 
+          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
+        );
+        
         // Build locked pick object
         const lockedGameObj = {
           awayTeam: lockedBet.game.awayTeam,
@@ -344,9 +350,10 @@ const Basketball = () => {
             initialOdds: lockedBet.initialOdds,
             initialEV: lockedBet.initialEV
           },
-          dratings: null,
-          haslametrics: null,
-          barttorvik: lockedBet.barttorvik || null,
+          // 🔧 FIX: Use fresh data from todaysGames, then Firebase, then null
+          dratings: freshGameData?.dratings || null,
+          haslametrics: freshGameData?.haslametrics || null,
+          barttorvik: freshGameData?.barttorvik || lockedBet.barttorvik || null,
           // 📈 CLV data from Firebase
           clv: lockedBet.clv || null
         };
@@ -363,7 +370,7 @@ const Basketball = () => {
           };
         } else {
           // Add locked pick (game no longer in today's scraped data)
-          console.log(`   🔒 Adding locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
+          console.log(`   🔒 Adding locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam} (with ${lockedGameObj.barttorvik ? 'fresh' : 'no'} barttorvik)`);
           mergedGames.push(lockedGameObj);
         }
       }

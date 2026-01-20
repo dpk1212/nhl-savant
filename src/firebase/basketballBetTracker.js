@@ -152,7 +152,10 @@ export class BasketballBetTracker {
       initialEV: prediction.bestEV,
       
       // ⭐ Savant Pick - set to true in Firebase to mark as analyst-enhanced
-      savantPick: false
+      savantPick: false,
+      
+      // 🏀 Barttorvik data for Matchup Intelligence (persists even if game drops off)
+      barttorvik: game.barttorvik || null
     };
     
     try {
