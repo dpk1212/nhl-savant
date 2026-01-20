@@ -414,6 +414,160 @@ export async function updateDynamicConfidence() {
     console.log('\n   ⏳ CONVICTION SCORE: No data yet (field not present in completed bets)');
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // NEW: HASLAMETRICS vs D-RATINGS ACCURACY TRACKING
+  // Compare which model is better at predicting winners
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ 🏀 HASLAMETRICS vs D-RATINGS ACCURACY                                                      │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
+
+  let haslaCorrect = 0;
+  let haslaTotal = 0;
+  let dratingsCorrect = 0;
+  let dratingsTotal = 0;
+  let bothCorrect = 0;
+  let bothWrong = 0;
+  let haslaOnlyCorrect = 0;
+  let dratingsOnlyCorrect = 0;
+  let betsWithBothModels = 0;
+
+  // Track by margin of victory prediction
+  const haslaByMargin = { close: { correct: 0, total: 0 }, medium: { correct: 0, total: 0 }, blowout: { correct: 0, total: 0 } };
+  const dratingsByMargin = { close: { correct: 0, total: 0 }, medium: { correct: 0, total: 0 }, blowout: { correct: 0, total: 0 } };
+
+  bets.forEach(bet => {
+    const prediction = bet.prediction || {};
+    const result = bet.result || {};
+    
+    // Get actual winner
+    const actualAwayScore = result.awayScore;
+    const actualHomeScore = result.homeScore;
+    if (actualAwayScore === undefined || actualHomeScore === undefined) return;
+    
+    const actualWinner = actualAwayScore > actualHomeScore ? 'AWAY' : 'HOME';
+    const actualMargin = Math.abs(actualAwayScore - actualHomeScore);
+    
+    // Haslametrics prediction
+    const haslaAwayScore = prediction.haslametricsAwayScore;
+    const haslaHomeScore = prediction.haslametricsHomeScore;
+    if (haslaAwayScore !== undefined && haslaHomeScore !== undefined && haslaAwayScore !== null && haslaHomeScore !== null) {
+      haslaTotal++;
+      const haslaPredictedWinner = haslaAwayScore > haslaHomeScore ? 'AWAY' : 'HOME';
+      const haslaMargin = Math.abs(haslaAwayScore - haslaHomeScore);
+      const marginCategory = haslaMargin <= 3 ? 'close' : haslaMargin <= 10 ? 'medium' : 'blowout';
+      
+      haslaByMargin[marginCategory].total++;
+      if (haslaPredictedWinner === actualWinner) {
+        haslaCorrect++;
+        haslaByMargin[marginCategory].correct++;
+      }
+    }
+    
+    // D-Ratings prediction
+    const dratingsAwayScore = prediction.dratingsAwayScore;
+    const dratingsHomeScore = prediction.dratingsHomeScore;
+    if (dratingsAwayScore !== undefined && dratingsHomeScore !== undefined && dratingsAwayScore !== null && dratingsHomeScore !== null) {
+      dratingsTotal++;
+      const dratingsPredictedWinner = dratingsAwayScore > dratingsHomeScore ? 'AWAY' : 'HOME';
+      const dratingsMargin = Math.abs(dratingsAwayScore - dratingsHomeScore);
+      const marginCategory = dratingsMargin <= 3 ? 'close' : dratingsMargin <= 10 ? 'medium' : 'blowout';
+      
+      dratingsByMargin[marginCategory].total++;
+      if (dratingsPredictedWinner === actualWinner) {
+        dratingsCorrect++;
+        dratingsByMargin[marginCategory].correct++;
+      }
+    }
+    
+    // Both models comparison
+    if (haslaAwayScore !== undefined && haslaHomeScore !== undefined && 
+        dratingsAwayScore !== undefined && dratingsHomeScore !== undefined &&
+        haslaAwayScore !== null && haslaHomeScore !== null &&
+        dratingsAwayScore !== null && dratingsHomeScore !== null) {
+      betsWithBothModels++;
+      const haslaPredictedWinner = haslaAwayScore > haslaHomeScore ? 'AWAY' : 'HOME';
+      const dratingsPredictedWinner = dratingsAwayScore > dratingsHomeScore ? 'AWAY' : 'HOME';
+      
+      const haslaRight = haslaPredictedWinner === actualWinner;
+      const dratingsRight = dratingsPredictedWinner === actualWinner;
+      
+      if (haslaRight && dratingsRight) bothCorrect++;
+      else if (!haslaRight && !dratingsRight) bothWrong++;
+      else if (haslaRight && !dratingsRight) haslaOnlyCorrect++;
+      else if (!haslaRight && dratingsRight) dratingsOnlyCorrect++;
+    }
+  });
+
+  // Store model accuracy stats
+  factorPerformance.modelAccuracy = {
+    haslametrics: {
+      correct: haslaCorrect,
+      total: haslaTotal,
+      accuracy: haslaTotal > 0 ? (haslaCorrect / haslaTotal * 100) : 0,
+      byMargin: {
+        close: haslaByMargin.close,
+        medium: haslaByMargin.medium,
+        blowout: haslaByMargin.blowout
+      }
+    },
+    dratings: {
+      correct: dratingsCorrect,
+      total: dratingsTotal,
+      accuracy: dratingsTotal > 0 ? (dratingsCorrect / dratingsTotal * 100) : 0,
+      byMargin: {
+        close: dratingsByMargin.close,
+        medium: dratingsByMargin.medium,
+        blowout: dratingsByMargin.blowout
+      }
+    },
+    headToHead: {
+      betsWithBothModels,
+      bothCorrect,
+      bothWrong,
+      haslaOnlyCorrect,
+      dratingsOnlyCorrect
+    }
+  };
+
+  // Display results
+  const haslaAcc = haslaTotal > 0 ? (haslaCorrect / haslaTotal * 100).toFixed(1) : 'N/A';
+  const dratingsAcc = dratingsTotal > 0 ? (dratingsCorrect / dratingsTotal * 100).toFixed(1) : 'N/A';
+  
+  const haslaEmoji = parseFloat(haslaAcc) > parseFloat(dratingsAcc) ? '👑' : '  ';
+  const dratingsEmoji = parseFloat(dratingsAcc) > parseFloat(haslaAcc) ? '👑' : '  ';
+  
+  console.log(`   ${haslaEmoji} HASLAMETRICS: ${haslaAcc}% accuracy (${haslaCorrect}/${haslaTotal} winners correct)`);
+  console.log(`   ${dratingsEmoji} D-RATINGS:    ${dratingsAcc}% accuracy (${dratingsCorrect}/${dratingsTotal} winners correct)`);
+  
+  if (betsWithBothModels > 0) {
+    console.log('');
+    console.log(`   📊 HEAD-TO-HEAD (${betsWithBothModels} bets with both models):`);
+    console.log(`      Both correct:     ${bothCorrect} (${(bothCorrect/betsWithBothModels*100).toFixed(1)}%)`);
+    console.log(`      Both wrong:       ${bothWrong} (${(bothWrong/betsWithBothModels*100).toFixed(1)}%)`);
+    console.log(`      Hasla only right: ${haslaOnlyCorrect} (${(haslaOnlyCorrect/betsWithBothModels*100).toFixed(1)}%)`);
+    console.log(`      D-Rat only right: ${dratingsOnlyCorrect} (${(dratingsOnlyCorrect/betsWithBothModels*100).toFixed(1)}%)`);
+  }
+  
+  // Accuracy by predicted margin
+  console.log('');
+  console.log('   📏 ACCURACY BY PREDICTED MARGIN:');
+  console.log('');
+  console.log('      Margin        │ Haslametrics      │ D-Ratings');
+  console.log('      ──────────────┼───────────────────┼───────────────────');
+  
+  ['close', 'medium', 'blowout'].forEach(margin => {
+    const marginLabel = margin === 'close' ? 'Close (≤3)' : margin === 'medium' ? 'Medium (4-10)' : 'Blowout (11+)';
+    const haslaMarginAcc = haslaByMargin[margin].total > 0 
+      ? `${(haslaByMargin[margin].correct/haslaByMargin[margin].total*100).toFixed(1)}% (${haslaByMargin[margin].correct}/${haslaByMargin[margin].total})`
+      : 'N/A';
+    const dratingsMarginAcc = dratingsByMargin[margin].total > 0 
+      ? `${(dratingsByMargin[margin].correct/dratingsByMargin[margin].total*100).toFixed(1)}% (${dratingsByMargin[margin].correct}/${dratingsByMargin[margin].total})`
+      : 'N/A';
+    console.log(`      ${marginLabel.padEnd(13)} │ ${haslaMarginAcc.padEnd(17)} │ ${dratingsMarginAcc}`);
+  });
+
   // Save to local JSON file (public folder for frontend access)
   console.log('\n💾 Saving dynamic confidence weights...\n');
 
