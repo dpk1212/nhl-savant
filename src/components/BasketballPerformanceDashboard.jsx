@@ -166,6 +166,11 @@ export function BasketballPerformanceDashboard() {
   const savantCount = useMemo(() => {
     return allBets.filter(b => b.savantPick && b.result?.outcome).length;
   }, [allBets]);
+  
+  // Count Models Aligned picks for display
+  const modelsAlignedCount = useMemo(() => {
+    return allBets.filter(b => b.prediction?.modelsAgree === true && b.result?.outcome).length;
+  }, [allBets]);
 
   if (loading) {
     return (
@@ -662,6 +667,7 @@ export function BasketballPerformanceDashboard() {
               bets={allBets} 
               timeFilter={timeFilter} 
               showSavantLine={savantCount > 0}
+              showModelsAlignedLine={modelsAlignedCount > 0}
             />
           )}
         </div>

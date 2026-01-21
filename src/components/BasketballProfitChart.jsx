@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
-const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = false }) => {
+const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = false, showModelsAlignedLine = false }) => {
   const isMobile = window.innerWidth < 768;
   
   // Process bets into timeline data
@@ -47,16 +47,21 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
     
     let cumulativeAll = 0;
     let cumulativeSavant = 0;
+    let cumulativeModelsAligned = 0;
     
     const allData = sortedBets.map((bet, index) => {
       const profit = bet.result?.profit || 0;
       const grade = bet.prediction?.grade || 'B';
       const isSavant = bet.savantPick === true;
+      const isModelsAligned = bet.prediction?.modelsAgree === true;
       
       // Update cumulative profits
       cumulativeAll += profit;
       if (isSavant) {
         cumulativeSavant += profit;
+      }
+      if (isModelsAligned) {
+        cumulativeModelsAligned += profit;
       }
       
       const date = bet.timestamp?.toDate?.() || new Date(bet.timestamp);
@@ -67,13 +72,16 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
         fullDate: date,
         all: parseFloat(cumulativeAll.toFixed(2)),
         savant: parseFloat(cumulativeSavant.toFixed(2)),
+        modelsAligned: parseFloat(cumulativeModelsAligned.toFixed(2)),
         isSavant,
+        isModelsAligned,
         betDetails: {
           grade,
           profit,
           outcome: bet.result?.outcome,
           teams: `${bet.game?.awayTeam || '?'} @ ${bet.game?.homeTeam || '?'}`,
-          isSavant
+          isSavant,
+          isModelsAligned
         }
       };
     });
@@ -98,7 +106,9 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
   // Get final profits
   const finalProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].all : 0;
   const finalSavantProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].savant : 0;
+  const finalModelsAlignedProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].modelsAligned : 0;
   const hasSavantBets = showSavantLine && timelineData.some(d => d.isSavant);
+  const hasModelsAlignedBets = showModelsAlignedLine && timelineData.some(d => d.isModelsAligned);
   
   // Get filter label
   const filterLabel = timeFilter === 'all' ? 'All Time' :
@@ -113,6 +123,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
     const data = payload[0].payload;
     const allValue = data.all;
     const savantValue = data.savant;
+    const modelsAlignedValue = data.modelsAligned;
     const isPositive = allValue >= 0;
     
     return (
@@ -196,6 +207,34 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
           </div>
         )}
         
+        {/* Models Aligned Profit */}
+        {hasModelsAlignedBets && modelsAlignedValue !== 0 && (
+          <div style={{ marginBottom: '0.625rem' }}>
+            <div style={{ 
+              fontSize: '0.625rem', 
+              color: 'rgba(59, 130, 246, 0.8)', 
+              marginBottom: '0.125rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              🔗 Models Aligned
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '0.938rem' : '1.125rem', 
+              fontWeight: '800', 
+              color: modelsAlignedValue >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
+              fontFeatureSettings: "'tnum'",
+              letterSpacing: '-0.02em'
+            }}>
+              {modelsAlignedValue >= 0 ? '+' : ''}{modelsAlignedValue.toFixed(2)}u
+            </div>
+          </div>
+        )}
+        
         {data.betDetails && (
           <div style={{
             paddingTop: '0.625rem',
@@ -228,6 +267,19 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                   fontSize: '0.563rem'
                 }}>
                   SAVANT
+                </span>
+              )}
+              {data.betDetails.isModelsAligned && (
+                <span style={{ 
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  color: 'rgba(59, 130, 246, 0.95)',
+                  padding: '0.125rem 0.375rem',
+                  borderRadius: '4px',
+                  fontWeight: '700',
+                  fontSize: '0.563rem'
+                }}>
+                  ALIGNED
                 </span>
               )}
               <span style={{ 
@@ -451,15 +503,61 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               </div>
             </div>
           )}
+          
+          {/* Models Aligned Badge */}
+          {hasModelsAlignedBets && (
+            <div style={{
+              background: finalModelsAlignedProfit >= 0 
+                ? `linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(37, 99, 235, 0.12) 100%)`
+                : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
+              border: `1px solid ${finalModelsAlignedProfit >= 0 ? 'rgba(59, 130, 246, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+              borderRadius: isMobile ? '10px' : '11px',
+              padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
+              textAlign: 'center',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: finalModelsAlignedProfit >= 0
+                ? '0 4px 16px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+            }}>
+              <div style={{ 
+                fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                color: 'rgba(59, 130, 246, 0.9)', 
+                marginBottom: '0.375rem', 
+                fontWeight: '700', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.08em',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.25rem'
+              }}>
+                🔗 Aligned
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '1.25rem' : '1.625rem', 
+                fontWeight: '900', 
+                color: finalModelsAlignedProfit >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
+                fontFeatureSettings: "'tnum'",
+                letterSpacing: '-0.04em',
+                textShadow: finalModelsAlignedProfit >= 0
+                  ? '0 2px 16px rgba(59, 130, 246, 0.3)'
+                  : '0 2px 16px rgba(239, 68, 68, 0.3)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+              }}>
+                {finalModelsAlignedProfit >= 0 ? '+' : ''}{finalModelsAlignedProfit}u
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
       {/* Legend */}
-      {hasSavantBets && (
+      {(hasSavantBets || hasModelsAlignedBets) && (
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: isMobile ? '1rem' : '2rem',
+          gap: isMobile ? '0.75rem' : '1.5rem',
           marginTop: isMobile ? '1rem' : '1.5rem',
           flexWrap: 'wrap'
         }}>
@@ -478,24 +576,47 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               All Picks
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{
-              width: isMobile ? '20px' : '24px',
-              height: '3px',
-              background: 'rgba(251, 191, 36, 0.9)',
-              borderRadius: '2px'
-            }} />
-            <span style={{
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'rgba(251, 191, 36, 0.9)',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}>
-              ⭐ Savant Picks
-            </span>
-          </div>
+          {hasSavantBets && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{
+                width: isMobile ? '20px' : '24px',
+                height: '3px',
+                background: 'rgba(251, 191, 36, 0.9)',
+                borderRadius: '2px'
+              }} />
+              <span style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(251, 191, 36, 0.9)',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                ⭐ Savant Picks
+              </span>
+            </div>
+          )}
+          {hasModelsAlignedBets && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{
+                width: isMobile ? '20px' : '24px',
+                height: '3px',
+                background: 'rgba(59, 130, 246, 0.9)',
+                borderRadius: '2px',
+                backgroundImage: 'repeating-linear-gradient(90deg, rgba(59, 130, 246, 0.9), rgba(59, 130, 246, 0.9) 4px, transparent 4px, transparent 8px)'
+              }} />
+              <span style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                color: 'rgba(59, 130, 246, 0.9)',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                🔗 Models Aligned
+              </span>
+            </div>
+          )}
         </div>
       )}
       
@@ -514,6 +635,10 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               <linearGradient id="savantGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#FBBF24" stopOpacity={0.15}/>
                 <stop offset="95%" stopColor="#FBBF24" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="modelsAlignedGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15}/>
+                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid 
@@ -586,6 +711,28 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                   stroke: 'rgba(255, 255, 255, 0.3)'
                 }}
                 animationDuration={1000}
+                animationEasing="ease-in-out"
+                isAnimationActive={true}
+              />
+            )}
+            
+            {/* Models Aligned Line */}
+            {hasModelsAlignedBets && (
+              <Line 
+                type="monotone" 
+                dataKey="modelsAligned"
+                name="Models Aligned"
+                stroke="rgba(59, 130, 246, 0.9)"
+                strokeWidth={isMobile ? 2 : 2.5}
+                strokeDasharray="4 4"
+                dot={false}
+                activeDot={{ 
+                  r: isMobile ? 4 : 5, 
+                  fill: 'rgba(59, 130, 246, 0.95)',
+                  strokeWidth: 2,
+                  stroke: 'rgba(255, 255, 255, 0.3)'
+                }}
+                animationDuration={1200}
                 animationEasing="ease-in-out"
                 isAnimationActive={true}
               />
