@@ -17,7 +17,7 @@ export function BasketballPerformanceDashboard() {
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
-  const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
+  const [showSavantOnly, setShowSavantOnly] = useState(true); // Filter to show only Savant Picks - DEFAULT ON
   const [showModelsAlignedOnly, setShowModelsAlignedOnly] = useState(false); // Filter to show only Models Aligned picks
 
   // Fetch ALL bets from Firebase for chart and time calculations

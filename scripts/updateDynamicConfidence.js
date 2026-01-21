@@ -415,6 +415,287 @@ export async function updateDynamicConfidence() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // CLV (CLOSING LINE VALUE) ANALYSIS
+  // Uses the clv.value field stored in Firebase bets
+  // CLV+ = Consistently getting better odds than close = REAL SKILL
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ 💰 CLV (CLOSING LINE VALUE) ANALYSIS                                                       │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
+  
+  let betsWithCLV = 0;
+  let totalCLV = 0;
+  let positiveCLVCount = 0;
+  let negativeCLVCount = 0;
+  
+  // CLV by outcome
+  const clvByOutcome = { WIN: { count: 0, totalCLV: 0 }, LOSS: { count: 0, totalCLV: 0 } };
+  
+  // CLV by grade
+  const clvByGrade = {};
+  
+  // CLV by odds range
+  const clvByOddsRange = {};
+  
+  // CLV by Savant status
+  const clvBySavant = { savant: { count: 0, totalCLV: 0 }, nonSavant: { count: 0, totalCLV: 0 } };
+  
+  // CLV by movement type
+  const clvByMovement = { STEAM: { count: 0, totalCLV: 0, wins: 0 }, FADE: { count: 0, totalCLV: 0, wins: 0 }, UNCHANGED: { count: 0, totalCLV: 0, wins: 0 } };
+  
+  // CLV by Models Aligned
+  const clvByModelsAligned = { AGREE: { count: 0, totalCLV: 0 }, DISAGREE: { count: 0, totalCLV: 0 } };
+  
+  // Track CLV tiers
+  const clvByTier = { elite: 0, great: 0, good: 0, neutral: 0, slight_negative: 0, negative: 0 };
+  
+  bets.forEach(bet => {
+    // Use the clv.value field from Firebase
+    const clvData = bet.clv;
+    if (!clvData || clvData.value === undefined || clvData.value === null) return;
+    
+    const clv = clvData.value;
+    betsWithCLV++;
+    totalCLV += clv;
+    
+    if (clv > 0) positiveCLVCount++;
+    else negativeCLVCount++;
+    
+    // Track CLV tiers
+    if (clv >= 5) clvByTier.elite++;
+    else if (clv >= 3) clvByTier.great++;
+    else if (clv >= 1) clvByTier.good++;
+    else if (clv >= 0) clvByTier.neutral++;
+    else if (clv >= -2) clvByTier.slight_negative++;
+    else clvByTier.negative++;
+    
+    // By outcome
+    const outcome = bet.result?.outcome;
+    if (outcome && clvByOutcome[outcome]) {
+      clvByOutcome[outcome].count++;
+      clvByOutcome[outcome].totalCLV += clv;
+    }
+    
+    // By grade
+    const grade = bet.prediction?.grade || 'C';
+    if (!clvByGrade[grade]) clvByGrade[grade] = { count: 0, totalCLV: 0, wins: 0 };
+    clvByGrade[grade].count++;
+    clvByGrade[grade].totalCLV += clv;
+    if (outcome === 'WIN') clvByGrade[grade].wins++;
+    
+    // By odds range
+    const factors = classifyBet(bet);
+    if (!clvByOddsRange[factors.oddsRange]) clvByOddsRange[factors.oddsRange] = { count: 0, totalCLV: 0, wins: 0 };
+    clvByOddsRange[factors.oddsRange].count++;
+    clvByOddsRange[factors.oddsRange].totalCLV += clv;
+    if (outcome === 'WIN') clvByOddsRange[factors.oddsRange].wins++;
+    
+    // By Savant status
+    const isSavant = bet.savantPick === true;
+    const savantKey = isSavant ? 'savant' : 'nonSavant';
+    clvBySavant[savantKey].count++;
+    clvBySavant[savantKey].totalCLV += clv;
+    
+    // By movement type (STEAM, FADE, UNCHANGED)
+    const movement = clvData.movement;
+    if (movement && clvByMovement[movement]) {
+      clvByMovement[movement].count++;
+      clvByMovement[movement].totalCLV += clv;
+      if (outcome === 'WIN') clvByMovement[movement].wins++;
+    }
+    
+    // By Models Aligned
+    const modelsAgree = bet.prediction?.modelsAgree;
+    if (modelsAgree !== undefined) {
+      const agreeKey = modelsAgree ? 'AGREE' : 'DISAGREE';
+      clvByModelsAligned[agreeKey].count++;
+      clvByModelsAligned[agreeKey].totalCLV += clv;
+    }
+  });
+  
+  // Store CLV analysis
+  factorPerformance.clv = {
+    summary: {
+      betsWithCLV,
+      avgCLV: betsWithCLV > 0 ? parseFloat((totalCLV / betsWithCLV).toFixed(2)) : 0,
+      positiveCLVCount,
+      negativeCLVCount,
+      positiveCLVRate: betsWithCLV > 0 ? parseFloat((positiveCLVCount / betsWithCLV * 100).toFixed(1)) : 0,
+      tiers: clvByTier
+    },
+    byOutcome: {
+      WIN: {
+        count: clvByOutcome.WIN.count,
+        avgCLV: clvByOutcome.WIN.count > 0 ? parseFloat((clvByOutcome.WIN.totalCLV / clvByOutcome.WIN.count).toFixed(2)) : 0
+      },
+      LOSS: {
+        count: clvByOutcome.LOSS.count,
+        avgCLV: clvByOutcome.LOSS.count > 0 ? parseFloat((clvByOutcome.LOSS.totalCLV / clvByOutcome.LOSS.count).toFixed(2)) : 0
+      }
+    },
+    byGrade: {},
+    byOddsRange: {},
+    bySavant: {
+      savant: {
+        count: clvBySavant.savant.count,
+        avgCLV: clvBySavant.savant.count > 0 ? parseFloat((clvBySavant.savant.totalCLV / clvBySavant.savant.count).toFixed(2)) : 0
+      },
+      nonSavant: {
+        count: clvBySavant.nonSavant.count,
+        avgCLV: clvBySavant.nonSavant.count > 0 ? parseFloat((clvBySavant.nonSavant.totalCLV / clvBySavant.nonSavant.count).toFixed(2)) : 0
+      }
+    },
+    byMovement: {},
+    byModelsAligned: {}
+  };
+  
+  // Fill in grade breakdown
+  for (const [grade, data] of Object.entries(clvByGrade)) {
+    factorPerformance.clv.byGrade[grade] = {
+      count: data.count,
+      avgCLV: data.count > 0 ? parseFloat((data.totalCLV / data.count).toFixed(2)) : 0,
+      winRate: data.count > 0 ? parseFloat((data.wins / data.count * 100).toFixed(1)) : 0
+    };
+  }
+  
+  // Fill in odds range breakdown
+  for (const [range, data] of Object.entries(clvByOddsRange)) {
+    factorPerformance.clv.byOddsRange[range] = {
+      count: data.count,
+      avgCLV: data.count > 0 ? parseFloat((data.totalCLV / data.count).toFixed(2)) : 0,
+      winRate: data.count > 0 ? parseFloat((data.wins / data.count * 100).toFixed(1)) : 0
+    };
+  }
+  
+  // Fill in movement breakdown
+  for (const [movement, data] of Object.entries(clvByMovement)) {
+    if (data.count > 0) {
+      factorPerformance.clv.byMovement[movement] = {
+        count: data.count,
+        avgCLV: parseFloat((data.totalCLV / data.count).toFixed(2)),
+        winRate: parseFloat((data.wins / data.count * 100).toFixed(1))
+      };
+    }
+  }
+  
+  // Fill in models aligned breakdown
+  for (const [align, data] of Object.entries(clvByModelsAligned)) {
+    if (data.count > 0) {
+      factorPerformance.clv.byModelsAligned[align] = {
+        count: data.count,
+        avgCLV: parseFloat((data.totalCLV / data.count).toFixed(2))
+      };
+    }
+  }
+  
+  // Display CLV results
+  if (betsWithCLV > 0) {
+    const avgCLV = totalCLV / betsWithCLV;
+    const clvEmoji = avgCLV > 0 ? '🟢' : avgCLV < -1 ? '🔴' : '🟡';
+    
+    console.log(`   ${clvEmoji} Average CLV: ${avgCLV >= 0 ? '+' : ''}${avgCLV.toFixed(2)}% (${betsWithCLV} bets with CLV data)`);
+    console.log(`   📊 Positive CLV: ${positiveCLVCount}/${betsWithCLV} (${(positiveCLVCount/betsWithCLV*100).toFixed(1)}%)`);
+    console.log('');
+    
+    // CLV Tiers distribution
+    console.log('   🏆 CLV TIER DISTRIBUTION:');
+    console.log(`      Elite (5%+):     ${clvByTier.elite} bets`);
+    console.log(`      Great (3-5%):    ${clvByTier.great} bets`);
+    console.log(`      Good (1-3%):     ${clvByTier.good} bets`);
+    console.log(`      Neutral (0-1%):  ${clvByTier.neutral} bets`);
+    console.log(`      Slight (-2-0%):  ${clvByTier.slight_negative} bets`);
+    console.log(`      Negative (<-2%): ${clvByTier.negative} bets`);
+    console.log('');
+    
+    // CLV by outcome
+    console.log('   📈 CLV BY OUTCOME:');
+    if (clvByOutcome.WIN.count > 0) {
+      const winCLV = clvByOutcome.WIN.totalCLV / clvByOutcome.WIN.count;
+      console.log(`      WIN:  ${winCLV >= 0 ? '+' : ''}${winCLV.toFixed(2)}% avg CLV (${clvByOutcome.WIN.count} bets)`);
+    }
+    if (clvByOutcome.LOSS.count > 0) {
+      const lossCLV = clvByOutcome.LOSS.totalCLV / clvByOutcome.LOSS.count;
+      console.log(`      LOSS: ${lossCLV >= 0 ? '+' : ''}${lossCLV.toFixed(2)}% avg CLV (${clvByOutcome.LOSS.count} bets)`);
+    }
+    console.log('');
+    
+    // CLV by movement (STEAM/FADE/UNCHANGED)
+    if (Object.keys(clvByMovement).some(k => clvByMovement[k].count > 0)) {
+      console.log('   🔄 CLV BY LINE MOVEMENT:');
+      for (const [movement, data] of Object.entries(clvByMovement)) {
+        if (data.count > 0) {
+          const movCLV = data.totalCLV / data.count;
+          const movWinRate = (data.wins / data.count * 100).toFixed(1);
+          const emoji = movement === 'STEAM' ? '✅' : movement === 'FADE' ? '🔴' : '➖';
+          console.log(`      ${emoji} ${movement.padEnd(9)}: ${movCLV >= 0 ? '+' : ''}${movCLV.toFixed(2)}% CLV | ${movWinRate}% win rate (${data.count} bets)`);
+        }
+      }
+      console.log('');
+    }
+    
+    // CLV by grade
+    if (Object.keys(clvByGrade).length > 0) {
+      console.log('   📊 CLV BY GRADE:');
+      const gradeOrder = ['A', 'B+', 'B', 'C+', 'C', 'D', 'F'];
+      gradeOrder.forEach(grade => {
+        if (clvByGrade[grade] && clvByGrade[grade].count > 0) {
+          const gradeCLV = clvByGrade[grade].totalCLV / clvByGrade[grade].count;
+          const gradeWinRate = (clvByGrade[grade].wins / clvByGrade[grade].count * 100).toFixed(1);
+          const clvIcon = gradeCLV > 0 ? '🟢' : gradeCLV < -1 ? '🔴' : '🟡';
+          console.log(`      ${clvIcon} ${grade.padEnd(3)}: ${gradeCLV >= 0 ? '+' : ''}${gradeCLV.toFixed(2)}% CLV | ${gradeWinRate}% win (${clvByGrade[grade].count} bets)`);
+        }
+      });
+      console.log('');
+    }
+    
+    // CLV by odds range
+    if (Object.keys(clvByOddsRange).length > 0) {
+      console.log('   💰 CLV BY ODDS RANGE:');
+      const oddsOrder = ['HEAVY_FAV', 'BIG_FAV', 'MOD_FAV', 'SLIGHT_FAV', 'PICKEM', 'SLIGHT_DOG', 'BIG_DOG'];
+      oddsOrder.forEach(range => {
+        if (clvByOddsRange[range] && clvByOddsRange[range].count > 0) {
+          const rangeCLV = clvByOddsRange[range].totalCLV / clvByOddsRange[range].count;
+          const rangeWinRate = (clvByOddsRange[range].wins / clvByOddsRange[range].count * 100).toFixed(1);
+          const clvIcon = rangeCLV > 0 ? '🟢' : rangeCLV < -1 ? '🔴' : '🟡';
+          console.log(`      ${clvIcon} ${range.padEnd(12)}: ${rangeCLV >= 0 ? '+' : ''}${rangeCLV.toFixed(2)}% CLV | ${rangeWinRate}% win (${clvByOddsRange[range].count} bets)`);
+        }
+      });
+      console.log('');
+    }
+    
+    // CLV by Savant
+    if (clvBySavant.savant.count > 0 || clvBySavant.nonSavant.count > 0) {
+      console.log('   ⭐ CLV BY SAVANT STATUS:');
+      if (clvBySavant.savant.count > 0) {
+        const savantCLV = clvBySavant.savant.totalCLV / clvBySavant.savant.count;
+        console.log(`      Savant Picks:     ${savantCLV >= 0 ? '+' : ''}${savantCLV.toFixed(2)}% avg CLV (${clvBySavant.savant.count} bets)`);
+      }
+      if (clvBySavant.nonSavant.count > 0) {
+        const nonSavantCLV = clvBySavant.nonSavant.totalCLV / clvBySavant.nonSavant.count;
+        console.log(`      Non-Savant Picks: ${nonSavantCLV >= 0 ? '+' : ''}${nonSavantCLV.toFixed(2)}% avg CLV (${clvBySavant.nonSavant.count} bets)`);
+      }
+      console.log('');
+    }
+    
+    // CLV by Models Aligned
+    if (clvByModelsAligned.AGREE.count > 0 || clvByModelsAligned.DISAGREE.count > 0) {
+      console.log('   🔗 CLV BY MODELS ALIGNED:');
+      if (clvByModelsAligned.AGREE.count > 0) {
+        const agreeCLV = clvByModelsAligned.AGREE.totalCLV / clvByModelsAligned.AGREE.count;
+        console.log(`      Models Agree:     ${agreeCLV >= 0 ? '+' : ''}${agreeCLV.toFixed(2)}% avg CLV (${clvByModelsAligned.AGREE.count} bets)`);
+      }
+      if (clvByModelsAligned.DISAGREE.count > 0) {
+        const disagreeCLV = clvByModelsAligned.DISAGREE.totalCLV / clvByModelsAligned.DISAGREE.count;
+        console.log(`      Models Disagree:  ${disagreeCLV >= 0 ? '+' : ''}${disagreeCLV.toFixed(2)}% avg CLV (${clvByModelsAligned.DISAGREE.count} bets)`);
+      }
+    }
+  } else {
+    console.log('   ⏳ No CLV data available yet');
+    console.log('      CLV is tracked in the clv.value field on bet documents');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
   // NEW: HASLAMETRICS vs D-RATINGS ACCURACY TRACKING
   // Compare which model is better at predicting winners
   // ═══════════════════════════════════════════════════════════════════════════════════════════
