@@ -436,6 +436,124 @@
         "calibError": -0.0172
       }
     },
+    "clv": {
+      "summary": {
+        "betsWithCLV": 78,
+        "avgCLV": 0.35,
+        "positiveCLVCount": 33,
+        "negativeCLVCount": 45,
+        "positiveCLVRate": 42.3,
+        "tiers": {
+          "elite": 8,
+          "great": 7,
+          "good": 12,
+          "neutral": 16,
+          "slight_negative": 19,
+          "negative": 16
+        }
+      },
+      "byOutcome": {
+        "WIN": {
+          "count": 37,
+          "avgCLV": 0.29
+        },
+        "LOSS": {
+          "count": 41,
+          "avgCLV": 0.41
+        }
+      },
+      "byGrade": {
+        "A": {
+          "count": 54,
+          "avgCLV": 1.14,
+          "winRate": 40.7
+        },
+        "B": {
+          "count": 23,
+          "avgCLV": -1.32,
+          "winRate": 60.9
+        },
+        "C": {
+          "count": 1,
+          "avgCLV": -3.92,
+          "winRate": 100
+        }
+      },
+      "byOddsRange": {
+        "BIG_DOG": {
+          "count": 7,
+          "avgCLV": -0.18,
+          "winRate": 42.9
+        },
+        "SLIGHT_DOG": {
+          "count": 25,
+          "avgCLV": 1.69,
+          "winRate": 28
+        },
+        "MOD_FAV": {
+          "count": 8,
+          "avgCLV": -3.05,
+          "winRate": 62.5
+        },
+        "SLIGHT_FAV": {
+          "count": 15,
+          "avgCLV": 1.17,
+          "winRate": 46.7
+        },
+        "HEAVY_FAV": {
+          "count": 5,
+          "avgCLV": -0.9,
+          "winRate": 100
+        },
+        "PICKEM": {
+          "count": 13,
+          "avgCLV": 0.17,
+          "winRate": 46.2
+        },
+        "BIG_FAV": {
+          "count": 5,
+          "avgCLV": -0.85,
+          "winRate": 80
+        }
+      },
+      "bySavant": {
+        "savant": {
+          "count": 18,
+          "avgCLV": 1.29
+        },
+        "nonSavant": {
+          "count": 60,
+          "avgCLV": 0.07
+        }
+      },
+      "byMovement": {
+        "STEAM": {
+          "count": 33,
+          "avgCLV": 3.63,
+          "winRate": 54.5
+        },
+        "FADE": {
+          "count": 35,
+          "avgCLV": -2.63,
+          "winRate": 40
+        },
+        "UNCHANGED": {
+          "count": 10,
+          "avgCLV": 0,
+          "winRate": 50
+        }
+      },
+      "byModelsAligned": {
+        "AGREE": {
+          "count": 35,
+          "avgCLV": 0.44
+        },
+        "DISAGREE": {
+          "count": 39,
+          "avgCLV": 0.2
+        }
+      }
+    },
     "modelAccuracy": {
       "haslametrics": {
         "correct": 51,
@@ -485,7 +603,7 @@
     }
   },
   "totalBets": 1005,
-  "lastUpdated": "2026-01-21T13:19:20.333Z",
+  "lastUpdated": "2026-01-21T16:02:51.344Z",
   "config": {
     "fGradeCap": 0.5,
     "minSampleSize": 30,
