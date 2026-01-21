@@ -18,6 +18,7 @@ export function BasketballPerformanceDashboard() {
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
   const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
+  const [showModelsAlignedOnly, setShowModelsAlignedOnly] = useState(false); // Filter to show only Models Aligned picks
 
   // Fetch ALL bets from Firebase for chart and time calculations
   useEffect(() => {
@@ -125,6 +126,9 @@ export function BasketballPerformanceDashboard() {
       // Apply Savant filter
       if (showSavantOnly && !b.savantPick) return false;
       
+      // Apply Models Aligned filter
+      if (showModelsAlignedOnly && b.prediction?.modelsAgree !== true) return false;
+      
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
       
       if (timeFilter === 'today') {
@@ -160,7 +164,7 @@ export function BasketballPerformanceDashboard() {
       gradedBets: gradedBets.length,
       totalBets: gradedBets.length
     };
-  }, [stats, allBets, timeFilter, showSavantOnly]);
+  }, [stats, allBets, timeFilter, showSavantOnly, showModelsAlignedOnly]);
   
   // Count Savant Picks for display
   const savantCount = useMemo(() => {
@@ -441,8 +445,8 @@ export function BasketballPerformanceDashboard() {
                 </div>
               </div>
               
-              {/* Savant Picks Filter */}
-              {savantCount > 0 && (
+              {/* Filter Buttons */}
+              {(savantCount > 0 || modelsAlignedCount > 0) && (
                 <div>
                   <div style={{ 
                     fontSize: isMobile ? '0.625rem' : '0.688rem', 
@@ -463,46 +467,95 @@ export function BasketballPerformanceDashboard() {
                     }} />
                     FILTER
                   </div>
-                  <button
-                    onClick={() => setShowSavantOnly(!showSavantOnly)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      background: showSavantOnly 
-                        ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.12) 100%)'
-                        : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
-                      border: showSavantOnly 
-                        ? '1px solid rgba(251, 191, 36, 0.5)'
-                        : '1px solid rgba(255,255,255,0.08)',
-                      color: showSavantOnly ? 'rgba(251, 191, 36, 0.95)' : 'rgba(255,255,255,0.7)',
-                      padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
-                      borderRadius: '8px',
-                      fontSize: isMobile ? '0.75rem' : '0.813rem',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      outline: 'none',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      boxShadow: showSavantOnly
-                        ? '0 4px 12px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-                        : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                    }}
-                  >
-                    <span>⭐</span>
-                    <span>Savant Only</span>
-                    <span style={{
-                      fontSize: '0.688rem',
-                      fontWeight: '800',
-                      color: showSavantOnly ? 'rgba(251, 191, 36, 0.8)' : 'rgba(255,255,255,0.5)',
-                      background: showSavantOnly ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.1)',
-                      padding: '0.125rem 0.375rem',
-                      borderRadius: '4px',
-                    }}>
-                      {savantCount}
-                    </span>
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {/* Savant Only Button */}
+                    {savantCount > 0 && (
+                      <button
+                        onClick={() => setShowSavantOnly(!showSavantOnly)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          background: showSavantOnly 
+                            ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.12) 100%)'
+                            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                          border: showSavantOnly 
+                            ? '1px solid rgba(251, 191, 36, 0.5)'
+                            : '1px solid rgba(255,255,255,0.08)',
+                          color: showSavantOnly ? 'rgba(251, 191, 36, 0.95)' : 'rgba(255,255,255,0.7)',
+                          padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '0.75rem' : '0.813rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          outline: 'none',
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          boxShadow: showSavantOnly
+                            ? '0 4px 12px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                            : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                        }}
+                      >
+                        <span>⭐</span>
+                        <span>Savant Only</span>
+                        <span style={{
+                          fontSize: '0.688rem',
+                          fontWeight: '800',
+                          color: showSavantOnly ? 'rgba(251, 191, 36, 0.8)' : 'rgba(255,255,255,0.5)',
+                          background: showSavantOnly ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.1)',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: '4px',
+                        }}>
+                          {savantCount}
+                        </span>
+                      </button>
+                    )}
+                    
+                    {/* Models Aligned Button */}
+                    {modelsAlignedCount > 0 && (
+                      <button
+                        onClick={() => setShowModelsAlignedOnly(!showModelsAlignedOnly)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          background: showModelsAlignedOnly 
+                            ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(37, 99, 235, 0.12) 100%)'
+                            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                          border: showModelsAlignedOnly 
+                            ? '1px solid rgba(59, 130, 246, 0.5)'
+                            : '1px solid rgba(255,255,255,0.08)',
+                          color: showModelsAlignedOnly ? 'rgba(59, 130, 246, 0.95)' : 'rgba(255,255,255,0.7)',
+                          padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
+                          borderRadius: '8px',
+                          fontSize: isMobile ? '0.75rem' : '0.813rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          outline: 'none',
+                          backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)',
+                          boxShadow: showModelsAlignedOnly
+                            ? '0 4px 12px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                            : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                        }}
+                      >
+                        <span>🔗</span>
+                        <span>Models Aligned</span>
+                        <span style={{
+                          fontSize: '0.688rem',
+                          fontWeight: '800',
+                          color: showModelsAlignedOnly ? 'rgba(59, 130, 246, 0.8)' : 'rgba(255,255,255,0.5)',
+                          background: showModelsAlignedOnly ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.1)',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: '4px',
+                        }}>
+                          {modelsAlignedCount}
+                        </span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
