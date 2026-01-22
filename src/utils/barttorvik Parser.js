@@ -86,6 +86,7 @@ export function parseBarttorvik(markdown) {
         adjDef: adjDef.value,
         adjDef_rank: adjDef.rank,
         bartholomew: bartholomew.value,
+        bartholomew_rank: bartholomew.rank,
         
         // Shooting efficiency (eFG%)
         eFG_off: eFG_off.value,
