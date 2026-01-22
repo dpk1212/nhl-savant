@@ -312,93 +312,160 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white' }}>Matchup Intelligence</div>
       </div>
 
-      {/* ═══════════════════ HERO: TEAM COMPARISON ═══════════════════ */}
+{/* ═══════════════════ VISUAL TEAM COMPARISON ═══════════════════ */}
       <div style={{ padding }}>
+        {/* 3 Category Cards - Like OUR MODEL / MARKET / GRADE */}
         <div style={{
-          padding: isMobile ? '16px' : '22px',
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          borderRadius: '16px',
-          border: '1px solid rgba(99, 102, 241, 0.15)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: isMobile ? '8px' : '12px',
+          marginBottom: isMobile ? '12px' : '16px'
         }}>
-          {/* Section Label */}
-          <div style={{ 
-            textAlign: 'center', 
-            marginBottom: isMobile ? '16px' : '20px',
-            paddingBottom: isMobile ? '12px' : '14px',
-            borderBottom: '1px solid rgba(255,255,255,0.06)'
-          }}>
-            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', marginBottom: '4px' }}>TEAM COMPARISON</div>
-            <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.7)', fontWeight: '500' }}>
-              Who has the edge in each category?
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
-            {[
-              { label: 'OVERALL', icon: '⚡', awayRank: awayRank, homeRank: homeRank },
-              { label: 'OFFENSE', icon: '🎯', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank },
-              { label: 'DEFENSE', icon: '🛡️', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank }
-            ].map(({ label, icon, awayRank: aRank, homeRank: hRank }) => {
-              const awayColor = getTier(aRank).color;
-              const homeColor = getTier(hRank).color;
-              const total = aRank + hRank;
-              const awayPct = Math.round(((total - aRank) / total) * 100);
-              const awayBetter = aRank < hRank;
-
+          {[
+            { label: 'OVERALL', icon: '⚡', awayRank: awayRank, homeRank: homeRank },
+            { label: 'OFFENSE', icon: '🎯', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank },
+            { label: 'DEFENSE', icon: '🛡️', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank }
+          ].map(({ label, icon, awayRank: aRank, homeRank: hRank }) => {
+            const gap = hRank - aRank;
+            const awayBetter = aRank < hRank;
+            const isKeyEdge = Math.abs(gap) > 50;
+            const winnerName = awayBetter ? awayAbbrev : homeAbbrev;
+            const winnerRank = awayBetter ? aRank : hRank;
+            const loserRank = awayBetter ? hRank : aRank;
+            const winnerColor = getTier(winnerRank).color;
+            
+            // Visual strength (0-100 scale, higher = bigger edge)
+            const edgeStrength = Math.min(Math.abs(gap) / 2, 100);
+            
             return (
-                <div key={label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: awayColor, fontFamily: 'ui-monospace, monospace' }}>#{aRank}</span>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: awayBetter ? 'white' : 'rgba(255,255,255,0.4)' }}>{awayAbbrev}</span>
-                      {awayBetter && <span style={{ color: '#10B981', fontSize: '11px' }}>✓</span>}
-                      </div>
-                    <div style={{ 
-                      fontSize: isMobile ? '9px' : '10px', 
-                      color: 'rgba(255,255,255,0.5)', 
-                      letterSpacing: '0.1em', 
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      <span>{icon}</span>
-                      <span>{label}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {!awayBetter && <span style={{ color: '#10B981', fontSize: '11px' }}>✓</span>}
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: !awayBetter ? 'white' : 'rgba(255,255,255,0.4)' }}>{homeAbbrev}</span>
-                      <span style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: homeColor, fontFamily: 'ui-monospace, monospace' }}>#{hRank}</span>
-                    </div>
-                  </div>
-                  
-                  <div style={{ position: 'relative', height: '10px', borderRadius: '5px', overflow: 'hidden', background: 'rgba(0,0,0,0.4)' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, width: `${awayPct}%`, height: '100%', background: `linear-gradient(90deg, ${awayColor}50, ${awayColor})`, transition: 'width 0.6s ease' }} />
-                    <div style={{ position: 'absolute', right: 0, top: 0, width: `${100 - awayPct}%`, height: '100%', background: `linear-gradient(270deg, ${homeColor}50, ${homeColor})`, transition: 'width 0.6s ease' }} />
-                    <div style={{ position: 'absolute', left: '50%', top: 0, width: '2px', height: '100%', background: 'rgba(255,255,255,0.2)', transform: 'translateX(-50%)' }} />
-                      </div>
-                    </div>
-              );
-            })}
-                    </div>
-                  </div>
+              <div key={label} style={{
+                padding: isMobile ? '12px 10px' : '16px 14px',
+                background: isKeyEdge 
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.04) 100%)'
+                  : 'rgba(15, 23, 42, 0.5)',
+                borderRadius: '12px',
+                border: isKeyEdge ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                textAlign: 'center',
+                position: 'relative'
+              }}>
+                {/* Key Edge Badge */}
+                {isKeyEdge && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: '#10B981',
+                    color: 'white',
+                    fontSize: '7px',
+                    fontWeight: '700',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    letterSpacing: '0.05em'
+                  }}>KEY</div>
+                )}
+                
+                {/* Category Label */}
+                <div style={{ 
+                  fontSize: isMobile ? '8px' : '9px', 
+                  color: 'rgba(255,255,255,0.5)', 
+                  letterSpacing: '0.1em',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}>
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </div>
+                
+                {/* Winner Name */}
+                <div style={{ 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  fontWeight: '700', 
+                  color: 'white',
+                  marginBottom: '4px'
+                }}>{winnerName}</div>
+                
+                {/* Visual Strength Bar */}
+                <div style={{ 
+                  height: '6px', 
+                  background: 'rgba(0,0,0,0.3)', 
+                  borderRadius: '3px', 
+                  overflow: 'hidden',
+                  margin: '8px 0'
+                }}>
+                  <div style={{
+                    width: `${edgeStrength}%`,
+                    height: '100%',
+                    background: `linear-gradient(90deg, ${winnerColor}60, ${winnerColor})`,
+                    borderRadius: '3px',
+                    transition: 'width 0.6s ease'
+                  }} />
+      </div>
+
+                {/* Gap Badge */}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  background: Math.abs(gap) > 50 ? 'rgba(16, 185, 129, 0.2)' : Math.abs(gap) > 20 ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.1)',
+                  borderRadius: '6px'
+                }}>
+                  <span style={{ 
+                    fontSize: isMobile ? '10px' : '11px', 
+                    fontWeight: '800', 
+                    color: Math.abs(gap) > 50 ? '#10B981' : Math.abs(gap) > 20 ? '#3B82F6' : 'rgba(255,255,255,0.6)',
+                    fontFamily: 'ui-monospace, monospace'
+                  }}>+{Math.abs(gap)}</span>
                 </div>
 
-      {/* ═══════════════════ DIVIDER WITH CONTEXT ═══════════════════ */}
-      <div style={{ padding: `0 ${padding}`, margin: isMobile ? '8px 0' : '12px 0' }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '12px'
+                {/* Rank Comparison */}
+                <div style={{ 
+                  marginTop: '8px',
+                  fontSize: isMobile ? '9px' : '10px',
+                  color: 'rgba(255,255,255,0.4)'
+                }}>
+                  <span style={{ color: winnerColor, fontWeight: '600' }}>#{winnerRank}</span>
+                  <span style={{ margin: '0 4px' }}>vs</span>
+                  <span>#{loserRank}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* Team Legend */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: isMobile ? '16px' : '24px',
+          padding: isMobile ? '10px' : '12px',
+          background: 'rgba(15, 23, 42, 0.3)',
+          borderRadius: '10px',
+          border: '1px solid rgba(255,255,255,0.04)'
         }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getTier(awayRank).color }} />
+            <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{awayAbbrev}</span>
+            <span style={{ fontSize: isMobile ? '10px' : '11px', color: getTier(awayRank).color, fontWeight: '700', fontFamily: 'ui-monospace, monospace' }}>#{awayRank}</span>
+          </div>
+          <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getTier(homeRank).color }} />
+            <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>{homeAbbrev}</span>
+            <span style={{ fontSize: isMobile ? '10px' : '11px', color: getTier(homeRank).color, fontWeight: '700', fontFamily: 'ui-monospace, monospace' }}>#{homeRank}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════ DIVIDER ═══════════════════ */}
+      <div style={{ padding: `0 ${padding}`, margin: isMobile ? '8px 0' : '12px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
-          <div style={{ 
-            fontSize: '8px', 
-            color: 'rgba(255,255,255,0.3)', 
-            letterSpacing: '0.15em',
-            fontWeight: '600'
-          }}>DETAILED BREAKDOWN</div>
+          <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', fontWeight: '600' }}>MATCHUP DETAILS</div>
           <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
         </div>
       </div>
