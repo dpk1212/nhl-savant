@@ -524,34 +524,118 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               ].map(({ label, offVal, defVal, avg, type }) => {
                 const offDiff = offVal - avg;
                 const defDiff = defVal - avg;
-                const offGood = offDiff > 0;
-                const defGood = defDiff < 0; // Lower = good defense (allows less)
-                const matchupEdge = offVal - defVal; // Positive = offense advantage
+                // OFFENSE: Higher % = GOOD (scoring well)
+                const offAboveAvg = offDiff > 2;
+                const offBelowAvg = offDiff < -2;
+                // DEFENSE: Lower % allowed = GOOD (holding opponents down)
+                const defStingy = defDiff < -2; // Below avg = good D
+                const defLeaky = defDiff > 2;   // Above avg = bad D (allows too much)
                 
-                // Generate matchup-specific insight
+                // Matchup edge: offense shoots X%, defense allows Y%
+                // If offense shoots HIGHER than defense allows = GOOD for offense
+                const matchupEdge = offVal - defVal;
+                
+                // Generate matchup-specific insight with VARIETY
                 const getMatchupInsight = () => {
                   if (type === '2pt') {
-                    if (offGood && !defGood) return `🔥 ${offAbbrev} finishes well (${offVal.toFixed(0)}%) vs weak interior D → paint points`;
-                    if (offGood && defGood) return `⚔️ Good finishers vs stingy D → execution battle inside`;
-                    if (!offGood && !defGood) return `📊 Poor shooters vs leaky D → could go either way`;
-                    if (!offGood && defGood) return `🛡️ Struggling offense vs tough D → expect low 2PT%`;
+                    // Great matchup: good offense vs bad defense
+                    if (offAboveAvg && defLeaky) {
+                      const phrases = [
+                        `🔥 ${offAbbrev} elite inside (${offVal.toFixed(0)}%) vs ${defAbbrev}'s porous interior (${defVal.toFixed(0)}%) → paint feast`,
+                        `🎯 Mismatch! ${offAbbrev} finishes at ${offVal.toFixed(0)}% and ${defAbbrev} allows ${defVal.toFixed(0)}% → attack the rim`,
+                        `💪 ${offAbbrev}'s ${offVal.toFixed(0)}% 2PT meets weak interior D allowing ${defVal.toFixed(0)}% → advantage inside`
+                      ];
+                      return phrases[Math.floor(offVal + defVal) % 3];
+                    }
+                    // Battle: good offense vs good defense
+                    if (offAboveAvg && defStingy) {
+                      const phrases = [
+                        `⚔️ ${offAbbrev} shoots ${offVal.toFixed(0)}% but ${defAbbrev} only allows ${defVal.toFixed(0)}% → elite battle`,
+                        `🔒 Stoppable force vs immovable object — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev} D (${defVal.toFixed(0)}%)`,
+                        `⚡ Premium matchup: ${offAbbrev}'s finishing vs ${defAbbrev}'s lockdown D`
+                      ];
+                      return phrases[Math.floor(offVal + defVal) % 3];
+                    }
+                    // Bad offense vs bad defense
+                    if (offBelowAvg && defLeaky) {
+                      return `📊 ${offAbbrev} struggles inside (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% → should still score`;
+                    }
+                    // Bad offense vs good defense
+                    if (offBelowAvg && defStingy) {
+                      const phrases = [
+                        `🛡️ Tough sledding — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s stingy ${defVal.toFixed(0)}% allowed`,
+                        `🧱 ${offAbbrev} struggles at ${offVal.toFixed(0)}% and ${defAbbrev} holds teams to ${defVal.toFixed(0)}% → low scoring`,
+                        `❄️ Cold shooting meets brick wall — points will be hard to come by`
+                      ];
+                      return phrases[Math.floor(offVal + defVal) % 3];
+                    }
+                    // Neutral
+                    return `📊 Both near D1 average inside — game flow will decide`;
                   }
+                  
                   if (type === '3pt') {
-                    if (offGood && !defGood) return `🏹 ${offAbbrev} shoots ${offVal.toFixed(0)}% vs poor perimeter D → 3s will fall`;
-                    if (offGood && defGood) return `⚔️ Good shooters vs tight coverage → shot selection matters`;
-                    if (!offGood && !defGood) return `📊 Cold shooters vs porous D → variance game`;
-                    if (!offGood && defGood) return `🧱 Poor shooters vs elite D → stay out of 3PT contests`;
+                    if (offAboveAvg && defLeaky) {
+                      const phrases = [
+                        `🏹 ${offAbbrev} knocks down ${offVal.toFixed(0)}% from deep vs ${defAbbrev} allowing ${defVal.toFixed(0)}% → shooters feast`,
+                        `🎯 Sniper alert! ${offAbbrev} (${offVal.toFixed(0)}%) meets poor perimeter D (${defVal.toFixed(0)}%)`,
+                        `🔥 Open looks expected — ${offAbbrev} shoots ${offVal.toFixed(0)}%, ${defAbbrev} gives up ${defVal.toFixed(0)}%`
+                      ];
+                      return phrases[Math.floor(offVal + defVal) % 3];
+                    }
+                    if (offAboveAvg && defStingy) {
+                      return `⚔️ ${offAbbrev}'s shooters (${offVal.toFixed(0)}%) vs ${defAbbrev}'s tight coverage (${defVal.toFixed(0)}%) → contested looks`;
+                    }
+                    if (offBelowAvg && defLeaky) {
+                      return `📊 ${offAbbrev} cold from 3 (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% → open looks may help`;
+                    }
+                    if (offBelowAvg && defStingy) {
+                      const phrases = [
+                        `🧱 Avoid the 3 — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s elite D (${defVal.toFixed(0)}%)`,
+                        `❄️ Stay out of 3PT contests — neither team's strength`,
+                        `🚫 Poor shooters (${offVal.toFixed(0)}%) vs lockdown perimeter D (${defVal.toFixed(0)}%)`
+                      ];
+                      return phrases[Math.floor(offVal + defVal) % 3];
+                    }
+                    return `📊 3PT shooting near average for both — variance factor`;
                   }
+                  
                   if (type === '3ptRate') {
-                    if (offVal > 42 && defVal > 42) return `⚠️ Heavy 3PT game both ways → high variance expected`;
-                    if (offVal > 42) return `🎯 ${offAbbrev} lives beyond the arc (${offVal.toFixed(0)}% of shots)`;
-                    if (offVal < 35) return `🎨 ${offAbbrev} attacks inside — low 3PT volume (${offVal.toFixed(0)}%)`;
-                    return `📊 Balanced shot selection`;
+                    const offHeavy3 = offVal > 42;
+                    const offLow3 = offVal < 35;
+                    const defAllowsLots = defVal > 42;
+                    
+                    if (offHeavy3 && defAllowsLots) {
+                      return `⚠️ 3PT heavy game — ${offAbbrev} takes ${offVal.toFixed(0)}% from deep, ${defAbbrev} allows ${defVal.toFixed(0)}% → high variance`;
+                    }
+                    if (offHeavy3) {
+                      return `🎯 ${offAbbrev} perimeter-oriented (${offVal.toFixed(0)}% 3PT rate) — swings will be big`;
+                    }
+                    if (offLow3) {
+                      return `🎨 ${offAbbrev} attacks inside — only ${offVal.toFixed(0)}% 3PT rate, less variance`;
+                    }
+                    return `📊 Balanced shot diet (${offVal.toFixed(0)}% 3PT rate)`;
                   }
+                  
                   if (type === 'efg') {
-                    if (matchupEdge > 3) return `✅ ${offAbbrev} efficient (${offVal.toFixed(0)}%) vs ${defAbbrev} allowing ${defVal.toFixed(0)}% → scoring edge`;
-                    if (matchupEdge < -3) return `⚠️ ${defAbbrev} holds teams to ${defVal.toFixed(0)}% → tough to score`;
-                    return `📊 Efficiency roughly even — execution decides`;
+                    if (offAboveAvg && defLeaky) {
+                      return `✅ Efficient ${offAbbrev} (${offVal.toFixed(0)}% eFG) vs ${defAbbrev} allowing ${defVal.toFixed(0)}% → should score well`;
+                    }
+                    if (offAboveAvg && defStingy) {
+                      return `⚔️ ${offAbbrev}'s efficiency (${offVal.toFixed(0)}%) meets ${defAbbrev}'s elite D (${defVal.toFixed(0)}%) → key battle`;
+                    }
+                    if (offBelowAvg && defLeaky) {
+                      return `📊 ${offAbbrev} inefficient (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% → could improve`;
+                    }
+                    if (offBelowAvg && defStingy) {
+                      return `🛡️ ${defAbbrev} elite D (${defVal.toFixed(0)}% allowed) vs struggling ${offAbbrev} → low-scoring`;
+                    }
+                    if (matchupEdge > 2) {
+                      return `✅ ${offAbbrev} efficiency edge (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}% allowed)`;
+                    }
+                    if (matchupEdge < -2) {
+                      return `⚠️ ${defAbbrev} efficiency edge — holds teams below their average`;
+                    }
+                    return `📊 Efficiency even (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}%) — execution decides`;
                   }
                   return '';
                 };
@@ -562,34 +646,40 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                       <span>{label}</span>
                       <span>D1: {avg}%</span>
                     </div>
-                    {/* Offense row */}
+                    {/* Offense row - HIGHER is better for offense */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{offAbbrev}</span>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offGood ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{offVal.toFixed(1)}%</span>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offAboveAvg ? '#10B981' : offBelowAvg ? '#F87171' : 'rgba(255,255,255,0.6)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{offVal.toFixed(1)}%</span>
                       <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((offVal / 60) * 100, 100)}%`, height: '100%', background: offGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
+                        <div style={{ width: `${Math.min((offVal / 60) * 100, 100)}%`, height: '100%', background: offAboveAvg ? 'linear-gradient(90deg, #10B98150, #10B981)' : offBelowAvg ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
                         <div style={{ position: 'absolute', left: `${(avg / 60) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
                       </div>
                     </div>
                     {/* Arrow */}
                     <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0', marginLeft: isMobile ? '45px' : '50px' }}>↓</div>
-                    {/* Defense row */}
+                    {/* Defense row - LOWER is better for defense (allows less) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{defAbbrev}</span>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defGood ? '#10B981' : '#F87171', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{defVal.toFixed(1)}%</span>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defStingy ? '#10B981' : defLeaky ? '#F87171' : 'rgba(255,255,255,0.6)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{defVal.toFixed(1)}%</span>
                       <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((defVal / 60) * 100, 100)}%`, height: '100%', background: defGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #F8717150, #F87171)', borderRadius: '2px' }} />
+                        {/* For defense: LOW bar = good (green), HIGH bar = bad (red) */}
+                        <div style={{ width: `${Math.min((defVal / 60) * 100, 100)}%`, height: '100%', background: defStingy ? 'linear-gradient(90deg, #10B98150, #10B981)' : defLeaky ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
                         <div style={{ position: 'absolute', left: `${(avg / 60) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
                       </div>
                     </div>
-                    {/* Matchup Insight */}
+                    {/* Matchup Insight - green when offense has edge (shoots > allows) */}
                     <div style={{ 
                       fontSize: isMobile ? '10px' : '11px', 
-                      color: 'rgba(255,255,255,0.6)',
-                      padding: '6px 10px',
-                      background: 'rgba(0,0,0,0.15)',
-                      borderRadius: '6px',
-                      borderLeft: `2px solid ${matchupEdge > 2 ? '#10B981' : matchupEdge < -2 ? '#F87171' : '#64748B'}`
+                      color: 'rgba(255,255,255,0.7)',
+                      padding: '8px 12px',
+                      background: 'rgba(0,0,0,0.2)',
+                      borderRadius: '8px',
+                      borderLeft: `3px solid ${
+                        (offAboveAvg && defLeaky) ? '#10B981' :  // Great matchup for offense
+                        (offBelowAvg && defStingy) ? '#F87171' : // Bad matchup for offense
+                        (offAboveAvg && defStingy) ? '#F59E0B' : // Battle
+                        '#64748B' // Neutral
+                      }`
                     }}>
                       {getMatchupInsight()}
                     </div>
