@@ -321,89 +321,162 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           border: '1px solid rgba(255,255,255,0.04)'
         }}>
           {/* Comparison Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '28px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '24px' : '32px' }}>
             {[
-              { label: 'OVERALL', awayRank: awayRank, homeRank: homeRank },
-              { label: 'OFFENSE', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank },
-              { label: 'DEFENSE', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank }
-            ].map(({ label, awayRank: aRank, homeRank: hRank }, idx) => {
+              { label: 'POWER RATING', sublabel: 'Overall Team Strength', awayRank: awayRank, homeRank: homeRank, type: 'overall' },
+              { label: 'OFFENSIVE EFFICIENCY', sublabel: 'Scoring Ability (pts/100)', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank, type: 'offense' },
+              { label: 'DEFENSIVE EFFICIENCY', sublabel: 'Points Allowed (pts/100)', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank, type: 'defense' }
+            ].map(({ label, sublabel, awayRank: aRank, homeRank: hRank, type }, idx) => {
               const awayBetter = aRank < hRank;
               const gap = Math.abs(hRank - aRank);
+              const winner = awayBetter ? awayAbbrev : homeAbbrev;
+              const loser = awayBetter ? homeAbbrev : awayAbbrev;
+              const winnerRank = awayBetter ? aRank : hRank;
+              const loserRank = awayBetter ? hRank : aRank;
               
               // Calculate bar fill (toward winner)
               const total = aRank + hRank;
               const awayPct = ((total - aRank) / total) * 100;
               
-              const awayColor = getTier(aRank).color;
-              const homeColor = getTier(hRank).color;
+              const awayTier = getTier(aRank);
+              const homeTier = getTier(hRank);
+              const awayPercentile = getPercentile(aRank);
+              const homePercentile = getPercentile(hRank);
+              
+              // Generate contextual insight based on matchup
+              const getInsight = () => {
+                if (type === 'overall') {
+                  if (gap > 100) {
+                    return `🔥 ${winner} is significantly stronger — expect them to control this game`;
+                  } else if (gap > 50) {
+                    return `✅ ${winner} has a clear edge (${winnerRank} vs ${loserRank}) — should be favored`;
+                  } else if (gap > 25) {
+                    return `📊 ${winner} slightly better but ${loser} can compete — closer than rankings suggest`;
+                  } else {
+                    return `⚔️ Evenly matched teams — this one could go either way`;
+                  }
+                }
+                if (type === 'offense') {
+                  if (gap > 100) {
+                    return `🔥 ${winner}'s offense (#${winnerRank}) should dominate — expect points`;
+                  } else if (gap > 50) {
+                    return `🎯 ${winner} scores more efficiently (#${winnerRank} vs #${loserRank}) — offensive edge`;
+                  } else if (gap > 25) {
+                    return `📊 ${winner} has slight scoring edge — watch for shot quality`;
+                  } else {
+                    return `⚔️ Similar offensive capabilities — defense may decide this`;
+                  }
+                }
+                if (type === 'defense') {
+                  if (gap > 100) {
+                    return `🛡️ ${winner}'s defense (#${winnerRank}) is elite — tough to score against`;
+                  } else if (gap > 50) {
+                    return `🔒 ${winner} defends much better (#${winnerRank} vs #${loserRank}) — grind it out`;
+                  } else if (gap > 25) {
+                    return `📊 ${winner} has the defensive edge — could slow the game down`;
+                  } else {
+                    return `⚔️ Similar defensive quality — offense will be the difference`;
+                  }
+                }
+                return '';
+              };
               
               return (
                 <div key={label}>
-                  {/* Row Header */}
+                  {/* Category Header */}
+                  <div style={{ 
+                    textAlign: 'center',
+                    marginBottom: isMobile ? '12px' : '14px'
+                  }}>
+                    <div style={{ 
+                      fontSize: isMobile ? '10px' : '11px', 
+                      color: 'rgba(255,255,255,0.5)', 
+                      letterSpacing: '0.12em',
+                      fontWeight: '700',
+                      marginBottom: '2px'
+                    }}>{label}</div>
+                    <div style={{ 
+                      fontSize: isMobile ? '8px' : '9px', 
+                      color: 'rgba(255,255,255,0.3)'
+                    }}>{sublabel}</div>
+                  </div>
+                  
+                  {/* Row Header with Tiers */}
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    marginBottom: isMobile ? '10px' : '12px'
+                    marginBottom: isMobile ? '8px' : '10px'
                   }}>
                     {/* Away Team */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px' }}>
                       <span style={{ 
-                        fontSize: isMobile ? '13px' : '15px', 
-                        fontWeight: '700', 
-                        color: awayColor,
+                        fontSize: isMobile ? '14px' : '16px', 
+                        fontWeight: '800', 
+                        color: awayTier.color,
                         fontFamily: 'ui-monospace, monospace'
                       }}>#{aRank}</span>
-                      <span style={{ 
-                        fontSize: isMobile ? '11px' : '12px', 
-                        fontWeight: '600', 
-                        color: awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
-                      }}>{awayAbbrev}</span>
-                      {awayBetter && (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ 
+                            fontSize: isMobile ? '11px' : '12px', 
+                            fontWeight: '600', 
+                            color: awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
+                          }}>{awayAbbrev}</span>
+                          {awayBetter && (
+                            <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '600' }}>✓</span>
+                          )}
+                        </div>
                         <span style={{ 
-                          fontSize: isMobile ? '9px' : '10px',
-                          color: '#10B981',
-                          fontWeight: '600'
-                        }}>✓</span>
-                      )}
+                          fontSize: isMobile ? '8px' : '9px',
+                          color: awayTier.color,
+                          fontWeight: '600',
+                          opacity: 0.8
+                        }}>Top {100 - awayPercentile}%</span>
+                      </div>
                     </div>
                     
-                    {/* Category Label */}
+                    {/* VS Badge */}
                     <div style={{ 
-                      fontSize: isMobile ? '9px' : '10px', 
-                      color: 'rgba(255,255,255,0.35)', 
-                      letterSpacing: '0.12em',
+                      fontSize: isMobile ? '8px' : '9px', 
+                      color: 'rgba(255,255,255,0.2)', 
                       fontWeight: '600'
-                    }}>{label}</div>
+                    }}>VS</div>
                     
                     {/* Home Team */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
-                      {!awayBetter && (
-                        <span style={{ 
-                          fontSize: isMobile ? '9px' : '10px',
-                          color: '#10B981',
-                          fontWeight: '600'
-                        }}>✓</span>
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px', flexDirection: 'row-reverse' }}>
                       <span style={{ 
-                        fontSize: isMobile ? '11px' : '12px', 
-                        fontWeight: '600', 
-                        color: !awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
-                      }}>{homeAbbrev}</span>
-                      <span style={{ 
-                        fontSize: isMobile ? '13px' : '15px', 
-                        fontWeight: '700', 
-                        color: homeColor,
+                        fontSize: isMobile ? '14px' : '16px', 
+                        fontWeight: '800', 
+                        color: homeTier.color,
                         fontFamily: 'ui-monospace, monospace'
                       }}>#{hRank}</span>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                          {!awayBetter && (
+                            <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '600' }}>✓</span>
+                          )}
+                          <span style={{ 
+                            fontSize: isMobile ? '11px' : '12px', 
+                            fontWeight: '600', 
+                            color: !awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
+                          }}>{homeAbbrev}</span>
+                        </div>
+                        <span style={{ 
+                          fontSize: isMobile ? '8px' : '9px',
+                          color: homeTier.color,
+                          fontWeight: '600',
+                          opacity: 0.8
+                        }}>Top {100 - homePercentile}%</span>
+                      </div>
                     </div>
                   </div>
                   
                   {/* Comparison Bar */}
                   <div style={{ 
                     position: 'relative', 
-                    height: isMobile ? '6px' : '8px', 
-                    borderRadius: '4px', 
+                    height: isMobile ? '8px' : '10px', 
+                    borderRadius: '5px', 
                     overflow: 'hidden',
                     background: 'rgba(0,0,0,0.4)'
                   }}>
@@ -414,7 +487,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                       top: 0,
                       width: `${awayPct}%`,
                       height: '100%',
-                      background: `linear-gradient(90deg, ${awayColor}30, ${awayColor})`,
+                      background: `linear-gradient(90deg, ${awayTier.color}30, ${awayTier.color})`,
                       transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
                     {/* Home side fill */}
@@ -424,7 +497,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                       top: 0,
                       width: `${100 - awayPct}%`,
                       height: '100%',
-                      background: `linear-gradient(270deg, ${homeColor}30, ${homeColor})`,
+                      background: `linear-gradient(270deg, ${homeTier.color}30, ${homeTier.color})`,
                       transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
                     {/* Center marker */}
@@ -432,9 +505,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                       position: 'absolute',
                       left: '50%',
                       top: 0,
-                      width: '1px',
+                      width: '2px',
                       height: '100%',
-                      background: 'rgba(255,255,255,0.15)',
+                      background: 'rgba(255,255,255,0.2)',
                       transform: 'translateX(-50%)'
                     }} />
                   </div>
@@ -442,20 +515,37 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   {/* Gap indicator */}
                   <div style={{ 
                     textAlign: 'center', 
-                    marginTop: isMobile ? '8px' : '10px'
+                    marginTop: isMobile ? '10px' : '12px'
                   }}>
                     <span style={{
                       display: 'inline-block',
-                      padding: isMobile ? '3px 10px' : '4px 12px',
-                      borderRadius: '6px',
-                      background: gap > 50 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.04)',
-                      border: gap > 50 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(255,255,255,0.06)',
+                      padding: isMobile ? '4px 12px' : '5px 14px',
+                      borderRadius: '8px',
+                      background: gap > 50 ? 'rgba(16, 185, 129, 0.15)' : gap > 25 ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)',
+                      border: gap > 50 ? '1px solid rgba(16, 185, 129, 0.25)' : gap > 25 ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid rgba(255,255,255,0.06)',
                       fontSize: isMobile ? '10px' : '11px',
                       fontWeight: '700',
-                      color: gap > 50 ? '#10B981' : 'rgba(255,255,255,0.5)',
+                      color: gap > 50 ? '#10B981' : gap > 25 ? '#60A5FA' : 'rgba(255,255,255,0.5)',
                       fontFamily: 'ui-monospace, monospace'
                     }}>
-                      {gap > 50 ? `+${gap} edge` : gap > 20 ? `+${gap}` : `+${gap} close`}
+                      {gap > 100 ? `+${gap} MAJOR` : gap > 50 ? `+${gap} edge` : gap > 25 ? `+${gap}` : `+${gap} close`}
+                    </span>
+                  </div>
+                  
+                  {/* Contextual Insight */}
+                  <div style={{ 
+                    marginTop: isMobile ? '10px' : '12px',
+                    padding: isMobile ? '8px 12px' : '10px 14px',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '8px',
+                    borderLeft: `3px solid ${gap > 50 ? '#10B981' : gap > 25 ? '#60A5FA' : '#64748B'}`
+                  }}>
+                    <span style={{ 
+                      fontSize: isMobile ? '10px' : '11px', 
+                      color: 'rgba(255,255,255,0.7)',
+                      lineHeight: '1.4'
+                    }}>
+                      {getInsight()}
                     </span>
                   </div>
                 </div>
