@@ -343,43 +343,51 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               const awayPercentile = getPercentile(aRank);
               const homePercentile = getPercentile(hRank);
               
-              // Generate contextual insight based on matchup
+              // Generate contextual insight based on matchup (clean, no emojis)
               const getInsight = () => {
                 if (type === 'overall') {
                   if (gap > 100) {
-                    return `🔥 ${winner} is significantly stronger — expect them to control this game`;
+                    return `${winner} is significantly stronger — expect them to control this game`;
                   } else if (gap > 50) {
-                    return `✅ ${winner} has a clear edge (${winnerRank} vs ${loserRank}) — should be favored`;
+                    return `${winner} has a clear edge (#${winnerRank} vs #${loserRank}) — should be favored`;
                   } else if (gap > 25) {
-                    return `📊 ${winner} slightly better but ${loser} can compete — closer than rankings suggest`;
+                    return `${winner} slightly better but ${loser} can compete — closer than rankings suggest`;
                   } else {
-                    return `⚔️ Evenly matched teams — this one could go either way`;
+                    return `Evenly matched teams — this one could go either way`;
                   }
                 }
                 if (type === 'offense') {
                   if (gap > 100) {
-                    return `🔥 ${winner}'s offense (#${winnerRank}) should dominate — expect points`;
+                    return `${winner}'s offense (#${winnerRank}) should dominate — expect points`;
                   } else if (gap > 50) {
-                    return `🎯 ${winner} scores more efficiently (#${winnerRank} vs #${loserRank}) — offensive edge`;
+                    return `${winner} scores more efficiently (#${winnerRank} vs #${loserRank}) — offensive edge`;
                   } else if (gap > 25) {
-                    return `📊 ${winner} has slight scoring edge — watch for shot quality`;
+                    return `${winner} has slight scoring edge — watch for shot quality`;
                   } else {
-                    return `⚔️ Similar offensive capabilities — defense may decide this`;
+                    return `Similar offensive capabilities — defense may decide this`;
                   }
                 }
                 if (type === 'defense') {
                   if (gap > 100) {
-                    return `🛡️ ${winner}'s defense (#${winnerRank}) is elite — tough to score against`;
+                    return `${winner}'s defense (#${winnerRank}) is elite — tough to score against`;
                   } else if (gap > 50) {
-                    return `🔒 ${winner} defends much better (#${winnerRank} vs #${loserRank}) — grind it out`;
+                    return `${winner} defends much better (#${winnerRank} vs #${loserRank}) — expect a grind`;
                   } else if (gap > 25) {
-                    return `📊 ${winner} has the defensive edge — could slow the game down`;
+                    return `${winner} has the defensive edge — could slow the game down`;
                   } else {
-                    return `⚔️ Similar defensive quality — offense will be the difference`;
+                    return `Similar defensive quality — offense will be the difference`;
                   }
                 }
                 return '';
               };
+              
+              // Determine insight type for styling
+              const getInsightType = () => {
+                if (gap > 50) return 'edge';
+                if (gap > 25) return 'slight';
+                return 'neutral';
+              };
+              const insightType = getInsightType();
               
               return (
                 <div key={label}>
@@ -468,9 +476,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                           fontWeight: '600',
                           opacity: 0.8
                         }}>Top {100 - homePercentile}%</span>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+            </div>
+          </div>
                   
                   {/* Comparison Bar */}
                   <div style={{ 
@@ -530,16 +538,24 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     }}>
                       {gap > 100 ? `+${gap} MAJOR` : gap > 50 ? `+${gap} edge` : gap > 25 ? `+${gap}` : `+${gap} close`}
                     </span>
-                  </div>
+          </div>
                   
-                  {/* Contextual Insight */}
+                  {/* Contextual Insight - Clean with symbol prefix */}
                   <div style={{ 
                     marginTop: isMobile ? '10px' : '12px',
                     padding: isMobile ? '8px 12px' : '10px 14px',
                     background: 'rgba(0,0,0,0.2)',
                     borderRadius: '8px',
-                    borderLeft: `3px solid ${gap > 50 ? '#10B981' : gap > 25 ? '#60A5FA' : '#64748B'}`
+                    borderLeft: `3px solid ${insightType === 'edge' ? '#10B981' : insightType === 'slight' ? '#60A5FA' : '#64748B'}`
                   }}>
+                    <span style={{ 
+                      fontSize: isMobile ? '10px' : '11px', 
+                      color: insightType === 'edge' ? '#10B981' : insightType === 'slight' ? '#60A5FA' : 'rgba(255,255,255,0.5)',
+                      fontWeight: '600',
+                      marginRight: '6px'
+                    }}>
+                      {insightType === 'edge' ? '✓' : insightType === 'slight' ? '→' : '—'}
+                    </span>
                     <span style={{ 
                       fontSize: isMobile ? '10px' : '11px', 
                       color: 'rgba(255,255,255,0.7)',
@@ -547,8 +563,8 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     }}>
                       {getInsight()}
                     </span>
-                  </div>
-                </div>
+              </div>
+            </div>
               );
             })}
           </div>
@@ -577,12 +593,12 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           border: '1px solid rgba(255,255,255,0.04)'
         }}>
           <div>
-            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>⚡ {offAbbrev}</div>
+            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{offAbbrev}</div>
             <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#34D399', fontFamily: 'ui-monospace, monospace' }}>
               {offTeam.adjOff?.toFixed(1) || '—'} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
             </div>
           </div>
-          
+
           <button onClick={() => setView(isAwayOffView ? 'homeOff_awayDef' : 'awayOff_homeDef')}
             style={{ padding: isMobile ? '8px 14px' : '10px 18px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ArrowRightLeft size={isMobile ? 12 : 14} color="#A78BFA" />
@@ -590,7 +606,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           </button>
           
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{defAbbrev} 🛡️</div>
+            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{defAbbrev}</div>
             <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#F87171', fontFamily: 'ui-monospace, monospace' }}>
               {defTeam.adjDef?.toFixed(1) || '—'} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
             </div>
@@ -603,8 +619,8 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           {/* SHOOTING CARD */}
           <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(251, 191, 36, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#FBBF24', letterSpacing: '0.1em' }}>🎯 SHOOTING</span>
-            </div>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#FBBF24', letterSpacing: '0.1em' }}>SHOOTING</span>
+      </div>
             <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
               {[
                 { label: '2PT%', offVal: twoP.off, defVal: twoP.def, avg: D1_AVG.twoP, type: '2pt' },
@@ -631,62 +647,62 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     // Great matchup: good offense vs bad defense
                     if (offAboveAvg && defLeaky) {
                       const phrases = [
-                        `🔥 ${offAbbrev} elite inside (${offVal.toFixed(0)}%) vs ${defAbbrev}'s porous interior (${defVal.toFixed(0)}%) → paint feast`,
-                        `🎯 Mismatch! ${offAbbrev} finishes at ${offVal.toFixed(0)}% and ${defAbbrev} allows ${defVal.toFixed(0)}% → attack the rim`,
-                        `💪 ${offAbbrev}'s ${offVal.toFixed(0)}% 2PT meets weak interior D allowing ${defVal.toFixed(0)}% → advantage inside`
+                        `${offAbbrev} elite inside (${offVal.toFixed(0)}%) vs ${defAbbrev}'s porous interior (${defVal.toFixed(0)}%) — paint feast`,
+                        `Mismatch: ${offAbbrev} finishes at ${offVal.toFixed(0)}% and ${defAbbrev} allows ${defVal.toFixed(0)}% — attack the rim`,
+                        `${offAbbrev}'s ${offVal.toFixed(0)}% 2PT meets weak interior D allowing ${defVal.toFixed(0)}% — advantage inside`
                       ];
                       return phrases[Math.floor(offVal + defVal) % 3];
                     }
                     // Battle: good offense vs good defense
                     if (offAboveAvg && defStingy) {
                       const phrases = [
-                        `⚔️ ${offAbbrev} shoots ${offVal.toFixed(0)}% but ${defAbbrev} only allows ${defVal.toFixed(0)}% → elite battle`,
-                        `🔒 Stoppable force vs immovable object — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev} D (${defVal.toFixed(0)}%)`,
-                        `⚡ Premium matchup: ${offAbbrev}'s finishing vs ${defAbbrev}'s lockdown D`
+                        `${offAbbrev} shoots ${offVal.toFixed(0)}% but ${defAbbrev} only allows ${defVal.toFixed(0)}% — elite battle`,
+                        `Stoppable force vs immovable object — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev} D (${defVal.toFixed(0)}%)`,
+                        `Premium matchup: ${offAbbrev}'s finishing vs ${defAbbrev}'s lockdown D`
                       ];
                       return phrases[Math.floor(offVal + defVal) % 3];
                     }
                     // Bad offense vs bad defense
                     if (offBelowAvg && defLeaky) {
-                      return `📊 ${offAbbrev} struggles inside (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% → should still score`;
+                      return `${offAbbrev} struggles inside (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% — should still score`;
                     }
                     // Bad offense vs good defense
                     if (offBelowAvg && defStingy) {
                       const phrases = [
-                        `🛡️ Tough sledding — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s stingy ${defVal.toFixed(0)}% allowed`,
-                        `🧱 ${offAbbrev} struggles at ${offVal.toFixed(0)}% and ${defAbbrev} holds teams to ${defVal.toFixed(0)}% → low scoring`,
-                        `❄️ Cold shooting meets brick wall — points will be hard to come by`
+                        `Tough sledding — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s stingy ${defVal.toFixed(0)}% allowed`,
+                        `${offAbbrev} struggles at ${offVal.toFixed(0)}% and ${defAbbrev} holds teams to ${defVal.toFixed(0)}% — low scoring`,
+                        `Cold shooting meets brick wall — points will be hard to come by`
                       ];
                       return phrases[Math.floor(offVal + defVal) % 3];
                     }
                     // Neutral
-                    return `📊 Both near D1 average inside — game flow will decide`;
+                    return `Both near D1 average inside — game flow will decide`;
                   }
                   
                   if (type === '3pt') {
                     if (offAboveAvg && defLeaky) {
                       const phrases = [
-                        `🏹 ${offAbbrev} knocks down ${offVal.toFixed(0)}% from deep vs ${defAbbrev} allowing ${defVal.toFixed(0)}% → shooters feast`,
-                        `🎯 Sniper alert! ${offAbbrev} (${offVal.toFixed(0)}%) meets poor perimeter D (${defVal.toFixed(0)}%)`,
-                        `🔥 Open looks expected — ${offAbbrev} shoots ${offVal.toFixed(0)}%, ${defAbbrev} gives up ${defVal.toFixed(0)}%`
+                        `${offAbbrev} knocks down ${offVal.toFixed(0)}% from deep vs ${defAbbrev} allowing ${defVal.toFixed(0)}% — shooters feast`,
+                        `Sniper alert: ${offAbbrev} (${offVal.toFixed(0)}%) meets poor perimeter D (${defVal.toFixed(0)}%)`,
+                        `Open looks expected — ${offAbbrev} shoots ${offVal.toFixed(0)}%, ${defAbbrev} gives up ${defVal.toFixed(0)}%`
                       ];
                       return phrases[Math.floor(offVal + defVal) % 3];
                     }
                     if (offAboveAvg && defStingy) {
-                      return `⚔️ ${offAbbrev}'s shooters (${offVal.toFixed(0)}%) vs ${defAbbrev}'s tight coverage (${defVal.toFixed(0)}%) → contested looks`;
+                      return `${offAbbrev}'s shooters (${offVal.toFixed(0)}%) vs ${defAbbrev}'s tight coverage (${defVal.toFixed(0)}%) — contested looks`;
                     }
                     if (offBelowAvg && defLeaky) {
-                      return `📊 ${offAbbrev} cold from 3 (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% → open looks may help`;
+                      return `${offAbbrev} cold from 3 (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% — open looks may help`;
                     }
                     if (offBelowAvg && defStingy) {
                       const phrases = [
-                        `🧱 Avoid the 3 — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s elite D (${defVal.toFixed(0)}%)`,
-                        `❄️ Stay out of 3PT contests — neither team's strength`,
-                        `🚫 Poor shooters (${offVal.toFixed(0)}%) vs lockdown perimeter D (${defVal.toFixed(0)}%)`
+                        `Avoid the 3 — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s elite D (${defVal.toFixed(0)}%)`,
+                        `Stay out of 3PT contests — neither team's strength`,
+                        `Poor shooters (${offVal.toFixed(0)}%) vs lockdown perimeter D (${defVal.toFixed(0)}%)`
                       ];
                       return phrases[Math.floor(offVal + defVal) % 3];
                     }
-                    return `📊 3PT shooting near average for both — variance factor`;
+                    return `3PT shooting near average for both — variance factor`;
                   }
                   
                   if (type === '3ptRate') {
@@ -695,47 +711,47 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     const defAllowsLots = defVal > 42;
                     
                     if (offHeavy3 && defAllowsLots) {
-                      return `⚠️ 3PT heavy game — ${offAbbrev} takes ${offVal.toFixed(0)}% from deep, ${defAbbrev} allows ${defVal.toFixed(0)}% → high variance`;
+                      return `3PT heavy game — ${offAbbrev} takes ${offVal.toFixed(0)}% from deep, ${defAbbrev} allows ${defVal.toFixed(0)}% — high variance`;
                     }
                     if (offHeavy3) {
-                      return `🎯 ${offAbbrev} perimeter-oriented (${offVal.toFixed(0)}% 3PT rate) — swings will be big`;
+                      return `${offAbbrev} perimeter-oriented (${offVal.toFixed(0)}% 3PT rate) — swings will be big`;
                     }
                     if (offLow3) {
-                      return `🎨 ${offAbbrev} attacks inside — only ${offVal.toFixed(0)}% 3PT rate, less variance`;
+                      return `${offAbbrev} attacks inside — only ${offVal.toFixed(0)}% 3PT rate, less variance`;
                     }
-                    return `📊 Balanced shot diet (${offVal.toFixed(0)}% 3PT rate)`;
+                    return `Balanced shot diet (${offVal.toFixed(0)}% 3PT rate)`;
                   }
                   
                   if (type === 'efg') {
                     if (offAboveAvg && defLeaky) {
-                      return `✅ Efficient ${offAbbrev} (${offVal.toFixed(0)}% eFG) vs ${defAbbrev} allowing ${defVal.toFixed(0)}% → should score well`;
+                      return `Efficient ${offAbbrev} (${offVal.toFixed(0)}% eFG) vs ${defAbbrev} allowing ${defVal.toFixed(0)}% — should score well`;
                     }
                     if (offAboveAvg && defStingy) {
-                      return `⚔️ ${offAbbrev}'s efficiency (${offVal.toFixed(0)}%) meets ${defAbbrev}'s elite D (${defVal.toFixed(0)}%) → key battle`;
+                      return `${offAbbrev}'s efficiency (${offVal.toFixed(0)}%) meets ${defAbbrev}'s elite D (${defVal.toFixed(0)}%) — key battle`;
                     }
                     if (offBelowAvg && defLeaky) {
-                      return `📊 ${offAbbrev} inefficient (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% → could improve`;
+                      return `${offAbbrev} inefficient (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% — could improve`;
                     }
                     if (offBelowAvg && defStingy) {
-                      return `🛡️ ${defAbbrev} elite D (${defVal.toFixed(0)}% allowed) vs struggling ${offAbbrev} → low-scoring`;
+                      return `${defAbbrev} elite D (${defVal.toFixed(0)}% allowed) vs struggling ${offAbbrev} — low-scoring`;
                     }
                     if (matchupEdge > 2) {
-                      return `✅ ${offAbbrev} efficiency edge (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}% allowed)`;
+                      return `${offAbbrev} efficiency edge (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}% allowed)`;
                     }
                     if (matchupEdge < -2) {
-                      return `⚠️ ${defAbbrev} efficiency edge — holds teams below their average`;
+                      return `${defAbbrev} efficiency edge — holds teams below their average`;
                     }
-                    return `📊 Efficiency even (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}%) — execution decides`;
+                    return `Efficiency even (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}%) — execution decides`;
                   }
                   return '';
                 };
-                
-                return (
+
+            return (
                   <div key={label}>
                     <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
                       <span>{label}</span>
                       <span>D1: {avg}%</span>
-                    </div>
+                  </div>
                     {/* Offense row - HIGHER is better for offense */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{offAbbrev}</span>
@@ -773,32 +789,32 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     }}>
                       {getMatchupInsight()}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+              </div>
+            );
+          })}
+        </div>
             {/* Smart Takeaway */}
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
                 {twoP.off > D1_AVG.twoP + 2 && twoP.def > D1_AVG.twoP + 2 
-                  ? `🔥 ${offAbbrev} elite inside (${twoP.off.toFixed(0)}%) vs leaky interior D — paint points likely` 
+                  ? `${offAbbrev} elite inside (${twoP.off.toFixed(0)}%) vs leaky interior D — paint points likely` 
                   : threeP.off > D1_AVG.threeP + 2 && threeP.def > D1_AVG.threeP + 2
-                  ? `🏹 ${offAbbrev} shoots well (${threeP.off.toFixed(0)}%) & ${defAbbrev} allows ${threeP.def.toFixed(0)}% — perimeter edge`
+                  ? `${offAbbrev} shoots well (${threeP.off.toFixed(0)}%) & ${defAbbrev} allows ${threeP.def.toFixed(0)}% — perimeter edge`
                   : twoP.off < D1_AVG.twoP - 2 && twoP.def < D1_AVG.twoP - 2
-                  ? `🛡️ Tough interior matchup — ${defAbbrev} holds teams to ${twoP.def.toFixed(0)}%`
+                  ? `Tough interior matchup — ${defAbbrev} holds teams to ${twoP.def.toFixed(0)}%`
                   : eFG.off > D1_AVG.eFG + 2
-                  ? `📊 ${offAbbrev} efficient offense (${eFG.off.toFixed(0)}% eFG) — should score`
+                  ? `${offAbbrev} efficient offense (${eFG.off.toFixed(0)}% eFG) — should score`
                   : eFG.def < D1_AVG.eFG - 2
-                  ? `🛡️ ${defAbbrev} elite D (${eFG.def.toFixed(0)}% eFG allowed) — tough to score on`
-                  : '📊 Balanced shooting matchup — execution will decide'}
+                  ? `${defAbbrev} elite D (${eFG.def.toFixed(0)}% eFG allowed) — tough to score on`
+                  : 'Balanced shooting matchup — execution will decide'}
               </span>
-            </div>
+      </div>
           </div>
 
           {/* BALL CONTROL CARD */}
           <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(239, 68, 68, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#F87171', letterSpacing: '0.1em' }}>🏀 BALL CONTROL</span>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#F87171', letterSpacing: '0.1em' }}>BALL CONTROL</span>
             </div>
             <div style={{ padding: isMobile ? '14px' : '18px' }}>
               <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
@@ -809,8 +825,8 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               {(() => {
                 const offGood = to.off < D1_AVG.to;
                 const defDangerous = to.def > D1_AVG.to;
-                const offContext = Math.abs(to.off - D1_AVG.to) > 1.5 ? (offGood ? '✓ PROTECTS' : '⚠️ CARELESS') : '~ AVG';
-                const defContext = Math.abs(to.def - D1_AVG.to) > 1.5 ? (defDangerous ? '⚠️ FORCES TOs' : '✓ DOESN\'T PRESS') : '~ AVG D';
+                const offContext = Math.abs(to.off - D1_AVG.to) > 1.5 ? (offGood ? '✓ PROTECTS' : '! CARELESS') : '~ AVG';
+                const defContext = Math.abs(to.def - D1_AVG.to) > 1.5 ? (defDangerous ? '! FORCES TOs' : '✓ DOESN\'T PRESS') : '~ AVG D';
                 return (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -837,23 +853,23 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
                 {to.def > D1_AVG.to + 1.5 && to.off > D1_AVG.to
-                  ? `⚠️ Danger! ${defAbbrev} forces ${to.def.toFixed(0)}% TOs & ${offAbbrev} is careless (${to.off.toFixed(0)}%)`
+                  ? `Danger: ${defAbbrev} forces ${to.def.toFixed(0)}% TOs & ${offAbbrev} is careless (${to.off.toFixed(0)}%)`
                   : to.off < D1_AVG.to - 1.5 && to.def > D1_AVG.to
-                  ? `✓ ${offAbbrev} protects the ball well (${to.off.toFixed(0)}%) — should handle pressure`
+                  ? `${offAbbrev} protects the ball well (${to.off.toFixed(0)}%) — should handle pressure`
                   : to.off < D1_AVG.to - 1.5
-                  ? `✓ ${offAbbrev} takes care of the ball (${to.off.toFixed(0)}% TO rate)`
+                  ? `${offAbbrev} takes care of the ball (${to.off.toFixed(0)}% TO rate)`
                   : to.def > D1_AVG.to + 1.5
-                  ? `⚠️ ${defAbbrev} forces turnovers (${to.def.toFixed(0)}%) — ball security matters`
-                  : '📊 Ball control should be neutral in this matchup'}
+                  ? `${defAbbrev} forces turnovers (${to.def.toFixed(0)}%) — ball security matters`
+                  : 'Ball control should be neutral in this matchup'}
               </span>
+              </div>
             </div>
-          </div>
 
           {/* REBOUNDING CARD */}
           <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(59, 130, 246, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#60A5FA', letterSpacing: '0.1em' }}>♻️ REBOUNDING</span>
-            </div>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#60A5FA', letterSpacing: '0.1em' }}>REBOUNDING</span>
+                </div>
             <div style={{ padding: isMobile ? '14px' : '18px' }}>
               <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>OFFENSIVE REBOUND %</span>
@@ -863,7 +879,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                 const offGood = oreb.off > D1_AVG.oreb;
                 const defBad = oreb.def > D1_AVG.oreb; // Defense allowing high OREB% is bad
                 const offContext = Math.abs(oreb.off - D1_AVG.oreb) > 2 ? (offGood ? '▲ CRASHES GLASS' : '▼ DOESN\'T CRASH') : '~ AVG';
-                const defContext = Math.abs(oreb.def - D1_AVG.oreb) > 2 ? (defBad ? '⚠️ GIVES UP' : '✓ LOCKS OUT') : '~ AVG D';
+                const defContext = Math.abs(oreb.def - D1_AVG.oreb) > 2 ? (defBad ? '! GIVES UP' : '✓ LOCKS OUT') : '~ AVG D';
                 return (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -880,9 +896,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                       <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
                         <div style={{ width: `${Math.min((oreb.def / 40) * 100, 100)}%`, height: '100%', background: defBad ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #10B98150, #10B981)', borderRadius: '2px' }} />
                         <div style={{ position: 'absolute', left: `${(D1_AVG.oreb / 40) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                      </div>
+                </div>
                       <span style={{ fontSize: isMobile ? '8px' : '9px', color: defBad ? '#F87171' : '#10B981', width: isMobile ? '70px' : '85px', textAlign: 'right' }}>{defContext}</span>
-                    </div>
+              </div>
                   </>
                 );
               })()}
@@ -890,14 +906,14 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
                 {oreb.off > D1_AVG.oreb + 2 && oreb.def > D1_AVG.oreb + 2
-                  ? `🔥 Big edge! ${offAbbrev} crashes glass (${oreb.off.toFixed(0)}%) & ${defAbbrev} allows ${oreb.def.toFixed(0)}% — second chance pts`
+                  ? `Big edge: ${offAbbrev} crashes glass (${oreb.off.toFixed(0)}%) & ${defAbbrev} allows ${oreb.def.toFixed(0)}% — second chance pts`
                   : oreb.off > D1_AVG.oreb + 2 && oreb.def < D1_AVG.oreb
-                  ? `⚔️ Battle: ${offAbbrev} crashes (${oreb.off.toFixed(0)}%) vs ${defAbbrev}'s lockout D (${oreb.def.toFixed(0)}%)`
+                  ? `Battle: ${offAbbrev} crashes (${oreb.off.toFixed(0)}%) vs ${defAbbrev}'s lockout D (${oreb.def.toFixed(0)}%)`
                   : oreb.off > D1_AVG.oreb + 2
-                  ? `♻️ ${offAbbrev} crashes the offensive glass (${oreb.off.toFixed(0)}%)`
+                  ? `${offAbbrev} crashes the offensive glass (${oreb.off.toFixed(0)}%)`
                   : oreb.def > D1_AVG.oreb + 2
-                  ? `⚠️ ${defAbbrev} gives up offensive boards (${oreb.def.toFixed(0)}%) — second chances`
-                  : '📊 Rebounding should be neutral'}
+                  ? `${defAbbrev} gives up offensive boards (${oreb.def.toFixed(0)}%) — second chances`
+                  : 'Rebounding should be neutral'}
               </span>
             </div>
           </div>
@@ -905,7 +921,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           {/* PACE CARD */}
           <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(16, 185, 129, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#34D399', letterSpacing: '0.1em' }}>🏃 PACE & FREE THROWS</span>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#34D399', letterSpacing: '0.1em' }}>PACE & FREE THROWS</span>
             </div>
             <div style={{ padding: isMobile ? '14px' : '18px' }}>
               {/* FT Rate */}
@@ -918,7 +934,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   const offGood = ftRate.off > D1_AVG.ftRate;
                   const defFouls = (ftRate.def || 32) > D1_AVG.ftRate;
                   const offContext = Math.abs(ftRate.off - D1_AVG.ftRate) > 3 ? (offGood ? '▲ ATTACKS' : '▼ PERIMETER') : '~ AVG';
-                  const defContext = Math.abs((ftRate.def || 32) - D1_AVG.ftRate) > 3 ? (defFouls ? '⚠️ FOULS A LOT' : '✓ DISCIPLINED') : '~ AVG D';
+                  const defContext = Math.abs((ftRate.def || 32) - D1_AVG.ftRate) > 3 ? (defFouls ? '! FOULS A LOT' : '✓ DISCIPLINED') : '~ AVG D';
                   return (
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -970,14 +986,14 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
                 {ftRate.off > D1_AVG.ftRate + 3 && (ftRate.def || 32) > D1_AVG.ftRate + 3
-                  ? `🎟️ FT parade! ${offAbbrev} attacks (${ftRate.off.toFixed(0)}%) vs fouling D (${(ftRate.def || 32).toFixed(0)}%)`
+                  ? `FT parade: ${offAbbrev} attacks (${ftRate.off.toFixed(0)}%) vs fouling D (${(ftRate.def || 32).toFixed(0)}%)`
                   : tempo.off > 70 && tempo.def > 70 
-                  ? `🏃 Fast pace from both (~${((tempo.off + tempo.def) / 2).toFixed(0)} poss) — high-scoring potential`
+                  ? `Fast pace from both (~${((tempo.off + tempo.def) / 2).toFixed(0)} poss) — high-scoring potential`
                   : tempo.off < 65 && tempo.def < 65 
-                  ? `🐢 Grind it out game (~${((tempo.off + tempo.def) / 2).toFixed(0)} poss) — low-scoring`
+                  ? `Grind it out game (~${((tempo.off + tempo.def) / 2).toFixed(0)} poss) — low-scoring`
                   : ftRate.off > D1_AVG.ftRate + 3
-                  ? `🎟️ ${offAbbrev} gets to the line (${ftRate.off.toFixed(0)}% FT rate)`
-                  : `🏃 Expect ~${((tempo.off + tempo.def) / 2).toFixed(0)} possessions — ${tempo.off + tempo.def > 140 ? 'faster' : tempo.off + tempo.def < 130 ? 'slower' : 'average'} pace`}
+                  ? `${offAbbrev} gets to the line (${ftRate.off.toFixed(0)}% FT rate)`
+                  : `Expect ~${((tempo.off + tempo.def) / 2).toFixed(0)} possessions — ${tempo.off + tempo.def > 140 ? 'faster' : tempo.off + tempo.def < 130 ? 'slower' : 'average'} pace`}
               </span>
             </div>
           </div>
