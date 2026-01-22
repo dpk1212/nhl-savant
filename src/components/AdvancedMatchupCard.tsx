@@ -106,11 +106,12 @@ const RadialGauge = ({ value, max, size, color, glow, label, sublabel }: {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
       }}>
         <div style={{ 
-          fontSize: size / 3.5, fontWeight: '900', color: 'white', 
+          fontSize: size / 3, fontWeight: '900', color: 'white', 
           fontFamily: 'ui-monospace, monospace',
-          textShadow: `0 0 20px ${glow}`
+          textShadow: `0 0 25px ${glow}`,
+          letterSpacing: '-0.02em'
         }}>{label}</div>
-        {sublabel && <div style={{ fontSize: size / 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, letterSpacing: '0.05em' }}>{sublabel}</div>}
+        {sublabel && <div style={{ fontSize: size / 12, color: 'rgba(255,255,255,0.4)', marginTop: 4, letterSpacing: '0.15em', fontWeight: '700' }}>{sublabel}</div>}
       </div>
     </div>
   );
@@ -293,64 +294,107 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         }}>
           {/* Away Team */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginBottom: '20px', letterSpacing: '0.02em' }}>{awayTeam}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <RadialGauge value={awayBarthag} max={100} size={isMobile ? 110 : 130} color={awayTier.color} glow={awayTier.glow} label={`${Math.round(awayBarthag)}%`} />
+            <div style={{ fontSize: '14px', fontWeight: '800', color: 'white', marginBottom: '20px', letterSpacing: '0.02em' }}>{awayTeam}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+              <RadialGauge 
+                value={TOTAL_TEAMS - awayPowerRank + 1} 
+                max={TOTAL_TEAMS} 
+                size={isMobile ? 120 : 140} 
+                color={awayTier.color} 
+                glow={awayTier.glow} 
+                label={`#${awayPowerRank}`}
+                sublabel="OVERALL"
+              />
             </div>
             <div style={{ 
-              fontSize: '22px', fontWeight: '900', 
-              background: `linear-gradient(135deg, ${awayTier.color}, ${awayTier.color}CC)`,
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              marginBottom: '4px'
-            }}>#{awayPowerRank}</div>
-            <div style={{ 
-              display: 'inline-block', padding: '4px 12px', borderRadius: '6px',
-              background: `${awayTier.color}15`, border: `1px solid ${awayTier.color}30`,
-              fontSize: '9px', fontWeight: '700', color: awayTier.color, letterSpacing: '0.1em'
+              display: 'inline-block', padding: '6px 16px', borderRadius: '8px',
+              background: `linear-gradient(135deg, ${awayTier.color}20, ${awayTier.color}10)`, 
+              border: `1px solid ${awayTier.color}40`,
+              boxShadow: `0 0 20px ${awayTier.glow}`,
+              fontSize: '10px', fontWeight: '800', color: awayTier.color, letterSpacing: '0.12em'
             }}>{awayTier.label}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
+              Top {getPercentile(awayPowerRank)}% of D1
+            </div>
+            <div style={{ 
+              display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px',
+              padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px'
+            }}>
               <div>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>OFFENSE</div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#10B981' }}>#{away.adjOff_rank}</div>
+                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', marginBottom: '4px' }}>OFFENSE</div>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#10B981', fontFamily: 'ui-monospace, monospace' }}>#{away.adjOff_rank}</div>
               </div>
               <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
               <div>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>DEFENSE</div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#EF4444' }}>#{away.adjDef_rank}</div>
+                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', marginBottom: '4px' }}>DEFENSE</div>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#EF4444', fontFamily: 'ui-monospace, monospace' }}>#{away.adjDef_rank}</div>
               </div>
             </div>
           </div>
 
           {/* Home Team */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginBottom: '20px', letterSpacing: '0.02em' }}>{homeTeam}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <RadialGauge value={homeBarthag} max={100} size={isMobile ? 110 : 130} color={homeTier.color} glow={homeTier.glow} label={`${Math.round(homeBarthag)}%`} />
+            <div style={{ fontSize: '14px', fontWeight: '800', color: 'white', marginBottom: '20px', letterSpacing: '0.02em' }}>{homeTeam}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+              <RadialGauge 
+                value={TOTAL_TEAMS - homePowerRank + 1} 
+                max={TOTAL_TEAMS} 
+                size={isMobile ? 120 : 140} 
+                color={homeTier.color} 
+                glow={homeTier.glow} 
+                label={`#${homePowerRank}`}
+                sublabel="OVERALL"
+              />
             </div>
             <div style={{ 
-              fontSize: '22px', fontWeight: '900', 
-              background: `linear-gradient(135deg, ${homeTier.color}, ${homeTier.color}CC)`,
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              marginBottom: '4px'
-            }}>#{homePowerRank}</div>
-            <div style={{ 
-              display: 'inline-block', padding: '4px 12px', borderRadius: '6px',
-              background: `${homeTier.color}15`, border: `1px solid ${homeTier.color}30`,
-              fontSize: '9px', fontWeight: '700', color: homeTier.color, letterSpacing: '0.1em'
+              display: 'inline-block', padding: '6px 16px', borderRadius: '8px',
+              background: `linear-gradient(135deg, ${homeTier.color}20, ${homeTier.color}10)`, 
+              border: `1px solid ${homeTier.color}40`,
+              boxShadow: `0 0 20px ${homeTier.glow}`,
+              fontSize: '10px', fontWeight: '800', color: homeTier.color, letterSpacing: '0.12em'
             }}>{homeTier.label}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
+              Top {getPercentile(homePowerRank)}% of D1
+            </div>
+            <div style={{ 
+              display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px',
+              padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px'
+            }}>
               <div>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>OFFENSE</div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#10B981' }}>#{home.adjOff_rank}</div>
+                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', marginBottom: '4px' }}>OFFENSE</div>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#10B981', fontFamily: 'ui-monospace, monospace' }}>#{home.adjOff_rank}</div>
               </div>
               <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
               <div>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>DEFENSE</div>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: '#EF4444' }}>#{home.adjDef_rank}</div>
+                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', marginBottom: '4px' }}>DEFENSE</div>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#EF4444', fontFamily: 'ui-monospace, monospace' }}>#{home.adjDef_rank}</div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Power Gap Insight */}
+        {Math.abs(awayPowerRank - homePowerRank) > 20 && (
+          <div style={{
+            marginTop: '20px',
+            padding: '14px 20px',
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.03) 100%)',
+            borderRadius: '12px',
+            border: '1px solid rgba(251, 191, 36, 0.15)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+              <span style={{ color: '#FBBF24', fontWeight: '700' }}>
+                {awayPowerRank < homePowerRank ? awayTeam : homeTeam}
+              </span>
+              {' '}is ranked{' '}
+              <span style={{ color: '#FBBF24', fontWeight: '800', fontFamily: 'ui-monospace, monospace' }}>
+                {Math.abs(awayPowerRank - homePowerRank)} spots higher
+              </span>
+              {' '}— {Math.abs(awayPowerRank - homePowerRank) > 75 ? 'significant quality gap' : 'notable advantage in overall strength'}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
@@ -435,13 +479,25 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* 2PT */}
             <div style={{ padding: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: 'rgba(255,255,255,0.7)', marginBottom: '16px', letterSpacing: '0.08em' }}>2-POINT EFFICIENCY</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.08em' }}>2-POINT EFFICIENCY</div>
+                {twoP.off - twoP.def > 3 && (
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: '#10B981', padding: '3px 10px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    🔥 PAINT ADVANTAGE
+                  </div>
+                )}
+              </div>
               <StatBar 
                 leftValue={twoP.off} rightValue={twoP.def}
                 leftLabel={`${offTeamName} shoots`} rightLabel={`${defTeamName} allows`}
                 leftColor={twoP.off > 52 ? '#10B981' : twoP.off > 48 ? '#F59E0B' : '#EF4444'}
                 rightColor={twoP.def > 52 ? '#EF4444' : twoP.def > 48 ? '#F59E0B' : '#10B981'}
               />
+              {twoP.off > 54 && twoP.def > 54 && (
+                <div style={{ marginTop: '12px', fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                  → Elite finishers facing weak interior defense — high-percentage looks expected
+                </div>
+              )}
             </div>
 
             {/* 3PT */}
@@ -472,6 +528,20 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   maxValue={60}
                 />
               </div>
+              {threePRate.off > 45 && threeP.off > 34 && (
+                <div style={{ marginTop: '14px', padding: '10px 14px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <div style={{ fontSize: '10px', color: '#10B981', fontWeight: '600' }}>
+                    🏹 High-volume 3PT team with above-average accuracy — can get hot and put up points quickly
+                  </div>
+                </div>
+              )}
+              {threePRate.off > 48 && threeP.off < 33 && (
+                <div style={{ marginTop: '14px', padding: '10px 14px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                  <div style={{ fontSize: '10px', color: '#F59E0B', fontWeight: '600' }}>
+                    ⚠️ Heavy 3PT reliance with below-average accuracy — volatile, high-variance team
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* eFG */}
