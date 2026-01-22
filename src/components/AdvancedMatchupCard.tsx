@@ -1,6 +1,6 @@
 /**
- * 🏀 MATCHUP INTELLIGENCE v7 - PREMIUM MOBILE-FIRST
- * Elite analytics experience optimized for mobile
+ * 🏀 MATCHUP INTELLIGENCE v8 - STORYTELLING + CONTEXT
+ * Every metric tells a story with D1 averages for reference
  */
 
 import React, { useState, useEffect } from 'react';
@@ -8,12 +8,20 @@ import { ArrowRightLeft } from 'lucide-react';
 
 const TOTAL_TEAMS = 364;
 
+// D1 AVERAGES - Reference points for context
+const D1_AVG = {
+  twoP: 50.0,
+  threeP: 34.0,
+  threePRate: 40.0,
+  eFG: 50.0,
+  oreb: 28.0,
+  to: 18.0,
+  ftRate: 32.0,
+  tempo: 67.5
+};
+
 interface AdvancedMatchupCardProps {
-  barttorvik: {
-    away: TeamStats;
-    home: TeamStats;
-    matchup: MatchupAnalysis;
-  };
+  barttorvik: { away: TeamStats; home: TeamStats; matchup: MatchupAnalysis; };
   awayTeam: string;
   homeTeam: string;
 }
@@ -43,159 +51,92 @@ interface TeamStats {
   threeP_rate_def?: number;
 }
 
-interface MatchupAnalysis {
-  rankAdvantage: 'away' | 'home';
-  rankDiff: number;
-}
+interface MatchupAnalysis { rankAdvantage: 'away' | 'home'; rankDiff: number; }
 
 type ViewMode = 'awayOff_homeDef' | 'homeOff_awayDef';
 
 const getPercentile = (rank: number) => Math.round((1 - (rank - 1) / (TOTAL_TEAMS - 1)) * 100);
 
 const getTier = (rank: number) => {
-  if (rank <= 25) return { label: 'ELITE', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' };
-  if (rank <= 50) return { label: 'EXCELLENT', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)' };
-  if (rank <= 100) return { label: 'STRONG', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' };
-  if (rank <= 175) return { label: 'AVERAGE', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
-  if (rank <= 275) return { label: 'BELOW AVG', color: '#F97316', bg: 'rgba(249, 115, 22, 0.12)' };
-  return { label: 'WEAK', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)' };
+  if (rank <= 25) return { label: 'ELITE', color: '#10B981' };
+  if (rank <= 50) return { label: 'EXCELLENT', color: '#06B6D4' };
+  if (rank <= 100) return { label: 'STRONG', color: '#3B82F6' };
+  if (rank <= 175) return { label: 'AVERAGE', color: '#F59E0B' };
+  if (rank <= 275) return { label: 'BELOW AVG', color: '#F97316' };
+  return { label: 'WEAK', color: '#EF4444' };
 };
 
-// Premium Power Ring Component
-const PowerRing = ({ rank, size, color, teamName, offRank, defRank, isMobile }: {
-  rank: number; size: number; color: string; teamName: string; offRank: number; defRank: number; isMobile: boolean;
+// Get color based on whether stat is good (green) or bad (red)
+// For offense: higher is better. For defense: lower is better (they allow less)
+const getStatColor = (value: number, avg: number, isDefense: boolean) => {
+  const diff = isDefense ? avg - value : value - avg; // Flip for defense
+  if (diff > 3) return '#10B981'; // Great
+  if (diff > 0) return '#22D3EE'; // Good
+  if (diff > -3) return '#F59E0B'; // Average
+  return '#EF4444'; // Poor
+};
+
+const getStatLabel = (value: number, avg: number, isDefense: boolean) => {
+  const diff = isDefense ? avg - value : value - avg;
+  if (diff > 5) return isDefense ? 'ELITE D' : 'ELITE';
+  if (diff > 2) return isDefense ? 'STRONG D' : 'ABOVE AVG';
+  if (diff > -2) return 'AVERAGE';
+  if (diff > -5) return isDefense ? 'WEAK D' : 'BELOW AVG';
+  return isDefense ? 'POOR D' : 'POOR';
+};
+
+// Stat Display Component
+const StatDisplay = ({ 
+  label, value, avg, isDefense, isMobile, showDiff = true 
+}: { 
+  label: string; value: number; avg: number; isDefense: boolean; isMobile: boolean; showDiff?: boolean;
 }) => {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => { setTimeout(() => setProgress((TOTAL_TEAMS - rank) / TOTAL_TEAMS), 100); }, [rank]);
-  
-  const strokeWidth = size * 0.08;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const tier = getTier(rank);
+  const color = getStatColor(value, avg, isDefense);
+  const diff = value - avg;
+  const diffStr = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
   
   return (
     <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: isMobile ? '8px' : '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', marginBottom: '4px' }}>
+        {label}
+      </div>
       <div style={{ 
-        fontSize: isMobile ? '13px' : '14px', 
-        fontWeight: '700', 
-        color: 'white', 
-        marginBottom: isMobile ? '12px' : '16px',
-        letterSpacing: '0.01em'
-      }}>{teamName}</div>
-      
-      <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
-        {/* Outer glow ring */}
-        <div style={{
-          position: 'absolute', inset: -4,
-          borderRadius: '50%',
-          background: `conic-gradient(from 0deg, ${color}00, ${color}30, ${color}00)`,
-          filter: 'blur(8px)',
-          opacity: progress
-        }} />
-        
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          {/* Track */}
-          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="rgba(30, 41, 59, 0.6)" strokeWidth={strokeWidth} />
-          {/* Progress */}
-          <circle 
-            cx={size/2} cy={size/2} r={radius} fill="none"
-            stroke={`url(#ring-${teamName.replace(/\s/g, '')})`}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference - progress * circumference}
-            style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }}
-          />
-          <defs>
-            <linearGradient id={`ring-${teamName.replace(/\s/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-              <stop offset="50%" stopColor={color} />
-              <stop offset="100%" stopColor={color} stopOpacity="0.4" />
-            </linearGradient>
-          </defs>
-        </svg>
-        
-        {/* Center content */}
+        fontSize: isMobile ? '18px' : '22px', 
+        fontWeight: '800', 
+        color,
+        fontFamily: 'ui-monospace, monospace'
+      }}>{value.toFixed(1)}%</div>
+      {showDiff && (
         <div style={{ 
-          position: 'absolute', inset: 0, 
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+          fontSize: isMobile ? '9px' : '10px', 
+          color: 'rgba(255,255,255,0.4)',
+          marginTop: '2px'
         }}>
-          <div style={{ 
-            fontSize: size * 0.28, 
-            fontWeight: '800', 
-            color: 'white',
-            fontFamily: 'ui-monospace, monospace',
-            letterSpacing: '-0.03em',
-            lineHeight: 1
-          }}>#{rank}</div>
-          <div style={{ 
-            fontSize: size * 0.08, 
-            fontWeight: '600', 
-            color: 'rgba(255,255,255,0.4)',
-            letterSpacing: '0.15em',
-            marginTop: 4
-          }}>OVERALL</div>
+          <span style={{ color, fontWeight: '600' }}>{diffStr}</span>
+          <span style={{ marginLeft: '3px' }}>vs avg</span>
         </div>
-      </div>
-      
-      {/* Tier badge */}
-      <div style={{ 
-        display: 'inline-flex', 
-        alignItems: 'center',
-        gap: '6px',
-        marginTop: isMobile ? '10px' : '14px',
-        padding: isMobile ? '5px 12px' : '6px 14px',
-        borderRadius: '8px',
-        background: tier.bg,
-        border: `1px solid ${tier.color}30`
-      }}>
-        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: tier.color, boxShadow: `0 0 8px ${tier.color}` }} />
-        <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: tier.color, letterSpacing: '0.1em' }}>{tier.label}</span>
-      </div>
-      
-      <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginTop: '6px' }}>
-        Top {getPercentile(rank)}% of D1
-      </div>
-      
-      {/* Off/Def ranks */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        gap: isMobile ? '16px' : '20px', 
-        marginTop: isMobile ? '12px' : '16px',
-        padding: isMobile ? '10px 12px' : '12px 16px',
-        background: 'rgba(0,0,0,0.25)',
-        borderRadius: '10px',
-        border: '1px solid rgba(255,255,255,0.04)'
-      }}>
-        <div>
-          <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', marginBottom: '3px' }}>OFF</div>
-          <div style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: '800', color: '#34D399', fontFamily: 'ui-monospace, monospace' }}>#{offRank}</div>
-        </div>
-        <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)' }} />
-        <div>
-          <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', marginBottom: '3px' }}>DEF</div>
-          <div style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: '800', color: '#F87171', fontFamily: 'ui-monospace, monospace' }}>#{defRank}</div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
 
-// Premium Stat Row Component
-const StatRow = ({ label, leftTeam, rightTeam, leftVal, rightVal, leftColor, rightColor, insight, isMobile }: {
-  label: string; leftTeam: string; rightTeam: string; 
-  leftVal: number; rightVal: number; leftColor: string; rightColor: string;
-  insight?: string; isMobile: boolean;
+// Metric Row Component - Shows offense value → defense value with context
+const MetricRow = ({
+  label, offValue, defValue, avg, offLabel, defLabel, insight, isMobile
+}: {
+  label: string; offValue: number; defValue: number; avg: number;
+  offLabel: string; defLabel: string; insight?: string; isMobile: boolean;
 }) => {
-  const [animated, setAnimated] = useState(false);
-  useEffect(() => { setTimeout(() => setAnimated(true), 200); }, []);
+  const offColor = getStatColor(offValue, avg, false);
+  const defColor = getStatColor(defValue, avg, true); // Defense: lower is better
+  const offDiff = offValue - avg;
+  const defDiff = defValue - avg;
   
   return (
     <div style={{ 
-      padding: isMobile ? '14px' : '18px', 
-      background: 'rgba(15, 23, 42, 0.4)', 
-      borderRadius: '14px',
+      padding: isMobile ? '12px' : '16px',
+      background: 'rgba(15, 23, 42, 0.3)',
+      borderRadius: '12px',
       border: '1px solid rgba(255,255,255,0.03)'
     }}>
       <div style={{ 
@@ -203,74 +144,63 @@ const StatRow = ({ label, leftTeam, rightTeam, leftVal, rightVal, leftColor, rig
         fontWeight: '700', 
         color: 'rgba(255,255,255,0.5)', 
         letterSpacing: '0.1em',
-        marginBottom: isMobile ? '12px' : '14px'
-      }}>{label}</div>
+        marginBottom: isMobile ? '10px' : '12px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <span>{label}</span>
+        <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>D1 AVG: {avg}%</span>
+      </div>
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
-        {/* Left side */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)' }}>{leftTeam}</span>
-            <span style={{ 
-              fontSize: isMobile ? '16px' : '18px', 
-              fontWeight: '800', 
-              color: leftColor,
-              fontFamily: 'ui-monospace, monospace'
-            }}>{leftVal.toFixed(1)}%</span>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: isMobile ? '8px' : '12px', alignItems: 'center' }}>
+        {/* Offense */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+            <span style={{ fontSize: isMobile ? '8px' : '9px', color: 'rgba(255,255,255,0.4)' }}>{offLabel}</span>
+            <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: offColor, fontFamily: 'ui-monospace, monospace' }}>
+              {offValue.toFixed(1)}%
+            </span>
           </div>
-          <div style={{ height: '5px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ 
-              width: `${animated ? Math.min((leftVal / 65) * 100, 100) : 0}%`,
-              height: '100%',
-              background: `linear-gradient(90deg, ${leftColor}50, ${leftColor})`,
-              borderRadius: '3px',
-              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
-            }} />
+          <div style={{ height: '4px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ width: `${Math.min((offValue / (avg * 1.3)) * 100, 100)}%`, height: '100%', background: offColor, borderRadius: '2px', transition: 'width 0.6s ease' }} />
+          </div>
+          <div style={{ fontSize: '8px', color: offColor, marginTop: '3px', fontWeight: '600' }}>
+            {offDiff >= 0 ? '+' : ''}{offDiff.toFixed(1)} vs avg
           </div>
         </div>
         
-        {/* Divider */}
-        <div style={{ 
-          width: isMobile ? '24px' : '32px', 
-          textAlign: 'center',
-          fontSize: '10px',
-          color: 'rgba(255,255,255,0.2)',
-          fontWeight: '600'
-        }}>→</div>
+        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>→</div>
         
-        {/* Right side */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)' }}>{rightTeam}</span>
-            <span style={{ 
-              fontSize: isMobile ? '16px' : '18px', 
-              fontWeight: '800', 
-              color: rightColor,
-              fontFamily: 'ui-monospace, monospace'
-            }}>{rightVal.toFixed(1)}%</span>
+        {/* Defense */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+            <span style={{ fontSize: isMobile ? '8px' : '9px', color: 'rgba(255,255,255,0.4)' }}>{defLabel}</span>
+            <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: defColor, fontFamily: 'ui-monospace, monospace' }}>
+              {defValue.toFixed(1)}%
+            </span>
           </div>
-          <div style={{ height: '5px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ 
-              width: `${animated ? Math.min((rightVal / 65) * 100, 100) : 0}%`,
-              height: '100%',
-              background: `linear-gradient(90deg, ${rightColor}50, ${rightColor})`,
-              borderRadius: '3px',
-              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
-            }} />
+          <div style={{ height: '4px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ width: `${Math.min((defValue / (avg * 1.3)) * 100, 100)}%`, height: '100%', background: defColor, borderRadius: '2px', transition: 'width 0.6s ease' }} />
+          </div>
+          <div style={{ fontSize: '8px', color: defColor, marginTop: '3px', fontWeight: '600' }}>
+            {defDiff >= 0 ? '+' : ''}{defDiff.toFixed(1)} vs avg
+            <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '4px' }}>
+              ({defDiff < 0 ? '✓ good D' : 'allows a lot'})
+            </span>
           </div>
         </div>
       </div>
       
       {insight && (
         <div style={{ 
-          marginTop: '12px', 
+          marginTop: '10px', 
           padding: isMobile ? '8px 10px' : '10px 12px',
           background: 'rgba(16, 185, 129, 0.08)',
           borderRadius: '8px',
           borderLeft: '3px solid #10B981',
           fontSize: isMobile ? '10px' : '11px',
-          color: 'rgba(255,255,255,0.7)',
-          lineHeight: 1.5
+          color: 'rgba(255,255,255,0.7)'
         }}>{insight}</div>
       )}
     </div>
@@ -301,28 +231,32 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
   const homeRank = home.bartholomew_rank || home.rank || 182;
   const awayTier = getTier(awayRank);
   const homeTier = getTier(homeRank);
+  const betterTeam = awayRank < homeRank ? awayTeam : homeTeam;
+  const rankGap = Math.abs(awayRank - homeRank);
 
   const offRank = offTeam.adjOff_rank || 182;
   const defRank = defTeam.adjDef_rank || 182;
   const mismatch = defRank - offRank;
 
+  // All stats
   const twoP = { off: offTeam.twoP_off || 50, def: defTeam.twoP_def || 50 };
   const threeP = { off: offTeam.threeP_off || 34, def: defTeam.threeP_def || 34 };
   const threePRate = { off: offTeam.threeP_rate_off || 40, def: defTeam.threeP_rate_def || 40 };
   const eFG = { off: offTeam.eFG_off || 50, def: defTeam.eFG_def || 50 };
+  const oreb = { off: offTeam.oreb_off || 28, def: defTeam.oreb_def || 28 };
+  const to = { off: offTeam.to_off || 18, def: defTeam.to_def || 18 };
+  const ftRate = { off: offTeam.ftRate_off || 32, def: defTeam.ftRate_def || 32 };
   const tempo = { off: offTeam.adjTempo || 67, def: defTeam.adjTempo || 67 };
 
-  const edges = [
-    { key: 'PWR', label: 'Power', good: awayRank < homeRank },
-    { key: 'SHOOT', label: 'Shooting', good: eFG.off > eFG.def },
-    { key: 'TEMPO', label: 'Tempo', good: tempo.off > tempo.def },
-    { key: 'TO', label: 'Turnovers', good: offTeam.to_off < defTeam.to_def, risk: defTeam.to_def > offTeam.to_off + 2 },
-    { key: 'VAR', label: 'Variance', good: threePRate.off < 45, risk: threePRate.off >= 45 }
-  ];
+  // Generate narrative headline
+  const getHeadline = () => {
+    if (rankGap > 75) return `${betterTeam} is significantly stronger — expect them to control this game`;
+    if (rankGap > 40) return `${betterTeam} holds a clear quality advantage in this matchup`;
+    if (mismatch > 100) return `Major mismatch: ${offTeamName}'s offense faces weak defense`;
+    if (mismatch > 50) return `Favorable matchup for ${offTeamName} on the offensive end`;
+    return `Competitive matchup — margins will matter here`;
+  };
 
-  const edgeCount = edges.filter(e => e.good && !e.risk).length;
-
-  const ringSize = isMobile ? 100 : 120;
   const padding = isMobile ? '16px' : '24px';
 
   return (
@@ -330,8 +264,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
       background: 'linear-gradient(180deg, #020617 0%, #0F172A 100%)',
       borderRadius: isMobile ? '16px' : '20px',
       border: '1px solid rgba(99, 102, 241, 0.12)',
-      overflow: 'hidden',
-      boxShadow: '0 20px 60px -20px rgba(0, 0, 0, 0.7)'
+      overflow: 'hidden'
     }}>
       
       {/* ═══════════════════ HEADER ═══════════════════ */}
@@ -342,7 +275,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
           <div>
-          <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(167, 139, 250, 0.7)', letterSpacing: '0.2em', marginBottom: '3px' }}>ADVANCED ANALYTICS</div>
+          <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(167, 139, 250, 0.7)', letterSpacing: '0.2em' }}>ADVANCED ANALYTICS</div>
           <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white' }}>Matchup Intelligence</div>
         </div>
         <button
@@ -357,258 +290,256 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           }}
         >
           <ArrowRightLeft size={isMobile ? 12 : 14} color="#C7D2FE" />
-          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#E0E7FF', letterSpacing: '0.05em' }}>FLIP</span>
+          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#E0E7FF' }}>FLIP</span>
         </button>
       </div>
 
-      {/* ═══════════════════ POWER RATINGS ═══════════════════ */}
+      {/* ═══════════════════ HEADLINE NARRATIVE ═══════════════════ */}
       <div style={{ padding }}>
         <div style={{
-          textAlign: 'center', 
-          marginBottom: isMobile ? '16px' : '24px',
-          padding: '10px 0',
-          background: 'linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.06), transparent)'
+          padding: isMobile ? '14px' : '18px',
+          background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.03) 100%)',
+          borderRadius: '14px',
+          border: '1px solid rgba(251, 191, 36, 0.15)',
+          textAlign: 'center'
         }}>
-          <span style={{ 
-            fontSize: isMobile ? '10px' : '11px', 
-            fontWeight: '700',
-            color: '#FBBF24',
-            letterSpacing: '0.2em'
-          }}>◈ POWER RATINGS ◈</span>
+          <div style={{ fontSize: isMobile ? '12px' : '14px', color: 'white', fontWeight: '600', lineHeight: 1.5 }}>
+            {getHeadline()}
+          </div>
         </div>
+      </div>
+
+      {/* ═══════════════════ POWER RATINGS ═══════════════════ */}
+      <div style={{ padding: `0 ${padding} ${padding}` }}>
+        <div style={{ 
+          fontSize: isMobile ? '9px' : '10px', 
+          fontWeight: '700', 
+          color: '#FBBF24', 
+          letterSpacing: '0.15em',
+          textAlign: 'center',
+          marginBottom: isMobile ? '12px' : '16px'
+        }}>◈ OVERALL POWER RATINGS ◈</div>
 
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr', 
-          gap: isMobile ? '12px' : '20px',
-          padding: isMobile ? '16px' : '24px',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.3) 100%)',
-          borderRadius: '16px',
-          border: '1px solid rgba(251, 191, 36, 0.08)'
+          gap: isMobile ? '10px' : '16px'
         }}>
-          <PowerRing 
-            rank={awayRank} 
-            size={ringSize} 
-            color={awayTier.color} 
-            teamName={awayTeam}
-            offRank={away.adjOff_rank}
-            defRank={away.adjDef_rank}
-            isMobile={isMobile}
-          />
-          <PowerRing 
-            rank={homeRank} 
-            size={ringSize} 
-            color={homeTier.color} 
-            teamName={homeTeam}
-            offRank={home.adjOff_rank}
-            defRank={home.adjDef_rank}
-            isMobile={isMobile}
-          />
-      </div>
-
-        {/* Power Gap */}
-        {Math.abs(awayRank - homeRank) > 25 && (
-          <div style={{
-            marginTop: isMobile ? '12px' : '16px',
-            padding: isMobile ? '10px 14px' : '12px 18px',
-            background: 'linear-gradient(90deg, rgba(251, 191, 36, 0.06), rgba(251, 191, 36, 0.03))',
-            borderRadius: '10px',
-            borderLeft: '3px solid #FBBF24',
-            fontSize: isMobile ? '11px' : '12px',
-            color: 'rgba(255,255,255,0.7)',
-            lineHeight: 1.5
+          {/* Away Team */}
+          <div style={{ 
+            padding: isMobile ? '14px' : '20px',
+            background: 'rgba(15, 23, 42, 0.4)',
+            borderRadius: '14px',
+            border: `1px solid ${awayTier.color}20`,
+            textAlign: 'center'
           }}>
-            <span style={{ color: '#FBBF24', fontWeight: '700' }}>{awayRank < homeRank ? awayTeam : homeTeam}</span>
-            {' '}ranked{' '}
-            <span style={{ color: '#FBBF24', fontWeight: '700' }}>{Math.abs(awayRank - homeRank)} spots higher</span>
-            {' '}— {Math.abs(awayRank - homeRank) > 75 ? 'significant quality advantage' : 'notable edge in overall strength'}
+            <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>{awayTeam}</div>
+            <div style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: '800', color: awayTier.color, fontFamily: 'ui-monospace, monospace' }}>#{awayRank}</div>
+            <div style={{ 
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              padding: '4px 10px', borderRadius: '6px',
+              background: `${awayTier.color}15`, border: `1px solid ${awayTier.color}30`,
+              marginTop: '6px'
+            }}>
+              <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: awayTier.color }} />
+              <span style={{ fontSize: '9px', fontWeight: '700', color: awayTier.color }}>{awayTier.label}</span>
+            </div>
+            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '6px' }}>Top {getPercentile(awayRank)}% of D1</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '10px', fontSize: isMobile ? '11px' : '12px' }}>
+              <span><span style={{ color: 'rgba(255,255,255,0.4)' }}>OFF</span> <span style={{ color: '#34D399', fontWeight: '700' }}>#{away.adjOff_rank}</span></span>
+              <span><span style={{ color: 'rgba(255,255,255,0.4)' }}>DEF</span> <span style={{ color: '#F87171', fontWeight: '700' }}>#{away.adjDef_rank}</span></span>
+            </div>
           </div>
-        )}
+
+          {/* Home Team */}
+          <div style={{ 
+            padding: isMobile ? '14px' : '20px',
+            background: 'rgba(15, 23, 42, 0.4)',
+            borderRadius: '14px',
+            border: `1px solid ${homeTier.color}20`,
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>{homeTeam}</div>
+            <div style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: '800', color: homeTier.color, fontFamily: 'ui-monospace, monospace' }}>#{homeRank}</div>
+            <div style={{ 
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              padding: '4px 10px', borderRadius: '6px',
+              background: `${homeTier.color}15`, border: `1px solid ${homeTier.color}30`,
+              marginTop: '6px'
+            }}>
+              <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: homeTier.color }} />
+              <span style={{ fontSize: '9px', fontWeight: '700', color: homeTier.color }}>{homeTier.label}</span>
+            </div>
+            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '6px' }}>Top {getPercentile(homeRank)}% of D1</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '10px', fontSize: isMobile ? '11px' : '12px' }}>
+              <span><span style={{ color: 'rgba(255,255,255,0.4)' }}>OFF</span> <span style={{ color: '#34D399', fontWeight: '700' }}>#{home.adjOff_rank}</span></span>
+              <span><span style={{ color: 'rgba(255,255,255,0.4)' }}>DEF</span> <span style={{ color: '#F87171', fontWeight: '700' }}>#{home.adjDef_rank}</span></span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ═══════════════════ MISMATCH INDEX ═══════════════════ */}
+      {/* ═══════════════════ OFFENSE vs DEFENSE BREAKDOWN ═══════════════════ */}
       <div style={{ padding: `0 ${padding} ${padding}` }}>
         <div style={{
-          padding: isMobile ? '18px' : '24px',
+          padding: isMobile ? '14px' : '20px',
           background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(99, 102, 241, 0.03) 100%)',
           borderRadius: '16px',
           border: '1px solid rgba(139, 92, 246, 0.12)'
         }}>
-          <div style={{ 
-            textAlign: 'center', 
-            fontSize: isMobile ? '9px' : '10px', 
-            fontWeight: '700', 
-            color: '#A78BFA', 
-            letterSpacing: '0.15em',
-            marginBottom: isMobile ? '14px' : '18px'
-          }}>⚡ MATCHUP MISMATCH ⚡</div>
-
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr auto 1fr', 
-            gap: isMobile ? '8px' : '16px', 
-            alignItems: 'center',
-            marginBottom: isMobile ? '14px' : '18px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '4px' }}>{offTeamName.toUpperCase().slice(0, isMobile ? 8 : 12)} OFF</div>
-              <div style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '800', color: '#3B82F6', fontFamily: 'ui-monospace, monospace' }}>#{offRank}</div>
-              <div style={{ fontSize: '9px', color: getTier(offRank).color }}>{getPercentile(offRank)}th %ile</div>
-            </div>
-            <div style={{ 
-              width: isMobile ? '32px' : '40px', 
-              height: isMobile ? '32px' : '40px',
-              borderRadius: '50%',
-              background: 'rgba(139, 92, 246, 0.1)',
-              border: '1px solid rgba(139, 92, 246, 0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700'
-            }}>VS</div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '4px' }}>{defTeamName.toUpperCase().slice(0, isMobile ? 8 : 12)} DEF</div>
-              <div style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '800', color: '#EF4444', fontFamily: 'ui-monospace, monospace' }}>#{defRank}</div>
-              <div style={{ fontSize: '9px', color: getTier(defRank).color }}>{getPercentile(defRank)}th %ile</div>
-            </div>
-          </div>
-
-          {/* Mismatch score */}
-              <div style={{ textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-block',
-              padding: isMobile ? '12px 20px' : '14px 28px',
-              borderRadius: '12px',
-              background: mismatch > 50 
-                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08))'
-                : mismatch > 0 
-                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.08))'
-                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08))',
-              border: `1px solid ${mismatch > 50 ? 'rgba(16, 185, 129, 0.25)' : mismatch > 0 ? 'rgba(59, 130, 246, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`
-            }}>
-              <div style={{ 
-                fontSize: isMobile ? '22px' : '26px', 
-                fontWeight: '800',
-                color: mismatch > 50 ? '#10B981' : mismatch > 0 ? '#3B82F6' : '#EF4444',
-                fontFamily: 'ui-monospace, monospace'
-              }}>{mismatch > 0 ? '+' : ''}{mismatch}</div>
-              <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginTop: '2px' }}>
-                {mismatch > 150 ? 'MASSIVE EDGE' : mismatch > 75 ? 'STRONG EDGE' : mismatch > 25 ? 'SLIGHT EDGE' : mismatch > -25 ? 'EVEN' : 'TOUGH MATCHUP'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════ SHOOTING ═══════════════════ */}
-      <div style={{ padding: `0 ${padding} ${padding}` }}>
-        <div style={{
-          padding: isMobile ? '14px' : '20px',
-          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.2) 100%)',
-          borderRadius: '16px',
-          border: '1px solid rgba(251, 191, 36, 0.08)'
-        }}>
+          {/* Section Header */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '8px', 
-            marginBottom: isMobile ? '14px' : '18px' 
+            justifyContent: 'space-between',
+            marginBottom: isMobile ? '14px' : '18px',
+            paddingBottom: '12px',
+            borderBottom: '1px solid rgba(255,255,255,0.05)'
           }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FBBF24' }} />
-            <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#FBBF24', letterSpacing: '0.12em' }}>SHOOTING BREAKDOWN</span>
-        </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '14px' }}>
-            <StatRow
-              label="2-POINT EFFICIENCY"
-              leftTeam={`${offTeamName.slice(0, 6)} shoots`}
-              rightTeam={`${defTeamName.slice(0, 6)} allows`}
-              leftVal={twoP.off}
-              rightVal={twoP.def}
-              leftColor={twoP.off > 52 ? '#10B981' : twoP.off > 48 ? '#F59E0B' : '#EF4444'}
-              rightColor={twoP.def > 52 ? '#EF4444' : twoP.def > 48 ? '#F59E0B' : '#10B981'}
-              insight={twoP.off > 54 && twoP.def > 52 ? "Elite finishers vs weak interior D — paint points expected" : undefined}
-              isMobile={isMobile}
-            />
-
-            <StatRow
-              label="3-POINT ACCURACY"
-              leftTeam={`${offTeamName.slice(0, 6)} shoots`}
-              rightTeam={`${defTeamName.slice(0, 6)} allows`}
-              leftVal={threeP.off}
-              rightVal={threeP.def}
-              leftColor={threeP.off > 36 ? '#10B981' : threeP.off > 32 ? '#F59E0B' : '#EF4444'}
-              rightColor={threeP.def > 36 ? '#EF4444' : threeP.def > 32 ? '#F59E0B' : '#10B981'}
-              insight={threePRate.off > 45 && threeP.off > 34 ? "High-volume 3PT team with solid accuracy — can score in bunches" : 
-                       threePRate.off > 48 && threeP.off < 33 ? "⚠️ Heavy 3PT reliance with low accuracy — volatile outcomes likely" : undefined}
-              isMobile={isMobile}
-            />
-
-            <StatRow
-              label="OVERALL EFFICIENCY (eFG%)"
-              leftTeam={`${offTeamName.slice(0, 6)} shoots`}
-              rightTeam={`${defTeamName.slice(0, 6)} allows`}
-              leftVal={eFG.off}
-              rightVal={eFG.def}
-              leftColor={eFG.off > 52 ? '#10B981' : eFG.off > 48 ? '#F59E0B' : '#EF4444'}
-              rightColor={eFG.def > 52 ? '#EF4444' : eFG.def > 48 ? '#F59E0B' : '#10B981'}
-              isMobile={isMobile}
-            />
+            <div>
+              <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#A78BFA', letterSpacing: '0.1em' }}>
+                ⚡ {offTeamName.toUpperCase()} OFFENSE
+          </div>
+              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                Ranked #{offRank} • {getPercentile(offRank)}th percentile
               </div>
-        </div>
-      </div>
+            </div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>vs</div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#F87171', letterSpacing: '0.1em' }}>
+                {defTeamName.toUpperCase()} DEFENSE 🛡️
+              </div>
+              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                Ranked #{defRank} • {getPercentile(defRank)}th percentile
+              </div>
+              </div>
+            </div>
 
-      {/* ═══════════════════ EDGE SUMMARY ═══════════════════ */}
-      <div style={{ padding: `0 ${padding} ${padding}` }}>
-        <div style={{
-          padding: isMobile ? '16px' : '22px',
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 182, 212, 0.03) 100%)',
-          borderRadius: '16px',
-          border: '1px solid rgba(16, 185, 129, 0.1)'
-        }}>
+          {/* Mismatch Score */}
           <div style={{ 
             textAlign: 'center', 
-            fontSize: isMobile ? '9px' : '10px', 
-            fontWeight: '700',
-            color: '#10B981',
-            letterSpacing: '0.15em',
-            marginBottom: isMobile ? '14px' : '18px'
-          }}>◈ EDGE SUMMARY ◈</div>
-
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            gap: isMobile ? '6px' : '8px', 
-            flexWrap: 'wrap',
+            padding: isMobile ? '12px' : '16px',
+            background: mismatch > 50 ? 'rgba(16, 185, 129, 0.1)' : mismatch > 0 ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            borderRadius: '12px',
             marginBottom: isMobile ? '14px' : '18px'
           }}>
-            {edges.map(edge => (
-              <div key={edge.key} style={{
-                width: isMobile ? '44px' : '52px',
-                padding: isMobile ? '8px 4px' : '10px 6px',
-                borderRadius: '10px',
-                textAlign: 'center',
-                background: edge.risk ? 'rgba(239, 68, 68, 0.1)' : edge.good ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                border: `1px solid ${edge.risk ? 'rgba(239, 68, 68, 0.2)' : edge.good ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.15)'}`
-              }}>
-                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.6)', marginBottom: '3px' }}>{edge.key}</div>
-                <div style={{ fontSize: isMobile ? '14px' : '16px' }}>{edge.risk ? '⚠️' : edge.good ? '✅' : '➖'}</div>
-              </div>
-            ))}
+            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: '4px' }}>MISMATCH INDEX</div>
+            <div style={{ 
+              fontSize: isMobile ? '24px' : '28px', 
+              fontWeight: '800',
+              color: mismatch > 50 ? '#10B981' : mismatch > 0 ? '#3B82F6' : '#EF4444',
+              fontFamily: 'ui-monospace, monospace'
+            }}>{mismatch > 0 ? '+' : ''}{mismatch}</div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+              {mismatch > 100 ? 'MASSIVE ADVANTAGE' : mismatch > 50 ? 'STRONG EDGE' : mismatch > 0 ? 'SLIGHT EDGE' : mismatch > -50 ? 'EVEN' : 'TOUGH MATCHUP'}
+            </div>
           </div>
 
-          <div style={{ 
-            textAlign: 'center', 
-            paddingTop: isMobile ? '12px' : '16px', 
-            borderTop: '1px solid rgba(255,255,255,0.05)' 
-          }}>
+          {/* ALL METRICS */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '10px' }}>
+            
+            {/* SHOOTING */}
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', marginTop: '8px' }}>SHOOTING</div>
+            
+            <MetricRow
+              label="2-POINT %"
+              offValue={twoP.off} defValue={twoP.def} avg={D1_AVG.twoP}
+              offLabel={`${offTeamName.slice(0,6)} shoots`}
+              defLabel={`${defTeamName.slice(0,6)} allows`}
+              insight={twoP.off > 54 && twoP.def > 52 ? `🔥 Elite paint scorers vs weak interior D` : undefined}
+              isMobile={isMobile}
+            />
+            
+            <MetricRow
+              label="3-POINT %"
+              offValue={threeP.off} defValue={threeP.def} avg={D1_AVG.threeP}
+              offLabel={`${offTeamName.slice(0,6)} shoots`}
+              defLabel={`${defTeamName.slice(0,6)} allows`}
+              insight={threeP.off > 36 && threeP.def > 36 ? `🏹 Good shooters face poor perimeter D` : undefined}
+              isMobile={isMobile}
+            />
+            
+            <MetricRow
+              label="3PT RATE (how often they shoot 3s)"
+              offValue={threePRate.off} defValue={threePRate.def} avg={D1_AVG.threePRate}
+              offLabel={`${offTeamName.slice(0,6)} takes`}
+              defLabel={`${defTeamName.slice(0,6)} allows`}
+              insight={threePRate.off > 48 ? `⚠️ High 3PT volume = variance risk` : undefined}
+              isMobile={isMobile}
+            />
+            
+            <MetricRow
+              label="eFG% (overall shooting efficiency)"
+              offValue={eFG.off} defValue={eFG.def} avg={D1_AVG.eFG}
+              offLabel={`${offTeamName.slice(0,6)} shoots`}
+              defLabel={`${defTeamName.slice(0,6)} allows`}
+              isMobile={isMobile}
+            />
+
+            {/* BALL CONTROL */}
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', marginTop: '12px' }}>BALL CONTROL</div>
+            
+            <MetricRow
+              label="TURNOVER RATE"
+              offValue={to.off} defValue={to.def} avg={D1_AVG.to}
+              offLabel={`${offTeamName.slice(0,6)} commits`}
+              defLabel={`${defTeamName.slice(0,6)} forces`}
+              insight={to.def > to.off + 3 ? `⚠️ ${defTeamName} forces turnovers — protect the ball` : to.off < 15 ? `✓ ${offTeamName} takes care of the ball` : undefined}
+              isMobile={isMobile}
+            />
+
+            {/* REBOUNDING */}
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', marginTop: '12px' }}>REBOUNDING</div>
+            
+            <MetricRow
+              label="OFFENSIVE REBOUND %"
+              offValue={oreb.off} defValue={oreb.def} avg={D1_AVG.oreb}
+              offLabel={`${offTeamName.slice(0,6)} grabs`}
+              defLabel={`${defTeamName.slice(0,6)} allows`}
+              insight={oreb.off > 30 && oreb.def > 29 ? `♻️ Second chance points likely` : undefined}
+              isMobile={isMobile}
+            />
+
+            {/* FREE THROWS */}
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', marginTop: '12px' }}>FREE THROWS & PACE</div>
+            
+            <MetricRow
+              label="FREE THROW RATE"
+              offValue={ftRate.off} defValue={ftRate.def || 32} avg={D1_AVG.ftRate}
+              offLabel={`${offTeamName.slice(0,6)} draws`}
+              defLabel={`${defTeamName.slice(0,6)} sends`}
+              insight={ftRate.off > 38 ? `🎟️ ${offTeamName} attacks & gets to the line` : undefined}
+              isMobile={isMobile}
+            />
+
+            {/* TEMPO */}
             <div style={{ 
-              fontSize: isMobile ? '14px' : '16px', 
-              fontWeight: '800',
-              color: edgeCount >= 3 ? '#10B981' : edgeCount >= 2 ? '#F59E0B' : '#EF4444'
+              padding: isMobile ? '12px' : '16px',
+              background: 'rgba(15, 23, 42, 0.3)',
+              borderRadius: '12px',
+              border: '1px solid rgba(255,255,255,0.03)'
             }}>
-              🏆 {offTeamName.toUpperCase()} {edgeCount >= 3 ? 'FAVORED' : edgeCount >= 2 ? 'SLIGHT EDGE' : 'FACES CHALLENGES'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em' }}>TEMPO (possessions/game)</span>
+                <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>D1 AVG: {D1_AVG.tempo}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>{offTeamName.slice(0,8)}</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: tempo.off > 70 ? '#10B981' : tempo.off > 65 ? '#F59E0B' : '#3B82F6', fontFamily: 'ui-monospace, monospace' }}>{tempo.off.toFixed(1)}</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>{tempo.off > 70 ? 'FAST' : tempo.off > 65 ? 'MODERATE' : 'SLOW'}</div>
             </div>
-            <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.4)', marginTop: '6px' }}>
-              {edgeCount} Edges • {edges.filter(e => e.risk).length} Risks
+                <div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>{defTeamName.slice(0,8)}</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: tempo.def > 70 ? '#10B981' : tempo.def > 65 ? '#F59E0B' : '#3B82F6', fontFamily: 'ui-monospace, monospace' }}>{tempo.def.toFixed(1)}</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>{tempo.def > 70 ? 'FAST' : tempo.def > 65 ? 'MODERATE' : 'SLOW'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>EXPECTED</div>
+                  <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: '#FBBF24', fontFamily: 'ui-monospace, monospace' }}>{((tempo.off + tempo.def) / 2).toFixed(0)}</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>GAME PACE</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
