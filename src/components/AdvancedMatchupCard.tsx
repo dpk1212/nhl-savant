@@ -312,153 +312,151 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white' }}>Matchup Intelligence</div>
       </div>
 
-{/* ═══════════════════ VERTICAL BARS COMPARISON ═══════════════════ */}
+{/* ═══════════════════ PREMIUM COMPARISON BARS ═══════════════════ */}
       <div style={{ padding }}>
         <div style={{
-          padding: isMobile ? '16px' : '20px',
-          background: 'rgba(15, 23, 42, 0.4)',
-          borderRadius: '14px',
-          border: '1px solid rgba(255,255,255,0.05)'
+          padding: isMobile ? '16px' : '24px',
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.3) 100%)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255,255,255,0.04)'
         }}>
-          {/* Team Headers */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '80px 1fr 1fr', 
-            gap: isMobile ? '12px' : '20px',
-            marginBottom: isMobile ? '16px' : '20px',
-            paddingBottom: isMobile ? '12px' : '16px',
-            borderBottom: '1px solid rgba(255,255,255,0.06)'
-          }}>
-            <div></div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{awayAbbrev}</div>
-              <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)' }}>Away</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{homeAbbrev}</div>
-              <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)' }}>Home</div>
-            </div>
-          </div>
-
           {/* Comparison Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '28px' }}>
             {[
-              { label: 'OVERALL', icon: '⚡', awayRank: awayRank, homeRank: homeRank },
-              { label: 'OFFENSE', icon: '🎯', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank },
-              { label: 'DEFENSE', icon: '🛡️', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank }
-            ].map(({ label, icon, awayRank: aRank, homeRank: hRank }) => {
+              { label: 'OVERALL', awayRank: awayRank, homeRank: homeRank },
+              { label: 'OFFENSE', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank },
+              { label: 'DEFENSE', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank }
+            ].map(({ label, awayRank: aRank, homeRank: hRank }, idx) => {
               const awayBetter = aRank < hRank;
-              const homeBetter = hRank < aRank;
               const gap = Math.abs(hRank - aRank);
-              const isKeyEdge = gap > 50;
               
-              // Bar heights (lower rank = taller bar, scale 0-100)
-              const maxHeight = isMobile ? 50 : 60;
-              const awayHeight = Math.max(10, ((TOTAL_TEAMS - aRank) / TOTAL_TEAMS) * maxHeight);
-              const homeHeight = Math.max(10, ((TOTAL_TEAMS - hRank) / TOTAL_TEAMS) * maxHeight);
+              // Calculate bar fill (toward winner)
+              const total = aRank + hRank;
+              const awayPct = ((total - aRank) / total) * 100;
               
               const awayColor = getTier(aRank).color;
               const homeColor = getTier(hRank).color;
               
               return (
-                <div key={label} style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '80px 1fr 1fr', 
-                  gap: isMobile ? '12px' : '20px',
-                  alignItems: 'end'
-                }}>
-                  {/* Category Label */}
+                <div key={label}>
+                  {/* Row Header */}
                   <div style={{ 
                     display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px',
-                    paddingBottom: '8px'
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: isMobile ? '10px' : '12px'
                   }}>
-                    <span style={{ fontSize: '14px' }}>{icon}</span>
-                    <span style={{ 
+                    {/* Away Team */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
+                      <span style={{ 
+                        fontSize: isMobile ? '13px' : '15px', 
+                        fontWeight: '700', 
+                        color: awayColor,
+                        fontFamily: 'ui-monospace, monospace'
+                      }}>#{aRank}</span>
+                      <span style={{ 
+                        fontSize: isMobile ? '11px' : '12px', 
+                        fontWeight: '600', 
+                        color: awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
+                      }}>{awayAbbrev}</span>
+                      {awayBetter && (
+                        <span style={{ 
+                          fontSize: isMobile ? '9px' : '10px',
+                          color: '#10B981',
+                          fontWeight: '600'
+                        }}>✓</span>
+                      )}
+                    </div>
+                    
+                    {/* Category Label */}
+                    <div style={{ 
                       fontSize: isMobile ? '9px' : '10px', 
-                      fontWeight: '600', 
-                      color: 'rgba(255,255,255,0.6)',
-                      letterSpacing: '0.05em'
-                    }}>{label}</span>
+                      color: 'rgba(255,255,255,0.35)', 
+                      letterSpacing: '0.12em',
+                      fontWeight: '600'
+                    }}>{label}</div>
+                    
+                    {/* Home Team */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
+                      {!awayBetter && (
+                        <span style={{ 
+                          fontSize: isMobile ? '9px' : '10px',
+                          color: '#10B981',
+                          fontWeight: '600'
+                        }}>✓</span>
+                      )}
+                      <span style={{ 
+                        fontSize: isMobile ? '11px' : '12px', 
+                        fontWeight: '600', 
+                        color: !awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
+                      }}>{homeAbbrev}</span>
+                      <span style={{ 
+                        fontSize: isMobile ? '13px' : '15px', 
+                        fontWeight: '700', 
+                        color: homeColor,
+                        fontFamily: 'ui-monospace, monospace'
+                      }}>#{hRank}</span>
+                    </div>
                   </div>
                   
-                  {/* Away Team Bar */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                    {/* Winner Badge */}
-                    {awayBetter && (
-                      <div style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        background: isKeyEdge ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                        fontSize: '8px',
-                        fontWeight: '700',
-                        color: isKeyEdge ? '#10B981' : '#3B82F6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px'
-                      }}>
-                        <span>✓</span>
-                        <span>+{gap}</span>
-                      </div>
-                    )}
-                    
-                    {/* Vertical Bar */}
+                  {/* Comparison Bar */}
+                  <div style={{ 
+                    position: 'relative', 
+                    height: isMobile ? '6px' : '8px', 
+                    borderRadius: '4px', 
+                    overflow: 'hidden',
+                    background: 'rgba(0,0,0,0.4)'
+                  }}>
+                    {/* Away side fill */}
                     <div style={{
-                      width: isMobile ? '40px' : '50px',
-                      height: `${awayHeight}px`,
-                      background: `linear-gradient(180deg, ${awayColor}, ${awayColor}60)`,
-                      borderRadius: '6px 6px 4px 4px',
-                      boxShadow: awayBetter ? `0 0 12px ${awayColor}40` : 'none',
-                      transition: 'height 0.6s ease'
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: `${awayPct}%`,
+                      height: '100%',
+                      background: `linear-gradient(90deg, ${awayColor}30, ${awayColor})`,
+                      transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
-                    
-                    {/* Rank */}
-                    <div style={{ 
-                      fontSize: isMobile ? '12px' : '14px', 
-                      fontWeight: '800', 
-                      color: awayColor,
-                      fontFamily: 'ui-monospace, monospace'
-                    }}>#{aRank}</div>
+                    {/* Home side fill */}
+                    <div style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: 0,
+                      width: `${100 - awayPct}%`,
+                      height: '100%',
+                      background: `linear-gradient(270deg, ${homeColor}30, ${homeColor})`,
+                      transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }} />
+                    {/* Center marker */}
+                    <div style={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: 0,
+                      width: '1px',
+                      height: '100%',
+                      background: 'rgba(255,255,255,0.15)',
+                      transform: 'translateX(-50%)'
+                    }} />
                   </div>
                   
-                  {/* Home Team Bar */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                    {/* Winner Badge */}
-                    {homeBetter && (
-                      <div style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        background: isKeyEdge ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                        fontSize: '8px',
-                        fontWeight: '700',
-                        color: isKeyEdge ? '#10B981' : '#3B82F6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px'
-                      }}>
-                        <span>✓</span>
-                        <span>+{gap}</span>
-                      </div>
-                    )}
-                    
-                    {/* Vertical Bar */}
-                    <div style={{
-                      width: isMobile ? '40px' : '50px',
-                      height: `${homeHeight}px`,
-                      background: `linear-gradient(180deg, ${homeColor}, ${homeColor}60)`,
-                      borderRadius: '6px 6px 4px 4px',
-                      boxShadow: homeBetter ? `0 0 12px ${homeColor}40` : 'none',
-                      transition: 'height 0.6s ease'
-                    }} />
-                    
-                    {/* Rank */}
-                    <div style={{ 
-                      fontSize: isMobile ? '12px' : '14px', 
-                      fontWeight: '800', 
-                      color: homeColor,
+                  {/* Gap indicator */}
+                  <div style={{ 
+                    textAlign: 'center', 
+                    marginTop: isMobile ? '8px' : '10px'
+                  }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: isMobile ? '3px 10px' : '4px 12px',
+                      borderRadius: '6px',
+                      background: gap > 50 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.04)',
+                      border: gap > 50 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(255,255,255,0.06)',
+                      fontSize: isMobile ? '10px' : '11px',
+                      fontWeight: '700',
+                      color: gap > 50 ? '#10B981' : 'rgba(255,255,255,0.5)',
                       fontFamily: 'ui-monospace, monospace'
-                    }}>#{hRank}</div>
+                    }}>
+                      {gap > 50 ? `+${gap} edge` : gap > 20 ? `+${gap}` : `+${gap} close`}
+                    </span>
                   </div>
                 </div>
               );
