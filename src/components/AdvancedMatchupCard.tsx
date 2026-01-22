@@ -428,6 +428,15 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                 ⚡ {offAbbrev}
               </div>
               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>Offense #{offRank}</div>
+              <div style={{ 
+                fontSize: isMobile ? '14px' : '16px', 
+                fontWeight: '800', 
+                color: '#34D399', 
+                fontFamily: 'ui-monospace, monospace',
+                marginTop: '4px'
+              }}>
+                {offTeam.adjOff?.toFixed(1) || '—'} <span style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
+              </div>
             </div>
             
             {/* FLIP BUTTON - Now in the matchup section */}
@@ -452,6 +461,15 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                 {defAbbrev} 🛡️
               </div>
               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>Defense #{defRank}</div>
+              <div style={{ 
+                fontSize: isMobile ? '14px' : '16px', 
+                fontWeight: '800', 
+                color: '#F87171', 
+                fontFamily: 'ui-monospace, monospace',
+                marginTop: '4px'
+              }}>
+                {defTeam.adjDef?.toFixed(1) || '—'} <span style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
+              </div>
             </div>
           </div>
 
