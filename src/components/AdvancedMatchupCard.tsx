@@ -568,13 +568,13 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         </div>
       </div>
 
-      {/* BETTING EDGE INSIGHTS */}
+      {/* BETTING EDGE MATCHUP - BATTLE BARS */}
       {(away.barthag || away.adjTempo || barttorvik.matchup?.expectedTempo) && (
         <div style={{ padding: isMobile ? '0 18px 20px' : '0 28px 24px' }}>
           <div style={{
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(6, 182, 212, 0.04) 100%)',
-            borderRadius: '14px',
-            border: '1px solid rgba(16, 185, 129, 0.15)',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.04) 100%)',
+            borderRadius: '16px',
+            border: '1px solid rgba(99, 102, 241, 0.15)',
             overflow: 'hidden'
           }}>
             {/* Header - Collapsible */}
@@ -585,152 +585,281 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '14px 18px',
-                background: 'rgba(0,0,0,0.2)',
+                padding: '16px 20px',
+                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%)',
                 border: 'none',
-                borderBottom: bettingEdgeExpanded ? '1px solid rgba(16, 185, 129, 0.1)' : 'none',
+                borderBottom: bettingEdgeExpanded ? '1px solid rgba(99, 102, 241, 0.1)' : 'none',
                 cursor: 'pointer'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingUp size={14} color="white" />
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '20px' }}>⚔️</div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '700', color: 'rgba(16, 185, 129, 0.8)', letterSpacing: '0.08em' }}>BETTING EDGE INSIGHTS</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Advanced metrics for sharper bets</div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'white', letterSpacing: '0.02em' }}>MATCHUP BREAKDOWN</div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Head-to-head betting edges</div>
                 </div>
               </div>
               {bettingEdgeExpanded ? <ChevronUp size={18} color="rgba(255,255,255,0.4)" /> : <ChevronDown size={18} color="rgba(255,255,255,0.4)" />}
             </button>
 
-            {/* Content - 4 Insight Pills */}
+            {/* Content - Battle Bars */}
             {bettingEdgeExpanded && (
-              <div style={{ padding: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '10px', marginBottom: '14px' }}>
+              <div style={{ padding: isMobile ? '16px' : '20px' }}>
+                
+                {/* Team Headers */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '12px', marginBottom: '16px', padding: '0 4px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#3B82F6', textAlign: 'left' }}>{awayTeam.toUpperCase()}</div>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>VS</div>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#EF4444', textAlign: 'right' }}>{homeTeam.toUpperCase()}</div>
+                </div>
+
+                {/* Battle Bar Rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   
-                  {/* PACE PILL */}
+                  {/* TEMPO ROW */}
                   {(() => {
-                    const expectedTempo = barttorvik.matchup?.expectedTempo || ((away.adjTempo || 67) + (home.adjTempo || 67)) / 2;
-                    const paceLabel = expectedTempo >= 70 ? 'FAST' : expectedTempo >= 66 ? 'MODERATE' : 'SLOW';
-                    const paceColor = expectedTempo >= 70 ? '#10B981' : expectedTempo >= 66 ? '#F59E0B' : '#3B82F6';
+                    const awayTempo = away.adjTempo || 67;
+                    const homeTempo = home.adjTempo || 67;
+                    const expectedTempo = (awayTempo + homeTempo) / 2;
+                    const tempoWinner = awayTempo > homeTempo ? 'away' : awayTempo < homeTempo ? 'home' : 'even';
+                    const paceLabel = expectedTempo >= 70 ? 'Fast-paced game' : expectedTempo >= 66 ? 'Moderate tempo expected' : 'Slow grind expected';
+                    const awayPct = Math.min((awayTempo - 60) / 20 * 100, 100);
+                    const homePct = Math.min((homeTempo - 60) / 20 * 100, 100);
+                    
                     return (
-                      <div style={{
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        border: `1px solid ${paceColor}25`,
-                        textAlign: 'center'
-                      }}>
-                        <Clock size={16} color={paceColor} style={{ marginBottom: '6px' }} />
-                        <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', marginBottom: '4px' }}>PACE</div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: paceColor, fontFamily: 'ui-monospace, monospace', lineHeight: 1 }}>{expectedTempo.toFixed(1)}</div>
-                        <div style={{ fontSize: '9px', fontWeight: '800', color: paceColor, marginTop: '4px', padding: '2px 6px', borderRadius: '4px', background: `${paceColor}15`, display: 'inline-block' }}>{paceLabel}</div>
+                      <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>🏃</span>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>TEMPO</span>
+                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>(Pace Control)</span>
+                          </div>
+                          <div style={{ fontSize: '10px', fontWeight: '700', color: tempoWinner === 'away' ? '#3B82F6' : tempoWinner === 'home' ? '#EF4444' : '#94A3B8' }}>
+                            {tempoWinner === 'even' ? 'EVEN' : tempoWinner === 'away' ? `${awayTeam} ✓` : `${homeTeam} ✓`}
+                          </div>
+                        </div>
+                        
+                        {/* Battle Bars */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 8px 1fr', gap: '4px', alignItems: 'center', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#3B82F6', fontFamily: 'ui-monospace, monospace', minWidth: '36px' }}>{awayTempo.toFixed(1)}</span>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
+                              <div style={{ width: `${awayPct}%`, height: '100%', background: 'linear-gradient(90deg, #1E40AF, #3B82F6)', borderRadius: '4px' }} />
+                            </div>
+                          </div>
+                          <div style={{ width: '8px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ width: `${homePct}%`, height: '100%', background: 'linear-gradient(90deg, #EF4444, #B91C1C)', borderRadius: '4px' }} />
+                            </div>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444', fontFamily: 'ui-monospace, monospace', minWidth: '36px', textAlign: 'right' }}>{homeTempo.toFixed(1)}</span>
+                          </div>
+                        </div>
+                        
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                          → {paceLabel} (~{expectedTempo.toFixed(0)} possessions)
+                        </div>
                       </div>
                     );
                   })()}
 
-                  {/* POWER RATING PILL */}
+                  {/* POWER RATING ROW */}
                   {(() => {
                     const awayBarthag = away.barthag || 0.5;
                     const homeBarthag = home.barthag || 0.5;
-                    const barthagDiff = barttorvik.matchup?.barthagDiff || (awayBarthag - homeBarthag) * 100;
-                    const favoredTeam = barthagDiff > 0 ? awayTeam : homeTeam;
-                    const diffAbs = Math.abs(barthagDiff);
-                    const powerColor = diffAbs > 20 ? '#10B981' : diffAbs > 10 ? '#F59E0B' : '#94A3B8';
-                    const powerLabel = diffAbs > 20 ? 'DOMINANT' : diffAbs > 10 ? 'CLEAR EDGE' : 'EVEN';
+                    const barthagDiff = (awayBarthag - homeBarthag) * 100;
+                    const powerWinner = Math.abs(barthagDiff) < 5 ? 'even' : barthagDiff > 0 ? 'away' : 'home';
+                    const awayPct = awayBarthag * 100;
+                    const homePct = homeBarthag * 100;
+                    const insight = Math.abs(barthagDiff) > 20 
+                      ? `${powerWinner === 'away' ? awayTeam : homeTeam} significantly stronger (+${Math.abs(barthagDiff).toFixed(0)}%)`
+                      : Math.abs(barthagDiff) > 10 
+                        ? `${powerWinner === 'away' ? awayTeam : homeTeam} has clear quality edge`
+                        : 'Evenly matched in overall quality';
+                    
                     return (
-                      <div style={{
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        border: `1px solid ${powerColor}25`,
-                        textAlign: 'center'
-                      }}>
-                        <Trophy size={16} color={powerColor} style={{ marginBottom: '6px' }} />
-                        <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', marginBottom: '4px' }}>POWER</div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: powerColor, fontFamily: 'ui-monospace, monospace', lineHeight: 1 }}>{barthagDiff > 0 ? '+' : ''}{barthagDiff.toFixed(0)}%</div>
-                        <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>{favoredTeam.slice(0, 8)}</div>
+                      <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>🏆</span>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>POWER RATING</span>
+                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>(True Quality)</span>
+                          </div>
+                          <div style={{ fontSize: '10px', fontWeight: '700', color: powerWinner === 'away' ? '#3B82F6' : powerWinner === 'home' ? '#EF4444' : '#94A3B8' }}>
+                            {powerWinner === 'even' ? 'EVEN' : powerWinner === 'away' ? `${awayTeam} ✓` : `${homeTeam} ✓`}
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 8px 1fr', gap: '4px', alignItems: 'center', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#3B82F6', fontFamily: 'ui-monospace, monospace', minWidth: '36px' }}>{(awayBarthag * 100).toFixed(0)}%</span>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
+                              <div style={{ width: `${awayPct}%`, height: '100%', background: 'linear-gradient(90deg, #1E40AF, #3B82F6)', borderRadius: '4px' }} />
+                            </div>
+                          </div>
+                          <div style={{ width: '8px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ width: `${homePct}%`, height: '100%', background: 'linear-gradient(90deg, #EF4444, #B91C1C)', borderRadius: '4px' }} />
+                            </div>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444', fontFamily: 'ui-monospace, monospace', minWidth: '36px', textAlign: 'right' }}>{(homeBarthag * 100).toFixed(0)}%</span>
+                          </div>
+                        </div>
+                        
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                          → {insight}
+                        </div>
                       </div>
                     );
                   })()}
 
-                  {/* FOUL RATE EDGE PILL */}
+                  {/* FREE THROW RATE ROW */}
                   {(() => {
-                    const awayFTEdge = (away.ftRate_off || 35) - (home.ftRate_def || 35);
-                    const homeFTEdge = (home.ftRate_off || 35) - (away.ftRate_def || 35);
-                    const ftEdge = barttorvik.matchup?.ftRateEdge || (awayFTEdge - homeFTEdge);
-                    const favoredTeam = ftEdge > 0 ? awayTeam : homeTeam;
-                    const edgeAbs = Math.abs(ftEdge);
-                    const ftColor = edgeAbs > 5 ? '#10B981' : edgeAbs > 2 ? '#F59E0B' : '#94A3B8';
+                    const awayFT = away.ftRate_off || 35;
+                    const homeFT = home.ftRate_off || 35;
+                    const ftWinner = Math.abs(awayFT - homeFT) < 2 ? 'even' : awayFT > homeFT ? 'away' : 'home';
+                    const awayPct = Math.min((awayFT / 50) * 100, 100);
+                    const homePct = Math.min((homeFT / 50) * 100, 100);
+                    const winner = ftWinner === 'away' ? awayTeam : homeTeam;
+                    const insight = ftWinner === 'even' 
+                      ? 'Similar free throw rates — no edge'
+                      : `${winner} attacks paint more → advantage in close games`;
+                    
                     return (
-                      <div style={{
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        border: `1px solid ${ftColor}25`,
-                        textAlign: 'center'
-                      }}>
-                        <Ticket size={16} color={ftColor} style={{ marginBottom: '6px' }} />
-                        <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', marginBottom: '4px' }}>FOUL EDGE</div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: ftColor, fontFamily: 'ui-monospace, monospace', lineHeight: 1 }}>{ftEdge > 0 ? '+' : ''}{ftEdge.toFixed(1)}</div>
-                        <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>{favoredTeam.slice(0, 8)}</div>
+                      <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>🎟️</span>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>FREE THROW RATE</span>
+                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>(Paint Attack)</span>
+                          </div>
+                          <div style={{ fontSize: '10px', fontWeight: '700', color: ftWinner === 'away' ? '#3B82F6' : ftWinner === 'home' ? '#EF4444' : '#94A3B8' }}>
+                            {ftWinner === 'even' ? 'EVEN' : ftWinner === 'away' ? `${awayTeam} ✓` : `${homeTeam} ✓`}
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 8px 1fr', gap: '4px', alignItems: 'center', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#3B82F6', fontFamily: 'ui-monospace, monospace', minWidth: '36px' }}>{awayFT.toFixed(1)}</span>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
+                              <div style={{ width: `${awayPct}%`, height: '100%', background: 'linear-gradient(90deg, #1E40AF, #3B82F6)', borderRadius: '4px' }} />
+                            </div>
+                          </div>
+                          <div style={{ width: '8px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ width: `${homePct}%`, height: '100%', background: 'linear-gradient(90deg, #EF4444, #B91C1C)', borderRadius: '4px' }} />
+                            </div>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444', fontFamily: 'ui-monospace, monospace', minWidth: '36px', textAlign: 'right' }}>{homeFT.toFixed(1)}</span>
+                          </div>
+                        </div>
+                        
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                          → {insight}
+                        </div>
                       </div>
                     );
                   })()}
 
-                  {/* VOLATILITY PILL */}
+                  {/* 3PT RELIANCE ROW */}
                   {(() => {
-                    const avgThreeRate = barttorvik.matchup?.avgThreeRate || ((away.threeP_rate_off || 40) + (home.threeP_rate_off || 40)) / 2;
-                    const volLabel = avgThreeRate >= 45 ? 'HIGH' : avgThreeRate >= 38 ? 'MODERATE' : 'LOW';
-                    const volColor = avgThreeRate >= 45 ? '#EF4444' : avgThreeRate >= 38 ? '#F59E0B' : '#10B981';
-                    const volDesc = avgThreeRate >= 45 ? 'VOLATILE' : avgThreeRate >= 38 ? 'BALANCED' : 'STABLE';
+                    const away3PR = away.threeP_rate_off || 40;
+                    const home3PR = home.threeP_rate_off || 40;
+                    const higher3PR = away3PR > home3PR ? 'away' : 'home';
+                    const higherTeam = higher3PR === 'away' ? awayTeam : homeTeam;
+                    const max3PR = Math.max(away3PR, home3PR);
+                    const awayPct = Math.min((away3PR / 55) * 100, 100);
+                    const homePct = Math.min((home3PR / 55) * 100, 100);
+                    
+                    const volatilityLevel = max3PR >= 45 ? 'HIGH' : max3PR >= 38 ? 'MODERATE' : 'LOW';
+                    const volColor = max3PR >= 45 ? '#EF4444' : max3PR >= 38 ? '#F59E0B' : '#10B981';
+                    const insight = max3PR >= 45 
+                      ? `${higherTeam} lives by the 3 = HIGH VARIANCE`
+                      : max3PR >= 38 
+                        ? 'Balanced approach — moderate variance'
+                        : 'Interior-focused teams — more predictable';
+                    
                     return (
-                      <div style={{
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        border: `1px solid ${volColor}25`,
-                        textAlign: 'center'
-                      }}>
-                        <Dices size={16} color={volColor} style={{ marginBottom: '6px' }} />
-                        <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', marginBottom: '4px' }}>VARIANCE</div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: volColor, fontFamily: 'ui-monospace, monospace', lineHeight: 1 }}>{volLabel}</div>
-                        <div style={{ fontSize: '9px', fontWeight: '800', color: volColor, marginTop: '4px', padding: '2px 6px', borderRadius: '4px', background: `${volColor}15`, display: 'inline-block' }}>{volDesc}</div>
+                      <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>🎲</span>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>3PT RELIANCE</span>
+                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>(Variance Factor)</span>
+                          </div>
+                          <div style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', background: `${volColor}20`, color: volColor }}>
+                            {volatilityLevel} VAR
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 8px 1fr', gap: '4px', alignItems: 'center', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#3B82F6', fontFamily: 'ui-monospace, monospace', minWidth: '36px' }}>{away3PR.toFixed(0)}%</span>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
+                              <div style={{ width: `${awayPct}%`, height: '100%', background: 'linear-gradient(90deg, #1E40AF, #3B82F6)', borderRadius: '4px' }} />
+                            </div>
+                          </div>
+                          <div style={{ width: '8px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ width: `${homePct}%`, height: '100%', background: 'linear-gradient(90deg, #EF4444, #B91C1C)', borderRadius: '4px' }} />
+                            </div>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444', fontFamily: 'ui-monospace, monospace', minWidth: '36px', textAlign: 'right' }}>{home3PR.toFixed(0)}%</span>
+                          </div>
+                        </div>
+                        
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                          → {insight}
+                        </div>
                       </div>
                     );
                   })()}
                 </div>
 
-                {/* Quick Read Summary */}
+                {/* Betting Takeaway */}
                 {(() => {
-                  const expectedTempo = barttorvik.matchup?.expectedTempo || ((away.adjTempo || 67) + (home.adjTempo || 67)) / 2;
-                  const barthagDiff = barttorvik.matchup?.barthagDiff || ((away.barthag || 0.5) - (home.barthag || 0.5)) * 100;
-                  const ftEdge = barttorvik.matchup?.ftRateEdge || ((away.ftRate_off || 35) - (home.ftRate_def || 35)) - ((home.ftRate_off || 35) - (away.ftRate_def || 35));
-                  const avgThreeRate = barttorvik.matchup?.avgThreeRate || ((away.threeP_rate_off || 40) + (home.threeP_rate_off || 40)) / 2;
+                  const awayBarthag = away.barthag || 0.5;
+                  const homeBarthag = home.barthag || 0.5;
+                  const barthagDiff = (awayBarthag - homeBarthag) * 100;
+                  const awayFT = away.ftRate_off || 35;
+                  const homeFT = home.ftRate_off || 35;
+                  const max3PR = Math.max(away.threeP_rate_off || 40, home.threeP_rate_off || 40);
                   
-                  const paceInsight = expectedTempo >= 70 ? 'fast-paced game expected' : expectedTempo >= 66 ? 'moderate tempo' : 'slow, grind-it-out style';
-                  const powerFavored = Math.abs(barthagDiff) > 10 ? (barthagDiff > 0 ? awayTeam : homeTeam) + ' significantly stronger' : 'evenly matched quality';
-                  const ftFavored = Math.abs(ftEdge) > 3 ? (ftEdge > 0 ? awayTeam : homeTeam) + ' has late-game edge' : '';
-                  const volInsight = avgThreeRate >= 45 ? 'high variance—anything can happen' : avgThreeRate < 38 ? 'consistent, predictable outcome likely' : '';
-
-                  const insights = [paceInsight, powerFavored, ftFavored, volInsight].filter(Boolean).slice(0, 2);
+                  const powerWinner = Math.abs(barthagDiff) > 10 ? (barthagDiff > 0 ? awayTeam : homeTeam) : null;
+                  const ftWinner = Math.abs(awayFT - homeFT) > 3 ? (awayFT > homeFT ? awayTeam : homeTeam) : null;
+                  const highVariance = max3PR >= 45;
+                  
+                  let edges = 0;
+                  let edgeTeam = '';
+                  if (powerWinner) { edges++; edgeTeam = powerWinner; }
+                  if (ftWinner === edgeTeam || !edgeTeam) { if (ftWinner) { edges++; edgeTeam = ftWinner; } }
+                  
+                  let takeaway = '';
+                  if (powerWinner && ftWinner && powerWinner === ftWinner) {
+                    takeaway = `${powerWinner} dominates quality metrics and gets to the line.${highVariance ? ' However, high 3PT reliance creates variance—spread carries risk.' : ' Clean edge on both sides.'}`;
+                  } else if (powerWinner) {
+                    takeaway = `${powerWinner} is the stronger team overall.${highVariance ? ' High variance from 3PT reliance—ML safer than spread if close.' : ''}`;
+                  } else if (highVariance) {
+                    takeaway = 'Evenly matched teams with high 3PT reliance = volatile outcome. Spread carries significant risk.';
+                  } else {
+                    takeaway = 'Evenly matched with predictable playing styles. Line value is key here.';
+                  }
                   
                   return (
                     <div style={{
-                      padding: '12px 14px',
-                      borderRadius: '10px',
-                      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)',
-                      border: '1px solid rgba(16, 185, 129, 0.12)',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '10px'
+                      marginTop: '16px',
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)',
+                      border: '1px solid rgba(16, 185, 129, 0.2)'
                     }}>
-                      <div style={{ fontSize: '16px', lineHeight: 1 }}>💡</div>
-                      <div>
-                        <div style={{ fontSize: '10px', fontWeight: '800', color: '#10B981', letterSpacing: '0.04em', marginBottom: '4px' }}>QUICK READ</div>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
-                          {insights.join(' • ')}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ fontSize: '18px', lineHeight: 1 }}>🎯</div>
+                        <div>
+                          <div style={{ fontSize: '10px', fontWeight: '800', color: '#10B981', letterSpacing: '0.06em', marginBottom: '6px' }}>BETTING TAKEAWAY</div>
+                          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>
+                            {takeaway}
+                          </div>
                         </div>
                       </div>
                     </div>
