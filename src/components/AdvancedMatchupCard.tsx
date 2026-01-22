@@ -474,153 +474,224 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         </div>
       </div>
 
-      {/* ═══════════════════ DETAIL: MATCHUP BREAKDOWN ═══════════════════ */}
+{/* ═══════════════════ PREMIUM MATCHUP DETAILS ═══════════════════ */}
       <div style={{ padding: `0 ${padding} ${padding}` }}>
-        <div style={{
-          padding: isMobile ? '14px' : '20px',
-          background: 'rgba(15, 23, 42, 0.25)',
-          borderRadius: '14px',
-          border: '1px solid rgba(255,255,255,0.03)'
+        
+        {/* Header with FLIP */}
+        <div style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: isMobile ? '16px' : '20px',
+          padding: isMobile ? '12px 14px' : '14px 18px',
+          background: 'rgba(15, 23, 42, 0.4)',
+          borderRadius: '12px',
+          border: '1px solid rgba(255,255,255,0.04)'
         }}>
-{/* Compact Header with FLIP */}
-          <div style={{ 
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: isMobile ? '12px' : '16px',
-            paddingBottom: '10px',
-            borderBottom: '1px solid rgba(255,255,255,0.04)'
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>
-                ⚡ {offAbbrev} <span style={{ color: 'rgba(255,255,255,0.4)' }}>#{offRank}</span>
+          <div>
+            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>⚡ {offAbbrev}</div>
+            <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#34D399', fontFamily: 'ui-monospace, monospace' }}>
+              {offTeam.adjOff?.toFixed(1) || '—'} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
+            </div>
           </div>
-              <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: '#34D399', fontFamily: 'ui-monospace, monospace', marginTop: '2px' }}>
-                {offTeam.adjOff?.toFixed(1) || '—'} <span style={{ fontSize: '8px', fontWeight: '500', color: 'rgba(255,255,255,0.3)' }}>pts/100</span>
+          
+          <button onClick={() => setView(isAwayOffView ? 'homeOff_awayDef' : 'awayOff_homeDef')}
+            style={{ padding: isMobile ? '8px 14px' : '10px 18px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ArrowRightLeft size={isMobile ? 12 : 14} color="#A78BFA" />
+            <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: '#C7D2FE' }}>FLIP</span>
+          </button>
+          
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{defAbbrev} 🛡️</div>
+            <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#F87171', fontFamily: 'ui-monospace, monospace' }}>
+              {defTeam.adjDef?.toFixed(1) || '—'} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Category Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
+          
+          {/* SHOOTING CARD */}
+          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(251, 191, 36, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#FBBF24', letterSpacing: '0.1em' }}>🎯 SHOOTING</span>
+            </div>
+            <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '18px' }}>
+              {[
+                { label: '2PT%', offVal: twoP.off, defVal: twoP.def, avg: D1_AVG.twoP },
+                { label: '3PT%', offVal: threeP.off, defVal: threeP.def, avg: D1_AVG.threeP },
+                { label: '3PT RATE', offVal: threePRate.off, defVal: threePRate.def, avg: D1_AVG.threePRate },
+                { label: 'eFG%', offVal: eFG.off, defVal: eFG.def, avg: D1_AVG.eFG }
+              ].map(({ label, offVal, defVal, avg }) => {
+                const offDiff = offVal - avg;
+                const defDiff = defVal - avg;
+                const offGood = offDiff > 0;
+                const defGood = defDiff < 0; // Lower = good defense
+                return (
+                  <div key={label}>
+                    <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{label}</span>
+                      <span>D1: {avg}%</span>
+                    </div>
+                    {/* Offense row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offGood ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{offVal.toFixed(1)}%</span>
+                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min((offVal / 60) * 100, 100)}%`, height: '100%', background: offGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
+                      </div>
+                      <span style={{ fontSize: '9px', color: offGood ? '#10B981' : 'rgba(255,255,255,0.4)', width: '50px' }}>{offDiff >= 0 ? '+' : ''}{offDiff.toFixed(1)}</span>
+                    </div>
+                    {/* Arrow */}
+                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
+                    {/* Defense row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defGood ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{defVal.toFixed(1)}%</span>
+                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min((defVal / 60) * 100, 100)}%`, height: '100%', background: defGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #EF444450, #EF4444)', borderRadius: '2px' }} />
+                      </div>
+                      <span style={{ fontSize: '9px', color: defGood ? '#10B981' : '#EF4444', width: '50px' }}>{defDiff >= 0 ? '+' : ''}{defDiff.toFixed(1)} {defGood ? '✓' : ''}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Takeaway */}
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)' }}>
+                {twoP.off > 52 && twoP.def > 50 ? '📊 Strong inside game — expect paint points' : 
+                 threeP.off > 35 ? '📊 Perimeter-oriented — watch 3PT variance' : 
+                 '📊 Balanced shooting profile'}
+              </span>
+            </div>
+          </div>
+
+          {/* BALL CONTROL CARD */}
+          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(239, 68, 68, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#F87171', letterSpacing: '0.1em' }}>🏀 BALL CONTROL</span>
+            </div>
+            <div style={{ padding: isMobile ? '14px' : '18px' }}>
+              <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>TURNOVER RATE</span>
+                <span>D1: {D1_AVG.to}%</span>
+              </div>
+              {/* Offense commits */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: to.off < D1_AVG.to ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{to.off.toFixed(1)}%</span>
+                <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min((to.off / 25) * 100, 100)}%`, height: '100%', background: to.off < D1_AVG.to ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #F5980B50, #F59E0B)', borderRadius: '2px' }} />
+                </div>
+                <span style={{ fontSize: '9px', color: to.off < D1_AVG.to ? '#10B981' : '#F59E0B', width: '60px' }}>commits</span>
+              </div>
+              <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
+              {/* Defense forces */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: to.def > D1_AVG.to ? '#EF4444' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{to.def.toFixed(1)}%</span>
+                <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min((to.def / 25) * 100, 100)}%`, height: '100%', background: to.def > D1_AVG.to ? 'linear-gradient(90deg, #EF444450, #EF4444)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
+                </div>
+                <span style={{ fontSize: '9px', color: to.def > D1_AVG.to ? '#EF4444' : 'rgba(255,255,255,0.4)', width: '60px' }}>forces</span>
               </div>
             </div>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)' }}>
+                {to.def > to.off + 2 ? '⚠️ Opponent forces TOs — protect the ball' : 
+                 to.off < 16 ? '✓ Takes care of the ball' : 
+                 '📊 Average ball security'}
+              </span>
+            </div>
+          </div>
 
-            <button
-              onClick={() => setView(isAwayOffView ? 'homeOff_awayDef' : 'awayOff_homeDef')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                padding: isMobile ? '6px 10px' : '8px 12px',
-                borderRadius: '8px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                cursor: 'pointer'
-              }}
-            >
-              <ArrowRightLeft size={isMobile ? 10 : 12} color="rgba(255,255,255,0.5)" />
-              <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>FLIP</span>
-            </button>
-            
-            <div style={{ flex: 1, textAlign: 'right' }}>
-              <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>
-                <span style={{ color: 'rgba(255,255,255,0.4)' }}>#{defRank}</span> {defAbbrev} 🛡️
+          {/* REBOUNDING CARD */}
+          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(59, 130, 246, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#60A5FA', letterSpacing: '0.1em' }}>♻️ REBOUNDING</span>
+            </div>
+            <div style={{ padding: isMobile ? '14px' : '18px' }}>
+              <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>OFFENSIVE REBOUND %</span>
+                <span>D1: {D1_AVG.oreb}%</span>
               </div>
-              <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: '#F87171', fontFamily: 'ui-monospace, monospace', marginTop: '2px' }}>
-                {defTeam.adjDef?.toFixed(1) || '—'} <span style={{ fontSize: '8px', fontWeight: '500', color: 'rgba(255,255,255,0.3)' }}>pts/100</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: oreb.off > D1_AVG.oreb ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{oreb.off.toFixed(1)}%</span>
+                <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min((oreb.off / 40) * 100, 100)}%`, height: '100%', background: oreb.off > D1_AVG.oreb ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
+                </div>
+                <span style={{ fontSize: '9px', color: oreb.off > D1_AVG.oreb ? '#10B981' : 'rgba(255,255,255,0.4)', width: '60px' }}>grabs</span>
+              </div>
+              <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: oreb.def > D1_AVG.oreb ? '#EF4444' : '#10B981', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{oreb.def.toFixed(1)}%</span>
+                <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min((oreb.def / 40) * 100, 100)}%`, height: '100%', background: oreb.def > D1_AVG.oreb ? 'linear-gradient(90deg, #EF444450, #EF4444)' : 'linear-gradient(90deg, #10B98150, #10B981)', borderRadius: '2px' }} />
+                </div>
+                <span style={{ fontSize: '9px', color: oreb.def < D1_AVG.oreb ? '#10B981' : '#EF4444', width: '60px' }}>allows</span>
+              </div>
+            </div>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)' }}>
+                {oreb.off > 30 && oreb.def > 29 ? '♻️ Second chance points likely both ways' : 
+                 oreb.off > 30 ? '✓ Crashes the glass well' : 
+                 '📊 Average rebounding matchup'}
+              </span>
+            </div>
+          </div>
+
+          {/* PACE CARD */}
+          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(16, 185, 129, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#34D399', letterSpacing: '0.1em' }}>🏃 PACE & FREE THROWS</span>
+            </div>
+            <div style={{ padding: isMobile ? '14px' : '18px' }}>
+              {/* FT Rate */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>FREE THROW RATE</span>
+                  <span>D1: {D1_AVG.ftRate}%</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: ftRate.off > D1_AVG.ftRate ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{ftRate.off.toFixed(1)}%</span>
+                  <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min((ftRate.off / 45) * 100, 100)}%`, height: '100%', background: ftRate.off > D1_AVG.ftRate ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
+                  </div>
+                  <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', width: '60px' }}>draws</span>
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: (ftRate.def || 32) > D1_AVG.ftRate ? '#EF4444' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: '55px' }}>{(ftRate.def || 32).toFixed(1)}%</span>
+                  <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(((ftRate.def || 32) / 45) * 100, 100)}%`, height: '100%', background: (ftRate.def || 32) > D1_AVG.ftRate ? 'linear-gradient(90deg, #EF444450, #EF4444)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
+                  </div>
+                  <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', width: '60px' }}>sends</span>
                 </div>
               </div>
-            </div>
-
-          {/* Mismatch Score - Compact */}
-          <div style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: isMobile ? '8px' : '12px',
-            padding: isMobile ? '10px' : '12px',
-            background: 'rgba(0,0,0,0.2)',
-            borderRadius: '10px',
-            marginBottom: isMobile ? '12px' : '16px'
-          }}>
-            <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em' }}>MISMATCH</span>
-            <span style={{ 
-              fontSize: isMobile ? '18px' : '20px', fontWeight: '800',
-              color: mismatch > 50 ? '#10B981' : mismatch > 0 ? '#3B82F6' : '#EF4444',
-              fontFamily: 'ui-monospace, monospace'
-            }}>{mismatch > 0 ? '+' : ''}{mismatch}</span>
-            <span style={{ 
-              fontSize: '8px', 
-              fontWeight: '600',
-              color: mismatch > 50 ? '#10B981' : mismatch > 0 ? '#3B82F6' : '#EF4444',
-              padding: '2px 6px',
-              background: mismatch > 50 ? 'rgba(16, 185, 129, 0.15)' : mismatch > 0 ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-              borderRadius: '4px'
-            }}>
-              {mismatch > 100 ? 'MASSIVE' : mismatch > 50 ? 'STRONG' : mismatch > 0 ? 'EDGE' : mismatch > -50 ? 'EVEN' : 'TOUGH'}
-            </span>
-          </div>
-
-          {/* ALL METRICS */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '10px' }}>
-            
-            <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em', marginTop: '4px' }}>SHOOTING</div>
-            
-            <MetricRow label="2-POINT %" offValue={twoP.off} defValue={twoP.def} avg={D1_AVG.twoP}
-              offTeam="shoots" defTeam="allows"
-              insight={twoP.off > 54 && twoP.def > 52 ? `🔥 Elite finishers vs weak interior D` : undefined}
-              isMobile={isMobile} />
-            
-            <MetricRow label="3-POINT %" offValue={threeP.off} defValue={threeP.def} avg={D1_AVG.threeP}
-              offTeam="shoots" defTeam="allows"
-              insight={threeP.off > 36 && threeP.def > 36 ? `🏹 Good shooters vs poor perimeter D` : undefined}
-              isMobile={isMobile} />
-            
-            <MetricRow label="3PT RATE" offValue={threePRate.off} defValue={threePRate.def} avg={D1_AVG.threePRate}
-              offTeam="takes" defTeam="allows"
-              insight={threePRate.off > 48 ? `⚠️ High 3PT volume = variance risk` : undefined}
-              isMobile={isMobile} isDefenseLowerBetter={false} />
-            
-            <MetricRow label="eFG% (EFFICIENCY)" offValue={eFG.off} defValue={eFG.def} avg={D1_AVG.eFG}
-              offTeam="shoots" defTeam="allows" isMobile={isMobile} />
-
-            <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em', marginTop: '8px' }}>BALL CONTROL</div>
-            
-            <MetricRow label="TURNOVER RATE" offValue={to.off} defValue={to.def} avg={D1_AVG.to}
-              offTeam="commits" defTeam="forces"
-              insight={to.def > to.off + 3 ? `⚠️ Watch for turnovers` : to.off < 15 ? `✓ Takes care of the ball` : undefined}
-              isMobile={isMobile} isDefenseLowerBetter={false} />
-
-            <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em', marginTop: '8px' }}>REBOUNDING</div>
-            
-            <MetricRow label="OFFENSIVE REBOUND %" offValue={oreb.off} defValue={oreb.def} avg={D1_AVG.oreb}
-              offTeam="grabs" defTeam="allows"
-              insight={oreb.off > 30 && oreb.def > 29 ? `♻️ Second chance points likely` : undefined}
-              isMobile={isMobile} />
-
-            <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em', marginTop: '8px' }}>FREE THROWS & PACE</div>
-            
-            <MetricRow label="FREE THROW RATE" offValue={ftRate.off} defValue={ftRate.def || 32} avg={D1_AVG.ftRate}
-              offTeam="draws" defTeam="sends"
-              insight={ftRate.off > 38 ? `🎟️ Attacks & gets to the line` : undefined}
-              isMobile={isMobile} isDefenseLowerBetter={false} />
-
-            {/* Tempo */}
-            <div style={{ padding: isMobile ? '12px' : '16px', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em' }}>TEMPO</span>
-                <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>D1 AVG: {D1_AVG.tempo}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
+              {/* Tempo */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                 <div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{offAbbrev}</div>
-                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '800', color: tempo.off > 70 ? '#10B981' : tempo.off > 65 ? '#F59E0B' : '#3B82F6', fontFamily: 'ui-monospace, monospace' }}>{tempo.off.toFixed(1)}</div>
-                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>{tempo.off > 70 ? 'FAST' : tempo.off > 65 ? 'AVG' : 'SLOW'}</div>
-            </div>
-                <div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{defAbbrev}</div>
-                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '800', color: tempo.def > 70 ? '#10B981' : tempo.def > 65 ? '#F59E0B' : '#3B82F6', fontFamily: 'ui-monospace, monospace' }}>{tempo.def.toFixed(1)}</div>
-                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>{tempo.def > 70 ? 'FAST' : tempo.def > 65 ? 'AVG' : 'SLOW'}</div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{offAbbrev}</div>
+                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: tempo.off > 70 ? '#10B981' : tempo.off < 65 ? '#3B82F6' : '#F59E0B', fontFamily: 'ui-monospace, monospace' }}>{tempo.off.toFixed(1)}</div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)' }}>{tempo.off > 70 ? 'FAST' : tempo.off < 65 ? 'SLOW' : 'AVG'}</div>
                 </div>
-                <div style={{ background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', padding: '8px' }}>
-                  <div style={{ fontSize: '8px', color: '#FBBF24', marginBottom: '4px' }}>EXPECTED</div>
-                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '800', color: '#FBBF24', fontFamily: 'ui-monospace, monospace' }}>{((tempo.off + tempo.def) / 2).toFixed(0)}</div>
-                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>PACE</div>
+                <div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{defAbbrev}</div>
+                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: tempo.def > 70 ? '#10B981' : tempo.def < 65 ? '#3B82F6' : '#F59E0B', fontFamily: 'ui-monospace, monospace' }}>{tempo.def.toFixed(1)}</div>
+                  <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)' }}>{tempo.def > 70 ? 'FAST' : tempo.def < 65 ? 'SLOW' : 'AVG'}</div>
+                </div>
+                <div style={{ background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', padding: '8px 4px' }}>
+                  <div style={{ fontSize: '7px', color: '#FBBF24', marginBottom: '4px' }}>EXPECTED</div>
+                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#FBBF24', fontFamily: 'ui-monospace, monospace' }}>{((tempo.off + tempo.def) / 2).toFixed(0)}</div>
+                  <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)' }}>POSS</div>
                 </div>
               </div>
             </div>
+            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)' }}>
+                {tempo.off > 70 && tempo.def > 70 ? '🏃 Fast-paced game — high scoring potential' : 
+                 tempo.off < 65 && tempo.def < 65 ? '🐢 Slow, grinding game expected' : 
+                 `🏃 ~${((tempo.off + tempo.def) / 2).toFixed(0)} possessions expected`}
+              </span>
+            </div>
           </div>
+          
         </div>
       </div>
 
