@@ -312,99 +312,84 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white' }}>Matchup Intelligence</div>
       </div>
 
-      {/* ═══════════════════ POWER COMPARISON ═══════════════════ */}
+      {/* ═══════════════════ 3 COMPARISON BARS ═══════════════════ */}
       <div style={{ padding }}>
-        {/* Power Balance Bar */}
         <div style={{
           padding: isMobile ? '14px' : '18px',
           background: 'rgba(15, 23, 42, 0.4)',
           borderRadius: '14px',
           border: '1px solid rgba(255,255,255,0.05)',
-          marginBottom: isMobile ? '12px' : '16px'
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isMobile ? '14px' : '18px'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{awayAbbrev}</span>
-              <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: awayTier.color, fontFamily: 'ui-monospace, monospace' }}>#{awayRank}</span>
-            </div>
-            <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em' }}>POWER</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: homeTier.color, fontFamily: 'ui-monospace, monospace' }}>#{homeRank}</span>
-              <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{homeAbbrev}</span>
-            </div>
-          </div>
-          
-          <div style={{ position: 'relative', height: '8px', borderRadius: '4px', overflow: 'hidden', background: 'rgba(0,0,0,0.3)' }}>
-            <div style={{ position: 'absolute', left: 0, top: 0, width: `${awayPowerPct}%`, height: '100%', background: `linear-gradient(90deg, ${awayTier.color}40, ${awayTier.color})`, transition: 'width 0.6s ease' }} />
-            <div style={{ position: 'absolute', right: 0, top: 0, width: `${100 - awayPowerPct}%`, height: '100%', background: `linear-gradient(270deg, ${homeTier.color}40, ${homeTier.color})`, transition: 'width 0.6s ease' }} />
-            <div style={{ position: 'absolute', left: '50%', top: '-2px', width: '2px', height: '12px', background: 'white', opacity: 0.4, transform: 'translateX(-50%)' }} />
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ padding: '2px 6px', borderRadius: '4px', background: `${awayTier.color}20`, fontSize: '8px', fontWeight: '700', color: awayTier.color }}>{awayTier.label}</div>
-              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>Top {getPercentile(awayRank)}%</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>Top {getPercentile(homeRank)}%</span>
-              <div style={{ padding: '2px 6px', borderRadius: '4px', background: `${homeTier.color}20`, fontSize: '8px', fontWeight: '700', color: homeTier.color }}>{homeTier.label}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Edge Badges */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '6px' : '10px', flexWrap: 'wrap', marginBottom: isMobile ? '8px' : '12px' }}>
+          {/* Bar Component */}
           {[
-            { label: 'POWER', winner: powerEdge === 'away' ? awayAbbrev : homeAbbrev, icon: '⚡', edge: powerEdge },
-            { label: 'OFFENSE', winner: offenseEdge === 'away' ? awayAbbrev : homeAbbrev, icon: '🎯', edge: offenseEdge },
-            { label: 'DEFENSE', winner: defenseEdge === 'away' ? awayAbbrev : homeAbbrev, icon: '🛡️', edge: defenseEdge },
-          ].map(({ label, winner, icon, edge }) => (
-            <div key={label} style={{
-              padding: isMobile ? '6px 10px' : '8px 14px',
-              borderRadius: '8px',
-              background: 'rgba(15, 23, 42, 0.5)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              display: 'flex', alignItems: 'center', gap: '6px'
-            }}>
-              <span style={{ fontSize: '12px' }}>{icon}</span>
-              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>{label}</span>
-              <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: edge === 'even' ? '#F59E0B' : '#10B981' }}>
-                {edge === 'even' ? 'EVEN' : winner}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ═══════════════════ OFF/DEF RANKS ═══════════════════ */}
-      <div style={{ padding: `0 ${padding}`, marginBottom: padding }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '8px' : '12px' }}>
-          <div style={{ padding: isMobile ? '12px' : '16px', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '12px', border: `1px solid ${awayTier.color}15` }}>
-            <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>{awayAbbrev}</div>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div>
-                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>OFF</div>
-                <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#34D399', fontFamily: 'ui-monospace, monospace' }}>#{away.adjOff_rank}</div>
+            { 
+              label: '⚡ OVERALL', 
+              awayRank: awayRank, 
+              homeRank: homeRank,
+              awayColor: awayTier.color,
+              homeColor: homeTier.color
+            },
+            { 
+              label: '🎯 OFFENSE', 
+              awayRank: away.adjOff_rank, 
+              homeRank: home.adjOff_rank,
+              awayColor: getTier(away.adjOff_rank).color,
+              homeColor: getTier(home.adjOff_rank).color
+            },
+            { 
+              label: '🛡️ DEFENSE', 
+              awayRank: away.adjDef_rank, 
+              homeRank: home.adjDef_rank,
+              awayColor: getTier(away.adjDef_rank).color,
+              homeColor: getTier(home.adjDef_rank).color
+            }
+          ].map(({ label, awayRank: aRank, homeRank: hRank, awayColor, homeColor }) => {
+            const total = aRank + hRank;
+            const awayPct = Math.round(((total - aRank) / total) * 100);
+            const awayBetter = aRank < hRank;
+            const even = aRank === hRank;
+            
+            return (
+              <div key={label}>
+                {/* Header row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: awayColor, fontFamily: 'ui-monospace, monospace' }}>#{aRank}</span>
+                    <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.6)' }}>{awayAbbrev}</span>
+                    {awayBetter && <span style={{ fontSize: '10px' }}>✓</span>}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', fontWeight: '600' }}>{label}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {!awayBetter && !even && <span style={{ fontSize: '10px' }}>✓</span>}
+                    <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.6)' }}>{homeAbbrev}</span>
+                    <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: homeColor, fontFamily: 'ui-monospace, monospace' }}>#{hRank}</span>
+                  </div>
+                </div>
+                
+                {/* Visual bar */}
+                <div style={{ position: 'relative', height: '8px', borderRadius: '4px', overflow: 'hidden', background: 'rgba(0,0,0,0.3)' }}>
+                  <div style={{ position: 'absolute', left: 0, top: 0, width: `${awayPct}%`, height: '100%', background: `linear-gradient(90deg, ${awayColor}40, ${awayColor})`, transition: 'width 0.6s ease' }} />
+                  <div style={{ position: 'absolute', right: 0, top: 0, width: `${100 - awayPct}%`, height: '100%', background: `linear-gradient(270deg, ${homeColor}40, ${homeColor})`, transition: 'width 0.6s ease' }} />
+                  <div style={{ position: 'absolute', left: '50%', top: '-2px', width: '2px', height: '12px', background: 'white', opacity: 0.3, transform: 'translateX(-50%)' }} />
+                </div>
+                
+                {/* Tier labels */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ padding: '2px 6px', borderRadius: '4px', background: `${awayColor}20`, fontSize: '7px', fontWeight: '700', color: awayColor }}>{getTier(aRank).label}</div>
+                    <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)' }}>Top {getPercentile(aRank)}%</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)' }}>Top {getPercentile(hRank)}%</span>
+                    <div style={{ padding: '2px 6px', borderRadius: '4px', background: `${homeColor}20`, fontSize: '7px', fontWeight: '700', color: homeColor }}>{getTier(hRank).label}</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>DEF</div>
-                <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#F87171', fontFamily: 'ui-monospace, monospace' }}>#{away.adjDef_rank}</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ padding: isMobile ? '12px' : '16px', background: 'rgba(15, 23, 42, 0.3)', borderRadius: '12px', border: `1px solid ${homeTier.color}15` }}>
-            <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>{homeAbbrev}</div>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div>
-                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>OFF</div>
-                <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#34D399', fontFamily: 'ui-monospace, monospace' }}>#{home.adjOff_rank}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)' }}>DEF</div>
-                <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#F87171', fontFamily: 'ui-monospace, monospace' }}>#{home.adjDef_rank}</div>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
 
