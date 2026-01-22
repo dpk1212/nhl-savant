@@ -234,7 +234,15 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
           twoP_off: awayBartt.twoP_off,
           twoP_def: awayBartt.twoP_def,
           threeP_off: awayBartt.threeP_off,
-          threeP_def: awayBartt.threeP_def
+          threeP_def: awayBartt.threeP_def,
+          // NEW: Betting Edge data
+          barthag: awayBartt.bartholomew,
+          adjTempo: awayBartt.adjTempo,
+          ftRate_off: awayBartt.ftRate_off,
+          ftRate_def: awayBartt.ftRate_def,
+          threeP_rate_off: awayBartt.threeP_rate_off,
+          threeP_rate_def: awayBartt.threeP_rate_def,
+          wab: awayBartt.wab
         },
         home: {
           rank: homeBartt.rank,
@@ -251,7 +259,15 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
           twoP_off: homeBartt.twoP_off,
           twoP_def: homeBartt.twoP_def,
           threeP_off: homeBartt.threeP_off,
-          threeP_def: homeBartt.threeP_def
+          threeP_def: homeBartt.threeP_def,
+          // NEW: Betting Edge data
+          barthag: homeBartt.bartholomew,
+          adjTempo: homeBartt.adjTempo,
+          ftRate_off: homeBartt.ftRate_off,
+          ftRate_def: homeBartt.ftRate_def,
+          threeP_rate_off: homeBartt.threeP_rate_off,
+          threeP_rate_def: homeBartt.threeP_rate_def,
+          wab: homeBartt.wab
         },
         matchup: {
           rankAdvantage: awayBartt.rank < homeBartt.rank ? 'away' : 'home',
@@ -260,7 +276,12 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
           offDiff: Math.abs(awayBartt.adjOff - homeBartt.adjOff).toFixed(1),
           defAdvantage: awayBartt.adjDef < homeBartt.adjDef ? 'away' : 'home',
           awayOffVsHomeDef: (awayBartt.eFG_off - homeBartt.eFG_def).toFixed(1),
-          homeOffVsAwayDef: (homeBartt.eFG_off - awayBartt.eFG_def).toFixed(1)
+          homeOffVsAwayDef: (homeBartt.eFG_off - awayBartt.eFG_def).toFixed(1),
+          // NEW: Betting Edge matchup calculations
+          expectedTempo: ((awayBartt.adjTempo || 67) + (homeBartt.adjTempo || 67)) / 2,
+          barthagDiff: ((awayBartt.bartholomew || 0.5) - (homeBartt.bartholomew || 0.5)) * 100,
+          ftRateEdge: (awayBartt.ftRate_off - homeBartt.ftRate_def) - (homeBartt.ftRate_off - awayBartt.ftRate_def),
+          avgThreeRate: ((awayBartt.threeP_rate_off || 40) + (homeBartt.threeP_rate_off || 40)) / 2
         }
       } : null,
       
