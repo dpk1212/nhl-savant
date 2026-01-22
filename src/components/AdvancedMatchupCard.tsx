@@ -515,19 +515,47 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(251, 191, 36, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#FBBF24', letterSpacing: '0.1em' }}>🎯 SHOOTING</span>
             </div>
-            <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '18px' }}>
+            <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
               {[
-                { label: '2PT%', offVal: twoP.off, defVal: twoP.def, avg: D1_AVG.twoP },
-                { label: '3PT%', offVal: threeP.off, defVal: threeP.def, avg: D1_AVG.threeP },
-                { label: '3PT RATE', offVal: threePRate.off, defVal: threePRate.def, avg: D1_AVG.threePRate },
-                { label: 'eFG%', offVal: eFG.off, defVal: eFG.def, avg: D1_AVG.eFG }
-              ].map(({ label, offVal, defVal, avg }) => {
+                { label: '2PT%', offVal: twoP.off, defVal: twoP.def, avg: D1_AVG.twoP, type: '2pt' },
+                { label: '3PT%', offVal: threeP.off, defVal: threeP.def, avg: D1_AVG.threeP, type: '3pt' },
+                { label: '3PT RATE', offVal: threePRate.off, defVal: threePRate.def, avg: D1_AVG.threePRate, type: '3ptRate' },
+                { label: 'eFG%', offVal: eFG.off, defVal: eFG.def, avg: D1_AVG.eFG, type: 'efg' }
+              ].map(({ label, offVal, defVal, avg, type }) => {
                 const offDiff = offVal - avg;
                 const defDiff = defVal - avg;
                 const offGood = offDiff > 0;
                 const defGood = defDiff < 0; // Lower = good defense (allows less)
-                const offContext = Math.abs(offDiff) > 3 ? (offGood ? '▲ ABOVE AVG' : '▼ BELOW AVG') : '~ AVG';
-                const defContext = Math.abs(defDiff) > 3 ? (defGood ? '✓ STINGY D' : '⚠️ ALLOWS') : '~ AVG D';
+                const matchupEdge = offVal - defVal; // Positive = offense advantage
+                
+                // Generate matchup-specific insight
+                const getMatchupInsight = () => {
+                  if (type === '2pt') {
+                    if (offGood && !defGood) return `🔥 ${offAbbrev} finishes well (${offVal.toFixed(0)}%) vs weak interior D → paint points`;
+                    if (offGood && defGood) return `⚔️ Good finishers vs stingy D → execution battle inside`;
+                    if (!offGood && !defGood) return `📊 Poor shooters vs leaky D → could go either way`;
+                    if (!offGood && defGood) return `🛡️ Struggling offense vs tough D → expect low 2PT%`;
+                  }
+                  if (type === '3pt') {
+                    if (offGood && !defGood) return `🏹 ${offAbbrev} shoots ${offVal.toFixed(0)}% vs poor perimeter D → 3s will fall`;
+                    if (offGood && defGood) return `⚔️ Good shooters vs tight coverage → shot selection matters`;
+                    if (!offGood && !defGood) return `📊 Cold shooters vs porous D → variance game`;
+                    if (!offGood && defGood) return `🧱 Poor shooters vs elite D → stay out of 3PT contests`;
+                  }
+                  if (type === '3ptRate') {
+                    if (offVal > 42 && defVal > 42) return `⚠️ Heavy 3PT game both ways → high variance expected`;
+                    if (offVal > 42) return `🎯 ${offAbbrev} lives beyond the arc (${offVal.toFixed(0)}% of shots)`;
+                    if (offVal < 35) return `🎨 ${offAbbrev} attacks inside — low 3PT volume (${offVal.toFixed(0)}%)`;
+                    return `📊 Balanced shot selection`;
+                  }
+                  if (type === 'efg') {
+                    if (matchupEdge > 3) return `✅ ${offAbbrev} efficient (${offVal.toFixed(0)}%) vs ${defAbbrev} allowing ${defVal.toFixed(0)}% → scoring edge`;
+                    if (matchupEdge < -3) return `⚠️ ${defAbbrev} holds teams to ${defVal.toFixed(0)}% → tough to score`;
+                    return `📊 Efficiency roughly even — execution decides`;
+                  }
+                  return '';
+                };
+                
                 return (
                   <div key={label}>
                     <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
@@ -535,25 +563,35 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                       <span>D1: {avg}%</span>
                     </div>
                     {/* Offense row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{offAbbrev}</span>
                       <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offGood ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{offVal.toFixed(1)}%</span>
                       <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
                         <div style={{ width: `${Math.min((offVal / 60) * 100, 100)}%`, height: '100%', background: offGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                        {/* D1 Average marker */}
                         <div style={{ position: 'absolute', left: `${(avg / 60) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
                       </div>
-                      <span style={{ fontSize: isMobile ? '8px' : '9px', color: offGood ? '#10B981' : 'rgba(255,255,255,0.4)', width: isMobile ? '70px' : '80px', textAlign: 'right' }}>{offContext}</span>
                     </div>
                     {/* Arrow */}
-                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
+                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0', marginLeft: isMobile ? '45px' : '50px' }}>↓</div>
                     {/* Defense row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{defAbbrev}</span>
                       <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defGood ? '#10B981' : '#F87171', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{defVal.toFixed(1)}%</span>
                       <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
                         <div style={{ width: `${Math.min((defVal / 60) * 100, 100)}%`, height: '100%', background: defGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #F8717150, #F87171)', borderRadius: '2px' }} />
                         <div style={{ position: 'absolute', left: `${(avg / 60) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
                       </div>
-                      <span style={{ fontSize: isMobile ? '8px' : '9px', color: defGood ? '#10B981' : '#F87171', width: isMobile ? '70px' : '80px', textAlign: 'right' }}>{defContext}</span>
+                    </div>
+                    {/* Matchup Insight */}
+                    <div style={{ 
+                      fontSize: isMobile ? '10px' : '11px', 
+                      color: 'rgba(255,255,255,0.6)',
+                      padding: '6px 10px',
+                      background: 'rgba(0,0,0,0.15)',
+                      borderRadius: '6px',
+                      borderLeft: `2px solid ${matchupEdge > 2 ? '#10B981' : matchupEdge < -2 ? '#F87171' : '#64748B'}`
+                    }}>
+                      {getMatchupInsight()}
                     </div>
                   </div>
                 );
