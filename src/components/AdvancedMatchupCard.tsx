@@ -46,20 +46,23 @@ interface TeamStats {
   threeP_off: number;
   threeP_def?: number;
   // Betting Edge data
-  barthag?: number;
+  bartholomew?: number;
+  bartholomew_rank?: number;
   adjTempo?: number;
+  adjTempo_rank?: number;
   ftRate_off?: number;
   ftRate_def?: number;
   threeP_rate_off?: number;
   threeP_rate_def?: number;
   wab?: number;
+  wab_rank?: number;
 }
 
 interface MatchupAnalysis {
   rankAdvantage: 'away' | 'home';
   rankDiff: number;
   expectedTempo?: number;
-  barthagDiff?: number;
+  powerRankDiff?: number;
   ftRateEdge?: number;
   avgThreeRate?: number;
 }
@@ -569,7 +572,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
       </div>
 
       {/* BETTING EDGE MATCHUP - BATTLE BARS */}
-      {(away.barthag || away.adjTempo || barttorvik.matchup?.expectedTempo) && (
+      {(away.bartholomew_rank || away.adjTempo || barttorvik.matchup?.expectedTempo) && (
         <div style={{ padding: isMobile ? '0 18px 20px' : '0 28px 24px' }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.04) 100%)',
@@ -665,25 +668,37 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
 
                   {/* POWER RATING ROW */}
                   {(() => {
-                    const awayBarthag = away.barthag || 0.5;
-                    const homeBarthag = home.barthag || 0.5;
-                    const barthagDiff = (awayBarthag - homeBarthag) * 100;
-                    const powerWinner = Math.abs(barthagDiff) < 5 ? 'even' : barthagDiff > 0 ? 'away' : 'home';
-                    const awayPct = awayBarthag * 100;
-                    const homePct = homeBarthag * 100;
-                    const insight = Math.abs(barthagDiff) > 20 
-                      ? `${powerWinner === 'away' ? awayTeam : homeTeam} significantly stronger (+${Math.abs(barthagDiff).toFixed(0)}%)`
-                      : Math.abs(barthagDiff) > 10 
-                        ? `${powerWinner === 'away' ? awayTeam : homeTeam} has clear quality edge`
+                    // Use ranks for power rating (lower is better)
+                    const awayRank = away.bartholomew_rank || away.rank || 182;
+                    const homeRank = home.bartholomew_rank || home.rank || 182;
+                    const rankDiff = homeRank - awayRank; // Positive = away is better
+                    const powerWinner = Math.abs(rankDiff) < 15 ? 'even' : rankDiff > 0 ? 'away' : 'home';
+                    // Convert rank to percentile for bar display (lower rank = higher percentile)
+                    const awayPct = Math.max(5, (1 - (awayRank - 1) / (TOTAL_TEAMS - 1)) * 100);
+                    const homePct = Math.max(5, (1 - (homeRank - 1) / (TOTAL_TEAMS - 1)) * 100);
+                    
+                    const getTierLabel = (rank: number) => {
+                      if (rank <= 25) return 'ELITE';
+                      if (rank <= 50) return 'EXCELLENT';
+                      if (rank <= 100) return 'STRONG';
+                      if (rank <= 175) return 'AVERAGE';
+                      if (rank <= 275) return 'BELOW AVG';
+                      return 'WEAK';
+                    };
+                    
+                    const insight = Math.abs(rankDiff) > 75 
+                      ? `${powerWinner === 'away' ? awayTeam : homeTeam} is a clear class above (${Math.abs(rankDiff)} spots)`
+                      : Math.abs(rankDiff) > 40 
+                        ? `${powerWinner === 'away' ? awayTeam : homeTeam} has quality advantage`
                         : 'Evenly matched in overall quality';
                     
                     return (
-                      <div style={{ background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', padding: '14px 16px' }}>
+                      <div style={{ background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%)', borderRadius: '12px', padding: '14px 16px', border: '1px solid rgba(251, 191, 36, 0.15)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '14px' }}>🏆</span>
                             <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>POWER RATING</span>
-                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>(True Quality)</span>
+                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>(National Rank)</span>
                           </div>
                           <div style={{ fontSize: '10px', fontWeight: '700', color: powerWinner === 'away' ? '#3B82F6' : powerWinner === 'home' ? '#EF4444' : '#94A3B8' }}>
                             {powerWinner === 'even' ? 'EVEN' : powerWinner === 'away' ? `${awayTeam} ✓` : `${homeTeam} ✓`}
@@ -692,17 +707,23 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 8px 1fr', gap: '4px', alignItems: 'center', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#3B82F6', fontFamily: 'ui-monospace, monospace', minWidth: '36px' }}>{(awayBarthag * 100).toFixed(0)}%</span>
+                            <div style={{ minWidth: '48px', textAlign: 'left' }}>
+                              <span style={{ fontSize: '16px', fontWeight: '900', color: '#3B82F6', fontFamily: 'ui-monospace, monospace' }}>#{awayRank}</span>
+                              <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{getTierLabel(awayRank)}</div>
+                            </div>
                             <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
                               <div style={{ width: `${awayPct}%`, height: '100%', background: 'linear-gradient(90deg, #1E40AF, #3B82F6)', borderRadius: '4px' }} />
                             </div>
                           </div>
-                          <div style={{ width: '8px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }} />
+                          <div style={{ width: '8px', height: '24px', background: 'rgba(251, 191, 36, 0.2)', borderRadius: '2px' }} />
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ flex: 1, height: '8px', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '4px', overflow: 'hidden' }}>
                               <div style={{ width: `${homePct}%`, height: '100%', background: 'linear-gradient(90deg, #EF4444, #B91C1C)', borderRadius: '4px' }} />
                             </div>
-                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444', fontFamily: 'ui-monospace, monospace', minWidth: '36px', textAlign: 'right' }}>{(homeBarthag * 100).toFixed(0)}%</span>
+                            <div style={{ minWidth: '48px', textAlign: 'right' }}>
+                              <span style={{ fontSize: '16px', fontWeight: '900', color: '#EF4444', fontFamily: 'ui-monospace, monospace' }}>#{homeRank}</span>
+                              <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{getTierLabel(homeRank)}</div>
+                            </div>
                           </div>
                         </div>
                         
@@ -818,31 +839,30 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
 
                 {/* Betting Takeaway */}
                 {(() => {
-                  const awayBarthag = away.barthag || 0.5;
-                  const homeBarthag = home.barthag || 0.5;
-                  const barthagDiff = (awayBarthag - homeBarthag) * 100;
+                  // Use ranks for power comparison (lower rank = better team)
+                  const awayRank = away.bartholomew_rank || away.rank || 182;
+                  const homeRank = home.bartholomew_rank || home.rank || 182;
+                  const rankDiff = homeRank - awayRank; // Positive = away is better
                   const awayFT = away.ftRate_off || 35;
                   const homeFT = home.ftRate_off || 35;
                   const max3PR = Math.max(away.threeP_rate_off || 40, home.threeP_rate_off || 40);
                   
-                  const powerWinner = Math.abs(barthagDiff) > 10 ? (barthagDiff > 0 ? awayTeam : homeTeam) : null;
+                  // Power winner determined by significant rank difference
+                  const powerWinner = Math.abs(rankDiff) > 40 ? (rankDiff > 0 ? awayTeam : homeTeam) : null;
                   const ftWinner = Math.abs(awayFT - homeFT) > 3 ? (awayFT > homeFT ? awayTeam : homeTeam) : null;
                   const highVariance = max3PR >= 45;
                   
-                  let edges = 0;
-                  let edgeTeam = '';
-                  if (powerWinner) { edges++; edgeTeam = powerWinner; }
-                  if (ftWinner === edgeTeam || !edgeTeam) { if (ftWinner) { edges++; edgeTeam = ftWinner; } }
-                  
                   let takeaway = '';
                   if (powerWinner && ftWinner && powerWinner === ftWinner) {
-                    takeaway = `${powerWinner} dominates quality metrics and gets to the line.${highVariance ? ' However, high 3PT reliance creates variance—spread carries risk.' : ' Clean edge on both sides.'}`;
+                    takeaway = `${powerWinner} is ranked significantly higher AND gets to the line more.${highVariance ? ' However, high 3PT reliance creates variance—spread carries risk.' : ' Strong dual-edge.'}`;
                   } else if (powerWinner) {
-                    takeaway = `${powerWinner} is the stronger team overall.${highVariance ? ' High variance from 3PT reliance—ML safer than spread if close.' : ''}`;
+                    const betterRank = rankDiff > 0 ? awayRank : homeRank;
+                    const worseRank = rankDiff > 0 ? homeRank : awayRank;
+                    takeaway = `${powerWinner} (#${betterRank}) has a ${Math.abs(rankDiff)}-spot edge over #${worseRank}.${highVariance ? ' 3PT reliance adds variance—factor into sizing.' : ''}`;
                   } else if (highVariance) {
-                    takeaway = 'Evenly matched teams with high 3PT reliance = volatile outcome. Spread carries significant risk.';
+                    takeaway = 'Evenly ranked teams with high 3PT reliance = volatile outcome. Spread carries significant risk.';
                   } else {
-                    takeaway = 'Evenly matched with predictable playing styles. Line value is key here.';
+                    takeaway = 'Similar power ratings with predictable styles. Look for line value.';
                   }
                   
                   return (
