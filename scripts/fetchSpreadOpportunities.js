@@ -220,6 +220,57 @@ function matchSpreadWithModels(spreadGames, matchedGames) {
 }
 
 /**
+ * Calculate unit size based on margin over spread
+ * Higher margin = higher conviction = more units
+ */
+function calculateSpreadUnits(marginOverSpread, odds) {
+  // Filter extreme favorites (odds worse than -500)
+  if (odds < -500) {
+    return { units: 0, tier: 'FILTERED', reason: 'Extreme favorite' };
+  }
+  
+  if (marginOverSpread >= 5) {
+    return { units: 3.0, tier: 'HIGH', reason: 'Strong spread coverage' };
+  } else if (marginOverSpread >= 3) {
+    return { units: 2.5, tier: 'GOOD', reason: 'Solid spread coverage' };
+  } else if (marginOverSpread >= 1.5) {
+    return { units: 2.0, tier: 'MODERATE', reason: 'Moderate spread coverage' };
+  } else {
+    return { units: 1.5, tier: 'LOW', reason: 'Thin spread coverage' };
+  }
+}
+
+/**
+ * Generate context for spread opportunity
+ */
+function generateSpreadContext(opp, unitInfo) {
+  const marginOver = opp.avgMargin - Math.abs(opp.spread);
+  const roundedMargin = Math.round(marginOver * 10) / 10;
+  
+  if (unitInfo.tier === 'HIGH') {
+    return {
+      title: `${opp.pickedTeam} Strong Spread Play`,
+      subtitle: `Models project +${roundedMargin} pts over spread • High conviction`
+    };
+  } else if (unitInfo.tier === 'GOOD') {
+    return {
+      title: `${opp.pickedTeam} Spread Value`,
+      subtitle: `Both models cover by ${roundedMargin}+ pts • Solid edge`
+    };
+  } else if (unitInfo.tier === 'MODERATE') {
+    return {
+      title: `${opp.pickedTeam} Spread Opportunity`,
+      subtitle: `Models aligned on spread coverage • Moderate conviction`
+    };
+  } else {
+    return {
+      title: `${opp.pickedTeam} Spread Lean`,
+      subtitle: `Thin margin over spread • Reduced allocation`
+    };
+  }
+}
+
+/**
  * Save or update spread-based moneyline bet in Firebase
  * 
  * Strategy:
@@ -271,11 +322,30 @@ async function saveSpreadOpportunityBet(opp) {
     return { action: 'upgraded', betId: evBetId };
   }
   
-  // No existing EV bet - Check if we already wrote a spread bet
-  const spreadBetId = `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${teamNorm}_(${side})`;
-  
   // Get moneyline odds for picked team
   const mlOdds = opp.pickedSide === 'away' ? opp.odds?.awayOdds : opp.odds?.homeOdds;
+  
+  // Calculate margin over spread
+  const marginOverSpread = Math.round((opp.avgMargin - Math.abs(opp.spread)) * 10) / 10;
+  
+  // Calculate units based on margin and filter extreme favorites
+  const unitInfo = calculateSpreadUnits(marginOverSpread, mlOdds);
+  
+  // Filter out extreme favorites
+  if (unitInfo.tier === 'FILTERED') {
+    console.log(`   ❌ FILTERED: ${opp.pickedTeam} (${mlOdds} odds - extreme favorite)`);
+    return { action: 'filtered', reason: unitInfo.reason };
+  }
+  
+  // Generate context for UI
+  const context = generateSpreadContext(opp, unitInfo);
+  
+  // Calculate win probability from odds for display
+  const winProb = mlOdds < 0 
+    ? Math.abs(mlOdds) / (Math.abs(mlOdds) + 100)
+    : 100 / (mlOdds + 100);
+  
+  const spreadBetId = `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${teamNorm}_(${side})`;
   
   // Create NEW bet with same structure as regular EV bets so it displays properly
   const betData = {
@@ -298,29 +368,38 @@ async function saveSpreadOpportunityBet(opp) {
     },
     
     // Spread analysis data
-    spreadAnalysis: spreadAnalysis,
+    spreadAnalysis: {
+      ...spreadAnalysis,
+      marginOverSpread: marginOverSpread,
+      unitTier: unitInfo.tier,
+      context: context
+    },
     
     prediction: {
       modelsAgree: true,
       spreadConfirmed: true,
-      confidence: 'HIGH',
-      unitSize: 2.0,
-      confidenceTier: 'GOOD',
-      grade: 'A',
-      simplifiedGrade: 'A',
+      confidence: unitInfo.tier,
+      unitSize: unitInfo.units,
+      confidenceTier: unitInfo.tier,
+      grade: unitInfo.tier === 'HIGH' ? 'A+' : unitInfo.tier === 'GOOD' ? 'A' : 'B+',
+      simplifiedGrade: unitInfo.tier === 'HIGH' || unitInfo.tier === 'GOOD' ? 'A' : 'B',
       bestTeam: opp.pickedTeam,
       bestBet: opp.pickedSide,
       bestOdds: mlOdds || 0,
-      bestEV: 0, // No EV calculation for spread-only bets
+      bestEV: marginOverSpread, // Use margin as proxy for value
       // Model data for UI display
-      ensembleAwayProb: opp.pickedSide === 'away' ? 0.6 : 0.4,
-      ensembleHomeProb: opp.pickedSide === 'home' ? 0.6 : 0.4,
+      ensembleAwayProb: opp.pickedSide === 'away' ? winProb : (1 - winProb),
+      ensembleHomeProb: opp.pickedSide === 'home' ? winProb : (1 - winProb),
+      marketAwayProb: opp.pickedSide === 'away' ? winProb : (1 - winProb),
+      marketHomeProb: opp.pickedSide === 'home' ? winProb : (1 - winProb),
       dratingsAwayScore: opp.game?.dratings?.awayScore || null,
       dratingsHomeScore: opp.game?.dratings?.homeScore || null,
       haslametricsAwayScore: opp.game?.haslametrics?.awayScore || null,
       haslametricsHomeScore: opp.game?.haslametrics?.homeScore || null,
       ensembleAwayScore: opp.game?.dratings?.awayScore || null,
-      ensembleHomeScore: opp.game?.dratings?.homeScore || null
+      ensembleHomeScore: opp.game?.dratings?.homeScore || null,
+      // Spread-specific context for UI
+      spreadContext: context
     },
     
     result: {
@@ -336,7 +415,8 @@ async function saveSpreadOpportunityBet(opp) {
   };
   
   await setDoc(evBetRef, betData);
-  console.log(`   ✅ NEW BET: ${opp.pickedTeam} ML (spread: ${opp.spread}, models: +${opp.avgMargin})`);
+  console.log(`   ✅ NEW: ${opp.pickedTeam} ML @ ${mlOdds}`);
+  console.log(`      Spread: ${opp.spread} | Margin: +${marginOverSpread} | ${unitInfo.units}u (${unitInfo.tier})`);
   return { action: 'created', betId: spreadBetId };
 }
 
@@ -435,17 +515,20 @@ async function findSpreadOpportunities() {
     let upgraded = 0;
     let created = 0;
     let skipped = 0;
+    let filtered = 0;
     
     for (const opp of qualityOpps) {
       const result = await saveSpreadOpportunityBet(opp);
       if (result?.action === 'upgraded') upgraded++;
       else if (result?.action === 'created') created++;
+      else if (result?.action === 'filtered') filtered++;
       else skipped++;
     }
     
     console.log(`\n📊 SPREAD OPPORTUNITY RESULTS:`);
     console.log(`   ⬆️  Upgraded existing EV bets: ${upgraded}`);
     console.log(`   ✅ New spread-only bets created: ${created}`);
+    console.log(`   ❌ Filtered (extreme favorites): ${filtered}`);
     console.log(`   🔒 Already processed: ${skipped}`);
     console.log('=============================================\n');
     
