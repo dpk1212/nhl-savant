@@ -261,15 +261,9 @@ async function saveSpreadOpportunityBet(opp) {
       return { action: 'already_confirmed', betId: evBetId };
     }
     
+    // ONLY add spreadAnalysis - DO NOT touch prediction or any other data!
     await setDoc(evBetRef, {
-      ...existingData,
-      spreadAnalysis: spreadAnalysis,
-      // Boost confidence since both EV AND spread align
-      prediction: {
-        ...existingData.prediction,
-        spreadConfirmed: true,
-        confidenceBoost: 'SPREAD_ALIGNED'
-      }
+      spreadAnalysis: spreadAnalysis
     }, { merge: true });
     
     console.log(`   ⬆️  UPGRADED: ${opp.pickedTeam} - Added spread confirmation to existing EV bet`);
