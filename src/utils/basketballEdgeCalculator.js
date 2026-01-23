@@ -137,6 +137,10 @@ export class BasketballEdgeCalculator {
       
       // Combined margin: sum of both (if they agree, it's additive; if they disagree, they partially cancel)
       combinedMargin = drateMargin + haslaMargin;
+      
+      // 🎯 CRITICAL: Check if both models support THE PICK (not just agree on winner)
+      // This is what determines if we should bet - both models must favor the picked team
+      // We'll set this after we know bestBet (below)
     }
     
     // Calculate market probability from odds
@@ -465,11 +469,20 @@ export class BasketballEdgeCalculator {
       return false;
     }
     
-    // FILTER 5: MODELS MUST BE ALIGNED (both D-Ratings and Haslametrics agree)
-    // This is the #1 predictor of profitable bets based on historical analysis
-    // CRITICAL: modelsAgree must be explicitly TRUE (not null, undefined, or false)
-    if (prediction.modelsAgree !== true) {
-      console.log(`   ❌ Filtered: Models NOT aligned (modelsAgree=${prediction.modelsAgree})`);
+    // FILTER 5: MODELS MUST SUPPORT THE PICK (not just agree on winner)
+    // If combined margin is negative, we're betting AGAINST what both models predict
+    // Combined margin: positive = away favored by both, negative = home favored by both
+    // bestBet tells us which side we're picking
+    const combinedMargin = prediction.combinedMargin;
+    const pickIsAway = prediction.bestBet === 'away';
+    
+    // Models support the pick if:
+    // - Picking away AND combined margin > 0 (both models favor away)
+    // - Picking home AND combined margin < 0 (both models favor home)
+    const modelsSupportPick = (pickIsAway && combinedMargin > 0) || (!pickIsAway && combinedMargin < 0);
+    
+    if (!modelsSupportPick) {
+      console.log(`   ❌ Filtered: Models don't support pick (pick=${prediction.bestBet}, margin=${combinedMargin})`);
       return false;
     }
     
