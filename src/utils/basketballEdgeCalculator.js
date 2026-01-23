@@ -467,8 +467,9 @@ export class BasketballEdgeCalculator {
     
     // FILTER 5: MODELS MUST BE ALIGNED (both D-Ratings and Haslametrics agree)
     // This is the #1 predictor of profitable bets based on historical analysis
-    if (prediction.modelsAgree === false) {
-      console.log(`   ❌ Filtered: Models NOT aligned (D-Ratings and Haslametrics disagree)`);
+    // CRITICAL: modelsAgree must be explicitly TRUE (not null, undefined, or false)
+    if (prediction.modelsAgree !== true) {
+      console.log(`   ❌ Filtered: Models NOT aligned (modelsAgree=${prediction.modelsAgree})`);
       return false;
     }
     
