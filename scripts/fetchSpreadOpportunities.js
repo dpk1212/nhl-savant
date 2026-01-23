@@ -420,6 +420,7 @@ async function saveSpreadOpportunityBet(opp) {
       // Ensemble = average of both models
       ensembleAwayScore: Math.round(((opp.game?.dratings?.awayScore || 0) + (opp.game?.haslametrics?.awayScore || 0)) / 2 * 10) / 10,
       ensembleHomeScore: Math.round(((opp.game?.dratings?.homeScore || 0) + (opp.game?.haslametrics?.homeScore || 0)) / 2 * 10) / 10,
+      ensembleTotal: Math.round(((opp.game?.dratings?.awayScore || 0) + (opp.game?.haslametrics?.awayScore || 0) + (opp.game?.dratings?.homeScore || 0) + (opp.game?.haslametrics?.homeScore || 0)) / 2 * 10) / 10,
       // Spread-specific context for UI
       spreadContext: context
     },
