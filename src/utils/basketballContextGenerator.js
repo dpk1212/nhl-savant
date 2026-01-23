@@ -9,10 +9,11 @@
  * @param {Object} game - Game data with awayTeam, homeTeam, etc.
  * @param {Object} prediction - Prediction object with ensembleProb, bestEV, etc.
  * @param {Object} odds - Odds data with awayOdds, homeOdds
+ * @param {Object} bet - Optional Firebase bet data with spreadAnalysis
  * @returns {Object} Context with icon, title, subtitle
  */
-export function getBasketballContext(game, prediction, odds) {
-  const { 
+export function getBasketballContext(game, prediction, odds, bet = null) {
+  const {
     ensembleAwayProb,
     ensembleHomeProb,
     bestEV, 
@@ -22,6 +23,54 @@ export function getBasketballContext(game, prediction, odds) {
     ensembleHomeScore,
     bestBet // 'away' or 'home'
   } = prediction;
+  
+  // ============================================================
+  // SPREAD OPPORTUNITY CONTEXT (takes priority if present)
+  // ============================================================
+  // Check multiple places for spread data (game, prediction, or direct bet object)
+  const spreadAnalysis = game?.spreadAnalysis || bet?.spreadAnalysis || prediction?.spreadAnalysis;
+  const isSpreadOnly = game?.source === 'SPREAD_OPPORTUNITY' || bet?.source === 'SPREAD_OPPORTUNITY' || prediction?.spreadConfirmed;
+  
+  if (spreadAnalysis?.spreadConfirmed || isSpreadOnly) {
+    const marginOver = spreadAnalysis?.marginOverSpread || 0;
+    const spread = spreadAnalysis?.spread || 0;
+    const tier = spreadAnalysis?.unitTier || prediction?.confidenceTier || 'MODERATE';
+    const modelProb = (bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb) * 100;
+    
+    // HIGH tier - both models project strong coverage
+    if (tier === 'HIGH' || marginOver >= 5) {
+      return {
+        icon: '🎯',
+        title: `${bestTeam} Strong Spread Play`,
+        subtitle: `Models project +${marginOver.toFixed(1)} pts over ${spread} spread • High conviction`
+      };
+    }
+    
+    // GOOD tier - solid coverage
+    if (tier === 'GOOD' || marginOver >= 3) {
+      return {
+        icon: '💎',
+        title: `${bestTeam} Spread Value`,
+        subtitle: `Both models cover by +${marginOver.toFixed(1)} pts • ${modelProb.toFixed(0)}% to win`
+      };
+    }
+    
+    // MODERATE tier
+    if (tier === 'MODERATE' || marginOver >= 1.5) {
+      return {
+        icon: '📊',
+        title: `${bestTeam} Spread Opportunity`,
+        subtitle: `Models aligned +${marginOver.toFixed(1)} over spread • Moderate conviction`
+      };
+    }
+    
+    // LOW tier - thin margin
+    return {
+      icon: '💡',
+      title: `${bestTeam} Spread Lean`,
+      subtitle: `Thin +${marginOver.toFixed(1)} margin over spread • Conservative sizing`
+    };
+  }
   
   const isHome = bestBet === 'home';
   const modelProb = (bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb) * 100;
