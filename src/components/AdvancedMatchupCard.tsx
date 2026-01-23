@@ -578,11 +578,26 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
       </div>
 
       {/* ═══════════════════ DIVIDER ═══════════════════ */}
-      <div style={{ padding: `0 ${padding}`, margin: isMobile ? '8px 0' : '12px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
-          <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', fontWeight: '600' }}>MATCHUP DETAILS</div>
-          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+      <div style={{ padding: `0 ${padding}`, margin: isMobile ? '12px 0' : '16px 0' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '16px',
+          padding: isMobile ? '10px 0' : '12px 0'
+        }}>
+          <div style={{ flex: 1, height: '2px', background: 'linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.3))' }} />
+          <div style={{ 
+            fontSize: isMobile ? '11px' : '13px', 
+            color: 'white', 
+            letterSpacing: '0.15em', 
+            fontWeight: '800',
+            textShadow: '0 0 20px rgba(139, 92, 246, 0.5)',
+            background: 'linear-gradient(135deg, #C7D2FE 0%, #A78BFA 50%, #8B5CF6 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>MATCHUP DETAILS</div>
+          <div style={{ flex: 1, height: '2px', background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.4), transparent)' }} />
         </div>
       </div>
 
@@ -757,7 +772,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)', 
               borderBottom: '1px solid rgba(251, 191, 36, 0.2)' 
             }}>
-              <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.08em' }}>SHOOTING</span>
+              <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.08em' }}>SHOOTING PROFILE</span>
       </div>
             <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
               {[
