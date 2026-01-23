@@ -242,30 +242,36 @@ function calculateSpreadUnits(marginOverSpread, odds) {
 
 /**
  * Generate context for spread opportunity
+ * NOTE: We're betting the MONEYLINE, using spread coverage as our selection signal
  */
 function generateSpreadContext(opp, unitInfo) {
   const marginOver = opp.avgMargin - Math.abs(opp.spread);
   const roundedMargin = Math.round(marginOver * 10) / 10;
+  const winMargin = Math.round(opp.avgMargin);
   
   if (unitInfo.tier === 'HIGH') {
     return {
-      title: `${opp.pickedTeam} Strong Spread Play`,
-      subtitle: `Models project +${roundedMargin} pts over spread • High conviction`
+      icon: '🎯',
+      title: `${opp.pickedTeam} High Conviction`,
+      subtitle: `Both models project ${opp.pickedTeam} by ${winMargin}+ pts • Strong ML value`
     };
   } else if (unitInfo.tier === 'GOOD') {
     return {
-      title: `${opp.pickedTeam} Spread Value`,
-      subtitle: `Both models cover by ${roundedMargin}+ pts • Solid edge`
+      icon: '💎',
+      title: `${opp.pickedTeam} Model Consensus`,
+      subtitle: `Models aligned on ${opp.pickedTeam} win by ${winMargin} pts • Take ML`
     };
   } else if (unitInfo.tier === 'MODERATE') {
     return {
-      title: `${opp.pickedTeam} Spread Opportunity`,
-      subtitle: `Models aligned on spread coverage • Moderate conviction`
+      icon: '📊',
+      title: `${opp.pickedTeam} Models Aligned`,
+      subtitle: `Both models pick ${opp.pickedTeam} to win • ML opportunity`
     };
   } else {
     return {
-      title: `${opp.pickedTeam} Spread Lean`,
-      subtitle: `Thin margin over spread • Reduced allocation`
+      icon: '💡',
+      title: `${opp.pickedTeam} System Pick`,
+      subtitle: `Model consensus on winner • Conservative ML play`
     };
   }
 }
