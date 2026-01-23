@@ -576,34 +576,90 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     </span>
           </div>
                   
-                  {/* Contextual Insight - COMPACT */}
-                  <div style={{ 
-                    marginTop: isMobile ? '6px' : '10px',
-                    padding: isMobile ? '6px 10px' : '8px 12px',
-                    background: 'rgba(0,0,0,0.2)',
-                    borderRadius: '6px',
-                    borderLeft: `3px solid ${insightType === 'edge' ? '#10B981' : insightType === 'slight' ? '#60A5FA' : '#64748B'}`
-                  }}>
-                    <span style={{ 
-                      fontSize: isMobile ? '10px' : '11px', 
-                      color: insightType === 'edge' ? '#10B981' : insightType === 'slight' ? '#60A5FA' : 'rgba(255,255,255,0.5)',
-                      fontWeight: '600',
-                      marginRight: '6px'
-                    }}>
-                      {insightType === 'edge' ? '✓' : insightType === 'slight' ? '→' : '—'}
-                    </span>
-                    <span style={{ 
-                      fontSize: isMobile ? '10px' : '11px', 
-                      color: 'rgba(255,255,255,0.7)',
-                      lineHeight: '1.4'
-                    }}>
-                      {getInsight()}
-                    </span>
-              </div>
             </div>
               );
             })}
           </div>
+          
+          {/* CONSOLIDATED SMART SUMMARY */}
+          {(() => {
+            const overallGap = Math.abs(homeRank - awayRank);
+            const offGap = Math.abs(home.adjOff_rank - away.adjOff_rank);
+            const defGap = Math.abs(home.adjDef_rank - away.adjDef_rank);
+            const overallWinner = awayRank < homeRank ? awayAbbrev : homeAbbrev;
+            const offWinner = away.adjOff_rank < home.adjOff_rank ? awayAbbrev : homeAbbrev;
+            const defWinner = away.adjDef_rank < home.adjDef_rank ? awayAbbrev : homeAbbrev;
+            
+            // Determine dominant edge
+            const edges = [
+              { type: 'overall', gap: overallGap, winner: overallWinner },
+              { type: 'offense', gap: offGap, winner: offWinner },
+              { type: 'defense', gap: defGap, winner: defWinner }
+            ].filter(e => e.gap > 25).sort((a, b) => b.gap - a.gap);
+            
+            const hasSignificantEdge = edges.length > 0 && edges[0].gap > 50;
+            const dominantTeam = edges.length > 0 ? edges[0].winner : null;
+            const allSameWinner = offWinner === defWinner && defWinner === overallWinner;
+            
+            let summary = '';
+            if (allSameWinner && hasSignificantEdge) {
+              summary = `${dominantTeam} dominates across the board — clear favorite in this matchup`;
+            } else if (allSameWinner && overallGap > 25) {
+              summary = `${overallWinner} has advantages in all phases — should control pace and outcome`;
+            } else if (edges.length >= 2) {
+              const e1 = edges[0];
+              const e2 = edges[1];
+              if (e1.winner === e2.winner) {
+                summary = `${e1.winner} holds key edges in ${e1.type} and ${e2.type} — meaningful advantage`;
+              } else {
+                summary = `Split edges: ${e1.winner} better ${e1.type}, ${e2.winner} better ${e2.type} — game style matters`;
+              }
+            } else if (edges.length === 1) {
+              const e = edges[0];
+              summary = `${e.winner}'s ${e.type} advantage (+${e.gap}) could be the difference maker`;
+            } else {
+              summary = `Evenly matched across all phases — expect a competitive, close game`;
+            }
+            
+            return (
+              <div style={{ 
+                marginTop: isMobile ? '12px' : '16px',
+                padding: isMobile ? '10px 12px' : '12px 16px',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%)',
+                borderRadius: '10px',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px'
+              }}>
+                <span style={{ 
+                  fontSize: isMobile ? '11px' : '12px',
+                  color: hasSignificantEdge ? '#34D399' : '#A78BFA',
+                  fontWeight: '700'
+                }}>
+                  {hasSignificantEdge ? '✓' : '→'}
+                </span>
+                <div>
+                  <div style={{ 
+                    fontSize: isMobile ? '8px' : '9px',
+                    color: 'rgba(255,255,255,0.4)',
+                    letterSpacing: '0.1em',
+                    fontWeight: '600',
+                    marginBottom: '4px',
+                    textTransform: 'uppercase'
+                  }}>MATCHUP SUMMARY</div>
+                  <span style={{ 
+                    fontSize: isMobile ? '11px' : '12px', 
+                    color: 'rgba(255,255,255,0.85)',
+                    lineHeight: '1.5',
+                    fontWeight: '500'
+                  }}>
+                    {summary}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
