@@ -391,21 +391,27 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               
               return (
                 <div key={label}>
-                  {/* Category Header */}
+                  {/* Category Header - PROMINENT */}
                   <div style={{ 
                     textAlign: 'center',
-                    marginBottom: isMobile ? '12px' : '14px'
+                    marginBottom: isMobile ? '14px' : '18px',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                    border: '1px solid rgba(59, 130, 246, 0.25)',
+                    borderRadius: '8px',
+                    padding: isMobile ? '10px 12px' : '12px 16px'
                   }}>
                     <div style={{ 
-                      fontSize: isMobile ? '10px' : '11px', 
-                      color: 'rgba(255,255,255,0.5)', 
-                      letterSpacing: '0.12em',
-                      fontWeight: '700',
-                      marginBottom: '2px'
+                      fontSize: isMobile ? '11px' : '13px', 
+                      color: '#60A5FA',
+                      letterSpacing: '0.1em',
+                      fontWeight: '800',
+                      marginBottom: '3px',
+                      textTransform: 'uppercase'
                     }}>{label}</div>
                     <div style={{ 
-                      fontSize: isMobile ? '8px' : '9px', 
-                      color: 'rgba(255,255,255,0.3)'
+                      fontSize: isMobile ? '9px' : '10px', 
+                      color: 'rgba(255,255,255,0.5)',
+                      fontWeight: '500'
                     }}>{sublabel}</div>
                   </div>
                   
@@ -617,9 +623,13 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
         <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
           
           {/* SHOOTING CARD */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(251, 191, 36, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#FBBF24', letterSpacing: '0.1em' }}>SHOOTING</span>
+          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ 
+              padding: isMobile ? '12px 16px' : '14px 20px', 
+              background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)', 
+              borderBottom: '1px solid rgba(251, 191, 36, 0.2)' 
+            }}>
+              <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.08em' }}>SHOOTING</span>
       </div>
             <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
               {[
@@ -812,9 +822,13 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           </div>
 
           {/* BALL CONTROL CARD */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(239, 68, 68, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#F87171', letterSpacing: '0.1em' }}>BALL CONTROL</span>
+          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ 
+              padding: isMobile ? '12px 16px' : '14px 20px', 
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)', 
+              borderBottom: '1px solid rgba(239, 68, 68, 0.2)' 
+            }}>
+              <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: '#F87171', letterSpacing: '0.08em' }}>BALL CONTROL</span>
             </div>
             <div style={{ padding: isMobile ? '14px' : '18px' }}>
               <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
@@ -861,7 +875,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   : to.def > D1_AVG.to + 1.5
                   ? `${defAbbrev} forces turnovers (${to.def.toFixed(0)}%) — ball security matters`
                   : 'Ball control should be neutral in this matchup'}
-              </span>
+                </span>
               </div>
             </div>
 
