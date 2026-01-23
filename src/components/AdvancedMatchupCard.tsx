@@ -595,6 +595,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             const betterOffRank = Math.min(away.adjOff_rank, home.adjOff_rank);
             const betterDefRank = Math.min(away.adjDef_rank, home.adjDef_rank);
             
+            // Deterministic variety based on team names
+            const pickVariant = (arr: string[]) => arr[(awayRank + homeRank) % arr.length];
+            
             const allSameWinner = offWinner === defWinner && defWinner === overallWinner;
             const hasMajorEdge = overallGap > 100;
             const hasStrongEdge = overallGap > 50;
@@ -604,32 +607,102 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             let confidence: 'high' | 'medium' | 'low' = 'medium';
             
             if (allSameWinner && hasMajorEdge) {
-              headline = `${overallWinner} is the clear favorite here.`;
-              insight = `Ranked #${betterOverallRank} overall with elite marks on both ends of the floor, ${overallWinner} outclasses ${overallLoser} in every phase. This is a significant mismatch — expect them to control tempo and pull away.`;
+              headline = pickVariant([
+                `${overallWinner} is the clear favorite here.`,
+                `This one's lopsided on paper.`,
+                `${overallWinner} should dominate.`,
+                `Expect ${overallWinner} to control this one.`
+              ]);
+              insight = pickVariant([
+                `Ranked #${betterOverallRank} overall with elite marks on both ends, ${overallWinner} outclasses ${overallLoser} in every phase. This is a significant mismatch — expect them to control tempo and pull away.`,
+                `The gap here is massive. ${overallWinner} (#${betterOverallRank}) is simply a better team across the board. ${overallLoser} would need an exceptional performance and some luck to hang around.`,
+                `${overallWinner} brings a top-${betterOverallRank} overall rating with no exploitable weaknesses. They're better offensively, defensively, and on the efficiency metrics. This should be comfortable.`,
+                `When you're ranked #${betterOverallRank} and your opponent is #${worseOverallRank}, the data speaks for itself. ${overallWinner} is the superior squad and should prove it.`
+              ]);
               confidence = 'high';
             } else if (allSameWinner && hasStrongEdge) {
-              headline = `${overallWinner} holds meaningful advantages.`;
-              insight = `With a #${betterOverallRank} power rating and edges in both offense (#${betterOffRank}) and defense (#${betterDefRank}), ${overallWinner} should dictate the pace. ${overallLoser} will need to overperform to stay competitive.`;
+              headline = pickVariant([
+                `${overallWinner} holds meaningful advantages.`,
+                `The metrics strongly favor ${overallWinner}.`,
+                `${overallWinner} looks like the better team.`,
+                `Edge to ${overallWinner} across the board.`
+              ]);
+              insight = pickVariant([
+                `With a #${betterOverallRank} power rating and edges in both offense (#${betterOffRank}) and defense (#${betterDefRank}), ${overallWinner} should dictate the pace. ${overallLoser} will need to overperform to stay competitive.`,
+                `${overallWinner} grades out better in every major category. Their #${betterOffRank} offense combined with #${betterDefRank} defense creates problems for ${overallLoser} on both ends.`,
+                `The numbers paint a clear picture: ${overallWinner} is the more complete team. They can score, they can defend, and they control the efficiency battle.`,
+                `${overallLoser} faces an uphill climb here. ${overallWinner} owns advantages on offense, defense, and overall power rating — that's tough to overcome.`
+              ]);
               confidence = 'high';
             } else if (allSameWinner && overallGap > 25) {
-              headline = `${overallWinner} has the edge, but it's not a runaway.`;
-              insight = `The metrics favor ${overallWinner} across the board, though the gap isn't massive. They're the better team on paper, but ${overallLoser} has the talent to make this interesting if they execute.`;
+              headline = pickVariant([
+                `${overallWinner} has the edge, but it's not a runaway.`,
+                `Lean ${overallWinner}, though it's closer than it looks.`,
+                `${overallWinner} is favored, but not by much.`,
+                `Slight advantage to ${overallWinner}.`
+              ]);
+              insight = pickVariant([
+                `The metrics favor ${overallWinner} across the board, though the gap isn't massive. They're the better team on paper, but ${overallLoser} has the talent to make this interesting if they execute.`,
+                `${overallWinner} grades out ahead in every phase, but we're talking margins here, not chasms. A hot shooting night from ${overallLoser} could flip the script.`,
+                `On balance, ${overallWinner} is the more efficient team. But the difference isn't so large that ${overallLoser} can't compete — they'll need to bring their A-game.`,
+                `The edge goes to ${overallWinner} based on the analytics, but this isn't a layup. ${overallLoser} has enough talent to make this a game.`
+              ]);
               confidence = 'medium';
             } else if (offWinner !== defWinner && offGap > 50 && defGap > 50) {
-              headline = `A fascinating style clash.`;
-              insight = `${offWinner} brings the firepower (#${betterOffRank} offense) while ${defWinner} wins with defense (#${betterDefRank}). Pace will be the X-factor — a fast game favors ${offWinner}, a grind favors ${defWinner}.`;
+              headline = pickVariant([
+                `A fascinating style clash.`,
+                `Offense vs. defense — classic battle.`,
+                `Different strengths make this intriguing.`,
+                `This is a pace-of-play game.`
+              ]);
+              insight = pickVariant([
+                `${offWinner} brings the firepower (#${betterOffRank} offense) while ${defWinner} wins with defense (#${betterDefRank}). Pace will be the X-factor — a fast game favors ${offWinner}, a grind favors ${defWinner}.`,
+                `Two different philosophies collide. ${offWinner} wants to run and score; ${defWinner} wants to slow it down and suffocate. Whoever dictates tempo likely wins.`,
+                `${offWinner}'s elite offense (#${betterOffRank}) meets ${defWinner}'s stingy defense (#${betterDefRank}). The team that imposes its style wins this chess match.`,
+                `Style matchup alert: ${offWinner} can light up the scoreboard, but ${defWinner} makes every point feel like a struggle. Tempo is everything here.`
+              ]);
               confidence = 'medium';
             } else if (offWinner !== defWinner) {
-              headline = `Split edges make this a toss-up.`;
-              insight = `${offWinner} has the offensive advantage, ${defWinner} the defensive edge. Neither team dominates both phases, so execution and game flow will likely decide the outcome.`;
+              headline = pickVariant([
+                `Split edges make this a toss-up.`,
+                `Neither team has a clear advantage.`,
+                `Balanced matchup with no obvious favorite.`,
+                `This one could go either way.`
+              ]);
+              insight = pickVariant([
+                `${offWinner} has the offensive advantage, ${defWinner} the defensive edge. Neither team dominates both phases, so execution and game flow will likely decide the outcome.`,
+                `The strengths offset: ${offWinner} scores more efficiently, but ${defWinner} prevents points better. When advantages cancel out, it comes down to who plays better on the night.`,
+                `No team owns both sides of the ball here. ${offWinner} can put up points, ${defWinner} can take them away. Classic coin-flip territory.`,
+                `Split edges create uncertainty. ${offWinner} controls offense, ${defWinner} controls defense — and neither has enough margin to feel confident.`
+              ]);
               confidence = 'low';
             } else if (overallGap > 25) {
-              headline = `${overallWinner} is the slight favorite.`;
-              insight = `The overall metrics lean toward ${overallWinner} (#${betterOverallRank} vs #${worseOverallRank}), but this isn't a dominant advantage. Expect a competitive game where either team could find a way.`;
+              headline = pickVariant([
+                `${overallWinner} is the slight favorite.`,
+                `Give the edge to ${overallWinner}.`,
+                `${overallWinner} has the analytics advantage.`,
+                `Lean toward ${overallWinner} here.`
+              ]);
+              insight = pickVariant([
+                `The overall metrics lean toward ${overallWinner} (#${betterOverallRank} vs #${worseOverallRank}), but this isn't a dominant advantage. Expect a competitive game where either team could find a way.`,
+                `${overallWinner} grades out higher on the power ratings, though the margin is modest. This is a game that could swing on a few key possessions.`,
+                `The data gives ${overallWinner} the nod, but not by much. Both teams have paths to victory — this should be entertaining.`,
+                `${overallWinner} (#${betterOverallRank}) holds a slight edge over ${overallLoser} (#${worseOverallRank}). Not enough to feel strongly about, but the lean is there.`
+              ]);
               confidence = 'medium';
             } else {
-              headline = `True toss-up matchup.`;
-              insight = `The numbers say these teams are evenly matched across all phases. Home court, momentum, and individual performances will matter more than usual. Don't be surprised by any outcome.`;
+              headline = pickVariant([
+                `True toss-up matchup.`,
+                `The numbers say pick 'em.`,
+                `Can't separate these two.`,
+                `About as even as it gets.`
+              ]);
+              insight = pickVariant([
+                `The numbers say these teams are evenly matched across all phases. Home court, momentum, and individual performances will matter more than usual. Don't be surprised by any outcome.`,
+                `When the metrics can't find an edge, it comes down to intangibles. Who wants it more? Who makes the big plays? That's what will decide this one.`,
+                `Statistically, there's nothing to separate these teams. Expect a competitive battle where execution and adjustments will be the difference.`,
+                `The analytics shrug at this one. Both teams grade out similarly — this is a pure game-day performance matchup.`
+              ]);
               confidence = 'low';
             }
             
