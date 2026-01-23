@@ -321,7 +321,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
           border: '1px solid rgba(255,255,255,0.04)'
         }}>
           {/* Comparison Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '24px' : '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '24px' }}>
             {[
               { label: 'POWER RATING', sublabel: 'Overall Team Strength', awayRank: awayRank, homeRank: homeRank, type: 'overall', color: '#A78BFA', colorLight: 'rgba(167, 139, 250, 0.15)', colorBorder: 'rgba(167, 139, 250, 0.3)' },
               { label: 'OFFENSIVE EFFICIENCY', sublabel: 'Scoring Ability (pts/100)', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank, type: 'offense', color: '#34D399', colorLight: 'rgba(52, 211, 153, 0.12)', colorBorder: 'rgba(52, 211, 153, 0.25)' },
@@ -392,72 +392,72 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
               return (
                 <div key={label} style={{
                   background: idx > 0 ? 'transparent' : 'transparent',
-                  paddingTop: idx > 0 ? (isMobile ? '8px' : '12px') : 0,
+                  paddingTop: idx > 0 ? (isMobile ? '6px' : '10px') : 0,
                   borderTop: idx > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                 }}>
                   {/* Category Header - COLOR CODED */}
                   <div style={{ 
                     textAlign: 'center',
-                    marginBottom: isMobile ? '16px' : '20px',
+                    marginBottom: isMobile ? '10px' : '14px',
                     background: `linear-gradient(135deg, ${colorLight} 0%, transparent 100%)`,
                     border: `1px solid ${colorBorder}`,
-                    borderRadius: '10px',
-                    padding: isMobile ? '12px 14px' : '14px 18px',
+                    borderRadius: '8px',
+                    padding: isMobile ? '8px 12px' : '10px 16px',
                     boxShadow: `0 2px 12px ${colorLight}`
                   }}>
                     <div style={{ 
-                      fontSize: isMobile ? '12px' : '14px', 
+                      fontSize: isMobile ? '11px' : '13px', 
                       color: sectionColor,
-                      letterSpacing: '0.12em',
+                      letterSpacing: '0.1em',
                       fontWeight: '800',
-                      marginBottom: '4px',
+                      marginBottom: '2px',
                       textTransform: 'uppercase',
                       textShadow: `0 0 20px ${sectionColor}40`
                     }}>{label}</div>
                     <div style={{ 
-                      fontSize: isMobile ? '9px' : '10px', 
+                      fontSize: isMobile ? '8px' : '9px', 
                       color: 'rgba(255,255,255,0.5)',
                       fontWeight: '500'
                     }}>{sublabel}</div>
                   </div>
                   
-                  {/* Row Header with Tiers - LARGER RANKINGS */}
+                  {/* Row Header with Tiers - COMPACT */}
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    marginBottom: isMobile ? '10px' : '12px'
+                    marginBottom: isMobile ? '6px' : '10px'
                   }}>
                     {/* Away Team */}
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: isMobile ? '8px' : '12px',
-                      padding: isMobile ? '8px 10px' : '10px 14px',
+                      gap: isMobile ? '6px' : '10px',
+                      padding: isMobile ? '6px 8px' : '8px 12px',
                       background: awayBetter ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: awayBetter ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid transparent'
                     }}>
                       <span style={{ 
-                        fontSize: isMobile ? '20px' : '24px', 
+                        fontSize: isMobile ? '18px' : '22px', 
                         fontWeight: '800', 
                         color: awayTier.color,
                         fontFamily: 'ui-monospace, monospace',
                         textShadow: awayBetter ? `0 0 15px ${awayTier.color}50` : 'none'
                       }}>#{aRank}</span>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span style={{ 
-                            fontSize: isMobile ? '11px' : '13px', 
+                            fontSize: isMobile ? '10px' : '12px', 
                             fontWeight: '700', 
                             color: awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
                           }}>{awayAbbrev}</span>
                           {awayBetter && (
-                            <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '700' }}>✓</span>
+                            <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓</span>
                           )}
                         </div>
                         <span style={{ 
-                          fontSize: isMobile ? '9px' : '10px',
+                          fontSize: isMobile ? '8px' : '9px',
                           color: awayTier.color,
                           fontWeight: '600'
                         }}>Top {100 - awayPercentile}%</span>
@@ -476,33 +476,33 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: isMobile ? '8px' : '12px', 
+                      gap: isMobile ? '6px' : '10px', 
                       flexDirection: 'row-reverse',
-                      padding: isMobile ? '8px 10px' : '10px 14px',
+                      padding: isMobile ? '6px 8px' : '8px 12px',
                       background: !awayBetter ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: !awayBetter ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid transparent'
                     }}>
                       <span style={{ 
-                        fontSize: isMobile ? '20px' : '24px', 
+                        fontSize: isMobile ? '18px' : '22px', 
                         fontWeight: '800', 
                         color: homeTier.color,
                         fontFamily: 'ui-monospace, monospace',
                         textShadow: !awayBetter ? `0 0 15px ${homeTier.color}50` : 'none'
                       }}>#{hRank}</span>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
                           {!awayBetter && (
-                            <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '700' }}>✓</span>
+                            <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓</span>
                           )}
                           <span style={{ 
-                            fontSize: isMobile ? '11px' : '13px', 
+                            fontSize: isMobile ? '10px' : '12px', 
                             fontWeight: '700', 
                             color: !awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
                           }}>{homeAbbrev}</span>
                         </div>
                         <span style={{ 
-                          fontSize: isMobile ? '9px' : '10px',
+                          fontSize: isMobile ? '8px' : '9px',
                           color: homeTier.color,
                           fontWeight: '600'
                         }}>Top {100 - homePercentile}%</span>
@@ -513,8 +513,8 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                   {/* Comparison Bar */}
                   <div style={{ 
                     position: 'relative', 
-                    height: isMobile ? '8px' : '10px', 
-                    borderRadius: '5px', 
+                    height: isMobile ? '6px' : '8px', 
+                    borderRadius: '4px', 
                     overflow: 'hidden',
                     background: 'rgba(0,0,0,0.4)'
                   }}>
@@ -550,22 +550,22 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     }} />
                   </div>
                   
-                  {/* Gap indicator - ELEVATED */}
+                  {/* Gap indicator - COMPACT */}
                   <div style={{ 
                     textAlign: 'center', 
-                    marginTop: isMobile ? '12px' : '14px'
+                    marginTop: isMobile ? '8px' : '10px'
                   }}>
                     <span style={{
                       display: 'inline-block',
-                      padding: isMobile ? '6px 16px' : '7px 20px',
-                      borderRadius: '20px',
+                      padding: isMobile ? '4px 12px' : '5px 16px',
+                      borderRadius: '16px',
                       background: gap > 50 
                         ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)' 
                         : gap > 25 
                           ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%)' 
                           : 'rgba(255,255,255,0.04)',
                       border: gap > 50 ? '1px solid rgba(16, 185, 129, 0.35)' : gap > 25 ? '1px solid rgba(59, 130, 246, 0.25)' : '1px solid rgba(255,255,255,0.08)',
-                      fontSize: isMobile ? '11px' : '12px',
+                      fontSize: isMobile ? '10px' : '11px',
                       fontWeight: '800',
                       color: gap > 50 ? '#34D399' : gap > 25 ? '#60A5FA' : 'rgba(255,255,255,0.5)',
                       fontFamily: 'ui-monospace, monospace',
@@ -576,12 +576,12 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
                     </span>
           </div>
                   
-                  {/* Contextual Insight - Clean with symbol prefix */}
+                  {/* Contextual Insight - COMPACT */}
                   <div style={{ 
-                    marginTop: isMobile ? '10px' : '12px',
-                    padding: isMobile ? '8px 12px' : '10px 14px',
+                    marginTop: isMobile ? '6px' : '10px',
+                    padding: isMobile ? '6px 10px' : '8px 12px',
                     background: 'rgba(0,0,0,0.2)',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     borderLeft: `3px solid ${insightType === 'edge' ? '#10B981' : insightType === 'slight' ? '#60A5FA' : '#64748B'}`
                   }}>
                     <span style={{ 
