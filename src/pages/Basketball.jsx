@@ -2601,11 +2601,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         {/* Dynamic Pick Context */}
         {(() => {
           const isPositiveEV = pred.bestEV > 0;
-          // Get bet from betsMap to pass spread data to context generator
-          const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
-          const betKey = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
-          const bet = betsMap.get(betKey);
-          const context = getBasketballContext(game, pred, odds, bet);
+          const context = getBasketballContext(game, pred, odds);
           
           return (
             <div style={{ 
