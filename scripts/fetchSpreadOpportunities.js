@@ -383,27 +383,25 @@ async function findSpreadOpportunities() {
     const spreadGames = parseSpreadData(spreadResult.markdown);
     console.log(`📋 Parsed ${spreadGames.length} games with spreads\n`);
     
-    // 3. Load model predictions (use existing data)
-    console.log('📂 Loading model predictions...');
+    // 3. Load model predictions AND existing odds (use already-scraped data)
+    console.log('📂 Loading model predictions and odds...');
     const haslaMarkdown = await fs.readFile(join(__dirname, '../public/haslametrics.md'), 'utf8');
     const drateMarkdown = await fs.readFile(join(__dirname, '../public/dratings.md'), 'utf8');
     const bartMarkdown = await fs.readFile(join(__dirname, '../public/Bart.md'), 'utf8');
     const csvContent = await fs.readFile(join(__dirname, '../public/basketball_teams.csv'), 'utf8');
     
+    // Load existing moneyline odds from normal fetch
+    const { parseBasketballOdds } = await import('../src/utils/basketballOddsParser.js');
+    const oddsMarkdown = await fs.readFile(join(__dirname, '../public/basketball_odds.md'), 'utf8');
+    const existingOdds = parseBasketballOdds(oddsMarkdown);
+    console.log(`   📊 Loaded ${existingOdds.length} games with moneyline odds`);
+    
     const haslaData = parseHaslametrics(haslaMarkdown);
     const dratePreds = parseDRatings(drateMarkdown);
     const bartData = parseBarttorvik(bartMarkdown);
     
-    // Create minimal odds structure for matching
-    const oddsGames = spreadGames.map(sg => ({
-      awayTeam: sg.awayTeam,
-      homeTeam: sg.homeTeam,
-      awayOdds: null,
-      homeOdds: null,
-      gameTime: sg.date
-    }));
-    
-    const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, bartData, csvContent);
+    // Use existing odds for matching (has real moneyline odds)
+    const matchedGames = matchGamesWithCSV(existingOdds, haslaData, dratePreds, bartData, csvContent);
     console.log(`✅ Matched ${matchedGames.length} games with model data\n`);
     
     // 4. Find spread opportunities
