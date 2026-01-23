@@ -589,32 +589,160 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
 {/* ═══════════════════ PREMIUM MATCHUP DETAILS ═══════════════════ */}
       <div style={{ padding: `0 ${padding} ${padding}` }}>
         
-        {/* Header with FLIP */}
+        {/* ELEVATED Efficiency Comparison Header */}
         <div style={{ 
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: isMobile ? '16px' : '20px',
-          padding: isMobile ? '12px 14px' : '14px 18px',
-          background: 'rgba(15, 23, 42, 0.4)',
-          borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.04)'
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
+          borderRadius: isMobile ? '14px' : '16px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
         }}>
-          <div>
-            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{offAbbrev}</div>
-            <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#34D399', fontFamily: 'ui-monospace, monospace' }}>
-              {offTeam.adjOff?.toFixed(1) || '—'} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
-            </div>
+          {/* Section Label */}
+          <div style={{
+            padding: isMobile ? '8px 14px' : '10px 18px',
+            background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 50%, rgba(99, 102, 241, 0.1) 100%)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}>
+            <div style={{ width: '40px', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5))' }} />
+            <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: 'rgba(199, 210, 254, 0.8)', letterSpacing: '0.12em' }}>EFFICIENCY COMPARISON</span>
+            <div style={{ width: '40px', height: '1px', background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.5), transparent)' }} />
           </div>
 
-          <button onClick={() => setView(isAwayOffView ? 'homeOff_awayDef' : 'awayOff_homeDef')}
-            style={{ padding: isMobile ? '8px 14px' : '10px 18px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <ArrowRightLeft size={isMobile ? 12 : 14} color="#A78BFA" />
-            <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: '#C7D2FE' }}>FLIP</span>
-          </button>
-          
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'white' }}>{defAbbrev}</div>
-            <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#F87171', fontFamily: 'ui-monospace, monospace' }}>
-              {defTeam.adjDef?.toFixed(1) || '—'} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>pts/100</span>
+          {/* Main Stats Row */}
+          <div style={{ 
+            display: 'flex', alignItems: 'stretch', justifyContent: 'space-between',
+            padding: isMobile ? '16px 14px' : '20px 24px'
+          }}>
+            {/* OFFENSE SIDE */}
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: isMobile ? '10px' : '11px', 
+                fontWeight: '700', 
+                color: 'rgba(255,255,255,0.6)', 
+                marginBottom: '4px',
+                letterSpacing: '0.05em'
+              }}>
+                {offAbbrev} <span style={{ color: '#34D399' }}>OFFENSE</span>
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '28px' : '36px', 
+                fontWeight: '800', 
+                background: 'linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: 'ui-monospace, monospace',
+                lineHeight: 1,
+                textShadow: '0 0 40px rgba(52, 211, 153, 0.3)'
+              }}>
+                {offTeam.adjOff?.toFixed(1) || '—'}
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '8px' : '9px', 
+                color: 'rgba(52, 211, 153, 0.6)', 
+                fontWeight: '600',
+                marginTop: '2px',
+                letterSpacing: '0.08em'
+              }}>PTS/100 POSS</div>
+            </div>
+
+            {/* CENTER DIVIDER & FLIP */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '0 12px',
+              position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent 100%)'
+              }} />
+              <button onClick={() => setView(isAwayOffView ? 'homeOff_awayDef' : 'awayOff_homeDef')}
+                style={{ 
+                  padding: isMobile ? '8px 12px' : '10px 16px', 
+                  borderRadius: '10px', 
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%)', 
+                  border: '1px solid rgba(139, 92, 246, 0.3)', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  boxShadow: '0 2px 10px rgba(139, 92, 246, 0.2)',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                <ArrowRightLeft size={isMobile ? 12 : 14} color="#A78BFA" />
+                <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: '#C7D2FE' }}>FLIP</span>
+              </button>
+              {/* Differential Badge */}
+              {(() => {
+                const diff = (offTeam.adjOff || 0) - (defTeam.adjDef || 0);
+                const isAdvantage = diff > 0;
+                return (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: isMobile ? '3px 8px' : '4px 10px',
+                    borderRadius: '6px',
+                    background: isAdvantage 
+                      ? 'linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)'
+                      : 'linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%)',
+                    border: `1px solid ${isAdvantage ? 'rgba(52, 211, 153, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`,
+                  }}>
+                    <span style={{
+                      fontSize: isMobile ? '10px' : '11px',
+                      fontWeight: '800',
+                      color: isAdvantage ? '#34D399' : '#F87171',
+                      fontFamily: 'ui-monospace, monospace'
+                    }}>
+                      {isAdvantage ? '+' : ''}{diff.toFixed(1)}
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+            
+            {/* DEFENSE SIDE */}
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: isMobile ? '10px' : '11px', 
+                fontWeight: '700', 
+                color: 'rgba(255,255,255,0.6)', 
+                marginBottom: '4px',
+                letterSpacing: '0.05em'
+              }}>
+                {defAbbrev} <span style={{ color: '#F87171' }}>DEFENSE</span>
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '28px' : '36px', 
+                fontWeight: '800', 
+                background: 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: 'ui-monospace, monospace',
+                lineHeight: 1,
+                textShadow: '0 0 40px rgba(248, 113, 113, 0.3)'
+              }}>
+                {defTeam.adjDef?.toFixed(1) || '—'}
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '8px' : '9px', 
+                color: 'rgba(248, 113, 113, 0.6)', 
+                fontWeight: '600',
+                marginTop: '2px',
+                letterSpacing: '0.08em'
+              }}>PTS/100 ALLOWED</div>
             </div>
           </div>
         </div>
