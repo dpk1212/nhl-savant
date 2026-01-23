@@ -2601,14 +2601,16 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         {/* Dynamic Pick Context */}
         {(() => {
           const isPositiveEV = pred.bestEV > 0;
+          const isSystemPick = pred.spreadContext?.title; // Spread-based system picks
+          const showPositive = isPositiveEV || isSystemPick; // Green for EV+ OR system picks
           const context = getBasketballContext(game, pred, odds);
           
           return (
             <div style={{ 
-              background: isPositiveEV
+              background: showPositive
                 ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
                 : 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-              border: `1px solid ${isPositiveEV ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+              border: `1px solid ${showPositive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
               borderRadius: '8px',
               padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
               marginBottom: isMobile ? '0.5rem' : '0.75rem',
@@ -2631,7 +2633,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 <div style={{ 
                   fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '800',
-                  color: isPositiveEV ? '#10B981' : '#EF4444',
+                  color: showPositive ? '#10B981' : '#EF4444',
                   marginBottom: '0.25rem',
                   letterSpacing: '-0.01em'
                 }}>
