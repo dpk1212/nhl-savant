@@ -25,33 +25,35 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
   } = prediction;
   
   // ============================================================
-  // SPREAD OPPORTUNITY CONTEXT (takes priority if present)
+  // SPREAD-ONLY BETS (no EV, just spread coverage → bet moneyline)
+  // Only use spread context if this is PURELY a spread opportunity (no EV)
+  // EV bets with spread confirmation should use normal EV context below
   // ============================================================
-  // Check multiple places for spread data (game, prediction, or direct bet object)
   const spreadAnalysis = game?.spreadAnalysis || bet?.spreadAnalysis || prediction?.spreadAnalysis;
-  const isSpreadOnly = game?.source === 'SPREAD_OPPORTUNITY' || bet?.source === 'SPREAD_OPPORTUNITY' || prediction?.spreadConfirmed;
+  const isSpreadOnlyBet = (game?.source === 'SPREAD_OPPORTUNITY' || bet?.source === 'SPREAD_OPPORTUNITY') 
+                          && (bestEV <= 0 || bestEV === undefined);
   
-  if (spreadAnalysis?.spreadConfirmed || isSpreadOnly) {
+  if (isSpreadOnlyBet && spreadAnalysis?.spreadConfirmed) {
     const marginOver = spreadAnalysis?.marginOverSpread || 0;
     const spread = spreadAnalysis?.spread || 0;
     const tier = spreadAnalysis?.unitTier || prediction?.confidenceTier || 'MODERATE';
     const modelProb = (bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb) * 100;
     
-    // HIGH tier - both models project strong coverage
+    // HIGH tier - both models project strong coverage → Moneyline bet
     if (tier === 'HIGH' || marginOver >= 5) {
       return {
         icon: '🎯',
-        title: `${bestTeam} Strong Spread Play`,
-        subtitle: `Models project +${marginOver.toFixed(1)} pts over ${spread} spread • High conviction`
+        title: `${bestTeam} Model Alignment`,
+        subtitle: `Both models project ${bestTeam} by ${Math.abs(marginOver + Math.abs(spread)).toFixed(0)}+ pts • Moneyline value`
       };
     }
     
-    // GOOD tier - solid coverage
+    // GOOD tier - solid coverage → Moneyline bet
     if (tier === 'GOOD' || marginOver >= 3) {
       return {
         icon: '💎',
-        title: `${bestTeam} Spread Value`,
-        subtitle: `Both models cover by +${marginOver.toFixed(1)} pts • ${modelProb.toFixed(0)}% to win`
+        title: `${bestTeam} Undervalued Pick`,
+        subtitle: `Close game analysis favors ${bestTeam} • ${modelProb.toFixed(0)}% with system agreement`
       };
     }
     
@@ -59,16 +61,16 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
     if (tier === 'MODERATE' || marginOver >= 1.5) {
       return {
         icon: '📊',
-        title: `${bestTeam} Spread Opportunity`,
-        subtitle: `Models aligned +${marginOver.toFixed(1)} over spread • Moderate conviction`
+        title: `${bestTeam} System Lean`,
+        subtitle: `Models aligned on ${bestTeam} • ${modelProb.toFixed(0)}% moneyline value`
       };
     }
     
     // LOW tier - thin margin
     return {
       icon: '💡',
-      title: `${bestTeam} Spread Lean`,
-      subtitle: `Thin +${marginOver.toFixed(1)} margin over spread • Conservative sizing`
+      title: `${bestTeam} Marginal Edge`,
+        subtitle: `Thin model consensus • ${modelProb.toFixed(0)}% with reduced allocation`
     };
   }
   
