@@ -469,20 +469,23 @@ export class BasketballEdgeCalculator {
       return false;
     }
     
-    // FILTER 5: MODELS MUST SUPPORT THE PICK (not just agree on winner)
-    // If combined margin is negative, we're betting AGAINST what both models predict
-    // Combined margin: positive = away favored by both, negative = home favored by both
-    // bestBet tells us which side we're picking
+    // FILTER 5: BOTH MODELS MUST AGREE AND SUPPORT THE PICK
+    // modelsAgree = true means D-Ratings and Haslametrics predict same team wins
+    // But we also need to be betting ON that team, not against it!
+    // combinedMargin > 0 means models favor away, < 0 means models favor home
     const combinedMargin = prediction.combinedMargin;
     const pickIsAway = prediction.bestBet === 'away';
     
-    // Models support the pick if:
-    // - Picking away AND combined margin > 0 (both models favor away)
-    // - Picking home AND combined margin < 0 (both models favor home)
-    const modelsSupportPick = (pickIsAway && combinedMargin > 0) || (!pickIsAway && combinedMargin < 0);
+    // Check if we're betting on the team the models predict to win
+    const bettingOnPredictedWinner = (pickIsAway && combinedMargin > 0) || (!pickIsAway && combinedMargin < 0);
     
-    if (!modelsSupportPick) {
-      console.log(`   ❌ Filtered: Models don't support pick (pick=${prediction.bestBet}, margin=${combinedMargin})`);
+    if (prediction.modelsAgree !== true) {
+      console.log(`   ❌ Filtered: Models SPLIT (modelsAgree=${prediction.modelsAgree})`);
+      return false;
+    }
+    
+    if (!bettingOnPredictedWinner) {
+      console.log(`   ❌ Filtered: Betting AGAINST predicted winner (pick=${prediction.bestBet}, margin=${combinedMargin})`);
       return false;
     }
     
