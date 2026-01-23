@@ -581,81 +581,110 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: Advanced
             })}
           </div>
           
-          {/* CONSOLIDATED SMART SUMMARY */}
+          {/* PREMIUM MATCHUP INSIGHT */}
           {(() => {
             const overallGap = Math.abs(homeRank - awayRank);
             const offGap = Math.abs(home.adjOff_rank - away.adjOff_rank);
             const defGap = Math.abs(home.adjDef_rank - away.adjDef_rank);
             const overallWinner = awayRank < homeRank ? awayAbbrev : homeAbbrev;
+            const overallLoser = awayRank < homeRank ? homeAbbrev : awayAbbrev;
             const offWinner = away.adjOff_rank < home.adjOff_rank ? awayAbbrev : homeAbbrev;
             const defWinner = away.adjDef_rank < home.adjDef_rank ? awayAbbrev : homeAbbrev;
+            const betterOverallRank = Math.min(awayRank, homeRank);
+            const worseOverallRank = Math.max(awayRank, homeRank);
+            const betterOffRank = Math.min(away.adjOff_rank, home.adjOff_rank);
+            const betterDefRank = Math.min(away.adjDef_rank, home.adjDef_rank);
             
-            // Determine dominant edge
-            const edges = [
-              { type: 'overall', gap: overallGap, winner: overallWinner },
-              { type: 'offense', gap: offGap, winner: offWinner },
-              { type: 'defense', gap: defGap, winner: defWinner }
-            ].filter(e => e.gap > 25).sort((a, b) => b.gap - a.gap);
-            
-            const hasSignificantEdge = edges.length > 0 && edges[0].gap > 50;
-            const dominantTeam = edges.length > 0 ? edges[0].winner : null;
             const allSameWinner = offWinner === defWinner && defWinner === overallWinner;
+            const hasMajorEdge = overallGap > 100;
+            const hasStrongEdge = overallGap > 50;
             
-            let summary = '';
-            if (allSameWinner && hasSignificantEdge) {
-              summary = `${dominantTeam} dominates across the board — clear favorite in this matchup`;
+            let headline = '';
+            let insight = '';
+            let confidence: 'high' | 'medium' | 'low' = 'medium';
+            
+            if (allSameWinner && hasMajorEdge) {
+              headline = `${overallWinner} is the clear favorite here.`;
+              insight = `Ranked #${betterOverallRank} overall with elite marks on both ends of the floor, ${overallWinner} outclasses ${overallLoser} in every phase. This is a significant mismatch — expect them to control tempo and pull away.`;
+              confidence = 'high';
+            } else if (allSameWinner && hasStrongEdge) {
+              headline = `${overallWinner} holds meaningful advantages.`;
+              insight = `With a #${betterOverallRank} power rating and edges in both offense (#${betterOffRank}) and defense (#${betterDefRank}), ${overallWinner} should dictate the pace. ${overallLoser} will need to overperform to stay competitive.`;
+              confidence = 'high';
             } else if (allSameWinner && overallGap > 25) {
-              summary = `${overallWinner} has advantages in all phases — should control pace and outcome`;
-            } else if (edges.length >= 2) {
-              const e1 = edges[0];
-              const e2 = edges[1];
-              if (e1.winner === e2.winner) {
-                summary = `${e1.winner} holds key edges in ${e1.type} and ${e2.type} — meaningful advantage`;
-              } else {
-                summary = `Split edges: ${e1.winner} better ${e1.type}, ${e2.winner} better ${e2.type} — game style matters`;
-              }
-            } else if (edges.length === 1) {
-              const e = edges[0];
-              summary = `${e.winner}'s ${e.type} advantage (+${e.gap}) could be the difference maker`;
+              headline = `${overallWinner} has the edge, but it's not a runaway.`;
+              insight = `The metrics favor ${overallWinner} across the board, though the gap isn't massive. They're the better team on paper, but ${overallLoser} has the talent to make this interesting if they execute.`;
+              confidence = 'medium';
+            } else if (offWinner !== defWinner && offGap > 50 && defGap > 50) {
+              headline = `A fascinating style clash.`;
+              insight = `${offWinner} brings the firepower (#${betterOffRank} offense) while ${defWinner} wins with defense (#${betterDefRank}). Pace will be the X-factor — a fast game favors ${offWinner}, a grind favors ${defWinner}.`;
+              confidence = 'medium';
+            } else if (offWinner !== defWinner) {
+              headline = `Split edges make this a toss-up.`;
+              insight = `${offWinner} has the offensive advantage, ${defWinner} the defensive edge. Neither team dominates both phases, so execution and game flow will likely decide the outcome.`;
+              confidence = 'low';
+            } else if (overallGap > 25) {
+              headline = `${overallWinner} is the slight favorite.`;
+              insight = `The overall metrics lean toward ${overallWinner} (#${betterOverallRank} vs #${worseOverallRank}), but this isn't a dominant advantage. Expect a competitive game where either team could find a way.`;
+              confidence = 'medium';
             } else {
-              summary = `Evenly matched across all phases — expect a competitive, close game`;
+              headline = `True toss-up matchup.`;
+              insight = `The numbers say these teams are evenly matched across all phases. Home court, momentum, and individual performances will matter more than usual. Don't be surprised by any outcome.`;
+              confidence = 'low';
             }
             
             return (
               <div style={{ 
-                marginTop: isMobile ? '12px' : '16px',
-                padding: isMobile ? '10px 12px' : '12px 16px',
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%)',
-                borderRadius: '10px',
-                border: '1px solid rgba(139, 92, 246, 0.2)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px'
+                marginTop: isMobile ? '14px' : '18px',
+                padding: isMobile ? '14px' : '18px',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)',
+                borderRadius: '12px',
+                border: confidence === 'high' 
+                  ? '1px solid rgba(52, 211, 153, 0.3)' 
+                  : confidence === 'medium' 
+                    ? '1px solid rgba(139, 92, 246, 0.25)' 
+                    : '1px solid rgba(100, 116, 139, 0.2)',
+                boxShadow: confidence === 'high' 
+                  ? '0 4px 20px rgba(52, 211, 153, 0.1)' 
+                  : '0 4px 20px rgba(0,0,0,0.3)'
               }}>
-                <span style={{ 
-                  fontSize: isMobile ? '11px' : '12px',
-                  color: hasSignificantEdge ? '#34D399' : '#A78BFA',
-                  fontWeight: '700'
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  marginBottom: isMobile ? '10px' : '12px'
                 }}>
-                  {hasSignificantEdge ? '✓' : '→'}
-                </span>
-                <div>
-                  <div style={{ 
+                  <div style={{
+                    width: isMobile ? '6px' : '8px',
+                    height: isMobile ? '6px' : '8px',
+                    borderRadius: '50%',
+                    background: confidence === 'high' ? '#34D399' : confidence === 'medium' ? '#A78BFA' : '#64748B',
+                    boxShadow: confidence === 'high' ? '0 0 8px rgba(52, 211, 153, 0.5)' : 'none'
+                  }} />
+                  <span style={{ 
                     fontSize: isMobile ? '8px' : '9px',
                     color: 'rgba(255,255,255,0.4)',
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.12em',
                     fontWeight: '600',
-                    marginBottom: '4px',
                     textTransform: 'uppercase'
-                  }}>MATCHUP SUMMARY</div>
-                  <span style={{ 
-                    fontSize: isMobile ? '11px' : '12px', 
-                    color: 'rgba(255,255,255,0.85)',
-                    lineHeight: '1.5',
-                    fontWeight: '500'
-                  }}>
-                    {summary}
-                  </span>
+                  }}>ANALYST INSIGHT</span>
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '13px' : '15px', 
+                  color: 'white',
+                  fontWeight: '700',
+                  marginBottom: isMobile ? '8px' : '10px',
+                  lineHeight: '1.3'
+                }}>
+                  {headline}
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '11px' : '12px', 
+                  color: 'rgba(255,255,255,0.7)',
+                  lineHeight: '1.6',
+                  fontWeight: '400'
+                }}>
+                  {insight}
                 </div>
               </div>
             );
