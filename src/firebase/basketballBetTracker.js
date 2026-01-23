@@ -171,10 +171,11 @@ export class BasketballBetTracker {
   
   /**
    * SMART SAVE: Only writes NEW bets that don't exist in betsMap
+   * 🎯 ONLY saves MODEL ALIGNED games (both D-Ratings and Haslametrics agree)
    * 
    * @param {Array} games - Games with predictions
    * @param {Map} existingBetsMap - Already loaded from Firebase (avoids extra reads!)
-   * @returns {Object} { saved, skipped }
+   * @returns {Object} { saved, skipped, notAligned }
    */
   async saveNewBetsOnly(games, existingBetsMap) {
     // Filter to only NEW games (not in betsMap)
@@ -183,15 +184,34 @@ export class BasketballBetTracker {
       return !existingBetsMap.has(key);
     });
     
-    if (newGames.length === 0) {
-      console.log('📋 All bets already exist in Firebase - no writes needed');
-      return { saved: 0, skipped: games.length };
+    // 🎯 CRITICAL: Only save MODEL ALIGNED games
+    // Both D-Ratings and Haslametrics must agree on the winner
+    const alignedGames = newGames.filter(game => {
+      const conviction = this.calculateConvictionScore(game, game.prediction);
+      const isAligned = conviction?.modelsAgree === true;
+      
+      if (!isAligned) {
+        console.log(`   ⚠️ Skipping ${game.awayTeam} @ ${game.homeTeam} - Models NOT aligned`);
+      }
+      
+      return isAligned;
+    });
+    
+    const notAlignedCount = newGames.length - alignedGames.length;
+    
+    if (alignedGames.length === 0) {
+      if (notAlignedCount > 0) {
+        console.log(`📋 No MODEL ALIGNED bets to save (${notAlignedCount} games skipped - models disagree)`);
+      } else {
+        console.log('📋 All bets already exist in Firebase - no writes needed');
+      }
+      return { saved: 0, skipped: games.length - newGames.length, notAligned: notAlignedCount };
     }
     
-    console.log(`\n💾 Saving ${newGames.length} NEW bets (${games.length - newGames.length} already exist)...`);
+    console.log(`\n💾 Saving ${alignedGames.length} MODEL ALIGNED bets (${games.length - newGames.length} exist, ${notAlignedCount} not aligned)...`);
     
     const results = await Promise.allSettled(
-      newGames.map(game => this.saveBet(game, game.prediction))
+      alignedGames.map(game => this.saveBet(game, game.prediction))
     );
     
     const saved = results.filter(r => r.status === 'fulfilled').length;
@@ -201,7 +221,7 @@ export class BasketballBetTracker {
       console.log(`⚠️ ${failed} bets failed to save`);
     }
     
-    return { saved, skipped: games.length - newGames.length, failed };
+    return { saved, skipped: games.length - newGames.length, notAligned: notAlignedCount, failed };
   }
 }
 
