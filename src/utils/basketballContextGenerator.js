@@ -25,52 +25,13 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
   } = prediction;
   
   // ============================================================
-  // SPREAD-ONLY BETS (no EV, just spread coverage → bet moneyline)
-  // Only use spread context if this is PURELY a spread opportunity (no EV)
-  // EV bets with spread confirmation should use normal EV context below
+  // SPREAD-ONLY BETS - Check for pre-computed context from fetch script
   // ============================================================
-  const spreadAnalysis = game?.spreadAnalysis || bet?.spreadAnalysis || prediction?.spreadAnalysis;
-  const isSpreadOnlyBet = (game?.source === 'SPREAD_OPPORTUNITY' || bet?.source === 'SPREAD_OPPORTUNITY') 
-                          && (bestEV <= 0 || bestEV === undefined);
-  
-  if (isSpreadOnlyBet && spreadAnalysis?.spreadConfirmed) {
-    const marginOver = spreadAnalysis?.marginOverSpread || 0;
-    const spread = spreadAnalysis?.spread || 0;
-    const tier = spreadAnalysis?.unitTier || prediction?.confidenceTier || 'MODERATE';
-    const modelProb = (bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb) * 100;
-    
-    // HIGH tier - both models project strong coverage → Moneyline bet
-    if (tier === 'HIGH' || marginOver >= 5) {
-      return {
-        icon: '🎯',
-        title: `${bestTeam} Model Alignment`,
-        subtitle: `Both models project ${bestTeam} by ${Math.abs(marginOver + Math.abs(spread)).toFixed(0)}+ pts • Moneyline value`
-      };
-    }
-    
-    // GOOD tier - solid coverage → Moneyline bet
-    if (tier === 'GOOD' || marginOver >= 3) {
-      return {
-        icon: '💎',
-        title: `${bestTeam} Undervalued Pick`,
-        subtitle: `Close game analysis favors ${bestTeam} • ${modelProb.toFixed(0)}% with system agreement`
-      };
-    }
-    
-    // MODERATE tier
-    if (tier === 'MODERATE' || marginOver >= 1.5) {
-      return {
-        icon: '📊',
-        title: `${bestTeam} System Lean`,
-        subtitle: `Models aligned on ${bestTeam} • ${modelProb.toFixed(0)}% moneyline value`
-      };
-    }
-    
-    // LOW tier - thin margin
+  if (prediction?.spreadContext?.title) {
     return {
-      icon: '💡',
-      title: `${bestTeam} Marginal Edge`,
-        subtitle: `Thin model consensus • ${modelProb.toFixed(0)}% with reduced allocation`
+      icon: prediction.spreadContext.icon || '📊',
+      title: prediction.spreadContext.title,
+      subtitle: prediction.spreadContext.subtitle
     };
   }
   
