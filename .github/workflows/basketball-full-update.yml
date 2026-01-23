@@ -73,12 +73,19 @@ jobs:
           npm run update-pending-bets
           echo "✅ Pending bets updated!"
       
-      # Step 5: Commit and push confidence weights
-      - name: Commit updated weights
+      # Step 5: Analyze Spread Performance
+      - name: Analyze Spread Performance
+        run: |
+          echo "🎯 Step 5: Analyzing spread opportunity performance..."
+          npm run analyze-spread-performance
+          echo "✅ Spread analysis complete!"
+      
+      # Step 6: Commit and push weights + spread analysis
+      - name: Commit updated data
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/basketball_confidence_weights.json
+          git add public/basketball_confidence_weights.json public/spread_performance.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "🎯 Full basketball update [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
       # Step 6: Build and deploy
@@ -102,4 +109,5 @@ jobs:
           echo "  ✅ Update pattern ROI"
           echo "  ✅ Update dynamic confidence weights"
           echo "  ✅ Update pending bets"
+          echo "  ✅ Analyze spread performance"
           echo "  ✅ Deploy to GitHub Pages"

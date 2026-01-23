@@ -312,13 +312,28 @@ async function saveSpreadOpportunityBet(opp) {
       return { action: 'already_confirmed', betId: evBetId };
     }
     
-    // ONLY add spreadAnalysis - DO NOT touch prediction or any other data!
+    // Calculate unit boost: +0.5u for spread confirmation, capped at 4u
+    const originalUnits = existingData.prediction?.unitSize || 2.0;
+    const boostedUnits = Math.min(originalUnits + 0.5, 4.0);
+    
+    // Add spreadAnalysis AND boost units
     await setDoc(evBetRef, {
-      spreadAnalysis: spreadAnalysis
+      spreadAnalysis: {
+        ...spreadAnalysis,
+        marginOverSpread: Math.round((opp.avgMargin - Math.abs(opp.spread)) * 10) / 10
+      },
+      prediction: {
+        ...existingData.prediction,
+        unitSize: boostedUnits,
+        originalUnits: originalUnits,
+        spreadBoost: 0.5,
+        spreadConfirmed: true
+      }
     }, { merge: true });
     
-    console.log(`   ⬆️  UPGRADED: ${opp.pickedTeam} - Added spread confirmation to existing EV bet`);
-    console.log(`      Spread: ${opp.spread} | Models: +${opp.avgMargin} | Covers by: +${spreadAnalysis.marginOverSpread}`);
+    console.log(`   ⬆️  UPGRADED: ${opp.pickedTeam} - EV bet + Spread confirmation`);
+    console.log(`      Units: ${originalUnits}u → ${boostedUnits}u (+0.5 spread boost)`);
+    console.log(`      Spread: ${opp.spread} | Margin: +${spreadAnalysis.marginOverSpread}`);
     return { action: 'upgraded', betId: evBetId };
   }
   
