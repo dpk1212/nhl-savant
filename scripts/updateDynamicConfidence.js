@@ -219,6 +219,8 @@ export async function updateDynamicConfidence() {
   const bySide = {};
   const byModelsAgree = {};
   const byConvictionScore = {};
+  const bySpreadSource = {};  // SPREAD_OPPORTUNITY vs regular EV bets
+  const bySpreadConfirmed = {}; // EV bets reinforced by spread analysis
 
   bets.forEach(bet => {
     const factors = classifyBet(bet);
@@ -263,6 +265,19 @@ export async function updateDynamicConfidence() {
       
       if (!byConvictionScore[convictionRange]) byConvictionScore[convictionRange] = [];
       byConvictionScore[convictionRange].push(bet);
+    }
+    
+    // Spread Opportunity Tracking (source field)
+    const source = bet.source || 'EV_PICK';  // Default to EV_PICK if no source
+    if (!bySpreadSource[source]) bySpreadSource[source] = [];
+    bySpreadSource[source].push(bet);
+    
+    // EV bets with Spread Confirmation (reinforced by spread analysis)
+    const spreadConfirmed = bet.prediction?.spreadConfirmed || bet.spreadAnalysis?.marginOverSpread;
+    if (spreadConfirmed) {
+      const key = bet.source === 'SPREAD_OPPORTUNITY' ? 'SPREAD_ONLY' : 'EV_WITH_SPREAD';
+      if (!bySpreadConfirmed[key]) bySpreadConfirmed[key] = [];
+      bySpreadConfirmed[key].push(bet);
     }
   });
 
@@ -413,6 +428,76 @@ export async function updateDynamicConfidence() {
   } else {
     console.log('\n   ⏳ CONVICTION SCORE: No data yet (field not present in completed bets)');
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // SPREAD OPPORTUNITY ANALYSIS
+  // Tracks: 1) Spread-only picks (source: SPREAD_OPPORTUNITY)
+  //         2) EV picks reinforced by spread analysis (spreadConfirmed: true)
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  
+  factorPerformance.spreadSource = {};
+  factorPerformance.spreadConfirmed = {};
+  
+  console.log('\n┌───────────────────────────────────────────────────────────────────────────────────────────┐');
+  console.log('│ 📊 SPREAD OPPORTUNITY ANALYSIS                                                             │');
+  console.log('└───────────────────────────────────────────────────────────────────────────────────────────┘\n');
+
+  // Part 1: By Source (SPREAD_OPPORTUNITY vs EV_PICK)
+  console.log('   📈 BY SOURCE (how bet was created):');
+  if (Object.keys(bySpreadSource).length > 0) {
+    // Sort to show SPREAD_OPPORTUNITY first
+    const sortedSources = Object.entries(bySpreadSource)
+      .sort((a, b) => {
+        if (a[0] === 'SPREAD_OPPORTUNITY') return -1;
+        if (b[0] === 'SPREAD_OPPORTUNITY') return 1;
+        return 0;
+      });
+
+    for (const [source, sourceBets] of sortedSources) {
+      const stats = calculateStats(sourceBets);
+      factorPerformance.spreadSource[source] = stats;
+      
+      const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+      const label = source === 'SPREAD_OPPORTUNITY' ? 'SPREAD_ONLY' : source;
+      console.log(`      ${roiEmoji} ${label.padEnd(18)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+    }
+  } else {
+    console.log('      ⏳ No source data yet');
+  }
+
+  // Part 2: Spread-Confirmed Analysis
+  console.log('\n   🎯 SPREAD CONFIRMATION ANALYSIS:');
+  if (Object.keys(bySpreadConfirmed).length > 0) {
+    for (const [type, typeBets] of Object.entries(bySpreadConfirmed)) {
+      const stats = calculateStats(typeBets);
+      factorPerformance.spreadConfirmed[type] = stats;
+      
+      const roiEmoji = stats.roi > 0 ? '🟢' : stats.roi < -10 ? '🔴' : '🟡';
+      console.log(`      ${roiEmoji} ${type.padEnd(18)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+    }
+    
+    // Compare spread-confirmed vs non-spread
+    const spreadConfirmedBets = [...(bySpreadConfirmed.SPREAD_ONLY || []), ...(bySpreadConfirmed.EV_WITH_SPREAD || [])];
+    const nonSpreadBets = bets.filter(b => !b.prediction?.spreadConfirmed && !b.spreadAnalysis?.marginOverSpread && b.source !== 'SPREAD_OPPORTUNITY');
+    
+    if (spreadConfirmedBets.length > 0 && nonSpreadBets.length > 0) {
+      const spreadStats = calculateStats(spreadConfirmedBets);
+      const nonSpreadStats = calculateStats(nonSpreadBets);
+      
+      console.log('\n   📊 SPREAD CONFIRMATION EDGE:');
+      console.log(`      With Spread:    ${spreadStats.winRate.toFixed(1)}% win | ${spreadStats.roi >= 0 ? '+' : ''}${spreadStats.roi.toFixed(1)}% ROI (${spreadConfirmedBets.length} bets)`);
+      console.log(`      Without Spread: ${nonSpreadStats.winRate.toFixed(1)}% win | ${nonSpreadStats.roi >= 0 ? '+' : ''}${nonSpreadStats.roi.toFixed(1)}% ROI (${nonSpreadBets.length} bets)`);
+      
+      const edgeDiff = spreadStats.roi - nonSpreadStats.roi;
+      const edgeEmoji = edgeDiff > 3 ? '🚀' : edgeDiff > 0 ? '✅' : '⚠️';
+      console.log(`      ${edgeEmoji} Edge: ${edgeDiff >= 0 ? '+' : ''}${edgeDiff.toFixed(1)}% ROI advantage`);
+    }
+  } else {
+    console.log('      ⏳ No spread-confirmed bets completed yet');
+  }
+  
+  console.log(`\n   📊 Total spread opportunity bets: ${(bySpreadSource.SPREAD_OPPORTUNITY || []).length}`);
+  console.log(`   📊 Total EV bets with spread confirmation: ${(bySpreadConfirmed.EV_WITH_SPREAD || []).length}`);
 
   // ═══════════════════════════════════════════════════════════════════════════════════════════
   // CLV (CLOSING LINE VALUE) ANALYSIS
