@@ -499,6 +499,128 @@ export async function updateDynamicConfidence() {
   console.log(`\n   📊 Total spread opportunity bets: ${(bySpreadSource.SPREAD_OPPORTUNITY || []).length}`);
   console.log(`   📊 Total EV bets with spread confirmation: ${(bySpreadConfirmed.EV_WITH_SPREAD || []).length}`);
 
+  // Deep dive: Spread bets by odds range
+  const allSpreadBets = [...(bySpreadSource.SPREAD_OPPORTUNITY || []), ...(bySpreadConfirmed.EV_WITH_SPREAD || [])];
+  
+  if (allSpreadBets.length > 0) {
+    console.log('\n   💰 SPREAD PICKS BY ODDS RANGE:');
+    
+    // Group by odds range
+    const spreadByOdds = {};
+    allSpreadBets.forEach(bet => {
+      const odds = bet.bet?.odds || 0;
+      let range;
+      if (odds <= -300) range = 'HEAVY_FAV';
+      else if (odds <= -200) range = 'BIG_FAV';
+      else if (odds <= -150) range = 'MOD_FAV';
+      else if (odds <= -110) range = 'SLIGHT_FAV';
+      else if (odds <= 110) range = 'PICKEM';
+      else if (odds <= 150) range = 'SLIGHT_DOG';
+      else if (odds <= 200) range = 'MOD_DOG';
+      else range = 'BIG_DOG';
+      
+      if (!spreadByOdds[range]) spreadByOdds[range] = [];
+      spreadByOdds[range].push(bet);
+    });
+    
+    // Sort and display
+    const oddsOrder = ['HEAVY_FAV', 'BIG_FAV', 'MOD_FAV', 'SLIGHT_FAV', 'PICKEM', 'SLIGHT_DOG', 'MOD_DOG', 'BIG_DOG'];
+    for (const range of oddsOrder) {
+      if (spreadByOdds[range] && spreadByOdds[range].length > 0) {
+        const stats = calculateStats(spreadByOdds[range]);
+        const roiEmoji = stats.roi > 5 ? '🟢' : stats.roi < -5 ? '🔴' : '🟡';
+        console.log(`      ${roiEmoji} ${range.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+        
+        // Store for dynamic units
+        if (!factorPerformance.spreadByOdds) factorPerformance.spreadByOdds = {};
+        factorPerformance.spreadByOdds[range] = stats;
+      }
+    }
+    
+    console.log('\n   🎯 SPREAD PICKS BY WIN PROBABILITY:');
+    
+    // Group by win probability
+    const spreadByProb = {};
+    allSpreadBets.forEach(bet => {
+      const prob = Math.max(
+        bet.prediction?.ensembleAwayProb || 0,
+        bet.prediction?.ensembleHomeProb || 0
+      ) * 100;
+      
+      let range;
+      if (prob >= 75) range = 'HIGH_75+';
+      else if (prob >= 65) range = 'GOOD_65-74';
+      else if (prob >= 55) range = 'MOD_55-64';
+      else if (prob >= 45) range = 'PICKEM_45-54';
+      else range = 'LOW_<45';
+      
+      if (!spreadByProb[range]) spreadByProb[range] = [];
+      spreadByProb[range].push(bet);
+    });
+    
+    // Sort and display
+    const probOrder = ['HIGH_75+', 'GOOD_65-74', 'MOD_55-64', 'PICKEM_45-54', 'LOW_<45'];
+    for (const range of probOrder) {
+      if (spreadByProb[range] && spreadByProb[range].length > 0) {
+        const stats = calculateStats(spreadByProb[range]);
+        const roiEmoji = stats.roi > 5 ? '🟢' : stats.roi < -5 ? '🔴' : '🟡';
+        console.log(`      ${roiEmoji} ${range.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+        
+        // Store for dynamic units
+        if (!factorPerformance.spreadByProb) factorPerformance.spreadByProb = {};
+        factorPerformance.spreadByProb[range] = stats;
+      }
+    }
+    
+    console.log('\n   📏 SPREAD PICKS BY MARGIN OVER SPREAD:');
+    
+    // Group by spread margin (how much they beat the spread by)
+    const spreadByMargin = {};
+    allSpreadBets.forEach(bet => {
+      const margin = bet.spreadAnalysis?.marginOverSpread || bet.prediction?.bestEV || 0;
+      
+      let range;
+      if (margin >= 5) range = 'HUGE_5+';
+      else if (margin >= 3) range = 'STRONG_3-5';
+      else if (margin >= 1.5) range = 'SOLID_1.5-3';
+      else range = 'SLIM_<1.5';
+      
+      if (!spreadByMargin[range]) spreadByMargin[range] = [];
+      spreadByMargin[range].push(bet);
+    });
+    
+    // Sort and display
+    const marginOrder = ['HUGE_5+', 'STRONG_3-5', 'SOLID_1.5-3', 'SLIM_<1.5'];
+    for (const range of marginOrder) {
+      if (spreadByMargin[range] && spreadByMargin[range].length > 0) {
+        const stats = calculateStats(spreadByMargin[range]);
+        const roiEmoji = stats.roi > 5 ? '🟢' : stats.roi < -5 ? '🔴' : '🟡';
+        console.log(`      ${roiEmoji} ${range.padEnd(12)}: ${stats.total.toString().padStart(3)} bets | Win: ${stats.winRate.toFixed(1)}% | ${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI | Profit: ${stats.profit >= 0 ? '+' : ''}${stats.profit.toFixed(2)}u`);
+        
+        // Store for dynamic units
+        if (!factorPerformance.spreadByMargin) factorPerformance.spreadByMargin = {};
+        factorPerformance.spreadByMargin[range] = stats;
+      }
+    }
+    
+    // Summary recommendation
+    console.log('\n   💡 SPREAD UNIT RECOMMENDATIONS (based on data):');
+    
+    // Find best performing categories
+    const allSpreadStats = calculateStats(allSpreadBets);
+    console.log(`      Overall Spread Performance: ${allSpreadStats.winRate.toFixed(1)}% win | ${allSpreadStats.roi >= 0 ? '+' : ''}${allSpreadStats.roi.toFixed(1)}% ROI`);
+    
+    if (allSpreadStats.roi > 10) {
+      console.log('      🚀 STRONG EDGE - Consider 2-3u base for spread picks');
+    } else if (allSpreadStats.roi > 5) {
+      console.log('      ✅ GOOD EDGE - Consider 1.5-2u base for spread picks');
+    } else if (allSpreadStats.roi > 0) {
+      console.log('      🟡 SLIGHT EDGE - Keep at 1u base, monitor for improvements');
+    } else {
+      console.log('      ⚠️ NEGATIVE EDGE - Consider 0.5u or pause spread picks');
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════════════════════
   // CLV (CLOSING LINE VALUE) ANALYSIS
   // Uses the clv.value field stored in Firebase bets
