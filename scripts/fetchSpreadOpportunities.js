@@ -368,7 +368,26 @@ async function saveSpreadOpportunityBet(opp) {
   
   const spreadBetId = `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${teamNorm}_(${side})`;
   
+  // Calculate conviction score (model agreement metric) - SAME AS UI
+  const dr = opp.game?.dratings;
+  const hs = opp.game?.haslametrics;
+  let convictionData = null;
+  
+  if (dr?.awayScore && dr?.homeScore && hs?.awayScore && hs?.homeScore) {
+    const pickIsAway = opp.pickedSide === 'away';
+    const drMargin = pickIsAway ? (dr.awayScore - dr.homeScore) : (dr.homeScore - dr.awayScore);
+    const hsMargin = pickIsAway ? (hs.awayScore - hs.homeScore) : (hs.homeScore - hs.awayScore);
+    
+    convictionData = {
+      convictionScore: Math.round((drMargin + hsMargin) * 10) / 10,
+      modelsAgree: true, // Spread opportunities always have aligned models
+      drMargin: Math.round(drMargin * 10) / 10,
+      hsMargin: Math.round(hsMargin * 10) / 10
+    };
+  }
+  
   // Create NEW bet with same structure as regular EV bets so it displays properly
+  // MATCHES UI basketballBetTracker.saveBet() structure
   const betData = {
     id: spreadBetId,
     date: date,
@@ -402,25 +421,50 @@ async function saveSpreadOpportunityBet(opp) {
       confidence: unitInfo.tier,
       unitSize: unitInfo.units,
       confidenceTier: unitInfo.tier,
+      confidenceScore: null, // Not calculated for spread opportunities
+      confidenceFactors: null,
       grade: unitInfo.tier === 'HIGH' ? 'A+' : unitInfo.tier === 'GOOD' ? 'A' : 'B+',
       simplifiedGrade: unitInfo.tier === 'HIGH' || unitInfo.tier === 'GOOD' ? 'A' : 'B',
       bestTeam: opp.pickedTeam,
       bestBet: opp.pickedSide,
       bestOdds: mlOdds || 0,
       bestEV: marginOverSpread, // Use margin as proxy for value
+      evPercent: marginOverSpread, // Alias for consistency with EV bets
+      
+      // Pattern ROI (not available for spread opportunities)
+      oddsRange: null,
+      oddsRangeName: null,
+      historicalROI: null,
+      qualityEmoji: null,
+      
       // Model data for UI display
       ensembleAwayProb: opp.pickedSide === 'away' ? winProb : (1 - winProb),
       ensembleHomeProb: opp.pickedSide === 'home' ? winProb : (1 - winProb),
       marketAwayProb: opp.pickedSide === 'away' ? winProb : (1 - winProb),
       marketHomeProb: opp.pickedSide === 'home' ? winProb : (1 - winProb),
+      
+      // Model breakdown - D-Ratings
+      dratingsAwayProb: null,
+      dratingsHomeProb: null,
       dratingsAwayScore: opp.game?.dratings?.awayScore || 0,
       dratingsHomeScore: opp.game?.dratings?.homeScore || 0,
+      
+      // Model breakdown - Haslametrics
+      haslametricsAwayProb: null,
+      haslametricsHomeProb: null,
       haslametricsAwayScore: opp.game?.haslametrics?.awayScore || 0,
       haslametricsHomeScore: opp.game?.haslametrics?.homeScore || 0,
+      
       // Ensemble = average of both models
       ensembleAwayScore: Math.round(((opp.game?.dratings?.awayScore || 0) + (opp.game?.haslametrics?.awayScore || 0)) / 2 * 10) / 10,
       ensembleHomeScore: Math.round(((opp.game?.dratings?.homeScore || 0) + (opp.game?.haslametrics?.homeScore || 0)) / 2 * 10) / 10,
       ensembleTotal: Math.round(((opp.game?.dratings?.awayScore || 0) + (opp.game?.haslametrics?.awayScore || 0) + (opp.game?.dratings?.homeScore || 0) + (opp.game?.haslametrics?.homeScore || 0)) / 2 * 10) / 10,
+      
+      // 🎯 Conviction Score (model agreement metric) - MATCHES UI
+      convictionScore: convictionData?.convictionScore || null,
+      dratingMargin: convictionData?.drMargin || null,
+      haslametricsMargin: convictionData?.hsMargin || null,
+      
       // Spread-specific context for UI
       spreadContext: context
     },
@@ -428,13 +472,26 @@ async function saveSpreadOpportunityBet(opp) {
     result: {
       awayScore: null,
       homeScore: null,
+      totalScore: null,
+      winner: null,
       outcome: null,
       profit: null,
-      fetched: false
+      fetched: false,
+      fetchedAt: null,
+      source: null
     },
     
     status: 'PENDING',
-    source: 'SPREAD_OPPORTUNITY'
+    firstRecommendedAt: Date.now(),
+    initialOdds: mlOdds || 0,
+    initialEV: marginOverSpread,
+    source: 'SPREAD_OPPORTUNITY',
+    
+    // ⭐ Savant Pick - set to true in Firebase to mark as analyst-enhanced
+    savantPick: false,
+    
+    // 🏀 Barttorvik data for Matchup Intelligence
+    barttorvik: opp.game?.barttorvik || null
   };
   
   await setDoc(evBetRef, betData);

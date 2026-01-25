@@ -18,7 +18,7 @@ import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUni
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { getDynamicTierInfo, getDynamicConfidenceRating, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
 import { CLVIndicator } from '../components/CLVBadge';
-import { basketballBetTracker } from '../firebase/basketballBetTracker';
+// basketballBetTracker import removed - bet saving now handled by GitHub workflows only
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { 
@@ -112,27 +112,19 @@ const Basketball = () => {
   }, [gradedCount]); // Re-fetch when bets are graded
   
   
-  // 💾 SMART BET SAVING: Only write NEW bets, only once per session
-  // Waits for both recommendations AND betsMap to be loaded
+  // 💾 BET SAVING DISABLED - Workflows only (prevents rogue bets)
+  // All bet creation now happens via GitHub Actions:
+  //   - writeBasketballBets.js (EV bets with model alignment filter)
+  //   - fetchSpreadOpportunities.js (spread-confirmed bets)
+  // 
+  // This prevents non-aligned bets from being created when users visit.
+  // The workflows have the same fields as the UI (conviction, barttorvik, etc.)
   useEffect(() => {
-    // Don't save if already saved this session, or data not ready
-    if (betsSaved || recommendations.length === 0 || betsMap.size === 0) {
-      return;
+    if (recommendations.length > 0 && !betsSaved) {
+      console.log('📋 Bet saving handled by GitHub workflow - UI read-only');
+      setBetsSaved(true);
     }
-    
-    // Save only new bets (ones not in betsMap)
-    basketballBetTracker.saveNewBetsOnly(recommendations, betsMap)
-      .then(({ saved, skipped }) => {
-        if (saved > 0) {
-          console.log(`✅ Saved ${saved} new bets, skipped ${skipped} existing`);
-        }
-        setBetsSaved(true); // Mark as done for this session
-      })
-      .catch(err => {
-        console.error('Failed to save bets:', err);
-        setBetsSaved(true); // Don't retry on error
-      });
-  }, [recommendations, betsMap, betsSaved]);
+  }, [recommendations, betsSaved]);
   
   // Start live score polling when we have games and mappings
   useEffect(() => {

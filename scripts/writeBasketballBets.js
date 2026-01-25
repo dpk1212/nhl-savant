@@ -99,7 +99,26 @@ async function saveBetToFirebase(db, game, prediction) {
     return betId;
   }
   
-  // Create new bet document
+  // Calculate conviction score (model agreement metric) - SAME AS UI
+  const dr = game.dratings;
+  const hs = game.haslametrics;
+  let convictionData = null;
+  
+  if (dr?.awayScore && dr?.homeScore && hs?.awayScore && hs?.homeScore) {
+    const pickIsAway = prediction.bestBet === 'away';
+    const drMargin = pickIsAway ? (dr.awayScore - dr.homeScore) : (dr.homeScore - dr.awayScore);
+    const hsMargin = pickIsAway ? (hs.awayScore - hs.homeScore) : (hs.homeScore - hs.awayScore);
+    const modelsAgree = drMargin > 0 && hsMargin > 0;
+    
+    convictionData = {
+      convictionScore: Math.round((drMargin + hsMargin) * 10) / 10,
+      modelsAgree: modelsAgree,
+      drMargin: Math.round(drMargin * 10) / 10,
+      hsMargin: Math.round(hsMargin * 10) / 10
+    };
+  }
+  
+  // Create new bet document - MATCHES UI basketballBetTracker.saveBet()
   const betData = {
     id: betId,
     date: date,
@@ -130,29 +149,42 @@ async function saveBetToFirebase(db, game, prediction) {
       confidenceTier: confidenceTier,
       confidenceScore: confidenceScore,
       dynamicUnits: dynamicResult.units, // Store dynamic for comparison
+      confidenceFactors: null, // Not available in workflow context
+      
+      // Pattern ROI from dynamic analysis
       oddsRange: prediction.oddsRange,
       oddsRangeName: prediction.oddsRangeName,
       historicalROI: prediction.historicalROI,
       qualityEmoji: prediction.qualityEmoji,
       
+      // Ensemble probabilities
       ensembleAwayProb: prediction.ensembleAwayProb,
       ensembleHomeProb: prediction.ensembleHomeProb,
       marketAwayProb: prediction.marketAwayProb,
       marketHomeProb: prediction.marketHomeProb,
       
+      // Score predictions
       ensembleAwayScore: prediction.ensembleAwayScore || null,
       ensembleHomeScore: prediction.ensembleHomeScore || null,
       ensembleTotal: prediction.ensembleTotal || null,
       
+      // Model breakdown - D-Ratings
       dratingsAwayProb: prediction.dratingsAwayProb || null,
       dratingsHomeProb: prediction.dratingsHomeProb || null,
       dratingsAwayScore: prediction.dratingsAwayScore || null,
       dratingsHomeScore: prediction.dratingsHomeScore || null,
       
+      // Model breakdown - Haslametrics
       haslametricsAwayProb: prediction.haslametricsAwayProb || null,
       haslametricsHomeProb: prediction.haslametricsHomeProb || null,
       haslametricsAwayScore: prediction.haslametricsAwayScore || null,
-      haslametricsHomeScore: prediction.haslametricsHomeScore || null
+      haslametricsHomeScore: prediction.haslametricsHomeScore || null,
+      
+      // 🎯 Conviction Score (model agreement metric) - MATCHES UI
+      convictionScore: convictionData?.convictionScore || null,
+      modelsAgree: convictionData?.modelsAgree || null,
+      dratingMargin: convictionData?.drMargin || null,
+      haslametricsMargin: convictionData?.hsMargin || null
     },
     
     result: {
@@ -170,7 +202,13 @@ async function saveBetToFirebase(db, game, prediction) {
     status: 'PENDING',
     firstRecommendedAt: Date.now(),
     initialOdds: prediction.bestOdds,
-    initialEV: prediction.bestEV
+    initialEV: prediction.bestEV,
+    
+    // ⭐ Savant Pick - set to true in Firebase to mark as analyst-enhanced
+    savantPick: false,
+    
+    // 🏀 Barttorvik data for Matchup Intelligence (persists even if game drops off)
+    barttorvik: game.barttorvik || null
   };
   
   await setDoc(betRef, betData);
@@ -235,8 +273,41 @@ async function writeBasketballBets() {
     // This ensures we only write QUALITY bets, not all predictions
     const qualityBets = calculator.processGames(matchedGames);
     
-    console.log(`\n🎯 Found ${qualityBets.length} picks (pick-to-win strategy):`);
-    qualityBets.forEach((game, i) => {
+    // 🎯 CRITICAL: Filter for MODEL ALIGNED bets only (both models pick same winner)
+    // This matches the UI's basketballBetTracker.saveNewBetsOnly() behavior
+    const alignedBets = qualityBets.filter(game => {
+      const pred = game.prediction;
+      const dr = game.dratings;
+      const hs = game.haslametrics;
+      
+      if (!dr?.awayScore || !dr?.homeScore || !hs?.awayScore || !hs?.homeScore) {
+        console.log(`   ❌ Filtered: ${game.awayTeam} @ ${game.homeTeam} - Missing model data`);
+        return false;
+      }
+      
+      const pickIsAway = pred.bestBet === 'away';
+      
+      // Margin from picked team's perspective
+      const drMargin = pickIsAway ? (dr.awayScore - dr.homeScore) : (dr.homeScore - dr.awayScore);
+      const hsMargin = pickIsAway ? (hs.awayScore - hs.homeScore) : (hs.homeScore - hs.awayScore);
+      
+      const modelsAgree = drMargin > 0 && hsMargin > 0;
+      
+      if (!modelsAgree) {
+        console.log(`   ❌ Filtered: ${game.awayTeam} @ ${game.homeTeam} - Models NOT aligned (DR: ${drMargin > 0 ? '+' : ''}${drMargin.toFixed(1)}, HS: ${hsMargin > 0 ? '+' : ''}${hsMargin.toFixed(1)})`);
+        return false;
+      }
+      
+      return true;
+    });
+    
+    console.log(`\n📊 MODEL ALIGNMENT FILTER:`);
+    console.log(`   Quality bets: ${qualityBets.length}`);
+    console.log(`   Model aligned: ${alignedBets.length} ✅`);
+    console.log(`   Filtered (models disagree): ${qualityBets.length - alignedBets.length} ❌\n`);
+    
+    console.log(`\n🎯 Found ${alignedBets.length} MODEL ALIGNED picks:`);
+    alignedBets.forEach((game, i) => {
       const pred = game.prediction;
       const winProb = (pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100;
       console.log(`   ${i + 1}. ${game.awayTeam} @ ${game.homeTeam}`);
@@ -252,8 +323,8 @@ async function writeBasketballBets() {
       console.log(`      🎯 ${dynResult.tierLabel} - ${dynResult.units}u (score: ${dynResult.score})`);
     });
     
-    if (qualityBets.length === 0) {
-      console.log('\n⚠️  No valid picks found today. Nothing to write to Firebase.');
+    if (alignedBets.length === 0) {
+      console.log('\n⚠️  No MODEL ALIGNED picks found today. Nothing to write to Firebase.');
       console.log('================================\n');
       return 0;
     }
@@ -263,7 +334,7 @@ async function writeBasketballBets() {
     let savedCount = 0;
     let errorCount = 0;
     
-    for (const game of qualityBets) {
+    for (const game of alignedBets) {
       try {
         await saveBetToFirebase(db, game, game.prediction);
         savedCount++;
@@ -274,7 +345,7 @@ async function writeBasketballBets() {
       }
     }
     
-    console.log(`\n✅ Successfully saved ${savedCount}/${qualityBets.length} bets to Firebase`);
+    console.log(`\n✅ Successfully saved ${savedCount}/${alignedBets.length} bets to Firebase`);
     if (errorCount > 0) {
       console.log(`⚠️  Failed to save ${errorCount} bets (see errors above)`);
     }
