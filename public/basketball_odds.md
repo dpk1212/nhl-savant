@@ -96,7 +96,7 @@ Yesterday
 
 ![logo-NCAAB ](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg)
 
-NCAAB Sun 01/25
+NCAAB Mon 01/26
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -114,28 +114,55 @@ NCAAB Sun 01/25
 
 ![logo-NCAAB ](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg)
 
-NCAAB Sun 01/25
+NCAAB Mon 01/26
 
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 01/251:00 PM<br>![](https://logos.oddstrader.com/logos-original/768a6398-5cc2-4e19-ba2f-28518dcad9ec-original.PNG?d=100x100)<br>Florida Atlantic<br>14-6<br>100%<br>+185Heritage | +170 | +174 | +175 | +180 | +185 | +185 | +185 |
-| ![](https://logos.oddstrader.com/logos-original/929b9438-b8a1-41db-a439-e306a1cd7051-original.png?d=100x100)<br>South Florida<br>12-7<br>0%<br>-200BetOnline | -195 | -200 | -210 | -220 | -220 | -221 | -221 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/266:00 PM<br>![](https://logos.oddstrader.com/logos-original/8afa244f-e909-46bf-88fc-d1908447d8c0-original.PNG?d=100x100)<br>Delaware State<br>5-14<br>-<br>-105MyBookie | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/e333eef0-439f-4d1b-aaaa-a25b807802ec-original.png?d=100x100)<br>South Carolina State<br>4-16<br>-<br>-130MyBookie | - | - | - | - | - | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 01/252:00 PM<br>![](https://logos.oddstrader.com/logos-original/813094f0-62e8-47f7-ad93-a231a871503b-original.png?d=100x100)<br>Chicago State<br>2-18<br>-<br>+450Heritage | +446 | +446 | - | +425 | +450 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/d6f7e93d-66ec-450d-8fd2-5571d36f7d7f.png?d=100x100)<br>Mercyhurst<br>9-11<br>-<br>-575Heritage | -600 | -600 | - | -600 | -575 | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/266:00 PM<br>![](https://logos.oddstrader.com/logos-original/d6856763-895a-453b-824a-0edb03dd318e-original.png?d=100x100)<br>Le Moyne<br>10-10<br>-<br>-150Heritage | - | - | - | - | -150 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/ffbdf9bc-81c6-47fe-94b9-888e35b83ed0-original.png?d=100x100)<br>Fairleigh Dickinson<br>7-13<br>-<br>+130Heritage | - | - | - | - | +130 | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 01/253:00 PM<br>![](https://logos.oddstrader.com/logos-original/cfb79e26-e10d-4cfe-8c97-8bb1baadbaf3-original.png?d=100x100)<br>Oregon<br>8-11<br>100%<br>+355Bovada | +350 | +350 | +340 | +355 | +350 | +342 | +342 |
-| ![](https://logos.oddstrader.com/logos-original/6d27ec87-8d37-4bb9-8466-52f53e900893-original.PNG?d=100x100)<br>Washington<br>10-9<br>0%<br>-437Bookmaker | -450 | -450 | -450 | -490 | -440 | -437 | -437 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6639454-9399-498c-b15c-a0b020fb3a85-original.PNG?d=100x100)<br>#23Louisville<br>14-5<br>-<br>+270Bovada | - | - | - | +270 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/7f34efc1-8d5b-4463-bfc6-58703d9f4b11-original.png?d=100x100)<br>#5Duke<br>18-1<br>-<br>-340Bovada | - | - | - | -340 | - | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 01/254:00 PM<br>![](https://logos.oddstrader.com/logos-original/159e70f0-bcd7-4507-84f8-148946571333-original.PNG?d=100x100)<br>USC<br>14-5<br>100%<br>+272Bookmaker | +263 | +249 | +245 | +260 | +250 | +272 | +272 |
-| ![](https://logos.oddstrader.com/logos-original/e6e2ec6e-c78b-497c-a97e-ad38acf90413-original.PNG?d=100x100)<br>Wisconsin<br>14-5<br>0%<br>-300Everygame | -325 | -305 | -305 | -320 | -310 | -336 | -336 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/8de4947e-f4a1-4fc6-aa40-abe6f3ade19c-original.png?d=100x100)<br>Penn State<br>9-10<br>-<br>+700Bovada | - | - | - | +700 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/b8ce927e-a7ab-437a-94eb-5314621c0c03-original.png?d=100x100)<br>Ohio State<br>13-6<br>-<br>-1200Bovada | - | - | - | -1200 | - | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 01/254:00 PM<br>![](https://logos.oddstrader.com/logos-original/cef7eda1-68b4-4d32-82c3-2ad7de95a94b-original.PNG?d=100x100)<br>Southern Illinois<br>8-12<br>0%<br>-160BetOnline | -170 | -160 | -160 | -160 | -160 | -160 | -160 |
-| ![](https://logos.oddstrader.com/logos-original/0a577046-a6f6-42a2-a5da-53d6686f1ba0-original.PNG?d=100x100)<br>Evansville<br>5-15<br>100%<br>+140BetOnline | +149 | +140 | +140 | +135 | +140 | +140 | +140 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/6aa79a6d-417e-4515-9a79-44642a4bbc2c-original.PNG?d=100x100)<br>Abilene Christian<br>10-9<br>-<br>+165Bovada | - | - | - | +165 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/3a31bc6a-8491-4079-a857-3fe89acca65b-original.png?d=100x100)<br>Tarleton State<br>11-9<br>-<br>-195Bovada | - | - | - | -195 | - | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FINAL<br>![](https://logos.oddstrader.com/logos-original/10c818ce-55dc-4714-828e-ca98038ff4e4-original.PNG?d=100x100)<br>Cal State Northridge<br>11-10<br>68<br>+450BetAnything | +383 | +406 | +450 | +425 | +435 | +418 | +418 |
-| ![](https://logos.oddstrader.com/logos-original/0f95c70d-7d49-4567-8224-e66973240ca0-original.png?d=100x100)<br>Hawaii<br>15-4<br>89<br>-535BetOnline | -500 | -535 | -600 | -600 | -560 | -554 | -554 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/5565e4ef-2626-4361-a8cc-468707da0da8-original.png?d=100x100)<br>Jackson State<br>5-14<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/ebc2f864-2333-4a1b-9ab1-dc6ee40ae749-original.PNG?d=100x100)<br>Florida A&M<br>8-9<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/c8b5fe89-fd53-41fb-b8df-385edd88b567-original.PNG?d=100x100)<br>Alcorn State<br>3-15<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/6ee49531-52f0-4028-90b1-0fcf5409e5ce-original.PNG?d=100x100)<br>Bethune-Cookman<br>8-11<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/73966c6a-a613-439d-bdd2-560b1529d6b6-original.png?d=100x100)<br>Morgan State<br>7-13<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/84b0d74e-8b25-4f55-9fde-5fd5799059c3-original.png?d=100x100)<br>Norfolk State<br>10-12<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/8e2dcc12-e7dc-4a9b-8567-e06ac3b8a51d-original.png?d=100x100)<br>Central Connecticut State<br>10-8<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/73c51d33-bcf8-4f4e-875b-ac0a4c4fbfc8-original.png?d=100x100)<br>Stonehill<br>6-14<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/267:00 PM<br>![](https://logos.oddstrader.com/logos-original/c4017304-cd28-4d0b-b57f-d789bbbe67f7-original.png?d=100x100)<br>Wagner<br>6-12<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/1ad738be-b4b4-49c4-878c-efdc201193d1-original.PNG?d=100x100)<br>LIU<br>12-8<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/268:00 PM<br>![](https://logos.oddstrader.com/logos-original/21d874bd-ed12-41bf-864b-22123868bd72-original.PNG?d=100x100)<br>Texas Rio Grande Valley<br>9-11<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/b1a76f5f-5897-4414-a295-6949e1d5a82a-original.png?d=100x100)<br>Texas A&M-CC<br>11-9<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 01/269:00 PM<br>![](https://logos.oddstrader.com/logos-original/516fe8be-ae63-454f-8906-9b483b11354e-original.png?d=100x100)<br>#1Arizona<br>20-0<br>-<br>-140Bovada | - | - | - | -140 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/e4d34e24-d124-4ac5-96cd-2193a6cf2888-original.png?d=100x100)<br>#13BYU<br>17-2<br>-<br>+120Bovada | - | - | - | +120 | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 01/277:00 PM<br>![](https://logos.oddstrader.com/logos-original/8aae7392-4f65-4977-9e7f-c633ba905a1a-original.PNG?d=100x100)<br>#7Nebraska<br>20-0<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/e8de38e1-9624-4cea-9af7-68f8ee0a7efe-original.png?d=100x100)<br>#3Michigan<br>18-1<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 01/277:00 PM<br>![](https://logos.oddstrader.com/logos-original/be9a7026-738d-48c5-85d9-c8b79e3f5580-original.png?d=100x100)<br>East Texas A&M <br>8-12<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/8c6a2f24-8633-4f2d-968c-be808424ce3f-original.png?d=100x100)<br>Lamar<br>10-10<br>-<br>- | - | - | - | - | - | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 01/278:00 PM<br>![](https://logos.oddstrader.com/logos-original/49635cd2-de6d-4ab8-abaf-d3b1040f5d5c-original.PNG?d=100x100)<br>Incarnate Word<br>9-11<br>-<br>- | - | - | - | - | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/51827a34-5960-45fc-8762-5325d2273298-original.png?d=100x100)<br>Houston Christian<br>7-13<br>-<br>- | - | - | - | - | - | - | - |
 
 OddsTrader has live betting odds for every college basketball game from the start of the season through March Madness. Betting lines update every 30 seconds for upcoming games and every 10 seconds for live games, ensuring that you’re always looking at the latest odds.
 
@@ -174,7 +201,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-How has Washington looked in recent home games?Generate
+Do Tarleton State games usually go over the total?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
