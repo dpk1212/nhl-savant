@@ -141,6 +141,10 @@ function parseSpreadData(markdown) {
  */
 function matchSpreadWithModels(spreadGames, matchedGames) {
   const opportunities = [];
+  let noMatchCount = 0;
+  let noModelDataCount = 0;
+  let modelsDisagreeCount = 0;
+  const unmatchedGames = [];
   
   const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z]/g, '') || '';
   
@@ -154,8 +158,15 @@ function matchSpreadWithModels(spreadGames, matchedGames) {
       return awayMatch && homeMatch;
     });
     
-    if (!modelGame) continue;
-    if (!modelGame.dratings || !modelGame.haslametrics) continue;
+    if (!modelGame) {
+      noMatchCount++;
+      unmatchedGames.push(`${spreadGame.awayTeam} @ ${spreadGame.homeTeam}`);
+      continue;
+    }
+    if (!modelGame.dratings || !modelGame.haslametrics) {
+      noModelDataCount++;
+      continue;
+    }
     
     const dr = modelGame.dratings;
     const hs = modelGame.haslametrics;
@@ -169,7 +180,10 @@ function matchSpreadWithModels(spreadGames, matchedGames) {
     const hsPicksAway = hsMargin > 0;
     const modelsAgree = drPicksAway === hsPicksAway;
     
-    if (!modelsAgree) continue; // Skip if models don't agree on winner
+    if (!modelsAgree) {
+      modelsDisagreeCount++;
+      continue; // Skip if models don't agree on winner
+    }
     
     // Determine which team both models pick
     const pickedTeam = drPicksAway ? 'away' : 'home';
@@ -214,6 +228,23 @@ function matchSpreadWithModels(spreadGames, matchedGames) {
       odds: modelGame.odds,
       game: modelGame
     });
+  }
+  
+  // Log matching summary
+  console.log(`\n📊 SPREAD MATCHING BREAKDOWN:`);
+  console.log(`   Total spread games: ${spreadGames.length}`);
+  console.log(`   ❌ No model match: ${noMatchCount} games`);
+  console.log(`   ❌ Missing model data: ${noModelDataCount} games`);
+  console.log(`   ❌ Models disagree: ${modelsDisagreeCount} games`);
+  console.log(`   ✅ Fully analyzed: ${opportunities.length} games`);
+  
+  if (unmatchedGames.length > 0 && unmatchedGames.length <= 10) {
+    console.log(`\n   🔍 Unmatched games (need CSV mapping?):`);
+    unmatchedGames.forEach(g => console.log(`      - ${g}`));
+  } else if (unmatchedGames.length > 10) {
+    console.log(`\n   🔍 First 10 unmatched games:`);
+    unmatchedGames.slice(0, 10).forEach(g => console.log(`      - ${g}`));
+    console.log(`      ... and ${unmatchedGames.length - 10} more`);
   }
   
   return opportunities;
