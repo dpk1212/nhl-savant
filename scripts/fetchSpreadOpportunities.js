@@ -137,32 +137,47 @@ function parseSpreadData(markdown) {
 }
 
 /**
- * Match spread games with model predictions
+ * Analyze spread opportunities using ALREADY MATCHED games
+ * The matchedGames already have perfect CSV-based matching from matchGamesWithCSV()
+ * We just need to add spread data to those games
  */
-function matchSpreadWithModels(spreadGames, matchedGames) {
+function analyzeSpreadOpportunities(matchedGames, spreadGames) {
   const opportunities = [];
-  let noMatchCount = 0;
+  let noSpreadDataCount = 0;
   let noModelDataCount = 0;
   let modelsDisagreeCount = 0;
-  const unmatchedGames = [];
   
   const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z]/g, '') || '';
   
-  for (const spreadGame of spreadGames) {
-    // Find matching game in our model data
-    const modelGame = matchedGames.find(mg => {
-      const awayMatch = normalizeTeam(mg.awayTeam).includes(normalizeTeam(spreadGame.awayTeam)) ||
-                        normalizeTeam(spreadGame.awayTeam).includes(normalizeTeam(mg.awayTeam));
-      const homeMatch = normalizeTeam(mg.homeTeam).includes(normalizeTeam(spreadGame.homeTeam)) ||
-                        normalizeTeam(spreadGame.homeTeam).includes(normalizeTeam(mg.homeTeam));
-      return awayMatch && homeMatch;
-    });
+  // Build spread lookup from spread games
+  const spreadLookup = new Map();
+  spreadGames.forEach(sg => {
+    const key = `${normalizeTeam(sg.awayTeam)}_${normalizeTeam(sg.homeTeam)}`;
+    spreadLookup.set(key, sg);
+  });
+  
+  // Iterate through MATCHED games (already have model data)
+  for (const modelGame of matchedGames) {
+    // Find spread data for this game
+    const key = `${normalizeTeam(modelGame.awayTeam)}_${normalizeTeam(modelGame.homeTeam)}`;
+    let spreadGame = spreadLookup.get(key);
     
-    if (!modelGame) {
-      noMatchCount++;
-      unmatchedGames.push(`${spreadGame.awayTeam} @ ${spreadGame.homeTeam}`);
+    // Try partial matching if direct match fails
+    if (!spreadGame) {
+      spreadGame = spreadGames.find(sg => {
+        const awayMatch = normalizeTeam(modelGame.awayTeam).includes(normalizeTeam(sg.awayTeam)) ||
+                          normalizeTeam(sg.awayTeam).includes(normalizeTeam(modelGame.awayTeam));
+        const homeMatch = normalizeTeam(modelGame.homeTeam).includes(normalizeTeam(sg.homeTeam)) ||
+                          normalizeTeam(sg.homeTeam).includes(normalizeTeam(modelGame.homeTeam));
+        return awayMatch && homeMatch;
+      });
+    }
+    
+    if (!spreadGame) {
+      noSpreadDataCount++;
       continue;
     }
+    
     if (!modelGame.dratings || !modelGame.haslametrics) {
       noModelDataCount++;
       continue;
@@ -231,21 +246,12 @@ function matchSpreadWithModels(spreadGames, matchedGames) {
   }
   
   // Log matching summary
-  console.log(`\n📊 SPREAD MATCHING BREAKDOWN:`);
-  console.log(`   Total spread games: ${spreadGames.length}`);
-  console.log(`   ❌ No model match: ${noMatchCount} games`);
+  console.log(`\n📊 SPREAD ANALYSIS BREAKDOWN:`);
+  console.log(`   Total matched games: ${matchedGames.length}`);
+  console.log(`   ❌ No spread data: ${noSpreadDataCount} games (spread not available)`);
   console.log(`   ❌ Missing model data: ${noModelDataCount} games`);
   console.log(`   ❌ Models disagree: ${modelsDisagreeCount} games`);
   console.log(`   ✅ Fully analyzed: ${opportunities.length} games`);
-  
-  if (unmatchedGames.length > 0 && unmatchedGames.length <= 10) {
-    console.log(`\n   🔍 Unmatched games (need CSV mapping?):`);
-    unmatchedGames.forEach(g => console.log(`      - ${g}`));
-  } else if (unmatchedGames.length > 10) {
-    console.log(`\n   🔍 First 10 unmatched games:`);
-    unmatchedGames.slice(0, 10).forEach(g => console.log(`      - ${g}`));
-    console.log(`      ... and ${unmatchedGames.length - 10} more`);
-  }
   
   return opportunities;
 }
@@ -595,9 +601,10 @@ async function findSpreadOpportunities() {
     const matchedGames = matchGamesWithCSV(existingOdds, haslaData, dratePreds, bartData, csvContent);
     console.log(`✅ Matched ${matchedGames.length} games with model data\n`);
     
-    // 4. Find spread opportunities
+    // 4. Analyze spread opportunities using ALREADY MATCHED games
+    // The matchedGames have perfect CSV-based matching - just add spread data
     console.log('🔍 Analyzing spread opportunities...');
-    const opportunities = matchSpreadWithModels(spreadGames, matchedGames);
+    const opportunities = analyzeSpreadOpportunities(matchedGames, spreadGames);
     
     console.log(`\n📊 SPREAD ANALYSIS RESULTS:`);
     console.log(`   Total analyzed: ${opportunities.length}`);
