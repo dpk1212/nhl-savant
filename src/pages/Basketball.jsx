@@ -52,7 +52,7 @@ const Basketball = () => {
   const [gameStatusFilter, setGameStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('confidence'); // 'confidence' | 'time' | 'edge' | 'savant'
   const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
-  const [showModelsAligned, setShowModelsAligned] = useState(false); // Filter to show only when both models agree
+  const [showPrimeOnly, setShowPrimeOnly] = useState(false); // Filter to show only Prime picks (EV + spread confirmed)
   const [teamMappings, setTeamMappings] = useState(null);
   
   // Bet outcomes state
@@ -777,38 +777,38 @@ const Basketball = () => {
                   })()}
                 </span>
               </button>
-              {/* Models Aligned Filter */}
+              {/* Prime Picks Filter (EV + Spread Confirmed) */}
               <button
-                onClick={() => setShowModelsAligned(!showModelsAligned)}
+                onClick={() => setShowPrimeOnly(!showPrimeOnly)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  background: showModelsAligned 
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)'
+                  background: showPrimeOnly 
+                    ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.15) 100%)'
                     : 'rgba(15, 23, 42, 0.5)',
-                  border: showModelsAligned 
-                    ? '2px solid rgba(16, 185, 129, 0.5)'
+                  border: showPrimeOnly 
+                    ? '2px solid rgba(59, 130, 246, 0.5)'
                     : '1px solid rgba(71, 85, 105, 0.3)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
               >
-                <span style={{ fontSize: '12px' }}>🔗</span>
+                <span style={{ fontSize: '12px' }}>⚡</span>
                 <span style={{
                   fontSize: '13px',
                   fontWeight: '600',
-                  color: showModelsAligned ? 'rgba(16, 185, 129, 0.95)' : '#cbd5e1',
+                  color: showPrimeOnly ? 'rgba(59, 130, 246, 0.95)' : '#cbd5e1',
                 }}>
-                  Models Aligned
+                  Prime
                 </span>
                 <span style={{
                   fontSize: '11px',
                   fontWeight: '700',
-                  color: showModelsAligned ? 'rgba(16, 185, 129, 0.8)' : 'rgba(255,255,255,0.5)',
-                  background: showModelsAligned ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.1)',
+                  color: showPrimeOnly ? 'rgba(59, 130, 246, 0.8)' : 'rgba(255,255,255,0.5)',
+                  background: showPrimeOnly ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.1)',
                   padding: '2px 6px',
                   borderRadius: '4px',
                 }}>
@@ -818,7 +818,10 @@ const Basketball = () => {
                     return gamesToCount.filter(g => {
                       const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
                       const bet = betsMap.get(key);
-                      return g.prediction?.modelsAgree === true || bet?.prediction?.modelsAgree === true;
+                      // Prime = EV bet with spread confirmation OR spread opportunity bet
+                      return bet?.prediction?.spreadConfirmed === true || 
+                             bet?.source === 'SPREAD_OPPORTUNITY' ||
+                             bet?.spreadAnalysis?.marginOverSpread > 0;
                     }).length;
                   })()}
                 </span>
@@ -963,13 +966,15 @@ const Basketball = () => {
                 filteredGames = filteredGames.filter(game => isGameSavantPick(game));
               }
               
-              // 🔗 Apply Models Aligned filter (if showModelsAligned is enabled)
-              if (showModelsAligned) {
+              // ⚡ Apply Prime filter (EV + Spread Confirmed)
+              if (showPrimeOnly) {
                 filteredGames = filteredGames.filter(game => {
-                  // Check if models agree from prediction or from Firebase bet
                   const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
                   const bet = betsMap.get(key);
-                  return game.prediction?.modelsAgree === true || bet?.prediction?.modelsAgree === true;
+                  // Prime = EV bet with spread confirmation OR spread opportunity bet
+                  return bet?.prediction?.spreadConfirmed === true || 
+                         bet?.source === 'SPREAD_OPPORTUNITY' ||
+                         bet?.spreadAnalysis?.marginOverSpread > 0;
                 });
               }
               

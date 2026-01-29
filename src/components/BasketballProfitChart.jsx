@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
-const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = false, showModelsAlignedLine = false }) => {
+const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = false, showPrimeLine = false }) => {
   const isMobile = window.innerWidth < 768;
   
   // Process bets into timeline data
@@ -47,21 +47,24 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
     
     let cumulativeAll = 0;
     let cumulativeSavant = 0;
-    let cumulativeModelsAligned = 0;
+    let cumulativePrime = 0;
     
     const allData = sortedBets.map((bet, index) => {
       const profit = bet.result?.profit || 0;
       const grade = bet.prediction?.grade || 'B';
       const isSavant = bet.savantPick === true;
-      const isModelsAligned = bet.prediction?.modelsAgree === true;
+      // Prime = EV bet with spread confirmation OR spread opportunity bet
+      const isPrime = bet.prediction?.spreadConfirmed === true || 
+                      bet.source === 'SPREAD_OPPORTUNITY' ||
+                      bet.spreadAnalysis?.marginOverSpread > 0;
       
       // Update cumulative profits
       cumulativeAll += profit;
       if (isSavant) {
         cumulativeSavant += profit;
       }
-      if (isModelsAligned) {
-        cumulativeModelsAligned += profit;
+      if (isPrime) {
+        cumulativePrime += profit;
       }
       
       const date = bet.timestamp?.toDate?.() || new Date(bet.timestamp);
@@ -72,16 +75,16 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
         fullDate: date,
         all: parseFloat(cumulativeAll.toFixed(2)),
         savant: parseFloat(cumulativeSavant.toFixed(2)),
-        modelsAligned: parseFloat(cumulativeModelsAligned.toFixed(2)),
+        prime: parseFloat(cumulativePrime.toFixed(2)),
         isSavant,
-        isModelsAligned,
+        isPrime,
         betDetails: {
           grade,
           profit,
           outcome: bet.result?.outcome,
           teams: `${bet.game?.awayTeam || '?'} @ ${bet.game?.homeTeam || '?'}`,
           isSavant,
-          isModelsAligned
+          isPrime
         }
       };
     });
@@ -106,9 +109,9 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
   // Get final profits
   const finalProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].all : 0;
   const finalSavantProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].savant : 0;
-  const finalModelsAlignedProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].modelsAligned : 0;
+  const finalPrimeProfit = timelineData.length > 0 ? timelineData[timelineData.length - 1].prime : 0;
   const hasSavantBets = showSavantLine && timelineData.some(d => d.isSavant);
-  const hasModelsAlignedBets = showModelsAlignedLine && timelineData.some(d => d.isModelsAligned);
+  const hasPrimeBets = showPrimeLine && timelineData.some(d => d.isPrime);
   
   // Get filter label
   const filterLabel = timeFilter === 'all' ? 'All Time' :
@@ -123,7 +126,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
     const data = payload[0].payload;
     const allValue = data.all;
     const savantValue = data.savant;
-    const modelsAlignedValue = data.modelsAligned;
+    const primeValue = data.prime;
     const isPositive = allValue >= 0;
     
     return (
@@ -207,8 +210,8 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
           </div>
         )}
         
-        {/* Models Aligned Profit */}
-        {hasModelsAlignedBets && modelsAlignedValue !== 0 && (
+        {/* Prime Profit */}
+        {hasPrimeBets && primeValue !== 0 && (
           <div style={{ marginBottom: '0.625rem' }}>
             <div style={{ 
               fontSize: '0.625rem', 
@@ -221,16 +224,16 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               alignItems: 'center',
               gap: '0.25rem'
             }}>
-              🔗 Models Aligned
+              ⚡ Prime
             </div>
             <div style={{ 
               fontSize: isMobile ? '0.938rem' : '1.125rem', 
               fontWeight: '800', 
-              color: modelsAlignedValue >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
+              color: primeValue >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
               fontFeatureSettings: "'tnum'",
               letterSpacing: '-0.02em'
             }}>
-              {modelsAlignedValue >= 0 ? '+' : ''}{modelsAlignedValue.toFixed(2)}u
+              {primeValue >= 0 ? '+' : ''}{primeValue.toFixed(2)}u
             </div>
           </div>
         )}
@@ -269,7 +272,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                   SAVANT
                 </span>
               )}
-              {data.betDetails.isModelsAligned && (
+              {data.betDetails.isPrime && (
                 <span style={{ 
                   background: 'rgba(59, 130, 246, 0.15)',
                   border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -279,7 +282,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                   fontWeight: '700',
                   fontSize: '0.563rem'
                 }}>
-                  ALIGNED
+                  PRIME
                 </span>
               )}
               <span style={{ 
@@ -504,8 +507,8 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
             </div>
           )}
           
-          {/* Models Aligned Badge */}
-          {hasModelsAlignedBets && (
+          {/* Prime Badge */}
+          {hasPrimeBets && (
             <div style={{
               background: finalModelsAlignedProfit >= 0 
                 ? `linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(37, 99, 235, 0.12) 100%)`
@@ -532,7 +535,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                 justifyContent: 'center',
                 gap: '0.25rem'
               }}>
-                🔗 Aligned
+                ⚡ Prime
               </div>
               <div style={{ 
                 fontSize: isMobile ? '1.25rem' : '1.625rem', 
@@ -553,7 +556,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
       </div>
       
       {/* Legend */}
-      {(hasSavantBets || hasModelsAlignedBets) && (
+      {(hasSavantBets || hasPrimeBets) && (
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -596,7 +599,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               </span>
             </div>
           )}
-          {hasModelsAlignedBets && (
+          {hasPrimeBets && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{
                 width: isMobile ? '20px' : '24px',
@@ -613,7 +616,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                 alignItems: 'center',
                 gap: '0.25rem'
               }}>
-                🔗 Models Aligned
+                ⚡ Prime
               </span>
             </div>
           )}
@@ -636,7 +639,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                 <stop offset="5%" stopColor="#FBBF24" stopOpacity={0.15}/>
                 <stop offset="95%" stopColor="#FBBF24" stopOpacity={0}/>
               </linearGradient>
-              <linearGradient id="modelsAlignedGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="primeGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15}/>
                 <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
               </linearGradient>
@@ -716,12 +719,12 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               />
             )}
             
-            {/* Models Aligned Line */}
-            {hasModelsAlignedBets && (
+            {/* Prime Line */}
+            {hasPrimeBets && (
               <Line 
                 type="monotone" 
-                dataKey="modelsAligned"
-                name="Models Aligned"
+                dataKey="prime"
+                name="Prime"
                 stroke="rgba(59, 130, 246, 0.9)"
                 strokeWidth={isMobile ? 2 : 2.5}
                 strokeDasharray="4 4"

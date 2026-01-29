@@ -18,7 +18,7 @@ export function BasketballPerformanceDashboard() {
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
   const [showSavantOnly, setShowSavantOnly] = useState(true); // Filter to show only Savant Picks - DEFAULT ON
-  const [showModelsAlignedOnly, setShowModelsAlignedOnly] = useState(false); // Filter to show only Models Aligned picks
+  const [showPrimeOnly, setShowPrimeOnly] = useState(false); // Filter to show only Prime picks (EV + spread confirmed)
 
   // Fetch ALL bets from Firebase for chart and time calculations
   useEffect(() => {
@@ -126,8 +126,13 @@ export function BasketballPerformanceDashboard() {
       // Apply Savant filter
       if (showSavantOnly && !b.savantPick) return false;
       
-      // Apply Models Aligned filter
-      if (showModelsAlignedOnly && b.prediction?.modelsAgree !== true) return false;
+      // Apply Prime filter (EV + spread confirmed)
+      if (showPrimeOnly) {
+        const isPrime = b.prediction?.spreadConfirmed === true || 
+                        b.source === 'SPREAD_OPPORTUNITY' ||
+                        b.spreadAnalysis?.marginOverSpread > 0;
+        if (!isPrime) return false;
+      }
       
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
       
@@ -164,16 +169,21 @@ export function BasketballPerformanceDashboard() {
       gradedBets: gradedBets.length,
       totalBets: gradedBets.length
     };
-  }, [stats, allBets, timeFilter, showSavantOnly, showModelsAlignedOnly]);
+  }, [stats, allBets, timeFilter, showSavantOnly, showPrimeOnly]);
   
   // Count Savant Picks for display
   const savantCount = useMemo(() => {
     return allBets.filter(b => b.savantPick && b.result?.outcome).length;
   }, [allBets]);
   
-  // Count Models Aligned picks for display
-  const modelsAlignedCount = useMemo(() => {
-    return allBets.filter(b => b.prediction?.modelsAgree === true && b.result?.outcome).length;
+  // Count Prime picks for display (EV + spread confirmed)
+  const primeCount = useMemo(() => {
+    return allBets.filter(b => {
+      if (!b.result?.outcome) return false;
+      return b.prediction?.spreadConfirmed === true || 
+             b.source === 'SPREAD_OPPORTUNITY' ||
+             b.spreadAnalysis?.marginOverSpread > 0;
+    }).length;
   }, [allBets]);
 
   if (loading) {
@@ -446,7 +456,7 @@ export function BasketballPerformanceDashboard() {
               </div>
               
               {/* Filter Buttons */}
-              {(savantCount > 0 || modelsAlignedCount > 0) && (
+              {(savantCount > 0 || primeCount > 0) && (
                 <div>
                   <div style={{ 
                     fontSize: isMobile ? '0.625rem' : '0.688rem', 
@@ -512,21 +522,21 @@ export function BasketballPerformanceDashboard() {
                       </button>
                     )}
                     
-                    {/* Models Aligned Button */}
-                    {modelsAlignedCount > 0 && (
+                    {/* Prime Button (EV + Spread Confirmed) */}
+                    {primeCount > 0 && (
                       <button
-                        onClick={() => setShowModelsAlignedOnly(!showModelsAlignedOnly)}
+                        onClick={() => setShowPrimeOnly(!showPrimeOnly)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          background: showModelsAlignedOnly 
+                          background: showPrimeOnly 
                             ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(37, 99, 235, 0.12) 100%)'
                             : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
-                          border: showModelsAlignedOnly 
+                          border: showPrimeOnly 
                             ? '1px solid rgba(59, 130, 246, 0.5)'
                             : '1px solid rgba(255,255,255,0.08)',
-                          color: showModelsAlignedOnly ? 'rgba(59, 130, 246, 0.95)' : 'rgba(255,255,255,0.7)',
+                          color: showPrimeOnly ? 'rgba(59, 130, 246, 0.95)' : 'rgba(255,255,255,0.7)',
                           padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
                           borderRadius: '8px',
                           fontSize: isMobile ? '0.75rem' : '0.813rem',
@@ -536,22 +546,22 @@ export function BasketballPerformanceDashboard() {
                           outline: 'none',
                           backdropFilter: 'blur(8px)',
                           WebkitBackdropFilter: 'blur(8px)',
-                          boxShadow: showModelsAlignedOnly
+                          boxShadow: showPrimeOnly
                             ? '0 4px 12px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
                             : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
                         }}
                       >
-                        <span>🔗</span>
-                        <span>Models Aligned</span>
+                        <span>⚡</span>
+                        <span>Prime</span>
                         <span style={{
                           fontSize: '0.688rem',
                           fontWeight: '800',
-                          color: showModelsAlignedOnly ? 'rgba(59, 130, 246, 0.8)' : 'rgba(255,255,255,0.5)',
-                          background: showModelsAlignedOnly ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.1)',
+                          color: showPrimeOnly ? 'rgba(59, 130, 246, 0.8)' : 'rgba(255,255,255,0.5)',
+                          background: showPrimeOnly ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.1)',
                           padding: '0.125rem 0.375rem',
                           borderRadius: '4px',
                         }}>
-                          {modelsAlignedCount}
+                          {primeCount}
                         </span>
                       </button>
                     )}
@@ -720,7 +730,7 @@ export function BasketballPerformanceDashboard() {
               bets={allBets} 
               timeFilter={timeFilter} 
               showSavantLine={savantCount > 0}
-              showModelsAlignedLine={modelsAlignedCount > 0}
+              showPrimeLine={primeCount > 0}
             />
           )}
         </div>
