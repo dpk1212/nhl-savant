@@ -818,10 +818,8 @@ const Basketball = () => {
                     return gamesToCount.filter(g => {
                       const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
                       const bet = betsMap.get(key);
-                      // Prime = EV bet with spread confirmation OR spread opportunity bet
-                      return bet?.prediction?.spreadConfirmed === true || 
-                             bet?.source === 'SPREAD_OPPORTUNITY' ||
-                             bet?.spreadAnalysis?.marginOverSpread > 0;
+                      // Prime = EV bet with spread confirmation ONLY
+                      return bet?.prediction?.spreadConfirmed === true;
                     }).length;
                   })()}
                 </span>
@@ -966,15 +964,13 @@ const Basketball = () => {
                 filteredGames = filteredGames.filter(game => isGameSavantPick(game));
               }
               
-              // ⚡ Apply Prime filter (EV + Spread Confirmed)
+              // ⚡ Apply Prime filter (EV + Spread Confirmed ONLY)
               if (showPrimeOnly) {
                 filteredGames = filteredGames.filter(game => {
                   const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
                   const bet = betsMap.get(key);
-                  // Prime = EV bet with spread confirmation OR spread opportunity bet
-                  return bet?.prediction?.spreadConfirmed === true || 
-                         bet?.source === 'SPREAD_OPPORTUNITY' ||
-                         bet?.spreadAnalysis?.marginOverSpread > 0;
+                  // Prime = EV bet with spread confirmation ONLY
+                  return bet?.prediction?.spreadConfirmed === true;
                 });
               }
               

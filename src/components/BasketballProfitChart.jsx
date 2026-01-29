@@ -53,10 +53,8 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
       const profit = bet.result?.profit || 0;
       const grade = bet.prediction?.grade || 'B';
       const isSavant = bet.savantPick === true;
-      // Prime = EV bet with spread confirmation OR spread opportunity bet
-      const isPrime = bet.prediction?.spreadConfirmed === true || 
-                      bet.source === 'SPREAD_OPPORTUNITY' ||
-                      bet.spreadAnalysis?.marginOverSpread > 0;
+      // Prime = EV bet with spread confirmation ONLY
+      const isPrime = bet.prediction?.spreadConfirmed === true;
       
       // Update cumulative profits
       cumulativeAll += profit;
@@ -510,16 +508,16 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
           {/* Prime Badge */}
           {hasPrimeBets && (
             <div style={{
-              background: finalModelsAlignedProfit >= 0 
+              background: finalPrimeProfit >= 0 
                 ? `linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(37, 99, 235, 0.12) 100%)`
                 : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
-              border: `1px solid ${finalModelsAlignedProfit >= 0 ? 'rgba(59, 130, 246, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+              border: `1px solid ${finalPrimeProfit >= 0 ? 'rgba(59, 130, 246, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
               borderRadius: isMobile ? '10px' : '11px',
               padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
               textAlign: 'center',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: finalModelsAlignedProfit >= 0
+              boxShadow: finalPrimeProfit >= 0
                 ? '0 4px 16px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
                 : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
             }}>
@@ -540,15 +538,15 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               <div style={{ 
                 fontSize: isMobile ? '1.25rem' : '1.625rem', 
                 fontWeight: '900', 
-                color: finalModelsAlignedProfit >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
+                color: finalPrimeProfit >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
                 fontFeatureSettings: "'tnum'",
                 letterSpacing: '-0.04em',
-                textShadow: finalModelsAlignedProfit >= 0
+                textShadow: finalPrimeProfit >= 0
                   ? '0 2px 16px rgba(59, 130, 246, 0.3)'
                   : '0 2px 16px rgba(239, 68, 68, 0.3)',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
               }}>
-                {finalModelsAlignedProfit >= 0 ? '+' : ''}{finalModelsAlignedProfit}u
+                {finalPrimeProfit >= 0 ? '+' : ''}{finalPrimeProfit}u
               </div>
             </div>
           )}
