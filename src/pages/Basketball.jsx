@@ -818,8 +818,8 @@ const Basketball = () => {
                     return gamesToCount.filter(g => {
                       const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
                       const bet = betsMap.get(key);
-                      // Prime = EV bet with spread confirmation ONLY
-                      return bet?.prediction?.spreadConfirmed === true;
+                      // Prime = EV bet with spread confirmation (spreadBoost only exists on upgraded EV bets)
+                      return bet?.prediction?.spreadBoost > 0;
                     }).length;
                   })()}
                 </span>
@@ -969,8 +969,8 @@ const Basketball = () => {
                 filteredGames = filteredGames.filter(game => {
                   const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
                   const bet = betsMap.get(key);
-                  // Prime = EV bet with spread confirmation ONLY
-                  return bet?.prediction?.spreadConfirmed === true;
+                  // Prime = EV bet with spread boost (only exists on upgraded EV bets)
+                  return bet?.prediction?.spreadBoost > 0;
                 });
               }
               

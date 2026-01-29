@@ -126,9 +126,9 @@ export function BasketballPerformanceDashboard() {
       // Apply Savant filter
       if (showSavantOnly && !b.savantPick) return false;
       
-      // Apply Prime filter (EV + spread confirmed ONLY)
+      // Apply Prime filter (EV bets with spread boost ONLY)
       if (showPrimeOnly) {
-        if (b.prediction?.spreadConfirmed !== true) return false;
+        if (!(b.prediction?.spreadBoost > 0)) return false;
       }
       
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
@@ -173,11 +173,11 @@ export function BasketballPerformanceDashboard() {
     return allBets.filter(b => b.savantPick && b.result?.outcome).length;
   }, [allBets]);
   
-  // Count Prime picks for display (EV + spread confirmed ONLY)
+  // Count Prime picks for display (EV bets with spread boost ONLY)
   const primeCount = useMemo(() => {
     return allBets.filter(b => {
       if (!b.result?.outcome) return false;
-      return b.prediction?.spreadConfirmed === true;
+      return b.prediction?.spreadBoost > 0;
     }).length;
   }, [allBets]);
 
