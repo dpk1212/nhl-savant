@@ -177,7 +177,8 @@ export function parseOddsTrader(markdownText) {
       } else {
         // If not a total, try moneyline (match odds immediately before sportsbook name)
         // Updated regex to include new offshore sportsbooks (OddsTrader changed partners Jan 2026)
-        const awayOddsMatch = line.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame)/i);
+        // CRITICAL: Also match "Bet" followed by any alphanumeric (e.g., Bet105, BetUS, etc.)
+        const awayOddsMatch = line.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame|Bet\d+|BetUS)/i);
         if (awayOddsMatch) {
           currentGame.moneyline.away = parseInt(awayOddsMatch[1]);
           console.log(`  💰 Away odds: ${currentGame.moneyline.away} (from ${awayOddsMatch[2]})`);
@@ -218,7 +219,8 @@ export function parseOddsTrader(markdownText) {
       } else {
         // If not a total, try moneyline (match odds immediately before sportsbook name)
         // Updated regex to include new offshore sportsbooks (OddsTrader changed partners Jan 2026)
-        const homeOddsMatch = nextLine.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame)/i);
+        // CRITICAL: Also match "Bet" followed by any alphanumeric (e.g., Bet105, BetUS, etc.)
+        const homeOddsMatch = nextLine.match(/([-+]\d{3,})(Bet365|Caesars|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame|Bet\d+|BetUS)/i);
         if (homeOddsMatch) {
           currentGame.moneyline.home = parseInt(homeOddsMatch[1]);
           console.log(`  💰 Home odds: ${currentGame.moneyline.home} (from ${homeOddsMatch[2]})`);
