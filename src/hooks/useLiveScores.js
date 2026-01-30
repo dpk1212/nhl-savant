@@ -16,7 +16,6 @@ export function useLiveScores() {
   const fetchScores = async () => {
     try {
       // CRITICAL FIX: Use LOCAL date, not UTC date
-      // UTC date can be a day ahead when it's evening in North America
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -24,41 +23,53 @@ export function useLiveScores() {
       const today = `${year}-${month}-${day}`;
       console.log(`📊 Fetching live scores from NHL API for ${today} (LOCAL time)...`);
       
-      // Use CORS proxy to bypass browser restrictions
-      // Try multiple proxies in case one fails
-      const corsProxies = [
-        'https://api.allorigins.win/raw?url=',
-        'https://corsproxy.io/?'
-      ];
-      
+      // Try direct NHL API first (works in some environments)
       const nhlApiUrl = `https://api-web.nhle.com/v1/schedule/${today}`;
       
       let response = null;
-      let lastError = null;
+      let data = null;
       
-      for (const proxy of corsProxies) {
-        try {
-          const fullUrl = `${proxy}${encodeURIComponent(nhlApiUrl)}`;
-          response = await fetch(fullUrl);
-          if (response.ok) {
-            console.log(`✅ Successfully fetched via ${proxy.split('/')[2]}`);
-            break;
+      // Try direct fetch first
+      try {
+        response = await fetch(nhlApiUrl);
+        if (response.ok) {
+          data = await response.json();
+          console.log('✅ Direct NHL API fetch successful');
+        }
+      } catch (e) {
+        console.log('⚠️ Direct fetch failed, trying proxies...');
+      }
+      
+      // If direct failed, try proxies
+      if (!data) {
+        const corsProxies = [
+          'https://corsproxy.io/?',
+          'https://api.allorigins.win/raw?url='
+        ];
+        
+        for (const proxy of corsProxies) {
+          try {
+            const fullUrl = `${proxy}${encodeURIComponent(nhlApiUrl)}`;
+            response = await fetch(fullUrl);
+            if (response.ok) {
+              data = await response.json();
+              console.log(`✅ Fetched via ${proxy.split('/')[2]}`);
+              break;
+            }
+          } catch (e) {
+            console.warn(`⚠️ Proxy ${proxy.split('/')[2]} failed`);
           }
-        } catch (e) {
-          lastError = e;
-          console.warn(`⚠️ Proxy ${proxy.split('/')[2]} failed, trying next...`);
         }
       }
       
-      if (!response || !response.ok) {
-        throw lastError || new Error('All proxies failed');
+      // If ALL methods failed, just return empty - don't crash
+      if (!data) {
+        console.warn('⚠️ All live score methods failed - showing pre-game data only');
+        setScores([]);
+        setLoading(false);
+        return;
       }
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
       const gameWeek = data.gameWeek || [];
       const games = gameWeek[0]?.games || [];
       
