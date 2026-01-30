@@ -178,8 +178,10 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
     (score.away === awayTeam && score.home === homeTeam)
   );
   
-  const isLive = liveScore && (liveScore.status === 'LIVE' || liveScore.status === 'In Progress');
-  const isFinal = liveScore && (liveScore.status === 'FINAL' || liveScore.status === 'Final');
+  // CRITICAL: Only show live layout for ACTUALLY live/final games - NOT scheduled
+  const isScheduled = liveScore && (liveScore.status === 'SCHEDULED' || liveScore.status === 'FUT' || liveScore.status === 'PRE' || liveScore.gameState === 'FUT' || liveScore.gameState === 'PRE');
+  const isLive = liveScore && !isScheduled && (liveScore.status === 'LIVE' || liveScore.status === 'In Progress');
+  const isFinal = liveScore && !isScheduled && (liveScore.status === 'FINAL' || liveScore.status === 'Final' || liveScore.status === 'OFF');
   
   // 🔒 Check if this game has a LOCKED pick from Firebase
   const firebaseBet = firebaseBets?.find(bet => 
