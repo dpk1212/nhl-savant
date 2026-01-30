@@ -25,9 +25,34 @@ export function useLiveScores() {
       console.log(`📊 Fetching live scores from NHL API for ${today} (LOCAL time)...`);
       
       // Use CORS proxy to bypass browser restrictions
-      const corsProxy = 'https://corsproxy.io/?';
+      // Try multiple proxies in case one fails
+      const corsProxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?'
+      ];
+      
       const nhlApiUrl = `https://api-web.nhle.com/v1/schedule/${today}`;
-      const response = await fetch(`${corsProxy}${encodeURIComponent(nhlApiUrl)}`);
+      
+      let response = null;
+      let lastError = null;
+      
+      for (const proxy of corsProxies) {
+        try {
+          const fullUrl = `${proxy}${encodeURIComponent(nhlApiUrl)}`;
+          response = await fetch(fullUrl);
+          if (response.ok) {
+            console.log(`✅ Successfully fetched via ${proxy.split('/')[2]}`);
+            break;
+          }
+        } catch (e) {
+          lastError = e;
+          console.warn(`⚠️ Proxy ${proxy.split('/')[2]} failed, trying next...`);
+        }
+      }
+      
+      if (!response || !response.ok) {
+        throw lastError || new Error('All proxies failed');
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -88,11 +113,23 @@ export function useLiveScores() {
   // Fetch detailed live game data including clock
   const fetchLiveGameDetails = async (gameData) => {
     try {
-      const corsProxy = 'https://corsproxy.io/?';
+      const corsProxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?'
+      ];
       const url = `https://api-web.nhle.com/v1/gamecenter/${gameData.gameId}/play-by-play`;
-      const response = await fetch(`${corsProxy}${encodeURIComponent(url)}`);
       
-      if (!response.ok) {
+      let response = null;
+      for (const proxy of corsProxies) {
+        try {
+          response = await fetch(`${proxy}${encodeURIComponent(url)}`);
+          if (response.ok) break;
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      if (!response || !response.ok) {
         console.warn(`⚠️  Could not fetch live details for game ${gameData.gameId}`);
         return;
       }
