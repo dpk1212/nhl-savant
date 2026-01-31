@@ -254,6 +254,7 @@ export function matchGames(apiGame, ourGame, teamMappings) {
 
 /**
  * Fuzzy team name matching
+ * CRITICAL: Avoid false positives like "Michigan" matching "Michigan State"
  */
 function teamNamesMatch(name1, name2) {
   if (!name1 || !name2) return false;
@@ -275,10 +276,17 @@ function teamNamesMatch(name1, name2) {
   const norm1 = normalize(name1);
   const norm2 = normalize(name2);
   
+  // Exact match after normalization
   if (norm1 === norm2) return true;
   
+  // CRITICAL FIX: Only allow substring matching if the lengths are similar
+  // This prevents "michigan" from matching "michiganst" (Michigan State)
+  // Require at least 80% length similarity for substring matching
   if (norm1.length >= 4 && norm2.length >= 4) {
-    if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
+    const lengthRatio = Math.min(norm1.length, norm2.length) / Math.max(norm1.length, norm2.length);
+    if (lengthRatio >= 0.8) {
+      if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
+    }
   }
   
   return false;
