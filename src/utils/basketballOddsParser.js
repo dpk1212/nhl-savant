@@ -190,7 +190,8 @@ export function parseBasketballOdds(markdown) {
       
       // Extract odds (look for +/- number before sportsbook name)
       // Updated regex to include new offshore sportsbooks (OddsTrader changed partners Jan 2026)
-      const oddsMatch = teamSection.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame)/i);
+      // CRITICAL: Also match "Bet" followed by any digits (e.g., Bet105, Bet99)
+      const oddsMatch = teamSection.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame|Bet\d+|BetUS)/i);
       const awayOdds = oddsMatch ? parseInt(oddsMatch[1]) : null;
       
       // Now look at NEXT line for HOME team
@@ -211,7 +212,8 @@ export function parseBasketballOdds(markdown) {
       const homeRecord = homeRecordMatch ? homeRecordMatch[1] : null;
       
       // Updated regex to include new offshore sportsbooks (OddsTrader changed partners Jan 2026)
-      const homeOddsMatch = homeSection.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame)/i);
+      // CRITICAL: Also match "Bet" followed by any digits (e.g., Bet105, Bet99)
+      const homeOddsMatch = homeSection.match(/([+-]\d+)(?:Caesars|Bet365|BetMGM|BetRivers|SugarHouse|FanDuel|Bovada|BetOnline|BetAnything|Heritage|Bookmaker|JustBet|MyBookie|Everygame|Bet\d+|BetUS)/i);
       const homeOdds = homeOddsMatch ? parseInt(homeOddsMatch[1]) : null;
       
       // Create game object
