@@ -1,12 +1,15 @@
 /**
  * Spread-Based Moneyline Opportunity Finder
  * 
- * Strategy: Find games where BOTH models predict:
- * 1. Team COVERS the spread (predicted margin > spread)
- * 2. Team WINS the game (models aligned)
+ * Strategy: Tiered conviction based on D-Ratings (proven more accurate):
  * 
- * If both conditions are met, write MONEYLINE bet for that team.
- * This filters for high-conviction picks where models agree on both winner AND margin.
+ * 1. BASE REQUIREMENT: D-Ratings must predict team covers the spread
+ * 2. LIGHT BOOST (+0.25u): 90/10 weighted blend also covers
+ * 3. MAX BOOST (+0.5u): BOTH models independently cover
+ * 
+ * Based on analysis (2026-02-01):
+ * - D-Ratings is more accurate (62.7% vs 61.4% winner prediction)
+ * - "Both cover" filter shows +10.9% actual cover rate vs baseline
  * 
  * Usage: npm run find-spread-opportunities
  */
@@ -220,12 +223,29 @@ function analyzeSpreadOpportunities(matchedGames, spreadGames) {
     const drPickedMargin = pickedTeam === 'away' ? drMargin : -drMargin;
     const hsPickedMargin = pickedTeam === 'away' ? hsMargin : -hsMargin;
     
+    // Calculate 90/10 weighted blend margin (D-Ratings dominant)
+    const blendedMargin = (drPickedMargin * 0.90) + (hsPickedMargin * 0.10);
+    
     // To cover: margin must be greater than the spread
     // Spread is usually negative for favorite (e.g., -7.5 means must win by 8+)
     const drCovers = drPickedMargin > -spread;
     const hsCovers = hsPickedMargin > -spread;
+    const blendCovers = blendedMargin > -spread;
     
     const bothCover = drCovers && hsCovers;
+    
+    // TIERED CONVICTION:
+    // - convictionTier: 'MAX' (both cover), 'BLEND' (90/10 covers), 'BASE' (D-Rate only)
+    let convictionTier = null;
+    if (drCovers) {
+      if (bothCover) {
+        convictionTier = 'MAX';      // Both models cover - highest conviction
+      } else if (blendCovers) {
+        convictionTier = 'BLEND';    // 90/10 blend covers - medium conviction
+      } else {
+        convictionTier = 'BASE';     // D-Ratings only covers - base conviction
+      }
+    }
     
     opportunities.push({
       awayTeam: modelGame.awayTeam,
@@ -235,10 +255,13 @@ function analyzeSpreadOpportunities(matchedGames, spreadGames) {
       spread: spread,
       drMargin: Math.round(drPickedMargin * 10) / 10,
       hsMargin: Math.round(hsPickedMargin * 10) / 10,
+      blendedMargin: Math.round(blendedMargin * 10) / 10,
       avgMargin: Math.round((drPickedMargin + hsPickedMargin) / 2 * 10) / 10,
       drCovers,
       hsCovers,
+      blendCovers,
       bothCover,
+      convictionTier,
       modelsAgree,
       odds: modelGame.odds,
       game: modelGame
@@ -257,24 +280,57 @@ function analyzeSpreadOpportunities(matchedGames, spreadGames) {
 }
 
 /**
- * Calculate unit size based on margin over spread
- * Higher margin = higher conviction = more units
+ * Calculate unit size based on margin over spread AND conviction tier
+ * 
+ * Base units from margin, then boost based on model agreement:
+ * - BASE (D-Rate only): no boost
+ * - BLEND (90/10 covers): +0.25u boost
+ * - MAX (both cover): +0.5u boost
  */
-function calculateSpreadUnits(marginOverSpread, odds) {
+function calculateSpreadUnits(marginOverSpread, odds, convictionTier) {
   // Filter extreme favorites (odds worse than -500)
   if (odds < -500) {
-    return { units: 0, tier: 'FILTERED', reason: 'Extreme favorite' };
+    return { units: 0, tier: 'FILTERED', reason: 'Extreme favorite', boost: 0 };
   }
   
+  // Base units from margin over spread
+  let baseUnits;
+  let baseTier;
   if (marginOverSpread >= 5) {
-    return { units: 3.0, tier: 'HIGH', reason: 'Strong spread coverage' };
+    baseUnits = 2.5;
+    baseTier = 'HIGH';
   } else if (marginOverSpread >= 3) {
-    return { units: 2.5, tier: 'GOOD', reason: 'Solid spread coverage' };
+    baseUnits = 2.0;
+    baseTier = 'GOOD';
   } else if (marginOverSpread >= 1.5) {
-    return { units: 2.0, tier: 'MODERATE', reason: 'Moderate spread coverage' };
+    baseUnits = 1.5;
+    baseTier = 'MODERATE';
   } else {
-    return { units: 1.5, tier: 'LOW', reason: 'Thin spread coverage' };
+    baseUnits = 1.0;
+    baseTier = 'LOW';
   }
+  
+  // Apply conviction tier boost
+  let boost = 0;
+  let boostReason = '';
+  if (convictionTier === 'MAX') {
+    boost = 0.5;
+    boostReason = 'Both models cover';
+  } else if (convictionTier === 'BLEND') {
+    boost = 0.25;
+    boostReason = '90/10 blend covers';
+  }
+  
+  const totalUnits = Math.min(baseUnits + boost, 4.0); // Cap at 4u
+  
+  return { 
+    units: totalUnits, 
+    baseUnits: baseUnits,
+    boost: boost,
+    tier: baseTier, 
+    convictionTier: convictionTier,
+    reason: boost > 0 ? `${baseTier} margin + ${boostReason}` : `${baseTier} margin (D-Rate only)`
+  };
 }
 
 /**
@@ -338,11 +394,14 @@ async function saveSpreadOpportunityBet(opp) {
     spread: opp.spread,
     drMargin: opp.drMargin,
     hsMargin: opp.hsMargin,
+    blendedMargin: opp.blendedMargin,
     avgMargin: opp.avgMargin,
-    marginOverSpread: Math.round((opp.avgMargin - Math.abs(opp.spread)) * 10) / 10,
+    marginOverSpread: Math.round((opp.blendedMargin - Math.abs(opp.spread)) * 10) / 10,
     drCovers: opp.drCovers,
     hsCovers: opp.hsCovers,
-    bothModelsCover: true
+    blendCovers: opp.blendCovers,
+    bothModelsCover: opp.bothCover,
+    convictionTier: opp.convictionTier  // MAX, BLEND, or BASE
   };
   
   if (existingEvBet.exists()) {
@@ -383,11 +442,11 @@ async function saveSpreadOpportunityBet(opp) {
   // Get moneyline odds for picked team
   const mlOdds = opp.pickedSide === 'away' ? opp.odds?.awayOdds : opp.odds?.homeOdds;
   
-  // Calculate margin over spread
-  const marginOverSpread = Math.round((opp.avgMargin - Math.abs(opp.spread)) * 10) / 10;
+  // Calculate margin over spread (use blended margin for consistency with 90/10 model)
+  const marginOverSpread = Math.round((opp.blendedMargin - Math.abs(opp.spread)) * 10) / 10;
   
-  // Calculate units based on margin and filter extreme favorites
-  const unitInfo = calculateSpreadUnits(marginOverSpread, mlOdds);
+  // Calculate units based on margin AND conviction tier
+  const unitInfo = calculateSpreadUnits(marginOverSpread, mlOdds, opp.convictionTier);
   
   // Filter out extreme favorites
   if (unitInfo.tier === 'FILTERED') {
@@ -532,8 +591,10 @@ async function saveSpreadOpportunityBet(opp) {
   };
   
   await setDoc(evBetRef, betData);
+  const tierEmoji = opp.convictionTier === 'MAX' ? '🎯' : opp.convictionTier === 'BLEND' ? '💎' : '📊';
   console.log(`   ✅ NEW: ${opp.pickedTeam} ML @ ${mlOdds}`);
   console.log(`      Spread: ${opp.spread} | Margin: +${marginOverSpread} | ${unitInfo.units}u (${unitInfo.tier})`);
+  console.log(`      ${tierEmoji} Conviction: ${opp.convictionTier}${unitInfo.boost > 0 ? ` (+${unitInfo.boost}u boost)` : ''}`);
   return { action: 'created', betId: spreadBetId };
 }
 
@@ -609,9 +670,18 @@ async function findSpreadOpportunities() {
     console.log(`\n📊 SPREAD ANALYSIS RESULTS:`);
     console.log(`   Total analyzed: ${opportunities.length}`);
     
-    // Filter for opportunities where BOTH models predict covering
-    const qualityOpps = opportunities.filter(o => o.bothCover && o.modelsAgree);
-    console.log(`   Both models cover spread: ${qualityOpps.length} ✅\n`);
+    // Filter for opportunities where D-Ratings predicts covering (base requirement)
+    const qualityOpps = opportunities.filter(o => o.drCovers && o.modelsAgree);
+    
+    // Count by conviction tier
+    const maxConviction = qualityOpps.filter(o => o.convictionTier === 'MAX').length;
+    const blendConviction = qualityOpps.filter(o => o.convictionTier === 'BLEND').length;
+    const baseConviction = qualityOpps.filter(o => o.convictionTier === 'BASE').length;
+    
+    console.log(`   D-Ratings covers (eligible): ${qualityOpps.length} ✅`);
+    console.log(`      🎯 MAX (both cover): ${maxConviction}`);
+    console.log(`      💎 BLEND (90/10 covers): ${blendConviction}`);
+    console.log(`      📊 BASE (D-Rate only): ${baseConviction}\n`);
     
     if (qualityOpps.length === 0) {
       console.log('⚠️  No spread opportunities found today.');
@@ -620,11 +690,12 @@ async function findSpreadOpportunities() {
     
     console.log('🎯 SPREAD-BASED MONEYLINE OPPORTUNITIES:\n');
     for (const opp of qualityOpps) {
+      const tierEmoji = opp.convictionTier === 'MAX' ? '🎯' : opp.convictionTier === 'BLEND' ? '💎' : '📊';
       console.log(`   ${opp.awayTeam} @ ${opp.homeTeam}`);
-      console.log(`   Pick: ${opp.pickedTeam} (spread: ${opp.spread})`);
+      console.log(`   Pick: ${opp.pickedTeam} (spread: ${opp.spread}) ${tierEmoji} ${opp.convictionTier}`);
       console.log(`   D-Ratings: ${opp.drCovers ? '✅' : '❌'} ${opp.drMargin > 0 ? '+' : ''}${opp.drMargin} pts`);
       console.log(`   Haslametrics: ${opp.hsCovers ? '✅' : '❌'} ${opp.hsMargin > 0 ? '+' : ''}${opp.hsMargin} pts`);
-      console.log(`   Avg margin: ${opp.avgMargin > 0 ? '+' : ''}${opp.avgMargin} vs spread ${opp.spread}`);
+      console.log(`   90/10 Blend: ${opp.blendCovers ? '✅' : '❌'} ${opp.blendedMargin > 0 ? '+' : ''}${opp.blendedMargin} pts`);
       console.log();
     }
     

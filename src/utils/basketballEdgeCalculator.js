@@ -1,8 +1,11 @@
 /**
  * Basketball Edge Calculator
- * Implements 80/20 ensemble model: D-Ratings (80%) + Haslametrics (20%)
+ * Implements 90/10 ensemble model: D-Ratings (90%) + Haslametrics (10%)
  * 
- * Calculates betting edges and assigns quality grades
+ * Updated 2026-02-01: Analysis showed D-Ratings is more accurate:
+ * - Winner prediction: 62.7% vs 61.4%
+ * - Score prediction: Lower MAE across all metrics
+ * - Head-to-head: D-Ratings closer 51.4% vs 47.7%
  * 
  * DYNAMIC CONFIDENCE UNIT ALLOCATION:
  * Uses live-weighted confidence scoring based on historical ROI performance
@@ -26,10 +29,10 @@ import {
  */
 export class BasketballEdgeCalculator {
   constructor() {
-    // Ensemble weights (Updated weighting)
+    // Ensemble weights (Updated 2026-02-01: D-Ratings proven more accurate)
     this.weights = {
-      dratings: 0.80,    // Primary predictions (increased weight)
-      haslametrics: 0.20  // Tempo-free validation
+      dratings: 0.90,    // Primary predictions (D-Ratings wins 5-0 on accuracy metrics)
+      haslametrics: 0.10  // Secondary validation only
     };
     
     // PHASE 3: Updated grading thresholds (stricter for profitability)
@@ -95,7 +98,7 @@ export class BasketballEdgeCalculator {
       ensembleHomeProb = 1 - ensembleAwayProb;
       confidence = 'HIGH';
       
-      // Calculate ensemble predicted scores (80/20 blend)
+      // Calculate ensemble predicted scores (90/10 blend)
       if (dratings.awayScore && dratings.homeScore && haslametrics.awayScore && haslametrics.homeScore) {
         ensembleAwayScore = 
           (dratings.awayScore * this.weights.dratings) +
@@ -147,8 +150,8 @@ export class BasketballEdgeCalculator {
     const marketAwayProb = this.oddsToProb(odds.awayOdds);
     const marketHomeProb = this.oddsToProb(odds.homeOdds);
     
-    // Use RAW ensemble probabilities (NO calibration - model is already calibrated via 80/20 blend)
-    // Market calibration was killing all edge - D-Ratings + Haslametrics already provides balance
+    // Use RAW ensemble probabilities (NO calibration - model is already calibrated via 90/10 blend)
+    // Market calibration was killing all edge - D-Ratings dominates with 90% weight
     const calibratedAwayProb = ensembleAwayProb;
     const calibratedHomeProb = ensembleHomeProb;
     
