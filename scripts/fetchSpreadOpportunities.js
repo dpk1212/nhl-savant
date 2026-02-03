@@ -82,8 +82,9 @@ function parseSpreadData(markdown) {
     // Look for table rows with team data
     // Format: | ...team info...<br>TeamName<br>Record<br>...spread info... |
     if (line.includes('|') && line.includes('<br>')) {
-      // Extract team name - look for pattern after logo: TeamName<br>Record
-      const teamMatch = line.match(/<br>([A-Za-z\s\-\.&'#\d]+?)<br>(\d{1,2}-\d{1,2})/);
+      // Extract team name - use [^<]+ to match ANY characters (same as basketballOddsParser.js)
+      // This handles teams with parentheses like "Miami (OH)", special chars, etc.
+      const teamMatch = line.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>(\d{1,2}-\d{1,2})/);
       if (!teamMatch) continue;
       
       let teamName = teamMatch[1].trim();
