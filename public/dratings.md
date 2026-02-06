@@ -36,30 +36,30 @@ Close
 
 # NCAA Basketball Predictions
 
-Updated 4 sec ago
+Updated 23 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#scroll-related)
 
 ## Upcoming Games for February 6, 2026
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [02/06/2026\<br>\<br>06:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/0dea0524-65d0-557c-a37c-7c99e4e4ad7d) | [Loyola Chicago Ramblers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3126-loyola-chicago-ramblers)(6-18)<br>[Davidson Wildcats](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3109-davidson-wildcats)(13-9) | 13.2%<br>86.8% | +420<br>-550<br>+425<br>-550 | +9½-105<br>-9½-110<br>+12-110<br>-9½-109 | 64.4<br>75.8 | 140.2 | o138½-110<br>u139-110<br>o138½-110<br>u139-110 | Volatility Bet Value Active |  |
 | [02/06/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/26cc689e-098b-595f-8401-01bbd2f54643) | [Brown Bears](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3265-brown-bears)(7-13)<br>[Yale Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3269-yale-bulldogs)(16-4) | 7.0%<br>93.0% | +928<br>-1600<br>+975<br>-1500 | +15-105<br>-15-110<br>+15½-110<br>-15-109 | 63.5<br>78.8 | 142.3 | o139½-110<br>u140-105<br>o140½-110<br>u140½-110 |  |  |
 | [02/06/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/a1087f81-7655-5650-998c-d6ae6dac7bd9) | [Dayton Flyers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3064-dayton-flyers)(15-8)<br>[VCU Rams](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3016-vcu-rams)(17-6) | 27.8%<br>72.2% | +263<br>-320<br>+290<br>-340 | +7½-110<br>-7-115<br>+7½-109<br>-7½-109 | 72.1<br>78.9 | 151.0 | o149-110<br>u149-110<br>o149-110<br>u149-110 |  |  |
-| [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/53ecf7f8-a6f3-5eef-9948-765276cf0021) | [Bradley University Braves](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3111-bradley-university-braves)(16-8)<br>[Northern Iowa Panthers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3102-northern-iowa-panthers)(14-9) | 35.7%<br>64.3% | +145<br>-165<br>+150<br>-165 | +3½-108<br>-3½-110<br>+3½-109<br>-3½-109 | 64.8<br>69.5 | 134.3 | o132½-110<br>u132½-110<br>o132½-110<br>u132½-110 |  |  |
-| [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/59ceda52-a0f7-562a-9209-3304c5117482) | [Drake Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3154-drake-bulldogs)(12-12)<br>[Illinois State Redbirds](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3048-illinois-state-redbirds)(15-8) | 17.0%<br>83.0% | +390<br>-450<br>+375<br>-450 | +9½-110<br>-9-110<br>+10-110<br>-9-109 | 67.3<br>77.4 | 144.7 | o144-110<br>u144-105<br>o143-110<br>u144-110 | Volatility Bet Value Active |  |
+| [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/53ecf7f8-a6f3-5eef-9948-765276cf0021) | [Bradley University Braves](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3111-bradley-university-braves)(16-8)<br>[Northern Iowa Panthers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3102-northern-iowa-panthers)(14-9) | 35.7%<br>64.3% | +145<br>-165<br>+150<br>-165 | +3½-108<br>-3½-110<br>+3½-109<br>-3½-109 | 64.8<br>69.5 | 134.3 | o133½-110<br>u133½-110<br>o132½-110<br>u133-110 |  |  |
+| [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/59ceda52-a0f7-562a-9209-3304c5117482) | [Drake Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3154-drake-bulldogs)(12-12)<br>[Illinois State Redbirds](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3048-illinois-state-redbirds)(15-8) | 17.0%<br>83.0% | +390<br>-450<br>+375<br>-445 | +9½-110<br>-9-110<br>+10-110<br>-9-109 | 67.3<br>77.4 | 144.7 | o144-110<br>u144-105<br>o143-110<br>u144-110 | Volatility Bet Value Active |  |
 | [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/1d0e1a69-8ccb-5d82-805d-86798000e726) | [Evansville Purple Aces](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3130-evansville-purple-aces)(5-18)<br>[Valparaiso Beacons](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3094-valparaiso-beacons)(11-12) | 17.3%<br>82.7% | +400<br>-500<br>+400<br>-500 | +9½-110<br>-9½-108<br>+10½-110<br>-9½-109 | 64.1<br>74.2 | 138.3 | o136-110<br>u136½-110<br>o136½-110<br>u136½-110 |  |  |
 | [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/22880bd7-8657-5ab9-bc6e-09b0f329f814) | [Murray State Racers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3059-murray-state-racers)(17-7)<br>[Southern Illinois Salukis](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3191-southern-illinois-salukis)(10-13) | 53.5%<br>46.5% | -125<br>+110<br>-125<br>+105 | -1½-110<br>+1½-105<br>+1-110<br>+1½-109 | 78.9<br>77.4 | 156.3 | o158-105<br>u158-110<br>o157½-110<br>u158-110 | Volatility Bet Value Active |  |
-| [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/4f55d876-9303-5687-b8b6-bda0f7596c29) | [Connecticut Huskies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3040-connecticut-huskies)(22-1)<br>[St. John's Red Storm](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3097-st--john-s-red-storm)(17-5) | 63.3%<br>36.7% | -145<br>+125<br>-145<br>+130 | -2-113<br>+2½-105<br>-1½-110<br>+2½-109 | 76.0<br>71.7 | 147.7 | o144½-110<br>u144½-110<br>o144-110<br>u144½-110 | Overall Bet Value Active |  |
+| [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/4f55d876-9303-5687-b8b6-bda0f7596c29) | [Connecticut Huskies](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3040-connecticut-huskies)(22-1)<br>[St. John's Red Storm](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3097-st--john-s-red-storm)(17-5) | 63.3%<br>36.7% | -145<br>+135<br>-145<br>+130 | -2½-108<br>+2½-105<br>-1½-110<br>+2½-109 | 76.0<br>71.7 | 147.7 | o144½-110<br>u144½-110<br>o144-110<br>u144½-110 | Overall Bet Value Active |  |
 | [02/06/2026\<br>\<br>09:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/00317ca3-128c-5e4c-831f-e4531da06566) | [Belmont Bruins](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3042-belmont-bruins)(21-3)<br>[UIC Flames](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3091-uic-flames)(13-11) | 65.0%<br>35.0% | -160<br>+140<br>-155<br>+140 | -3-110<br>+3½-112<br>-3-109<br>+3-109 | 77.5<br>72.7 | 150.2 | o150½-110<br>u151-110<br>o150½-110<br>u150½-110 |  |  |
 
 Games for Feb 5, 2026
@@ -68,7 +68,7 @@ Games for Feb 5, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -95,7 +95,7 @@ Games for Feb 5, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770387894621#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388385161#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
