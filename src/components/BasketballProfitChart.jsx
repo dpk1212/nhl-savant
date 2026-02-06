@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
-const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = false, showPrimeLine = false }) => {
+const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = false, showPrimeLine = false, primeFirst = false }) => {
   const isMobile = window.innerWidth < 768;
   
   // Process bets into timeline data
@@ -117,16 +117,96 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
                       timeFilter === 'yesterday' ? 'Yesterday' :
                       timeFilter === 'week' ? 'This Week' : 'All Time';
   
-  // Custom tooltip with improved design
+  // Custom tooltip with improved design - simplified for Prime mode
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload || !payload.length) return null;
     
     const data = payload[0].payload;
+    const primeValue = data.prime;
     const allValue = data.all;
     const savantValue = data.savant;
-    const primeValue = data.prime;
-    const isPositive = allValue >= 0;
+    const isPrimePositive = primeValue >= 0;
+    const isPositive = primeFirst ? isPrimePositive : allValue >= 0;
     
+    // In Prime mode, only show Prime data
+    if (primeFirst) {
+      return (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: `1px solid ${isPrimePositive ? 'rgba(59, 130, 246, 0.4)' : 'rgba(239, 68, 68, 0.3)'}`,
+          borderRadius: isMobile ? '10px' : '12px',
+          padding: isMobile ? '0.875rem' : '1rem',
+          boxShadow: isPrimePositive
+            ? '0 8px 32px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+            : '0 8px 32px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+          minWidth: isMobile ? '150px' : '170px'
+        }}>
+          <div style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: isMobile ? '0.75rem' : '0.813rem', 
+            color: 'rgba(59, 130, 246, 0.8)', 
+            marginBottom: '0.625rem',
+            fontWeight: '700',
+            letterSpacing: '0.02em'
+          }}>
+            ⚡ {data.date}
+          </div>
+          
+          {/* Prime Profit - Main Focus */}
+          <div style={{ 
+            fontSize: isMobile ? '1.375rem' : '1.625rem', 
+            fontWeight: '900', 
+            color: isPrimePositive ? '#3B82F6' : '#EF4444',
+            fontFeatureSettings: "'tnum'",
+            letterSpacing: '-0.02em',
+            textShadow: isPrimePositive 
+              ? '0 2px 12px rgba(59, 130, 246, 0.4)'
+              : '0 2px 12px rgba(239, 68, 68, 0.3)',
+            marginBottom: '0.5rem'
+          }}>
+            {primeValue >= 0 ? '+' : ''}{primeValue.toFixed(2)}u
+          </div>
+          
+          {data.betDetails && data.betDetails.isPrime && (
+            <div style={{
+              paddingTop: '0.5rem',
+              borderTop: '1px solid rgba(59, 130, 246, 0.15)'
+            }}>
+              <div style={{ 
+                fontSize: isMobile ? '0.688rem' : '0.75rem', 
+                color: 'rgba(255,255,255,0.6)', 
+                marginBottom: '0.25rem',
+                fontWeight: '600'
+              }}>
+                {data.betDetails.teams}
+              </div>
+              <div style={{ 
+                fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                display: 'flex',
+                gap: '0.5rem',
+                alignItems: 'center'
+              }}>
+                <span style={{
+                  color: data.betDetails.outcome === 'WIN' ? '#10B981' : '#EF4444',
+                  fontWeight: '700'
+                }}>
+                  {data.betDetails.outcome}
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: '600' }}>
+                  {data.betDetails.profit >= 0 ? '+' : ''}{data.betDetails.profit.toFixed(2)}u
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Legacy mode - show all data
     return (
       <div style={{
         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
@@ -204,34 +284,6 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               letterSpacing: '-0.02em'
             }}>
               {savantValue >= 0 ? '+' : ''}{savantValue.toFixed(2)}u
-            </div>
-          </div>
-        )}
-        
-        {/* Prime Profit */}
-        {hasPrimeBets && primeValue !== 0 && (
-          <div style={{ marginBottom: '0.625rem' }}>
-            <div style={{ 
-              fontSize: '0.625rem', 
-              color: 'rgba(59, 130, 246, 0.8)', 
-              marginBottom: '0.125rem',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}>
-              ⚡ Prime
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? '0.938rem' : '1.125rem', 
-              fontWeight: '800', 
-              color: primeValue >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
-              fontFeatureSettings: "'tnum'",
-              letterSpacing: '-0.02em'
-            }}>
-              {primeValue >= 0 ? '+' : ''}{primeValue.toFixed(2)}u
             </div>
           </div>
         )}
@@ -345,11 +397,15 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
       `,
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid rgba(16, 185, 129, 0.12)',
+      border: primeFirst 
+        ? '1px solid rgba(59, 130, 246, 0.2)'
+        : '1px solid rgba(16, 185, 129, 0.12)',
       borderRadius: isMobile ? '14px' : '16px',
       padding: isMobile ? '1.25rem' : '2rem',
       marginBottom: isMobile ? '1.5rem' : '2rem',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+      boxShadow: primeFirst
+        ? '0 8px 32px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03)'
+        : '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
       position: 'relative',
       overflow: 'hidden'
     }}>
@@ -360,7 +416,9 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
         left: '20%',
         width: '300px',
         height: '300px',
-        background: 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%)',
+        background: primeFirst
+          ? 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)'
+          : 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%)',
         pointerEvents: 'none',
         filter: 'blur(50px)'
       }} />
@@ -369,13 +427,17 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: isMobile ? '1.5rem' : '2rem', flexWrap: 'wrap', gap: isMobile ? '0.75rem' : '1rem', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1rem' }}>
           <div style={{
-            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            background: primeFirst 
+              ? 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)'
+              : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
             padding: isMobile ? '0.625rem' : '0.75rem',
             borderRadius: isMobile ? '10px' : '11px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
+            boxShadow: primeFirst
+              ? '0 6px 20px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset'
+              : '0 6px 20px rgba(16, 185, 129, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
             position: 'relative',
             overflow: 'hidden',
             flexShrink: 0
@@ -396,153 +458,67 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
             <h3 style={{ 
               fontSize: isMobile ? '1.063rem' : '1.375rem', 
               fontWeight: '900', 
-              background: 'linear-gradient(135deg, #10B981 0%, #14B8A6 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: primeFirst ? '#60A5FA' : '#34D399',
               margin: 0, 
               letterSpacing: '-0.03em',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              textShadow: primeFirst 
+                ? '0 2px 16px rgba(59, 130, 246, 0.4)'
+                : '0 2px 16px rgba(16, 185, 129, 0.3)'
             }}>
-              Profit Over Time
+              {primeFirst ? 'Prime Picks Performance' : 'Profit Over Time'}
             </h3>
             <p style={{ 
               fontSize: isMobile ? '0.688rem' : '0.813rem', 
-              color: 'rgba(255,255,255,0.6)', 
+              color: primeFirst ? 'rgba(59, 130, 246, 0.7)' : 'rgba(255,255,255,0.6)', 
               margin: '0.25rem 0 0 0',
               fontWeight: '600'
             }}>
-              {filterLabel} • {timelineData.length} bets tracked
+              {filterLabel} • {primeFirst ? `${timelineData.filter(d => d.isPrime).length} Prime bets` : `${timelineData.length} bets tracked`}
             </p>
           </div>
         </div>
         
         {/* Profit Badges */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {/* All Picks Badge */}
-          <div style={{
-            background: finalProfit >= 0 
-              ? `linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.12) 100%)`
-              : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
-            border: `1px solid ${finalProfit >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
-            borderRadius: isMobile ? '10px' : '11px',
-            padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
-            textAlign: 'center',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            boxShadow: finalProfit >= 0
-              ? '0 4px 16px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-              : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-          }}>
-            <div style={{ 
-              fontSize: isMobile ? '0.625rem' : '0.688rem', 
-              color: 'rgba(255,255,255,0.6)', 
-              marginBottom: '0.375rem', 
-              fontWeight: '700', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.08em' 
-            }}>
-              Current
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? '1.25rem' : '1.625rem', 
-              fontWeight: '900', 
-              color: finalProfit >= 0 ? '#10B981' : '#EF4444',
-              fontFeatureSettings: "'tnum'",
-              letterSpacing: '-0.04em',
-              textShadow: finalProfit >= 0
-                ? '0 2px 16px rgba(16, 185, 129, 0.3)'
-                : '0 2px 16px rgba(239, 68, 68, 0.3)',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-            }}>
-              {finalProfit >= 0 ? '+' : ''}{finalProfit}u
-            </div>
-          </div>
-          
-          {/* Savant Picks Badge */}
-          {hasSavantBets && (
-            <div style={{
-              background: finalSavantProfit >= 0 
-                ? `linear-gradient(135deg, rgba(251, 191, 36, 0.18) 0%, rgba(245, 158, 11, 0.12) 100%)`
-                : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
-              border: `1px solid ${finalSavantProfit >= 0 ? 'rgba(251, 191, 36, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
-              borderRadius: isMobile ? '10px' : '11px',
-              padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
-              textAlign: 'center',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: finalSavantProfit >= 0
-                ? '0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-                : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-            }}>
-              <div style={{ 
-                fontSize: isMobile ? '0.625rem' : '0.688rem', 
-                color: 'rgba(251, 191, 36, 0.8)', 
-                marginBottom: '0.375rem', 
-                fontWeight: '700', 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.08em',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.25rem'
-              }}>
-                ⭐ Savant
-              </div>
-              <div style={{ 
-                fontSize: isMobile ? '1.25rem' : '1.625rem', 
-                fontWeight: '900', 
-                color: finalSavantProfit >= 0 ? 'rgba(251, 191, 36, 0.95)' : '#EF4444',
-                fontFeatureSettings: "'tnum'",
-                letterSpacing: '-0.04em',
-                textShadow: finalSavantProfit >= 0
-                  ? '0 2px 16px rgba(251, 191, 36, 0.3)'
-                  : '0 2px 16px rgba(239, 68, 68, 0.3)',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-              }}>
-                {finalSavantProfit >= 0 ? '+' : ''}{finalSavantProfit}u
-              </div>
-            </div>
-          )}
-          
-          {/* Prime Badge */}
-          {hasPrimeBets && (
+          {/* Prime First Mode: Show Prime as the main badge */}
+          {primeFirst && hasPrimeBets && (
             <div style={{
               background: finalPrimeProfit >= 0 
-                ? `linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(37, 99, 235, 0.12) 100%)`
+                ? `linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(139, 92, 246, 0.15) 100%)`
                 : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
-              border: `1px solid ${finalPrimeProfit >= 0 ? 'rgba(59, 130, 246, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
-              borderRadius: isMobile ? '10px' : '11px',
-              padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
+              border: `2px solid ${finalPrimeProfit >= 0 ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.35)'}`,
+              borderRadius: isMobile ? '12px' : '14px',
+              padding: isMobile ? '0.875rem 1.25rem' : '1rem 2rem',
               textAlign: 'center',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
               boxShadow: finalPrimeProfit >= 0
-                ? '0 4px 16px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                ? '0 8px 24px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
                 : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
             }}>
               <div style={{ 
-                fontSize: isMobile ? '0.625rem' : '0.688rem', 
-                color: 'rgba(59, 130, 246, 0.9)', 
-                marginBottom: '0.375rem', 
-                fontWeight: '700', 
+                fontSize: isMobile ? '0.688rem' : '0.75rem', 
+                color: 'rgba(59, 130, 246, 1)', 
+                marginBottom: '0.5rem', 
+                fontWeight: '800', 
                 textTransform: 'uppercase', 
-                letterSpacing: '0.08em',
+                letterSpacing: '0.1em',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.25rem'
+                gap: '0.375rem'
               }}>
-                ⚡ Prime
+                ⚡ Prime V2
               </div>
               <div style={{ 
-                fontSize: isMobile ? '1.25rem' : '1.625rem', 
+                fontSize: isMobile ? '1.5rem' : '2rem', 
                 fontWeight: '900', 
-                color: finalPrimeProfit >= 0 ? 'rgba(59, 130, 246, 0.95)' : '#EF4444',
+                color: finalPrimeProfit >= 0 ? '#3B82F6' : '#EF4444',
                 fontFeatureSettings: "'tnum'",
                 letterSpacing: '-0.04em',
                 textShadow: finalPrimeProfit >= 0
-                  ? '0 2px 16px rgba(59, 130, 246, 0.3)'
+                  ? '0 2px 20px rgba(59, 130, 246, 0.4)'
                   : '0 2px 16px rgba(239, 68, 68, 0.3)',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
               }}>
@@ -550,11 +526,102 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               </div>
             </div>
           )}
+          
+          {/* Legacy Mode: Show All/Savant badges */}
+          {!primeFirst && (
+            <>
+              {/* All Picks Badge */}
+              <div style={{
+                background: finalProfit >= 0 
+                  ? `linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.12) 100%)`
+                  : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
+                border: `1px solid ${finalProfit >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+                borderRadius: isMobile ? '10px' : '11px',
+                padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
+                textAlign: 'center',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                boxShadow: finalProfit >= 0
+                  ? '0 4px 16px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                  : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+              }}>
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                  color: 'rgba(255,255,255,0.6)', 
+                  marginBottom: '0.375rem', 
+                  fontWeight: '700', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.08em' 
+                }}>
+                  Current
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '1.25rem' : '1.625rem', 
+                  fontWeight: '900', 
+                  color: finalProfit >= 0 ? '#10B981' : '#EF4444',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.04em',
+                  textShadow: finalProfit >= 0
+                    ? '0 2px 16px rgba(16, 185, 129, 0.3)'
+                    : '0 2px 16px rgba(239, 68, 68, 0.3)',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                }}>
+                  {finalProfit >= 0 ? '+' : ''}{finalProfit}u
+                </div>
+              </div>
+              
+              {/* Savant Picks Badge */}
+              {hasSavantBets && (
+                <div style={{
+                  background: finalSavantProfit >= 0 
+                    ? `linear-gradient(135deg, rgba(251, 191, 36, 0.18) 0%, rgba(245, 158, 11, 0.12) 100%)`
+                    : `linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.12) 100%)`,
+                  border: `1px solid ${finalSavantProfit >= 0 ? 'rgba(251, 191, 36, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+                  borderRadius: isMobile ? '10px' : '11px',
+                  padding: isMobile ? '0.625rem 1rem' : '0.75rem 1.5rem',
+                  textAlign: 'center',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  boxShadow: finalSavantProfit >= 0
+                    ? '0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                    : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                }}>
+                  <div style={{ 
+                    fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                    color: 'rgba(251, 191, 36, 0.8)', 
+                    marginBottom: '0.375rem', 
+                    fontWeight: '700', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.08em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    ⭐ Savant
+                  </div>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.625rem', 
+                    fontWeight: '900', 
+                    color: finalSavantProfit >= 0 ? 'rgba(251, 191, 36, 0.95)' : '#EF4444',
+                    fontFeatureSettings: "'tnum'",
+                    letterSpacing: '-0.04em',
+                    textShadow: finalSavantProfit >= 0
+                      ? '0 2px 16px rgba(251, 191, 36, 0.3)'
+                      : '0 2px 16px rgba(239, 68, 68, 0.3)',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    {finalSavantProfit >= 0 ? '+' : ''}{finalSavantProfit}u
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
       
-      {/* Legend */}
-      {(hasSavantBets || hasPrimeBets) && (
+      {/* Legend - simplified for Prime mode */}
+      {!primeFirst && (hasSavantBets || hasPrimeBets) && (
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -676,67 +743,71 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
               isAnimationActive={false}
             />
             
-            {/* All Picks Line */}
-            <Line 
-              type="monotone" 
-              dataKey="all"
-              name="All Picks"
-              stroke={finalProfit >= 0 ? '#10B981' : '#EF4444'}
-              strokeWidth={isMobile ? 2.5 : 3}
-              dot={false}
-              activeDot={{ 
-                r: isMobile ? 5 : 6, 
-                fill: finalProfit >= 0 ? '#10B981' : '#EF4444',
-                strokeWidth: 2,
-                stroke: 'rgba(255, 255, 255, 0.3)'
-              }}
-              animationDuration={800}
-              animationEasing="ease-in-out"
-              isAnimationActive={true}
-            />
-            
-            {/* Savant Picks Line */}
-            {hasSavantBets && (
+            {/* Prime First Mode: Show Prime as primary solid line */}
+            {primeFirst && hasPrimeBets && (
               <Line 
                 type="monotone" 
-                dataKey="savant"
-                name="Savant Picks"
-                stroke="rgba(251, 191, 36, 0.9)"
-                strokeWidth={isMobile ? 2 : 2.5}
-                strokeDasharray="6 3"
+                dataKey="prime"
+                name="Prime V2"
+                stroke="#3B82F6"
+                strokeWidth={isMobile ? 3 : 3.5}
                 dot={false}
                 activeDot={{ 
-                  r: isMobile ? 4 : 5, 
-                  fill: 'rgba(251, 191, 36, 0.95)',
+                  r: isMobile ? 6 : 7, 
+                  fill: '#3B82F6',
                   strokeWidth: 2,
-                  stroke: 'rgba(255, 255, 255, 0.3)'
+                  stroke: 'rgba(255, 255, 255, 0.4)'
                 }}
-                animationDuration={1000}
+                animationDuration={800}
                 animationEasing="ease-in-out"
                 isAnimationActive={true}
               />
             )}
             
-            {/* Prime Line */}
-            {hasPrimeBets && (
-              <Line 
-                type="monotone" 
-                dataKey="prime"
-                name="Prime"
-                stroke="rgba(59, 130, 246, 0.9)"
-                strokeWidth={isMobile ? 2 : 2.5}
-                strokeDasharray="4 4"
-                dot={false}
-                activeDot={{ 
-                  r: isMobile ? 4 : 5, 
-                  fill: 'rgba(59, 130, 246, 0.95)',
-                  strokeWidth: 2,
-                  stroke: 'rgba(255, 255, 255, 0.3)'
-                }}
-                animationDuration={1200}
-                animationEasing="ease-in-out"
-                isAnimationActive={true}
-              />
+            {/* Legacy Mode: Show All Picks and Savant as primary */}
+            {!primeFirst && (
+              <>
+                {/* All Picks Line */}
+                <Line 
+                  type="monotone" 
+                  dataKey="all"
+                  name="All Picks"
+                  stroke={finalProfit >= 0 ? '#10B981' : '#EF4444'}
+                  strokeWidth={isMobile ? 2.5 : 3}
+                  dot={false}
+                  activeDot={{ 
+                    r: isMobile ? 5 : 6, 
+                    fill: finalProfit >= 0 ? '#10B981' : '#EF4444',
+                    strokeWidth: 2,
+                    stroke: 'rgba(255, 255, 255, 0.3)'
+                  }}
+                  animationDuration={800}
+                  animationEasing="ease-in-out"
+                  isAnimationActive={true}
+                />
+                
+                {/* Savant Picks Line */}
+                {hasSavantBets && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="savant"
+                    name="Savant Picks"
+                    stroke="rgba(251, 191, 36, 0.9)"
+                    strokeWidth={isMobile ? 2 : 2.5}
+                    strokeDasharray="6 3"
+                    dot={false}
+                    activeDot={{ 
+                      r: isMobile ? 4 : 5, 
+                      fill: 'rgba(251, 191, 36, 0.95)',
+                      strokeWidth: 2,
+                      stroke: 'rgba(255, 255, 255, 0.3)'
+                    }}
+                    animationDuration={1000}
+                    animationEasing="ease-in-out"
+                    isAnimationActive={true}
+                  />
+                )}
+              </>
             )}
           </LineChart>
         </ResponsiveContainer>

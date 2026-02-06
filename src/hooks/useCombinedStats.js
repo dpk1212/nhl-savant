@@ -88,9 +88,13 @@ export function useCombinedStats() {
       const nhlROI = nhlGradedBets.length > 0 ? (nhlFlatProfit / STARTING_BANKROLL) * 100 : 0;
       const nhlWinRate = nhlGradedBets.length > 0 ? (nhlWins / nhlGradedBets.length) * 100 : 0;
 
-      // Calculate CBB stats (MATCH BasketballPerformanceDashboard.jsx calculation)
+      // Calculate CBB stats - PRIME PICKS ONLY (V2 model)
+      // Prime = EV bets with spread confirmation (spreadBoost > 0)
       // CBB uses UNITS-BASED ROI: (profit / totalRisked) * 100
-      const cbbGradedBets = cbbBets.filter(bet => bet.result?.outcome);
+      const cbbGradedBets = cbbBets.filter(bet => 
+        bet.result?.outcome && 
+        bet.prediction?.spreadBoost > 0  // Prime picks only
+      );
       const cbbWins = cbbGradedBets.filter(bet => bet.result.outcome === 'WIN').length;
       const cbbRisked = cbbGradedBets.reduce((sum, bet) => {
         const units = bet.result?.unitsRisked || 
@@ -183,7 +187,7 @@ export function useCombinedStats() {
       console.log(`📊 Combined Stats Updated:`, {
         total: `${gradedBets.length} bets, +${totalProfit.toFixed(1)}u, ${roi.toFixed(1)}% ROI`,
         nhl: `${nhlGradedBets.length} bets, +${nhlProfit.toFixed(1)}u, ${nhlROI.toFixed(1)}% ROI`,
-        cbb: `${cbbGradedBets.length} bets, +${cbbProfit.toFixed(1)}u, ${cbbROI.toFixed(1)}% ROI`
+        cbb_prime: `${cbbGradedBets.length} Prime picks, +${cbbProfit.toFixed(1)}u, ${cbbROI.toFixed(1)}% ROI`
       });
     };
 

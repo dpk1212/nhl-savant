@@ -17,8 +17,10 @@ export function BasketballPerformanceDashboard() {
   const [showTimeBreakdown, setShowTimeBreakdown] = useState(false);
   const [allBets, setAllBets] = useState([]);
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week'
-  const [showSavantOnly, setShowSavantOnly] = useState(true); // Filter to show only Savant Picks - DEFAULT ON
-  const [showPrimeOnly, setShowPrimeOnly] = useState(false); // Filter to show only Prime picks (EV + spread confirmed)
+  const [showLegacy, setShowLegacy] = useState(false); // Toggle to show legacy (non-Prime) data
+  
+  // PRIME V2: Always filter to Prime picks by default, legacy toggle shows all Savant
+  const showPrimeOnly = !showLegacy; // Prime is default, legacy shows all Savant picks
 
   // Fetch ALL bets from Firebase for chart and time calculations
   useEffect(() => {
@@ -123,12 +125,14 @@ export function BasketballPerformanceDashboard() {
     let gradedBets = allBets.filter(b => {
       if (!b.result || !b.result.outcome) return false;
       
-      // Apply Savant filter
-      if (showSavantOnly && !b.savantPick) return false;
-      
-      // Apply Prime filter (EV bets with spread boost ONLY)
+      // PRIME V2: Default to Prime picks only (EV + spread confirmed)
+      // Legacy mode shows all Savant picks
       if (showPrimeOnly) {
+        // Prime = EV bet with spread boost
         if (!(b.prediction?.spreadBoost > 0)) return false;
+      } else {
+        // Legacy = all Savant picks
+        if (!b.savantPick) return false;
       }
       
       const betDate = b.timestamp?.toDate?.() || new Date(b.timestamp);
@@ -166,7 +170,7 @@ export function BasketballPerformanceDashboard() {
       gradedBets: gradedBets.length,
       totalBets: gradedBets.length
     };
-  }, [stats, allBets, timeFilter, showSavantOnly, showPrimeOnly]);
+  }, [stats, allBets, timeFilter, showPrimeOnly, showLegacy]);
   
   // Count Savant Picks for display
   const savantCount = useMemo(() => {
@@ -212,15 +216,15 @@ export function BasketballPerformanceDashboard() {
       background: `
         linear-gradient(135deg, #0A0E1A 0%, #111827 30%, #1F2937 60%, #0F172A 100%)
       `,
-      border: '1px solid rgba(16, 185, 129, 0.15)',
+      border: showPrimeOnly 
+        ? '1px solid rgba(59, 130, 246, 0.2)'
+        : '1px solid rgba(251, 191, 36, 0.15)',
       borderRadius: '20px',
-      padding: isMobile ? '1.5rem' : '2rem',
+      padding: isMobile ? '1.25rem' : '2rem',
       marginBottom: '2rem',
-      boxShadow: `
-        0 20px 60px rgba(0, 0, 0, 0.5),
-        0 0 40px rgba(16, 185, 129, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05)
-      `,
+      boxShadow: showPrimeOnly
+        ? `0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05)`
+        : `0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(251, 191, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05)`,
       position: 'relative',
       overflow: 'hidden'
     }}>
@@ -231,10 +235,11 @@ export function BasketballPerformanceDashboard() {
         left: 0,
         right: 0,
         bottom: 0,
-        background: `
-          radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-          radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.06) 0%, transparent 50%)
-        `,
+        background: showPrimeOnly
+          ? `radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+             radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 50%)`
+          : `radial-gradient(circle at 20% 30%, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
+             radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.06) 0%, transparent 50%)`,
         pointerEvents: 'none',
         animation: 'nebulaPulse 8s ease-in-out infinite'
       }} />
@@ -260,17 +265,17 @@ export function BasketballPerformanceDashboard() {
           <div style={{
             width: isMobile ? '44px' : '52px',
             height: isMobile ? '44px' : '52px',
-            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            background: showPrimeOnly 
+              ? 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)'
+              : 'linear-gradient(135deg, #FBBF24 0%, #D97706 100%)',
             borderRadius: '14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: isMobile ? '1.375rem' : '1.625rem',
-            boxShadow: `
-              0 8px 24px rgba(16, 185, 129, 0.35),
-              0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-              0 2px 0 rgba(255, 255, 255, 0.15) inset
-            `,
+            boxShadow: showPrimeOnly
+              ? `0 8px 24px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 2px 0 rgba(255, 255, 255, 0.15) inset`
+              : `0 8px 24px rgba(251, 191, 36, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 2px 0 rgba(255, 255, 255, 0.15) inset`,
             flexShrink: 0,
             position: 'relative',
             overflow: 'hidden'
@@ -286,44 +291,70 @@ export function BasketballPerformanceDashboard() {
               animation: 'iconShine 6s infinite',
               pointerEvents: 'none'
             }} />
-            <span style={{ position: 'relative', zIndex: 1 }}>🏀</span>
+            <span style={{ position: 'relative', zIndex: 1 }}>{showPrimeOnly ? '⚡' : '🏀'}</span>
           </div>
           <div style={{ textAlign: 'left' }}>
             <h2 style={{
               fontSize: isMobile ? '1.125rem' : '1.375rem',
               fontWeight: '900',
-              background: 'linear-gradient(135deg, #10B981 0%, #14B8A6 50%, #06B6D4 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: showPrimeOnly ? '#60A5FA' : '#FCD34D',
               letterSpacing: '-0.04em',
               margin: 0,
               lineHeight: 1.15,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              textShadow: '0 0 40px rgba(16, 185, 129, 0.3)'
+              textShadow: showPrimeOnly 
+                ? '0 2px 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'
+                : '0 2px 20px rgba(251, 191, 36, 0.4)'
             }}>
-              Basketball Performance
+              {showPrimeOnly ? 'Prime Picks' : 'Legacy Model'}
             </h2>
             <div style={{
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              color: 'rgba(16, 185, 129, 0.85)',
-              fontWeight: '700',
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              color: showPrimeOnly ? 'rgba(59, 130, 246, 0.9)' : 'rgba(251, 191, 36, 0.9)',
+              fontWeight: '800',
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.12em',
               marginTop: '0.25rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.375rem'
+              gap: '0.5rem'
             }}>
-              <div style={{
-                width: '4px',
-                height: '4px',
-                borderRadius: '50%',
-                background: '#10B981',
-                boxShadow: '0 0 8px #10B981',
-                animation: 'pulse 2s infinite'
-              }} />
-              Live Tracking
+              {showPrimeOnly ? (
+                <>
+                  <div style={{
+                    padding: '2px 6px',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                    border: '1px solid rgba(59, 130, 246, 0.5)',
+                    borderRadius: '4px',
+                    fontSize: '0.563rem',
+                    fontWeight: '900',
+                    letterSpacing: '0.1em',
+                    color: '#fff'
+                  }}>
+                    V2
+                  </div>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '50%',
+                    background: '#3B82F6',
+                    boxShadow: '0 0 8px #3B82F6',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                  Multi-Model Verified
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '50%',
+                    background: '#FBBF24',
+                    boxShadow: '0 0 8px #FBBF24'
+                  }} />
+                  All Savant Picks
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -450,119 +481,126 @@ export function BasketballPerformanceDashboard() {
                 </div>
               </div>
               
-              {/* Filter Buttons */}
-              {(savantCount > 0 || primeCount > 0) && (
-                <div>
-                  <div style={{ 
-                    fontSize: isMobile ? '0.625rem' : '0.688rem', 
-                    color: 'rgba(255,255,255,0.55)', 
-                    marginBottom: '0.875rem', 
-                    fontWeight: '700', 
-                    textTransform: 'uppercase', 
-                    letterSpacing: '0.12em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <div style={{
-                      width: '2px',
-                      height: '12px',
-                      background: 'linear-gradient(180deg, #FBBF24 0%, transparent 100%)',
-                      borderRadius: '1px'
-                    }} />
-                    FILTER
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {/* Savant Only Button */}
-                    {savantCount > 0 && (
-                      <button
-                        onClick={() => setShowSavantOnly(!showSavantOnly)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          background: showSavantOnly 
-                            ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.12) 100%)'
-                            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
-                          border: showSavantOnly 
-                            ? '1px solid rgba(251, 191, 36, 0.5)'
-                            : '1px solid rgba(255,255,255,0.08)',
-                          color: showSavantOnly ? 'rgba(251, 191, 36, 0.95)' : 'rgba(255,255,255,0.7)',
-                          padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
-                          borderRadius: '8px',
-                          fontSize: isMobile ? '0.75rem' : '0.813rem',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          outline: 'none',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                          boxShadow: showSavantOnly
-                            ? '0 4px 12px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-                            : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                        }}
-                      >
-                        <span>⭐</span>
-                        <span>Savant Only</span>
-                        <span style={{
-                          fontSize: '0.688rem',
-                          fontWeight: '800',
-                          color: showSavantOnly ? 'rgba(251, 191, 36, 0.8)' : 'rgba(255,255,255,0.5)',
-                          background: showSavantOnly ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.1)',
-                          padding: '0.125rem 0.375rem',
-                          borderRadius: '4px',
-                        }}>
-                          {savantCount}
-                        </span>
-                      </button>
-                    )}
-                    
-                    {/* Prime Button (EV + Spread Confirmed) */}
-                    {primeCount > 0 && (
-                      <button
-                        onClick={() => setShowPrimeOnly(!showPrimeOnly)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          background: showPrimeOnly 
-                            ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(37, 99, 235, 0.12) 100%)'
-                            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%)',
-                          border: showPrimeOnly 
-                            ? '1px solid rgba(59, 130, 246, 0.5)'
-                            : '1px solid rgba(255,255,255,0.08)',
-                          color: showPrimeOnly ? 'rgba(59, 130, 246, 0.95)' : 'rgba(255,255,255,0.7)',
-                          padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
-                          borderRadius: '8px',
-                          fontSize: isMobile ? '0.75rem' : '0.813rem',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          outline: 'none',
-                          backdropFilter: 'blur(8px)',
-                          WebkitBackdropFilter: 'blur(8px)',
-                          boxShadow: showPrimeOnly
-                            ? '0 4px 12px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
-                            : '0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                        }}
-                      >
-                        <span>⚡</span>
-                        <span>Prime</span>
-                        <span style={{
-                          fontSize: '0.688rem',
-                          fontWeight: '800',
-                          color: showPrimeOnly ? 'rgba(59, 130, 246, 0.8)' : 'rgba(255,255,255,0.5)',
-                          background: showPrimeOnly ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.1)',
-                          padding: '0.125rem 0.375rem',
-                          borderRadius: '4px',
-                        }}>
-                          {primeCount}
-                        </span>
-                      </button>
-                    )}
-                  </div>
+              {/* Model Toggle - Prime V2 (default) vs Legacy */}
+              <div>
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                  color: 'rgba(255,255,255,0.55)', 
+                  marginBottom: '0.875rem', 
+                  fontWeight: '700', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.12em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '2px',
+                    height: '12px',
+                    background: 'linear-gradient(180deg, #3B82F6 0%, transparent 100%)',
+                    borderRadius: '1px'
+                  }} />
+                  MODEL
                 </div>
-              )}
+                
+                {/* Toggle Switch */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 1rem'
+                }}>
+                  {/* Prime Button */}
+                  <button
+                    onClick={() => setShowLegacy(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      background: !showLegacy 
+                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%)'
+                        : 'transparent',
+                      boxShadow: !showLegacy 
+                        ? '0 4px 12px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                        : 'none'
+                    }}
+                  >
+                    <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>⚡</span>
+                    <span style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '700',
+                      color: !showLegacy ? '#3B82F6' : 'rgba(255,255,255,0.5)'
+                    }}>
+                      Prime V2
+                    </span>
+                    <span style={{
+                      fontSize: '0.625rem',
+                      fontWeight: '800',
+                      color: !showLegacy ? 'rgba(59, 130, 246, 0.9)' : 'rgba(255,255,255,0.4)',
+                      background: !showLegacy ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.08)',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
+                    }}>
+                      {primeCount}
+                    </span>
+                  </button>
+                  
+                  {/* Divider */}
+                  <div style={{
+                    width: '1px',
+                    height: '24px',
+                    background: 'rgba(255,255,255,0.15)'
+                  }} />
+                  
+                  {/* Legacy Button */}
+                  <button
+                    onClick={() => setShowLegacy(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      background: showLegacy 
+                        ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(245, 158, 11, 0.15) 100%)'
+                        : 'transparent',
+                      boxShadow: showLegacy 
+                        ? '0 4px 12px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                        : 'none'
+                    }}
+                  >
+                    <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>🏀</span>
+                    <span style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '700',
+                      color: showLegacy ? '#FBBF24' : 'rgba(255,255,255,0.5)'
+                    }}>
+                      Legacy
+                    </span>
+                    <span style={{
+                      fontSize: '0.625rem',
+                      fontWeight: '800',
+                      color: showLegacy ? 'rgba(251, 191, 36, 0.9)' : 'rgba(255,255,255,0.4)',
+                      background: showLegacy ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255,255,255,0.08)',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
+                    }}>
+                      {savantCount}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -724,8 +762,9 @@ export function BasketballPerformanceDashboard() {
             <BasketballProfitChart 
               bets={allBets} 
               timeFilter={timeFilter} 
-              showSavantLine={savantCount > 0}
-              showPrimeLine={primeCount > 0}
+              showSavantLine={showLegacy && savantCount > 0}
+              showPrimeLine={!showLegacy && primeCount > 0}
+              primeFirst={!showLegacy}
             />
           )}
         </div>
