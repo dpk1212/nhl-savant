@@ -494,7 +494,7 @@ async function fetchPrimePicks() {
       }
       
       // Calculate EV edge
-      const prediction = edgeCalculator.calculateEdge(game);
+      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       
       if (!prediction || prediction.bestEV < MIN_EV_THRESHOLD) {
         continue;
