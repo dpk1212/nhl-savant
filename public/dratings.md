@@ -36,23 +36,23 @@ Close
 
 # NCAA Basketball Predictions
 
-Updated 16 sec ago
+Updated 3 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#scroll-related)
 
 ## Upcoming Games for February 6, 2026
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [02/06/2026\<br>\<br>06:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/0dea0524-65d0-557c-a37c-7c99e4e4ad7d) | [Loyola Chicago Ramblers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3126-loyola-chicago-ramblers)(6-18)<br>[Davidson Wildcats](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3109-davidson-wildcats)(13-9) | 13.2%<br>86.8% | +420<br>-525<br>+425<br>-550 | +9½-110<br>-9-111<br>+12-110<br>-9½-109 | 64.4<br>75.8 | 140.2 | o138½-110<br>u139-110<br>o138½-110<br>u139-110 | Volatility Bet Value Active |  |
+| [02/06/2026\<br>\<br>06:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/0dea0524-65d0-557c-a37c-7c99e4e4ad7d) | [Loyola Chicago Ramblers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3126-loyola-chicago-ramblers)(6-18)<br>[Davidson Wildcats](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3109-davidson-wildcats)(13-9) | 13.2%<br>86.8% | +420<br>-525<br>+425<br>-550 | +9½-110<br>-9-105<br>+12-110<br>-9½-109 | 64.4<br>75.8 | 140.2 | o138½-110<br>u139-110<br>o138½-110<br>u139-110 | Volatility Bet Value Active |  |
 | [02/06/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/26cc689e-098b-595f-8401-01bbd2f54643) | [Brown Bears](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3265-brown-bears)(7-13)<br>[Yale Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3269-yale-bulldogs)(16-4) | 7.0%<br>93.0% | +912<br>-1600<br>+975<br>-1500 | +15-110<br>-14½-110<br>+15½-110<br>-15-109 | 63.5<br>78.8 | 142.3 | o139½-110<br>u140-105<br>o140½-110<br>u140½-110 |  |  |
 | [02/06/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/a1087f81-7655-5650-998c-d6ae6dac7bd9) | [Dayton Flyers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3064-dayton-flyers)(15-8)<br>[VCU Rams](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3016-vcu-rams)(17-6) | 27.8%<br>72.2% | +263<br>-320<br>+290<br>-340 | +7½-110<br>-7-115<br>+7½-109<br>-7½-109 | 72.1<br>78.9 | 151.0 | o149-110<br>u149-110<br>o149-110<br>u149-110 |  |  |
 | [02/06/2026\<br>\<br>08:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/53ecf7f8-a6f3-5eef-9948-765276cf0021) | [Bradley University Braves](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3111-bradley-university-braves)(16-8)<br>[Northern Iowa Panthers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3102-northern-iowa-panthers)(14-9) | 35.7%<br>64.3% | +145<br>-165<br>+150<br>-165 | +3½-108<br>-3½-110<br>+3½-109<br>-3½-109 | 64.8<br>69.5 | 134.3 | o133½-110<br>u133½-110<br>o132½-110<br>u133½-110 |  |  |
@@ -68,7 +68,7 @@ Games for Feb 5, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -95,7 +95,7 @@ Games for Feb 5, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770388927548#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1770389214741#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
