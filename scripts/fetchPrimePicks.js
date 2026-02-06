@@ -56,15 +56,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Minimum EV threshold for Prime Picks
-const MIN_EV_THRESHOLD = 3.0;
+// Lowered from 3% to 2% since spread confirmation provides additional quality filter
+const MIN_EV_THRESHOLD = 2.0;
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
 console.log('║              🏀 PRIME PICKS - Unified Basketball Workflow                     ║');
 console.log('║                                                                               ║');
 console.log('║  Only writes bets that have BOTH:                                             ║');
-console.log('║  ✅ EV Edge (≥3% from 90/10 model)                                            ║');
-console.log('║  ✅ Spread Confirmation (both models cover)                                   ║');
+console.log('║  ✅ EV Edge (≥2% from 90/10 model)                                            ║');
+console.log('║  ✅ Spread Confirmation (D-Ratings covers + models agree)                     ║');
 console.log('║                                                                               ║');
 console.log('║  Historical: +11.8% ROI, 69% win rate                                         ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
