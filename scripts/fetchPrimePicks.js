@@ -482,53 +482,103 @@ async function fetchPrimePicks() {
     
     const primePicks = [];
     let evEdgeCount = 0;
-    let spreadConfirmCount = 0;
+    let spreadOppsCount = 0;
+    let evOnlyCount = 0;
+    let spreadOnlyCount = 0;
     let noModelData = 0;
-    let noSpreadData = 0;
+    
+    // Track EV picks and Spread picks separately, then find intersection
+    const evPicks = new Map(); // game key -> { game, prediction, evPickedSide }
+    const spreadPicks = new Map(); // game key -> { game, spreadAnalysis, spreadPickedSide }
     
     for (const game of matchedGames) {
-      // Skip games without model data
       if (!game.dratings || !game.haslametrics) {
         noModelData++;
         continue;
       }
       
-      // Calculate EV edge
+      const gameKey = `${game.awayTeam}_${game.homeTeam}`;
+      
+      // ═══════════════════════════════════════════════════════════════
+      // STEP A: Would the OLD EV workflow pick this game?
+      // ═══════════════════════════════════════════════════════════════
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       
-      if (!prediction || prediction.bestEV < MIN_EV_THRESHOLD) {
-        continue;
+      if (prediction && prediction.bestEV >= MIN_EV_THRESHOLD) {
+        evEdgeCount++;
+        evPicks.set(gameKey, {
+          game,
+          prediction,
+          evPickedSide: prediction.bestBet, // 'away' or 'home'
+          evPickedTeam: prediction.bestTeam
+        });
       }
       
-      evEdgeCount++;
-      
-      // Check spread confirmation
+      // ═══════════════════════════════════════════════════════════════
+      // STEP B: Would the OLD Spread workflow pick this game?
+      // ═══════════════════════════════════════════════════════════════
       const spreadAnalysis = checkSpreadConfirmation(game, spreadGames);
       
-      if (!spreadAnalysis) {
-        noSpreadData++;
+      if (spreadAnalysis && spreadAnalysis.bothCover) {
+        spreadOppsCount++;
+        spreadPicks.set(gameKey, {
+          game,
+          spreadAnalysis,
+          spreadPickedSide: spreadAnalysis.pickedSide, // 'away' or 'home'
+          spreadPickedTeam: spreadAnalysis.pickedTeam
+        });
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // STEP C: Find INTERSECTION - games where BOTH picked SAME TEAM
+    // This is what created Prime Picks in the old flow
+    // ═══════════════════════════════════════════════════════════════
+    for (const [gameKey, evData] of evPicks) {
+      const spreadData = spreadPicks.get(gameKey);
+      
+      if (!spreadData) {
+        // EV picked this game, Spread did not → EV Only (losing segment, skip)
+        evOnlyCount++;
         continue;
       }
       
-      if (!spreadAnalysis.bothCover) {
+      // Both workflows picked this game - but do they agree on the TEAM?
+      if (evData.evPickedSide !== spreadData.spreadPickedSide) {
+        // EV picked one team, Spread picked other → Both lose separately, skip
+        console.log(`   ⚠️ ${evData.game.awayTeam} @ ${evData.game.homeTeam}: EV picks ${evData.evPickedSide}, Spread picks ${spreadData.spreadPickedSide} - MISMATCH`);
+        evOnlyCount++;
         continue;
       }
       
-      spreadConfirmCount++;
-      
-      // 🌟 This is a Prime Pick!
-      primePicks.push({ game, prediction, spreadAnalysis });
+      // 🌟 PRIME PICK: Both workflows picked THE SAME TEAM
+      primePicks.push({
+        game: evData.game,
+        prediction: evData.prediction,
+        spreadAnalysis: spreadData.spreadAnalysis
+      });
+    }
+    
+    // Count spread-only (spread picked but EV didn't)
+    for (const [gameKey] of spreadPicks) {
+      if (!evPicks.has(gameKey)) {
+        spreadOnlyCount++;
+      }
     }
     
     console.log(`   📊 Games analyzed: ${matchedGames.length}`);
     console.log(`   ❌ No model data: ${noModelData}`);
-    console.log(`   💰 EV edge found: ${evEdgeCount}`);
-    console.log(`   ❌ No spread data: ${noSpreadData}`);
-    console.log(`   🌟 PRIME PICKS: ${primePicks.length}\n`);
+    console.log(`\n   OLD WORKFLOW WOULD HAVE CREATED:`);
+    console.log(`   💰 EV picks: ${evEdgeCount}`);
+    console.log(`   📈 Spread picks: ${spreadOppsCount}`);
+    console.log(`\n   SEGMENT BREAKDOWN:`);
+    console.log(`   ❌ EV Only (skip): ${evOnlyCount} (-11.2% ROI historically)`);
+    console.log(`   ❌ Spread Only (skip): ${spreadOnlyCount} (-19.5% ROI historically)`);
+    console.log(`   🌟 PRIME PICKS: ${primePicks.length} (+11.8% ROI historically)\n`);
     
     if (primePicks.length === 0) {
       console.log('⚠️  No Prime Picks found today.');
-      console.log('   (Requires BOTH EV edge ≥3% AND both models covering spread)\n');
+      console.log('   (Requires EV workflow AND Spread workflow to pick SAME team)\n');
       return;
     }
     
