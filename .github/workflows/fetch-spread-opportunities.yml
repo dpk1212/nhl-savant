@@ -1,7 +1,18 @@
-name: Fetch Spread Opportunities
+name: "[DEPRECATED] Fetch Spread Opportunities"
+
+# ⚠️ DEPRECATED: Use "Fetch Prime Picks" workflow instead
+# This workflow is kept for reference only.
+# The new Prime Picks workflow consolidates data fetching AND only writes
+# bets that have BOTH EV edge AND spread confirmation (+11.8% ROI).
 
 on:
-  workflow_dispatch: # Manual trigger only for now
+  # DISABLED - Use fetch-prime-picks.yml instead
+  workflow_dispatch:
+    inputs:
+      confirm_deprecated:
+        description: 'This is deprecated. Use Fetch Prime Picks instead.'
+        required: true
+        default: 'I understand'
 
 jobs:
   find-spread-opportunities:

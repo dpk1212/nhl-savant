@@ -1,25 +1,13 @@
-name: "[DEPRECATED] Fetch Basketball Data"
-
-# ⚠️ DEPRECATED: Use "Fetch Prime Picks" workflow instead
-# This workflow is kept for reference only.
-# The new Prime Picks workflow consolidates data fetching AND only writes
-# bets that have BOTH EV edge AND spread confirmation (+11.8% ROI).
+name: Fetch Prime Picks
 
 on:
-  # DISABLED - Use fetch-prime-picks.yml instead
-  # workflow_dispatch: # Allow manual trigger
-  workflow_dispatch:
-    inputs:
-      confirm_deprecated:
-        description: 'This is deprecated. Use Fetch Prime Picks instead.'
-        required: true
-        default: 'I understand'
+  workflow_dispatch: # Manual trigger
 
 jobs:
-  fetch-basketball-data:
+  fetch-prime-picks:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Allow workflow to push changes
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -32,7 +20,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      # Create .env file for scripts that use dotenv
       - name: Create .env file
         run: |
           echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
@@ -45,20 +32,17 @@ jobs:
           echo "FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}" >> .env
           echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
       
-      - name: Fetch basketball data
-        run: npm run fetch-basketball
+      - name: Fetch Prime Picks
+        run: npm run fetch-prime-picks
       
-      - name: Write basketball bets to Firebase
-        run: npm run write-basketball-bets
-      
-      - name: Commit and push if changed
+      - name: Commit data files if changed
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/basketball_odds.md public/haslametrics.md public/dratings.md
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Basketball data [$(date +'%Y-%m-%d %H:%M')]" && git push)
+          git add public/basketball_odds.md public/basketball_spreads.md public/haslametrics.md public/dratings.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Prime Picks data [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
-      # Build and deploy to ensure site stays updated with fresh data
+      # Build and deploy
       - name: Build site
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
