@@ -128,8 +128,8 @@ NCAAB Fri 02/06
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/067:00 PM<br>![](https://logos.oddstrader.com/logos-original/1dce4504-779e-43ec-960f-591f33699978-original.PNG?d=100x100)<br>Dayton<br>15-8<br>-<br>+270BetAnything | +256 | +263 | +270 | +260 | +263 | +252 | +252 |
 | ![](https://logos.oddstrader.com/logos-original/76d8de64-0aae-47d8-81d0-4f715ccb9d16-original.PNG?d=100x100)<br>Virginia Commonwealth<br>17-6<br>-<br>-310Bookmaker | -315 | -325 | -340 | -320 | -341 | -310 | -310 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/144b5149-3b1f-410f-8660-78c3f4da6236-original.png?d=100x100)<br>Bradley<br>16-8<br>-<br>+150BetAnything | +145 | +145 | +150 | +145 | +144 | +145 | +145 |
-| ![](https://logos.oddstrader.com/logos-original/a667f307-cc96-4233-873a-a74aa9729467-original.png?d=100x100)<br>Northern Iowa<br>14-9<br>-<br>-165BetOnline | -165 | -165 | -170 | -170 | -176 | -168 | -168 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/144b5149-3b1f-410f-8660-78c3f4da6236-original.png?d=100x100)<br>Bradley<br>16-8<br>-<br>+150BetAnything | +145 | +145 | +150 | +145 | +144 | +149 | +149 |
+| ![](https://logos.oddstrader.com/logos-original/a667f307-cc96-4233-873a-a74aa9729467-original.png?d=100x100)<br>Northern Iowa<br>14-9<br>-<br>-165BetOnline | -165 | -165 | -170 | -170 | -176 | -173 | -173 |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/33100385-4040-46ce-b662-b0c01d86ae3e-original.png?d=100x100)<br>Drake<br>12-12<br>-<br>+401Bet105 | +350 | +350 | +340 | +390 | +363 | +356 | +356 |
 | ![](https://logos.oddstrader.com/logos-original/c28390e5-7216-4ee9-953f-206145b7b6a7-original.png?d=100x100)<br>Illinois State<br>15-8<br>-<br>-450BetOnline | -450 | -450 | -450 | -550 | -493 | -458 | -458 |
@@ -140,11 +140,11 @@ NCAAB Fri 02/06
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/a3457dcf-2294-4900-b7eb-6644e3a14a69-original.PNG?d=100x100)<br>Murray State<br>17-7<br>-<br>-124Bet105 | -115 | -130 | -125 | -125 | -127 | -125 | -125 |
 | ![](https://logos.oddstrader.com/logos-original/cef7eda1-68b4-4d32-82c3-2ad7de95a94b-original.PNG?d=100x100)<br>Southern Illinois<br>10-13<br>-<br>+110BetOnline | -105 | +110 | +105 | +105 | +105 | +105 | +105 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6b4c9c4-058d-495a-bbaa-4b10d2857bf5-original.png?d=100x100)<br>#3Connecticut<br>22-1<br>100%<br>-140BetOnline | -135 | -140 | -150 | -145 | -151 | -148 | -148 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6b4c9c4-058d-495a-bbaa-4b10d2857bf5-original.png?d=100x100)<br>#3Connecticut<br>22-1<br>100%<br>-145BetOnline | -135 | -140 | -150 | -145 | -151 | -148 | -148 |
 | ![](https://logos.oddstrader.com/logos-original/8ddcb8fb-31c3-48cc-8d98-2d4abf53a4bf-original.PNG?d=100x100)<br>#22St. John's<br>17-5<br>0%<br>+130BetAnything | +115 | +120 | +130 | +125 | +123 | +127 | +127 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/069:00 PM<br>![](https://logos.oddstrader.com/logos-original/fd886257-a990-4abe-902b-300cf54b10d1-original.PNG?d=100x100)<br>Belmont<br>21-3<br>-<br>-158Bookmaker | -165 | -160 | -160 | -160 | -170 | -158 | -158 |
-| ![](https://logos.oddstrader.com/logos-original/9a5f1bb7-7ff8-42b2-836c-99c13543ab9f-original.png?d=100x100)<br>Illinois-Chicago<br>13-11<br>-<br>+145Everygame | +145 | +140 | +140 | +135 | +138 | +138 | +138 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/069:00 PM<br>![](https://logos.oddstrader.com/logos-original/fd886257-a990-4abe-902b-300cf54b10d1-original.PNG?d=100x100)<br>Belmont<br>21-3<br>-<br>-158Bookmaker | -165 | -160 | -160 | -160 | -170 | -159 | -159 |
+| ![](https://logos.oddstrader.com/logos-original/9a5f1bb7-7ff8-42b2-836c-99c13543ab9f-original.png?d=100x100)<br>Illinois-Chicago<br>13-11<br>-<br>+145Everygame | +145 | +140 | +140 | +135 | +138 | +139 | +139 |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 02/074:00 PM<br>![](https://logos.oddstrader.com/logos-original/2c7e280b-e4a9-4712-8934-d7f35a12c5c3-original.PNG?d=100x100)<br>Alabama<br>15-7<br>-<br>- | - | - | - | - | - | - | - |
 | ![](https://logos.oddstrader.com/logos-original/383574ef-8f82-4a79-8427-2a3b1315d93c-original.PNG?d=100x100)<br>Auburn<br>14-8<br>-<br>- | - | - | - | - | - | - | - |
@@ -204,7 +204,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-Why is Valparaiso favored vs Evansville?Generate
+Which matchup has the biggest spread gap tonight?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
