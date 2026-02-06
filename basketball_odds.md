@@ -143,8 +143,8 @@ NCAAB Fri 02/06
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/068:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6b4c9c4-058d-495a-bbaa-4b10d2857bf5-original.png?d=100x100)<br>#3Connecticut<br>22-1<br>100%<br>-145BetOnline | -135 | -145 | -150 | -145 | -155 | -148 | -148 |
 | ![](https://logos.oddstrader.com/logos-original/8ddcb8fb-31c3-48cc-8d98-2d4abf53a4bf-original.PNG?d=100x100)<br>#22St. John's<br>17-5<br>0%<br>+130BetAnything | +115 | +125 | +130 | +125 | +127 | +127 | +127 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/069:00 PM<br>![](https://logos.oddstrader.com/logos-original/fd886257-a990-4abe-902b-300cf54b10d1-original.PNG?d=100x100)<br>Belmont<br>21-3<br>-<br>-145Bovada | -165 | -160 | -160 | -145 | -161 | -158 | -158 |
-| ![](https://logos.oddstrader.com/logos-original/9a5f1bb7-7ff8-42b2-836c-99c13543ab9f-original.png?d=100x100)<br>Illinois-Chicago<br>13-11<br>-<br>+140BetOnline | +145 | +140 | +140 | +125 | +131 | +138 | +138 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/069:00 PM<br>![](https://logos.oddstrader.com/logos-original/fd886257-a990-4abe-902b-300cf54b10d1-original.PNG?d=100x100)<br>Belmont<br>21-3<br>-<br>-145Bovada | -165 | -160 | -155 | -145 | -161 | -158 | -158 |
+| ![](https://logos.oddstrader.com/logos-original/9a5f1bb7-7ff8-42b2-836c-99c13543ab9f-original.png?d=100x100)<br>Illinois-Chicago<br>13-11<br>-<br>+140BetOnline | +145 | +140 | +135 | +125 | +131 | +138 | +138 |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 02/074:00 PM<br>![](https://logos.oddstrader.com/logos-original/2c7e280b-e4a9-4712-8934-d7f35a12c5c3-original.PNG?d=100x100)<br>Alabama<br>15-7<br>-<br>- | - | - | - | - | - | - | - |
 | ![](https://logos.oddstrader.com/logos-original/383574ef-8f82-4a79-8427-2a3b1315d93c-original.PNG?d=100x100)<br>Auburn<br>14-8<br>-<br>- | - | - | - | - | - | - | - |
@@ -204,7 +204,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-Have Drake games been higher scoring than Redbirds games?Generate
+Why is VCU favored over Dayton at home?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
