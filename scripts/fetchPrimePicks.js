@@ -201,13 +201,28 @@ function checkSpreadConfirmation(game, spreadGames) {
   const blendCovers = blendedMargin > -spread;
   const bothCover = drCovers && hsCovers;
   
+  // Determine conviction tier (same as original workflow)
+  // This affects unit sizing, not whether to pick
+  let convictionTier = null;
+  if (drCovers) { // Base requirement met
+    if (bothCover) {
+      convictionTier = 'MAX';      // Both models cover - highest conviction (+0.5u)
+    } else if (blendCovers) {
+      convictionTier = 'BLEND';    // 90/10 blend covers - medium conviction (+0.25u)
+    } else {
+      convictionTier = 'BASE';     // D-Ratings only covers - base conviction (no boost)
+    }
+  }
+  
+  // Original workflow requirement: drCovers && modelsAgree (modelsAgree already checked above)
   return {
-    spreadConfirmed: bothCover,
+    spreadConfirmed: drCovers, // D-Ratings must cover = spread pick eligible
     spread,
     drCovers,
     hsCovers,
     blendCovers,
     bothCover,
+    convictionTier, // MAX, BLEND, or BASE - for unit sizing
     drMargin: Math.round(drPickedMargin * 10) / 10,
     hsMargin: Math.round(hsPickedMargin * 10) / 10,
     blendedMargin: Math.round(blendedMargin * 10) / 10,
@@ -238,10 +253,19 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     return { action: 'skipped', betId };
   }
   
-  // Calculate units - base from Kelly + boost for spread confirmation
-  const kellyUnits = prediction.unitSize || 2.0;
-  const spreadBoost = 0.5; // +0.5u for Prime Pick status
-  const totalUnits = Math.min(kellyUnits + spreadBoost, 4.0);
+  // Calculate units - base from prediction + conviction tier boost (same as old workflow)
+  const baseUnits = prediction.unitSize || 2.0;
+  
+  // Apply conviction tier boost (matches old fetchSpreadOpportunities.js logic)
+  let spreadBoost = 0;
+  if (spreadAnalysis.convictionTier === 'MAX') {
+    spreadBoost = 0.5;   // Both models cover
+  } else if (spreadAnalysis.convictionTier === 'BLEND') {
+    spreadBoost = 0.25;  // 90/10 blend covers
+  }
+  // BASE tier = no boost (only D-Ratings covers)
+  
+  const totalUnits = Math.min(baseUnits + spreadBoost, 4.0);
   
   const dynamicResult = calculateDynamicUnits({
     prediction: prediction,
@@ -298,7 +322,7 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       hsCovers: spreadAnalysis.hsCovers,
       blendCovers: spreadAnalysis.blendCovers,
       bothModelsCover: spreadAnalysis.bothCover,
-      convictionTier: 'MAX' // Prime picks always have max conviction
+      convictionTier: spreadAnalysis.convictionTier // MAX, BLEND, or BASE
     },
     
     prediction: {
@@ -307,9 +331,9 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // Unit sizing with Prime Pick boost
+      // Unit sizing with conviction tier boost (matches old workflow)
       unitSize: totalUnits,
-      baseUnits: kellyUnits,
+      baseUnits: baseUnits,
       spreadBoost: spreadBoost,
       confidenceTier: dynamicResult.tier,
       confidenceScore: dynamicResult.score,
@@ -538,7 +562,8 @@ async function fetchPrimePicks() {
       let spreadDetail = '';
       
       if (spreadAnalysis) {
-        if (spreadAnalysis.bothCover) {
+        // spreadConfirmed = drCovers (D-Ratings covers = base requirement, matches old workflow)
+        if (spreadAnalysis.spreadConfirmed) {
           spreadOppsCount++;
           spreadPicks.set(gameKey, {
             game,
@@ -546,11 +571,12 @@ async function fetchPrimePicks() {
             spreadPickedSide: spreadAnalysis.pickedSide,
             spreadPickedTeam: spreadAnalysis.pickedTeam
           });
-          spreadStatus = `✅ Spread picks ${spreadAnalysis.pickedSide.toUpperCase()}`;
-          spreadDetail = `${spreadAnalysis.pickedTeam} (spread ${spreadAnalysis.spread}, DR +${spreadAnalysis.drMargin}, HS +${spreadAnalysis.hsMargin})`;
+          const tierEmoji = spreadAnalysis.convictionTier === 'MAX' ? '🎯' : spreadAnalysis.convictionTier === 'BLEND' ? '💎' : '📊';
+          spreadStatus = `✅ Spread picks ${spreadAnalysis.pickedSide.toUpperCase()} [${spreadAnalysis.convictionTier}]`;
+          spreadDetail = `${spreadAnalysis.pickedTeam} (spread ${spreadAnalysis.spread}) DR:${spreadAnalysis.drCovers?'✓':'✗'}+${spreadAnalysis.drMargin} HS:${spreadAnalysis.hsCovers?'✓':'✗'}+${spreadAnalysis.hsMargin} Blend:${spreadAnalysis.blendCovers?'✓':'✗'}+${spreadAnalysis.blendedMargin}`;
         } else {
-          spreadStatus = `❌ Models don't both cover`;
-          spreadDetail = `DR: ${spreadAnalysis.drCovers ? '✓' : '✗'}, HS: ${spreadAnalysis.hsCovers ? '✓' : '✗'}`;
+          spreadStatus = `❌ D-Ratings doesn't cover spread`;
+          spreadDetail = `DR margin +${spreadAnalysis.drMargin} vs spread ${spreadAnalysis.spread}`;
         }
       } else {
         spreadDetail = 'No spread data or models disagree on winner';
