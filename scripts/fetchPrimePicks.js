@@ -403,9 +403,14 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   
   await setDoc(betRef, betData);
   
+  const tierLabel = spreadAnalysis.convictionTier === 'MAX' ? '🎯 MAX' : spreadAnalysis.convictionTier === 'BLEND' ? '💎 BLEND' : '📊 BASE';
+  const boostLabel = spreadBoost > 0 ? ` (+${spreadBoost}u boost)` : ' (no boost)';
+  
   console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
-  console.log(`      EV: +${prediction.bestEV.toFixed(1)}% | Spread: ${spreadAnalysis.spread} | ${totalUnits}u`);
-  console.log(`      Both models cover: ✅ DR +${spreadAnalysis.drMargin} | HS +${spreadAnalysis.hsMargin}`);
+  console.log(`      EV: +${prediction.bestEV.toFixed(1)}% | Grade: ${prediction.grade} | ${totalUnits}u (base ${baseUnits}u${boostLabel})`);
+  console.log(`      Spread: ${spreadAnalysis.spread} | 90/10 Blend: +${spreadAnalysis.blendedMargin} margin`);
+  console.log(`      Blend Over Spread: ${spreadAnalysis.marginOverSpread >= 0 ? '+' : ''}${spreadAnalysis.marginOverSpread} pts | Conviction: ${tierLabel}`);
+  console.log(`      DR: +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✅ covers' : '❌'} | HS: +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✅ covers' : '❌'}`);
   
   return { action: 'created', betId };
 }
@@ -695,12 +700,40 @@ async function fetchPrimePicks() {
     console.log('║                           PRIME PICKS SUMMARY                                 ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
+    // Calculate conviction tier breakdown
+    const maxPicks = primePicks.filter(p => p.spreadAnalysis.convictionTier === 'MAX');
+    const blendPicks = primePicks.filter(p => p.spreadAnalysis.convictionTier === 'BLEND');
+    const basePicks = primePicks.filter(p => p.spreadAnalysis.convictionTier === 'BASE');
+    
+    // Calculate avg blend margin over spread
+    const avgMarginOverSpread = primePicks.length > 0 
+      ? primePicks.reduce((sum, p) => sum + p.spreadAnalysis.marginOverSpread, 0) / primePicks.length
+      : 0;
+    
+    // Total units allocated
+    const totalUnitsAllocated = primePicks.reduce((sum, p) => {
+      const base = p.prediction.unitSize || 2.0;
+      let boost = 0;
+      if (p.spreadAnalysis.convictionTier === 'MAX') boost = 0.5;
+      else if (p.spreadAnalysis.convictionTier === 'BLEND') boost = 0.25;
+      return sum + Math.min(base + boost, 4.0);
+    }, 0);
+    
     console.log(`   🌟 Prime Picks Found: ${primePicks.length}`);
     console.log(`   ✅ New bets created: ${created}`);
     console.log(`   🔒 Already existed: ${skipped}`);
+    console.log(`\n   📊 CONVICTION BREAKDOWN:`);
+    console.log(`   🎯 MAX (both cover):     ${maxPicks.length} picks (+0.5u boost each)`);
+    console.log(`   💎 BLEND (90/10 covers): ${blendPicks.length} picks (+0.25u boost each)`);
+    console.log(`   📊 BASE (DR only):       ${basePicks.length} picks (no boost)`);
+    console.log(`\n   📈 EDGE METRICS:`);
+    console.log(`   Avg 90/10 Blend Over Spread: ${avgMarginOverSpread >= 0 ? '+' : ''}${avgMarginOverSpread.toFixed(1)} pts`);
+    console.log(`   Total Units Allocated: ${totalUnitsAllocated.toFixed(1)}u`);
     console.log('\n   Criteria for Prime Picks:');
-    console.log(`   • EV Edge: ≥${MIN_EV_THRESHOLD}% (90/10 D-Ratings model)`);
-    console.log('   • Spread: Both models independently cover');
+    console.log(`   • EV Edge: ≥${MIN_EV_THRESHOLD}% (90/10 D-Ratings/Haslametrics blend)`);
+    console.log('   • Spread: D-Ratings covers + models agree on winner');
+    console.log('   • Boost: MAX (+0.5u) if both cover, BLEND (+0.25u) if 90/10 covers, BASE (no boost)');
+    console.log('   • Cap: 4.0u max per pick');
     console.log('   • Historical: +11.8% ROI, 69% win rate\n');
     
     console.log('   Files updated:');
