@@ -720,6 +720,9 @@ async function fetchPrimePicks() {
     let created = 0;
     let skipped = 0;
     
+    // Sort by blend margin over spread (largest first) for easier scanning
+    primePicks.sort((a, b) => (b.spreadAnalysis.marginOverSpread || 0) - (a.spreadAnalysis.marginOverSpread || 0));
+    
     for (const { game, prediction, spreadAnalysis } of primePicks) {
       const result = await savePrimePick(db, game, prediction, spreadAnalysis, confidenceWeights);
       if (result.action === 'created') created++;
