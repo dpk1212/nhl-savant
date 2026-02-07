@@ -254,25 +254,53 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     return { action: 'skipped', betId };
   }
   
-  // Calculate units - base from prediction + conviction tier boost (same as old workflow)
-  const baseUnits = prediction.unitSize || 2.0;
+  // ═══════════════════════════════════════════════════════════════
+  // PRIME PICKS UNIT SIZING V2
+  // Two independent components: EV (1-3u) + Spread (1-2u) = 2-5u
+  // ═══════════════════════════════════════════════════════════════
   
-  // Apply conviction tier boost (matches old fetchSpreadOpportunities.js logic)
-  let spreadBoost = 0;
-  if (spreadAnalysis.convictionTier === 'MAX') {
-    spreadBoost = 0.5;   // Both models cover
-  } else if (spreadAnalysis.convictionTier === 'BLEND') {
-    spreadBoost = 0.25;  // 90/10 blend covers
+  // COMPONENT 1: EV UNITS (1-3u) — based on EV edge percentage
+  const ev = prediction.bestEV || 0;
+  let evUnits;
+  let evTier;
+  if (ev >= 10) {
+    evUnits = 3;
+    evTier = 'HIGH';      // Strong mispricing (10%+ EV)
+  } else if (ev >= 5) {
+    evUnits = 2;
+    evTier = 'MID';       // Solid edge (5-10% EV)
+  } else {
+    evUnits = 1;
+    evTier = 'BASE';      // Minimum qualifying edge (2-5% EV)
   }
-  // BASE tier = no boost (only D-Ratings covers)
   
-  const totalUnits = Math.min(baseUnits + spreadBoost, 4.0);
+  // COMPONENT 2: SPREAD UNITS (1-2u) — based on 90/10 blend margin over spread
+  const marginOverSpread = spreadAnalysis.marginOverSpread || 0;
+  const bothCover = spreadAnalysis.bothCover || false;
+  let spreadUnits;
+  let spreadTier;
+  if (marginOverSpread >= 3 && bothCover) {
+    spreadUnits = 2;
+    spreadTier = 'MAX';    // Comfortable cover + both models agree
+  } else if (marginOverSpread >= 3) {
+    spreadUnits = 1.5;
+    spreadTier = 'STRONG'; // Comfortable cover (blend 3+ pts over)
+  } else {
+    spreadUnits = 1;
+    spreadTier = 'BASE';   // Covers but tight (blend 0-3 pts over)
+  }
   
+  const totalUnits = evUnits + spreadUnits; // Range: 2u to 5u
+  
+  // Legacy: still compute dynamic result for tracking/display purposes
   const dynamicResult = calculateDynamicUnits({
     prediction: prediction,
     game: game,
     bet: { odds: prediction.bestOdds, team: prediction.bestTeam }
   }, confidenceWeights);
+  
+  // Spread boost for backward compat (stored in Firebase for filtering)
+  const spreadBoost = spreadUnits; // Now 1-2 instead of 0-0.5
   
   // Calculate conviction score
   const dr = game.dratings;
@@ -332,10 +360,15 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // Unit sizing with conviction tier boost (matches old workflow)
+      // PRIME V2 UNIT SIZING: EV (1-3u) + Spread (1-2u) = 2-5u
       unitSize: totalUnits,
-      baseUnits: baseUnits,
-      spreadBoost: spreadBoost,
+      evUnits: evUnits,
+      evTier: evTier,           // HIGH (3u), MID (2u), BASE (1u)
+      spreadUnits: spreadUnits,
+      spreadTier: spreadTier,   // MAX (2u), STRONG (1.5u), BASE (1u)
+      spreadBoost: spreadBoost, // backward compat (= spreadUnits)
+      
+      // Legacy dynamic confidence (for tracking, not used for sizing)
       confidenceTier: dynamicResult.tier,
       confidenceScore: dynamicResult.score,
       confidenceFactors: dynamicResult.factors,
@@ -403,14 +436,15 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   
   await setDoc(betRef, betData);
   
-  const tierLabel = spreadAnalysis.convictionTier === 'MAX' ? '🎯 MAX' : spreadAnalysis.convictionTier === 'BLEND' ? '💎 BLEND' : '📊 BASE';
-  const boostLabel = spreadBoost > 0 ? ` (+${spreadBoost}u boost)` : ' (no boost)';
+  const evIcon = evTier === 'HIGH' ? '🔥' : evTier === 'MID' ? '💪' : '📊';
+  const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : '📊';
   
   console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
-  console.log(`      EV: +${prediction.bestEV.toFixed(1)}% | Grade: ${prediction.grade} | ${totalUnits}u (base ${baseUnits}u${boostLabel})`);
-  console.log(`      Spread: ${spreadAnalysis.spread} | 90/10 Blend: +${spreadAnalysis.blendedMargin} margin`);
-  console.log(`      Blend Over Spread: ${spreadAnalysis.marginOverSpread >= 0 ? '+' : ''}${spreadAnalysis.marginOverSpread} pts | Conviction: ${tierLabel}`);
-  console.log(`      DR: +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✅ covers' : '❌'} | HS: +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✅ covers' : '❌'}`);
+  console.log(`      ┌─ TOTAL: ${totalUnits}u`);
+  console.log(`      ├─ EV:     ${evUnits}u ${evIcon} ${evTier} (${prediction.bestEV.toFixed(1)}% edge)`);
+  console.log(`      ├─ Spread: ${spreadUnits}u ${spreadIcon} ${spreadTier} (blend +${spreadAnalysis.marginOverSpread >= 0 ? '' : ''}${spreadAnalysis.marginOverSpread} pts over spread)`);
+  console.log(`      ├─ Spread: ${spreadAnalysis.spread} | DR +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✓' : '✗'} | HS +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✓' : '✗'} | Blend +${spreadAnalysis.blendedMargin}`);
+  console.log(`      └─ Grade: ${prediction.grade} | Odds: ${prediction.bestOdds}`);
   
   return { action: 'created', betId };
 }
@@ -700,41 +734,52 @@ async function fetchPrimePicks() {
     console.log('║                           PRIME PICKS SUMMARY                                 ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
-    // Calculate conviction tier breakdown
-    const maxPicks = primePicks.filter(p => p.spreadAnalysis.convictionTier === 'MAX');
-    const blendPicks = primePicks.filter(p => p.spreadAnalysis.convictionTier === 'BLEND');
-    const basePicks = primePicks.filter(p => p.spreadAnalysis.convictionTier === 'BASE');
+    // Calculate unit breakdown for summary
+    const evHighPicks = primePicks.filter(p => p.prediction.bestEV >= 10);
+    const evMidPicks = primePicks.filter(p => p.prediction.bestEV >= 5 && p.prediction.bestEV < 10);
+    const evBasePicks = primePicks.filter(p => p.prediction.bestEV < 5);
     
-    // Calculate avg blend margin over spread
+    const spreadMaxPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 3 && p.spreadAnalysis.bothCover);
+    const spreadStrongPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 3 && !p.spreadAnalysis.bothCover);
+    const spreadBasePicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread < 3);
+    
     const avgMarginOverSpread = primePicks.length > 0 
-      ? primePicks.reduce((sum, p) => sum + p.spreadAnalysis.marginOverSpread, 0) / primePicks.length
+      ? primePicks.reduce((sum, p) => sum + (p.spreadAnalysis.marginOverSpread || 0), 0) / primePicks.length
+      : 0;
+    const avgEV = primePicks.length > 0
+      ? primePicks.reduce((sum, p) => sum + (p.prediction.bestEV || 0), 0) / primePicks.length
       : 0;
     
-    // Total units allocated
+    // Total units allocated with new system
     const totalUnitsAllocated = primePicks.reduce((sum, p) => {
-      const base = p.prediction.unitSize || 2.0;
-      let boost = 0;
-      if (p.spreadAnalysis.convictionTier === 'MAX') boost = 0.5;
-      else if (p.spreadAnalysis.convictionTier === 'BLEND') boost = 0.25;
-      return sum + Math.min(base + boost, 4.0);
+      const ev = p.prediction.bestEV || 0;
+      const mos = p.spreadAnalysis.marginOverSpread || 0;
+      const both = p.spreadAnalysis.bothCover || false;
+      const evU = ev >= 10 ? 3 : ev >= 5 ? 2 : 1;
+      const spU = (mos >= 3 && both) ? 2 : mos >= 3 ? 1.5 : 1;
+      return sum + evU + spU;
     }, 0);
     
     console.log(`   🌟 Prime Picks Found: ${primePicks.length}`);
     console.log(`   ✅ New bets created: ${created}`);
     console.log(`   🔒 Already existed: ${skipped}`);
-    console.log(`\n   📊 CONVICTION BREAKDOWN:`);
-    console.log(`   🎯 MAX (both cover):     ${maxPicks.length} picks (+0.5u boost each)`);
-    console.log(`   💎 BLEND (90/10 covers): ${blendPicks.length} picks (+0.25u boost each)`);
-    console.log(`   📊 BASE (DR only):       ${basePicks.length} picks (no boost)`);
-    console.log(`\n   📈 EDGE METRICS:`);
-    console.log(`   Avg 90/10 Blend Over Spread: ${avgMarginOverSpread >= 0 ? '+' : ''}${avgMarginOverSpread.toFixed(1)} pts`);
+    console.log(`\n   💰 EV UNITS (1-3u per pick):`);
+    console.log(`   🔥 HIGH (3u):  ${evHighPicks.length} picks  — EV ≥ 10%`);
+    console.log(`   💪 MID  (2u):  ${evMidPicks.length} picks  — EV 5-10%`);
+    console.log(`   📊 BASE (1u):  ${evBasePicks.length} picks  — EV 2-5%`);
+    console.log(`\n   📈 SPREAD UNITS (1-2u per pick):`);
+    console.log(`   🎯 MAX    (2u):   ${spreadMaxPicks.length} picks  — Blend 3+ pts over + both cover`);
+    console.log(`   💎 STRONG (1.5u): ${spreadStrongPicks.length} picks  — Blend 3+ pts over`);
+    console.log(`   📊 BASE   (1u):   ${spreadBasePicks.length} picks  — Blend 0-3 pts over`);
+    console.log(`\n   📊 EDGE METRICS:`);
+    console.log(`   Avg EV: +${avgEV.toFixed(1)}%`);
+    console.log(`   Avg 90/10 Blend Over Spread: +${avgMarginOverSpread.toFixed(1)} pts`);
     console.log(`   Total Units Allocated: ${totalUnitsAllocated.toFixed(1)}u`);
-    console.log('\n   Criteria for Prime Picks:');
-    console.log(`   • EV Edge: ≥${MIN_EV_THRESHOLD}% (90/10 D-Ratings/Haslametrics blend)`);
-    console.log('   • Spread: D-Ratings covers + models agree on winner');
-    console.log('   • Boost: MAX (+0.5u) if both cover, BLEND (+0.25u) if 90/10 covers, BASE (no boost)');
-    console.log('   • Cap: 4.0u max per pick');
-    console.log('   • Historical: +11.8% ROI, 69% win rate\n');
+    console.log('\n   🏗️ UNIT SIZING V2:');
+    console.log(`   • EV Component:     1u (2-5%) | 2u (5-10%) | 3u (10%+)`);
+    console.log(`   • Spread Component:  1u (0-3 pts) | 1.5u (3+ pts) | 2u (3+ pts + both cover)`);
+    console.log(`   • Range: 2u min → 5u max`);
+    console.log(`   • EV Threshold: ≥${MIN_EV_THRESHOLD}%\n`);
     
     console.log('   Files updated:');
     console.log('   ✓ public/basketball_odds.md');
