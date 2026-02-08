@@ -150,6 +150,80 @@ export const getGradeColorScale = (grade) => {
   }
 };
 
+// Star Rating System — maps unit size (2-5u) to a 2-5 star visual rating
+// Based on data-driven V3 unit sizing where spread margin is primary signal
+export const getStarRating = (unitSize) => {
+  const clamped = Math.max(1, Math.min(5, unitSize || 2));
+  const fullStars = Math.floor(clamped);
+  const hasHalf = (clamped % 1) >= 0.4 && (clamped % 1) <= 0.6;
+  const displayStars = hasHalf ? fullStars + 0.5 : fullStars;
+
+  if (clamped >= 4.5) {
+    return {
+      stars: displayStars,
+      fullStars,
+      hasHalf,
+      color: '#10B981',
+      bg: 'rgba(16, 185, 129, 0.15)',
+      bgColor: 'rgba(16, 185, 129, 0.15)',
+      borderColor: '#10B981',
+      label: 'MAX CONVICTION',
+      tier: 'MAX CONVICTION',
+      intensity: 5
+    };
+  }
+  if (clamped >= 3.5) {
+    return {
+      stars: displayStars,
+      fullStars,
+      hasHalf,
+      color: '#14B8A6',
+      bg: 'rgba(20, 184, 166, 0.12)',
+      bgColor: 'rgba(20, 184, 166, 0.15)',
+      borderColor: '#14B8A6',
+      label: 'HIGH CONVICTION',
+      tier: 'HIGH CONVICTION',
+      intensity: 4
+    };
+  }
+  if (clamped >= 2.5) {
+    return {
+      stars: displayStars,
+      fullStars,
+      hasHalf,
+      color: '#3B82F6',
+      bg: 'rgba(59, 130, 246, 0.12)',
+      bgColor: 'rgba(59, 130, 246, 0.15)',
+      borderColor: '#3B82F6',
+      label: 'SOLID',
+      tier: 'SOLID',
+      intensity: 3
+    };
+  }
+  // 2u or below
+  return {
+    stars: displayStars,
+    fullStars,
+    hasHalf,
+    color: '#8B5CF6',
+    bg: 'rgba(139, 92, 246, 0.12)',
+    bgColor: 'rgba(139, 92, 246, 0.15)',
+    borderColor: '#8B5CF6',
+    label: 'STANDARD',
+    tier: 'STANDARD',
+    intensity: 2
+  };
+};
+
+// Renders star display as a string: "★★★☆☆" (for use in non-JSX contexts)
+export const getStarString = (unitSize) => {
+  const rating = getStarRating(unitSize);
+  const filled = '★'.repeat(rating.fullStars);
+  const half = rating.hasHalf ? '½' : '';
+  const empty = '☆'.repeat(5 - rating.fullStars - (rating.hasHalf ? 1 : 0));
+  return filled + half + empty;
+};
+
 // 5-Tier EV Color Scale (LEGACY - use getGradeColorScale for new code)
 // Thresholds calibrated for MoneyPuck ensemble
 export const getEVColorScale = (evPercent) => {

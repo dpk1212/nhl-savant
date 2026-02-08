@@ -16,7 +16,7 @@ import { BasketballPerformanceDashboard } from '../components/BasketballPerforma
 import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
-import { getDynamicTierInfo, getDynamicConfidenceRating, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
+import { getDynamicTierInfo, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
 import { CLVIndicator } from '../components/CLVBadge';
 // basketballBetTracker import removed - bet saving now handled by GitHub workflows only
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -26,7 +26,8 @@ import {
   TYPOGRAPHY, 
   MOBILE_SPACING, 
   GRADIENTS, 
-  getGradeColorScale
+  getGradeColorScale,
+  getStarRating
 } from '../utils/designSystem';
 import { getBasketballContext } from '../utils/basketballContextGenerator';
 // 🎯 CBB SOFT PAYWALL IMPORTS
@@ -1669,7 +1670,7 @@ const EnhancedTierHeader = ({
             </div>
             
             {topPlays.map((game, idx) => {
-              const gradeColors = getGradeColorScale(game.prediction?.grade || 'B');
+              const playStarRating = getStarRating(game.prediction?.unitSize || 2);
               const rankColors = ['#10B981', '#14B8A6', '#3B82F6'];
               const rankColor = rankColors[idx] || color;
               
@@ -1751,14 +1752,20 @@ const EnhancedTierHeader = ({
                     }}>
                       <span style={{
                         padding: '0.125rem 0.375rem',
-                        background: `${gradeColors.borderColor}20`,
-                        border: `1px solid ${gradeColors.borderColor}35`,
+                        background: `${playStarRating.borderColor}20`,
+                        border: `1px solid ${playStarRating.borderColor}35`,
                         borderRadius: '4px',
-                        color: gradeColors.color,
-                        fontWeight: '800',
-                        fontSize: isMobile ? '0.625rem' : '0.688rem'
+                        display: 'inline-flex',
+                        gap: '1px',
+                        alignItems: 'center'
                       }}>
-                        {game.prediction?.grade}
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} style={{
+                            fontSize: isMobile ? '0.5rem' : '0.563rem',
+                            color: i < playStarRating.fullStars ? '#FBBF24' : 'rgba(255,255,255,0.15)',
+                            lineHeight: 1
+                          }}>★</span>
+                        ))}
                       </span>
                       <span style={{
                         color: 'rgba(255,255,255,0.55)',
@@ -2111,7 +2118,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
     );
   }
   
-  const gradeColors = getGradeColorScale(pred.grade);
+  const starRating = getStarRating(pred.unitSize);
+  const gradeColors = starRating; // alias for backward compat within card
   
   // Format game time (remove "ET" suffix for cleaner look)
   const formatGameTime = (time) => {
@@ -2119,12 +2127,12 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
     return time.replace(/\s+ET$/i, '').trim();
   };
 
-  // Determine border and shadow based on A+ grade OR Savant Pick status
+  // Determine border and shadow based on 5-star rating OR Savant Pick status
   const getCardStyles = () => {
-    if (pred.grade === 'A+') {
+    if (starRating.intensity >= 5) {
       return {
-        border: `2px solid ${gradeColors.borderColor}`,
-        boxShadow: `0 8px 32px ${gradeColors.borderColor}40, 0 0 60px ${gradeColors.borderColor}15`
+        border: `2px solid ${starRating.borderColor}`,
+        boxShadow: `0 8px 32px ${starRating.borderColor}40, 0 0 60px ${starRating.borderColor}15`
       };
     }
     if (isSavantPick) {
@@ -2153,8 +2161,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       position: 'relative'
     }}>
-      {/* Animated gradient overlay for A+ picks */}
-      {pred.grade === 'A+' && (
+      {/* Animated gradient overlay for 5-star picks */}
+      {starRating.intensity >= 5 && (
         <>
           <div style={{
             position: 'absolute',
@@ -2228,82 +2236,93 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           </div>
         )}
         
-        {/* 🎯 UNIT SIZE HERO + CONFIDENCE BADGE */}
-        {(() => {
-          // Use dynamic tier from stored Firebase data when available
-          const tierInfo = getDynamicTierInfo(pred);
-          const confidence = getDynamicConfidenceRating(pred);
-          
-          return (
-            <div style={{
-              marginBottom: isMobile ? '0.75rem' : '0.875rem'
-            }}>
-              {/* UNIT SIZE - HERO ELEMENT */}
-              <div style={{
-                marginBottom: '0.625rem',
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-                gap: '0.75rem'
+        {/* UNIT SIZE HERO + STAR RATING */}
+        <div style={{
+          marginBottom: isMobile ? '0.75rem' : '0.875rem'
+        }}>
+          {/* UNIT SIZE - HERO ELEMENT */}
+          <div style={{
+            marginBottom: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
+          }}>
+            {/* Left: BET label + HUGE unit */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{
+                fontSize: isMobile ? '0.813rem' : '0.875rem',
+                color: 'rgba(255,255,255,0.6)',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em'
               }}>
-                {/* Left: BET label + HUGE unit */}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                  <span style={{
-                    fontSize: isMobile ? '0.813rem' : '0.875rem',
-                    color: 'rgba(255,255,255,0.6)',
-                    fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em'
-                  }}>
-                    BET:
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '2rem' : '2.25rem',
-                    fontWeight: '900',
-                    color: tierInfo.color,
-                    letterSpacing: '-0.04em',
-                    fontFeatureSettings: "'tnum'",
-                    textShadow: `0 2px 16px ${tierInfo.color}40, 0 0 40px ${tierInfo.color}20`,
-                    lineHeight: 0.9
-                  }}>
-                    {pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u'}
-                  </span>
-                </div>
-                
-                {/* Right: Confidence badge (NO EMOJI - PREMIUM) */}
-                <div style={{
-                  background: `linear-gradient(135deg, ${confidence.color}20 0%, ${confidence.color}12 100%)`,
-                  border: `2px solid ${confidence.color}50`,
-                  borderRadius: '10px',
-                  padding: isMobile ? '0.563rem 0.875rem' : '0.625rem 1rem',
-                  boxShadow: `0 3px 12px ${confidence.color}22, inset 0 1px 0 rgba(255,255,255,0.08)`
-                }}>
-                  <span style={{
-                    fontSize: isMobile ? '0.75rem' : '0.813rem',
-                    fontWeight: '900',
-                    color: confidence.color,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    textShadow: `0 1px 6px ${confidence.color}30`
-                  }}>
-                    {confidence.label}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Pattern Context */}
-              <div style={{
-                fontSize: isMobile ? '0.688rem' : '0.75rem',
-                color: 'rgba(255,255,255,0.70)',
-                fontWeight: '600',
-                lineHeight: 1.4,
-                letterSpacing: '0.01em'
+                BET:
+              </span>
+              <span style={{
+                fontSize: isMobile ? '2rem' : '2.25rem',
+                fontWeight: '900',
+                color: starRating.color,
+                letterSpacing: '-0.04em',
+                fontFeatureSettings: "'tnum'",
+                textShadow: `0 2px 16px ${starRating.color}40, 0 0 40px ${starRating.color}20`,
+                lineHeight: 0.9
               }}>
-                {pred.oddsRangeName || 'Standard odds'} pattern
-              </div>
+                {pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u'}
+              </span>
             </div>
-          );
-        })()}
+            
+            {/* Right: Star rating + conviction label */}
+            <div style={{
+              background: `linear-gradient(135deg, ${starRating.borderColor}20 0%, ${starRating.borderColor}10 100%)`,
+              border: `2px solid ${starRating.borderColor}50`,
+              borderRadius: '10px',
+              padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
+              boxShadow: `0 3px 12px ${starRating.borderColor}22, inset 0 1px 0 rgba(255,255,255,0.08)`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}>
+              <div style={{ display: 'flex', gap: '2px' }}>
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} style={{
+                    fontSize: isMobile ? '0.813rem' : '0.875rem',
+                    color: i < starRating.fullStars ? '#FBBF24' 
+                      : (starRating.hasHalf && i === starRating.fullStars) ? 'rgba(251, 191, 36, 0.5)'
+                      : 'rgba(255,255,255,0.12)',
+                    lineHeight: 1,
+                    filter: i < starRating.fullStars ? 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.5))' : 'none'
+                  }}>★</span>
+                ))}
+              </div>
+              <span style={{
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
+                fontWeight: '800',
+                color: starRating.color,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                lineHeight: 1
+              }}>
+                {starRating.label}
+              </span>
+            </div>
+          </div>
+          
+          {/* Conviction Context */}
+          <div style={{
+            fontSize: isMobile ? '0.688rem' : '0.75rem',
+            color: 'rgba(255,255,255,0.55)',
+            fontWeight: '600',
+            lineHeight: 1.4,
+            letterSpacing: '0.01em'
+          }}>
+            {starRating.label === 'MAX CONVICTION' ? 'Highest confidence play' 
+              : starRating.label === 'HIGH CONVICTION' ? 'Strong model agreement' 
+              : starRating.label === 'SOLID' ? 'Confirmed edge' 
+              : 'Qualifying edge'}
+          </div>
+        </div>
         
         {/* Top Row: Rank + Teams + Time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '0.75rem' }}>
@@ -2372,49 +2391,46 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               ? '0 4px 16px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.06)'
               : '0 4px 16px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255,255,255,0.06)'
           }}>
-            {/* Left: Grade + Units (compact) */}
+            {/* Left: Star Rating + Units (compact) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {/* Grade */}
+              {/* Star Rating */}
               <div style={{
-                background: `linear-gradient(135deg, ${gradeColors.borderColor}20 0%, ${gradeColors.borderColor}10 100%)`,
-                border: `1.5px solid ${gradeColors.borderColor}`,
-                color: gradeColors.color,
+                background: `linear-gradient(135deg, ${starRating.borderColor}20 0%, ${starRating.borderColor}10 100%)`,
+                border: `1.5px solid ${starRating.borderColor}`,
                 padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
                 borderRadius: '7px',
-              fontWeight: '900',
-                fontSize: isMobile ? '0.813rem' : '0.875rem',
-                letterSpacing: '-0.01em',
-                boxShadow: `0 2px 8px ${gradeColors.borderColor}20`
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1px',
+                boxShadow: `0 2px 8px ${starRating.borderColor}20`
               }}>
-                {pred.grade}
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} style={{
+                    fontSize: isMobile ? '0.688rem' : '0.75rem',
+                    color: i < starRating.fullStars ? starRating.color 
+                      : (starRating.hasHalf && i === starRating.fullStars) ? `${starRating.color}80`
+                      : 'rgba(255,255,255,0.15)',
+                    lineHeight: 1,
+                    filter: i < starRating.fullStars ? `drop-shadow(0 0 3px ${starRating.color}60)` : 'none'
+                  }}>★</span>
+                ))}
               </div>
               
-              {/* Units - USE STORED VALUE, not recalculated */}
-              {(() => {
-                // Get unit color based on actual stored unit size
-                const unitColor = pred.unitSize >= 5 ? '#10B981' 
-                  : pred.unitSize >= 4 ? '#14B8A6'
-                  : pred.unitSize >= 3 ? '#3B82F6'
-                  : pred.unitSize >= 2 ? '#8B5CF6'
-                  : pred.unitSize >= 1 ? '#A855F7'
-                  : '#6366F1';
-                return (
-                  <div style={{
-                    background: `linear-gradient(135deg, ${unitColor}15 0%, ${unitColor}08 100%)`,
-                    border: `1.5px solid ${unitColor}`,
-                    color: unitColor,
-                    padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
-                    borderRadius: '7px',
-                    fontWeight: '900',
-                    fontSize: isMobile ? '0.75rem' : '0.813rem',
-                    letterSpacing: '0.01em',
-                    fontFeatureSettings: "'tnum'",
-                    boxShadow: `0 2px 8px ${unitColor}20`
-                  }}>
-                    {pred.unitSize}u
-                  </div>
-                );
-              })()}
+              {/* Units badge */}
+              <div style={{
+                background: `linear-gradient(135deg, ${starRating.borderColor}15 0%, ${starRating.borderColor}08 100%)`,
+                border: `1.5px solid ${starRating.borderColor}`,
+                color: starRating.color,
+                padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+                borderRadius: '7px',
+                fontWeight: '900',
+                fontSize: isMobile ? '0.75rem' : '0.813rem',
+                letterSpacing: '0.01em',
+                fontFeatureSettings: "'tnum'",
+                boxShadow: `0 2px 8px ${starRating.borderColor}20`
+              }}>
+                {pred.unitSize}u
+              </div>
             </div>
             
             {/* Right: Profit (hero element) */}
@@ -2458,20 +2474,11 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         {!game.betOutcome && (
           <div style={{
             marginTop: isMobile ? '0.75rem' : '0.875rem',
-            background: (() => {
-              const tierInfo = getDynamicTierInfo(pred);
-              return tierInfo.bgGradient;
-            })(),
-            border: (() => {
-              const tierInfo = getDynamicTierInfo(pred);
-              return `2.5px solid ${tierInfo.borderColor}`;
-            })(),
+            background: `linear-gradient(135deg, ${starRating.borderColor}18 0%, ${starRating.borderColor}08 100%)`,
+            border: `2.5px solid ${starRating.borderColor}`,
             borderRadius: isMobile ? '14px' : '16px',
             padding: isMobile ? '1rem 1.125rem' : '1.125rem 1.375rem',
-            boxShadow: (() => {
-              const tierInfo = getDynamicTierInfo(pred);
-              return `0 6px 22px ${tierInfo.color}28, inset 0 1px 0 rgba(255,255,255,0.12)`;
-            })(),
+            boxShadow: `0 6px 22px ${starRating.borderColor}28, inset 0 1px 0 rgba(255,255,255,0.12)`,
             backdropFilter: 'blur(10px)'
           }}>
             {/* PREMIUM MOBILE-FIRST LAYOUT */}
@@ -2481,26 +2488,46 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               gap: isMobile ? '0.875rem' : '1rem',
               marginBottom: isMobile ? '0.625rem' : '0.75rem'
             }}>
-              {/* Grade Badge - HERO ELEMENT */}
+              {/* Star Rating Badge - HERO ELEMENT */}
               <div style={{
-                background: `linear-gradient(135deg, ${gradeColors.borderColor}30 0%, ${gradeColors.borderColor}18 100%)`,
-                border: `2.5px solid ${gradeColors.borderColor}`,
-                color: gradeColors.color,
-                padding: isMobile ? '0.625rem 0.875rem' : '0.688rem 1rem',
+                background: `linear-gradient(135deg, ${starRating.borderColor}30 0%, ${starRating.borderColor}18 100%)`,
+                border: `2.5px solid ${starRating.borderColor}`,
+                padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
                 borderRadius: '11px',
-                fontWeight: '900',
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
-                letterSpacing: '-0.03em',
-                boxShadow: `0 4px 14px ${gradeColors.borderColor}35, inset 0 1px 0 rgba(255,255,255,0.15)`,
+                boxShadow: `0 4px 14px ${starRating.borderColor}35, inset 0 1px 0 rgba(255,255,255,0.15)`,
                 flexShrink: 0,
-                lineHeight: 0.9,
-                minWidth: isMobile ? '42px' : '48px',
-                textAlign: 'center'
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.25rem',
+                minWidth: isMobile ? '52px' : '58px'
               }}>
-                {pred.grade}
+                <div style={{ display: 'flex', gap: '1px' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      color: i < starRating.fullStars ? starRating.color 
+                        : (starRating.hasHalf && i === starRating.fullStars) ? `${starRating.color}80`
+                        : 'rgba(255,255,255,0.15)',
+                      lineHeight: 1,
+                      filter: i < starRating.fullStars ? `drop-shadow(0 0 4px ${starRating.color}60)` : 'none'
+                    }}>★</span>
+                  ))}
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.5rem' : '0.563rem',
+                  fontWeight: '800',
+                  color: starRating.color,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  lineHeight: 1,
+                  opacity: 0.9
+                }}>
+                  {pred.unitSize}u
+                </div>
               </div>
               
-              {/* Unit Size - PROMINENT */}
+              {/* Unit Size + Conviction Label */}
               <div style={{
                 flex: 1
               }}>
@@ -2516,11 +2543,12 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 </div>
                 <div style={{
                   fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: pred.historicalROI >= 0 ? '#10B981' : '#F59E0B',
+                  color: starRating.color,
                   fontWeight: '700',
-                  letterSpacing: '0.01em'
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase'
                 }}>
-                  Pattern ROI: {pred.historicalROI >= 0 ? '+' : ''}{pred.historicalROI?.toFixed(1) || '0.0'}%
+                  {starRating.label}
                 </div>
               </div>
               
@@ -2541,31 +2569,17 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               letterSpacing: '0.005em'
             }}>
               {(() => {
-                const roi = pred.historicalROI || 0;
-                
-                // Custom premium descriptions based on unit size + ROI
-                if (pred.unitSize >= 5.0) {
-                  return roi > 20 
-                    ? `Elite opportunity with strong historical performance`
-                    : `Maximum allocation for highest conviction plays`;
+                // Conviction-based descriptions
+                if (starRating.intensity >= 5) {
+                  return `Maximum conviction — both models confirm with strong margin over spread`;
                 }
-                if (pred.unitSize >= 4.0) {
-                  return `Above-standard position backed by solid metrics`;
+                if (starRating.intensity >= 4) {
+                  return `High conviction — strong model agreement with comfortable spread coverage`;
                 }
-                if (pred.unitSize >= 3.0) {
-                  return roi > 15
-                    ? `Strong pattern with proven profitability`
-                    : `Standard allocation for balanced risk/reward`;
+                if (starRating.intensity >= 3) {
+                  return `Solid pick — positive edge confirmed by spread analysis`;
                 }
-                if (pred.unitSize >= 2.0) {
-                  return roi > 0
-                    ? `Moderate sizing for positive-expectation opportunity`
-                    : `Measured approach to volatile pattern`;
-                }
-                if (pred.unitSize >= 1.0) {
-                  return `Conservative sizing manages pattern volatility`;
-                }
-                return `Minimal allocation for tracking purposes`;
+                return `Standard pick — qualifying edge with spread confirmation`;
               })()}
             </div>
           </div>
@@ -2733,54 +2747,49 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   </div>
         </div>
         
-          {/* CONFIDENCE & UNIT SIZING */}
+          {/* RATING & UNIT SIZING */}
           <div style={{
-            background: `linear-gradient(135deg, ${gradeColors.borderColor}15 0%, ${gradeColors.borderColor}08 100%)`,
+            background: `linear-gradient(135deg, ${starRating.borderColor}15 0%, ${starRating.borderColor}08 100%)`,
             borderRadius: '8px',
             padding: isMobile ? '0.5rem' : '0.625rem',
-            border: `1px solid ${gradeColors.borderColor}30`
+            border: `1px solid ${starRating.borderColor}30`
           }}>
               <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: `${gradeColors.color}cc`,
+              color: `${starRating.color}cc`,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
               fontWeight: '700',
-              marginBottom: '0.375rem',
+              marginBottom: '0.375rem'
+            }}>
+              RATING
+              </div>
+              {/* Star display */}
+              <div style={{ 
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem'
+              gap: '0.375rem',
+              marginBottom: '0.375rem'
             }}>
-              {(() => {
-                const tierInfo = getDynamicTierInfo(pred);
-                return <span>{tierInfo.emoji}</span>;
-              })()} GRADE / BET SIZE
-              </div>
-              <div style={{ 
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '0.5rem',
-              marginBottom: '0.25rem'
-            }}>
-              <div style={{ 
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
-                fontWeight: '900',
-                color: gradeColors.color,
-                lineHeight: 1.1,
-                letterSpacing: '-0.01em'
-              }}>
-                {pred.grade}
+              <div style={{ display: 'flex', gap: '2px' }}>
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} style={{
+                    fontSize: isMobile ? '0.938rem' : '1.063rem',
+                    color: i < starRating.fullStars ? starRating.color 
+                      : (starRating.hasHalf && i === starRating.fullStars) ? `${starRating.color}80`
+                      : 'rgba(255,255,255,0.12)',
+                    lineHeight: 1,
+                    filter: i < starRating.fullStars ? `drop-shadow(0 0 3px ${starRating.color}50)` : 'none'
+                  }}>★</span>
+                ))}
               </div>
               <div style={{
                 fontSize: isMobile ? '0.938rem' : '1rem',
                 fontWeight: '900',
-                color: (() => {
-                  const tierInfo = getDynamicTierInfo(pred);
-                  return tierInfo.color;
-                })(),
+                color: starRating.color,
                 fontFeatureSettings: "'tnum'"
               }}>
-                → {pred.unitSize > 0 ? `${pred.unitSize}u` : 'No Bet'}
+                {pred.unitSize > 0 ? `${pred.unitSize}u` : 'No Bet'}
               </div>
             </div>
             <div style={{ 
@@ -2788,7 +2797,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               color: 'rgba(255,255,255,0.5)',
               lineHeight: 1.3
             }}>
-              {pred.oddsRangeName || 'Unknown Odds'} • {pred.unitSize > 0 
+              {starRating.label} • {pred.unitSize > 0 
                 ? `Risk ${pred.unitSize} unit${pred.unitSize !== 1 ? 's' : ''}`
                 : 'Below betting threshold'}
             </div>

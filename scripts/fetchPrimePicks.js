@@ -255,39 +255,47 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   }
   
   // ═══════════════════════════════════════════════════════════════
-  // PRIME PICKS UNIT SIZING V2
-  // Two independent components: EV (1-3u) + Spread (1-2u) = 2-5u
+  // PRIME PICKS UNIT SIZING V3 — DATA-DRIVEN REBALANCE
+  // Historical analysis: margin over spread is the strongest
+  // predictor of wins (linear relationship). EV% is noisy and
+  // nearly inverted (low EV outperforms high EV).
+  //
+  // EV (1-2u) + Spread (1-3u) = 2-5u
   // ═══════════════════════════════════════════════════════════════
   
-  // COMPONENT 1: EV UNITS (1-3u) — based on EV edge percentage
+  // COMPONENT 1: EV UNITS (1-2u) — less predictive signal, keep simple
+  // Data: 2-4% EV = 88% WR / +33% ROI, 6-8% = 22% WR / -66% ROI
+  // Low EV = market agrees with model = safer. High EV = volatile.
   const ev = prediction.bestEV || 0;
   let evUnits;
   let evTier;
-  if (ev >= 10) {
-    evUnits = 3;
-    evTier = 'HIGH';      // Strong mispricing (10%+ EV)
-  } else if (ev >= 5) {
+  if (ev >= 5) {
     evUnits = 2;
-    evTier = 'MID';       // Solid edge (5-10% EV)
+    evTier = 'HIGH';      // Solid edge (5%+ EV)
   } else {
     evUnits = 1;
-    evTier = 'BASE';      // Minimum qualifying edge (2-5% EV)
+    evTier = 'BASE';      // Standard qualifying edge (2-5% EV)
   }
   
-  // COMPONENT 2: SPREAD UNITS (1-2u) — based on 90/10 blend margin over spread
+  // COMPONENT 2: SPREAD UNITS (1-3u) — strongest predictor of wins
+  // Data: 0-2 pts = 63% WR, 2-3 pts = 67% WR, 3+ pts = 88% WR / +31% ROI
+  // Clean linear relationship: more margin = more wins.
   const marginOverSpread = spreadAnalysis.marginOverSpread || 0;
   const bothCover = spreadAnalysis.bothCover || false;
   let spreadUnits;
   let spreadTier;
   if (marginOverSpread >= 3 && bothCover) {
-    spreadUnits = 2;
-    spreadTier = 'MAX';    // Comfortable cover + both models agree
+    spreadUnits = 3;
+    spreadTier = 'MAX';    // Elite: wide margin + both models agree (historically 88%+ WR)
   } else if (marginOverSpread >= 3) {
-    spreadUnits = 1.5;
-    spreadTier = 'STRONG'; // Comfortable cover (blend 3+ pts over)
+    spreadUnits = 2.5;
+    spreadTier = 'STRONG'; // Strong: wide margin, blend 3+ pts over
+  } else if (marginOverSpread >= 2) {
+    spreadUnits = 2;
+    spreadTier = 'SOLID';  // Solid: comfortable margin, 2-3 pts over
   } else {
     spreadUnits = 1;
-    spreadTier = 'BASE';   // Covers but tight (blend 0-3 pts over)
+    spreadTier = 'BASE';   // Covers but tight (0-2 pts over)
   }
   
   const totalUnits = evUnits + spreadUnits; // Range: 2u to 5u
@@ -360,12 +368,13 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // PRIME V2 UNIT SIZING: EV (1-3u) + Spread (1-2u) = 2-5u
+      // PRIME V3 UNIT SIZING: EV (1-2u) + Spread (1-3u) = 2-5u
+      // Spread is primary signal (linear WR predictor), EV is secondary
       unitSize: totalUnits,
       evUnits: evUnits,
-      evTier: evTier,           // HIGH (3u), MID (2u), BASE (1u)
+      evTier: evTier,           // HIGH (2u), BASE (1u)
       spreadUnits: spreadUnits,
-      spreadTier: spreadTier,   // MAX (2u), STRONG (1.5u), BASE (1u)
+      spreadTier: spreadTier,   // MAX (3u), STRONG (2.5u), SOLID (2u), BASE (1u)
       spreadBoost: spreadBoost, // backward compat (= spreadUnits)
       
       // Legacy dynamic confidence (for tracking, not used for sizing)
@@ -436,8 +445,8 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   
   await setDoc(betRef, betData);
   
-  const evIcon = evTier === 'HIGH' ? '🔥' : evTier === 'MID' ? '💪' : '📊';
-  const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : '📊';
+  const evIcon = evTier === 'HIGH' ? '🔥' : '📊';
+  const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : spreadTier === 'SOLID' ? '💪' : '📊';
   
   console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
   console.log(`      ┌─ TOTAL: ${totalUnits}u`);
@@ -738,13 +747,13 @@ async function fetchPrimePicks() {
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
     // Calculate unit breakdown for summary
-    const evHighPicks = primePicks.filter(p => p.prediction.bestEV >= 10);
-    const evMidPicks = primePicks.filter(p => p.prediction.bestEV >= 5 && p.prediction.bestEV < 10);
+    const evHighPicks = primePicks.filter(p => p.prediction.bestEV >= 5);
     const evBasePicks = primePicks.filter(p => p.prediction.bestEV < 5);
     
     const spreadMaxPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 3 && p.spreadAnalysis.bothCover);
     const spreadStrongPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 3 && !p.spreadAnalysis.bothCover);
-    const spreadBasePicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread < 3);
+    const spreadSolidPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 2 && p.spreadAnalysis.marginOverSpread < 3);
+    const spreadBasePicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread < 2);
     
     const avgMarginOverSpread = primePicks.length > 0 
       ? primePicks.reduce((sum, p) => sum + (p.spreadAnalysis.marginOverSpread || 0), 0) / primePicks.length
@@ -753,34 +762,34 @@ async function fetchPrimePicks() {
       ? primePicks.reduce((sum, p) => sum + (p.prediction.bestEV || 0), 0) / primePicks.length
       : 0;
     
-    // Total units allocated with new system
+    // Total units allocated with V3 system
     const totalUnitsAllocated = primePicks.reduce((sum, p) => {
       const ev = p.prediction.bestEV || 0;
       const mos = p.spreadAnalysis.marginOverSpread || 0;
       const both = p.spreadAnalysis.bothCover || false;
-      const evU = ev >= 10 ? 3 : ev >= 5 ? 2 : 1;
-      const spU = (mos >= 3 && both) ? 2 : mos >= 3 ? 1.5 : 1;
+      const evU = ev >= 5 ? 2 : 1;
+      const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
       return sum + evU + spU;
     }, 0);
     
     console.log(`   🌟 Prime Picks Found: ${primePicks.length}`);
     console.log(`   ✅ New bets created: ${created}`);
     console.log(`   🔒 Already existed: ${skipped}`);
-    console.log(`\n   💰 EV UNITS (1-3u per pick):`);
-    console.log(`   🔥 HIGH (3u):  ${evHighPicks.length} picks  — EV ≥ 10%`);
-    console.log(`   💪 MID  (2u):  ${evMidPicks.length} picks  — EV 5-10%`);
+    console.log(`\n   💰 EV UNITS (1-2u per pick) — secondary signal:`);
+    console.log(`   🔥 HIGH (2u):  ${evHighPicks.length} picks  — EV ≥ 5%`);
     console.log(`   📊 BASE (1u):  ${evBasePicks.length} picks  — EV 2-5%`);
-    console.log(`\n   📈 SPREAD UNITS (1-2u per pick):`);
-    console.log(`   🎯 MAX    (2u):   ${spreadMaxPicks.length} picks  — Blend 3+ pts over + both cover`);
-    console.log(`   💎 STRONG (1.5u): ${spreadStrongPicks.length} picks  — Blend 3+ pts over`);
-    console.log(`   📊 BASE   (1u):   ${spreadBasePicks.length} picks  — Blend 0-3 pts over`);
+    console.log(`\n   📈 SPREAD UNITS (1-3u per pick) — primary signal:`);
+    console.log(`   🎯 MAX    (3u):   ${spreadMaxPicks.length} picks  — Blend 3+ pts over + both cover`);
+    console.log(`   💎 STRONG (2.5u): ${spreadStrongPicks.length} picks  — Blend 3+ pts over`);
+    console.log(`   💪 SOLID  (2u):   ${spreadSolidPicks.length} picks  — Blend 2-3 pts over`);
+    console.log(`   📊 BASE   (1u):   ${spreadBasePicks.length} picks  — Blend 0-2 pts over`);
     console.log(`\n   📊 EDGE METRICS:`);
     console.log(`   Avg EV: +${avgEV.toFixed(1)}%`);
     console.log(`   Avg 90/10 Blend Over Spread: +${avgMarginOverSpread.toFixed(1)} pts`);
     console.log(`   Total Units Allocated: ${totalUnitsAllocated.toFixed(1)}u`);
-    console.log('\n   🏗️ UNIT SIZING V2:');
-    console.log(`   • EV Component:     1u (2-5%) | 2u (5-10%) | 3u (10%+)`);
-    console.log(`   • Spread Component:  1u (0-3 pts) | 1.5u (3+ pts) | 2u (3+ pts + both cover)`);
+    console.log('\n   🏗️ UNIT SIZING V3 (data-driven rebalance):');
+    console.log(`   • EV Component:     1u (2-5%) | 2u (5%+)           ← secondary signal`);
+    console.log(`   • Spread Component:  1u (0-2) | 2u (2-3) | 2.5u (3+) | 3u (3+ & both cover)  ← PRIMARY`);
     console.log(`   • Range: 2u min → 5u max`);
     console.log(`   • EV Threshold: ≥${MIN_EV_THRESHOLD}%\n`);
     
