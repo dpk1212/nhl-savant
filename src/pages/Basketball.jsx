@@ -1152,6 +1152,7 @@ const Basketball = () => {
                         hasLiveScore={!!game.liveScore}
                         isSavantPick={isGameSavantPick(game)}
                         displayTime={sortOrder === 'time' ? getGameTime(game) : null}
+                        betsMap={betsMap}
                       />
                     ))}
                   </>
@@ -1180,6 +1181,7 @@ const Basketball = () => {
                           isMobile={isMobile}
                           hasLiveScore={!!game.liveScore}
                           isSavantPick={isGameSavantPick(game)}
+                          betsMap={betsMap}
                         />
                       ))}
                     </>
@@ -1206,6 +1208,7 @@ const Basketball = () => {
                           isMobile={isMobile}
                           hasLiveScore={!!game.liveScore}
                           isSavantPick={isGameSavantPick(game)}
+                          betsMap={betsMap}
                         />
                       ))}
                     </>
@@ -1230,6 +1233,7 @@ const Basketball = () => {
                           isMobile={isMobile}
                           hasLiveScore={!!game.liveScore}
                           isSavantPick={isGameSavantPick(game)}
+                          betsMap={betsMap}
                         />
                       ))}
                     </>
@@ -2084,12 +2088,18 @@ const TierHeader = ({ emoji, title, subtitle, color, unitRange, isMobile }) => {
   );
 };
 
-const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false }) => {
+const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap }) => {
   const [showDetails, setShowDetails] = useState(false);
   const pred = game.prediction;
   const odds = game.odds;
   const liveScore = game.liveScore;
   const grade = game.grade;
+  
+  // Look up Firebase bet data for spread analysis
+  const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+  const betKey = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
+  const betData = betsMap?.get(betKey);
+  const spreadData = betData?.spreadAnalysis;
   
   // If no prediction, show minimal card with just game info
   if (!pred || pred.error) {
@@ -2693,7 +2703,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             </div>
           </div>
 
-          {/* MARKET ODDS + SPREAD */}
+          {/* MARKET + SPREAD */}
           <div style={{
             background: 'rgba(255,255,255,0.03)',
                 borderRadius: '8px',
@@ -2713,75 +2723,78 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 }}>
               <span>💵</span> MARKET
                 </div>
-                <div style={{ 
-                  fontSize: isMobile ? '1.125rem' : '1.25rem',
-              fontWeight: '900',
-              color: 'rgba(255,255,255,0.9)',
-                  lineHeight: 1.1,
-              letterSpacing: '-0.01em',
+                {/* Odds + Spread side by side */}
+                <div style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '0.5rem',
               marginBottom: '0.25rem'
+            }}>
+              <div style={{ 
+                fontSize: isMobile ? '1.125rem' : '1.25rem',
+                fontWeight: '900',
+                color: 'rgba(255,255,255,0.9)',
+                lineHeight: 1.1,
+                letterSpacing: '-0.01em'
+              }}>
+                {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
+              </div>
+              {spreadData?.spread !== undefined && (
+                <div style={{
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  fontWeight: '800',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.01em'
                 }}>
-              {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
+                  ({spreadData.spread > 0 ? '+' : ''}{spreadData.spread})
                 </div>
+              )}
+            </div>
                   <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.5)',
-              lineHeight: 1.2,
-              marginBottom: '0.375rem'
+                    color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.2
                   }}>
               {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
                   </div>
-              {/* Projected cover margin from models */}
-              {(() => {
-                const dr = game.dratings;
-                const hs = game.haslametrics;
-                if (!dr?.awayScore || !dr?.homeScore) return null;
-                
-                const pickIsAway = pred.bestBet === 'away';
-                const drMargin = pickIsAway ? (dr.awayScore - dr.homeScore) : (dr.homeScore - dr.awayScore);
-                const hsMargin = (hs?.awayScore && hs?.homeScore) 
-                  ? (pickIsAway ? (hs.awayScore - hs.homeScore) : (hs.homeScore - hs.awayScore))
-                  : null;
-                
-                // 90/10 blend (matching V3 logic)
-                const blendMargin = hsMargin !== null 
-                  ? (drMargin * 0.9 + hsMargin * 0.1)
-                  : drMargin;
-                const projectedMargin = Math.round(blendMargin * 10) / 10;
-                const isPositive = projectedMargin > 0;
-                
-                return (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                    padding: '0.25rem 0.375rem',
-                    background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                    border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
-                    borderRadius: '5px',
-                    marginTop: '0.125rem'
+
+              {/* Margin covering spread - from Firebase spread analysis */}
+              {spreadData?.marginOverSpread !== undefined && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.313rem 0.5rem',
+                  background: spreadData.marginOverSpread > 0 
+                    ? 'rgba(16, 185, 129, 0.12)' 
+                    : 'rgba(239, 68, 68, 0.12)',
+                  border: `1px solid ${spreadData.marginOverSpread > 0 
+                    ? 'rgba(16, 185, 129, 0.3)' 
+                    : 'rgba(239, 68, 68, 0.3)'}`,
+                  borderRadius: '6px',
+                  marginTop: '0.5rem'
+                }}>
+                  <span style={{
+                    fontSize: isMobile ? '0.563rem' : '0.625rem',
+                    color: 'rgba(255,255,255,0.5)',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
                   }}>
-                    <span style={{
-                      fontSize: isMobile ? '0.563rem' : '0.625rem',
-                      color: 'rgba(255,255,255,0.45)',
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.03em'
-                    }}>
-                      PROJ
-                    </span>
-                    <span style={{
-                      fontSize: isMobile ? '0.688rem' : '0.75rem',
-                      fontWeight: '900',
-                      color: isPositive ? '#10B981' : '#EF4444',
-                      fontFeatureSettings: "'tnum'",
-                      letterSpacing: '-0.01em'
-                    }}>
-                      {isPositive ? '+' : ''}{projectedMargin}
-                    </span>
-                  </div>
-                );
-              })()}
+                    COVER
+                  </span>
+                  <span style={{
+                    fontSize: isMobile ? '0.813rem' : '0.875rem',
+                    fontWeight: '900',
+                    color: spreadData.marginOverSpread > 0 ? '#10B981' : '#EF4444',
+                    fontFeatureSettings: "'tnum'",
+                    letterSpacing: '-0.02em'
+                  }}>
+                    {spreadData.marginOverSpread > 0 ? '+' : ''}{spreadData.marginOverSpread} pts
+                  </span>
+                </div>
+              )}
         </div>
         
           {/* RATING */}
