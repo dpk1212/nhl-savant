@@ -2274,25 +2274,26 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             
             {/* Right: Star rating + conviction label */}
             <div style={{
-              background: `linear-gradient(135deg, ${starRating.borderColor}20 0%, ${starRating.borderColor}10 100%)`,
+              background: `linear-gradient(135deg, ${starRating.borderColor}20 0%, ${starRating.borderColor}08 100%)`,
               border: `2px solid ${starRating.borderColor}50`,
-              borderRadius: '10px',
-              padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
-              boxShadow: `0 3px 12px ${starRating.borderColor}22, inset 0 1px 0 rgba(255,255,255,0.08)`,
+              borderRadius: '12px',
+              padding: isMobile ? '0.625rem 0.875rem' : '0.688rem 1rem',
+              boxShadow: `0 4px 16px ${starRating.borderColor}25, inset 0 1px 0 rgba(255,255,255,0.1)`,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '0.25rem'
+              gap: '0.375rem'
             }}>
-              <div style={{ display: 'flex', gap: '2px' }}>
+              <div style={{ display: 'flex', gap: '3px' }}>
                 {[...Array(5)].map((_, i) => (
                   <span key={i} style={{
-                    fontSize: isMobile ? '0.813rem' : '0.875rem',
+                    fontSize: isMobile ? '1.063rem' : '1.188rem',
                     color: i < starRating.fullStars ? '#FBBF24' 
                       : (starRating.hasHalf && i === starRating.fullStars) ? 'rgba(251, 191, 36, 0.5)'
-                      : 'rgba(255,255,255,0.12)',
+                      : 'rgba(255,255,255,0.2)',
                     lineHeight: 1,
-                    filter: i < starRating.fullStars ? 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.5))' : 'none'
+                    filter: i < starRating.fullStars ? 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.6))' : 'none',
+                    transition: 'all 0.3s ease'
                   }}>★</span>
                 ))}
               </div>
@@ -2300,7 +2301,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 fontSize: isMobile ? '0.563rem' : '0.625rem',
                 fontWeight: '800',
                 color: starRating.color,
-                letterSpacing: '0.04em',
+                letterSpacing: '0.05em',
                 textTransform: 'uppercase',
                 lineHeight: 1
               }}>
@@ -2309,18 +2310,28 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             </div>
           </div>
           
-          {/* Conviction Context */}
+          {/* Edge context - show the actual numbers */}
           <div style={{
             fontSize: isMobile ? '0.688rem' : '0.75rem',
             color: 'rgba(255,255,255,0.55)',
             fontWeight: '600',
             lineHeight: 1.4,
-            letterSpacing: '0.01em'
+            letterSpacing: '0.01em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            {starRating.label === 'MAX CONVICTION' ? 'Highest confidence play' 
-              : starRating.label === 'HIGH CONVICTION' ? 'Strong model agreement' 
-              : starRating.label === 'SOLID' ? 'Confirmed edge' 
-              : 'Qualifying edge'}
+            {pred.bestEV > 0 && (
+              <span style={{ 
+                color: '#10B981', 
+                fontWeight: '700',
+                fontFeatureSettings: "'tnum'"
+              }}>
+                +{pred.bestEV.toFixed(1)}% edge
+              </span>
+            )}
+            {pred.bestEV > 0 && <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>}
+            <span>Model-verified pick</span>
           </div>
         </div>
         
@@ -2397,21 +2408,21 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               <div style={{
                 background: `linear-gradient(135deg, ${starRating.borderColor}20 0%, ${starRating.borderColor}10 100%)`,
                 border: `1.5px solid ${starRating.borderColor}`,
-                padding: isMobile ? '0.313rem 0.563rem' : '0.375rem 0.625rem',
+                padding: isMobile ? '0.313rem 0.5rem' : '0.375rem 0.625rem',
                 borderRadius: '7px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1px',
+                gap: '2px',
                 boxShadow: `0 2px 8px ${starRating.borderColor}20`
               }}>
                 {[...Array(5)].map((_, i) => (
                   <span key={i} style={{
-                    fontSize: isMobile ? '0.688rem' : '0.75rem',
-                    color: i < starRating.fullStars ? starRating.color 
-                      : (starRating.hasHalf && i === starRating.fullStars) ? `${starRating.color}80`
-                      : 'rgba(255,255,255,0.15)',
+                    fontSize: isMobile ? '0.75rem' : '0.813rem',
+                    color: i < starRating.fullStars ? '#FBBF24' 
+                      : (starRating.hasHalf && i === starRating.fullStars) ? 'rgba(251, 191, 36, 0.5)'
+                      : 'rgba(255,255,255,0.22)',
                     lineHeight: 1,
-                    filter: i < starRating.fullStars ? `drop-shadow(0 0 3px ${starRating.color}60)` : 'none'
+                    filter: i < starRating.fullStars ? 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.5))' : 'none'
                   }}>★</span>
                 ))}
               </div>
@@ -2481,80 +2492,54 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             boxShadow: `0 6px 22px ${starRating.borderColor}28, inset 0 1px 0 rgba(255,255,255,0.12)`,
             backdropFilter: 'blur(10px)'
           }}>
-            {/* PREMIUM MOBILE-FIRST LAYOUT */}
+            {/* CLEAN ALLOCATION LAYOUT */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: isMobile ? '0.875rem' : '1rem',
+              justifyContent: 'space-between',
+              gap: isMobile ? '0.75rem' : '1rem',
               marginBottom: isMobile ? '0.625rem' : '0.75rem'
             }}>
-              {/* Star Rating Badge - HERO ELEMENT */}
-              <div style={{
-                background: `linear-gradient(135deg, ${starRating.borderColor}30 0%, ${starRating.borderColor}18 100%)`,
-                border: `2.5px solid ${starRating.borderColor}`,
-                padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
-                borderRadius: '11px',
-                boxShadow: `0 4px 14px ${starRating.borderColor}35, inset 0 1px 0 rgba(255,255,255,0.15)`,
-                flexShrink: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.25rem',
-                minWidth: isMobile ? '52px' : '58px'
-              }}>
-                <div style={{ display: 'flex', gap: '1px' }}>
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} style={{
-                      fontSize: isMobile ? '0.75rem' : '0.813rem',
-                      color: i < starRating.fullStars ? starRating.color 
-                        : (starRating.hasHalf && i === starRating.fullStars) ? `${starRating.color}80`
-                        : 'rgba(255,255,255,0.15)',
-                      lineHeight: 1,
-                      filter: i < starRating.fullStars ? `drop-shadow(0 0 4px ${starRating.color}60)` : 'none'
-                    }}>★</span>
-                  ))}
-                </div>
+              {/* Left: Conviction label + units */}
+              <div>
                 <div style={{
-                  fontSize: isMobile ? '0.5rem' : '0.563rem',
-                  fontWeight: '800',
+                  fontSize: isMobile ? '0.938rem' : '1rem',
+                  fontWeight: '900',
                   color: starRating.color,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  lineHeight: 1,
-                  opacity: 0.9
-                }}>
-                  {pred.unitSize}u
-                </div>
-              </div>
-              
-              {/* Unit Size + Conviction Label */}
-              <div style={{
-                flex: 1
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '0.875rem' : '0.938rem',
-                  fontWeight: '800',
-                  color: 'rgba(255,255,255,0.95)',
-                  marginBottom: '0.25rem',
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1.2
-                }}>
-                  {pred.unitSize} unit{pred.unitSize !== 1 ? 's' : ''} allocated
-                </div>
-                <div style={{
-                  fontSize: isMobile ? '0.688rem' : '0.75rem',
-                  color: starRating.color,
-                  fontWeight: '700',
                   letterSpacing: '0.02em',
-                  textTransform: 'uppercase'
+                  textTransform: 'uppercase',
+                  marginBottom: '0.25rem',
+                  textShadow: `0 1px 8px ${starRating.color}30`
                 }}>
                   {starRating.label}
                 </div>
+                <div style={{
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  fontWeight: '700',
+                  color: 'rgba(255,255,255,0.75)',
+                  letterSpacing: '-0.01em'
+                }}>
+                  {pred.unitSize} unit{pred.unitSize !== 1 ? 's' : ''} allocated
+                </div>
               </div>
               
-              {/* CLV Badge - Shows when available */}
-              {game.clv && (
+              {/* Right: CLV or edge badge */}
+              {game.clv ? (
                 <CLVIndicator clvData={game.clv} />
+              ) : pred.bestEV > 0 && (
+                <div style={{
+                  padding: isMobile ? '0.375rem 0.625rem' : '0.438rem 0.75rem',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.06) 100%)',
+                  border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                  borderRadius: '8px',
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  fontWeight: '800',
+                  color: '#10B981',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.01em'
+                }}>
+                  +{pred.bestEV.toFixed(1)}%
+                </div>
               )}
             </div>
             
@@ -2747,12 +2732,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   </div>
         </div>
         
-          {/* RATING & UNIT SIZING */}
+          {/* RATING */}
           <div style={{
             background: `linear-gradient(135deg, ${starRating.borderColor}15 0%, ${starRating.borderColor}08 100%)`,
             borderRadius: '8px',
             padding: isMobile ? '0.5rem' : '0.625rem',
-            border: `1px solid ${starRating.borderColor}30`
+            border: `1px solid ${starRating.borderColor}30`,
+            textAlign: 'center'
           }}>
               <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
@@ -2764,42 +2750,42 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             }}>
               RATING
               </div>
-              {/* Star display */}
+              {/* Stars - stacked above units */}
               <div style={{ 
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem',
+              justifyContent: 'center',
+              gap: '3px',
               marginBottom: '0.375rem'
             }}>
-              <div style={{ display: 'flex', gap: '2px' }}>
                 {[...Array(5)].map((_, i) => (
                   <span key={i} style={{
-                    fontSize: isMobile ? '0.938rem' : '1.063rem',
-                    color: i < starRating.fullStars ? starRating.color 
-                      : (starRating.hasHalf && i === starRating.fullStars) ? `${starRating.color}80`
-                      : 'rgba(255,255,255,0.12)',
+                    fontSize: isMobile ? '1rem' : '1.125rem',
+                    color: i < starRating.fullStars ? '#FBBF24' 
+                      : (starRating.hasHalf && i === starRating.fullStars) ? 'rgba(251, 191, 36, 0.5)'
+                      : 'rgba(255,255,255,0.2)',
                     lineHeight: 1,
-                    filter: i < starRating.fullStars ? `drop-shadow(0 0 3px ${starRating.color}50)` : 'none'
+                    filter: i < starRating.fullStars ? 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.5))' : 'none'
                   }}>★</span>
                 ))}
-              </div>
-              <div style={{
-                fontSize: isMobile ? '0.938rem' : '1rem',
-                fontWeight: '900',
-                color: starRating.color,
-                fontFeatureSettings: "'tnum'"
-              }}>
-                {pred.unitSize > 0 ? `${pred.unitSize}u` : 'No Bet'}
-              </div>
+            </div>
+            <div style={{
+              fontSize: isMobile ? '1rem' : '1.125rem',
+              fontWeight: '900',
+              color: starRating.color,
+              fontFeatureSettings: "'tnum'",
+              marginBottom: '0.25rem'
+            }}>
+              {pred.unitSize > 0 ? `${pred.unitSize}u` : 'No Bet'}
             </div>
             <div style={{ 
-              fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: 'rgba(255,255,255,0.5)',
-              lineHeight: 1.3
+              fontSize: isMobile ? '0.563rem' : '0.625rem',
+              color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.3,
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em',
+              fontWeight: '700'
             }}>
-              {starRating.label} • {pred.unitSize > 0 
-                ? `Risk ${pred.unitSize} unit${pred.unitSize !== 1 ? 's' : ''}`
-                : 'Below betting threshold'}
+              {starRating.label}
             </div>
               </div>
             </div>
