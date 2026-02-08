@@ -2331,7 +2331,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               </span>
             )}
             {pred.bestEV > 0 && <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>}
-            <span>Model-verified pick</span>
+            <span>V2 model verified</span>
           </div>
         </div>
         
@@ -2693,7 +2693,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             </div>
           </div>
 
-          {/* MARKET ODDS */}
+          {/* MARKET ODDS + SPREAD */}
           <div style={{
             background: 'rgba(255,255,255,0.03)',
                 borderRadius: '8px',
@@ -2726,10 +2726,62 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
                     color: 'rgba(255,255,255,0.5)',
-              lineHeight: 1.2
+              lineHeight: 1.2,
+              marginBottom: '0.375rem'
                   }}>
               {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
                   </div>
+              {/* Projected cover margin from models */}
+              {(() => {
+                const dr = game.dratings;
+                const hs = game.haslametrics;
+                if (!dr?.awayScore || !dr?.homeScore) return null;
+                
+                const pickIsAway = pred.bestBet === 'away';
+                const drMargin = pickIsAway ? (dr.awayScore - dr.homeScore) : (dr.homeScore - dr.awayScore);
+                const hsMargin = (hs?.awayScore && hs?.homeScore) 
+                  ? (pickIsAway ? (hs.awayScore - hs.homeScore) : (hs.homeScore - hs.awayScore))
+                  : null;
+                
+                // 90/10 blend (matching V3 logic)
+                const blendMargin = hsMargin !== null 
+                  ? (drMargin * 0.9 + hsMargin * 0.1)
+                  : drMargin;
+                const projectedMargin = Math.round(blendMargin * 10) / 10;
+                const isPositive = projectedMargin > 0;
+                
+                return (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.25rem 0.375rem',
+                    background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                    borderRadius: '5px',
+                    marginTop: '0.125rem'
+                  }}>
+                    <span style={{
+                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      color: 'rgba(255,255,255,0.45)',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.03em'
+                    }}>
+                      PROJ
+                    </span>
+                    <span style={{
+                      fontSize: isMobile ? '0.688rem' : '0.75rem',
+                      fontWeight: '900',
+                      color: isPositive ? '#10B981' : '#EF4444',
+                      fontFeatureSettings: "'tnum'",
+                      letterSpacing: '-0.01em'
+                    }}>
+                      {isPositive ? '+' : ''}{projectedMargin}
+                    </span>
+                  </div>
+                );
+              })()}
         </div>
         
           {/* RATING */}
