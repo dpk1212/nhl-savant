@@ -479,7 +479,10 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
             // Defense: sort by FG% allowed (highest = weakest)
             const defWeakest = [...zoneData].sort((a, b) => b.defFg - a.defFg);
 
-            const maxEdgeIdx = zoneData.reduce((best, z, i) => (z.offFg - z.defFg) > (zoneData[best].offFg - zoneData[best].defFg) ? i : best, 0);
+            // Combined edge = offense above avg + defense weakness (allows above avg)
+            // Positive = good for offense, negative = tough for offense
+            const zoneEdge = (z: typeof zoneData[0]) => (z.offFg - z.avg) + (z.defFg - z.avg);
+            const maxEdgeIdx = zoneData.reduce((best, z, i) => zoneEdge(z) > zoneEdge(zoneData[best]) ? i : best, 0);
 
             // Bar color for share distribution
             const shareBarColors = ['#A78BFA', '#818CF8', '#6366F1', '#4F46E5'];
@@ -589,12 +592,13 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', marginTop: '4px' }}>ZONE-BY-ZONE BREAKDOWN</div>
 
                 {zoneData.map((zone, idx) => {
-                  const edge = zone.offFg - zone.defFg;
-                  const edgeColor = edge > 5 ? '#10B981' : edge > 2 ? '#22D3EE' : edge > -2 ? '#F59E0B' : '#EF4444';
-                  const edgeLabel = edge > 5 ? 'BIG EDGE' : edge > 2 ? 'ADVANTAGE' : edge > -2 ? 'CONTESTED' : edge > -5 ? 'TOUGH' : 'LOCKDOWN';
+                  // Combined edge: how much offense is above avg + how much defense allows above avg
+                  const edge = (zone.offFg - zone.avg) + (zone.defFg - zone.avg);
+                  const edgeColor = edge > 10 ? '#10B981' : edge > 4 ? '#22D3EE' : edge > -4 ? '#F59E0B' : edge > -10 ? '#F97316' : '#EF4444';
+                  const edgeLabel = edge > 10 ? 'BIG EDGE' : edge > 4 ? 'ADVANTAGE' : edge > -4 ? 'CONTESTED' : edge > -10 ? 'TOUGH' : 'LOCKDOWN';
                   const offColor = statColor(zone.offFg, zone.avg, true);
                   const defColor = statColor(zone.defFg, zone.avg, false);
-                  const isBiggest = idx === maxEdgeIdx && edge > 2;
+                  const isBiggest = idx === maxEdgeIdx && edge > 4;
                   const isGoTo = zone.key === offSorted[0].key;
                   const isDefWeak = zone.key === defWeakest[0].key;
                   const isDefStrong = zone.key === defWeakest[defWeakest.length - 1].key;
@@ -665,7 +669,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                         background: `${edgeColor}08`, border: `1px solid ${edgeColor}15`,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>NET EDGE</span>
+                          <span style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>VS AVG</span>
                           <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: edgeColor, fontFamily: mono }}>
                             {edge > 0 ? '+' : ''}{edge.toFixed(1)}
                           </span>
@@ -694,21 +698,30 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
         <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '14px', marginTop: '-6px' }}>{offA} offense vs {defA} defense</div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* eFG% Battle - kept since it's the most important factor */}
+          {/* eFG% Battle */}
           {(() => {
             const offRank = offTeam.eFG_off_rank || 182;
             const defRank = defTeam.eFG_def_rank || 182;
-            const diff = eFG.off - eFG.def;
-            const edge = diff; // higher eFG off is better, lower eFG def allowed is better
-            const edgeColor = edge > 4 ? '#10B981' : edge > 1.5 ? '#22D3EE' : edge > -1.5 ? '#F59E0B' : '#EF4444';
-            const offWins = eFG.off > eFG.def;
-            const verdict = edge > 5
-              ? `${offA}'s elite shooting (${eFG.off.toFixed(1)}% eFG) should overpower ${defA}'s defense. Major scoring advantage.`
-              : edge > 2
-              ? `${offA} shoots efficiently enough to exploit ${defA}'s defensive gaps in shooting coverage.`
-              : edge > -2
-              ? `Evenly matched — neither team has a clear shooting edge. Execution will decide this.`
-              : `${defA}'s defense is stifling shooters. ${offA} will need to find other ways to score.`;
+            // Combined edge: offense above avg + defense weakness above avg
+            const edge = (eFG.off - D1_AVG.eFG) + (eFG.def - D1_AVG.eFG);
+            const edgeColor = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+            // Use ranks: lower rank = better at their job
+            const offWins = offRank < defRank;
+            const verdict = offRank <= 50 && defRank > 200
+              ? `${offA}'s elite shooting (#${offRank} in D1) against ${defA}'s weak defense (#${defRank}) is a major scoring advantage.`
+              : offRank <= 100 && edge > 3
+              ? `${offA}'s efficient offense (#${offRank}) should exploit ${defA}'s defensive gaps (#${defRank}). Expect above-average shooting.`
+              : offRank > 250 && defRank > 250
+              ? `Neither team excels — ${offA} is a poor shooting team (#${offRank}) and ${defA}'s defense is also weak (#${defRank}). Sloppy shooting likely.`
+              : defRank <= 50 && offRank > 200
+              ? `${defA}'s elite defense (#${defRank} in D1) should contain ${offA}'s weak offense (#${offRank}). Tough shooting night expected.`
+              : defRank <= 100 && edge < -3
+              ? `${defA}'s strong defense (#${defRank}) should limit ${offA}'s shooting (#${offRank}). Low-scoring battle.`
+              : Math.abs(offRank - defRank) < 50
+              ? `Evenly matched — ${offA} (#${offRank}) and ${defA}'s defense (#${defRank}) are at similar levels. Execution will decide this.`
+              : offWins
+              ? `${offA}'s shooting (#${offRank}) has the edge over ${defA}'s defense (#${defRank}). Slight offensive advantage.`
+              : `${defA}'s defense (#${defRank}) is stronger than ${offA}'s shooting (#${offRank}). Defense has the edge.`;
 
             return (
               <div style={{
@@ -724,7 +737,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                     <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Effective FG% — the best measure of shooting quality</div>
                   </div>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
-                    {edge > 4 ? 'BIG EDGE' : edge > 1.5 ? 'EDGE' : edge > -1.5 ? 'NEUTRAL' : 'TOUGH'}
+                    {edge > 8 ? 'BIG EDGE' : edge > 3 ? 'EDGE' : edge > -3 ? 'NEUTRAL' : 'TOUGH'}
                   </span>
                 </div>
 
@@ -840,18 +853,26 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
           {(() => {
             const offRank = offTeam.oreb_off_rank || 182;
             const defRank = defTeam.oreb_def_rank || 182;
-            const edge = oreb.off - oreb.def;
-            const edgeColor = edge > 5 ? '#10B981' : edge > 2 ? '#22D3EE' : edge > -2 ? '#F59E0B' : '#EF4444';
-            const offWins = oreb.off > oreb.def;
-            const verdict = oreb.off > 33 && oreb.def > 30
-              ? `${offA} crashes the offensive glass hard (${oreb.off.toFixed(1)}%) but ${defA} also allows boards (${oreb.def.toFixed(1)}%). Second chances likely.`
-              : oreb.off > 33 && oreb.def < 26
-              ? `${offA} loves the offensive glass (${oreb.off.toFixed(1)}%) but ${defA} is elite at finishing defensive rebounds. Something has to give.`
-              : oreb.off < 25
-              ? `${offA} rarely gets second chances (${oreb.off.toFixed(1)}% OREB). They need to make their first shot count.`
+            // Combined edge: offense above avg at crashing + defense allows above avg (weak)
+            const edge = (oreb.off - D1_AVG.oreb) + (oreb.def - D1_AVG.oreb);
+            const edgeColor = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+            // Use ranks: lower = better at their job
+            const offWins = offRank < defRank;
+            const verdict = offRank <= 50 && defRank > 200
+              ? `${offA}'s elite crashing ability (#${offRank}) against ${defA}'s weak glass control (#${defRank}) means tons of second chances.`
+              : offRank <= 100 && edge > 3
+              ? `${offA} (#${offRank}) hits the offensive glass hard and ${defA}'s defense (#${defRank}) struggles to box out. Extra possessions expected.`
+              : offRank > 250 && defRank > 250
+              ? `Neither team excels — ${offA} rarely crashes (#${offRank}) and ${defA} also allows boards (#${defRank}). Sporadic second chances.`
+              : defRank <= 50 && offRank > 200
+              ? `${defA}'s elite rebounding defense (#${defRank}) should shut down ${offA}'s weak crashing (#${offRank}). One-shot possessions expected.`
+              : defRank <= 100 && edge < -3
+              ? `${defA} controls the glass (#${defRank}), limiting ${offA} (#${offRank}). Few second-chance points.`
+              : Math.abs(offRank - defRank) < 50
+              ? `Evenly matched on the glass — ${offA} (#${offRank}) and ${defA}'s defense (#${defRank}) are similar. Effort decides second chances.`
               : offWins
-              ? `${offA}'s rebounding strength (${oreb.off.toFixed(1)}%) outmatches what ${defA} typically allows (${oreb.def.toFixed(1)}%). Extra possessions expected.`
-              : `${defA} controls the glass well, allowing only ${oreb.def.toFixed(1)}% offensive rebounds. ${offA} will struggle to get second-chance points.`;
+              ? `${offA}'s rebounding (#${offRank}) outclasses ${defA}'s glass control (#${defRank}). Extra possessions likely.`
+              : `${defA}'s glass defense (#${defRank}) is stronger than ${offA}'s crashing (#${offRank}). Limited second chances.`;
 
             return (
               <div style={{
@@ -908,16 +929,26 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
           {(() => {
             const offRank = offTeam.ftRate_off_rank || 182;
             const defRank = defTeam.ftRate_def_rank || 182;
-            const edge = ftRate.off - ftRate.def;
-            const edgeColor = edge > 5 ? '#10B981' : edge > 2 ? '#22D3EE' : edge > -2 ? '#F59E0B' : '#EF4444';
-            const offWins = ftRate.off > ftRate.def;
-            const verdict = ftRate.off > 38
-              ? `${offA} gets to the line at an elite rate (${ftRate.off.toFixed(1)} FTA/FGA). ${defA} allows ${ftRate.def.toFixed(1)} — ${ftRate.def < 28 ? 'disciplined defense could limit free throws' : 'fouls could pile up'}.`
-              : ftRate.off < 25
-              ? `${offA} rarely gets to the free throw line (${ftRate.off.toFixed(1)} FTA/FGA). They rely on field goals, not free points.`
+            // Combined edge: offense draws fouls above avg + defense allows fouls above avg (weak)
+            const edge = (ftRate.off - D1_AVG.ftRate) + (ftRate.def - D1_AVG.ftRate);
+            const edgeColor = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+            // Use ranks: lower = better at their job
+            const offWins = offRank < defRank;
+            const verdict = offRank <= 50 && defRank > 200
+              ? `${offA} elite at drawing fouls (#${offRank}) and ${defA} is foul-prone (#${defRank}). Expect a parade to the line.`
+              : offRank <= 100 && edge > 3
+              ? `${offA} (#${offRank}) attacks the basket and draws contact. ${defA}'s defense (#${defRank}) tends to foul — free points likely.`
+              : offRank > 250 && defRank > 250
+              ? `Neither team excels — ${offA} rarely draws fouls (#${offRank}) and ${defA} also sends opponents to the line (#${defRank}). Few free throws either way.`
+              : defRank <= 50 && offRank > 200
+              ? `${defA}'s disciplined defense (#${defRank}) keeps ${offA} (#${offRank}) off the line. Very few free throw opportunities.`
+              : defRank <= 100 && edge < -3
+              ? `${defA} keeps opponents off the line (#${defRank}). ${offA} (#${offRank}) may not get the whistles they need.`
+              : Math.abs(offRank - defRank) < 50
+              ? `Evenly matched — ${offA} (#${offRank}) and ${defA}'s foul discipline (#${defRank}) are similar. Free throws won't swing this.`
               : offWins
-              ? `${offA} draws fouls well (${ftRate.off.toFixed(1)}) and ${defA} tends to foul (allows ${ftRate.def.toFixed(1)}). Free throw edge to ${offA}.`
-              : `${defA} keeps opponents off the line (${ftRate.def.toFixed(1)} FTA/FGA allowed). ${offA} may not get the whistles they're used to.`;
+              ? `${offA} draws fouls (#${offRank}) at a higher rate than ${defA} prevents them (#${defRank}). Free throw edge to ${offA}.`
+              : `${defA}'s foul discipline (#${defRank}) is stronger than ${offA}'s ability to draw contact (#${offRank}). Limited free throws.`;
 
             return (
               <div style={{
