@@ -765,20 +765,25 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
 
           {/* TURNOVER BATTLE */}
           {(() => {
-            const offRank = offTeam.to_off_rank || 182;  // lower TO = better offense, so lower rank = better
-            const defRank = defTeam.to_def_rank || 182;  // higher forced TO = better defense
-            const edge = to.def - to.off; // positive = offense protects well (gives up fewer than D forces)
-            const edgeColor = edge < -3 ? '#10B981' : edge < -1 ? '#22D3EE' : edge < 1 ? '#F59E0B' : '#EF4444';
-            const offWins = to.off < to.def;
+            const offRank = offTeam.to_off_rank || 182;  // Rank 1 = fewest TOs committed (best ball security)
+            const defRank = defTeam.to_def_rank || 182;  // Rank 1 = most TOs forced (best pressure defense)
+            // Use ranks to determine winner: lower rank = better at their job
+            const offWins = offRank < defRank;
+            const rankGap = Math.abs(offRank - defRank);
+            const edgeColor = offWins
+              ? (rankGap > 80 ? '#10B981' : rankGap > 30 ? '#22D3EE' : '#F59E0B')
+              : (rankGap > 80 ? '#EF4444' : rankGap > 30 ? '#F59E0B' : '#F59E0B');
             const verdict = to.off < 14 && to.def < 15
-              ? `${offA} protects the ball well (${to.off.toFixed(1)} TO rate) and ${defA} doesn't generate many steals. Clean game expected.`
+              ? `${offA} protects the ball well (${to.off.toFixed(1)} TO rate, #${offRank} in D1) and ${defA} doesn't generate many steals (#${defRank}). Clean game expected.`
+              : to.off > 19 && to.def > 19
+              ? `${offA} is turnover-prone (${to.off.toFixed(1)} per 100) and ${defA} forces a lot (${to.def.toFixed(1)}). Expect a chaotic, turnover-heavy game.`
               : to.off > 19
-              ? `${offA} is turnover-prone (${to.off.toFixed(1)} per 100). ${defA} forces ${to.def.toFixed(1)} — this could get ugly.`
+              ? `${offA} is turnover-prone (${to.off.toFixed(1)} per 100, #${offRank}). Even though ${defA} isn't elite at forcing TOs (#${defRank}), careless play could still lead to transition points.`
               : to.def > 20
-              ? `${defA}'s pressure defense forces ${to.def.toFixed(1)} turnovers per 100. ${offA} must handle the ball or risk getting sped up.`
+              ? `${defA}'s pressure defense forces ${to.def.toFixed(1)} turnovers per 100 (#${defRank} in D1). ${offA} must handle the ball or risk getting sped up.`
               : offWins
-              ? `${offA} takes care of the ball (${to.off.toFixed(1)}) better than ${defA} can disrupt it (${to.def.toFixed(1)}). Slight edge in ball security.`
-              : `${defA} forces more turnovers (${to.def.toFixed(1)}) than ${offA} typically commits (${to.off.toFixed(1)}). Expect some live-ball steals.`;
+              ? `${offA} protects the ball (#${offRank} in D1) better than ${defA} can disrupt it (#${defRank}). Ball security shouldn't be an issue.`
+              : `${defA}'s defensive pressure (#${defRank} in D1) is stronger than ${offA}'s ball security (#${offRank}). Turnovers could be a factor.`;
 
             return (
               <div style={{
@@ -804,9 +809,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                     </div>
                     <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(to.off, D1_AVG.to, false), fontFamily: mono }}>{to.off.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>turnovers per 100 possessions</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>turnovers per 100 poss — lower is better</div>
                   <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min((to.off / 30) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.off, D1_AVG.to, false)}40, ${statColor(to.off, D1_AVG.to, false)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
+                    <div style={{ height: '100%', width: isVisible ? `${Math.min(((30 - to.off) / 20) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.off, D1_AVG.to, false)}40, ${statColor(to.off, D1_AVG.to, false)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
                   </div>
                 </div>
 
@@ -818,7 +823,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                     </div>
                     <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(to.def, D1_AVG.to, true), fontFamily: mono }}>{to.def.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>turnovers forced per 100 possessions</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>turnovers forced per 100 poss — higher is better</div>
                   <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min((to.def / 30) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.def, D1_AVG.to, true)}40, ${statColor(to.def, D1_AVG.to, true)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
                   </div>
