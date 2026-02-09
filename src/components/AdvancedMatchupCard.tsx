@@ -535,11 +535,11 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                   // Zone style: selected zones get brighter, unselected dim slightly
                   const zFill = (key: string) => isVisible ? (activeKey === key ? Math.min(zoneMap[key].opacity + 0.15, 0.75) : zoneMap[key].opacity * 0.7) : 0;
 
-                  // Label sizes
-                  const ns = isMobile ? 9 : 11;
-                  const fs = isMobile ? 15 : 19;
+                  // Label sizes — mobile: clean and bold, desktop: more detail
+                  const ns = isMobile ? 8 : 11;
+                  const fs = isMobile ? 18 : 20;
                   const es = isMobile ? 10 : 12;
-                  const ss = isMobile ? 7.5 : 8.5;
+                  const ss = isMobile ? 7 : 8.5;
 
                   // Unique filter IDs per zone to avoid collisions
                   const glowId = (key: string) => `courtGlow_${key}`;
@@ -578,7 +578,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                         {/* Ambient glow behind court */}
                         <div style={{ position: 'absolute', top: '50%', left: '50%', width: '70%', height: '70%', transform: 'translate(-50%, -50%)', background: `radial-gradient(ellipse, ${zoneMap[goToKey]?.color || '#22D3EE'}10 0%, transparent 70%)`, pointerEvents: 'none' }} />
                         <svg
-                          viewBox="0 0 300 310"
+                          viewBox={isMobile ? '0 0 300 280' : '0 0 300 310'}
                           style={{ width: '100%', display: 'block' }}
                           xmlns="http://www.w3.org/2000/svg"
                         >
@@ -614,144 +614,172 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             </filter>
                           </defs>
 
-                          {/* Court floor */}
-                          <rect x="0" y="0" width="300" height="310" fill="url(#courtFloorGrad)" />
+                          {(() => {
+                            const H = isMobile ? 280 : 310;
+                            const bY = isMobile ? 248 : 272; // basket Y
+                            const pB = isMobile ? H : 310; // paint bottom
+                            const arcY = isMobile ? 100 : 120; // arc top
 
-                          {/* ── ZONE FILLS (back to front) ── */}
-
-                          {/* 3-Point zone */}
-                          <path
-                            d={`M 0,0 L 300,0 L 300,310 L 0,310 Z M 44,310 L 44,120 A 106,106 0 0,1 256,120 L 256,310 Z`}
-                            fill={`url(#zoneGrad_three)`}
-                            fillRule="evenodd"
-                            opacity={zFill('three')}
-                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
-                            onClick={() => handleZoneTap('three')}
-                            filter={activeKey === 'three' ? `url(#${glowId('three')})` : undefined}
-                          />
-
-                          {/* Mid-range zone */}
-                          <path
-                            d={`M 44,310 L 44,120 A 106,106 0 0,1 256,120 L 256,310 Z M 104,310 L 104,100 L 196,100 L 196,310 Z`}
-                            fill={`url(#zoneGrad_mid)`}
-                            fillRule="evenodd"
-                            opacity={zFill('mid')}
-                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
-                            onClick={() => handleZoneTap('mid')}
-                            filter={activeKey === 'mid' ? `url(#${glowId('mid')})` : undefined}
-                          />
-
-                          {/* Paint / Close 2 */}
-                          <rect
-                            x="104" y="100" width="92" height="210" rx="2"
-                            fill={`url(#zoneGrad_close2)`}
-                            opacity={zFill('close2')}
-                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
-                            onClick={() => handleZoneTap('close2')}
-                            filter={activeKey === 'close2' ? `url(#${glowId('close2')})` : undefined}
-                          />
-
-                          {/* Rim zone */}
-                          <circle
-                            cx="150" cy="272" r="28"
-                            fill={`url(#zoneGrad_rim)`}
-                            opacity={zFill('rim')}
-                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
-                            onClick={() => handleZoneTap('rim')}
-                            filter={activeKey === 'rim' ? `url(#${glowId('rim')})` : undefined}
-                          />
-
-                          {/* Vignette overlay */}
-                          <rect x="0" y="0" width="300" height="310" fill="url(#courtVignette)" pointerEvents="none" />
-
-                          {/* ── COURT LINES ── */}
-                          <rect x="0.5" y="0.5" width="299" height="309" rx="2" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-                          <path d="M 44,310 L 44,120 A 106,106 0 0,1 256,120 L 256,310" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-                          <rect x="104" y="100" width="92" height="210" rx="1" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-                          {/* FT circle */}
-                          <path d="M 122,100 A 28,28 0 0,1 178,100" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
-                          <path d="M 122,100 A 28,28 0 0,0 178,100" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" strokeDasharray="3 3" />
-                          {/* Restricted area */}
-                          <circle cx="150" cy="272" r="28" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
-                          {/* Hash marks */}
-                          {[118, 134, 150, 168].map(y => (
-                            <React.Fragment key={`hash_${y}`}>
-                              <line x1="98" y1={y} x2="104" y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
-                              <line x1="196" y1={y} x2="202" y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
-                            </React.Fragment>
-                          ))}
-                          {/* Basket + backboard */}
-                          <line x1="140" y1="302" x2="160" y2="302" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" />
-                          <circle cx="150" cy="293" r="4" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.2" />
-                          <line x1="147" y1="297" x2="148.5" y2="300" stroke="rgba(255,255,255,0.1)" strokeWidth="0.4" />
-                          <line x1="150" y1="297" x2="150" y2="301" stroke="rgba(255,255,255,0.1)" strokeWidth="0.4" />
-                          <line x1="153" y1="297" x2="151.5" y2="300" stroke="rgba(255,255,255,0.1)" strokeWidth="0.4" />
-
-                          {/* ── SELECTED ZONE HIGHLIGHT ── */}
-                          {activeKey === 'rim' && <circle cx="150" cy="272" r="32" fill="none" stroke="white" strokeWidth="1.5" opacity="0.3"><animate attributeName="opacity" values="0.15;0.4;0.15" dur="2.5s" repeatCount="indefinite" /></circle>}
-                          {activeKey === 'close2' && <rect x="101" y="97" width="98" height="216" rx="3" fill="none" stroke="white" strokeWidth="1.5" opacity="0.25"><animate attributeName="opacity" values="0.12;0.35;0.12" dur="2.5s" repeatCount="indefinite" /></rect>}
-                          {activeKey === 'mid' && <path d="M 44,310 L 44,120 A 106,106 0 0,1 256,120 L 256,310" fill="none" stroke="white" strokeWidth="1.5" opacity="0.2"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="2.5s" repeatCount="indefinite" /></path>}
-                          {activeKey === 'three' && <rect x="1" y="1" width="298" height="308" rx="2" fill="none" stroke="white" strokeWidth="1.5" opacity="0.15"><animate attributeName="opacity" values="0.08;0.25;0.08" dur="2.5s" repeatCount="indefinite" /></rect>}
-
-                          {/* ── ZONE LABELS (carefully positioned to avoid ALL overlap) ── */}
-
-                          {/* 3-POINT — top center, well above the arc */}
-                          <g onClick={() => handleZoneTap('three')} style={{ cursor: 'pointer' }}>
-                            <rect x="108" y="10" width="84" height={isMobile ? 66 : 72} rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'three' ? `${zoneMap.three.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
-                            <text x="150" y="27" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>3-POINT</text>
-                            <text x="150" y={isMobile ? 48 : 52} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs + 1} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
-                            <text x="150" y={isMobile ? 62 : 67} textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize={isMobile ? 8 : 9} fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.three.offRank} OFF  ·  #{zoneMap.three.defRank} DEF</text>
-                            <text x="150" y={isMobile ? 73 : 79} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
-                          </g>
-
-                          {/* MID-RANGE — left wing, vertically centered in the mid zone */}
-                          <g onClick={() => handleZoneTap('mid')} style={{ cursor: 'pointer' }}>
-                            <rect x="8" y="170" width="78" height={isMobile ? 60 : 66} rx="8" fill="rgba(0,0,0,0.55)" stroke={activeKey === 'mid' ? `${zoneMap.mid.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
-                            <text x="47" y="186" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
-                            <text x="47" y={isMobile ? 204 : 207} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
-                            <text x="47" y={isMobile ? 216 : 220} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize={isMobile ? 7.5 : 8.5} fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.mid.offRank} · #{zoneMap.mid.defRank}</text>
-                            <text x="47" y={isMobile ? 228 : 233} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.mid.offShare.toFixed(0)}% of shots</text>
-                          </g>
-
-                          {/* PAINT — center of key, well above the rim zone */}
-                          <g onClick={() => handleZoneTap('close2')} style={{ cursor: 'pointer' }}>
-                            <rect x="113" y="120" width="74" height={isMobile ? 70 : 76} rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'close2' ? `${zoneMap.close2.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
-                            <text x="150" y="137" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>PAINT</text>
-                            <text x="150" y={isMobile ? 160 : 163} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs + 4} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
-                            <text x="150" y={isMobile ? 175 : 179} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize={isMobile ? 8.5 : 9.5} fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.close2.offRank} OFF  ·  #{zoneMap.close2.defRank} DEF</text>
-                            <text x="150" y={isMobile ? 186 : 192} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
-                          </g>
-
-                          {/* RIM — compact, right wing to avoid basket overlap */}
-                          <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
-                            <rect x="214" y="248" width="78" height={isMobile ? 48 : 52} rx="8" fill="rgba(0,0,0,0.6)" stroke={activeKey === 'rim' ? `${zoneMap.rim.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
-                            <text x="253" y="262" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
-                            <text x="253" y={isMobile ? 278 : 280} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
-                            <text x="253" y={isMobile ? 288 : 291} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize={isMobile ? 7 : 8} fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.rim.offRank} · #{zoneMap.rim.defRank}</text>
-                            <text x="253" y={isMobile ? 298 : 301} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.rim.offShare.toFixed(0)}% of shots</text>
-                          </g>
-
-                          {/* ── Edge label badges ON the court ── */}
-                          {Object.entries(zoneMap).map(([key, z]) => {
-                            const pos = key === 'three' ? { x: 260, y: 55 } : key === 'mid' ? { x: 47, y: 235 } : key === 'close2' ? { x: 150, y: 210 } : { x: 253, y: 300 };
-                            const w = z.edgeLabel.length * 5.5 + 12;
                             return (
-                              <g key={`badge_${key}`} onClick={() => handleZoneTap(key)} style={{ cursor: 'pointer' }}>
-                                <rect x={pos.x - w/2} y={pos.y - 8} width={w} height="16" rx="8" fill={z.color} fillOpacity={isVisible ? 0.2 : 0} stroke={z.color} strokeOpacity={isVisible ? 0.3 : 0} strokeWidth="0.8" style={{ transition: 'fill-opacity 0.5s ease 0.4s, stroke-opacity 0.5s ease 0.4s' }} />
-                                <text x={pos.x} y={pos.y + 3.5} textAnchor="middle" fill={z.color} fontSize="7.5" fontWeight="800" letterSpacing="0.06em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.45s' }}>{z.edgeLabel}</text>
-                              </g>
+                              <>
+                                {/* Court floor */}
+                                <rect x="0" y="0" width="300" height={H} fill="url(#courtFloorGrad)" />
+
+                                {/* ── ZONE FILLS (back to front) ── */}
+
+                                {/* 3-Point zone */}
+                                <path
+                                  d={`M 0,0 L 300,0 L 300,${pB} L 0,${pB} Z M 44,${pB} L 44,${arcY} A 106,106 0 0,1 256,${arcY} L 256,${pB} Z`}
+                                  fill={`url(#zoneGrad_three)`}
+                                  fillRule="evenodd"
+                                  opacity={zFill('three')}
+                                  style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                                  onClick={() => handleZoneTap('three')}
+                                  filter={activeKey === 'three' ? `url(#${glowId('three')})` : undefined}
+                                />
+
+                                {/* Mid-range zone */}
+                                <path
+                                  d={`M 44,${pB} L 44,${arcY} A 106,106 0 0,1 256,${arcY} L 256,${pB} Z M 104,${pB} L 104,${arcY - 20} L 196,${arcY - 20} L 196,${pB} Z`}
+                                  fill={`url(#zoneGrad_mid)`}
+                                  fillRule="evenodd"
+                                  opacity={zFill('mid')}
+                                  style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                                  onClick={() => handleZoneTap('mid')}
+                                  filter={activeKey === 'mid' ? `url(#${glowId('mid')})` : undefined}
+                                />
+
+                                {/* Paint / Close 2 */}
+                                <rect
+                                  x="104" y={arcY - 20} width="92" height={pB - (arcY - 20)} rx="2"
+                                  fill={`url(#zoneGrad_close2)`}
+                                  opacity={zFill('close2')}
+                                  style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                                  onClick={() => handleZoneTap('close2')}
+                                  filter={activeKey === 'close2' ? `url(#${glowId('close2')})` : undefined}
+                                />
+
+                                {/* Rim zone */}
+                                <circle
+                                  cx="150" cy={bY} r={isMobile ? 24 : 28}
+                                  fill={`url(#zoneGrad_rim)`}
+                                  opacity={zFill('rim')}
+                                  style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                                  onClick={() => handleZoneTap('rim')}
+                                  filter={activeKey === 'rim' ? `url(#${glowId('rim')})` : undefined}
+                                />
+
+                                {/* Vignette overlay */}
+                                <rect x="0" y="0" width="300" height={H} fill="url(#courtVignette)" pointerEvents="none" />
+
+                                {/* ── COURT LINES ── */}
+                                <rect x="0.5" y="0.5" width="299" height={H - 1} rx="2" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                                <path d={`M 44,${pB} L 44,${arcY} A 106,106 0 0,1 256,${arcY} L 256,${pB}`} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+                                <rect x="104" y={arcY - 20} width="92" height={pB - (arcY - 20)} rx="1" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+                                {/* FT circle */}
+                                <path d={`M 122,${arcY - 20} A 28,28 0 0,1 178,${arcY - 20}`} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
+                                <path d={`M 122,${arcY - 20} A 28,28 0 0,0 178,${arcY - 20}`} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" strokeDasharray="3 3" />
+                                {/* Restricted area */}
+                                <circle cx="150" cy={bY} r={isMobile ? 24 : 28} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
+                                {/* Hash marks */}
+                                {[arcY - 2, arcY + 14, arcY + 30, arcY + 48].map(y => (
+                                  <React.Fragment key={`hash_${y}`}>
+                                    <line x1="98" y1={y} x2="104" y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
+                                    <line x1="196" y1={y} x2="202" y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" />
+                                  </React.Fragment>
+                                ))}
+                                {/* Basket + backboard */}
+                                <line x1="140" y1={pB - 8} x2="160" y2={pB - 8} stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" />
+                                <circle cx="150" cy={pB - 17} r="4" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.2" />
+
+                                {/* ── SELECTED ZONE HIGHLIGHT ── */}
+                                {activeKey === 'rim' && <circle cx="150" cy={bY} r={isMobile ? 28 : 32} fill="none" stroke="white" strokeWidth="1.5" opacity="0.3"><animate attributeName="opacity" values="0.15;0.4;0.15" dur="2.5s" repeatCount="indefinite" /></circle>}
+                                {activeKey === 'close2' && <rect x="101" y={arcY - 23} width="98" height={pB - (arcY - 23) + 3} rx="3" fill="none" stroke="white" strokeWidth="1.5" opacity="0.25"><animate attributeName="opacity" values="0.12;0.35;0.12" dur="2.5s" repeatCount="indefinite" /></rect>}
+                                {activeKey === 'mid' && <path d={`M 44,${pB} L 44,${arcY} A 106,106 0 0,1 256,${arcY} L 256,${pB}`} fill="none" stroke="white" strokeWidth="1.5" opacity="0.2"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="2.5s" repeatCount="indefinite" /></path>}
+                                {activeKey === 'three' && <rect x="1" y="1" width="298" height={H - 2} rx="2" fill="none" stroke="white" strokeWidth="1.5" opacity="0.15"><animate attributeName="opacity" values="0.08;0.25;0.08" dur="2.5s" repeatCount="indefinite" /></rect>}
+
+                                {/* ═══ ZONE LABELS — Mobile: minimal (name + bold FG%), Desktop: full detail ═══ */}
+
+                                {/* 3-POINT */}
+                                <g onClick={() => handleZoneTap('three')} style={{ cursor: 'pointer' }}>
+                                  {isMobile ? (<>
+                                    <text x="150" y="22" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="800" letterSpacing="0.12em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>3-POINT</text>
+                                    <text x="150" y="44" textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize="22" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
+                                  </>) : (<>
+                                    <rect x="108" y="10" width="84" height="72" rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'three' ? `${zoneMap.three.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                                    <text x="150" y="27" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>3-POINT</text>
+                                    <text x="150" y="52" textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs + 1} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
+                                    <text x="150" y="67" textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize="9" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.three.offRank} OFF  ·  #{zoneMap.three.defRank} DEF</text>
+                                    <text x="150" y="79" textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
+                                  </>)}
+                                </g>
+
+                                {/* MID-RANGE — left wing */}
+                                <g onClick={() => handleZoneTap('mid')} style={{ cursor: 'pointer' }}>
+                                  {isMobile ? (<>
+                                    <text x="30" y={arcY + 50} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="7" fontWeight="800" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>MID</text>
+                                    <text x="30" y={arcY + 68} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize="17" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
+                                  </>) : (<>
+                                    <rect x="8" y="170" width="78" height="66" rx="8" fill="rgba(0,0,0,0.55)" stroke={activeKey === 'mid' ? `${zoneMap.mid.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                                    <text x="47" y="186" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
+                                    <text x="47" y="207" textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
+                                    <text x="47" y="220" textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize="8.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.mid.offRank} · #{zoneMap.mid.defRank}</text>
+                                    <text x="47" y="233" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.mid.offShare.toFixed(0)}% of shots</text>
+                                  </>)}
+                                </g>
+
+                                {/* PAINT — center of key */}
+                                <g onClick={() => handleZoneTap('close2')} style={{ cursor: 'pointer' }}>
+                                  {isMobile ? (<>
+                                    <text x="150" y={arcY + 12} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="800" letterSpacing="0.12em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>PAINT</text>
+                                    <text x="150" y={arcY + 36} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize="24" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
+                                  </>) : (<>
+                                    <rect x="113" y="120" width="74" height="76" rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'close2' ? `${zoneMap.close2.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                                    <text x="150" y="137" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>PAINT</text>
+                                    <text x="150" y="163" textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs + 4} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
+                                    <text x="150" y="179" textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize="9.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.close2.offRank} OFF  ·  #{zoneMap.close2.defRank} DEF</text>
+                                    <text x="150" y="192" textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
+                                  </>)}
+                                </g>
+
+                                {/* RIM — right wing */}
+                                <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
+                                  {isMobile ? (<>
+                                    <text x="258" y={bY - 12} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="7" fontWeight="800" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>RIM</text>
+                                    <text x="258" y={bY + 6} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize="17" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
+                                  </>) : (<>
+                                    <rect x="214" y="248" width="78" height="52" rx="8" fill="rgba(0,0,0,0.6)" stroke={activeKey === 'rim' ? `${zoneMap.rim.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                                    <text x="253" y="262" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
+                                    <text x="253" y="280" textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
+                                    <text x="253" y="291" textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize="8" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.rim.offRank} · #{zoneMap.rim.defRank}</text>
+                                    <text x="253" y="301" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.rim.offShare.toFixed(0)}% of shots</text>
+                                  </>)}
+                                </g>
+
+                                {/* ── Edge label badges ON the court (desktop only — mobile uses distribution bar) ── */}
+                                {!isMobile && Object.entries(zoneMap).map(([key, z]) => {
+                                  const pos = key === 'three' ? { x: 260, y: 55 } : key === 'mid' ? { x: 47, y: 240 } : key === 'close2' ? { x: 150, y: 210 } : { x: 253, y: 305 };
+                                  const w = z.edgeLabel.length * 5.5 + 12;
+                                  return (
+                                    <g key={`badge_${key}`} onClick={() => handleZoneTap(key)} style={{ cursor: 'pointer' }}>
+                                      <rect x={pos.x - w/2} y={pos.y - 8} width={w} height="16" rx="8" fill={z.color} fillOpacity={isVisible ? 0.2 : 0} stroke={z.color} strokeOpacity={isVisible ? 0.3 : 0} strokeWidth="0.8" style={{ transition: 'fill-opacity 0.5s ease 0.4s, stroke-opacity 0.5s ease 0.4s' }} />
+                                      <text x={pos.x} y={pos.y + 3.5} textAnchor="middle" fill={z.color} fontSize="7.5" fontWeight="800" letterSpacing="0.06em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.45s' }}>{z.edgeLabel}</text>
+                                    </g>
+                                  );
+                                })}
+                              </>
                             );
-                          })}
+                          })()}
                         </svg>
                       </div>
 
-                      {/* ── SHOT DISTRIBUTION BAR ── */}
+                      {/* ── SHOT DISTRIBUTION BAR (enriched on mobile with rank + edge) ── */}
                       <div style={{ marginTop: '10px', padding: '0 2px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
                           <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}>SHOT DISTRIBUTION</span>
                           <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)', marginLeft: 'auto' }}>{offA}'s shot attempts by zone</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '2px', height: '28px', borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', gap: '3px', borderRadius: '8px', overflow: 'hidden' }}>
                           {offSorted.map((z, i) => {
                             const zm = zoneMap[z.key];
                             const isActive = activeKey === z.key;
@@ -762,19 +790,25 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                 style={{
                                   flex: z.offShare,
                                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                  background: isActive ? `${zm.color}25` : `${zm.color}12`,
-                                  border: isActive ? `1px solid ${zm.color}40` : '1px solid transparent',
-                                  borderRadius: i === 0 ? '6px 0 0 6px' : i === offSorted.length - 1 ? '0 6px 6px 0' : '0',
+                                  padding: isMobile ? '8px 2px' : '6px 2px',
+                                  background: isActive ? `${zm.color}20` : `${zm.color}08`,
+                                  border: isActive ? `1px solid ${zm.color}40` : '1px solid rgba(255,255,255,0.04)',
+                                  borderRadius: i === 0 ? '8px 0 0 8px' : i === offSorted.length - 1 ? '0 8px 8px 0' : '0',
                                   cursor: 'pointer', transition: 'all 0.3s ease', position: 'relative',
-                                  minWidth: isMobile ? '40px' : '50px',
+                                  minWidth: isMobile ? '50px' : '55px',
                                 }}
                               >
-                                <span style={{ fontSize: isMobile ? '11px' : '13px', fontWeight: '900', color: zm.color, fontFamily: mono, lineHeight: 1 }}>
+                                <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '900', color: zm.color, fontFamily: mono, lineHeight: 1 }}>
                                   {z.offShare.toFixed(0)}%
                                 </span>
-                                <span style={{ fontSize: isMobile ? '7px' : '8px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginTop: '1px' }}>
+                                <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.03em', marginTop: '2px' }}>
                                   {z.shortLabel}
                                 </span>
+                                {isMobile && (
+                                  <span style={{ fontSize: '7px', fontWeight: '800', color: zm.color, marginTop: '3px', opacity: 0.8, letterSpacing: '0.02em' }}>
+                                    {zm.edgeLabel}
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
