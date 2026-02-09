@@ -1401,6 +1401,22 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                   : `${defA} owns ${5 - totalWins} of 5 defensive checkpoints. ${offA} needs a special performance to overcome this.`
                 }
               </div>
+
+              {/* Flip button */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '14px' }}>
+                <button
+                  onClick={() => setView(v => v === 'awayOff_homeDef' ? 'homeOff_awayDef' : 'awayOff_homeDef')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: isMobile ? '10px 20px' : '8px 18px', borderRadius: '8px',
+                    background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+                    color: '#A78BFA', fontSize: isMobile ? '11px' : '10px', fontWeight: '700', cursor: 'pointer',
+                  }}
+                >
+                  <ArrowRightLeft size={13} />
+                  VIEW {isAwayView ? homeA : awayA}'S PATH
+                </button>
+              </div>
             </div>
           );
         })()}
