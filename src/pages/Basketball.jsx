@@ -1159,6 +1159,7 @@ const Basketball = () => {
                         isSavantPick={isGameSavantPick(game)}
                         displayTime={sortOrder === 'time' ? getGameTime(game) : null}
                         betsMap={betsMap}
+                        pbpData={pbpData}
                       />
                     ))}
                   </>
@@ -1188,6 +1189,7 @@ const Basketball = () => {
                           hasLiveScore={!!game.liveScore}
                           isSavantPick={isGameSavantPick(game)}
                           betsMap={betsMap}
+                          pbpData={pbpData}
                         />
                       ))}
                     </>
@@ -1215,6 +1217,7 @@ const Basketball = () => {
                           hasLiveScore={!!game.liveScore}
                           isSavantPick={isGameSavantPick(game)}
                           betsMap={betsMap}
+                          pbpData={pbpData}
                         />
                       ))}
                     </>
@@ -1240,6 +1243,7 @@ const Basketball = () => {
                           hasLiveScore={!!game.liveScore}
                           isSavantPick={isGameSavantPick(game)}
                           betsMap={betsMap}
+                          pbpData={pbpData}
                         />
                       ))}
                     </>
@@ -2094,7 +2098,7 @@ const TierHeader = ({ emoji, title, subtitle, color, unitRange, isMobile }) => {
   );
 };
 
-const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap }) => {
+const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap, pbpData = {} }) => {
   const [showDetails, setShowDetails] = useState(false);
   const pred = game.prediction;
   const odds = game.odds;
