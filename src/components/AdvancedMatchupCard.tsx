@@ -221,6 +221,33 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
   const homePBP = pbpData[barttorvik.homeBartName || ''] || null;
   const hasPBP = !!(awayPBP && homePBP);
 
+  // ── Compute per-zone ranks from ALL teams in pbpData ──
+  // For offense: higher FG% = better (rank 1 = best shooter)
+  // For defense: lower FG% allowed = better (rank 1 = best defender)
+  const allTeams = Object.values(pbpData || {}) as PBPTeamData[];
+  const zoneRankFields = [
+    { offKey: 'dunks_off_fg', defKey: 'dunks_def_fg' },
+    { offKey: 'close2_off_fg', defKey: 'close2_def_fg' },
+    { offKey: 'far2_off_fg', defKey: 'far2_def_fg' },
+    { offKey: 'three_off_fg', defKey: 'three_def_fg' },
+  ] as const;
+
+  // Build sorted arrays for ranking (once, not per-render in hot path)
+  const zoneRanks = zoneRankFields.map(({ offKey, defKey }) => {
+    const offSortedAll = [...allTeams].sort((a, b) => (b[offKey] || 0) - (a[offKey] || 0)); // highest FG% = rank 1
+    const defSortedAll = [...allTeams].sort((a, b) => (a[defKey] || 0) - (b[defKey] || 0)); // lowest FG% allowed = rank 1
+    return { offKey, defKey, offSortedAll, defSortedAll };
+  });
+
+  const getZoneRank = (teamPBP: PBPTeamData | null, field: string, isDefense: boolean): number => {
+    if (!teamPBP || allTeams.length === 0) return Math.ceil(allTeams.length / 2) || 182;
+    const entry = zoneRanks.find(z => isDefense ? z.defKey === field : z.offKey === field);
+    if (!entry) return Math.ceil(allTeams.length / 2) || 182;
+    const sorted = isDefense ? entry.defSortedAll : entry.offSortedAll;
+    const idx = sorted.indexOf(teamPBP);
+    return idx >= 0 ? idx + 1 : Math.ceil(allTeams.length / 2);
+  };
+
   // Edge calculations
   const edges = {
     power:     { winner: powerWinner, gap: powerGap, isRank: true, awayVal: awayRank, homeVal: homeRank },
@@ -466,32 +493,35 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
             const defPBP = isAwayView ? homePBP : awayPBP;
             if (!offPBP || !defPBP) return null;
 
-            // Build zone data with labels for sorting
+            // Build zone data with labels, FG%, and computed ranks
             const zoneData = [
-              { key: 'rim', label: 'AT THE RIM', shortLabel: 'Rim', offFg: offPBP.dunks_off_fg, offShare: offPBP.dunks_off_share, defFg: defPBP.dunks_def_fg, defShare: defPBP.dunks_def_share, avg: D1_AVG.dunks },
-              { key: 'close2', label: 'CLOSE 2', shortLabel: 'Close 2', offFg: offPBP.close2_off_fg, offShare: offPBP.close2_off_share, defFg: defPBP.close2_def_fg, defShare: defPBP.close2_def_share, avg: D1_AVG.close2 },
-              { key: 'mid', label: 'MID-RANGE', shortLabel: 'Mid', offFg: offPBP.far2_off_fg, offShare: offPBP.far2_off_share, defFg: defPBP.far2_def_fg, defShare: defPBP.far2_def_share, avg: D1_AVG.far2 },
-              { key: 'three', label: '3-POINT', shortLabel: '3PT', offFg: offPBP.three_off_fg, offShare: offPBP.three_off_share, defFg: defPBP.three_def_fg, defShare: defPBP.three_def_share, avg: D1_AVG.threeP },
+              { key: 'rim', label: 'AT THE RIM', shortLabel: 'Rim', offFg: offPBP.dunks_off_fg, offShare: offPBP.dunks_off_share, defFg: defPBP.dunks_def_fg, defShare: defPBP.dunks_def_share, avg: D1_AVG.dunks, offRank: getZoneRank(offPBP, 'dunks_off_fg', false), defRank: getZoneRank(defPBP, 'dunks_def_fg', true) },
+              { key: 'close2', label: 'CLOSE 2', shortLabel: 'Close 2', offFg: offPBP.close2_off_fg, offShare: offPBP.close2_off_share, defFg: defPBP.close2_def_fg, defShare: defPBP.close2_def_share, avg: D1_AVG.close2, offRank: getZoneRank(offPBP, 'close2_off_fg', false), defRank: getZoneRank(defPBP, 'close2_def_fg', true) },
+              { key: 'mid', label: 'MID-RANGE', shortLabel: 'Mid', offFg: offPBP.far2_off_fg, offShare: offPBP.far2_off_share, defFg: defPBP.far2_def_fg, defShare: defPBP.far2_def_share, avg: D1_AVG.far2, offRank: getZoneRank(offPBP, 'far2_off_fg', false), defRank: getZoneRank(defPBP, 'far2_def_fg', true) },
+              { key: 'three', label: '3-POINT', shortLabel: '3PT', offFg: offPBP.three_off_fg, offShare: offPBP.three_off_share, defFg: defPBP.three_def_fg, defShare: defPBP.three_def_share, avg: D1_AVG.threeP, offRank: getZoneRank(offPBP, 'three_off_fg', false), defRank: getZoneRank(defPBP, 'three_def_fg', true) },
             ];
 
             // Sort by share to find preferences
             const offSorted = [...zoneData].sort((a, b) => b.offShare - a.offShare);
             const defSorted = [...zoneData].sort((a, b) => b.defShare - a.defShare);
-            // Defense: sort by FG% allowed (highest = weakest)
-            const defWeakest = [...zoneData].sort((a, b) => b.defFg - a.defFg);
+            // Defense: sort by rank (highest rank number = weakest defender)
+            const defWeakest = [...zoneData].sort((a, b) => b.defRank - a.defRank);
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
                 {/* ── HALF-COURT ZONE MAP (Premium) ── */}
                 {(() => {
-                  // Compute edge + color + opacity for each zone
+                  // Compute edge using RANKS (not raw FG%)
+                  // offRank: rank 1 = best shooter in zone, defRank: rank 1 = best defender
+                  // rankEdge = defRank - offRank: positive = offense ranked better = offense advantage
+                  const totalT = allTeams.length || 365;
                   const zoneMap = Object.fromEntries(zoneData.map(z => {
-                    const edge = (z.offFg - z.avg) + (z.defFg - z.avg);
-                    const color = edge > 10 ? '#10B981' : edge > 4 ? '#22D3EE' : edge > -4 ? '#F59E0B' : edge > -10 ? '#F97316' : '#EF4444';
-                    const edgeLabel = edge > 10 ? 'BIG EDGE' : edge > 4 ? 'ADVANTAGE' : edge > -4 ? 'CONTESTED' : edge > -10 ? 'TOUGH' : 'LOCKDOWN';
+                    const rankEdge = z.defRank - z.offRank; // positive = offense better ranked
+                    const color = rankEdge > 100 ? '#10B981' : rankEdge > 40 ? '#22D3EE' : rankEdge > -40 ? '#F59E0B' : rankEdge > -100 ? '#F97316' : '#EF4444';
+                    const edgeLabel = rankEdge > 100 ? 'BIG EDGE' : rankEdge > 40 ? 'ADVANTAGE' : rankEdge > -40 ? 'CONTESTED' : rankEdge > -100 ? 'TOUGH' : 'LOCKDOWN';
                     const opacity = Math.min(0.65, Math.max(0.2, z.offShare / 65));
-                    return [z.key, { ...z, edge, color, edgeLabel, opacity }];
+                    return [z.key, { ...z, rankEdge, color, edgeLabel, opacity }];
                   }));
 
                   const goToKey = offSorted[0].key;
@@ -671,7 +701,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             <rect x="115" y={isMobile ? 14 : 12} width="70" height={isMobile ? 58 : 64} rx="6" fill="rgba(0,0,0,0.35)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                             <text x="150" y={isMobile ? 28 : 28} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns} fontWeight="700" letterSpacing="0.08em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>3-POINT</text>
                             <text x="150" y={isMobile ? 47 : 50} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
-                            <text x="150" y={isMobile ? 60 : 64} textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize={es} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.three.edge > 0 ? '+' : ''}{zoneMap.three.edge.toFixed(1)}</text>
+                            <text x="150" y={isMobile ? 60 : 64} textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize={es} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>#{zoneMap.three.offRank} OFF vs #{zoneMap.three.defRank} DEF</text>
                             <text x="150" y={isMobile ? 70 : 75} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.4s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
                           </g>
 
@@ -680,7 +710,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             <rect x="33" y={isMobile ? 152 : 148} width="70" height={isMobile ? 52 : 58} rx="6" fill="rgba(0,0,0,0.4)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                             <text x="68" y={isMobile ? 166 : 164} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns} fontWeight="700" letterSpacing="0.08em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
                             <text x="68" y={isMobile ? 184 : 184} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
-                            <text x="68" y={isMobile ? 196 : 198} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize={es} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.mid.edge > 0 ? '+' : ''}{zoneMap.mid.edge.toFixed(1)}</text>
+                            <text x="68" y={isMobile ? 196 : 198} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize={es - 1} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>#{zoneMap.mid.offRank} vs #{zoneMap.mid.defRank}</text>
                           </g>
 
                           {/* Paint — center of key */}
@@ -688,7 +718,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             <rect x="115" y={isMobile ? 118 : 112} width="70" height={isMobile ? 66 : 72} rx="6" fill="rgba(0,0,0,0.35)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                             <text x="150" y={isMobile ? 133 : 129} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns} fontWeight="700" letterSpacing="0.08em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>PAINT</text>
                             <text x="150" y={isMobile ? 154 : 153} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs + 3} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
-                            <text x="150" y={isMobile ? 168 : 169} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize={es + 1} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.close2.edge > 0 ? '+' : ''}{zoneMap.close2.edge.toFixed(1)}</text>
+                            <text x="150" y={isMobile ? 168 : 169} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize={es} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>#{zoneMap.close2.offRank} OFF vs #{zoneMap.close2.defRank} DEF</text>
                             <text x="150" y={isMobile ? 180 : 182} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.4s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
                           </g>
 
@@ -696,7 +726,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                           <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
                             <rect x="128" y={isMobile ? 232 : 230} width="44" height={isMobile ? 24 : 26} rx="5" fill="rgba(0,0,0,0.5)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                             <text x="150" y={isMobile ? 243 : 242} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns - 1} fontWeight="700" letterSpacing="0.06em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
-                            <text x="150" y={isMobile ? 254 : 254} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize={es - 1} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.rim.offFg.toFixed(0)}% / {zoneMap.rim.edge > 0 ? '+' : ''}{zoneMap.rim.edge.toFixed(0)}</text>
+                            <text x="150" y={isMobile ? 254 : 254} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize={es - 2} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>#{zoneMap.rim.offRank} vs #{zoneMap.rim.defRank}</text>
                           </g>
                         </svg>
                       </div>
@@ -736,27 +766,24 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                               <div style={{ flex: 1, padding: isMobile ? '8px' : '10px', borderRadius: '8px', background: `${offFgColor}08`, border: `1px solid ${offFgColor}15`, textAlign: 'center' }}>
                                 <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '3px' }}>{offA} SHOOTS</div>
                                 <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: offFgColor, fontFamily: mono, lineHeight: '1.1' }}>{active.offFg.toFixed(1)}%</div>
-                                <div style={{ fontSize: '9px', fontWeight: '700', color: offFgColor, marginTop: '2px' }}>{offDiff > 0 ? '+' : ''}{offDiff.toFixed(1)} vs avg</div>
+                                <div style={{ fontSize: '9px', fontWeight: '700', color: offFgColor, marginTop: '3px' }}>#{active.offRank} in D1</div>
                               </div>
                               {/* Defense */}
                               <div style={{ flex: 1, padding: isMobile ? '8px' : '10px', borderRadius: '8px', background: `${defFgColor}08`, border: `1px solid ${defFgColor}15`, textAlign: 'center' }}>
                                 <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '3px' }}>{defA} ALLOWS</div>
                                 <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: defFgColor, fontFamily: mono, lineHeight: '1.1' }}>{active.defFg.toFixed(1)}%</div>
-                                <div style={{ fontSize: '9px', fontWeight: '700', color: defFgColor, marginTop: '2px' }}>{defDiff > 0 ? '+' : ''}{defDiff.toFixed(1)} vs avg</div>
+                                <div style={{ fontSize: '9px', fontWeight: '700', color: defFgColor, marginTop: '3px' }}>#{active.defRank} in D1</div>
                               </div>
-                              {/* Combined edge */}
-                              <div style={{ width: isMobile ? '60px' : '70px', padding: isMobile ? '8px 4px' : '10px 6px', borderRadius: '8px', background: `${active.color}10`, border: `1px solid ${active.color}18`, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', marginBottom: '2px' }}>EDGE</div>
-                                <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: active.color, fontFamily: mono, lineHeight: '1.1' }}>
-                                  {active.edge > 0 ? '+' : ''}{active.edge.toFixed(1)}
-                                </div>
+                              {/* Verdict */}
+                              <div style={{ width: isMobile ? '70px' : '80px', padding: isMobile ? '8px 4px' : '10px 6px', borderRadius: '8px', background: `${active.color}10`, border: `1px solid ${active.color}18`, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '800', color: active.color, letterSpacing: '0.04em', lineHeight: '1.3' }}>{active.edgeLabel}</div>
                               </div>
                             </div>
 
                             {/* Volume + D1 context */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>D1 avg: {active.avg.toFixed(0)}% FG</span>
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>{active.offShare.toFixed(0)}% of {offA}'s shots</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>D1 avg: {active.avg.toFixed(0)}% FG · {active.offShare.toFixed(0)}% of {offA}'s shots</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>{active.offRank < active.defRank ? `${offA} has the edge` : active.defRank < active.offRank ? `${defA} has the edge` : 'Even matchup'}</span>
                             </div>
                           </div>
                         );
