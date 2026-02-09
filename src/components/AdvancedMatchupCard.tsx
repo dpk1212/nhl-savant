@@ -483,176 +483,223 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-                {/* ── HALF-COURT ZONE MAP ── */}
+                {/* ── HALF-COURT ZONE MAP (Premium) ── */}
                 {(() => {
                   // Compute edge + color + opacity for each zone
                   const zoneMap = Object.fromEntries(zoneData.map(z => {
                     const edge = (z.offFg - z.avg) + (z.defFg - z.avg);
                     const color = edge > 10 ? '#10B981' : edge > 4 ? '#22D3EE' : edge > -4 ? '#F59E0B' : edge > -10 ? '#F97316' : '#EF4444';
                     const edgeLabel = edge > 10 ? 'BIG EDGE' : edge > 4 ? 'ADVANTAGE' : edge > -4 ? 'CONTESTED' : edge > -10 ? 'TOUGH' : 'LOCKDOWN';
-                    // Opacity: scale by share. Min 0.3, max 0.7
-                    const opacity = Math.min(0.7, Math.max(0.3, z.offShare / 60));
+                    const opacity = Math.min(0.65, Math.max(0.2, z.offShare / 65));
                     return [z.key, { ...z, edge, color, edgeLabel, opacity }];
                   }));
 
                   const goToKey = offSorted[0].key;
                   const defWeakKey = defWeakest[0].key;
                   const defStrongKey = defWeakest[defWeakest.length - 1].key;
-
-                  // Auto-select GO-TO zone on first render
                   const activeKey = selectedZone || goToKey;
                   const active = zoneMap[activeKey];
 
-                  const handleZoneTap = (key: string) => {
-                    setSelectedZone(prev => prev === key ? null : key);
-                  };
+                  const handleZoneTap = (key: string) => setSelectedZone(prev => prev === key ? null : key);
 
-                  // Zone hover/selected styling
-                  const zoneStyle = (key: string): React.CSSProperties => ({
-                    cursor: 'pointer',
-                    transition: 'opacity 0.6s ease, filter 0.3s ease',
-                    opacity: isVisible ? zoneMap[key].opacity : 0,
-                    filter: activeKey === key ? `drop-shadow(0 0 8px ${zoneMap[key].color}80)` : 'none',
-                  });
+                  // Zone style: selected zones get brighter, unselected dim slightly
+                  const zFill = (key: string) => isVisible ? (activeKey === key ? Math.min(zoneMap[key].opacity + 0.15, 0.75) : zoneMap[key].opacity * 0.7) : 0;
 
-                  // SVG label font sizes
-                  const nameSize = isMobile ? 10 : 12;
-                  const fgSize = isMobile ? 13 : 16;
-                  const edgeSize = isMobile ? 9 : 11;
-                  const shareSize = isMobile ? 8 : 9;
+                  // Label sizes
+                  const ns = isMobile ? 9 : 11;
+                  const fs = isMobile ? 15 : 19;
+                  const es = isMobile ? 10 : 12;
+                  const ss = isMobile ? 7.5 : 8.5;
+
+                  // Unique filter IDs per zone to avoid collisions
+                  const glowId = (key: string) => `courtGlow_${key}`;
 
                   return (
                     <div style={{
-                      padding: isMobile ? '14px' : '18px', borderRadius: '12px',
-                      background: 'linear-gradient(135deg, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.3) 100%)',
+                      padding: isMobile ? '12px' : '16px', borderRadius: '14px',
+                      background: 'linear-gradient(180deg, rgba(8,12,28,0.85) 0%, rgba(15,23,42,0.5) 100%)',
                       border: '1px solid rgba(255,255,255,0.06)',
+                      position: 'relative', overflow: 'hidden',
                     }}>
+                      {/* Subtle top glow */}
+                      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.4), transparent)' }} />
+
                       {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '8px' : '12px' }}>
                         <div>
-                          <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#A78BFA', letterSpacing: '0.08em' }}>
-                            {offA} SHOT PROFILE vs {defA} DEFENSE
+                          <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '800', color: 'rgba(255,255,255,0.9)', letterSpacing: '0.04em' }}>
+                            {offA} <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: '600' }}>vs</span> {defA}
                           </div>
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Tap a zone to see the matchup detail</div>
+                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>Tap a zone for the full matchup breakdown</div>
+                        </div>
+                        {/* Mini legend */}
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#10B981' }} />
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>Edge</span>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#F59E0B' }} />
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>Even</span>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#EF4444' }} />
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>Tough</span>
                         </div>
                       </div>
 
                       {/* ── SVG HALF-COURT ── */}
-                      <svg
-                        viewBox="0 0 300 260"
-                        style={{ width: '100%', maxHeight: isMobile ? '240px' : '300px', display: 'block' }}
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <defs>
-                          {/* Glow filter for selected zone */}
-                          <filter id="courtGlow">
-                            <feGaussianBlur stdDeviation="3" result="blur" />
-                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                          </filter>
-                        </defs>
+                      <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', background: 'rgba(0,0,0,0.25)' }}>
+                        <svg
+                          viewBox="0 0 300 280"
+                          style={{ width: '100%', display: 'block' }}
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <defs>
+                            {/* Radial glow gradients per zone */}
+                            {Object.entries(zoneMap).map(([key, z]) => (
+                              <React.Fragment key={`defs_${key}`}>
+                                <radialGradient id={`zoneGrad_${key}`} cx="50%" cy="50%" r="70%">
+                                  <stop offset="0%" stopColor={z.color} stopOpacity="0.9" />
+                                  <stop offset="60%" stopColor={z.color} stopOpacity="0.5" />
+                                  <stop offset="100%" stopColor={z.color} stopOpacity="0.15" />
+                                </radialGradient>
+                                <filter id={glowId(key)} x="-30%" y="-30%" width="160%" height="160%">
+                                  <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+                                  <feColorMatrix in="blur" type="matrix" values={`0 0 0 0 ${parseInt(z.color.slice(1,3),16)/255} 0 0 0 0 ${parseInt(z.color.slice(3,5),16)/255} 0 0 0 0 ${parseInt(z.color.slice(5,7),16)/255} 0 0 0 0.5 0`} />
+                                  <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+                                </filter>
+                              </React.Fragment>
+                            ))}
+                            {/* Court floor texture pattern */}
+                            <pattern id="courtFloor" patternUnits="userSpaceOnUse" width="12" height="12">
+                              <rect width="12" height="12" fill="rgba(20,30,50,0.95)" />
+                              <line x1="0" y1="6" x2="12" y2="6" stroke="rgba(255,255,255,0.015)" strokeWidth="0.5" />
+                              <line x1="6" y1="0" x2="6" y2="12" stroke="rgba(255,255,255,0.015)" strokeWidth="0.5" />
+                            </pattern>
+                            {/* Vignette gradient */}
+                            <radialGradient id="courtVignette" cx="50%" cy="85%" r="65%">
+                              <stop offset="0%" stopColor="transparent" />
+                              <stop offset="100%" stopColor="rgba(0,0,0,0.4)" />
+                            </radialGradient>
+                          </defs>
 
-                        {/* Court background */}
-                        <rect x="0" y="0" width="300" height="260" rx="4" fill="rgba(15,23,42,0.5)" />
+                          {/* Court floor with subtle texture */}
+                          <rect x="0" y="0" width="300" height="280" fill="url(#courtFloor)" />
 
-                        {/* ── 3-POINT ZONE (everything outside the arc) ── */}
-                        {/* Drawn as the full court rect with the interior clipped out */}
-                        <path
-                          d={`M 0,0 L 300,0 L 300,260 L 0,260 Z
-                              M 45,260 L 45,96 A 105,105 0 0,1 255,96 L 255,260 Z`}
-                          fill={zoneMap.three.color}
-                          fillRule="evenodd"
-                          style={zoneStyle('three')}
-                          onClick={() => handleZoneTap('three')}
-                        />
+                          {/* ── ZONE FILLS (back to front) ── */}
 
-                        {/* ── MID-RANGE ZONE (inside arc, outside paint) ── */}
-                        <path
-                          d={`M 45,260 L 45,96 A 105,105 0 0,1 255,96 L 255,260 Z
-                              M 100,260 L 100,80 L 200,80 L 200,260 Z`}
-                          fill={zoneMap.mid.color}
-                          fillRule="evenodd"
-                          style={zoneStyle('mid')}
-                          onClick={() => handleZoneTap('mid')}
-                        />
+                          {/* 3-Point zone */}
+                          <path
+                            d={`M 0,0 L 300,0 L 300,280 L 0,280 Z M 46,280 L 46,108 A 104,104 0 0,1 254,108 L 254,280 Z`}
+                            fill={`url(#zoneGrad_three)`}
+                            fillRule="evenodd"
+                            opacity={zFill('three')}
+                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                            onClick={() => handleZoneTap('three')}
+                            filter={activeKey === 'three' ? `url(#${glowId('three')})` : undefined}
+                          />
 
-                        {/* ── CLOSE 2 / PAINT ZONE (the key rectangle) ── */}
-                        <rect
-                          x="100" y="80" width="100" height="180"
-                          fill={zoneMap.close2.color}
-                          style={zoneStyle('close2')}
-                          onClick={() => handleZoneTap('close2')}
-                        />
+                          {/* Mid-range zone */}
+                          <path
+                            d={`M 46,280 L 46,108 A 104,104 0 0,1 254,108 L 254,280 Z M 102,280 L 102,92 L 198,92 L 198,280 Z`}
+                            fill={`url(#zoneGrad_mid)`}
+                            fillRule="evenodd"
+                            opacity={zFill('mid')}
+                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                            onClick={() => handleZoneTap('mid')}
+                            filter={activeKey === 'mid' ? `url(#${glowId('mid')})` : undefined}
+                          />
 
-                        {/* ── RIM ZONE (restricted area circle) ── */}
-                        <circle
-                          cx="150" cy="232" r="28"
-                          fill={zoneMap.rim.color}
-                          style={zoneStyle('rim')}
-                          onClick={() => handleZoneTap('rim')}
-                        />
+                          {/* Paint / Close 2 */}
+                          <rect
+                            x="102" y="92" width="96" height="188" rx="2"
+                            fill={`url(#zoneGrad_close2)`}
+                            opacity={zFill('close2')}
+                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                            onClick={() => handleZoneTap('close2')}
+                            filter={activeKey === 'close2' ? `url(#${glowId('close2')})` : undefined}
+                          />
 
-                        {/* ── Court structure lines ── */}
-                        {/* Outer boundary */}
-                        <rect x="0" y="0" width="300" height="260" rx="4" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
-                        {/* 3PT arc */}
-                        <path d="M 45,260 L 45,96 A 105,105 0 0,1 255,96 L 255,260" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-                        {/* Paint / key outline */}
-                        <rect x="100" y="80" width="100" height="180" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-                        {/* Free throw circle */}
-                        <circle cx="150" cy="80" r="30" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="0.8" />
-                        {/* Restricted area */}
-                        <circle cx="150" cy="232" r="28" fill="none" stroke="rgba(255,255,255,0.20)" strokeWidth="1" />
-                        {/* Basket */}
-                        <circle cx="150" cy="248" r="4" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-                        {/* Backboard */}
-                        <line x1="138" y1="255" x2="162" y2="255" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                        {/* Baseline */}
-                        <line x1="0" y1="259.5" x2="300" y2="259.5" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                          {/* Rim zone */}
+                          <circle
+                            cx="150" cy="248" r="30"
+                            fill={`url(#zoneGrad_rim)`}
+                            opacity={zFill('rim')}
+                            style={{ cursor: 'pointer', transition: 'opacity 0.5s ease' }}
+                            onClick={() => handleZoneTap('rim')}
+                            filter={activeKey === 'rim' ? `url(#${glowId('rim')})` : undefined}
+                          />
 
-                        {/* ── ZONE LABELS ── */}
+                          {/* Vignette overlay */}
+                          <rect x="0" y="0" width="300" height="280" fill="url(#courtVignette)" pointerEvents="none" />
 
-                        {/* 3-Point zone label — top center */}
-                        <g onClick={() => handleZoneTap('three')} style={{ cursor: 'pointer' }}>
-                          <text x="150" y={isMobile ? 28 : 26} textAnchor="middle" fill="white" fontFamily={mono} fontSize={nameSize} fontWeight="700" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>3PT</text>
-                          <text x="150" y={isMobile ? 44 : 44} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fgSize} fontWeight="900" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.3s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
-                          <text x="150" y={isMobile ? 56 : 58} textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize={edgeSize} fontWeight="800" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.4s' }}>{zoneMap.three.edge > 0 ? '+' : ''}{zoneMap.three.edge.toFixed(1)}</text>
-                          <text x="150" y={isMobile ? 66 : 70} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize={shareSize} fontWeight="600" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.5s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
-                        </g>
+                          {/* ── COURT LINES (authentic markings) ── */}
+                          {/* Outer boundary */}
+                          <rect x="0.5" y="0.5" width="299" height="279" rx="3" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                          {/* 3PT arc + corner lines */}
+                          <path d="M 46,280 L 46,108 A 104,104 0 0,1 254,108 L 254,280" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" />
+                          {/* Paint outline */}
+                          <rect x="102" y="92" width="96" height="188" rx="1" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                          {/* Free throw circle (top half dashed, bottom solid) */}
+                          <path d="M 120,92 A 30,30 0 0,1 180,92" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
+                          <path d="M 120,92 A 30,30 0 0,0 180,92" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" strokeDasharray="3 3" />
+                          {/* Restricted area arc */}
+                          <circle cx="150" cy="248" r="30" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" />
+                          {/* Lane hash marks */}
+                          {[108, 124, 140, 156].map(y => (
+                            <React.Fragment key={`hash_${y}`}>
+                              <line x1="96" y1={y} x2="102" y2={y} stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
+                              <line x1="198" y1={y} x2="204" y2={y} stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
+                            </React.Fragment>
+                          ))}
+                          {/* Basket + backboard */}
+                          <line x1="139" y1="274" x2="161" y2="274" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" />
+                          <circle cx="150" cy="264" r="4.5" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />
+                          {/* Net lines (tiny detail) */}
+                          <line x1="146" y1="268" x2="148" y2="272" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                          <line x1="150" y1="268.5" x2="150" y2="273" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                          <line x1="154" y1="268" x2="152" y2="272" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+                          {/* Center court mark */}
+                          <line x1="148" y1="0" x2="152" y2="0" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
 
-                        {/* Mid-range label — left side */}
-                        <g onClick={() => handleZoneTap('mid')} style={{ cursor: 'pointer' }}>
-                          <text x="68" y={isMobile ? 170 : 165} textAnchor="middle" fill="white" fontFamily={mono} fontSize={nameSize} fontWeight="700" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>MID</text>
-                          <text x="68" y={isMobile ? 186 : 183} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fgSize} fontWeight="900" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.3s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
-                          <text x="68" y={isMobile ? 198 : 197} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize={edgeSize} fontWeight="800" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.4s' }}>{zoneMap.mid.edge > 0 ? '+' : ''}{zoneMap.mid.edge.toFixed(1)}</text>
-                          <text x="68" y={isMobile ? 208 : 209} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize={shareSize} fontWeight="600" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.5s' }}>{zoneMap.mid.offShare.toFixed(0)}% vol</text>
-                        </g>
+                          {/* ── SELECTED ZONE HIGHLIGHT ── */}
+                          {activeKey === 'rim' && <circle cx="150" cy="248" r="33" fill="none" stroke="white" strokeWidth="1.5" opacity="0.35"><animate attributeName="opacity" values="0.2;0.45;0.2" dur="2s" repeatCount="indefinite" /></circle>}
+                          {activeKey === 'close2' && <rect x="99" y="89" width="102" height="194" rx="3" fill="none" stroke="white" strokeWidth="1.5" opacity="0.3"><animate attributeName="opacity" values="0.15;0.4;0.15" dur="2s" repeatCount="indefinite" /></rect>}
+                          {activeKey === 'mid' && <path d="M 46,280 L 46,108 A 104,104 0 0,1 254,108 L 254,280" fill="none" stroke="white" strokeWidth="1.5" opacity="0.25"><animate attributeName="opacity" values="0.12;0.35;0.12" dur="2s" repeatCount="indefinite" /></path>}
+                          {activeKey === 'three' && <rect x="1" y="1" width="298" height="278" rx="3" fill="none" stroke="white" strokeWidth="1.5" opacity="0.2"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="2s" repeatCount="indefinite" /></rect>}
 
-                        {/* Close 2 / Paint label — center */}
-                        <g onClick={() => handleZoneTap('close2')} style={{ cursor: 'pointer' }}>
-                          <text x="150" y={isMobile ? 130 : 125} textAnchor="middle" fill="white" fontFamily={mono} fontSize={nameSize} fontWeight="700" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>PAINT</text>
-                          <text x="150" y={isMobile ? 150 : 147} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fgSize + 2} fontWeight="900" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.3s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
-                          <text x="150" y={isMobile ? 164 : 163} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize={edgeSize + 1} fontWeight="800" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.4s' }}>{zoneMap.close2.edge > 0 ? '+' : ''}{zoneMap.close2.edge.toFixed(1)}</text>
-                          <text x="150" y={isMobile ? 176 : 177} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize={shareSize} fontWeight="600" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.5s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
-                        </g>
+                          {/* ── ZONE LABELS ── */}
+                          {/* Helper: text background pill for readability */}
+                          {/* 3-Point — top center */}
+                          <g onClick={() => handleZoneTap('three')} style={{ cursor: 'pointer' }}>
+                            <rect x="115" y={isMobile ? 14 : 12} width="70" height={isMobile ? 58 : 64} rx="6" fill="rgba(0,0,0,0.35)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                            <text x="150" y={isMobile ? 28 : 28} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns} fontWeight="700" letterSpacing="0.08em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>3-POINT</text>
+                            <text x="150" y={isMobile ? 47 : 50} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
+                            <text x="150" y={isMobile ? 60 : 64} textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize={es} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.three.edge > 0 ? '+' : ''}{zoneMap.three.edge.toFixed(1)}</text>
+                            <text x="150" y={isMobile ? 70 : 75} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.4s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
+                          </g>
 
-                        {/* Rim label — bottom center */}
-                        <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
-                          <text x="150" y={isMobile ? 224 : 222} textAnchor="middle" fill="white" fontFamily={mono} fontSize={nameSize - 1} fontWeight="700" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.2s' }}>RIM</text>
-                          <text x="150" y={isMobile ? 237 : 237} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fgSize - 1} fontWeight="900" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)', opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.3s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
-                          <text x="150" y={isMobile ? 248 : 249} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize={edgeSize - 1} fontWeight="800" style={{ opacity: isVisible ? 1 : 0, transition: 'opacity 0.6s ease 0.4s' }}>{zoneMap.rim.edge > 0 ? '+' : ''}{zoneMap.rim.edge.toFixed(1)}</text>
-                        </g>
+                          {/* Mid-range — left wing */}
+                          <g onClick={() => handleZoneTap('mid')} style={{ cursor: 'pointer' }}>
+                            <rect x="33" y={isMobile ? 152 : 148} width="70" height={isMobile ? 52 : 58} rx="6" fill="rgba(0,0,0,0.4)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                            <text x="68" y={isMobile ? 166 : 164} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns} fontWeight="700" letterSpacing="0.08em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
+                            <text x="68" y={isMobile ? 184 : 184} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
+                            <text x="68" y={isMobile ? 196 : 198} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize={es} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.mid.edge > 0 ? '+' : ''}{zoneMap.mid.edge.toFixed(1)}</text>
+                          </g>
 
-                        {/* Selected zone highlight ring */}
-                        {activeKey === 'rim' && <circle cx="150" cy="232" r="30" fill="none" stroke="white" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.5" />}
-                        {activeKey === 'close2' && <rect x="98" y="78" width="104" height="184" rx="2" fill="none" stroke="white" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" />}
+                          {/* Paint — center of key */}
+                          <g onClick={() => handleZoneTap('close2')} style={{ cursor: 'pointer' }}>
+                            <rect x="115" y={isMobile ? 118 : 112} width="70" height={isMobile ? 66 : 72} rx="6" fill="rgba(0,0,0,0.35)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                            <text x="150" y={isMobile ? 133 : 129} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns} fontWeight="700" letterSpacing="0.08em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>PAINT</text>
+                            <text x="150" y={isMobile ? 154 : 153} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs + 3} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
+                            <text x="150" y={isMobile ? 168 : 169} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize={es + 1} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.close2.edge > 0 ? '+' : ''}{zoneMap.close2.edge.toFixed(1)}</text>
+                            <text x="150" y={isMobile ? 180 : 182} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.4s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
+                          </g>
 
-                        {/* Legend — bottom-left */}
-                        <g opacity="0.5">
-                          <text x="6" y="14" fill="rgba(255,255,255,0.4)" fontSize="7" fontWeight="600">GREEN = Big Edge</text>
-                          <text x="6" y="24" fill="rgba(255,255,255,0.4)" fontSize="7" fontWeight="600">YELLOW = Contested</text>
-                          <text x="6" y="34" fill="rgba(255,255,255,0.4)" fontSize="7" fontWeight="600">RED = Tough</text>
-                        </g>
-                      </svg>
+                          {/* Rim — tight inside restricted area */}
+                          <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
+                            <rect x="128" y={isMobile ? 232 : 230} width="44" height={isMobile ? 24 : 26} rx="5" fill="rgba(0,0,0,0.5)" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                            <text x="150" y={isMobile ? 243 : 242} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={ns - 1} fontWeight="700" letterSpacing="0.06em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
+                            <text x="150" y={isMobile ? 254 : 254} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize={es - 1} fontWeight="800" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.25s' }}>{zoneMap.rim.offFg.toFixed(0)}% / {zoneMap.rim.edge > 0 ? '+' : ''}{zoneMap.rim.edge.toFixed(0)}</text>
+                          </g>
+                        </svg>
+                      </div>
 
                       {/* ── DETAIL PANEL (below court) ── */}
                       {active && (() => {
@@ -661,44 +708,55 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                         const isGoTo = active.key === goToKey;
                         const isWeak = active.key === defWeakKey;
                         const isStrong = active.key === defStrongKey;
+                        const offDiff = active.offFg - active.avg;
+                        const defDiff = active.defFg - active.avg;
 
                         return (
                           <div style={{
-                            marginTop: '10px', padding: isMobile ? '12px' : '14px', borderRadius: '10px',
-                            background: `${active.color}06`,
-                            border: `1px solid ${active.color}18`,
+                            marginTop: '10px', padding: isMobile ? '12px 14px' : '14px 16px', borderRadius: '10px',
+                            background: `linear-gradient(135deg, ${active.color}08 0%, rgba(15,23,42,0.4) 100%)`,
+                            border: `1px solid ${active.color}15`,
+                            position: 'relative', overflow: 'hidden',
                           }}>
-                            {/* Zone name + tags */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: 'rgba(255,255,255,0.85)' }}>{active.label}</span>
-                              <span style={{ fontSize: '9px', fontWeight: '700', color: active.color, padding: '2px 8px', borderRadius: '4px', background: `${active.color}15` }}>{active.edgeLabel}</span>
-                              {isGoTo && <span style={{ fontSize: '8px', fontWeight: '800', color: '#A78BFA', padding: '2px 6px', borderRadius: '4px', background: 'rgba(167,139,250,0.2)' }}>GO-TO</span>}
-                              {isWeak && <span style={{ fontSize: '8px', fontWeight: '800', color: '#F87171', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.15)' }}>WEAK D</span>}
-                              {isStrong && <span style={{ fontSize: '8px', fontWeight: '800', color: '#10B981', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)' }}>STRONG D</span>}
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginLeft: 'auto' }}>{active.offShare.toFixed(0)}% of shots</span>
+                            {/* Top accent */}
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${active.color}50, transparent)` }} />
+
+                            {/* Zone header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '800', color: 'rgba(255,255,255,0.9)' }}>{active.label}</span>
+                              <span style={{ fontSize: '9px', fontWeight: '800', color: active.color, padding: '2px 8px', borderRadius: '4px', background: `${active.color}18`, border: `1px solid ${active.color}20`, letterSpacing: '0.05em' }}>{active.edgeLabel}</span>
+                              {isGoTo && <span style={{ fontSize: '8px', fontWeight: '800', color: '#A78BFA', padding: '2px 6px', borderRadius: '4px', background: 'rgba(167,139,250,0.2)', border: '1px solid rgba(167,139,250,0.15)' }}>GO-TO ZONE</span>}
+                              {isWeak && <span style={{ fontSize: '8px', fontWeight: '800', color: '#F87171', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.1)' }}>WEAK DEFENSE</span>}
+                              {isStrong && <span style={{ fontSize: '8px', fontWeight: '800', color: '#10B981', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.1)' }}>STRONG DEFENSE</span>}
                             </div>
 
-                            {/* OFF vs DEF FG% */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '8px', background: `${offFgColor}10`, border: `1px solid ${offFgColor}20` }}>
-                                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>{offA}</span>
-                                <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: offFgColor, fontFamily: mono }}>{active.offFg.toFixed(1)}%</span>
+                            {/* Side-by-side stat cards */}
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                              {/* Offense */}
+                              <div style={{ flex: 1, padding: isMobile ? '8px' : '10px', borderRadius: '8px', background: `${offFgColor}08`, border: `1px solid ${offFgColor}15`, textAlign: 'center' }}>
+                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '3px' }}>{offA} SHOOTS</div>
+                                <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: offFgColor, fontFamily: mono, lineHeight: '1.1' }}>{active.offFg.toFixed(1)}%</div>
+                                <div style={{ fontSize: '9px', fontWeight: '700', color: offFgColor, marginTop: '2px' }}>{offDiff > 0 ? '+' : ''}{offDiff.toFixed(1)} vs avg</div>
                               </div>
-                              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontWeight: '700' }}>vs</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '8px', background: `${defFgColor}10`, border: `1px solid ${defFgColor}20` }}>
-                                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>{defA}</span>
-                                <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: defFgColor, fontFamily: mono }}>{active.defFg.toFixed(1)}%</span>
+                              {/* Defense */}
+                              <div style={{ flex: 1, padding: isMobile ? '8px' : '10px', borderRadius: '8px', background: `${defFgColor}08`, border: `1px solid ${defFgColor}15`, textAlign: 'center' }}>
+                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '3px' }}>{defA} ALLOWS</div>
+                                <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: defFgColor, fontFamily: mono, lineHeight: '1.1' }}>{active.defFg.toFixed(1)}%</div>
+                                <div style={{ fontSize: '9px', fontWeight: '700', color: defFgColor, marginTop: '2px' }}>{defDiff > 0 ? '+' : ''}{defDiff.toFixed(1)} vs avg</div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '8px', background: `${active.color}12`, border: `1px solid ${active.color}18`, marginLeft: 'auto' }}>
-                                <span style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '900', color: active.color, fontFamily: mono }}>
+                              {/* Combined edge */}
+                              <div style={{ width: isMobile ? '60px' : '70px', padding: isMobile ? '8px 4px' : '10px 6px', borderRadius: '8px', background: `${active.color}10`, border: `1px solid ${active.color}18`, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', marginBottom: '2px' }}>EDGE</div>
+                                <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: active.color, fontFamily: mono, lineHeight: '1.1' }}>
                                   {active.edge > 0 ? '+' : ''}{active.edge.toFixed(1)}
-                                </span>
+                                </div>
                               </div>
                             </div>
 
-                            {/* D1 avg context */}
-                            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', lineHeight: '1.5' }}>
-                              D1 avg: {active.avg.toFixed(0)}% — {offA} {active.offFg > active.avg ? '+' : ''}{(active.offFg - active.avg).toFixed(1)} vs avg · {defA} allows {active.defFg > active.avg ? '+' : ''}{(active.defFg - active.avg).toFixed(1)} vs avg
+                            {/* Volume + D1 context */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>D1 avg: {active.avg.toFixed(0)}% FG</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>{active.offShare.toFixed(0)}% of {offA}'s shots</span>
                             </div>
                           </div>
                         );
@@ -727,7 +785,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
 
                         return (
                           <div style={{
-                            marginTop: '10px', padding: '10px 12px', borderRadius: '10px',
+                            marginTop: '8px', padding: '10px 12px', borderRadius: '10px',
                             background: `${matchupColor}06`, borderLeft: `3px solid ${matchupColor}30`,
                           }}>
                             <div style={{ fontSize: '9px', fontWeight: '700', color: matchupColor, letterSpacing: '0.06em', marginBottom: '4px' }}>
