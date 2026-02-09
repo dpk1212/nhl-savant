@@ -706,10 +706,11 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
 
                           {/* MID-RANGE — left wing, vertically centered in the mid zone */}
                           <g onClick={() => handleZoneTap('mid')} style={{ cursor: 'pointer' }}>
-                            <rect x="8" y="170" width="78" height={isMobile ? 50 : 56} rx="8" fill="rgba(0,0,0,0.55)" stroke={activeKey === 'mid' ? `${zoneMap.mid.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                            <rect x="8" y="170" width="78" height={isMobile ? 60 : 66} rx="8" fill="rgba(0,0,0,0.55)" stroke={activeKey === 'mid' ? `${zoneMap.mid.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                             <text x="47" y="186" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
                             <text x="47" y={isMobile ? 204 : 207} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
                             <text x="47" y={isMobile ? 216 : 220} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize={isMobile ? 7.5 : 8.5} fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.mid.offRank} · #{zoneMap.mid.defRank}</text>
+                            <text x="47" y={isMobile ? 228 : 233} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.mid.offShare.toFixed(0)}% of shots</text>
                           </g>
 
                           {/* PAINT — center of key, well above the rim zone */}
@@ -723,10 +724,11 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
 
                           {/* RIM — compact, right wing to avoid basket overlap */}
                           <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
-                            <rect x="214" y="248" width="78" height={isMobile ? 38 : 42} rx="8" fill="rgba(0,0,0,0.6)" stroke={activeKey === 'rim' ? `${zoneMap.rim.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
+                            <rect x="214" y="248" width="78" height={isMobile ? 48 : 52} rx="8" fill="rgba(0,0,0,0.6)" stroke={activeKey === 'rim' ? `${zoneMap.rim.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                             <text x="253" y="262" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
                             <text x="253" y={isMobile ? 278 : 280} textAnchor="middle" fill="white" fontFamily={mono} fontSize={fs} fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.2s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
                             <text x="253" y={isMobile ? 288 : 291} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize={isMobile ? 7 : 8} fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.3s' }}>#{zoneMap.rim.offRank} · #{zoneMap.rim.defRank}</text>
+                            <text x="253" y={isMobile ? 298 : 301} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={ss} fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.35s' }}>{zoneMap.rim.offShare.toFixed(0)}% of shots</text>
                           </g>
 
                           {/* ── Edge label badges ON the court ── */}
@@ -741,6 +743,42 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             );
                           })}
                         </svg>
+                      </div>
+
+                      {/* ── SHOT DISTRIBUTION BAR ── */}
+                      <div style={{ marginTop: '10px', padding: '0 2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}>SHOT DISTRIBUTION</span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)', marginLeft: 'auto' }}>{offA}'s shot attempts by zone</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '2px', height: '28px', borderRadius: '6px', overflow: 'hidden' }}>
+                          {offSorted.map((z, i) => {
+                            const zm = zoneMap[z.key];
+                            const isActive = activeKey === z.key;
+                            return (
+                              <div
+                                key={`distBar_${z.key}`}
+                                onClick={() => handleZoneTap(z.key)}
+                                style={{
+                                  flex: z.offShare,
+                                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                  background: isActive ? `${zm.color}25` : `${zm.color}12`,
+                                  border: isActive ? `1px solid ${zm.color}40` : '1px solid transparent',
+                                  borderRadius: i === 0 ? '6px 0 0 6px' : i === offSorted.length - 1 ? '0 6px 6px 0' : '0',
+                                  cursor: 'pointer', transition: 'all 0.3s ease', position: 'relative',
+                                  minWidth: isMobile ? '40px' : '50px',
+                                }}
+                              >
+                                <span style={{ fontSize: isMobile ? '11px' : '13px', fontWeight: '900', color: zm.color, fontFamily: mono, lineHeight: 1 }}>
+                                  {z.offShare.toFixed(0)}%
+                                </span>
+                                <span style={{ fontSize: isMobile ? '7px' : '8px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginTop: '1px' }}>
+                                  {z.shortLabel}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* ── DETAIL PANEL (below court) ── */}
