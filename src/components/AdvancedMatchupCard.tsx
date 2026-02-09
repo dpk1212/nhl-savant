@@ -479,209 +479,140 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
             // Defense: sort by FG% allowed (highest = weakest)
             const defWeakest = [...zoneData].sort((a, b) => b.defFg - a.defFg);
 
-            // Combined edge = offense above avg + defense weakness (allows above avg)
-            // Positive = good for offense, negative = tough for offense
-            const zoneEdge = (z: typeof zoneData[0]) => (z.offFg - z.avg) + (z.defFg - z.avg);
-            const maxEdgeIdx = zoneData.reduce((best, z, i) => zoneEdge(z) > zoneEdge(zoneData[best]) ? i : best, 0);
-
-            // Bar color for share distribution
-            const shareBarColors = ['#A78BFA', '#818CF8', '#6366F1', '#4F46E5'];
-
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-                {/* ── OFFENSIVE IDENTITY CARD ── */}
+                {/* ── ZONE EFFECTIVENESS MAP ── */}
                 <div style={{
-                  padding: isMobile ? '14px' : '16px', borderRadius: '12px',
-                  background: 'linear-gradient(135deg, rgba(167,139,250,0.06) 0%, rgba(15,23,42,0.3) 100%)',
-                  border: '1px solid rgba(167,139,250,0.15)',
+                  padding: isMobile ? '14px' : '18px', borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(167,139,250,0.06) 0%, rgba(15,23,42,0.4) 100%)',
+                  border: '1px solid rgba(167,139,250,0.12)',
                 }}>
-                  <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#A78BFA', letterSpacing: '0.08em', marginBottom: '10px' }}>
-                    {offA} OFFENSIVE IDENTITY
-                  </div>
-                  {/* Shot distribution bars */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-                    {offSorted.map((z, i) => (
-                      <div key={z.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: i === 0 ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.45)', minWidth: isMobile ? '48px' : '56px' }}>{z.shortLabel}</span>
-                        <div style={{ flex: 1, height: '14px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', overflow: 'hidden', position: 'relative' }}>
-                          <div style={{
-                            height: '100%', width: isVisible ? `${Math.min(z.offShare * 2, 100)}%` : '0%',
-                            background: `linear-gradient(90deg, ${shareBarColors[i]}60, ${shareBarColors[i]})`,
-                            borderRadius: '4px', transition: 'width 0.8s ease 0.1s',
-                          }} />
-                        </div>
-                        <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: i === 0 ? 'white' : 'rgba(255,255,255,0.55)', fontFamily: mono, minWidth: '34px', textAlign: 'right' }}>{z.offShare.toFixed(0)}%</span>
-                        {i === 0 && <span style={{ fontSize: '9px', fontWeight: '700', color: '#A78BFA', padding: '2px 6px', borderRadius: '4px', background: 'rgba(167,139,250,0.15)', whiteSpace: 'nowrap' }}>GO-TO</span>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#A78BFA', letterSpacing: '0.08em' }}>
+                        {offA} SHOT PROFILE vs {defA} DEFENSE
                       </div>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.4' }}>
-                    {offA} gets <strong style={{ color: 'rgba(255,255,255,0.75)' }}>{offSorted[0].offShare.toFixed(0)}%</strong> of shots from <strong style={{ color: '#A78BFA' }}>{offSorted[0].shortLabel}</strong>
-                    {offSorted[0].offShare + offSorted[1].offShare > 65 && <> and <strong style={{ color: 'rgba(255,255,255,0.75)' }}>{offSorted[1].offShare.toFixed(0)}%</strong> from <strong style={{ color: '#818CF8' }}>{offSorted[1].shortLabel}</strong> — heavily concentrated</>}
-                    {offSorted[0].offFg > offSorted[0].avg + 3 && <> at an elite <strong style={{ color: '#10B981' }}>{offSorted[0].offFg.toFixed(1)}%</strong></>}
-                  </div>
-                </div>
-
-                {/* ── DEFENSIVE IDENTITY CARD ── */}
-                <div style={{
-                  padding: isMobile ? '14px' : '16px', borderRadius: '12px',
-                  background: 'linear-gradient(135deg, rgba(239,68,68,0.04) 0%, rgba(15,23,42,0.3) 100%)',
-                  border: '1px solid rgba(239,68,68,0.12)',
-                }}>
-                  <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#F87171', letterSpacing: '0.08em', marginBottom: '10px' }}>
-                    {defA} DEFENSIVE IDENTITY
-                  </div>
-                  <div style={{ display: 'flex', gap: isMobile ? '6px' : '8px', marginBottom: '10px' }}>
-                    {/* Weakness callout */}
-                    <div style={{ flex: 1, padding: '8px', borderRadius: '8px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)', textAlign: 'center' }}>
-                      <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '3px' }}>WEAKEST AREA</div>
-                      <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#F87171', fontFamily: mono }}>{defWeakest[0].shortLabel}</div>
-                      <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'rgba(255,255,255,0.55)', fontFamily: mono }}>{defWeakest[0].defFg.toFixed(1)}% allowed</div>
-                    </div>
-                    {/* Strength callout */}
-                    <div style={{ flex: 1, padding: '8px', borderRadius: '8px', background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)', textAlign: 'center' }}>
-                      <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '3px' }}>STRONGEST AREA</div>
-                      <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '800', color: '#10B981', fontFamily: mono }}>{defWeakest[defWeakest.length - 1].shortLabel}</div>
-                      <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'rgba(255,255,255,0.55)', fontFamily: mono }}>{defWeakest[defWeakest.length - 1].defFg.toFixed(1)}% allowed</div>
+                      <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Volume + Effectiveness by zone</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.4' }}>
-                    {defA} is most vulnerable at <strong style={{ color: '#F87171' }}>{defWeakest[0].shortLabel}</strong> ({defWeakest[0].defFg.toFixed(1)}% allowed)
-                    {defWeakest[0].defFg > defWeakest[0].avg + 3 && <> — <strong style={{ color: '#EF4444' }}>{(defWeakest[0].defFg - defWeakest[0].avg).toFixed(1)} above D1 avg</strong></>}
-                    {' '}and locks down <strong style={{ color: '#10B981' }}>{defWeakest[defWeakest.length - 1].shortLabel}</strong> ({defWeakest[defWeakest.length - 1].defFg.toFixed(1)}%)
+
+                  {/* Zone rows sorted by offensive share */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '12px', marginBottom: '12px' }}>
+                    {offSorted.map((z, i) => {
+                      const zEdge = (z.offFg - z.avg) + (z.defFg - z.avg);
+                      const barColor = zEdge > 10 ? '#10B981' : zEdge > 4 ? '#22D3EE' : zEdge > -4 ? '#F59E0B' : zEdge > -10 ? '#F97316' : '#EF4444';
+                      const offFgColor = statColor(z.offFg, z.avg, true);
+                      const defFgColor = statColor(z.defFg, z.avg, false);
+                      const isGoTo = i === 0;
+                      const isDefWeak = z.key === defWeakest[0].key;
+                      const isDefStrong = z.key === defWeakest[defWeakest.length - 1].key;
+
+                      return (
+                        <div key={z.key} style={{
+                          padding: isMobile ? '10px' : '12px', borderRadius: '10px',
+                          background: isGoTo
+                            ? `linear-gradient(135deg, ${barColor}08 0%, rgba(15,23,42,0.3) 100%)`
+                            : 'rgba(0,0,0,0.15)',
+                          border: isGoTo ? `1px solid ${barColor}20` : '1px solid rgba(255,255,255,0.03)',
+                          position: 'relative', overflow: 'hidden',
+                        }}>
+                          {/* Top glow on GO-TO zone */}
+                          {isGoTo && (
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${barColor}60, transparent)` }} />
+                          )}
+
+                          {/* Zone header row */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: isGoTo ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{z.shortLabel}</span>
+                              {isGoTo && <span style={{ fontSize: '8px', fontWeight: '800', color: '#A78BFA', padding: '2px 6px', borderRadius: '4px', background: 'rgba(167,139,250,0.2)', letterSpacing: '0.05em' }}>GO-TO</span>}
+                              {isDefWeak && <span style={{ fontSize: '8px', fontWeight: '800', color: '#F87171', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.15)', letterSpacing: '0.05em' }}>WEAK D</span>}
+                              {isDefStrong && <span style={{ fontSize: '8px', fontWeight: '800', color: '#10B981', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', letterSpacing: '0.05em' }}>STRONG D</span>}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: isGoTo ? 'white' : 'rgba(255,255,255,0.55)', fontFamily: mono }}>{z.offShare.toFixed(0)}%</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>vol</span>
+                            </div>
+                          </div>
+
+                          {/* Share bar — colored by matchup edge */}
+                          <div style={{ height: '16px', borderRadius: '5px', background: 'rgba(0,0,0,0.35)', overflow: 'hidden', marginBottom: '8px', position: 'relative' }}>
+                            <div style={{
+                              height: '100%', width: isVisible ? `${Math.min(z.offShare * 2, 100)}%` : '0%',
+                              background: `linear-gradient(90deg, ${barColor}50, ${barColor})`,
+                              borderRadius: '5px', transition: 'width 0.8s ease 0.1s',
+                            }} />
+                          </div>
+
+                          {/* Effectiveness row: OFF FG% vs DEF FG% allowed */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '6px' }}>
+                              {/* Offense FG% */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: `${offFgColor}10`, border: `1px solid ${offFgColor}20` }}>
+                                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>OFF</span>
+                                <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: offFgColor, fontFamily: mono }}>{z.offFg.toFixed(1)}%</span>
+                              </div>
+                              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', fontWeight: '600' }}>vs</span>
+                              {/* Defense FG% allowed */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: `${defFgColor}10`, border: `1px solid ${defFgColor}20` }}>
+                                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>DEF</span>
+                                <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: defFgColor, fontFamily: mono }}>{z.defFg.toFixed(1)}%</span>
+                              </div>
+                            </div>
+                            {/* Edge badge */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', background: `${barColor}12`, border: `1px solid ${barColor}18` }}>
+                              <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '900', color: barColor, fontFamily: mono }}>
+                                {zEdge > 0 ? '+' : ''}{zEdge.toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* D1 avg context line */}
+                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginTop: '4px' }}>
+                            D1 avg: {z.avg.toFixed(0)}% — off {z.offFg > z.avg ? '+' : ''}{(z.offFg - z.avg).toFixed(1)} · def allows {z.defFg > z.avg ? '+' : ''}{(z.defFg - z.avg).toFixed(1)}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
 
-                {/* ── MATCHUP INSIGHT CARD ── */}
-                {(() => {
-                  // Check if offense go-to zone aligns with defense weakness
-                  const offGoTo = offSorted[0];
-                  const defWeak = defWeakest[0];
-                  const defStrong = defWeakest[defWeakest.length - 1];
-                  const goToMatchesWeak = offGoTo.key === defWeak.key;
-                  const goToMatchesStrong = offGoTo.key === defStrong.key;
+                  {/* Matchup insight verdict */}
+                  {(() => {
+                    const offGoTo = offSorted[0];
+                    const defWeak = defWeakest[0];
+                    const defStrong = defWeakest[defWeakest.length - 1];
+                    const goToMatchesWeak = offGoTo.key === defWeak.key;
+                    const goToMatchesStrong = offGoTo.key === defStrong.key;
 
-                  let matchupInsight = '';
-                  let matchupColor = '#F59E0B';
-                  if (goToMatchesWeak) {
-                    matchupInsight = `${offA}'s go-to zone (${offGoTo.shortLabel}) aligns perfectly with ${defA}'s biggest weakness. Expect heavy volume here with a favorable FG% edge.`;
-                    matchupColor = '#10B981';
-                  } else if (goToMatchesStrong) {
-                    matchupInsight = `${offA} prefers to score from ${offGoTo.shortLabel}, but that's exactly where ${defA} is strongest. ${offA} may need to adjust or face a tough shooting night.`;
-                    matchupColor = '#EF4444';
-                  } else {
-                    matchupInsight = `${offA} prefers ${offGoTo.shortLabel} (${offGoTo.offShare.toFixed(0)}% of shots) while ${defA} is weakest at ${defWeak.shortLabel} (${defWeak.defFg.toFixed(1)}% allowed). The question is whether ${offA} can exploit the mismatch.`;
-                    matchupColor = '#F59E0B';
-                  }
+                    let matchupInsight = '';
+                    let matchupColor = '#F59E0B';
+                    if (goToMatchesWeak) {
+                      matchupInsight = `${offA}'s go-to zone (${offGoTo.shortLabel}) aligns perfectly with ${defA}'s biggest weakness. Expect heavy volume here with a favorable FG% edge.`;
+                      matchupColor = '#10B981';
+                    } else if (goToMatchesStrong) {
+                      matchupInsight = `${offA} prefers to score from ${offGoTo.shortLabel}, but that's exactly where ${defA} is strongest. ${offA} may need to adjust or face a tough shooting night.`;
+                      matchupColor = '#EF4444';
+                    } else {
+                      matchupInsight = `${offA} prefers ${offGoTo.shortLabel} (${offGoTo.offShare.toFixed(0)}% of shots) while ${defA} is weakest at ${defWeak.shortLabel} (${defWeak.defFg.toFixed(1)}% allowed). The question is whether ${offA} can exploit the mismatch.`;
+                      matchupColor = '#F59E0B';
+                    }
 
-                  return (
-                    <div style={{
-                      padding: '10px 12px', borderRadius: '10px',
-                      background: `${matchupColor}06`, borderLeft: `3px solid ${matchupColor}30`,
-                    }}>
-                      <div style={{ fontSize: '9px', fontWeight: '700', color: matchupColor, letterSpacing: '0.06em', marginBottom: '4px' }}>
-                        {goToMatchesWeak ? 'FAVORABLE MATCHUP' : goToMatchesStrong ? 'TOUGH MATCHUP' : 'MIXED MATCHUP'}
-                      </div>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{matchupInsight}</span>
-                    </div>
-                  );
-                })()}
-
-                {/* ── ZONE-BY-ZONE BREAKDOWN ── */}
-                <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', marginTop: '4px' }}>ZONE-BY-ZONE BREAKDOWN</div>
-
-                {zoneData.map((zone, idx) => {
-                  // Combined edge: how much offense is above avg + how much defense allows above avg
-                  const edge = (zone.offFg - zone.avg) + (zone.defFg - zone.avg);
-                  const edgeColor = edge > 10 ? '#10B981' : edge > 4 ? '#22D3EE' : edge > -4 ? '#F59E0B' : edge > -10 ? '#F97316' : '#EF4444';
-                  const edgeLabel = edge > 10 ? 'BIG EDGE' : edge > 4 ? 'ADVANTAGE' : edge > -4 ? 'CONTESTED' : edge > -10 ? 'TOUGH' : 'LOCKDOWN';
-                  const offColor = statColor(zone.offFg, zone.avg, true);
-                  const defColor = statColor(zone.defFg, zone.avg, false);
-                  const isBiggest = idx === maxEdgeIdx && edge > 4;
-                  const isGoTo = zone.key === offSorted[0].key;
-                  const isDefWeak = zone.key === defWeakest[0].key;
-                  const isDefStrong = zone.key === defWeakest[defWeakest.length - 1].key;
-
-                  return (
-                    <div key={zone.label} style={{
-                      padding: isMobile ? '14px' : '18px', borderRadius: '12px',
-                      background: isBiggest
-                        ? `linear-gradient(135deg, ${edgeColor}08 0%, rgba(15,23,42,0.4) 100%)`
-                        : 'linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.15) 100%)',
-                      border: `1px solid ${isBiggest ? `${edgeColor}25` : 'rgba(255,255,255,0.04)'}`,
-                      position: 'relative', overflow: 'hidden',
-                    }}>
-                      {isBiggest && (
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${edgeColor}80, transparent)` }} />
-                      )}
-
-                      {/* Zone header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>{zone.label}</span>
-                          {/* Context tags */}
-                          {isGoTo && <span style={{ fontSize: '9px', fontWeight: '700', color: '#A78BFA', padding: '2px 6px', borderRadius: '4px', background: 'rgba(167,139,250,0.15)' }}>{offA} GO-TO</span>}
-                          {isDefWeak && <span style={{ fontSize: '9px', fontWeight: '700', color: '#F87171', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.12)' }}>{defA} WEAK</span>}
-                          {isDefStrong && <span style={{ fontSize: '9px', fontWeight: '700', color: '#10B981', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.12)' }}>{defA} STRONG</span>}
-                        </div>
-                        <span style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.4)', fontFamily: mono }}>{zone.offShare.toFixed(0)}% of shots</span>
-                      </div>
-
-                      {/* Offense */}
-                      <div style={{ marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>{offA} shoots</span>
-                          <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: offColor, fontFamily: mono }}>{zone.offFg.toFixed(1)}%</span>
-                        </div>
-                        <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: isVisible ? `${Math.min(zone.offFg, 100)}%` : '0%', background: `linear-gradient(90deg, ${offColor}40, ${offColor})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
-                        </div>
-                        <div style={{ marginTop: '3px', fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>
-                          D1 avg: <span style={{ color: 'rgba(255,255,255,0.5)', fontFamily: mono }}>{zone.avg.toFixed(1)}%</span>
-                          <span style={{ marginLeft: '6px', fontWeight: '700', color: offColor }}>
-                            {zone.offFg > zone.avg ? `+${(zone.offFg - zone.avg).toFixed(1)} above` : `${(zone.offFg - zone.avg).toFixed(1)} below`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Defense */}
-                      <div style={{ marginBottom: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>{defA} allows</span>
-                          <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: defColor, fontFamily: mono }}>{zone.defFg.toFixed(1)}%</span>
-                        </div>
-                        <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: isVisible ? `${Math.min(zone.defFg, 100)}%` : '0%', background: `linear-gradient(90deg, ${defColor}40, ${defColor})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
-                        </div>
-                        <div style={{ marginTop: '3px', fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>
-                          D1 avg: <span style={{ color: 'rgba(255,255,255,0.5)', fontFamily: mono }}>{zone.avg.toFixed(1)}%</span>
-                          <span style={{ marginLeft: '6px', fontWeight: '700', color: defColor }}>
-                            {zone.defFg < zone.avg ? `${(zone.avg - zone.defFg).toFixed(1)} below (good D)` : `+${(zone.defFg - zone.avg).toFixed(1)} above (weak D)`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Net edge */}
+                    return (
                       <div style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '8px 10px', borderRadius: '8px',
-                        background: `${edgeColor}08`, border: `1px solid ${edgeColor}15`,
+                        padding: '10px 12px', borderRadius: '10px',
+                        background: `${matchupColor}06`, borderLeft: `3px solid ${matchupColor}30`,
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>VS AVG</span>
-                          <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: edgeColor, fontFamily: mono }}>
-                            {edge > 0 ? '+' : ''}{edge.toFixed(1)}
-                          </span>
+                        <div style={{ fontSize: '9px', fontWeight: '700', color: matchupColor, letterSpacing: '0.06em', marginBottom: '4px' }}>
+                          {goToMatchesWeak ? 'FAVORABLE MATCHUP' : goToMatchesStrong ? 'TOUGH MATCHUP' : 'MIXED MATCHUP'}
                         </div>
-                        <span style={{
-                          fontSize: '9px', fontWeight: '700', color: edgeColor,
-                          padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`,
-                        }}>{edgeLabel}</span>
+                        <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{matchupInsight}</span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })()}
+                </div>
+
+                {/* Zone-by-zone data is now integrated into the effectiveness map above */}
               </div>
             );
           })()}
