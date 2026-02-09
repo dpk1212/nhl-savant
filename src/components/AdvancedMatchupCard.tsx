@@ -578,7 +578,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                         {/* Ambient glow behind court */}
                         <div style={{ position: 'absolute', top: '50%', left: '50%', width: '70%', height: '70%', transform: 'translate(-50%, -50%)', background: `radial-gradient(ellipse, ${zoneMap[goToKey]?.color || '#22D3EE'}10 0%, transparent 70%)`, pointerEvents: 'none' }} />
                         <svg
-                          viewBox={isMobile ? '0 0 300 280' : '0 0 300 310'}
+                          viewBox={isMobile ? '0 0 300 340' : '0 0 300 310'}
                           style={{ width: '100%', display: 'block' }}
                           xmlns="http://www.w3.org/2000/svg"
                         >
@@ -615,10 +615,10 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                           </defs>
 
                           {(() => {
-                            const H = isMobile ? 280 : 310;
-                            const bY = isMobile ? 248 : 272; // basket Y
+                            const H = isMobile ? 340 : 310;
+                            const bY = isMobile ? 300 : 272; // basket Y
                             const pB = isMobile ? H : 310; // paint bottom
-                            const arcY = isMobile ? 100 : 120; // arc top
+                            const arcY = isMobile ? 115 : 120; // arc top
 
                             return (
                               <>
@@ -703,14 +703,15 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                 {/* 3-POINT */}
                                 <g onClick={() => handleZoneTap('three')} style={{ cursor: 'pointer' }}>
                                   {isMobile ? (<>
-                                    <text x="150" y="20" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="800" letterSpacing="0.12em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>3-POINT</text>
-                                    <text x="150" y="42" textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize="22" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
-                                    <text x="150" y="55" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="7.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
+                                    <text x="150" y="22" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontWeight="800" letterSpacing="0.12em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>3-POINT</text>
+                                    <text x="150" y="48" textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize="26" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
+                                    <text x="150" y="63" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="8.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
                                       <tspan fill={zoneMap.three.offRank <= 100 ? '#10B981' : zoneMap.three.offRank <= 200 ? '#F59E0B' : '#EF4444'}>#{zoneMap.three.offRank}</tspan>
                                       <tspan fill="rgba(255,255,255,0.25)"> OFF vs </tspan>
                                       <tspan fill={zoneMap.three.defRank >= 250 ? '#10B981' : zoneMap.three.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.three.defRank}</tspan>
                                       <tspan fill="rgba(255,255,255,0.25)"> DEF</tspan>
                                     </text>
+                                    <text x="150" y="75" textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7.5" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="108" y="10" width="84" height="72" rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'three' ? `${zoneMap.three.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="150" y="27" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>3-POINT</text>
@@ -723,13 +724,14 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                 {/* MID-RANGE — left wing */}
                                 <g onClick={() => handleZoneTap('mid')} style={{ cursor: 'pointer' }}>
                                   {isMobile ? (<>
-                                    <text x="30" y={arcY + 46} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="7" fontWeight="800" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>MID</text>
-                                    <text x="30" y={arcY + 63} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize="16" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
-                                    <text x="30" y={arcY + 74} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="6.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
+                                    <text x="34" y={arcY + 55} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="800" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>MID-RANGE</text>
+                                    <text x="34" y={arcY + 76} textAnchor="middle" fill={zoneMap.mid.color} fontFamily={mono} fontSize="19" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.mid.offFg.toFixed(1)}%</text>
+                                    <text x="34" y={arcY + 89} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="7.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
                                       <tspan fill={zoneMap.mid.offRank <= 100 ? '#10B981' : zoneMap.mid.offRank <= 200 ? '#F59E0B' : '#EF4444'}>#{zoneMap.mid.offRank}</tspan>
                                       <tspan fill="rgba(255,255,255,0.2)"> vs </tspan>
                                       <tspan fill={zoneMap.mid.defRank >= 250 ? '#10B981' : zoneMap.mid.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.mid.defRank}</tspan>
                                     </text>
+                                    <text x="34" y={arcY + 100} textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.mid.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="8" y="170" width="78" height="66" rx="8" fill="rgba(0,0,0,0.55)" stroke={activeKey === 'mid' ? `${zoneMap.mid.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="47" y="186" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
@@ -742,14 +744,15 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                 {/* PAINT — center of key */}
                                 <g onClick={() => handleZoneTap('close2')} style={{ cursor: 'pointer' }}>
                                   {isMobile ? (<>
-                                    <text x="150" y={arcY + 10} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="800" letterSpacing="0.12em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>PAINT</text>
-                                    <text x="150" y={arcY + 34} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize="24" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
-                                    <text x="150" y={arcY + 48} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="7.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
+                                    <text x="150" y={arcY + 12} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontWeight="800" letterSpacing="0.12em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>PAINT</text>
+                                    <text x="150" y={arcY + 42} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize="28" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
+                                    <text x="150" y={arcY + 58} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="8.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
                                       <tspan fill={zoneMap.close2.offRank <= 100 ? '#10B981' : zoneMap.close2.offRank <= 200 ? '#F59E0B' : '#EF4444'}>#{zoneMap.close2.offRank}</tspan>
                                       <tspan fill="rgba(255,255,255,0.25)"> OFF vs </tspan>
                                       <tspan fill={zoneMap.close2.defRank >= 250 ? '#10B981' : zoneMap.close2.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.close2.defRank}</tspan>
                                       <tspan fill="rgba(255,255,255,0.25)"> DEF</tspan>
                                     </text>
+                                    <text x="150" y={arcY + 71} textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7.5" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="113" y="120" width="74" height="76" rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'close2' ? `${zoneMap.close2.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="150" y="137" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>PAINT</text>
@@ -762,13 +765,14 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                 {/* RIM — right wing */}
                                 <g onClick={() => handleZoneTap('rim')} style={{ cursor: 'pointer' }}>
                                   {isMobile ? (<>
-                                    <text x="258" y={bY - 16} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="7" fontWeight="800" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>RIM</text>
-                                    <text x="258" y={bY + 1} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize="16" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
-                                    <text x="258" y={bY + 12} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="6.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
+                                    <text x="260" y={bY - 22} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="800" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.1s' }}>RIM</text>
+                                    <text x="260" y={bY - 2} textAnchor="middle" fill={zoneMap.rim.color} fontFamily={mono} fontSize="19" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.rim.offFg.toFixed(1)}%</text>
+                                    <text x="260" y={bY + 11} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="7.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
                                       <tspan fill={zoneMap.rim.offRank <= 100 ? '#10B981' : zoneMap.rim.offRank <= 200 ? '#F59E0B' : '#EF4444'}>#{zoneMap.rim.offRank}</tspan>
                                       <tspan fill="rgba(255,255,255,0.2)"> vs </tspan>
                                       <tspan fill={zoneMap.rim.defRank >= 250 ? '#10B981' : zoneMap.rim.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.rim.defRank}</tspan>
                                     </text>
+                                    <text x="260" y={bY + 22} textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.rim.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="214" y="248" width="78" height="52" rx="8" fill="rgba(0,0,0,0.6)" stroke={activeKey === 'rim' ? `${zoneMap.rim.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="253" y="262" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
