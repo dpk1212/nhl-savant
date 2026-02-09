@@ -1,0 +1,844 @@
+{
+  "weights": {
+    "grade": {
+      "A": 1.0976563990161494,
+      "A+": 0.3495267768719359,
+      "B": 1.0095566493180608,
+      "D": 1.0904234635314909,
+      "C": 0.8402719175149075,
+      "B+": 0.1584698634892845,
+      "F": 0.5434615953377073
+    },
+    "odds": {
+      "HEAVY_FAV": 1.0284810973829694,
+      "BIG_FAV": 0.6647777204975563,
+      "SLIGHT_FAV": 0.6373319586430378,
+      "MOD_FAV": 0.9098746120657522,
+      "BIG_DOG": 0.33315967936647484,
+      "SLIGHT_DOG": 0.8433017650334866,
+      "PICKEM": 0.9672496361746616
+    },
+    "probability": {
+      "HIGH_PROB": 1.0643096771328282,
+      "LOW_PROB": 0.8128272907985218,
+      "MOD_PROB": 0.9652051407828702,
+      "GOOD_PROB": 0.46396454576484114
+    },
+    "ev": {
+      "NEG_EV": 1.0121715495630705,
+      "MOD_EV": 1.2388563371482257,
+      "LOW_EV": 0.510978720166978,
+      "VERY_HIGH_EV": 1.1352985165477767,
+      "HIGH_EV": 1.4526880471080297,
+      "GOOD_EV": 0.09999999999999998
+    },
+    "side": {
+      "HOME": 0.6300980298189012,
+      "AWAY": 1.0520916938150835
+    }
+  },
+  "performance": {
+    "grade": {
+      "A": {
+        "wins": 260,
+        "losses": 224,
+        "total": 484,
+        "winRate": 53.71900826446281,
+        "profit": 10.283218816400526,
+        "risked": 526.5,
+        "roi": 1.9531279803229866,
+        "avgModelProb": 0.6014,
+        "actualWinRate": 0.5372,
+        "calibError": -0.0642
+      },
+      "A+": {
+        "wins": 35,
+        "losses": 28,
+        "total": 63,
+        "winRate": 55.55555555555556,
+        "profit": -5.732464922344475,
+        "risked": 63,
+        "roi": -9.099150670388054,
+        "avgModelProb": 0.6322,
+        "actualWinRate": 0.5556,
+        "calibError": -0.0767
+      },
+      "B": {
+        "wins": 101,
+        "losses": 61,
+        "total": 162,
+        "winRate": 62.34567901234568,
+        "profit": 0.3239704118822604,
+        "risked": 169.5,
+        "roi": 0.1911329863612156,
+        "avgModelProb": 0.64,
+        "actualWinRate": 0.6235,
+        "calibError": -0.0165
+      },
+      "D": {
+        "wins": 42,
+        "losses": 11,
+        "total": 53,
+        "winRate": 79.24528301886792,
+        "profit": 0.9946580988463998,
+        "risked": 55,
+        "roi": 1.808469270629818,
+        "avgModelProb": 0.7859,
+        "actualWinRate": 0.7925,
+        "calibError": 0.0065
+      },
+      "C": {
+        "wins": 188,
+        "losses": 60,
+        "total": 248,
+        "winRate": 75.80645161290323,
+        "profit": -4.0974921977483705,
+        "risked": 272,
+        "roi": -1.506430955054548,
+        "avgModelProb": 0.7313,
+        "actualWinRate": 0.7581,
+        "calibError": 0.0267
+      },
+      "B+": {
+        "wins": 64,
+        "losses": 42,
+        "total": 106,
+        "winRate": 60.37735849056604,
+        "profit": -17.38148610850193,
+        "risked": 109,
+        "roi": -15.946317530735717,
+        "avgModelProb": 0.6995,
+        "actualWinRate": 0.6038,
+        "calibError": -0.0957
+      },
+      "F": {
+        "wins": 69,
+        "losses": 21,
+        "total": 90,
+        "winRate": 76.66666666666667,
+        "profit": -4.988182537399891,
+        "risked": 94.5,
+        "roi": -5.278500039576604,
+        "avgModelProb": 0.7053,
+        "actualWinRate": 0.7667,
+        "calibError": 0.0614
+      }
+    },
+    "odds": {
+      "HEAVY_FAV": {
+        "wins": 294,
+        "losses": 51,
+        "total": 345,
+        "winRate": 85.21739130434783,
+        "profit": 2.146050687806744,
+        "risked": 376.75,
+        "roi": 0.5696219476593879,
+        "avgModelProb": 0.824,
+        "actualWinRate": 0.8522,
+        "calibError": 0.0282
+      },
+      "BIG_FAV": {
+        "wins": 126,
+        "losses": 63,
+        "total": 189,
+        "winRate": 66.66666666666666,
+        "profit": -7.0863444349846985,
+        "risked": 200.5,
+        "roi": -3.534336376550972,
+        "avgModelProb": 0.7025,
+        "actualWinRate": 0.6667,
+        "calibError": -0.0358
+      },
+      "SLIGHT_FAV": {
+        "wins": 105,
+        "losses": 85,
+        "total": 190,
+        "winRate": 55.26315789473685,
+        "profit": -7.837590055917276,
+        "risked": 201,
+        "roi": -3.8992985352822265,
+        "avgModelProb": 0.5942,
+        "actualWinRate": 0.5526,
+        "calibError": -0.0416
+      },
+      "MOD_FAV": {
+        "wins": 103,
+        "losses": 64,
+        "total": 167,
+        "winRate": 61.67664670658682,
+        "profit": -1.4777435032465094,
+        "risked": 180.75,
+        "roi": -0.8175621041474463,
+        "avgModelProb": 0.6531,
+        "actualWinRate": 0.6168,
+        "calibError": -0.0363
+      },
+      "BIG_DOG": {
+        "wins": 10,
+        "losses": 25,
+        "total": 35,
+        "winRate": 28.57142857142857,
+        "profit": -3.3299999999999996,
+        "risked": 35,
+        "roi": -9.514285714285712,
+        "avgModelProb": 0.3885,
+        "actualWinRate": 0.2857,
+        "calibError": -0.1027
+      },
+      "SLIGHT_DOG": {
+        "wins": 69,
+        "losses": 104,
+        "total": 173,
+        "winRate": 39.884393063583815,
+        "profit": -2.685000000000005,
+        "risked": 182,
+        "roi": -1.475274725274728,
+        "avgModelProb": 0.4803,
+        "actualWinRate": 0.3988,
+        "calibError": -0.0814
+      },
+      "PICKEM": {
+        "wins": 52,
+        "losses": 55,
+        "total": 107,
+        "winRate": 48.598130841121495,
+        "profit": -0.3271511325237344,
+        "risked": 113.5,
+        "roi": -0.28823888328082325,
+        "avgModelProb": 0.5566,
+        "actualWinRate": 0.486,
+        "calibError": -0.0706
+      }
+    },
+    "probability": {
+      "HIGH_PROB": {
+        "wins": 376,
+        "losses": 95,
+        "total": 471,
+        "winRate": 79.83014861995754,
+        "profit": 6.588526422258247,
+        "risked": 512.25,
+        "roi": 1.2861935426565636,
+        "avgModelProb": 0.8053,
+        "actualWinRate": 0.7983,
+        "calibError": -0.007
+      },
+      "LOW_PROB": {
+        "wins": 131,
+        "losses": 169,
+        "total": 300,
+        "winRate": 43.666666666666664,
+        "profit": -5.614830376244325,
+        "risked": 313,
+        "roi": -1.793875519566877,
+        "avgModelProb": 0.4792,
+        "actualWinRate": 0.4367,
+        "calibError": -0.0425
+      },
+      "MOD_PROB": {
+        "wins": 75,
+        "losses": 62,
+        "total": 137,
+        "winRate": 54.74452554744526,
+        "profit": -0.44910303429828335,
+        "risked": 146.5,
+        "roi": -0.30655497221725825,
+        "avgModelProb": 0.575,
+        "actualWinRate": 0.5474,
+        "calibError": -0.0275
+      },
+      "GOOD_PROB": {
+        "wins": 177,
+        "losses": 121,
+        "total": 298,
+        "winRate": 59.395973154362416,
+        "profit": -21.122371450581106,
+        "risked": 317.75,
+        "roi": -6.647481180355975,
+        "avgModelProb": 0.649,
+        "actualWinRate": 0.594,
+        "calibError": -0.055
+      }
+    },
+    "ev": {
+      "NEG_EV": {
+        "wins": 306,
+        "losses": 84,
+        "total": 390,
+        "winRate": 78.46153846153847,
+        "profit": 1.010238613734848,
+        "risked": 415,
+        "roi": 0.24343099126140916,
+        "avgModelProb": 0.7329,
+        "actualWinRate": 0.7846,
+        "calibError": 0.0517
+      },
+      "MOD_EV": {
+        "wins": 126,
+        "losses": 82,
+        "total": 208,
+        "winRate": 60.57692307692307,
+        "profit": 11.035162776248026,
+        "risked": 231,
+        "roi": 4.777126742964513,
+        "avgModelProb": 0.6191,
+        "actualWinRate": 0.6058,
+        "calibError": -0.0134
+      },
+      "LOW_EV": {
+        "wins": 196,
+        "losses": 124,
+        "total": 320,
+        "winRate": 61.25000000000001,
+        "profit": -19.731703684210892,
+        "risked": 339.5,
+        "roi": -5.811989303154902,
+        "avgModelProb": 0.6629,
+        "actualWinRate": 0.6125,
+        "calibError": -0.0504
+      },
+      "VERY_HIGH_EV": {
+        "wins": 46,
+        "losses": 54,
+        "total": 100,
+        "winRate": 46,
+        "profit": 2.7871494408841992,
+        "risked": 103,
+        "roi": 2.7059703309555334,
+        "avgModelProb": 0.5725,
+        "actualWinRate": 0.46,
+        "calibError": -0.1125
+      },
+      "HIGH_EV": {
+        "wins": 40,
+        "losses": 39,
+        "total": 79,
+        "winRate": 50.63291139240506,
+        "profit": 7.831503214968912,
+        "risked": 86.5,
+        "roi": 9.053760942160592,
+        "avgModelProb": 0.5886,
+        "actualWinRate": 0.5063,
+        "calibError": -0.0823
+      },
+      "GOOD_EV": {
+        "wins": 45,
+        "losses": 64,
+        "total": 109,
+        "winRate": 41.284403669724774,
+        "profit": -23.530128800490573,
+        "risked": 114.5,
+        "roi": -20.55033083012277,
+        "avgModelProb": 0.5941,
+        "actualWinRate": 0.4128,
+        "calibError": -0.1812
+      }
+    },
+    "side": {
+      "HOME": {
+        "wins": 435,
+        "losses": 201,
+        "total": 636,
+        "winRate": 68.39622641509435,
+        "profit": -26.997243024048483,
+        "risked": 675.25,
+        "roi": -3.9981107773489053,
+        "avgModelProb": 0.7076,
+        "actualWinRate": 0.684,
+        "calibError": -0.0236
+      },
+      "AWAY": {
+        "wins": 324,
+        "losses": 246,
+        "total": 570,
+        "winRate": 56.84210526315789,
+        "profit": 6.399464585183001,
+        "risked": 614.25,
+        "roi": 1.0418338763016688,
+        "avgModelProb": 0.6056,
+        "actualWinRate": 0.5684,
+        "calibError": -0.0372
+      }
+    },
+    "modelsAgree": {
+      "AGREE": {
+        "wins": 134,
+        "losses": 84,
+        "total": 218,
+        "winRate": 61.46788990825688,
+        "profit": -12.673986282422108,
+        "risked": 242.5,
+        "roi": -5.226386095844168,
+        "avgModelProb": 0.6784,
+        "actualWinRate": 0.6147,
+        "calibError": -0.0637
+      },
+      "DISAGREE": {
+        "wins": 20,
+        "losses": 37,
+        "total": 57,
+        "winRate": 35.08771929824561,
+        "profit": -8.655194805194805,
+        "risked": 57,
+        "roi": -15.184552289815448,
+        "avgModelProb": 0.4808,
+        "actualWinRate": 0.3509,
+        "calibError": -0.1299
+      }
+    },
+    "convictionScore": {
+      "LOW_1-3": {
+        "wins": 30,
+        "losses": 41,
+        "total": 71,
+        "winRate": 42.25352112676056,
+        "profit": -3.771041558150332,
+        "risked": 71.5,
+        "roi": -5.2741839974130516,
+        "avgModelProb": 0.4915,
+        "actualWinRate": 0.4225,
+        "calibError": -0.069
+      },
+      "MED_4-5": {
+        "wins": 14,
+        "losses": 10,
+        "total": 24,
+        "winRate": 58.333333333333336,
+        "profit": -0.5949871419527175,
+        "risked": 30,
+        "roi": -1.983290473175725,
+        "avgModelProb": 0.572,
+        "actualWinRate": 0.5833,
+        "calibError": 0.0113
+      },
+      "HIGH_6-7": {
+        "wins": 7,
+        "losses": 13,
+        "total": 20,
+        "winRate": 35,
+        "profit": -9.30958725182863,
+        "risked": 24.75,
+        "roi": -37.61449394678234,
+        "avgModelProb": 0.5979,
+        "actualWinRate": 0.35,
+        "calibError": -0.2479
+      },
+      "ELITE_8-10": {
+        "wins": 86,
+        "losses": 54,
+        "total": 140,
+        "winRate": 61.42857142857143,
+        "profit": -10.891444658617239,
+        "risked": 153.25,
+        "roi": -7.106978570060188,
+        "avgModelProb": 0.7184,
+        "actualWinRate": 0.6143,
+        "calibError": -0.1041
+      }
+    },
+    "spreadSource": {
+      "SPREAD_OPPORTUNITY": {
+        "wins": 62,
+        "losses": 42,
+        "total": 104,
+        "winRate": 59.61538461538461,
+        "profit": -17.098119671017848,
+        "risked": 108.5,
+        "roi": -15.758635641491104,
+        "avgModelProb": 0.6966,
+        "actualWinRate": 0.5962,
+        "calibError": -0.1004
+      },
+      "EV_PICK": {
+        "wins": 697,
+        "losses": 404,
+        "total": 1101,
+        "winRate": 63.30608537693006,
+        "profit": -2.4996587678476465,
+        "risked": 1180,
+        "roi": -0.211835488800648,
+        "avgModelProb": 0.656,
+        "actualWinRate": 0.6331,
+        "calibError": -0.0229
+      },
+      "MANUAL_FIX": {
+        "wins": 0,
+        "losses": 1,
+        "total": 1,
+        "winRate": 0,
+        "profit": -1,
+        "risked": 1,
+        "roi": -100,
+        "avgModelProb": 0.532,
+        "actualWinRate": 0,
+        "calibError": -0.532
+      }
+    },
+    "spreadConfirmed": {
+      "SPREAD_ONLY": {
+        "wins": 62,
+        "losses": 42,
+        "total": 104,
+        "winRate": 59.61538461538461,
+        "profit": -17.098119671017848,
+        "risked": 108.5,
+        "roi": -15.758635641491104,
+        "avgModelProb": 0.6966,
+        "actualWinRate": 0.5962,
+        "calibError": -0.1004
+      },
+      "EV_WITH_SPREAD": {
+        "wins": 29,
+        "losses": 13,
+        "total": 42,
+        "winRate": 69.04761904761905,
+        "profit": 4.428576912026395,
+        "risked": 50.5,
+        "roi": 8.769459231735437,
+        "avgModelProb": 0.6589,
+        "actualWinRate": 0.6905,
+        "calibError": 0.0316
+      }
+    },
+    "spreadByOdds": {
+      "HEAVY_FAV": {
+        "wins": 35,
+        "losses": 10,
+        "total": 45,
+        "winRate": 77.77777777777779,
+        "profit": -0.6778926737742111,
+        "risked": 48.75,
+        "roi": -1.3905490744086382,
+        "avgModelProb": 0.7967,
+        "actualWinRate": 0.7778,
+        "calibError": -0.0189
+      },
+      "BIG_FAV": {
+        "wins": 20,
+        "losses": 14,
+        "total": 34,
+        "winRate": 58.82352941176471,
+        "profit": -4.630368719074639,
+        "risked": 35.5,
+        "roi": -13.043292166407433,
+        "avgModelProb": 0.7126,
+        "actualWinRate": 0.5882,
+        "calibError": -0.1243
+      },
+      "MOD_FAV": {
+        "wins": 15,
+        "losses": 11,
+        "total": 26,
+        "winRate": 57.692307692307686,
+        "profit": -2.216637659711664,
+        "risked": 27.25,
+        "roi": -8.134450127382253,
+        "avgModelProb": 0.6376,
+        "actualWinRate": 0.5769,
+        "calibError": -0.0607
+      },
+      "SLIGHT_FAV": {
+        "wins": 14,
+        "losses": 19,
+        "total": 33,
+        "winRate": 42.42424242424242,
+        "profit": -11.208662130251337,
+        "risked": 39.5,
+        "roi": -28.376359823421105,
+        "avgModelProb": 0.5802,
+        "actualWinRate": 0.4242,
+        "calibError": -0.1559
+      },
+      "PICKEM": {
+        "wins": 7,
+        "losses": 1,
+        "total": 8,
+        "winRate": 87.5,
+        "profit": 6.064018423820404,
+        "risked": 8,
+        "roi": 75.80023029775505,
+        "avgModelProb": 0.5494,
+        "actualWinRate": 0.875,
+        "calibError": 0.3256
+      }
+    },
+    "spreadByProb": {
+      "HIGH_75+": {
+        "wins": 39,
+        "losses": 10,
+        "total": 49,
+        "winRate": 79.59183673469387,
+        "profit": 0.9762218734210553,
+        "risked": 52.75,
+        "roi": 1.8506575799451284,
+        "avgModelProb": 0.7943,
+        "actualWinRate": 0.7959,
+        "calibError": 0.0016
+      },
+      "GOOD_65-74": {
+        "wins": 23,
+        "losses": 16,
+        "total": 39,
+        "winRate": 58.97435897435898,
+        "profit": -3.7471780300949398,
+        "risked": 40.5,
+        "roi": -9.252291432333184,
+        "avgModelProb": 0.7006,
+        "actualWinRate": 0.5897,
+        "calibError": -0.1108
+      },
+      "MOD_55-64": {
+        "wins": 21,
+        "losses": 21,
+        "total": 42,
+        "winRate": 50,
+        "profit": -9.064120177653118,
+        "risked": 49.25,
+        "roi": -18.404304929244912,
+        "avgModelProb": 0.605,
+        "actualWinRate": 0.5,
+        "calibError": -0.105
+      },
+      "PICKEM_45-54": {
+        "wins": 8,
+        "losses": 8,
+        "total": 16,
+        "winRate": 50,
+        "profit": -0.8344664246644444,
+        "risked": 16.5,
+        "roi": -5.057372270693603,
+        "avgModelProb": 0.5322,
+        "actualWinRate": 0.5,
+        "calibError": -0.0322
+      }
+    },
+    "spreadByMargin": {
+      "STRONG_3-5": {
+        "wins": 10,
+        "losses": 1,
+        "total": 11,
+        "winRate": 90.9090909090909,
+        "profit": 5.394057480885009,
+        "risked": 15,
+        "roi": 35.96038320590006,
+        "avgModelProb": 0.7261,
+        "actualWinRate": 0.9091,
+        "calibError": 0.183
+      },
+      "SOLID_1.5-3": {
+        "wins": 26,
+        "losses": 18,
+        "total": 44,
+        "winRate": 59.09090909090909,
+        "profit": -6.194123281634276,
+        "risked": 44,
+        "roi": -14.077552912805173,
+        "avgModelProb": 0.6941,
+        "actualWinRate": 0.5909,
+        "calibError": -0.1032
+      },
+      "SLIM_<1.5": {
+        "wins": 55,
+        "losses": 36,
+        "total": 91,
+        "winRate": 60.43956043956044,
+        "profit": -11.869476958242174,
+        "risked": 100,
+        "roi": -11.869476958242174,
+        "avgModelProb": 0.6766,
+        "actualWinRate": 0.6044,
+        "calibError": -0.0722
+      }
+    },
+    "clv": {
+      "summary": {
+        "betsWithCLV": 224,
+        "avgCLV": -0.19,
+        "positiveCLVCount": 78,
+        "negativeCLVCount": 146,
+        "positiveCLVRate": 34.8,
+        "tiers": {
+          "elite": 10,
+          "great": 13,
+          "good": 36,
+          "neutral": 61,
+          "slight_negative": 56,
+          "negative": 48
+        }
+      },
+      "byOutcome": {
+        "WIN": {
+          "count": 124,
+          "avgCLV": -0.2
+        },
+        "LOSS": {
+          "count": 100,
+          "avgCLV": -0.17
+        }
+      },
+      "byGrade": {
+        "A": {
+          "count": 118,
+          "avgCLV": 0.37,
+          "winRate": 48.3
+        },
+        "B": {
+          "count": 44,
+          "avgCLV": -0.73,
+          "winRate": 68.2
+        },
+        "C": {
+          "count": 2,
+          "avgCLV": -1.96,
+          "winRate": 100
+        },
+        "B+": {
+          "count": 60,
+          "avgCLV": -0.84,
+          "winRate": 58.3
+        }
+      },
+      "byOddsRange": {
+        "BIG_DOG": {
+          "count": 11,
+          "avgCLV": -0.31,
+          "winRate": 27.3
+        },
+        "SLIGHT_DOG": {
+          "count": 36,
+          "avgCLV": 1.42,
+          "winRate": 36.1
+        },
+        "MOD_FAV": {
+          "count": 36,
+          "avgCLV": -1.3,
+          "winRate": 55.6
+        },
+        "SLIGHT_FAV": {
+          "count": 41,
+          "avgCLV": -0.43,
+          "winRate": 39
+        },
+        "HEAVY_FAV": {
+          "count": 33,
+          "avgCLV": -0.52,
+          "winRate": 87.9
+        },
+        "PICKEM": {
+          "count": 28,
+          "avgCLV": 0.26,
+          "winRate": 57.1
+        },
+        "BIG_FAV": {
+          "count": 39,
+          "avgCLV": -0.4,
+          "winRate": 69.2
+        }
+      },
+      "bySavant": {
+        "savant": {
+          "count": 74,
+          "avgCLV": 0.17
+        },
+        "nonSavant": {
+          "count": 150,
+          "avgCLV": -0.36
+        }
+      },
+      "byMovement": {
+        "STEAM": {
+          "count": 78,
+          "avgCLV": 2.6,
+          "winRate": 56.4
+        },
+        "FADE": {
+          "count": 104,
+          "avgCLV": -2.36,
+          "winRate": 53.8
+        },
+        "UNCHANGED": {
+          "count": 42,
+          "avgCLV": 0,
+          "winRate": 57.1
+        }
+      },
+      "byModelsAligned": {
+        "AGREE": {
+          "count": 163,
+          "avgCLV": -0.35
+        },
+        "DISAGREE": {
+          "count": 57,
+          "avgCLV": 0.18
+        }
+      }
+    },
+    "modelAccuracy": {
+      "haslametrics": {
+        "correct": 169,
+        "total": 280,
+        "accuracy": 60.357142857142854,
+        "byMargin": {
+          "close": {
+            "correct": 51,
+            "total": 97
+          },
+          "medium": {
+            "correct": 105,
+            "total": 163
+          },
+          "blowout": {
+            "correct": 13,
+            "total": 20
+          }
+        }
+      },
+      "dratings": {
+        "correct": 172,
+        "total": 280,
+        "accuracy": 61.42857142857143,
+        "byMargin": {
+          "close": {
+            "correct": 46,
+            "total": 83
+          },
+          "medium": {
+            "correct": 121,
+            "total": 192
+          },
+          "blowout": {
+            "correct": 5,
+            "total": 5
+          }
+        }
+      },
+      "headToHead": {
+        "betsWithBothModels": 280,
+        "bothCorrect": 158,
+        "bothWrong": 97,
+        "haslaOnlyCorrect": 11,
+        "dratingsOnlyCorrect": 14
+      }
+    }
+  },
+  "totalBets": 1207,
+  "lastUpdated": "2026-02-06T13:06:24.909Z",
+  "config": {
+    "fGradeCap": 0.5,
+    "minSampleSize": 30,
+    "unitThresholds": {
+      "elite": 5.5,
+      "high": 4.5,
+      "good": 3.5,
+      "moderate": 2.5,
+      "low": 0
+    },
+    "maxWeightContribution": {
+      "grade": 2,
+      "odds": 2,
+      "probability": 1.5,
+      "ev": 1,
+      "side": 0.5
+    }
+  }
+}
