@@ -1172,60 +1172,200 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
       <Divider color={`${winnerTier.color}20`} />
 
       {/* ═══════════════════════════════════════════════════════════
-          SECTION 5: SAVANT ANALYSIS
+          SECTION 5: PATH TO VICTORY
          ═══════════════════════════════════════════════════════════ */}
       <div style={{ padding: pad, background: 'linear-gradient(180deg, rgba(15,23,42,0.3) 0%, rgba(2,6,23,0.8) 100%)' }}>
-        <div style={{ padding: isMobile ? '16px' : '20px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(16,185,129,0.03) 0%, rgba(99,102,241,0.03) 100%)', border: `1px solid ${winnerTier.color}12` }}>
+        {(() => {
+          // Build 5 checkpoints for the offense's path to victory
+          const offEfgRank = offTeam.eFG_off_rank || 182;
+          const defEfgRank = defTeam.eFG_def_rank || 182;
+          const offToRank = offTeam.to_off_rank || 182;
+          const defToRank = defTeam.to_def_rank || 182;
+          const offOrebRank = offTeam.oreb_off_rank || 182;
+          const defOrebRank = defTeam.oreb_def_rank || 182;
+          const offFtRank = offTeam.ftRate_off_rank || 182;
+          const defFtRank = defTeam.ftRate_def_rank || 182;
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: winnerTier.color, animation: 'mi5-pulse 2s infinite' }} />
-            <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em' }}>SAVANT ANALYSIS</span>
-            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginLeft: 'auto' }}>Our data-driven take</span>
-          </div>
+          // Scoring zone advantage (from PBP data if available)
+          const goToZone = hasPBP ? (() => {
+            const offPBP2 = isAwayView ? awayPBP : homePBP;
+            const defPBP2 = isAwayView ? homePBP : awayPBP;
+            if (!offPBP2 || !defPBP2) return null;
+            const zones = [
+              { name: 'Rim', offFg: offPBP2.dunks_off_fg, share: offPBP2.dunks_off_share, defFg: defPBP2.dunks_def_fg, offField: 'dunks_off_fg', defField: 'dunks_def_fg' },
+              { name: 'Paint', offFg: offPBP2.close2_off_fg, share: offPBP2.close2_off_share, defFg: defPBP2.close2_def_fg, offField: 'close2_off_fg', defField: 'close2_def_fg' },
+              { name: 'Mid', offFg: offPBP2.far2_off_fg, share: offPBP2.far2_off_share, defFg: defPBP2.far2_def_fg, offField: 'far2_off_fg', defField: 'far2_def_fg' },
+              { name: '3PT', offFg: offPBP2.three_off_fg, share: offPBP2.three_off_share, defFg: defPBP2.three_def_fg, offField: 'three_off_fg', defField: 'three_def_fg' },
+            ].sort((a, b) => b.share - a.share);
+            const goTo = zones[0];
+            const goToOffRank = getZoneRank(offPBP2, goTo.offField, false);
+            const goToDefRank = getZoneRank(defPBP2, goTo.defField, true);
+            return { ...goTo, offRank: goToOffRank, defRank: goToDefRank, win: goToOffRank < goToDefRank };
+          })() : null;
 
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px',
-            padding: '10px 12px', borderRadius: '10px',
-            background: `${biggestEdge.color}08`, border: `1px solid ${biggestEdge.color}15`,
-          }}>
-            <span style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '900', color: biggestEdge.color, fontFamily: mono, lineHeight: 1 }}>
-              {biggestEdge.value}
-            </span>
-            <div>
-              <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: biggestEdge.color }}>{biggestEdge.label}</div>
-              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>Biggest statistical advantage</div>
+          const checkpoints = [
+            {
+              id: 'scoring',
+              label: 'SCORING ZONE',
+              question: goToZone ? `${offA} prefers ${goToZone.name} (${goToZone.share.toFixed(0)}%) — can they exploit it?` : `Does ${offA} have a go-to scoring zone advantage?`,
+              win: goToZone ? goToZone.win : offEfgRank < defEfgRank,
+              offLabel: goToZone ? `#${goToZone.offRank} ${goToZone.name} OFF` : `#${offEfgRank} OFF`,
+              defLabel: goToZone ? `#${goToZone.defRank} ${goToZone.name} DEF` : `#${defEfgRank} DEF`,
+              icon: '🎯',
+            },
+            {
+              id: 'shooting',
+              label: 'SHOOTING',
+              question: `Can ${offA} shoot over ${defA}'s defense?`,
+              win: offEfgRank < defEfgRank,
+              offLabel: `#${offEfgRank} eFG% OFF`,
+              defLabel: `#${defEfgRank} eFG% DEF`,
+              icon: '🏀',
+            },
+            {
+              id: 'rebounding',
+              label: 'GLASS CONTROL',
+              question: `Can ${offA} get second chances on the boards?`,
+              win: offOrebRank < defOrebRank,
+              offLabel: `#${offOrebRank} OREB`,
+              defLabel: `#${defOrebRank} DREB`,
+              icon: '💪',
+            },
+            {
+              id: 'freeThrows',
+              label: 'FREE THROWS',
+              question: `Does ${offA} get to the line against ${defA}?`,
+              win: offFtRank < defFtRank,
+              offLabel: `#${offFtRank} FT Rate`,
+              defLabel: `#${defFtRank} FT Allowed`,
+              icon: '🔥',
+            },
+            {
+              id: 'turnovers',
+              label: 'BALL SECURITY',
+              question: `Can ${offA} protect the ball vs ${defA}'s pressure?`,
+              win: offToRank < defToRank,
+              offLabel: `#${offToRank} Ball Sec`,
+              defLabel: `#${defToRank} Pressure`,
+              icon: '🛡️',
+            },
+          ];
+
+          const totalWins = checkpoints.filter(c => c.win).length;
+          const pathColor = totalWins >= 4 ? '#10B981' : totalWins >= 3 ? '#22D3EE' : totalWins >= 2 ? '#F59E0B' : '#EF4444';
+          const pathLabel = totalWins >= 4 ? 'CLEAR PATH' : totalWins >= 3 ? 'PROBABLE PATH' : totalWins >= 2 ? 'NARROW PATH' : 'UPHILL BATTLE';
+
+          return (
+            <div style={{ padding: isMobile ? '16px' : '20px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(15,23,42,0.5) 0%, rgba(8,12,28,0.8) 100%)', border: `1px solid ${pathColor}12`, position: 'relative', overflow: 'hidden' }}>
+              {/* Top accent */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${pathColor}40, transparent)` }} />
+
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: pathColor, animation: 'mi5-pulse 2s infinite' }} />
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em' }}>PATH TO VICTORY</span>
+                </div>
+                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)' }}>{offA}'s offensive checklist</span>
+              </div>
+
+              {/* Score banner */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '10px', marginBottom: '14px',
+                background: `${pathColor}08`, border: `1px solid ${pathColor}15`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: isMobile ? '28px' : '34px', fontWeight: '900', color: pathColor, fontFamily: mono, lineHeight: 1 }}>
+                    {totalWins}/5
+                  </span>
+                  <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'rgba(255,255,255,0.5)' }}>checkpoints cleared</span>
+                </div>
+                <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: pathColor, padding: '4px 10px', borderRadius: '6px', background: `${pathColor}15`, border: `1px solid ${pathColor}20`, letterSpacing: '0.06em' }}>
+                  {pathLabel}
+                </span>
+              </div>
+
+              {/* Checkpoint rows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+                {checkpoints.map((cp, idx) => {
+                  const color = cp.win ? '#10B981' : '#EF4444';
+                  return (
+                    <div key={cp.id} style={{
+                      display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '10px',
+                      padding: isMobile ? '10px 12px' : '12px 14px', borderRadius: '10px',
+                      background: cp.win ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.03)',
+                      border: `1px solid ${color}10`,
+                      opacity: isVisible ? 1 : 0,
+                      transform: isVisible ? 'translateX(0)' : 'translateX(-10px)',
+                      transition: `opacity 0.4s ease ${idx * 0.08}s, transform 0.4s ease ${idx * 0.08}s`,
+                    }}>
+                      {/* Win/Loss indicator */}
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '6px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: `${color}15`, border: `1px solid ${color}25`,
+                        fontSize: '11px',
+                      }}>
+                        {cp.win ? '✓' : '✗'}
+                      </div>
+
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>{cp.label}</span>
+                        </div>
+                        <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.35)', lineHeight: '1.3' }}>{cp.question}</div>
+                      </div>
+
+                      {/* Rank comparison */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+                        <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: cp.win ? '#10B981' : 'rgba(255,255,255,0.4)', fontFamily: mono }}>{cp.offLabel}</span>
+                        <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: !cp.win ? '#EF4444' : 'rgba(255,255,255,0.4)', fontFamily: mono }}>{cp.defLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {checkpoints.map((cp, i) => (
+                    <div key={`bar_${i}`} style={{
+                      flex: 1, height: '6px', borderRadius: '3px',
+                      background: cp.win ? pathColor : 'rgba(255,255,255,0.06)',
+                      boxShadow: cp.win ? `0 0 8px ${pathColor}30` : 'none',
+                      transition: `background 0.4s ease ${i * 0.1}s`,
+                    }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Verdict */}
+              <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white', marginBottom: '4px', lineHeight: '1.3' }}>
+                {totalWins >= 4
+                  ? `${offA} has a clear path to victory.`
+                  : totalWins >= 3
+                  ? `${offA} has a probable path, but ${defA} can disrupt it.`
+                  : totalWins >= 2
+                  ? `${offA} has a narrow path — needs execution in key areas.`
+                  : `${offA} faces an uphill battle. ${defA} controls most checkpoints.`
+                }
+              </div>
+              <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>
+                {totalWins >= 4
+                  ? `${offA} clears ${totalWins} of 5 offensive checkpoints. When teams check this many boxes, scoring comes easy.`
+                  : totalWins >= 3
+                  ? `${totalWins} of 5 checkpoints cleared. The ${checkpoints.filter(c => !c.win).map(c => c.label.toLowerCase()).join(' and ')} ${checkpoints.filter(c => !c.win).length > 1 ? 'are' : 'is'} where ${defA} can make a stand.`
+                  : totalWins >= 2
+                  ? `Only ${totalWins} checkpoints cleared. ${defA} has the defensive edge in ${checkpoints.filter(c => !c.win).map(c => c.label.toLowerCase()).join(', ')}. ${offA} will need to overperform.`
+                  : `${defA} owns ${5 - totalWins} of 5 defensive checkpoints. ${offA} needs a special performance to overcome this.`
+                }
+              </div>
             </div>
-          </div>
-
-          <div style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: '700', color: 'white', marginBottom: '8px', lineHeight: '1.3' }}>
-            {insight.headline}
-          </div>
-          <div style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.6', marginBottom: '16px' }}>
-            {insight.body}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', flexShrink: 0 }}>CONFIDENCE</span>
-            <div style={{ flex: 1, display: 'flex', gap: '2px' }}>
-              {Array.from({ length: 10 }).map((_, i) => {
-                const filled = (i + 1) * 10 <= insight.confidence;
-                const partial = !filled && i * 10 < insight.confidence;
-                const segColor = insight.confidence > 75 ? '#10B981' : insight.confidence > 55 ? '#3B82F6' : '#F59E0B';
-                return (
-                  <div key={i} style={{
-                    flex: 1, height: '12px', borderRadius: '2px',
-                    background: filled ? segColor : partial ? `${segColor}50` : 'rgba(255,255,255,0.06)',
-                    boxShadow: filled && i === Math.floor(insight.confidence / 10) - 1 ? `0 0 6px ${segColor}50` : 'none',
-                    transition: `background 0.3s ease ${i * 0.05}s`,
-                  }} />
-                );
-              })}
-            </div>
-            <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '800', fontFamily: mono, color: insight.confidence > 75 ? '#10B981' : insight.confidence > 55 ? '#3B82F6' : '#F59E0B', minWidth: '48px', textAlign: 'right' }}>
-              {insight.confidence > 75 ? 'HIGH' : insight.confidence > 55 ? 'MEDIUM' : 'LOW'}
-            </span>
-          </div>
-        </div>
+          );
+        })()}
 
         <div style={{ textAlign: 'center', marginTop: '12px' }}>
           <span style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.12)', letterSpacing: '0.2em' }}>SAVANT ANALYTICS</span>
