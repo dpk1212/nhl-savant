@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { parseBasketballOdds } from '../utils/basketballOddsParser';
 import { parseHaslametrics } from '../utils/haslametricsParser';
 import { parseDRatings } from '../utils/dratingsParser';
-import { parseBarttorvik } from '../utils/barttorvik Parser';
+import { parseBarttorvik, parseBarttorvikPBP } from '../utils/barttorvik Parser';
 import { matchGamesWithCSV, filterByQuality } from '../utils/gameMatchingCSV';
 import { BasketballEdgeCalculator } from '../utils/basketballEdgeCalculator';
 import { useBasketballResultsGrader } from '../hooks/useBasketballResultsGrader';
@@ -55,6 +55,7 @@ const Basketball = () => {
   const [showSavantOnly, setShowSavantOnly] = useState(false); // Filter to show only Savant Picks
   const [showPrimeOnly, setShowPrimeOnly] = useState(false); // Filter to show only Prime picks (EV + spread confirmed)
   const [teamMappings, setTeamMappings] = useState(null);
+  const [pbpData, setPbpData] = useState({});
   
   // Bet outcomes state
   const [betsMap, setBetsMap] = useState(new Map());
@@ -231,11 +232,14 @@ const Basketball = () => {
       
       // Load Barttorvik data (using Bart.md - updated daily by scraper)
       const barttorvikResponse = await fetch(`/Bart.md${cacheBuster}`);
+      // Load Barttorvik PBP shooting splits
+      const bartPbpResponse = await fetch(`/bart_pbp.md${cacheBuster}`);
       
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();
       const drateMarkdown = await drateResponse.text();
       const barttorvikMarkdown = await barttorvikResponse.text();
+      const bartPbpMarkdown = bartPbpResponse.ok ? await bartPbpResponse.text() : '';
       const csvContent = await csvResponse.text();
       
       // Parse data (odds parser filters for TODAY only)
@@ -244,10 +248,12 @@ const Basketball = () => {
       const haslaData = parseHaslametrics(haslaMarkdown);
       const dratePreds = parseDRatings(drateMarkdown);
       const barttorvikData = parseBarttorvik(barttorvikMarkdown);
+      const bartPbpData = bartPbpMarkdown ? parseBarttorvikPBP(bartPbpMarkdown) : {};
       
       // Load team mappings for live score matching
       const mappings = loadTeamMappings(csvContent);
       setTeamMappings(mappings);
+      setPbpData(bartPbpData);
       
       // Match games using CSV mappings (OddsTrader as base)
       const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, barttorvikData, csvContent);
@@ -3171,6 +3177,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 barttorvik={game.barttorvik}
                 awayTeam={game.awayTeam}
                 homeTeam={game.homeTeam}
+                pbpData={pbpData}
               />
             )}
           </div>

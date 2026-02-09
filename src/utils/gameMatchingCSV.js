@@ -219,6 +219,8 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       
       // Barttorvik advanced stats
       barttorvik: (awayBartt && homeBartt) ? {
+        awayBartName: awayMapping.barttorvik,
+        homeBartName: homeMapping.barttorvik,
         away: {
           rank: awayBartt.rank,
           adjOff: awayBartt.adjOff,

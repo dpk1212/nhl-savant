@@ -202,8 +202,70 @@ export function calculateMatchupAdvantages(awayTeam, homeTeam) {
   };
 }
 
+/**
+ * Parse Barttorvik Shooting Splits (PBP) markdown
+ * Source: barttorvik.com/teampbp.php
+ * @param {string} markdown - PBP page markdown from Firecrawl
+ * @returns {Object} Dictionary of shooting splits keyed by team name
+ */
+export function parseBarttorvikPBP(markdown) {
+  const teams = {};
+  const lines = markdown.split('\n');
+  
+  for (const line of lines) {
+    if (!line.startsWith('|')) continue;
+    
+    const cells = line.split('|').map(c => c.trim()).filter(c => c);
+    
+    // Skip separator and header rows
+    if (cells.every(c => c.match(/^[-:]+$/))) continue;
+    if (cells.length < 20) continue;
+    
+    try {
+      const rank = parseInt(cells[0].trim());
+      if (isNaN(rank)) continue;
+      
+      const teamCell = cells[1] || '';
+      const urlMatch = teamCell.match(/team=([^&\)]+)/);
+      if (!urlMatch) continue;
+      
+      const teamName = decodeURIComponent(urlMatch[1].replace(/\+/g, ' '));
+      const p = (idx) => parseFloat(cells[idx]) || 0;
+      
+      // Column mapping (Firecrawl renders merged headers with duplicates):
+      // Each category has 5 cells: O FG%, O Share, D FG%, D FG% (dup), D Share
+      teams[teamName] = {
+        rank,
+        teamName,
+        dunks_off_fg: p(3),
+        dunks_off_share: p(4),
+        dunks_def_fg: p(5),
+        dunks_def_share: p(7),
+        close2_off_fg: p(8),
+        close2_off_share: p(9),
+        close2_def_fg: p(10),
+        close2_def_share: p(12),
+        far2_off_fg: p(13),
+        far2_off_share: p(14),
+        far2_def_fg: p(15),
+        far2_def_share: p(17),
+        three_off_fg: p(18),
+        three_off_share: p(19),
+        three_def_fg: p(20),
+        three_def_share: p(22)
+      };
+    } catch {
+      continue;
+    }
+  }
+  
+  console.log(`📊 Parsed Barttorvik PBP data for ${Object.keys(teams).length} teams`);
+  return teams;
+}
+
 export default {
   parseBarttorvik,
-  calculateMatchupAdvantages
+  calculateMatchupAdvantages,
+  parseBarttorvikPBP
 };
 

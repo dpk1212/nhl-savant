@@ -1,25 +1,28 @@
 /**
- * 🏀 MATCHUP INTELLIGENCE v10 - MOBILE OPTIMIZED
- * Better abbreviations + FLIP moved to matchup section
+ * MATCHUP INTELLIGENCE v2 — Premium Redesign
+ * Mobile-first, video-game inspired advanced analytics dashboard
+ * 
+ * Sections:
+ *  1. Versus Banner (Hero)
+ *  2. Edge Meter (Verdict)
+ *  3. Shot Profile (PBP zones)
+ *  4. Four Factors (2x2 grid)
+ *  5. Analyst Verdict (Footer)
  */
 
 import React, { useState, useEffect } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 
-const TOTAL_TEAMS = 364;
+const TOTAL_TEAMS = 365;
 
-// D1 AVERAGES
+// D1 averages for context
 const D1_AVG = {
   twoP: 50.0, threeP: 34.0, threePRate: 40.0, eFG: 50.0,
-  oreb: 28.0, to: 18.0, ftRate: 32.0, tempo: 67.5
+  oreb: 28.0, to: 17.0, ftRate: 32.0, tempo: 67.5,
+  close2: 52.0, far2: 36.0, dunks: 70.0
 };
 
-interface AdvancedMatchupCardProps {
-  barttorvik: { away: TeamStats; home: TeamStats; matchup: MatchupAnalysis; };
-  awayTeam: string;
-  homeTeam: string;
-}
-
+// ─── Interfaces ───────────────────────────────────────────
 interface TeamStats {
   rank: number; adjOff: number; adjOff_rank: number; adjDef: number; adjDef_rank: number;
   eFG_off: number; eFG_def: number; to_off: number; to_def: number;
@@ -27,1329 +30,750 @@ interface TeamStats {
   threeP_off: number; threeP_def?: number; bartholomew?: number; bartholomew_rank?: number;
   adjTempo?: number; ftRate_off?: number; ftRate_def?: number;
   threeP_rate_off?: number; threeP_rate_def?: number;
+  wab?: number; wab_rank?: number;
 }
 
-interface MatchupAnalysis { rankAdvantage: 'away' | 'home'; rankDiff: number; }
+interface PBPTeamData {
+  dunks_off_fg: number; dunks_off_share: number; dunks_def_fg: number; dunks_def_share: number;
+  close2_off_fg: number; close2_off_share: number; close2_def_fg: number; close2_def_share: number;
+  far2_off_fg: number; far2_off_share: number; far2_def_fg: number; far2_def_share: number;
+  three_off_fg: number; three_off_share: number; three_def_fg: number; three_def_share: number;
+}
+
+interface AdvancedMatchupCardProps {
+  barttorvik: {
+    awayBartName?: string;
+    homeBartName?: string;
+    away: TeamStats;
+    home: TeamStats;
+    matchup: { rankAdvantage: 'away' | 'home'; rankDiff: number; };
+  };
+  awayTeam: string;
+  homeTeam: string;
+  pbpData?: Record<string, PBPTeamData>;
+}
 
 type ViewMode = 'awayOff_homeDef' | 'homeOff_awayDef';
 
-const getPercentile = (rank: number) => Math.round((1 - (rank - 1) / (TOTAL_TEAMS - 1)) * 100);
+// ─── Helpers ──────────────────────────────────────────────
 
 const getTier = (rank: number) => {
-  if (rank <= 25) return { label: 'ELITE', color: '#10B981' };
-  if (rank <= 50) return { label: 'EXCELLENT', color: '#06B6D4' };
-  if (rank <= 100) return { label: 'STRONG', color: '#3B82F6' };
-  if (rank <= 175) return { label: 'AVERAGE', color: '#F59E0B' };
-  if (rank <= 275) return { label: 'BELOW AVG', color: '#F97316' };
-  return { label: 'WEAK', color: '#EF4444' };
+  if (rank <= 25) return { label: 'ELITE', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' };
+  if (rank <= 50) return { label: 'EXCELLENT', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.10)' };
+  if (rank <= 100) return { label: 'STRONG', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.10)' };
+  if (rank <= 175) return { label: 'AVERAGE', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.10)' };
+  if (rank <= 275) return { label: 'BELOW AVG', color: '#F97316', bg: 'rgba(249, 115, 22, 0.10)' };
+  return { label: 'WEAK', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.10)' };
 };
 
-const getStatColor = (value: number, avg: number, isDefense: boolean) => {
-  const diff = isDefense ? avg - value : value - avg;
-  if (diff > 3) return '#10B981';
-  if (diff > 0) return '#22D3EE';
-  if (diff > -3) return '#F59E0B';
-  return '#EF4444';
-};
-
-// IMPROVED: Smart team abbreviation for mobile
 const getTeamAbbrev = (name: string, maxLen: number = 12): string => {
-  // Already short enough
   if (name.length <= maxLen) return name;
-  
-  // Known abbreviations (prioritize these)
-  const knownAbbrevs: Record<string, string> = {
-    'North Carolina': 'UNC',
-    'NC-Wilmington': 'UNCW',
-    'UNC Wilmington': 'UNCW',
-    'South Carolina': 'S Carolina',
-    'Massachusetts': 'UMass',
-    'Connecticut': 'UConn',
-    'Mississippi State': 'Miss St',
-    'Mississippi': 'Ole Miss',
-    'Michigan State': 'Mich St',
-    'Ohio State': 'Ohio St',
-    'Penn State': 'Penn St',
-    'Florida State': 'FSU',
-    'Arizona State': 'ASU',
-    'Oregon State': 'Oregon St',
-    'Washington State': 'Wash St',
-    'San Diego State': 'SDSU',
-    'Fresno State': 'Fresno St',
-    'Boise State': 'Boise St',
-    'Colorado State': 'Colorado St',
-    'Utah State': 'Utah St',
-    'Iowa State': 'Iowa St',
-    'Kansas State': 'K-State',
-    'Oklahoma State': 'Okla St',
-    'Texas Tech': 'Texas Tech',
-    'Texas A&M': 'Texas A&M',
-    'William & Mary': 'W&M',
-    'William and Mary': 'W&M',
-    'Boston College': 'BC',
-    'Virginia Tech': 'Va Tech',
-    'Georgia Tech': 'Ga Tech',
-    'Wake Forest': 'Wake',
-    'Notre Dame': 'ND',
-    'Saint Louis': 'SLU',
-    "Saint Mary's": "St Mary's",
-    'San Francisco': 'USF',
-    'Southern California': 'USC',
-    'Central Florida': 'UCF',
-    'South Florida': 'USF',
-    'Northern Iowa': 'UNI',
-    'Southern Illinois': 'SIU',
-    'Northern Illinois': 'NIU',
-    'Western Kentucky': 'WKU',
-    'Eastern Kentucky': 'EKU',
-    'Middle Tennessee': 'MTSU',
-    'Louisiana Tech': 'LA Tech',
-    'Louisiana-Lafayette': 'UL Lafayette',
-    'Louisiana-Monroe': 'UL Monroe',
-    'Bowling Green': 'BGSU',
-    'Ball State': 'Ball St',
-    'Kent State': 'Kent St',
-    'Wright State': 'Wright St',
-    'Cleveland State': 'Cleveland St',
-    'Youngstown State': 'Youngstown',
-    'Milwaukee': 'Milwaukee',
-    'Green Bay': 'Green Bay',
+  const known: Record<string, string> = {
+    'North Carolina': 'UNC', 'South Carolina': 'S Carolina', 'Massachusetts': 'UMass',
+    'Connecticut': 'UConn', 'Mississippi State': 'Miss St', 'Mississippi': 'Ole Miss',
+    'Michigan State': 'Mich St', 'Ohio State': 'Ohio St', 'Penn State': 'Penn St',
+    'Florida State': 'FSU', 'Arizona State': 'ASU', 'San Diego State': 'SDSU',
+    'Kansas State': 'K-State', 'Oklahoma State': 'Okla St', 'Iowa State': 'Iowa St',
+    'Virginia Tech': 'Va Tech', 'Georgia Tech': 'Ga Tech', 'Boston College': 'BC',
+    'Wake Forest': 'Wake', 'Notre Dame': 'ND', 'Saint Louis': 'SLU',
+    "Saint Mary's": "St Mary's", 'Northern Iowa': 'UNI', 'Middle Tennessee': 'MTSU',
+    'Louisiana Tech': 'LA Tech', 'Western Kentucky': 'WKU', 'Bowling Green': 'BGSU',
+    'Texas A&M': 'Texas A&M', 'Texas Tech': 'Texas Tech',
   };
-  
-  // Check for known abbreviations
-  for (const [full, abbr] of Object.entries(knownAbbrevs)) {
-    if (name.toLowerCase().includes(full.toLowerCase())) {
-      if (abbr.length <= maxLen) return abbr;
-    }
+  for (const [full, abbr] of Object.entries(known)) {
+    if (name.toLowerCase().includes(full.toLowerCase()) && abbr.length <= maxLen) return abbr;
   }
-  
-  // Handle "State" suffix
-  if (name.includes(' State') && name.length > maxLen) {
-    const shortened = name.replace(' State', ' St');
-    if (shortened.length <= maxLen) return shortened;
-  }
-  
-  // Handle directional schools (North/South/East/West)
-  const directionalMap: Record<string, string> = {
-    'North ': 'N ',
-    'South ': 'S ',
-    'East ': 'E ',
-    'West ': 'W ',
-    'Northern ': 'N ',
-    'Southern ': 'S ',
-    'Eastern ': 'E ',
-    'Western ': 'W ',
-    'Central ': 'C ',
-  };
-  
-  let shortened = name;
-  for (const [full, abbr] of Object.entries(directionalMap)) {
-    if (shortened.startsWith(full)) {
-      shortened = abbr + shortened.slice(full.length);
-      break;
-    }
-  }
-  if (shortened.length <= maxLen) return shortened;
-  
-  // Take first word if it's reasonable
-  const words = name.split(' ');
-  if (words[0].length >= 4 && words[0].length <= maxLen) {
-    return words[0];
-  }
-  
-  // Last resort: truncate with ...
+  if (name.includes(' State') && name.replace(' State', ' St').length <= maxLen) return name.replace(' State', ' St');
+  const dirMap: Record<string, string> = { 'North ': 'N ', 'South ': 'S ', 'East ': 'E ', 'West ': 'W ', 'Northern ': 'N ', 'Southern ': 'S ', 'Eastern ': 'E ', 'Western ': 'W ' };
+  let s = name;
+  for (const [full, abbr] of Object.entries(dirMap)) { if (s.startsWith(full)) { s = abbr + s.slice(full.length); break; } }
+  if (s.length <= maxLen) return s;
+  const w = name.split(' ');
+  if (w[0].length >= 4 && w[0].length <= maxLen) return w[0];
   return name.slice(0, maxLen - 2) + '..';
 };
 
-// Metric Row Component
-const MetricRow = ({
-  label, offValue, defValue, avg, offTeam, defTeam, insight, isMobile, isDefenseLowerBetter = true
-}: {
-  label: string; offValue: number; defValue: number; avg: number;
-  offTeam: string; defTeam: string; insight?: string; isMobile: boolean;
-  isDefenseLowerBetter?: boolean;
-}) => {
-  const offColor = getStatColor(offValue, avg, false);
-  const defColor = getStatColor(defValue, avg, isDefenseLowerBetter);
-  const offDiff = offValue - avg;
-  const defDiff = defValue - avg;
-  
-  const minVal = Math.min(offValue, defValue, avg) - 5;
-  const maxVal = Math.max(offValue, defValue, avg) + 5;
-  const range = maxVal - minVal;
-  const offBarWidth = ((offValue - minVal) / range) * 100;
-  const defBarWidth = ((defValue - minVal) / range) * 100;
-  const avgMarkerPos = ((avg - minVal) / range) * 100;
-  
-  return (
-    <div style={{ 
-      padding: isMobile ? '12px' : '16px',
-      background: 'rgba(15, 23, 42, 0.3)',
-      borderRadius: '12px',
-      border: '1px solid rgba(255,255,255,0.03)'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '10px' : '12px' }}>
-        <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em' }}>{label}</span>
-        <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>D1 AVG: {avg}%</span>
-      </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: isMobile ? '8px' : '12px', alignItems: 'center' }}>
-        {/* Offense */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)' }}>{offTeam}</span>
-            <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: offColor, fontFamily: 'ui-monospace, monospace' }}>
-              {offValue.toFixed(1)}%
-            </span>
-          </div>
-          <div style={{ position: 'relative', height: '6px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '3px', overflow: 'visible' }}>
-            <div style={{ width: `${Math.min(offBarWidth, 100)}%`, height: '100%', background: `linear-gradient(90deg, ${offColor}60, ${offColor})`, borderRadius: '3px', transition: 'width 0.6s ease' }} />
-            <div style={{ position: 'absolute', left: `${avgMarkerPos}%`, top: '-2px', width: '2px', height: '10px', background: 'white', borderRadius: '1px', opacity: 0.6 }} />
-          </div>
-          <div style={{ fontSize: '8px', color: offColor, marginTop: '4px', fontWeight: '600' }}>
-            {offDiff >= 0 ? '+' : ''}{offDiff.toFixed(1)} vs avg
-          </div>
-        </div>
-        
-        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.15)', fontWeight: '600' }}>→</div>
-        
-        {/* Defense */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)' }}>{defTeam}</span>
-            <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: defColor, fontFamily: 'ui-monospace, monospace' }}>
-              {defValue.toFixed(1)}%
-            </span>
-          </div>
-          <div style={{ position: 'relative', height: '6px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '3px', overflow: 'visible' }}>
-            <div style={{ width: `${Math.min(defBarWidth, 100)}%`, height: '100%', background: `linear-gradient(90deg, ${defColor}60, ${defColor})`, borderRadius: '3px', transition: 'width 0.6s ease' }} />
-            <div style={{ position: 'absolute', left: `${avgMarkerPos}%`, top: '-2px', width: '2px', height: '10px', background: 'white', borderRadius: '1px', opacity: 0.6 }} />
-          </div>
-          <div style={{ fontSize: '8px', marginTop: '4px' }}>
-            <span style={{ color: defColor, fontWeight: '600' }}>{defDiff >= 0 ? '+' : ''}{defDiff.toFixed(1)} vs avg</span>
-            {isDefenseLowerBetter && defDiff < 0 && <span style={{ color: 'rgba(255,255,255,0.3)', marginLeft: '4px' }}>✓</span>}
-          </div>
-        </div>
-      </div>
-      
-      {insight && (
-        <div style={{ marginTop: '10px', padding: isMobile ? '8px 10px' : '10px 12px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', borderLeft: '3px solid #10B981', fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>{insight}</div>
-      )}
-    </div>
-  );
+const getStatColor = (value: number, avg: number, higherIsBetter: boolean = true) => {
+  const diff = higherIsBetter ? value - avg : avg - value;
+  if (diff > 4) return '#10B981';
+  if (diff > 1) return '#22D3EE';
+  if (diff > -2) return '#F59E0B';
+  return '#EF4444';
 };
 
-export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam }: AdvancedMatchupCardProps) {
+// ─── Keyframe injection (once) ────────────────────────────
+const ANIM_ID = 'matchup-intel-v2-anims';
+if (typeof document !== 'undefined' && !document.getElementById(ANIM_ID)) {
+  const style = document.createElement('style');
+  style.id = ANIM_ID;
+  style.textContent = `
+    @keyframes mi2-slideRight { from { width: 0%; } }
+    @keyframes mi2-fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes mi2-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+    @keyframes mi2-glow { 0%, 100% { box-shadow: 0 0 8px rgba(16,185,129,0.3); } 50% { box-shadow: 0 0 20px rgba(16,185,129,0.6); } }
+  `;
+  document.head.appendChild(style);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════
+
+export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = {} }: AdvancedMatchupCardProps) {
   const [view, setView] = useState<ViewMode>('awayOff_homeDef');
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   if (!barttorvik) return null;
 
   const { away, home } = barttorvik;
-  const isAwayOffView = view === 'awayOff_homeDef';
-  const offTeam = isAwayOffView ? away : home;
-  const defTeam = isAwayOffView ? home : away;
-  const offTeamName = isAwayOffView ? awayTeam : homeTeam;
-  const defTeamName = isAwayOffView ? homeTeam : awayTeam;
+  const isAwayView = view === 'awayOff_homeDef';
+  const offTeam = isAwayView ? away : home;
+  const defTeam = isAwayView ? home : away;
+  const offName = isAwayView ? awayTeam : homeTeam;
+  const defName = isAwayView ? homeTeam : awayTeam;
 
+  // Ranks
   const awayRank = away.bartholomew_rank || away.rank || 182;
   const homeRank = home.bartholomew_rank || home.rank || 182;
   const awayTier = getTier(awayRank);
   const homeTier = getTier(homeRank);
-  
-  const offRank = offTeam.adjOff_rank || 182;
-  const defRank = defTeam.adjDef_rank || 182;
-  const mismatch = defRank - offRank;
+  const powerWinner = awayRank < homeRank ? 'away' : 'home';
+  const powerGap = Math.abs(awayRank - homeRank);
 
-  // All stats
-  const twoP = { off: offTeam.twoP_off || 50, def: defTeam.twoP_def || 50 };
-  const threeP = { off: offTeam.threeP_off || 34, def: defTeam.threeP_def || 34 };
-  const threePRate = { off: offTeam.threeP_rate_off || 40, def: defTeam.threeP_rate_def || 40 };
+  // Abbreviated names
+  const ml = isMobile ? 10 : 14;
+  const awayA = getTeamAbbrev(awayTeam, ml);
+  const homeA = getTeamAbbrev(homeTeam, ml);
+  const offA = getTeamAbbrev(offName, ml);
+  const defA = getTeamAbbrev(defName, ml);
+
+  // PBP data lookup
+  const awayPBP = pbpData[barttorvik.awayBartName || ''] || null;
+  const homePBP = pbpData[barttorvik.homeBartName || ''] || null;
+  const hasPBP = !!(awayPBP && homePBP);
+
+  // Edge calculations for verdict chips
+  const aOffR = away.adjOff_rank || 182;
+  const hOffR = home.adjOff_rank || 182;
+  const aDefR = away.adjDef_rank || 182;
+  const hDefR = home.adjDef_rank || 182;
+  const edges = {
+    power: { winner: powerWinner, gap: powerGap },
+    offense: { winner: aOffR < hOffR ? 'away' : 'home', gap: Math.abs(aOffR - hOffR) },
+    defense: { winner: aDefR < hDefR ? 'away' : 'home', gap: Math.abs(aDefR - hDefR) },
+    shooting: { winner: away.eFG_off > home.eFG_off ? 'away' : 'home', gap: Math.abs(away.eFG_off - home.eFG_off) },
+    turnovers: { winner: away.to_off < home.to_off ? 'away' : 'home', gap: Math.abs(away.to_off - home.to_off) },
+    rebounding: { winner: away.oreb_off > home.oreb_off ? 'away' : 'home', gap: Math.abs(away.oreb_off - home.oreb_off) },
+  };
+
+  // Count category wins
+  const awayWins = Object.values(edges).filter(e => e.winner === 'away').length;
+  const homeWins = Object.values(edges).filter(e => e.winner === 'home').length;
+  const edgePct = Math.round((awayWins / (awayWins + homeWins)) * 100);
+  const overallWinner = awayWins > homeWins ? 'away' : 'home';
+  const winnerName = overallWinner === 'away' ? awayA : homeA;
+  const winCount = Math.max(awayWins, homeWins);
+
+  // Stats for four factors
   const eFG = { off: offTeam.eFG_off || 50, def: defTeam.eFG_def || 50 };
+  const to = { off: offTeam.to_off || 17, def: defTeam.to_def || 17 };
   const oreb = { off: offTeam.oreb_off || 28, def: defTeam.oreb_def || 28 };
-  const to = { off: offTeam.to_off || 18, def: defTeam.to_def || 18 };
   const ftRate = { off: offTeam.ftRate_off || 32, def: defTeam.ftRate_def || 32 };
-  const tempo = { off: offTeam.adjTempo || 67, def: defTeam.adjTempo || 67 };
+  const tempo = { away: away.adjTempo || 67.5, home: home.adjTempo || 67.5 };
 
-  // Edge calculations
-  const powerEdge = awayRank < homeRank ? 'away' : awayRank > homeRank ? 'home' : 'even';
-  const offenseEdge = away.adjOff_rank < home.adjOff_rank ? 'away' : away.adjOff_rank > home.adjOff_rank ? 'home' : 'even';
-  const defenseEdge = away.adjDef_rank < home.adjDef_rank ? 'away' : away.adjDef_rank > home.adjDef_rank ? 'home' : 'even';
+  // Insight generation
+  const generateInsight = () => {
+    const oW = overallWinner === 'away' ? awayA : homeA;
+    const oL = overallWinner === 'away' ? homeA : awayA;
+    const oWR = overallWinner === 'away' ? awayRank : homeRank;
+    const allSame = edges.offense.winner === edges.defense.winner && edges.defense.winner === edges.power.winner;
+    
+    if (allSame && powerGap > 100) {
+      return { headline: `${oW} should dominate this one.`, body: `Ranked #${oWR} overall with clear advantages on both ends of the floor, ${oW} outclasses ${oL} in every phase. This is a significant mismatch.`, confidence: 95 };
+    }
+    if (allSame && powerGap > 50) {
+      return { headline: `${oW} holds meaningful advantages.`, body: `With a #${oWR} power rating and edges in both offense and defense, ${oW} should dictate pace. ${oL} will need to overperform to stay competitive.`, confidence: 80 };
+    }
+    if (allSame && powerGap > 25) {
+      return { headline: `Lean ${oW}, but it's competitive.`, body: `The metrics favor ${oW} across the board, though margins are tight. A strong shooting night from ${oL} could flip the script.`, confidence: 65 };
+    }
+    if (winCount >= 4) {
+      return { headline: `${oW} wins ${winCount} of 6 key matchups.`, body: `Despite not dominating everywhere, ${oW} has the edge in more categories than ${oL}. The cumulative advantage matters.`, confidence: 60 };
+    }
+    if (powerGap < 15) {
+      return { headline: `This is a coin flip.`, body: `These teams are nearly identical by the numbers. Expect a tight game where execution and shooting variance decide it.`, confidence: 45 };
+    }
+    return { headline: `Split edges make this interesting.`, body: `Each team has clear strengths — ${oW} owns ${winCount} categories but ${oL} has counter-punches. Watch which style wins out.`, confidence: 55 };
+  };
 
-  const totalRanks = awayRank + homeRank;
-  const awayPowerPct = Math.round(((totalRanks - awayRank) / totalRanks) * 100);
-
-  // Abbreviated names for display
-  const awayAbbrev = getTeamAbbrev(awayTeam, isMobile ? 10 : 14);
-  const homeAbbrev = getTeamAbbrev(homeTeam, isMobile ? 10 : 14);
-  const offAbbrev = getTeamAbbrev(offTeamName, isMobile ? 10 : 14);
-  const defAbbrev = getTeamAbbrev(defTeamName, isMobile ? 10 : 14);
-
-  const padding = isMobile ? '16px' : '24px';
+  const insight = generateInsight();
+  const pad = isMobile ? '14px' : '20px';
+  const gap = isMobile ? '10px' : '14px';
 
   return (
     <div style={{
-      background: 'linear-gradient(180deg, #020617 0%, #0F172A 100%)',
-      borderRadius: isMobile ? '16px' : '20px',
-      border: '1px solid rgba(99, 102, 241, 0.12)',
-      overflow: 'hidden'
+      background: 'linear-gradient(180deg, #020617 0%, #0B1120 50%, #0F172A 100%)',
+      borderRadius: isMobile ? '14px' : '18px',
+      border: `1px solid rgba(99, 102, 241, 0.12)`,
+      overflow: 'hidden',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     }}>
-      
-      {/* ═══════════════════ HEADER (no flip button here) ═══════════════════ */}
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION 1: VERSUS BANNER (Hero)
+         ═══════════════════════════════════════════════════════════ */}
       <div style={{
-        background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.06) 0%, rgba(168, 85, 247, 0.08) 50%, rgba(99, 102, 241, 0.06) 100%)',
-        borderBottom: '1px solid rgba(99, 102, 241, 0.1)',
-        padding: isMobile ? '14px 16px' : '18px 24px'
+        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(99, 102, 241, 0.04) 100%)',
+        borderBottom: '1px solid rgba(99, 102, 241, 0.08)',
+        padding: `${isMobile ? '16px' : '24px'} ${pad}`,
       }}>
-        <div style={{ fontSize: '8px', fontWeight: '600', color: 'rgba(167, 139, 250, 0.7)', letterSpacing: '0.2em' }}>ADVANCED ANALYTICS</div>
-        <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white' }}>Matchup Intelligence</div>
+        {/* Eyebrow */}
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? '14px' : '18px' }}>
+          <span style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(167, 139, 250, 0.6)', letterSpacing: '0.25em', textTransform: 'uppercase' }}>MATCHUP INTELLIGENCE</span>
+        </div>
+
+        {/* Team vs Team */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          {/* Away */}
+          <div style={{
+            flex: 1, textAlign: 'center',
+            padding: isMobile ? '10px 4px' : '14px 8px', borderRadius: '12px',
+            background: powerWinner === 'away' ? `${awayTier.color}06` : 'transparent',
+            border: powerWinner === 'away' ? `1px solid ${awayTier.color}18` : '1px solid transparent',
+            transition: 'all 0.5s ease',
+          }}>
+            <div style={{
+              fontSize: isMobile ? '28px' : '36px', fontWeight: '900', color: awayTier.color,
+              fontFamily: 'ui-monospace, SFMono-Regular, monospace', lineHeight: 1,
+              textShadow: powerWinner === 'away' ? `0 0 20px ${awayTier.color}50` : 'none',
+            }}>#{awayRank}</div>
+            <div style={{
+              fontSize: isMobile ? '13px' : '15px', fontWeight: '700', color: 'white', marginTop: '4px',
+              opacity: powerWinner === 'away' ? 1 : 0.6,
+            }}>{awayA}</div>
+            <div style={{
+              display: 'inline-block', marginTop: '6px',
+              padding: '3px 10px', borderRadius: '20px',
+              background: awayTier.bg, border: `1px solid ${awayTier.color}30`,
+              fontSize: '9px', fontWeight: '700', color: awayTier.color, letterSpacing: '0.08em',
+            }}>{awayTier.label}</div>
+          </div>
+
+          {/* VS */}
+          <div style={{
+            fontSize: isMobile ? '11px' : '13px', fontWeight: '800', color: 'rgba(255,255,255,0.15)',
+            letterSpacing: '0.1em', flexShrink: 0,
+          }}>VS</div>
+
+          {/* Home */}
+          <div style={{
+            flex: 1, textAlign: 'center',
+            padding: isMobile ? '10px 4px' : '14px 8px', borderRadius: '12px',
+            background: powerWinner === 'home' ? `${homeTier.color}06` : 'transparent',
+            border: powerWinner === 'home' ? `1px solid ${homeTier.color}18` : '1px solid transparent',
+            transition: 'all 0.5s ease',
+          }}>
+            <div style={{
+              fontSize: isMobile ? '28px' : '36px', fontWeight: '900', color: homeTier.color,
+              fontFamily: 'ui-monospace, SFMono-Regular, monospace', lineHeight: 1,
+              textShadow: powerWinner === 'home' ? `0 0 20px ${homeTier.color}50` : 'none',
+            }}>#{homeRank}</div>
+            <div style={{
+              fontSize: isMobile ? '13px' : '15px', fontWeight: '700', color: 'white', marginTop: '4px',
+              opacity: powerWinner === 'home' ? 1 : 0.6,
+            }}>{homeA}</div>
+            <div style={{
+              display: 'inline-block', marginTop: '6px',
+              padding: '3px 10px', borderRadius: '20px',
+              background: homeTier.bg, border: `1px solid ${homeTier.color}30`,
+              fontSize: '9px', fontWeight: '700', color: homeTier.color, letterSpacing: '0.08em',
+            }}>{homeTier.label}</div>
+          </div>
+        </div>
+
+        {/* Power Bar */}
+        <div style={{ marginTop: isMobile ? '14px' : '18px' }}>
+          <div style={{
+            position: 'relative', height: '8px', borderRadius: '4px',
+            background: 'rgba(0,0,0,0.5)', overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', left: 0, top: 0, height: '100%',
+              width: `${Math.round(((awayRank + homeRank - awayRank) / (awayRank + homeRank)) * 100)}%`,
+              background: `linear-gradient(90deg, ${awayTier.color}40, ${awayTier.color})`,
+              borderRadius: '4px 0 0 4px',
+              animation: 'mi2-slideRight 1s cubic-bezier(0.4, 0, 0.2, 1)',
+            }} />
+            <div style={{
+              position: 'absolute', right: 0, top: 0, height: '100%',
+              width: `${Math.round(((awayRank + homeRank - homeRank) / (awayRank + homeRank)) * 100)}%`,
+              background: `linear-gradient(270deg, ${homeTier.color}40, ${homeTier.color})`,
+              borderRadius: '0 4px 4px 0',
+            }} />
+            <div style={{ position: 'absolute', left: '50%', top: 0, width: '2px', height: '100%', background: 'rgba(255,255,255,0.15)', transform: 'translateX(-50%)' }} />
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '8px' }}>
+            <span style={{
+              display: 'inline-block', padding: '3px 14px', borderRadius: '12px',
+              background: powerGap > 50 ? 'rgba(16, 185, 129, 0.12)' : powerGap > 20 ? 'rgba(59, 130, 246, 0.10)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${powerGap > 50 ? 'rgba(16,185,129,0.25)' : powerGap > 20 ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              fontSize: '10px', fontWeight: '700',
+              color: powerGap > 50 ? '#34D399' : powerGap > 20 ? '#60A5FA' : 'rgba(255,255,255,0.45)',
+              fontFamily: 'ui-monospace, monospace',
+            }}>
+              {powerWinner === 'away' ? awayA : homeA} +{powerGap} ranks
+            </span>
+          </div>
+        </div>
+
+        {/* Stat Chips Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: isMobile ? '12px' : '16px', gap: '6px' }}>
+          {/* Away chips */}
+          <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'center' }}>
+            {[
+              { label: 'OFF', value: `#${aOffR}`, good: aOffR <= 50 },
+              { label: 'DEF', value: `#${aDefR}`, good: aDefR <= 50 },
+              { label: 'TEMPO', value: (away.adjTempo || 67.5).toFixed(0), good: false },
+            ].map(chip => (
+              <div key={`a-${chip.label}`} style={{
+                padding: isMobile ? '4px 6px' : '4px 8px', borderRadius: '6px',
+                background: chip.good ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${chip.good ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '7px', fontWeight: '600', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>{chip.label}</div>
+                <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: chip.good ? '#10B981' : 'rgba(255,255,255,0.6)', fontFamily: 'ui-monospace, monospace' }}>{chip.value}</div>
+              </div>
+            ))}
+          </div>
+          {/* Home chips */}
+          <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'center' }}>
+            {[
+              { label: 'OFF', value: `#${hOffR}`, good: hOffR <= 50 },
+              { label: 'DEF', value: `#${hDefR}`, good: hDefR <= 50 },
+              { label: 'TEMPO', value: (home.adjTempo || 67.5).toFixed(0), good: false },
+            ].map(chip => (
+              <div key={`h-${chip.label}`} style={{
+                padding: isMobile ? '4px 6px' : '4px 8px', borderRadius: '6px',
+                background: chip.good ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${chip.good ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '7px', fontWeight: '600', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>{chip.label}</div>
+                <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: chip.good ? '#10B981' : 'rgba(255,255,255,0.6)', fontFamily: 'ui-monospace, monospace' }}>{chip.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-{/* ═══════════════════ PREMIUM COMPARISON BARS ═══════════════════ */}
-      <div style={{ padding }}>
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION 2: EDGE METER
+         ═══════════════════════════════════════════════════════════ */}
+      <div style={{ padding: `${pad}` }}>
         <div style={{
-          padding: isMobile ? '16px' : '24px',
+          padding: isMobile ? '14px' : '20px',
           background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.3) 100%)',
-          borderRadius: '16px',
-          border: '1px solid rgba(255,255,255,0.04)'
+          borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)',
         }}>
-          {/* Comparison Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em' }}>WHO HAS THE EDGE?</span>
+          </div>
+
+          {/* Tug-of-war bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: awayWins >= homeWins ? awayTier.color : 'rgba(255,255,255,0.3)', minWidth: isMobile ? '40px' : '50px', textAlign: 'right' }}>{awayA}</span>
+            <div style={{ flex: 1, position: 'relative', height: '10px', borderRadius: '5px', background: 'rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute', left: 0, top: 0, height: '100%',
+                width: `${edgePct}%`,
+                background: `linear-gradient(90deg, ${awayTier.color}50, ${awayTier.color})`,
+                borderRadius: '5px 0 0 5px',
+                transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: awayWins > homeWins ? `0 0 12px ${awayTier.color}40` : 'none',
+              }} />
+              <div style={{
+                position: 'absolute', right: 0, top: 0, height: '100%',
+                width: `${100 - edgePct}%`,
+                background: `linear-gradient(270deg, ${homeTier.color}50, ${homeTier.color})`,
+                borderRadius: '0 5px 5px 0',
+                boxShadow: homeWins > awayWins ? `0 0 12px ${homeTier.color}40` : 'none',
+              }} />
+              {/* Center marker */}
+              <div style={{ position: 'absolute', left: '50%', top: '-1px', width: '2px', height: '12px', background: 'rgba(255,255,255,0.25)', transform: 'translateX(-50%)', borderRadius: '1px' }} />
+            </div>
+            <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: homeWins >= awayWins ? homeTier.color : 'rgba(255,255,255,0.3)', minWidth: isMobile ? '40px' : '50px' }}>{homeA}</span>
+          </div>
+
+          {/* Verdict Chips */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '6px',
+            marginBottom: '12px',
+          }}>
             {[
-              { label: 'POWER RATING', sublabel: 'Overall Team Strength', awayRank: awayRank, homeRank: homeRank, type: 'overall', color: '#A78BFA', colorLight: 'rgba(167, 139, 250, 0.15)', colorBorder: 'rgba(167, 139, 250, 0.3)' },
-              { label: 'OFFENSIVE EFFICIENCY', sublabel: 'Scoring Ability (pts/100)', awayRank: away.adjOff_rank, homeRank: home.adjOff_rank, type: 'offense', color: '#34D399', colorLight: 'rgba(52, 211, 153, 0.12)', colorBorder: 'rgba(52, 211, 153, 0.25)' },
-              { label: 'DEFENSIVE EFFICIENCY', sublabel: 'Points Allowed (pts/100)', awayRank: away.adjDef_rank, homeRank: home.adjDef_rank, type: 'defense', color: '#60A5FA', colorLight: 'rgba(96, 165, 250, 0.12)', colorBorder: 'rgba(96, 165, 250, 0.25)' }
-            ].map(({ label, sublabel, awayRank: aRank, homeRank: hRank, type, color: sectionColor, colorLight, colorBorder }, idx) => {
-              const awayBetter = aRank < hRank;
-              const gap = Math.abs(hRank - aRank);
-              const winner = awayBetter ? awayAbbrev : homeAbbrev;
-              const loser = awayBetter ? homeAbbrev : awayAbbrev;
-              const winnerRank = awayBetter ? aRank : hRank;
-              const loserRank = awayBetter ? hRank : aRank;
-              
-              // Calculate bar fill (toward winner)
-              const total = aRank + hRank;
-              const awayPct = ((total - aRank) / total) * 100;
-              
-              const awayTier = getTier(aRank);
-              const homeTier = getTier(hRank);
-              const awayPercentile = getPercentile(aRank);
-              const homePercentile = getPercentile(hRank);
-              
-              // Generate contextual insight based on matchup (clean, no emojis)
-              const getInsight = () => {
-                if (type === 'overall') {
-                  if (gap > 100) {
-                    return `${winner} is significantly stronger — expect them to control this game`;
-                  } else if (gap > 50) {
-                    return `${winner} has a clear edge (#${winnerRank} vs #${loserRank}) — should be favored`;
-                  } else if (gap > 25) {
-                    return `${winner} slightly better but ${loser} can compete — closer than rankings suggest`;
-                  } else {
-                    return `Evenly matched teams — this one could go either way`;
-                  }
-                }
-                if (type === 'offense') {
-                  if (gap > 100) {
-                    return `${winner}'s offense (#${winnerRank}) should dominate — expect points`;
-                  } else if (gap > 50) {
-                    return `${winner} scores more efficiently (#${winnerRank} vs #${loserRank}) — offensive edge`;
-                  } else if (gap > 25) {
-                    return `${winner} has slight scoring edge — watch for shot quality`;
-                  } else {
-                    return `Similar offensive capabilities — defense may decide this`;
-                  }
-                }
-                if (type === 'defense') {
-                  if (gap > 100) {
-                    return `${winner}'s defense (#${winnerRank}) is elite — tough to score against`;
-                  } else if (gap > 50) {
-                    return `${winner} defends much better (#${winnerRank} vs #${loserRank}) — expect a grind`;
-                  } else if (gap > 25) {
-                    return `${winner} has the defensive edge — could slow the game down`;
-                  } else {
-                    return `Similar defensive quality — offense will be the difference`;
-                  }
-                }
-                return '';
-              };
-              
-              // Determine insight type for styling
-              const getInsightType = () => {
-                if (gap > 50) return 'edge';
-                if (gap > 25) return 'slight';
-                return 'neutral';
-              };
-              const insightType = getInsightType();
-              
+              { label: 'POWER', ...edges.power },
+              { label: 'OFFENSE', ...edges.offense },
+              { label: 'DEFENSE', ...edges.defense },
+              { label: 'SHOOTING', ...edges.shooting },
+              { label: 'TURNOVERS', ...edges.turnovers },
+              { label: 'BOARDS', ...edges.rebounding },
+            ].map(chip => {
+              const chipWinner = chip.winner === 'away' ? awayA : homeA;
+              const chipColor = chip.winner === 'away' ? awayTier.color : homeTier.color;
+              const isClose = chip.gap < 15;
               return (
-                <div key={label} style={{
-                  background: idx > 0 ? 'transparent' : 'transparent',
-                  paddingTop: idx > 0 ? (isMobile ? '6px' : '10px') : 0,
-                  borderTop: idx > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none'
+                <div key={chip.label} style={{
+                  padding: isMobile ? '6px 4px' : '8px 6px',
+                  borderRadius: '8px',
+                  background: isClose ? 'rgba(255,255,255,0.02)' : `${chipColor}10`,
+                  border: `1px solid ${isClose ? 'rgba(255,255,255,0.05)' : `${chipColor}25`}`,
+                  textAlign: 'center',
                 }}>
-                  {/* Category Header - COLOR CODED */}
-                  <div style={{ 
-                    textAlign: 'center',
-                    marginBottom: isMobile ? '10px' : '14px',
-                    background: `linear-gradient(135deg, ${colorLight} 0%, transparent 100%)`,
-                    border: `1px solid ${colorBorder}`,
-                    borderRadius: '8px',
-                    padding: isMobile ? '8px 12px' : '10px 16px',
-                    boxShadow: `0 2px 12px ${colorLight}`
-                  }}>
-                    <div style={{ 
-                      fontSize: isMobile ? '11px' : '13px', 
-                      color: sectionColor,
-                      letterSpacing: '0.1em',
-                      fontWeight: '800',
-                      marginBottom: '2px',
-                      textTransform: 'uppercase',
-                      textShadow: `0 0 20px ${sectionColor}40`
-                    }}>{label}</div>
-                    <div style={{ 
-                      fontSize: isMobile ? '8px' : '9px', 
-                      color: 'rgba(255,255,255,0.5)',
-                      fontWeight: '500'
-                    }}>{sublabel}</div>
+                  <div style={{ fontSize: '7px', fontWeight: '600', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '2px' }}>{chip.label}</div>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '800', color: isClose ? 'rgba(255,255,255,0.4)' : chipColor }}>
+                    {isClose ? '~EVEN' : chipWinner}
                   </div>
-                  
-                  {/* Row Header with Tiers - COMPACT */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: isMobile ? '6px' : '10px'
-                  }}>
-                    {/* Away Team */}
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: isMobile ? '6px' : '10px',
-                      padding: isMobile ? '6px 8px' : '8px 12px',
-                      background: awayBetter ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                      borderRadius: '8px',
-                      border: awayBetter ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid transparent'
-                    }}>
-                      <span style={{ 
-                        fontSize: isMobile ? '18px' : '22px', 
-                        fontWeight: '800', 
-                        color: awayTier.color,
-                        fontFamily: 'ui-monospace, monospace',
-                        textShadow: awayBetter ? `0 0 15px ${awayTier.color}50` : 'none'
-                      }}>#{aRank}</span>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ 
-                            fontSize: isMobile ? '10px' : '12px', 
-                            fontWeight: '700', 
-                            color: awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
-                          }}>{awayAbbrev}</span>
-                          {awayBetter && (
-                            <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓</span>
-                          )}
-                        </div>
-                        <span style={{ 
-                          fontSize: isMobile ? '8px' : '9px',
-                          color: awayTier.color,
-                          fontWeight: '600'
-                        }}>Top {100 - awayPercentile}%</span>
-                      </div>
-                    </div>
-                    
-                    {/* VS Badge */}
-                    <div style={{ 
-                      fontSize: isMobile ? '9px' : '10px', 
-                      color: 'rgba(255,255,255,0.25)', 
-                      fontWeight: '600',
-                      letterSpacing: '0.05em'
-                    }}>vs</div>
-                    
-                    {/* Home Team */}
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: isMobile ? '6px' : '10px', 
-                      flexDirection: 'row-reverse',
-                      padding: isMobile ? '6px 8px' : '8px 12px',
-                      background: !awayBetter ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-                      borderRadius: '8px',
-                      border: !awayBetter ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid transparent'
-                    }}>
-                      <span style={{ 
-                        fontSize: isMobile ? '18px' : '22px', 
-                        fontWeight: '800', 
-                        color: homeTier.color,
-                        fontFamily: 'ui-monospace, monospace',
-                        textShadow: !awayBetter ? `0 0 15px ${homeTier.color}50` : 'none'
-                      }}>#{hRank}</span>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                          {!awayBetter && (
-                            <span style={{ fontSize: '10px', color: '#10B981', fontWeight: '700' }}>✓</span>
-                          )}
-                          <span style={{ 
-                            fontSize: isMobile ? '10px' : '12px', 
-                            fontWeight: '700', 
-                            color: !awayBetter ? 'white' : 'rgba(255,255,255,0.4)'
-                          }}>{homeAbbrev}</span>
-                        </div>
-                        <span style={{ 
-                          fontSize: isMobile ? '8px' : '9px',
-                          color: homeTier.color,
-                          fontWeight: '600'
-                        }}>Top {100 - homePercentile}%</span>
-              </div>
-            </div>
-          </div>
-                  
-                  {/* Comparison Bar */}
-                  <div style={{ 
-                    position: 'relative', 
-                    height: isMobile ? '6px' : '8px', 
-                    borderRadius: '4px', 
-                    overflow: 'hidden',
-                    background: 'rgba(0,0,0,0.4)'
-                  }}>
-                    {/* Away side fill */}
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      width: `${awayPct}%`,
-                      height: '100%',
-                      background: `linear-gradient(90deg, ${awayTier.color}30, ${awayTier.color})`,
-                      transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }} />
-                    {/* Home side fill */}
-                    <div style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: 0,
-                      width: `${100 - awayPct}%`,
-                      height: '100%',
-                      background: `linear-gradient(270deg, ${homeTier.color}30, ${homeTier.color})`,
-                      transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }} />
-                    {/* Center marker */}
-                    <div style={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: 0,
-                      width: '2px',
-                      height: '100%',
-                      background: 'rgba(255,255,255,0.2)',
-                      transform: 'translateX(-50%)'
-                    }} />
-                  </div>
-                  
-                  {/* Gap indicator - COMPACT */}
-                  <div style={{ 
-                    textAlign: 'center', 
-                    marginTop: isMobile ? '8px' : '10px'
-                  }}>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: isMobile ? '4px 12px' : '5px 16px',
-                      borderRadius: '16px',
-                      background: gap > 50 
-                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)' 
-                        : gap > 25 
-                          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%)' 
-                          : 'rgba(255,255,255,0.04)',
-                      border: gap > 50 ? '1px solid rgba(16, 185, 129, 0.35)' : gap > 25 ? '1px solid rgba(59, 130, 246, 0.25)' : '1px solid rgba(255,255,255,0.08)',
-                      fontSize: isMobile ? '10px' : '11px',
-                      fontWeight: '800',
-                      color: gap > 50 ? '#34D399' : gap > 25 ? '#60A5FA' : 'rgba(255,255,255,0.5)',
-                      fontFamily: 'ui-monospace, monospace',
-                      boxShadow: gap > 50 ? '0 2px 10px rgba(16, 185, 129, 0.2)' : gap > 25 ? '0 2px 8px rgba(59, 130, 246, 0.15)' : 'none',
-                      letterSpacing: '0.05em'
-                    }}>
-                      {gap > 100 ? `+${gap} MAJOR` : gap > 50 ? `+${gap} EDGE` : gap > 25 ? `+${gap}` : `+${gap} close`}
-                    </span>
-          </div>
-                  
-            </div>
+                </div>
               );
             })}
           </div>
-          
-          {/* PREMIUM MATCHUP INSIGHT */}
-          {(() => {
-            const overallGap = Math.abs(homeRank - awayRank);
-            const offGap = Math.abs(home.adjOff_rank - away.adjOff_rank);
-            const defGap = Math.abs(home.adjDef_rank - away.adjDef_rank);
-            const overallWinner = awayRank < homeRank ? awayAbbrev : homeAbbrev;
-            const overallLoser = awayRank < homeRank ? homeAbbrev : awayAbbrev;
-            const offWinner = away.adjOff_rank < home.adjOff_rank ? awayAbbrev : homeAbbrev;
-            const defWinner = away.adjDef_rank < home.adjDef_rank ? awayAbbrev : homeAbbrev;
-            const betterOverallRank = Math.min(awayRank, homeRank);
-            const worseOverallRank = Math.max(awayRank, homeRank);
-            const betterOffRank = Math.min(away.adjOff_rank, home.adjOff_rank);
-            const betterDefRank = Math.min(away.adjDef_rank, home.adjDef_rank);
-            
-            // Deterministic variety based on team names
-            const pickVariant = (arr: string[]) => arr[(awayRank + homeRank) % arr.length];
-            
-            const allSameWinner = offWinner === defWinner && defWinner === overallWinner;
-            const hasMajorEdge = overallGap > 100;
-            const hasStrongEdge = overallGap > 50;
-            
-            let headline = '';
-            let insight = '';
-            let confidence: 'high' | 'medium' | 'low' = 'medium';
-            
-            if (allSameWinner && hasMajorEdge) {
-              headline = pickVariant([
-                `${overallWinner} is the clear favorite here.`,
-                `This one's lopsided on paper.`,
-                `${overallWinner} should dominate.`,
-                `Expect ${overallWinner} to control this one.`
-              ]);
-              insight = pickVariant([
-                `Ranked #${betterOverallRank} overall with elite marks on both ends, ${overallWinner} outclasses ${overallLoser} in every phase. This is a significant mismatch — expect them to control tempo and pull away.`,
-                `The gap here is massive. ${overallWinner} (#${betterOverallRank}) is simply a better team across the board. ${overallLoser} would need an exceptional performance and some luck to hang around.`,
-                `${overallWinner} brings a top-${betterOverallRank} overall rating with no exploitable weaknesses. They're better offensively, defensively, and on the efficiency metrics. This should be comfortable.`,
-                `When you're ranked #${betterOverallRank} and your opponent is #${worseOverallRank}, the data speaks for itself. ${overallWinner} is the superior squad and should prove it.`
-              ]);
-              confidence = 'high';
-            } else if (allSameWinner && hasStrongEdge) {
-              headline = pickVariant([
-                `${overallWinner} holds meaningful advantages.`,
-                `The metrics strongly favor ${overallWinner}.`,
-                `${overallWinner} looks like the better team.`,
-                `Edge to ${overallWinner} across the board.`
-              ]);
-              insight = pickVariant([
-                `With a #${betterOverallRank} power rating and edges in both offense (#${betterOffRank}) and defense (#${betterDefRank}), ${overallWinner} should dictate the pace. ${overallLoser} will need to overperform to stay competitive.`,
-                `${overallWinner} grades out better in every major category. Their #${betterOffRank} offense combined with #${betterDefRank} defense creates problems for ${overallLoser} on both ends.`,
-                `The numbers paint a clear picture: ${overallWinner} is the more complete team. They can score, they can defend, and they control the efficiency battle.`,
-                `${overallLoser} faces an uphill climb here. ${overallWinner} owns advantages on offense, defense, and overall power rating — that's tough to overcome.`
-              ]);
-              confidence = 'high';
-            } else if (allSameWinner && overallGap > 25) {
-              headline = pickVariant([
-                `${overallWinner} has the edge, but it's not a runaway.`,
-                `Lean ${overallWinner}, though it's closer than it looks.`,
-                `${overallWinner} is favored, but not by much.`,
-                `Slight advantage to ${overallWinner}.`
-              ]);
-              insight = pickVariant([
-                `The metrics favor ${overallWinner} across the board, though the gap isn't massive. They're the better team on paper, but ${overallLoser} has the talent to make this interesting if they execute.`,
-                `${overallWinner} grades out ahead in every phase, but we're talking margins here, not chasms. A hot shooting night from ${overallLoser} could flip the script.`,
-                `On balance, ${overallWinner} is the more efficient team. But the difference isn't so large that ${overallLoser} can't compete — they'll need to bring their A-game.`,
-                `The edge goes to ${overallWinner} based on the analytics, but this isn't a layup. ${overallLoser} has enough talent to make this a game.`
-              ]);
-              confidence = 'medium';
-            } else if (offWinner !== defWinner && offGap > 50 && defGap > 50) {
-              headline = pickVariant([
-                `A fascinating style clash.`,
-                `Offense vs. defense — classic battle.`,
-                `Different strengths make this intriguing.`,
-                `This is a pace-of-play game.`
-              ]);
-              insight = pickVariant([
-                `${offWinner} brings the firepower (#${betterOffRank} offense) while ${defWinner} wins with defense (#${betterDefRank}). Pace will be the X-factor — a fast game favors ${offWinner}, a grind favors ${defWinner}.`,
-                `Two different philosophies collide. ${offWinner} wants to run and score; ${defWinner} wants to slow it down and suffocate. Whoever dictates tempo likely wins.`,
-                `${offWinner}'s elite offense (#${betterOffRank}) meets ${defWinner}'s stingy defense (#${betterDefRank}). The team that imposes its style wins this chess match.`,
-                `Style matchup alert: ${offWinner} can light up the scoreboard, but ${defWinner} makes every point feel like a struggle. Tempo is everything here.`
-              ]);
-              confidence = 'medium';
-            } else if (offWinner !== defWinner) {
-              headline = pickVariant([
-                `Split edges make this a toss-up.`,
-                `Neither team has a clear advantage.`,
-                `Balanced matchup with no obvious favorite.`,
-                `This one could go either way.`
-              ]);
-              insight = pickVariant([
-                `${offWinner} has the offensive advantage, ${defWinner} the defensive edge. Neither team dominates both phases, so execution and game flow will likely decide the outcome.`,
-                `The strengths offset: ${offWinner} scores more efficiently, but ${defWinner} prevents points better. When advantages cancel out, it comes down to who plays better on the night.`,
-                `No team owns both sides of the ball here. ${offWinner} can put up points, ${defWinner} can take them away. Classic coin-flip territory.`,
-                `Split edges create uncertainty. ${offWinner} controls offense, ${defWinner} controls defense — and neither has enough margin to feel confident.`
-              ]);
-              confidence = 'low';
-            } else if (overallGap > 25) {
-              headline = pickVariant([
-                `${overallWinner} is the slight favorite.`,
-                `Give the edge to ${overallWinner}.`,
-                `${overallWinner} has the analytics advantage.`,
-                `Lean toward ${overallWinner} here.`
-              ]);
-              insight = pickVariant([
-                `The overall metrics lean toward ${overallWinner} (#${betterOverallRank} vs #${worseOverallRank}), but this isn't a dominant advantage. Expect a competitive game where either team could find a way.`,
-                `${overallWinner} grades out higher on the power ratings, though the margin is modest. This is a game that could swing on a few key possessions.`,
-                `The data gives ${overallWinner} the nod, but not by much. Both teams have paths to victory — this should be entertaining.`,
-                `${overallWinner} (#${betterOverallRank}) holds a slight edge over ${overallLoser} (#${worseOverallRank}). Not enough to feel strongly about, but the lean is there.`
-              ]);
-              confidence = 'medium';
-            } else {
-              headline = pickVariant([
-                `True toss-up matchup.`,
-                `The numbers say pick 'em.`,
-                `Can't separate these two.`,
-                `About as even as it gets.`
-              ]);
-              insight = pickVariant([
-                `The numbers say these teams are evenly matched across all phases. Home court, momentum, and individual performances will matter more than usual. Don't be surprised by any outcome.`,
-                `When the metrics can't find an edge, it comes down to intangibles. Who wants it more? Who makes the big plays? That's what will decide this one.`,
-                `Statistically, there's nothing to separate these teams. Expect a competitive battle where execution and adjustments will be the difference.`,
-                `The analytics shrug at this one. Both teams grade out similarly — this is a pure game-day performance matchup.`
-              ]);
-              confidence = 'low';
-            }
-            
-            return (
-              <div style={{ 
-                marginTop: isMobile ? '14px' : '18px',
-                padding: isMobile ? '14px' : '18px',
-                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)',
-                borderRadius: '12px',
-                border: confidence === 'high' 
-                  ? '1px solid rgba(52, 211, 153, 0.3)' 
-                  : confidence === 'medium' 
-                    ? '1px solid rgba(139, 92, 246, 0.25)' 
-                    : '1px solid rgba(100, 116, 139, 0.2)',
-                boxShadow: confidence === 'high' 
-                  ? '0 4px 20px rgba(52, 211, 153, 0.1)' 
-                  : '0 4px 20px rgba(0,0,0,0.3)'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  marginBottom: isMobile ? '10px' : '12px'
-                }}>
-                  <div style={{
-                    width: isMobile ? '6px' : '8px',
-                    height: isMobile ? '6px' : '8px',
-                    borderRadius: '50%',
-                    background: confidence === 'high' ? '#34D399' : confidence === 'medium' ? '#A78BFA' : '#64748B',
-                    boxShadow: confidence === 'high' ? '0 0 8px rgba(52, 211, 153, 0.5)' : 'none'
-                  }} />
-                  <span style={{ 
-                    fontSize: isMobile ? '8px' : '9px',
-                    color: 'rgba(255,255,255,0.4)',
-                    letterSpacing: '0.12em',
-                    fontWeight: '600',
-                    textTransform: 'uppercase'
-                  }}>ANALYST INSIGHT</span>
-                </div>
-                <div style={{ 
-                  fontSize: isMobile ? '13px' : '15px', 
-                  color: 'white',
-                  fontWeight: '700',
-                  marginBottom: isMobile ? '8px' : '10px',
-                  lineHeight: '1.3'
-                }}>
-                  {headline}
-                </div>
-                <div style={{ 
-                  fontSize: isMobile ? '11px' : '12px', 
-                  color: 'rgba(255,255,255,0.7)',
-                  lineHeight: '1.6',
-                  fontWeight: '400'
-                }}>
-                  {insight}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </div>
 
-      {/* ═══════════════════ DIVIDER ═══════════════════ */}
-      <div style={{ padding: `0 ${padding}`, margin: isMobile ? '12px 0' : '16px 0' }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '16px',
-          padding: isMobile ? '10px 0' : '12px 0'
-        }}>
-          <div style={{ flex: 1, height: '2px', background: 'linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.3))' }} />
-          <div style={{ 
-            fontSize: isMobile ? '11px' : '13px', 
-            color: 'white', 
-            letterSpacing: '0.15em', 
-            fontWeight: '800',
-            textShadow: '0 0 20px rgba(139, 92, 246, 0.5)',
-            background: 'linear-gradient(135deg, #C7D2FE 0%, #A78BFA 50%, #8B5CF6 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>MATCHUP DETAILS</div>
-          <div style={{ flex: 1, height: '2px', background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.4), transparent)' }} />
-        </div>
-      </div>
-
-{/* ═══════════════════ PREMIUM MATCHUP DETAILS ═══════════════════ */}
-      <div style={{ padding: `0 ${padding} ${padding}` }}>
-        
-        {/* ELEVATED Efficiency Comparison Header */}
-        <div style={{ 
-          marginBottom: isMobile ? '16px' : '20px',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
-          borderRadius: isMobile ? '14px' : '16px',
-          border: '1px solid rgba(255,255,255,0.08)',
-          overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)'
-        }}>
-          {/* Section Label */}
+          {/* Verdict sentence */}
           <div style={{
-            padding: isMobile ? '8px 14px' : '10px 18px',
-            background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 50%, rgba(99, 102, 241, 0.1) 100%)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
+            textAlign: 'center', padding: '8px 12px', borderRadius: '8px',
+            background: 'rgba(16, 185, 129, 0.06)', borderLeft: '3px solid #10B98150',
           }}>
-            <div style={{ width: '40px', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5))' }} />
-            <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: 'rgba(199, 210, 254, 0.8)', letterSpacing: '0.12em' }}>EFFICIENCY COMPARISON</span>
-            <div style={{ width: '40px', height: '1px', background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.5), transparent)' }} />
-          </div>
-
-          {/* Main Stats Row */}
-          <div style={{ 
-            display: 'flex', alignItems: 'stretch', justifyContent: 'space-between',
-            padding: isMobile ? '16px 14px' : '20px 24px'
-          }}>
-            {/* OFFENSE SIDE */}
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: isMobile ? '10px' : '11px', 
-                fontWeight: '700', 
-                color: 'rgba(255,255,255,0.6)', 
-                marginBottom: '4px',
-                letterSpacing: '0.05em'
-              }}>
-                {offAbbrev} <span style={{ color: '#34D399' }}>OFFENSE</span>
-              </div>
-              <div style={{ 
-                fontSize: isMobile ? '28px' : '36px', 
-                fontWeight: '800', 
-                background: 'linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                fontFamily: 'ui-monospace, monospace',
-                lineHeight: 1,
-                textShadow: '0 0 40px rgba(52, 211, 153, 0.3)'
-              }}>
-                {offTeam.adjOff?.toFixed(1) || '—'}
-              </div>
-              <div style={{ 
-                fontSize: isMobile ? '8px' : '9px', 
-                color: 'rgba(52, 211, 153, 0.6)', 
-                fontWeight: '600',
-                marginTop: '2px',
-                letterSpacing: '0.08em'
-              }}>PTS/100 POSS</div>
-            </div>
-
-            {/* CENTER DIVIDER & FLIP */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              padding: '0 12px',
-              position: 'relative'
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                width: '1px',
-                background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent 100%)'
-              }} />
-              <button onClick={() => setView(isAwayOffView ? 'homeOff_awayDef' : 'awayOff_homeDef')}
-                style={{ 
-                  padding: isMobile ? '8px 12px' : '10px 16px', 
-                  borderRadius: '10px', 
-                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%)', 
-                  border: '1px solid rgba(139, 92, 246, 0.3)', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px',
-                  boxShadow: '0 2px 10px rgba(139, 92, 246, 0.2)',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  zIndex: 1
-                }}>
-                <ArrowRightLeft size={isMobile ? 12 : 14} color="#A78BFA" />
-                <span style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: '#C7D2FE' }}>FLIP</span>
-              </button>
-              {/* Differential Badge */}
-              {(() => {
-                const diff = (offTeam.adjOff || 0) - (defTeam.adjDef || 0);
-                const isAdvantage = diff > 0;
-                return (
-                  <div style={{
-                    marginTop: '8px',
-                    padding: isMobile ? '3px 8px' : '4px 10px',
-                    borderRadius: '6px',
-                    background: isAdvantage 
-                      ? 'linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)'
-                      : 'linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%)',
-                    border: `1px solid ${isAdvantage ? 'rgba(52, 211, 153, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`,
-                  }}>
-                    <span style={{
-                      fontSize: isMobile ? '10px' : '11px',
-                      fontWeight: '800',
-                      color: isAdvantage ? '#34D399' : '#F87171',
-                      fontFamily: 'ui-monospace, monospace'
-                    }}>
-                      {isAdvantage ? '+' : ''}{diff.toFixed(1)}
-                    </span>
-                  </div>
-                );
-              })()}
-            </div>
-            
-            {/* DEFENSE SIDE */}
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: isMobile ? '10px' : '11px', 
-                fontWeight: '700', 
-                color: 'rgba(255,255,255,0.6)', 
-                marginBottom: '4px',
-                letterSpacing: '0.05em'
-              }}>
-                {defAbbrev} <span style={{ color: '#F87171' }}>DEFENSE</span>
-              </div>
-              <div style={{ 
-                fontSize: isMobile ? '28px' : '36px', 
-                fontWeight: '800', 
-                background: 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                fontFamily: 'ui-monospace, monospace',
-                lineHeight: 1,
-                textShadow: '0 0 40px rgba(248, 113, 113, 0.3)'
-              }}>
-                {defTeam.adjDef?.toFixed(1) || '—'}
-              </div>
-              <div style={{ 
-                fontSize: isMobile ? '8px' : '9px', 
-                color: 'rgba(248, 113, 113, 0.6)', 
-                fontWeight: '600',
-                marginTop: '2px',
-                letterSpacing: '0.08em'
-              }}>PTS/100 ALLOWED</div>
-            </div>
+            <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.65)', fontWeight: '500' }}>
+              {winnerName} wins <strong style={{ color: '#10B981' }}>{winCount} of 6</strong> key matchup categories
+            </span>
           </div>
         </div>
-
-        {/* Category Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
-          
-          {/* SHOOTING CARD */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-            <div style={{ 
-              padding: isMobile ? '12px 16px' : '14px 20px', 
-              background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%)', 
-              borderBottom: '1px solid rgba(251, 191, 36, 0.2)' 
-            }}>
-              <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.08em' }}>SHOOTING PROFILE</span>
       </div>
-            <div style={{ padding: isMobile ? '14px' : '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
-              {[
-                { label: '2PT%', offVal: twoP.off, defVal: twoP.def, avg: D1_AVG.twoP, type: '2pt' },
-                { label: '3PT%', offVal: threeP.off, defVal: threeP.def, avg: D1_AVG.threeP, type: '3pt' },
-                { label: '3PT RATE', offVal: threePRate.off, defVal: threePRate.def, avg: D1_AVG.threePRate, type: '3ptRate' },
-                { label: 'eFG%', offVal: eFG.off, defVal: eFG.def, avg: D1_AVG.eFG, type: 'efg' }
-              ].map(({ label, offVal, defVal, avg, type }) => {
-                const offDiff = offVal - avg;
-                const defDiff = defVal - avg;
-                // OFFENSE: Higher % = GOOD (scoring well)
-                const offAboveAvg = offDiff > 2;
-                const offBelowAvg = offDiff < -2;
-                // DEFENSE: Lower % allowed = GOOD (holding opponents down)
-                const defStingy = defDiff < -2; // Below avg = good D
-                const defLeaky = defDiff > 2;   // Above avg = bad D (allows too much)
-                
-                // Matchup edge: offense shoots X%, defense allows Y%
-                // If offense shoots HIGHER than defense allows = GOOD for offense
-                const matchupEdge = offVal - defVal;
-                
-                // Generate matchup-specific insight with VARIETY
-                const getMatchupInsight = () => {
-                  if (type === '2pt') {
-                    // Great matchup: good offense vs bad defense
-                    if (offAboveAvg && defLeaky) {
-                      const phrases = [
-                        `${offAbbrev} elite inside (${offVal.toFixed(0)}%) vs ${defAbbrev}'s porous interior (${defVal.toFixed(0)}%) — paint feast`,
-                        `Mismatch: ${offAbbrev} finishes at ${offVal.toFixed(0)}% and ${defAbbrev} allows ${defVal.toFixed(0)}% — attack the rim`,
-                        `${offAbbrev}'s ${offVal.toFixed(0)}% 2PT meets weak interior D allowing ${defVal.toFixed(0)}% — advantage inside`
-                      ];
-                      return phrases[Math.floor(offVal + defVal) % 3];
-                    }
-                    // Battle: good offense vs good defense
-                    if (offAboveAvg && defStingy) {
-                      const phrases = [
-                        `${offAbbrev} shoots ${offVal.toFixed(0)}% but ${defAbbrev} only allows ${defVal.toFixed(0)}% — elite battle`,
-                        `Stoppable force vs immovable object — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev} D (${defVal.toFixed(0)}%)`,
-                        `Premium matchup: ${offAbbrev}'s finishing vs ${defAbbrev}'s lockdown D`
-                      ];
-                      return phrases[Math.floor(offVal + defVal) % 3];
-                    }
-                    // Bad offense vs bad defense
-                    if (offBelowAvg && defLeaky) {
-                      return `${offAbbrev} struggles inside (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% — should still score`;
-                    }
-                    // Bad offense vs good defense
-                    if (offBelowAvg && defStingy) {
-                      const phrases = [
-                        `Tough sledding — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s stingy ${defVal.toFixed(0)}% allowed`,
-                        `${offAbbrev} struggles at ${offVal.toFixed(0)}% and ${defAbbrev} holds teams to ${defVal.toFixed(0)}% — low scoring`,
-                        `Cold shooting meets brick wall — points will be hard to come by`
-                      ];
-                      return phrases[Math.floor(offVal + defVal) % 3];
-                    }
-                    // Neutral
-                    return `Both near D1 average inside — game flow will decide`;
-                  }
-                  
-                  if (type === '3pt') {
-                    if (offAboveAvg && defLeaky) {
-                      const phrases = [
-                        `${offAbbrev} knocks down ${offVal.toFixed(0)}% from deep vs ${defAbbrev} allowing ${defVal.toFixed(0)}% — shooters feast`,
-                        `Sniper alert: ${offAbbrev} (${offVal.toFixed(0)}%) meets poor perimeter D (${defVal.toFixed(0)}%)`,
-                        `Open looks expected — ${offAbbrev} shoots ${offVal.toFixed(0)}%, ${defAbbrev} gives up ${defVal.toFixed(0)}%`
-                      ];
-                      return phrases[Math.floor(offVal + defVal) % 3];
-                    }
-                    if (offAboveAvg && defStingy) {
-                      return `${offAbbrev}'s shooters (${offVal.toFixed(0)}%) vs ${defAbbrev}'s tight coverage (${defVal.toFixed(0)}%) — contested looks`;
-                    }
-                    if (offBelowAvg && defLeaky) {
-                      return `${offAbbrev} cold from 3 (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% — open looks may help`;
-                    }
-                    if (offBelowAvg && defStingy) {
-                      const phrases = [
-                        `Avoid the 3 — ${offAbbrev} (${offVal.toFixed(0)}%) vs ${defAbbrev}'s elite D (${defVal.toFixed(0)}%)`,
-                        `Stay out of 3PT contests — neither team's strength`,
-                        `Poor shooters (${offVal.toFixed(0)}%) vs lockdown perimeter D (${defVal.toFixed(0)}%)`
-                      ];
-                      return phrases[Math.floor(offVal + defVal) % 3];
-                    }
-                    return `3PT shooting near average for both — variance factor`;
-                  }
-                  
-                  if (type === '3ptRate') {
-                    const offHeavy3 = offVal > 42;
-                    const offLow3 = offVal < 35;
-                    const defAllowsLots = defVal > 42;
-                    
-                    if (offHeavy3 && defAllowsLots) {
-                      return `3PT heavy game — ${offAbbrev} takes ${offVal.toFixed(0)}% from deep, ${defAbbrev} allows ${defVal.toFixed(0)}% — high variance`;
-                    }
-                    if (offHeavy3) {
-                      return `${offAbbrev} perimeter-oriented (${offVal.toFixed(0)}% 3PT rate) — swings will be big`;
-                    }
-                    if (offLow3) {
-                      return `${offAbbrev} attacks inside — only ${offVal.toFixed(0)}% 3PT rate, less variance`;
-                    }
-                    return `Balanced shot diet (${offVal.toFixed(0)}% 3PT rate)`;
-                  }
-                  
-                  if (type === 'efg') {
-                    if (offAboveAvg && defLeaky) {
-                      return `Efficient ${offAbbrev} (${offVal.toFixed(0)}% eFG) vs ${defAbbrev} allowing ${defVal.toFixed(0)}% — should score well`;
-                    }
-                    if (offAboveAvg && defStingy) {
-                      return `${offAbbrev}'s efficiency (${offVal.toFixed(0)}%) meets ${defAbbrev}'s elite D (${defVal.toFixed(0)}%) — key battle`;
-                    }
-                    if (offBelowAvg && defLeaky) {
-                      return `${offAbbrev} inefficient (${offVal.toFixed(0)}%) but ${defAbbrev} allows ${defVal.toFixed(0)}% — could improve`;
-                    }
-                    if (offBelowAvg && defStingy) {
-                      return `${defAbbrev} elite D (${defVal.toFixed(0)}% allowed) vs struggling ${offAbbrev} — low-scoring`;
-                    }
-                    if (matchupEdge > 2) {
-                      return `${offAbbrev} efficiency edge (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}% allowed)`;
-                    }
-                    if (matchupEdge < -2) {
-                      return `${defAbbrev} efficiency edge — holds teams below their average`;
-                    }
-                    return `Efficiency even (${offVal.toFixed(0)}% vs ${defVal.toFixed(0)}%) — execution decides`;
-                  }
-                  return '';
-                };
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION 3: SHOT PROFILE (PBP data)
+         ═══════════════════════════════════════════════════════════ */}
+      {hasPBP && (
+        <div style={{ padding: `0 ${pad} ${pad}` }}>
+          <div style={{
+            padding: isMobile ? '14px' : '20px',
+            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.3) 100%)',
+            borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)',
+          }}>
+            {/* Header with FLIP */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.12em' }}>SHOT PROFILE</div>
+                <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
+                  {offA} offense vs {defA} defense
+                </div>
+              </div>
+              <button
+                onClick={() => setView(v => v === 'awayOff_homeDef' ? 'homeOff_awayDef' : 'awayOff_homeDef')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  padding: isMobile ? '8px 12px' : '6px 12px', borderRadius: '8px',
+                  background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)',
+                  color: '#A78BFA', fontSize: '9px', fontWeight: '700', cursor: 'pointer',
+                  transition: 'all 0.2s', minHeight: '36px',
+                }}
+              >
+                <ArrowRightLeft size={12} />
+                FLIP
+              </button>
+            </div>
+
+            {/* Shot Zone Cards */}
+            {(() => {
+              const offPBP = isAwayView ? awayPBP : homePBP;
+              const defPBP = isAwayView ? homePBP : awayPBP;
+              if (!offPBP || !defPBP) return null;
+
+              const zones = [
+                { label: 'DUNKS', icon: '🔥', offFg: offPBP.dunks_off_fg, offShare: offPBP.dunks_off_share, defFg: defPBP.dunks_def_fg, defShare: defPBP.dunks_def_share, avg: D1_AVG.dunks },
+                { label: 'CLOSE 2', icon: '🎯', offFg: offPBP.close2_off_fg, offShare: offPBP.close2_off_share, defFg: defPBP.close2_def_fg, defShare: defPBP.close2_def_share, avg: D1_AVG.close2 },
+                { label: 'MID-RANGE', icon: '📐', offFg: offPBP.far2_off_fg, offShare: offPBP.far2_off_share, defFg: defPBP.far2_def_fg, defShare: defPBP.far2_def_share, avg: D1_AVG.far2 },
+                { label: '3-POINT', icon: '🏹', offFg: offPBP.three_off_fg, offShare: offPBP.three_off_share, defFg: defPBP.three_def_fg, defShare: defPBP.three_def_share, avg: D1_AVG.threeP },
+              ];
+
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                  {zones.map((zone) => {
+                    const offColor = getStatColor(zone.offFg, zone.avg, true);
+                    const defColor = getStatColor(zone.defFg, zone.avg, false); // For defense, lower = better for the defender
+                    const edge = zone.offFg - zone.defFg;
+                    const edgeColor = edge > 3 ? '#10B981' : edge > 0 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+
+                    return (
+                      <div key={zone.label} style={{
+                        padding: isMobile ? '10px' : '14px',
+                        borderRadius: '10px',
+                        background: 'rgba(0,0,0,0.25)',
+                        border: `1px solid rgba(255,255,255,0.04)`,
+                      }}>
+                        {/* Zone header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em' }}>{zone.label}</span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.25)' }}>{zone.offShare.toFixed(0)}% of shots</span>
+                        </div>
+
+                        {/* Offense FG% */}
+                        <div style={{ marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '3px' }}>
+                            <span style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)' }}>{offA} OFF</span>
+                            <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: offColor, fontFamily: 'ui-monospace, monospace' }}>{zone.offFg.toFixed(1)}%</span>
+                          </div>
+                          <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${Math.min((zone.offFg / 100) * 100, 100)}%`, background: `linear-gradient(90deg, ${offColor}50, ${offColor})`, borderRadius: '2px', transition: 'width 0.8s ease' }} />
+                          </div>
+                        </div>
+
+                        {/* Defense FG% Allowed */}
+                        <div style={{ marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '3px' }}>
+                            <span style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)' }}>{defA} DEF</span>
+                            <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace' }}>{zone.defFg.toFixed(1)}%</span>
+                          </div>
+                          <div style={{ height: '3px', borderRadius: '2px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${Math.min((zone.defFg / 100) * 100, 100)}%`, background: `rgba(255,255,255,0.15)`, borderRadius: '2px' }} />
+                          </div>
+                        </div>
+
+                        {/* Edge indicator */}
+                        <div style={{
+                          textAlign: 'center', padding: '3px 6px', borderRadius: '6px',
+                          background: `${edgeColor}10`, border: `1px solid ${edgeColor}20`,
+                        }}>
+                          <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, fontFamily: 'ui-monospace, monospace' }}>
+                            {edge > 0 ? '+' : ''}{edge.toFixed(1)}
+                          </span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginLeft: '3px' }}>
+                            {edge > 3 ? 'ADVANTAGE' : edge > 0 ? 'SLIGHT' : edge > -3 ? 'TOUGH' : 'MISMATCH'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Shot Profile Insight */}
+            {(() => {
+              const offPBP = isAwayView ? awayPBP : homePBP;
+              const defPBP = isAwayView ? homePBP : awayPBP;
+              if (!offPBP || !defPBP) return null;
+
+              const close2Edge = offPBP.close2_off_fg - defPBP.close2_def_fg;
+              const threeEdge = offPBP.three_off_fg - defPBP.three_def_fg;
+              const bestZone = offPBP.close2_off_share > offPBP.three_off_share ? 'inside' : 'perimeter';
+
+              let shotInsight = '';
+              if (bestZone === 'inside' && close2Edge > 3) {
+                shotInsight = `${offA} attacks inside (${offPBP.close2_off_share.toFixed(0)}% close 2s at ${offPBP.close2_off_fg.toFixed(0)}%) and ${defA} allows ${defPBP.close2_def_fg.toFixed(0)}% there — clear path to score`;
+              } else if (bestZone === 'perimeter' && threeEdge > 2) {
+                shotInsight = `${offA} relies on 3PT shooting (${offPBP.three_off_share.toFixed(0)}% of shots) and ${defA} allows ${defPBP.three_def_fg.toFixed(0)}% from deep — favorable matchup`;
+              } else if (close2Edge < -5) {
+                shotInsight = `${defA} locks down close range (${defPBP.close2_def_fg.toFixed(0)}% allowed) — ${offA} may struggle inside`;
+              } else {
+                shotInsight = `${offA} shoots ${offPBP.close2_off_fg.toFixed(0)}% close / ${offPBP.three_off_fg.toFixed(0)}% from 3 vs ${defA}'s ${defPBP.close2_def_fg.toFixed(0)}% / ${defPBP.three_def_fg.toFixed(0)}% allowed`;
+              }
+
+              return (
+                <div style={{
+                  marginTop: '10px', padding: '8px 10px', borderRadius: '8px',
+                  background: 'rgba(251, 191, 36, 0.06)', borderLeft: '3px solid rgba(251, 191, 36, 0.3)',
+                }}>
+                  <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.55)', fontWeight: '500', lineHeight: '1.4' }}>{shotInsight}</span>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION 4: FOUR FACTORS (2x2 Grid)
+         ═══════════════════════════════════════════════════════════ */}
+      <div style={{ padding: `0 ${pad} ${pad}` }}>
+        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>
+            {offA} OFFENSE vs {defA} DEFENSE
+          </span>
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px',
+        }}>
+          {[
+            {
+              label: 'SHOOTING', stat: 'eFG%', offVal: eFG.off, defVal: eFG.def, avg: D1_AVG.eFG,
+              higher: true, color: '#FBBF24',
+            },
+            {
+              label: 'BALL CONTROL', stat: 'TO Rate', offVal: to.off, defVal: to.def, avg: D1_AVG.to,
+              higher: false, color: '#F87171', // lower TO is better for offense
+            },
+            {
+              label: 'BOARDS', stat: 'OReb%', offVal: oreb.off, defVal: oreb.def, avg: D1_AVG.oreb,
+              higher: true, color: '#60A5FA',
+            },
+            {
+              label: 'FREE THROWS', stat: 'FT Rate', offVal: ftRate.off, defVal: ftRate.def, avg: D1_AVG.ftRate,
+              higher: true, color: '#34D399',
+            },
+          ].map((factor) => {
+            const diff = factor.offVal - factor.defVal;
+            const edge = factor.higher ? diff : -diff; // positive = good for offense
+            const edgeColor = edge > 3 ? '#10B981' : edge > 0 ? '#22D3EE' : edge > -2 ? '#F59E0B' : '#EF4444';
+            const edgeLabel = edge > 3 ? 'EDGE' : edge > 0 ? 'SLIGHT' : edge > -2 ? 'NEUTRAL' : 'TOUGH';
+            const offColor = factor.higher
+              ? getStatColor(factor.offVal, factor.avg, true)
+              : getStatColor(factor.offVal, factor.avg, false);
 
             return (
-                  <div key={label}>
-                    <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>{label}</span>
-                      <span>D1: {avg}%</span>
+              <div key={factor.label} style={{
+                padding: isMobile ? '10px' : '14px',
+                borderRadius: '10px',
+                background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.2) 100%)',
+                border: `1px solid ${edgeColor}20`,
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                {/* Subtle glow on edge cards */}
+                {edge > 3 && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${edgeColor}, transparent)` }} />
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '700', color: factor.color, letterSpacing: '0.08em' }}>{factor.label}</span>
+                  <span style={{
+                    fontSize: '8px', fontWeight: '700', color: edgeColor,
+                    padding: '2px 6px', borderRadius: '4px', background: `${edgeColor}12`,
+                  }}>{edgeLabel}</span>
+                </div>
+
+                {/* Values */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                  <div>
+                    <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '900', color: offColor, fontFamily: 'ui-monospace, monospace' }}>
+                      {factor.offVal.toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginLeft: '3px' }}>off</span>
                   </div>
-                    {/* Offense row - HIGHER is better for offense */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{offAbbrev}</span>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offAboveAvg ? '#10B981' : offBelowAvg ? '#F87171' : 'rgba(255,255,255,0.6)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{offVal.toFixed(1)}%</span>
-                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((offVal / 60) * 100, 100)}%`, height: '100%', background: offAboveAvg ? 'linear-gradient(90deg, #10B98150, #10B981)' : offBelowAvg ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                        <div style={{ position: 'absolute', left: `${(avg / 60) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                      </div>
-                    </div>
-                    {/* Arrow */}
-                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0', marginLeft: isMobile ? '45px' : '50px' }}>↓</div>
-                    {/* Defense row - LOWER is better for defense (allows less) */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.5)', width: isMobile ? '45px' : '50px' }}>{defAbbrev}</span>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defStingy ? '#10B981' : defLeaky ? '#F87171' : 'rgba(255,255,255,0.6)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{defVal.toFixed(1)}%</span>
-                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        {/* For defense: LOW bar = good (green), HIGH bar = bad (red) */}
-                        <div style={{ width: `${Math.min((defVal / 60) * 100, 100)}%`, height: '100%', background: defStingy ? 'linear-gradient(90deg, #10B98150, #10B981)' : defLeaky ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                        <div style={{ position: 'absolute', left: `${(avg / 60) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                      </div>
-                    </div>
-                    {/* Matchup Insight - green when offense has edge (shoots > allows) */}
-                    <div style={{ 
-                      fontSize: isMobile ? '10px' : '11px', 
-                      color: 'rgba(255,255,255,0.7)',
-                      padding: '8px 12px',
-                      background: 'rgba(0,0,0,0.2)',
-                      borderRadius: '8px',
-                      borderLeft: `3px solid ${
-                        (offAboveAvg && defLeaky) ? '#10B981' :  // Great matchup for offense
-                        (offBelowAvg && defStingy) ? '#F87171' : // Bad matchup for offense
-                        (offAboveAvg && defStingy) ? '#F59E0B' : // Battle
-                        '#64748B' // Neutral
-                      }`
-                    }}>
-                      {getMatchupInsight()}
-                    </div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>vs</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace' }}>
+                      {factor.defVal.toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', marginLeft: '3px' }}>def</span>
+                  </div>
+                </div>
+
+                {/* Comparison bar */}
+                <div style={{ position: 'relative', height: '4px', borderRadius: '2px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(Math.max((factor.offVal / (factor.offVal + factor.defVal)) * 100, 15), 85)}%`,
+                    background: `linear-gradient(90deg, ${edgeColor}60, ${edgeColor})`,
+                    borderRadius: '2px',
+                    transition: 'width 0.8s ease',
+                  }} />
+                </div>
+
+                <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: '700', color: edgeColor, fontFamily: 'ui-monospace, monospace' }}>
+                    {edge > 0 ? '+' : ''}{edge.toFixed(1)}
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
-            {/* Smart Takeaway */}
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
-                {twoP.off > D1_AVG.twoP + 2 && twoP.def > D1_AVG.twoP + 2 
-                  ? `${offAbbrev} elite inside (${twoP.off.toFixed(0)}%) vs leaky interior D — paint points likely` 
-                  : threeP.off > D1_AVG.threeP + 2 && threeP.def > D1_AVG.threeP + 2
-                  ? `${offAbbrev} shoots well (${threeP.off.toFixed(0)}%) & ${defAbbrev} allows ${threeP.def.toFixed(0)}% — perimeter edge`
-                  : twoP.off < D1_AVG.twoP - 2 && twoP.def < D1_AVG.twoP - 2
-                  ? `Tough interior matchup — ${defAbbrev} holds teams to ${twoP.def.toFixed(0)}%`
-                  : eFG.off > D1_AVG.eFG + 2
-                  ? `${offAbbrev} efficient offense (${eFG.off.toFixed(0)}% eFG) — should score`
-                  : eFG.def < D1_AVG.eFG - 2
-                  ? `${defAbbrev} elite D (${eFG.def.toFixed(0)}% eFG allowed) — tough to score on`
-                  : 'Balanced shooting matchup — execution will decide'}
-              </span>
-      </div>
-          </div>
 
-          {/* BALL CONTROL CARD */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-            <div style={{ 
-              padding: isMobile ? '12px 16px' : '14px 20px', 
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)', 
-              borderBottom: '1px solid rgba(239, 68, 68, 0.2)' 
-            }}>
-              <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '800', color: '#F87171', letterSpacing: '0.08em' }}>BALL CONTROL</span>
-            </div>
-            <div style={{ padding: isMobile ? '14px' : '18px' }}>
-              <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>TURNOVER RATE</span>
-                <span>D1: {D1_AVG.to}%</span>
-              </div>
-              {/* Offense commits - lower is better */}
-              {(() => {
-                const offGood = to.off < D1_AVG.to;
-                const defDangerous = to.def > D1_AVG.to;
-                const offContext = Math.abs(to.off - D1_AVG.to) > 1.5 ? (offGood ? '✓ PROTECTS' : '! CARELESS') : '~ AVG';
-                const defContext = Math.abs(to.def - D1_AVG.to) > 1.5 ? (defDangerous ? '! FORCES TOs' : '✓ DOESN\'T PRESS') : '~ AVG D';
-                return (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offGood ? '#10B981' : '#F59E0B', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{to.off.toFixed(1)}%</span>
-                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((to.off / 25) * 100, 100)}%`, height: '100%', background: offGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #F5980B50, #F59E0B)', borderRadius: '2px' }} />
-                        <div style={{ position: 'absolute', left: `${(D1_AVG.to / 25) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                      </div>
-                      <span style={{ fontSize: isMobile ? '8px' : '9px', color: offGood ? '#10B981' : '#F59E0B', width: isMobile ? '70px' : '80px', textAlign: 'right' }}>{offContext}</span>
-                    </div>
-                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defDangerous ? '#F87171' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{to.def.toFixed(1)}%</span>
-                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((to.def / 25) * 100, 100)}%`, height: '100%', background: defDangerous ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                        <div style={{ position: 'absolute', left: `${(D1_AVG.to / 25) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                      </div>
-                      <span style={{ fontSize: isMobile ? '8px' : '9px', color: defDangerous ? '#F87171' : 'rgba(255,255,255,0.4)', width: isMobile ? '70px' : '80px', textAlign: 'right' }}>{defContext}</span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
-                {to.def > D1_AVG.to + 1.5 && to.off > D1_AVG.to
-                  ? `Danger: ${defAbbrev} forces ${to.def.toFixed(0)}% TOs & ${offAbbrev} is careless (${to.off.toFixed(0)}%)`
-                  : to.off < D1_AVG.to - 1.5 && to.def > D1_AVG.to
-                  ? `${offAbbrev} protects the ball well (${to.off.toFixed(0)}%) — should handle pressure`
-                  : to.off < D1_AVG.to - 1.5
-                  ? `${offAbbrev} takes care of the ball (${to.off.toFixed(0)}% TO rate)`
-                  : to.def > D1_AVG.to + 1.5
-                  ? `${defAbbrev} forces turnovers (${to.def.toFixed(0)}%) — ball security matters`
-                  : 'Ball control should be neutral in this matchup'}
-                </span>
-              </div>
-            </div>
-
-          {/* REBOUNDING CARD */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(59, 130, 246, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#60A5FA', letterSpacing: '0.1em' }}>REBOUNDING</span>
-                </div>
-            <div style={{ padding: isMobile ? '14px' : '18px' }}>
-              <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>OFFENSIVE REBOUND %</span>
-                <span>D1: {D1_AVG.oreb}%</span>
-              </div>
-              {(() => {
-                const offGood = oreb.off > D1_AVG.oreb;
-                const defBad = oreb.def > D1_AVG.oreb; // Defense allowing high OREB% is bad
-                const offContext = Math.abs(oreb.off - D1_AVG.oreb) > 2 ? (offGood ? '▲ CRASHES GLASS' : '▼ DOESN\'T CRASH') : '~ AVG';
-                const defContext = Math.abs(oreb.def - D1_AVG.oreb) > 2 ? (defBad ? '! GIVES UP' : '✓ LOCKS OUT') : '~ AVG D';
-                return (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offGood ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{oreb.off.toFixed(1)}%</span>
-                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((oreb.off / 40) * 100, 100)}%`, height: '100%', background: offGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                        <div style={{ position: 'absolute', left: `${(D1_AVG.oreb / 40) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                      </div>
-                      <span style={{ fontSize: isMobile ? '8px' : '9px', color: offGood ? '#10B981' : 'rgba(255,255,255,0.4)', width: isMobile ? '70px' : '85px', textAlign: 'right' }}>{offContext}</span>
-                    </div>
-                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defBad ? '#F87171' : '#10B981', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{oreb.def.toFixed(1)}%</span>
-                      <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                        <div style={{ width: `${Math.min((oreb.def / 40) * 100, 100)}%`, height: '100%', background: defBad ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #10B98150, #10B981)', borderRadius: '2px' }} />
-                        <div style={{ position: 'absolute', left: `${(D1_AVG.oreb / 40) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                </div>
-                      <span style={{ fontSize: isMobile ? '8px' : '9px', color: defBad ? '#F87171' : '#10B981', width: isMobile ? '70px' : '85px', textAlign: 'right' }}>{defContext}</span>
-              </div>
-                  </>
-                );
-              })()}
-            </div>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
-                {oreb.off > D1_AVG.oreb + 2 && oreb.def > D1_AVG.oreb + 2
-                  ? `Big edge: ${offAbbrev} crashes glass (${oreb.off.toFixed(0)}%) & ${defAbbrev} allows ${oreb.def.toFixed(0)}% — second chance pts`
-                  : oreb.off > D1_AVG.oreb + 2 && oreb.def < D1_AVG.oreb
-                  ? `Battle: ${offAbbrev} crashes (${oreb.off.toFixed(0)}%) vs ${defAbbrev}'s lockout D (${oreb.def.toFixed(0)}%)`
-                  : oreb.off > D1_AVG.oreb + 2
-                  ? `${offAbbrev} crashes the offensive glass (${oreb.off.toFixed(0)}%)`
-                  : oreb.def > D1_AVG.oreb + 2
-                  ? `${defAbbrev} gives up offensive boards (${oreb.def.toFixed(0)}%) — second chances`
-                  : 'Rebounding should be neutral'}
-              </span>
-            </div>
+        {/* Pace badge */}
+        <div style={{
+          marginTop: '8px', padding: '8px 12px', borderRadius: '8px',
+          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <span style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em' }}>EXPECTED PACE</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#A78BFA', fontFamily: 'ui-monospace, monospace' }}>
+              {((tempo.away + tempo.home) / 2).toFixed(1)}
+            </span>
+            <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>
+              poss/40 ({tempo.away > tempo.home ? awayA : homeA} pushes)
+            </span>
           </div>
-
-          {/* PACE CARD */}
-          <div style={{ background: 'rgba(15, 23, 42, 0.3)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(16, 185, 129, 0.06)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: '#34D399', letterSpacing: '0.1em' }}>PACE & FREE THROWS</span>
-            </div>
-            <div style={{ padding: isMobile ? '14px' : '18px' }}>
-              {/* FT Rate */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>FREE THROW RATE</span>
-                  <span>D1: {D1_AVG.ftRate}%</span>
-                </div>
-                {(() => {
-                  const offGood = ftRate.off > D1_AVG.ftRate;
-                  const defFouls = (ftRate.def || 32) > D1_AVG.ftRate;
-                  const offContext = Math.abs(ftRate.off - D1_AVG.ftRate) > 3 ? (offGood ? '▲ ATTACKS' : '▼ PERIMETER') : '~ AVG';
-                  const defContext = Math.abs((ftRate.def || 32) - D1_AVG.ftRate) > 3 ? (defFouls ? '! FOULS A LOT' : '✓ DISCIPLINED') : '~ AVG D';
-                  return (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: offGood ? '#10B981' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{ftRate.off.toFixed(1)}%</span>
-                        <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                          <div style={{ width: `${Math.min((ftRate.off / 45) * 100, 100)}%`, height: '100%', background: offGood ? 'linear-gradient(90deg, #10B98150, #10B981)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                          <div style={{ position: 'absolute', left: `${(D1_AVG.ftRate / 45) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                        </div>
-                        <span style={{ fontSize: isMobile ? '8px' : '9px', color: offGood ? '#10B981' : 'rgba(255,255,255,0.4)', width: isMobile ? '70px' : '80px', textAlign: 'right' }}>{offContext}</span>
-                      </div>
-                      <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.15)', margin: '2px 0' }}>↓</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: defFouls ? '#F87171' : 'rgba(255,255,255,0.5)', fontFamily: 'ui-monospace, monospace', width: isMobile ? '50px' : '55px' }}>{(ftRate.def || 32).toFixed(1)}%</span>
-                        <div style={{ flex: 1, height: '4px', background: 'rgba(0,0,0,0.3)', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                          <div style={{ width: `${Math.min(((ftRate.def || 32) / 45) * 100, 100)}%`, height: '100%', background: defFouls ? 'linear-gradient(90deg, #F8717150, #F87171)' : 'linear-gradient(90deg, #64748B50, #64748B)', borderRadius: '2px' }} />
-                          <div style={{ position: 'absolute', left: `${(D1_AVG.ftRate / 45) * 100}%`, top: '-2px', width: '2px', height: '8px', background: 'rgba(255,255,255,0.5)', borderRadius: '1px' }} />
-                        </div>
-                        <span style={{ fontSize: isMobile ? '8px' : '9px', color: defFouls ? '#F87171' : 'rgba(255,255,255,0.4)', width: isMobile ? '70px' : '80px', textAlign: 'right' }}>{defContext}</span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-              {/* Tempo */}
-              <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>TEMPO (poss/40 min)</span>
-                  <span>D1: {D1_AVG.tempo}</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{offAbbrev}</div>
-                    <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: tempo.off > 70 ? '#10B981' : tempo.off < 65 ? '#3B82F6' : '#F59E0B', fontFamily: 'ui-monospace, monospace' }}>{tempo.off.toFixed(1)}</div>
-                    <div style={{ fontSize: '8px', color: tempo.off > 70 ? '#10B981' : tempo.off < 65 ? '#3B82F6' : '#F59E0B' }}>{tempo.off > 70 ? '▲ FAST' : tempo.off < 65 ? '▼ SLOW' : '~ AVG'}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>{defAbbrev}</div>
-                    <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: tempo.def > 70 ? '#10B981' : tempo.def < 65 ? '#3B82F6' : '#F59E0B', fontFamily: 'ui-monospace, monospace' }}>{tempo.def.toFixed(1)}</div>
-                    <div style={{ fontSize: '8px', color: tempo.def > 70 ? '#10B981' : tempo.def < 65 ? '#3B82F6' : '#F59E0B' }}>{tempo.def > 70 ? '▲ FAST' : tempo.def < 65 ? '▼ SLOW' : '~ AVG'}</div>
-                  </div>
-                  <div style={{ background: 'rgba(251, 191, 36, 0.1)', borderRadius: '8px', padding: '8px 4px' }}>
-                    <div style={{ fontSize: '7px', color: '#FBBF24', marginBottom: '4px' }}>EXPECTED</div>
-                    <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#FBBF24', fontFamily: 'ui-monospace, monospace' }}>{((tempo.off + tempo.def) / 2).toFixed(0)}</div>
-                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)' }}>POSS</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div style={{ padding: isMobile ? '10px 14px' : '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.7)' }}>
-                {ftRate.off > D1_AVG.ftRate + 3 && (ftRate.def || 32) > D1_AVG.ftRate + 3
-                  ? `FT parade: ${offAbbrev} attacks (${ftRate.off.toFixed(0)}%) vs fouling D (${(ftRate.def || 32).toFixed(0)}%)`
-                  : tempo.off > 70 && tempo.def > 70 
-                  ? `Fast pace from both (~${((tempo.off + tempo.def) / 2).toFixed(0)} poss) — high-scoring potential`
-                  : tempo.off < 65 && tempo.def < 65 
-                  ? `Grind it out game (~${((tempo.off + tempo.def) / 2).toFixed(0)} poss) — low-scoring`
-                  : ftRate.off > D1_AVG.ftRate + 3
-                  ? `${offAbbrev} gets to the line (${ftRate.off.toFixed(0)}% FT rate)`
-                  : `Expect ~${((tempo.off + tempo.def) / 2).toFixed(0)} possessions — ${tempo.off + tempo.def > 140 ? 'faster' : tempo.off + tempo.def < 130 ? 'slower' : 'average'} pace`}
-              </span>
-            </div>
-          </div>
-          
         </div>
       </div>
 
-      {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <div style={{ padding: isMobile ? '10px 16px' : '12px 24px', borderTop: '1px solid rgba(99, 102, 241, 0.06)', background: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#6366F1' }} />
-        <span style={{ fontSize: '7px', fontWeight: '600', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.15em' }}>SAVANT ANALYTICS</span>
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION 5: ANALYST VERDICT
+         ═══════════════════════════════════════════════════════════ */}
+      <div style={{
+        padding: `${pad}`,
+        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(2, 6, 23, 0.8) 100%)',
+        borderTop: '1px solid rgba(255,255,255,0.03)',
+      }}>
+        <div style={{
+          padding: isMobile ? '14px' : '20px',
+          borderRadius: '14px',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(99, 102, 241, 0.04) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.08)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', animation: 'mi2-pulse 2s infinite' }} />
+            <span style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em' }}>SAVANT ANALYSIS</span>
+          </div>
+
+          <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white', marginBottom: '8px', lineHeight: '1.3' }}>
+            {insight.headline}
+          </div>
+
+          <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5', marginBottom: '14px' }}>
+            {insight.body}
+          </div>
+
+          {/* Confidence meter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', flexShrink: 0 }}>CONFIDENCE</span>
+            <div style={{ flex: 1, position: 'relative', height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${insight.confidence}%`,
+                borderRadius: '3px',
+                background: insight.confidence > 75
+                  ? 'linear-gradient(90deg, #10B981, #34D399)'
+                  : insight.confidence > 55
+                    ? 'linear-gradient(90deg, #3B82F6, #60A5FA)'
+                    : 'linear-gradient(90deg, #F59E0B, #FBBF24)',
+                transition: 'width 1s ease',
+                boxShadow: insight.confidence > 75 ? '0 0 8px rgba(16,185,129,0.4)' : 'none',
+              }} />
+            </div>
+            <span style={{
+              fontSize: '10px', fontWeight: '800', fontFamily: 'ui-monospace, monospace',
+              color: insight.confidence > 75 ? '#10B981' : insight.confidence > 55 ? '#3B82F6' : '#F59E0B',
+            }}>
+              {insight.confidence > 75 ? 'HIGH' : insight.confidence > 55 ? 'MEDIUM' : 'LOW'}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer branding */}
+        <div style={{ textAlign: 'center', marginTop: '10px' }}>
+          <span style={{ fontSize: '7px', fontWeight: '600', color: 'rgba(255,255,255,0.15)', letterSpacing: '0.2em' }}>SAVANT ANALYTICS</span>
+        </div>
       </div>
     </div>
   );
