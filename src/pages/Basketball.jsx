@@ -2599,26 +2599,28 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 padding: '0.5rem 0.625rem',
                 background: spreadBet.tier === 'ELITE'
                   ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%)'
+                  : spreadBet.tier === 'PRIME'
+                  ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)'
                   : 'linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)',
-                border: `1px solid ${spreadBet.tier === 'ELITE' ? 'rgba(234, 179, 8, 0.25)' : 'rgba(34, 211, 238, 0.2)'}`,
+                border: `1px solid ${spreadBet.tier === 'ELITE' ? 'rgba(234, 179, 8, 0.25)' : spreadBet.tier === 'PRIME' ? 'rgba(168, 85, 247, 0.3)' : 'rgba(34, 211, 238, 0.2)'}`,
                 borderRadius: '8px'
               }}>
                 <div style={{
                   fontSize: isMobile ? '0.875rem' : '1rem',
                   lineHeight: 1
                 }}>
-                  {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : '📈'}
+                  {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : spreadBet.tier === 'PRIME' ? '⭐' : '📈'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: isMobile ? '0.625rem' : '0.688rem',
                     fontWeight: '800',
-                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     marginBottom: '0.125rem'
                   }}>
-                    {spreadBet.tier} Spread Bet
+                    {spreadBet.tier === 'PRIME' ? 'PRIME SPREAD' : spreadBet.tier + ' SPREAD'} BET{spreadBet.inSweetSpot ? ' · EV SWEET SPOT' : ''}
                   </div>
                   <div style={{
                     fontSize: isMobile ? '0.625rem' : '0.688rem',
@@ -2631,7 +2633,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 <div style={{
                   fontSize: isMobile ? '0.875rem' : '1rem',
                   fontWeight: '900',
-                  color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                  color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
                   fontFeatureSettings: "'tnum'",
                   whiteSpace: 'nowrap'
                 }}>
@@ -2867,11 +2869,15 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   padding: '0.375rem 0.5rem',
                   background: spreadBet.tier === 'ELITE' 
                     ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%)'
+                    : spreadBet.tier === 'PRIME'
+                    ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%)'
                     : spreadBet.tier === 'STRONG'
                     ? 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)'
                     : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)',
                   border: `1px solid ${spreadBet.tier === 'ELITE' 
                     ? 'rgba(234, 179, 8, 0.35)' 
+                    : spreadBet.tier === 'PRIME'
+                    ? 'rgba(168, 85, 247, 0.35)'
                     : spreadBet.tier === 'STRONG' 
                     ? 'rgba(34, 211, 238, 0.3)' 
                     : 'rgba(16, 185, 129, 0.3)'}`,
@@ -2880,13 +2886,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 }}>
                   <span style={{
                     fontSize: isMobile ? '0.563rem' : '0.625rem',
-                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
                     fontWeight: '800',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     whiteSpace: 'nowrap'
                   }}>
-                    {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : '📈'} SPREAD
+                    {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : spreadBet.tier === 'PRIME' ? '⭐' : '📈'} SPREAD
                   </span>
                   <span style={{
                     fontSize: isMobile ? '0.75rem' : '0.813rem',
@@ -2900,7 +2906,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   <span style={{
                     fontSize: isMobile ? '0.563rem' : '0.625rem',
                     fontWeight: '800',
-                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
                     marginLeft: 'auto',
                     fontFeatureSettings: "'tnum'"
                   }}>
