@@ -459,27 +459,26 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       const mlEV = ev; // from prediction.bestEV
       
       // Primary filter: model must predict 2+ pts over spread
+      // Historical: MOS 2+ = 68% ATS, +30.2% ROI (22 bets)
+      //             MOS 3+ = 80% ATS, +52.7% ROI (5 bets)
       if (mos < 2) return { recommended: false, reason: 'MOS_TOO_LOW' };
       
-      // EV danger zone: 5-10% EV picks cover only 30% ATS (-42.7% ROI)
-      // These are volatile favorites where model overestimates margin
-      const inDangerZone = mlEV >= 5 && mlEV < 10;
+      // EV zone classification (ML EV from moneyline odds)
+      // Sweet spot: 2-5% ML EV → 67-91% ATS (market agrees, reliable covers)
+      // Caution: 5-10% ML EV → 30% ATS in sample (n=10, small but noteworthy)
+      // NOTE: EV zones are INFORMATIONAL, not hard blockers
+      //       MOS ≥ 2 is the primary proven filter
+      const inSweetSpot = mlEV >= 2 && mlEV < 5;
+      const inCautionZone = mlEV >= 5 && mlEV < 10;
       
       // Estimate cover probability: ~50% baseline + 3% per point of edge
       const coverProb = Math.min(0.95, 0.50 + (mos * 0.03));
       // EV at -110: (coverProb * 100/110) - ((1 - coverProb) * 1)
       const spreadEV = (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
       
-      // EV sweet spot bonus: 2-5% ML EV has 67-91% ATS cover rate
-      const inSweetSpot = mlEV >= 2 && mlEV < 5;
-      
-      // Tier and unit sizing
+      // Tier and unit sizing — MOS is primary, EV zones adjust sizing
       let spreadBetTier, spreadBetUnits;
-      if (inDangerZone) {
-        // Still track but flag as caution — 30% ATS in this zone
-        spreadBetTier = 'CAUTION';
-        spreadBetUnits = 0.5;
-      } else if (mos >= 3 && bothCover) {
+      if (mos >= 3 && bothCover) {
         spreadBetTier = 'ELITE';     // 80%+ cover, +52.7% ROI historically
         spreadBetUnits = 2;
       } else if (mos >= 3) {
@@ -488,13 +487,16 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       } else if (inSweetSpot) {
         spreadBetTier = 'PRIME';     // MOS 2+ AND EV sweet spot = best combo
         spreadBetUnits = 1.5;
+      } else if (inCautionZone) {
+        spreadBetTier = 'CAUTION';   // MOS 2+ but volatile EV zone — reduce size
+        spreadBetUnits = 0.5;        // Still recommend but at reduced size
       } else {
         spreadBetTier = 'SOLID';     // 68% cover, +30.2% ROI
         spreadBetUnits = 1;
       }
       
       return {
-        recommended: !inDangerZone, // Don't recommend in danger zone
+        recommended: true,           // Always recommend when MOS ≥ 2
         spread: spreadAnalysis.spread,
         marginOverSpread: mos,
         tier: spreadBetTier,
@@ -504,7 +506,7 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
         bothModelsCover: bothCover,
         mlEV: Math.round(mlEV * 10) / 10,
         inSweetSpot,
-        inDangerZone,
+        inCautionZone,
         standardOdds: -110,
       };
     })(),
@@ -527,12 +529,10 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   // Log spread bet recommendation
   const sb = betData.spreadBet;
   if (sb.recommended) {
-    const sbIcon = sb.tier === 'ELITE' ? '🎯' : sb.tier === 'STRONG' ? '💎' : sb.tier === 'PRIME' ? '⭐' : '📈';
-    const sweetSpotTag = sb.inSweetSpot ? ' ⭐ EV SWEET SPOT' : '';
-    console.log(`      ├─ ${sbIcon} SPREAD BET: ${pickTeam} ${spreadAnalysis.spread} @ -110 → ${sb.units}u [${sb.tier}]${sweetSpotTag}`);
+    const sbIcon = sb.tier === 'ELITE' ? '🎯' : sb.tier === 'STRONG' ? '💎' : sb.tier === 'PRIME' ? '⭐' : sb.tier === 'CAUTION' ? '⚠️' : '📈';
+    const evTag = sb.inSweetSpot ? ' ⭐ EV SWEET SPOT' : sb.inCautionZone ? ' ⚠️ EV CAUTION (reduced)' : '';
+    console.log(`      ├─ ${sbIcon} SPREAD BET: ${pickTeam} ${spreadAnalysis.spread} @ -110 → ${sb.units}u [${sb.tier}]${evTag}`);
     console.log(`      │    Cover: ${sb.estimatedCoverProb}% | EV: +${sb.estimatedSpreadEV}% | MOS: +${sb.marginOverSpread} | ML EV: ${sb.mlEV}%`);
-  } else if (sb.inDangerZone) {
-    console.log(`      ├─ ⚠️  Spread bet SKIPPED — EV danger zone (${ev.toFixed(1)}% ML EV → 30% ATS historically)`);
   } else {
     console.log(`      ├─ ❌ No spread bet (MOS ${spreadAnalysis.marginOverSpread} < 2.0 threshold)`);
   }
@@ -876,21 +876,21 @@ async function fetchPrimePicks() {
       const mos = p.spreadAnalysis.marginOverSpread || 0;
       const both = p.spreadAnalysis.bothCover || false;
       const mlEV = p.prediction.bestEV || 0;
-      const inDangerZone = mlEV >= 5 && mlEV < 10;
+      const inCautionZone = mlEV >= 5 && mlEV < 10;
       const inSweetSpot = mlEV >= 2 && mlEV < 5;
-      const qualifies = mos >= 2 && !inDangerZone;
+      const qualifies = mos >= 2; // MOS is the primary filter, EV zones adjust sizing only
       let tier;
-      if (inDangerZone) tier = 'CAUTION';
-      else if (mos >= 3 && both) tier = 'ELITE';
+      if (mos >= 3 && both) tier = 'ELITE';
       else if (mos >= 3) tier = 'STRONG';
       else if (mos >= 2 && inSweetSpot) tier = 'PRIME';
+      else if (mos >= 2 && inCautionZone) tier = 'CAUTION';
       else if (mos >= 2) tier = 'SOLID';
       else tier = 'SKIP';
-      return { ...p, mos, both, mlEV, inDangerZone, inSweetSpot, qualifies, tier };
+      return { ...p, mos, both, mlEV, inCautionZone, inSweetSpot, qualifies, tier };
     });
     
     const spreadBetPicks = spreadBetAll.filter(p => p.qualifies);
-    const spreadDangerZone = spreadBetAll.filter(p => p.inDangerZone && p.mos >= 2);
+    const spreadCautionZone = spreadBetAll.filter(p => p.tier === 'CAUTION');
     const spreadBetElite = spreadBetPicks.filter(p => p.tier === 'ELITE');
     const spreadBetStrong = spreadBetPicks.filter(p => p.tier === 'STRONG');
     const spreadBetPrime = spreadBetPicks.filter(p => p.tier === 'PRIME');
@@ -918,21 +918,16 @@ async function fetchPrimePicks() {
       console.log(`   💎 STRONG (1.5u): ${spreadBetStrong.length} picks  — MOS 3+`);
       console.log(`   ⭐ PRIME  (1.5u): ${spreadBetPrime.length} picks  — MOS 2+ & EV sweet spot (2-5%)`);
       console.log(`   📈 SOLID  (1u):   ${spreadBetSolid.length} picks  — MOS 2-3`);
-      if (spreadDangerZone.length > 0) {
-        console.log(`   ⚠️  SKIPPED (danger): ${spreadDangerZone.length} picks — MOS 2+ but EV 5-10% (30% ATS historically)`);
+      if (spreadCautionZone.length > 0) {
+        console.log(`   ⚠️  CAUTION (0.5u): ${spreadCautionZone.length} picks — MOS 2+ but EV 5-10% (reduced sizing)`);
       }
       console.log(`   Total spread bets: ${spreadBetPicks.length} | Units: ${totalSpreadUnits.toFixed(1)}u @ -110`);
       spreadBetPicks.forEach(p => {
-        const sweetTag = p.inSweetSpot ? ' ⭐ SWEET SPOT' : '';
-        console.log(`      → ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} @ -110 [${p.tier}] MOS: +${p.mos} | EV: ${p.mlEV.toFixed(1)}%${sweetTag}`);
+        const evTag = p.inSweetSpot ? ' ⭐ SWEET SPOT' : p.inCautionZone ? ' ⚠️ CAUTION' : '';
+        console.log(`      → ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} @ -110 [${p.tier}] MOS: +${p.mos} | ML EV: ${p.mlEV.toFixed(1)}%${evTag}`);
       });
-      if (spreadDangerZone.length > 0) {
-        spreadDangerZone.forEach(p => {
-          console.log(`      ⚠️  ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} — SKIPPED (EV: ${p.mlEV.toFixed(1)}% in 5-10% danger zone)`);
-        });
-      }
     } else {
-      console.log(`   ⚠️  No spread bets today (no picks with MOS ≥ 2.0 outside danger zone)`);
+      console.log(`   ⚠️  No spread bets today (no picks with MOS ≥ 2.0)`);
     }
     console.log();
     
