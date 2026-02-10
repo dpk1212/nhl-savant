@@ -2112,6 +2112,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   const spreadData = betData?.spreadAnalysis;
   const spreadBet = betData?.spreadBet;
   
+  // Bet recommendation — ATS upgrade or ML
+  const betRec = betData?.betRecommendation;
+  const isATSRecommended = betRec?.type === 'ATS';
+  const isStandaloneATS = betData?.isATSPick && !betData?.isPrimePick;
+  const displayUnits = isATSRecommended ? betRec.atsUnits : (pred?.unitSize || 0);
+  const displayMarket = isATSRecommended ? 'ATS' : (isStandaloneATS ? 'ATS' : 'ML');
+  
   // If no prediction, show minimal card with just game info
   if (!pred || pred.error) {
     return (
@@ -2257,6 +2264,117 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           </div>
         )}
         
+        {/* BET TYPE BADGE — ATS UPGRADE / ML / ATS PICK */}
+        {isATSRecommended && !isStandaloneATS && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '0.5rem' : '0.625rem',
+            padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 0.875rem',
+            marginBottom: '0.75rem',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%)',
+            border: '1.5px solid rgba(6, 182, 212, 0.35)',
+            boxShadow: '0 2px 12px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255,255,255,0.08)'
+          }}>
+            <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', lineHeight: 1 }}>🏈</span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                fontWeight: '900',
+                color: '#22D3EE',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                lineHeight: 1.2
+              }}>
+                ATS UPGRADE
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(255,255,255,0.6)',
+                fontWeight: '600',
+                lineHeight: 1.3,
+                marginTop: '0.125rem'
+              }}>
+                Bet <span style={{ color: 'white', fontWeight: '800' }}>{betRec.atsSpread > 0 ? '+' : ''}{betRec.atsSpread}</span> @ <span style={{ color: 'white', fontWeight: '800' }}>-110</span>
+                {betRec.reason === 'MOS_UPGRADE' 
+                  ? <span> — model predicts <span style={{ color: '#10B981', fontWeight: '700' }}>+{betRec.marginOverSpread} pts</span> over spread</span>
+                  : <span> — heavy favorite, ATS has better risk-reward</span>
+                }
+              </div>
+            </div>
+            <div style={{
+              padding: '0.25rem 0.5rem',
+              background: 'rgba(6, 182, 212, 0.2)',
+              borderRadius: '6px',
+              fontSize: isMobile ? '0.625rem' : '0.688rem',
+              fontWeight: '800',
+              color: '#22D3EE',
+              letterSpacing: '0.03em'
+            }}>
+              {betRec.estimatedCoverProb}% COVER
+            </div>
+          </div>
+        )}
+        
+        {isStandaloneATS && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '0.5rem' : '0.625rem',
+            padding: isMobile ? '0.5rem 0.75rem' : '0.625rem 0.875rem',
+            marginBottom: '0.75rem',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)',
+            border: '1.5px solid rgba(16, 185, 129, 0.35)',
+            boxShadow: '0 2px 12px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.08)'
+          }}>
+            <span style={{ fontSize: isMobile ? '1rem' : '1.125rem', lineHeight: 1 }}>📈</span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                fontWeight: '900',
+                color: '#10B981',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                lineHeight: 1.2
+              }}>
+                ATS PICK — SPREAD EV
+              </div>
+              <div style={{
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                color: 'rgba(255,255,255,0.6)',
+                fontWeight: '600',
+                lineHeight: 1.3,
+                marginTop: '0.125rem'
+              }}>
+                Bet <span style={{ color: 'white', fontWeight: '800' }}>{betRec?.atsSpread > 0 ? '+' : ''}{betRec?.atsSpread}</span> @ <span style={{ color: 'white', fontWeight: '800' }}>-110</span>
+                <span> — <span style={{ color: '#10B981', fontWeight: '700' }}>+{betRec?.estimatedSpreadEV}% EV</span></span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isATSRecommended && !isStandaloneATS && betRec?.type === 'ML' && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            padding: '0.25rem 0.625rem',
+            borderRadius: '6px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            fontSize: isMobile ? '0.625rem' : '0.688rem',
+            fontWeight: '700',
+            color: 'rgba(255,255,255,0.5)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: '0.5rem'
+          }}>
+            💰 MONEYLINE
+          </div>
+        )}
+
         {/* UNIT SIZE HERO + STAR RATING */}
         <div style={{
           marginBottom: isMobile ? '0.75rem' : '0.875rem'
@@ -2273,23 +2391,25 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
               <span style={{
                 fontSize: isMobile ? '0.813rem' : '0.875rem',
-                color: 'rgba(255,255,255,0.6)',
+                color: isATSRecommended ? '#22D3EE' : 'rgba(255,255,255,0.6)',
                 fontWeight: '700',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em'
               }}>
-                BET:
+                {isATSRecommended || isStandaloneATS ? 'ATS:' : 'BET:'}
               </span>
               <span style={{
                 fontSize: isMobile ? '2rem' : '2.25rem',
                 fontWeight: '900',
-                color: starRating.color,
+                color: isATSRecommended ? '#22D3EE' : starRating.color,
                 letterSpacing: '-0.04em',
                 fontFeatureSettings: "'tnum'",
-                textShadow: `0 2px 16px ${starRating.color}40, 0 0 40px ${starRating.color}20`,
+                textShadow: isATSRecommended 
+                  ? '0 2px 16px rgba(34, 211, 238, 0.4), 0 0 40px rgba(34, 211, 238, 0.2)'
+                  : `0 2px 16px ${starRating.color}40, 0 0 40px ${starRating.color}20`,
                 lineHeight: 0.9
               }}>
-                {pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u'}
+                {isATSRecommended ? `${betRec.atsUnits}u` : (pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u')}
               </span>
             </div>
             
@@ -2564,7 +2684,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               )}
             </div>
             
-            {/* Rationale - TERTIARY INFO */}
+            {/* Rationale - Context-aware for ATS vs ML */}
             <div style={{
               fontSize: isMobile ? '0.688rem' : '0.75rem',
               color: 'rgba(255,255,255,0.70)',
@@ -2575,7 +2695,19 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               letterSpacing: '0.005em'
             }}>
               {(() => {
-                // Conviction-based descriptions
+                if (isATSRecommended && !isStandaloneATS) {
+                  // ATS Upgraded Prime Pick
+                  const tierDesc = betRec.atsTier === 'ELITE' ? 'Maximum conviction' 
+                    : betRec.atsTier === 'STRONG' ? 'High conviction'
+                    : betRec.atsTier === 'PRIME' ? 'Prime setup' 
+                    : betRec.atsTier === 'SOLID' ? 'Solid edge'
+                    : 'Qualifying edge';
+                  return `${tierDesc} — upgraded to spread bet. ${betRec.estimatedCoverProb}% est. cover at -110 odds`;
+                }
+                if (isStandaloneATS) {
+                  return `Spread value play — model predicts +${betRec?.marginOverSpread} pts over spread with +${betRec?.estimatedSpreadEV}% EV`;
+                }
+                // Standard ML descriptions
                 if (starRating.intensity >= 5) {
                   return `Maximum conviction — both models confirm with strong margin over spread`;
                 }
@@ -2589,8 +2721,51 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               })()}
             </div>
 
-            {/* 🎯 SPREAD BET CALLOUT */}
-            {spreadBet?.recommended && (
+            {/* ATS ANALYTICS ROW — show key ATS metrics for upgraded picks */}
+            {isATSRecommended && betRec && (
+              <div style={{
+                display: 'flex',
+                gap: isMobile ? '0.375rem' : '0.5rem',
+                marginTop: isMobile ? '0.5rem' : '0.625rem',
+                flexWrap: 'wrap'
+              }}>
+                {[
+                  { label: 'SPREAD', value: `${betRec.atsSpread > 0 ? '+' : ''}${betRec.atsSpread}`, color: '#22D3EE' },
+                  { label: 'COVER', value: `${betRec.estimatedCoverProb}%`, color: '#10B981' },
+                  { label: 'EV', value: `+${betRec.estimatedSpreadEV}%`, color: '#10B981' },
+                  { label: 'MOS', value: `+${betRec.marginOverSpread}`, color: betRec.marginOverSpread >= 3 ? '#FBBF24' : '#22D3EE' },
+                ].map((stat, i) => (
+                  <div key={i} style={{
+                    flex: 1,
+                    minWidth: isMobile ? '60px' : '70px',
+                    padding: isMobile ? '0.375rem 0.25rem' : '0.438rem 0.375rem',
+                    background: 'rgba(6, 182, 212, 0.06)',
+                    border: '1px solid rgba(6, 182, 212, 0.15)',
+                    borderRadius: '6px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: isMobile ? '0.5rem' : '0.563rem',
+                      color: 'rgba(255,255,255,0.45)',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      marginBottom: '0.125rem'
+                    }}>{stat.label}</div>
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '900',
+                      color: stat.color,
+                      fontFeatureSettings: "'tnum'",
+                      letterSpacing: '-0.02em'
+                    }}>{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Legacy spread bet callout — only show for ML picks that also have a spread recommendation */}
+            {!isATSRecommended && !isStandaloneATS && spreadBet?.recommended && (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -2769,151 +2944,200 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
 
           {/* MARKET + SPREAD */}
           <div style={{
-            background: 'rgba(255,255,255,0.03)',
-                borderRadius: '8px',
+            background: isATSRecommended 
+              ? 'rgba(6, 182, 212, 0.06)' 
+              : 'rgba(255,255,255,0.03)',
+            borderRadius: '8px',
             padding: isMobile ? '0.5rem' : '0.625rem',
-            border: '1px solid rgba(255,255,255,0.08)'
+            border: isATSRecommended 
+              ? '1px solid rgba(6, 182, 212, 0.2)' 
+              : '1px solid rgba(255,255,255,0.08)'
           }}>
-                <div style={{ 
+            <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.5)',
+              color: isATSRecommended ? 'rgba(34, 211, 238, 0.7)' : 'rgba(255,255,255,0.5)',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-                  fontWeight: '700',
+              fontWeight: '700',
               marginBottom: '0.375rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.25rem'
-                }}>
-              <span>💵</span> MARKET
-                </div>
-                {/* Odds + Spread side by side */}
-                <div style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '0.5rem',
-              marginBottom: '0.25rem'
             }}>
-              <div style={{ 
-                fontSize: isMobile ? '1.125rem' : '1.25rem',
-                fontWeight: '900',
-                color: 'rgba(255,255,255,0.9)',
-                lineHeight: 1.1,
-                letterSpacing: '-0.01em'
-              }}>
-                {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
-              </div>
-              {spreadData?.spread !== undefined && (
-                <div style={{
-                  fontSize: isMobile ? '0.75rem' : '0.813rem',
-                  fontWeight: '800',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontFeatureSettings: "'tnum'",
-                  letterSpacing: '-0.01em'
-                }}>
-                  ({spreadData.spread > 0 ? '+' : ''}{spreadData.spread})
-                </div>
+              {isATSRecommended || isStandaloneATS ? (
+                <><span>🏈</span> SPREAD LINE</>
+              ) : (
+                <><span>💵</span> MARKET</>
               )}
             </div>
+            
+            {isATSRecommended || isStandaloneATS ? (
+              <>
+                {/* ATS: Show spread as primary, ML odds as secondary */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.5rem',
+                  marginBottom: '0.25rem'
+                }}>
                   <div style={{ 
-              fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.45)',
-              lineHeight: 1.2
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '900',
+                    color: '#22D3EE',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.01em'
                   }}>
-              {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
+                    {betRec?.atsSpread > 0 ? '+' : ''}{betRec?.atsSpread}
                   </div>
-
-              {/* Margin covering spread - from Firebase spread analysis */}
-              {spreadData?.marginOverSpread !== undefined && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.313rem 0.5rem',
-                  background: spreadData.marginOverSpread > 0 
-                    ? 'rgba(16, 185, 129, 0.12)' 
-                    : 'rgba(239, 68, 68, 0.12)',
-                  border: `1px solid ${spreadData.marginOverSpread > 0 
-                    ? 'rgba(16, 185, 129, 0.3)' 
-                    : 'rgba(239, 68, 68, 0.3)'}`,
-                  borderRadius: '6px',
-                  marginTop: '0.5rem'
-                }}>
-                  <span style={{
-                    fontSize: isMobile ? '0.563rem' : '0.625rem',
-                    color: 'rgba(255,255,255,0.5)',
-                    fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em'
-                  }}>
-                    COVER
-                  </span>
-                  <span style={{
+                  <div style={{
                     fontSize: isMobile ? '0.813rem' : '0.875rem',
-                    fontWeight: '900',
-                    color: spreadData.marginOverSpread > 0 ? '#10B981' : '#EF4444',
-                    fontFeatureSettings: "'tnum'",
-                    letterSpacing: '-0.02em'
-                  }}>
-                    {spreadData.marginOverSpread > 0 ? '+' : ''}{spreadData.marginOverSpread} pts
-                  </span>
-                </div>
-              )}
-
-              {/* 🎯 SPREAD BET RECOMMENDATION */}
-              {spreadBet?.recommended && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.375rem 0.5rem',
-                  background: spreadBet.tier === 'ELITE' 
-                    ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%)'
-                    : spreadBet.tier === 'PRIME'
-                    ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%)'
-                    : spreadBet.tier === 'STRONG'
-                    ? 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)'
-                    : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)',
-                  border: `1px solid ${spreadBet.tier === 'ELITE' 
-                    ? 'rgba(234, 179, 8, 0.35)' 
-                    : spreadBet.tier === 'PRIME'
-                    ? 'rgba(168, 85, 247, 0.35)'
-                    : spreadBet.tier === 'STRONG' 
-                    ? 'rgba(34, 211, 238, 0.3)' 
-                    : 'rgba(16, 185, 129, 0.3)'}`,
-                  borderRadius: '6px',
-                  marginTop: '0.375rem'
-                }}>
-                  <span style={{
-                    fontSize: isMobile ? '0.563rem' : '0.625rem',
-                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
                     fontWeight: '800',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : spreadBet.tier === 'PRIME' ? '⭐' : '📈'} SPREAD
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '0.75rem' : '0.813rem',
-                    fontWeight: '900',
-                    color: 'rgba(255,255,255,0.9)',
-                    fontFeatureSettings: "'tnum'",
-                    letterSpacing: '-0.02em'
-                  }}>
-                    {spreadBet.spread > 0 ? '+' : ''}{spreadBet.spread}
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '0.563rem' : '0.625rem',
-                    fontWeight: '800',
-                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
-                    marginLeft: 'auto',
+                    color: 'rgba(255,255,255,0.7)',
                     fontFeatureSettings: "'tnum'"
                   }}>
-                    {spreadBet.units}u
-                  </span>
+                    @ -110
+                  </div>
                 </div>
-              )}
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.45)',
+                  lineHeight: 1.2
+                }}>
+                  ML ref: {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
+                  {pred.bestEV > 0 && <span> • +{pred.bestEV.toFixed(1)}% edge</span>}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* ML: Standard odds display */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.5rem',
+                  marginBottom: '0.25rem'
+                }}>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '900',
+                    color: 'rgba(255,255,255,0.9)',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.01em'
+                  }}>
+                    {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
+                  </div>
+                  {spreadData?.spread !== undefined && (
+                    <div style={{
+                      fontSize: isMobile ? '0.75rem' : '0.813rem',
+                      fontWeight: '800',
+                      color: 'rgba(255,255,255,0.6)',
+                      fontFeatureSettings: "'tnum'",
+                      letterSpacing: '-0.01em'
+                    }}>
+                      ({spreadData.spread > 0 ? '+' : ''}{spreadData.spread})
+                    </div>
+                  )}
+                </div>
+                <div style={{ 
+                  fontSize: isMobile ? '0.625rem' : '0.688rem',
+                  color: 'rgba(255,255,255,0.45)',
+                  lineHeight: 1.2
+                }}>
+                  {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
+                </div>
+              </>
+            )}
+
+            {/* Margin covering spread - from Firebase spread analysis */}
+            {spreadData?.marginOverSpread !== undefined && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.313rem 0.5rem',
+                background: spreadData.marginOverSpread > 0 
+                  ? 'rgba(16, 185, 129, 0.12)' 
+                  : 'rgba(239, 68, 68, 0.12)',
+                border: `1px solid ${spreadData.marginOverSpread > 0 
+                  ? 'rgba(16, 185, 129, 0.3)' 
+                  : 'rgba(239, 68, 68, 0.3)'}`,
+                borderRadius: '6px',
+                marginTop: '0.5rem'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.563rem' : '0.625rem',
+                  color: 'rgba(255,255,255,0.5)',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>
+                  COVER
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '0.813rem' : '0.875rem',
+                  fontWeight: '900',
+                  color: spreadData.marginOverSpread > 0 ? '#10B981' : '#EF4444',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.02em'
+                }}>
+                  {spreadData.marginOverSpread > 0 ? '+' : ''}{spreadData.marginOverSpread} pts
+                </span>
+              </div>
+            )}
+
+            {/* Compact spread bet recommendation — only for ML picks */}
+            {!isATSRecommended && !isStandaloneATS && spreadBet?.recommended && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.375rem 0.5rem',
+                background: spreadBet.tier === 'ELITE' 
+                  ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%)'
+                  : spreadBet.tier === 'PRIME'
+                  ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%)'
+                  : spreadBet.tier === 'STRONG'
+                  ? 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)'
+                  : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)',
+                border: `1px solid ${spreadBet.tier === 'ELITE' 
+                  ? 'rgba(234, 179, 8, 0.35)' 
+                  : spreadBet.tier === 'PRIME'
+                  ? 'rgba(168, 85, 247, 0.35)'
+                  : spreadBet.tier === 'STRONG' 
+                  ? 'rgba(34, 211, 238, 0.3)' 
+                  : 'rgba(16, 185, 129, 0.3)'}`,
+                borderRadius: '6px',
+                marginTop: '0.375rem'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.563rem' : '0.625rem',
+                  color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : spreadBet.tier === 'PRIME' ? '⭐' : '📈'} SPREAD
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '0.75rem' : '0.813rem',
+                  fontWeight: '900',
+                  color: 'rgba(255,255,255,0.9)',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.02em'
+                }}>
+                  {spreadBet.spread > 0 ? '+' : ''}{spreadBet.spread}
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '0.563rem' : '0.625rem',
+                  fontWeight: '800',
+                  color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'PRIME' ? '#A855F7' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                  marginLeft: 'auto',
+                  fontFeatureSettings: "'tnum'"
+                }}>
+                  {spreadBet.units}u
+                </span>
+              </div>
+            )}
         </div>
         
           {/* RATING */}
