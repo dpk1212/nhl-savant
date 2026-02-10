@@ -73,14 +73,35 @@ jobs:
           npm run update-pending-bets
           echo "✅ Pending bets updated!"
       
-      # Step 5: Analyze Spread Performance
+      # Step 5: Analyze Spread Performance (legacy)
       - name: Analyze Spread Performance
         run: |
           echo "🎯 Step 5: Analyzing spread opportunity performance..."
           npm run analyze-spread-performance
           echo "✅ Spread analysis complete!"
       
-      # Step 6: Commit and push weights + spread analysis
+      # Step 6: Prime Picks Performance Analysis
+      - name: Prime Picks Performance
+        run: |
+          echo "🌟 Step 6: Prime Picks performance breakdown..."
+          npm run analyze-prime-performance
+          echo "✅ Prime Picks performance analysis complete!"
+      
+      # Step 7: Prime Picks Unit Sizing Analysis
+      - name: Prime Picks Unit Sizing
+        run: |
+          echo "📊 Step 7: Unit sizing analysis (EV%, MOS, conviction tiers)..."
+          npm run analyze-prime-unit-sizing
+          echo "✅ Unit sizing analysis complete!"
+      
+      # Step 8: Historical Spread Edge (ATS) Analysis
+      - name: Spread Edge ATS Analysis
+        run: |
+          echo "🎯 Step 8: Historical spread edge (ATS) analysis..."
+          npm run analyze-spread-edge
+          echo "✅ Spread edge analysis complete!"
+      
+      # Step 9: Commit and push weights + spread analysis
       - name: Commit updated data
         run: |
           git config user.name "GitHub Actions"
@@ -88,7 +109,7 @@ jobs:
           git add public/basketball_confidence_weights.json public/spread_performance.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "🎯 Full basketball update [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
-      # Step 6: Build and deploy
+      # Step 10: Build and deploy
       - name: Build site
         run: npm run build
       
@@ -105,9 +126,12 @@ jobs:
           echo "🎉 BASKETBALL FULL UPDATE COMPLETE!"
           echo ""
           echo "Steps completed:"
-          echo "  ✅ Grade bets (if enabled)"
-          echo "  ✅ Update pattern ROI"
-          echo "  ✅ Update dynamic confidence weights"
-          echo "  ✅ Update pending bets"
-          echo "  ✅ Analyze spread performance"
-          echo "  ✅ Deploy to GitHub Pages"
+          echo "  ✅ 1. Grade bets (if enabled)"
+          echo "  ✅ 2. Update pattern ROI"
+          echo "  ✅ 3. Update dynamic confidence weights"
+          echo "  ✅ 4. Update pending bets"
+          echo "  ✅ 5. Analyze spread performance"
+          echo "  ✅ 6. Prime Picks performance (W-L, ROI by segment)"
+          echo "  ✅ 7. Unit sizing analysis (EV%, MOS, conviction tiers)"
+          echo "  ✅ 8. Spread edge ATS analysis (cover rate, filters)"
+          echo "  ✅ 9. Deploy to GitHub Pages"
