@@ -120,9 +120,9 @@ NCAAB Tue 02/10
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 02/106:30 PM<br>![](https://logos.oddstrader.com/logos-original/89babff3-9787-4a21-8795-0189c052c1f2-original.png?d=100x100)<br>Milwaukee<br>9-17<br>-<br>-115Bovada | - | - | - | -115 | - | - | - |
-| ![](https://logos.oddstrader.com/logos-original/5121bf95-50bc-4239-973a-906b3319eab3-original.png?d=100x100)<br>IUPUI<br>7-18<br>-<br>-103MyBookie | - | - | - | -105 | - | - | - |
+| ![](https://logos.oddstrader.com/logos-original/5121bf95-50bc-4239-973a-906b3319eab3-original.png?d=100x100)<br>IUPUI<br>7-18<br>-<br>-102MyBookie | - | - | - | -105 | - | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 02/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/93758896-7684-410b-b64f-18a67b12c08a-original.png?d=100x100)<br>#19Vanderbilt<br>19-4<br>-<br>+145Bovada | - | - | - | +145 | - | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 02/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/93758896-7684-410b-b64f-18a67b12c08a-original.png?d=100x100)<br>#19Vanderbilt<br>19-4<br>-<br>+149MyBookie | - | - | - | +145 | - | - | - |
 | ![](https://logos.oddstrader.com/logos-original/383574ef-8f82-4a79-8427-2a3b1315d93c-original.PNG?d=100x100)<br>Auburn<br>14-9<br>-<br>-170Bovada | - | - | - | -170 | - | - | - |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 02/107:00 PM<br>![](https://logos.oddstrader.com/logos-original/b96bf048-54c8-47ef-9626-1e6c8b794494-original.PNG?d=100x100)<br>#11North Carolina<br>19-4<br>-<br>-115Bovada | - | - | - | -115 | - | - | - |
@@ -222,7 +222,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-Does Cavaliers vs Seminoles total point to under?Generate
+Which matchups look most even on projections?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
