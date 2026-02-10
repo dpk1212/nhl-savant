@@ -2110,6 +2110,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   const betKey = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
   const betData = betsMap?.get(betKey);
   const spreadData = betData?.spreadAnalysis;
+  const spreadBet = betData?.spreadBet;
   
   // If no prediction, show minimal card with just game info
   if (!pred || pred.error) {
@@ -2587,6 +2588,57 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 return `Standard pick — qualifying edge with spread confirmation`;
               })()}
             </div>
+
+            {/* 🎯 SPREAD BET CALLOUT */}
+            {spreadBet?.recommended && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginTop: '0.5rem',
+                padding: '0.5rem 0.625rem',
+                background: spreadBet.tier === 'ELITE'
+                  ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%)'
+                  : 'linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)',
+                border: `1px solid ${spreadBet.tier === 'ELITE' ? 'rgba(234, 179, 8, 0.25)' : 'rgba(34, 211, 238, 0.2)'}`,
+                borderRadius: '8px'
+              }}>
+                <div style={{
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                  lineHeight: 1
+                }}>
+                  {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : '📈'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
+                    fontWeight: '800',
+                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: '0.125rem'
+                  }}>
+                    {spreadBet.tier} Spread Bet
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
+                    color: 'rgba(255,255,255,0.55)',
+                    lineHeight: 1.3
+                  }}>
+                    Also bet <span style={{ color: 'white', fontWeight: '800' }}>{spreadBet.spread > 0 ? '+' : ''}{spreadBet.spread}</span> @ -110 — {spreadBet.estimatedCoverProb}% est. cover • <span style={{ fontWeight: '700', color: '#10B981' }}>+{spreadBet.estimatedSpreadEV}% EV</span>
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '0.875rem' : '1rem',
+                  fontWeight: '900',
+                  color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                  fontFeatureSettings: "'tnum'",
+                  whiteSpace: 'nowrap'
+                }}>
+                  {spreadBet.units}u
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -2802,6 +2854,57 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                     letterSpacing: '-0.02em'
                   }}>
                     {spreadData.marginOverSpread > 0 ? '+' : ''}{spreadData.marginOverSpread} pts
+                  </span>
+                </div>
+              )}
+
+              {/* 🎯 SPREAD BET RECOMMENDATION */}
+              {spreadBet?.recommended && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.375rem 0.5rem',
+                  background: spreadBet.tier === 'ELITE' 
+                    ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%)'
+                    : spreadBet.tier === 'STRONG'
+                    ? 'linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)'
+                    : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%)',
+                  border: `1px solid ${spreadBet.tier === 'ELITE' 
+                    ? 'rgba(234, 179, 8, 0.35)' 
+                    : spreadBet.tier === 'STRONG' 
+                    ? 'rgba(34, 211, 238, 0.3)' 
+                    : 'rgba(16, 185, 129, 0.3)'}`,
+                  borderRadius: '6px',
+                  marginTop: '0.375rem'
+                }}>
+                  <span style={{
+                    fontSize: isMobile ? '0.563rem' : '0.625rem',
+                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {spreadBet.tier === 'ELITE' ? '🎯' : spreadBet.tier === 'STRONG' ? '💎' : '📈'} SPREAD
+                  </span>
+                  <span style={{
+                    fontSize: isMobile ? '0.75rem' : '0.813rem',
+                    fontWeight: '900',
+                    color: 'rgba(255,255,255,0.9)',
+                    fontFeatureSettings: "'tnum'",
+                    letterSpacing: '-0.02em'
+                  }}>
+                    {spreadBet.spread > 0 ? '+' : ''}{spreadBet.spread}
+                  </span>
+                  <span style={{
+                    fontSize: isMobile ? '0.563rem' : '0.625rem',
+                    fontWeight: '800',
+                    color: spreadBet.tier === 'ELITE' ? '#EAB308' : spreadBet.tier === 'STRONG' ? '#22D3EE' : '#10B981',
+                    marginLeft: 'auto',
+                    fontFeatureSettings: "'tnum'"
+                  }}>
+                    {spreadBet.units}u
                   </span>
                 </div>
               )}

@@ -439,6 +439,50 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     // 🌟 Prime Pick flag
     savantPick: true, // Prime picks are automatically savantPicks
     
+    // ═══════════════════════════════════════════════════════════════
+    // 🎯 SPREAD BET RECOMMENDATION
+    // Historical analysis (138 bets since 1/23):
+    //   MOS 2+: 68% cover rate, +30.2% ROI
+    //   MOS 3+: 80% cover rate, +52.7% ROI
+    //   MOS <2: 44% cover rate, -15.6% ROI (AVOID)
+    // Only recommend spread bets when model edge ≥ 2 pts over spread
+    // ═══════════════════════════════════════════════════════════════
+    spreadBet: (() => {
+      const mos = marginOverSpread;
+      const recommended = mos >= 2;
+      if (!recommended) return { recommended: false };
+      
+      // Estimate cover probability: ~50% baseline + 3% per point of edge
+      const coverProb = Math.min(0.95, 0.50 + (mos * 0.03));
+      // EV at -110: (coverProb * 100/110) - ((1 - coverProb) * 1)
+      const spreadEV = (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
+      
+      // Tier and unit sizing
+      let spreadBetTier, spreadBetUnits;
+      if (mos >= 3 && bothCover) {
+        spreadBetTier = 'ELITE';     // 80%+ cover, +52.7% ROI historically
+        spreadBetUnits = 2;
+      } else if (mos >= 3) {
+        spreadBetTier = 'STRONG';    // 80% cover rate
+        spreadBetUnits = 1.5;
+      } else {
+        spreadBetTier = 'SOLID';     // 68% cover, +30.2% ROI
+        spreadBetUnits = 1;
+      }
+      
+      return {
+        recommended: true,
+        spread: spreadAnalysis.spread,
+        marginOverSpread: mos,
+        tier: spreadBetTier,
+        units: spreadBetUnits,
+        estimatedCoverProb: Math.round(coverProb * 1000) / 10,
+        estimatedSpreadEV: Math.round(spreadEV * 1000) / 10,
+        bothModelsCover: bothCover,
+        standardOdds: -110,
+      };
+    })(),
+    
     // Barttorvik data
     barttorvik: game.barttorvik || null
   };
@@ -449,10 +493,21 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : spreadTier === 'SOLID' ? '💪' : '📊';
   
   console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
-  console.log(`      ┌─ TOTAL: ${totalUnits}u`);
+  console.log(`      ┌─ TOTAL: ${totalUnits}u (ML)`);
   console.log(`      ├─ EV:     ${evUnits}u ${evIcon} ${evTier} (${prediction.bestEV.toFixed(1)}% edge)`);
   console.log(`      ├─ Spread: ${spreadUnits}u ${spreadIcon} ${spreadTier} (blend +${spreadAnalysis.marginOverSpread >= 0 ? '' : ''}${spreadAnalysis.marginOverSpread} pts over spread)`);
-  console.log(`      ├─ Spread: ${spreadAnalysis.spread} | DR +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✓' : '✗'} | HS +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✓' : '✗'} | Blend +${spreadAnalysis.blendedMargin}`);
+  console.log(`      ├─ Line:   ${spreadAnalysis.spread} | DR +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✓' : '✗'} | HS +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✓' : '✗'} | Blend +${spreadAnalysis.blendedMargin}`);
+  
+  // Log spread bet recommendation
+  if (betData.spreadBet.recommended) {
+    const sb = betData.spreadBet;
+    const sbIcon = sb.tier === 'ELITE' ? '🎯' : sb.tier === 'STRONG' ? '💎' : '📈';
+    console.log(`      ├─ ${sbIcon} SPREAD BET: ${pickTeam} ${spreadAnalysis.spread} @ -110 → ${sb.units}u [${sb.tier}]`);
+    console.log(`      │    Cover prob: ${sb.estimatedCoverProb}% | Spread EV: +${sb.estimatedSpreadEV}% | MOS: +${sb.marginOverSpread}`);
+  } else {
+    console.log(`      ├─ ❌ No spread bet (MOS ${spreadAnalysis.marginOverSpread} < 2.0 threshold)`);
+  }
+  
   console.log(`      └─ Grade: ${prediction.grade} | Odds: ${prediction.bestOdds}`);
   
   return { action: 'created', betId };
@@ -787,11 +842,45 @@ async function fetchPrimePicks() {
     console.log(`   Avg EV: +${avgEV.toFixed(1)}%`);
     console.log(`   Avg 90/10 Blend Over Spread: +${avgMarginOverSpread.toFixed(1)} pts`);
     console.log(`   Total Units Allocated: ${totalUnitsAllocated.toFixed(1)}u`);
+    // Spread bet summary
+    const spreadBetPicks = primePicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 2);
+    const spreadBetElite = primePicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 3 && p.spreadAnalysis.bothCover);
+    const spreadBetStrong = primePicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 3 && !p.spreadAnalysis.bothCover);
+    const spreadBetSolid = primePicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 2 && (p.spreadAnalysis.marginOverSpread || 0) < 3);
+    
+    const totalSpreadUnits = spreadBetPicks.reduce((sum, p) => {
+      const mos = p.spreadAnalysis.marginOverSpread || 0;
+      const both = p.spreadAnalysis.bothCover || false;
+      if (mos >= 3 && both) return sum + 2;
+      if (mos >= 3) return sum + 1.5;
+      return sum + 1;
+    }, 0);
+
     console.log('\n   🏗️ UNIT SIZING V3 (data-driven rebalance):');
     console.log(`   • EV Component:     1u (2-5%) | 2u (5%+)           ← secondary signal`);
     console.log(`   • Spread Component:  1u (0-2) | 2u (2-3) | 2.5u (3+) | 3u (3+ & both cover)  ← PRIMARY`);
     console.log(`   • Range: 2u min → 5u max`);
-    console.log(`   • EV Threshold: ≥${MIN_EV_THRESHOLD}%\n`);
+    console.log(`   • EV Threshold: ≥${MIN_EV_THRESHOLD}%`);
+    
+    console.log(`\n   🎯 SPREAD BET RECOMMENDATIONS (MOS ≥ 2.0):`);
+    console.log(`   Historical: 68% cover rate, +30.2% ROI (MOS 2+) | 80% cover, +52.7% ROI (MOS 3+)`);
+    console.log(`   ─────────────────────────────────────────────────`);
+    if (spreadBetPicks.length > 0) {
+      console.log(`   🎯 ELITE  (2u):   ${spreadBetElite.length} picks  — MOS 3+ & both models cover`);
+      console.log(`   💎 STRONG (1.5u): ${spreadBetStrong.length} picks  — MOS 3+`);
+      console.log(`   📈 SOLID  (1u):   ${spreadBetSolid.length} picks  — MOS 2-3`);
+      console.log(`   Total spread bet picks: ${spreadBetPicks.length} | Units: ${totalSpreadUnits.toFixed(1)}u @ -110`);
+      spreadBetPicks.forEach(p => {
+        const mos = p.spreadAnalysis.marginOverSpread || 0;
+        const both = p.spreadAnalysis.bothCover || false;
+        const tier = (mos >= 3 && both) ? 'ELITE' : mos >= 3 ? 'STRONG' : 'SOLID';
+        const team = p.prediction.bestTeam;
+        console.log(`      → ${team} ${p.spreadAnalysis.spread} @ -110 [${tier}] MOS: +${mos}`);
+      });
+    } else {
+      console.log(`   ⚠️  No spread bets today (no picks with MOS ≥ 2.0)`);
+    }
+    console.log();
     
     console.log('   Files updated:');
     console.log('   ✓ public/basketball_odds.md');
