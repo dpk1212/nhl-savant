@@ -1,19 +1,23 @@
 /**
  * 🏀 PRIME PICKS - Unified Basketball Betting Workflow
  * 
- * ONLY writes to Firebase when a game has BOTH:
- * 1. EV Edge: 90/10 D-Ratings/Haslametrics model finds value (≥3% EV)
- * 2. Spread Confirmation: Both models independently predict covering the spread
+ * Writes to Firebase in TWO segments:
+ * 
+ * 1. PRIME PICKS — game has BOTH EV edge (≥2%) AND spread confirmation
+ *    → ATS Upgrade: When MOS ≥ 2 or ML odds ≤ -200, recommend ATS instead of ML
+ *      ATS tiers: ELITE (3u), STRONG (2.5u), PRIME (2u), SOLID (1.5u), BASE (1u)
+ *    → ML Kept: When MOS < 2 AND odds > -200, keep as moneyline bet
+ * 
+ * 2. STANDALONE ATS PICKS — SpreadEV 5%+ segment (non-Prime games)
+ *    → Qualifying: SpreadEV ≥ 5% AND MOS ≥ 1.5 AND NOT already a Prime Pick
+ *    → Historical: 9-2 ATS (81.8% cover, +56.2% ROI)
+ *    → ATS tiers: HIGH (2u), MID (1.5u), BASE (1u)
  * 
  * Based on analysis (since 1/23/2026):
  * - Prime Picks (EV + Spread): +11.8% ROI, 69% win rate ✅
+ * - ATS generated +25.35 units MORE profit than ML across Prime Picks
  * - EV Only: -11.2% ROI (not enough) ❌
  * - Spread Only: -19.5% ROI (not enough) ❌
- * 
- * This script consolidates:
- * - fetchBasketballData.js (data fetching)
- * - fetchSpreadOpportunities.js (spread analysis)
- * - writeBasketballBets.js (EV calculation + Firebase writes)
  * 
  * Usage: npm run fetch-prime-picks
  */
@@ -61,13 +65,13 @@ const MIN_EV_THRESHOLD = 2.0;
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-console.log('║              🏀 PRIME PICKS - Unified Basketball Workflow                     ║');
+console.log('║              🏀 PRIME PICKS + ATS - Basketball Workflow                        ║');
 console.log('║                                                                               ║');
-console.log('║  Only writes bets that have BOTH:                                             ║');
-console.log('║  ✅ EV Edge (≥2% from 90/10 model)                                            ║');
-console.log('║  ✅ Spread Confirmation (D-Ratings covers + models agree)                     ║');
-console.log('║                                                                               ║');
-console.log('║  Historical: +11.8% ROI, 69% win rate                                         ║');
+console.log('║  SEGMENT 1 — PRIME PICKS (EV + Spread intersection):                          ║');
+console.log('║    → ATS Upgrade when MOS ≥ 2 or odds ≤ -200                                  ║');
+console.log('║    → ML Kept when MOS < 2 & odds > -200                                       ║');
+console.log('║  SEGMENT 2 — STANDALONE ATS (SpreadEV 5%+ non-Prime):                         ║');
+console.log('║    → MOS ≥ 1.5 & SpreadEV ≥ 5% (81.8% cover, +56.2% ROI)                     ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
 
@@ -328,6 +332,76 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     };
   }
   
+  // ═══════════════════════════════════════════════════════════════
+  // BET RECOMMENDATION V1 — ML vs ATS UPGRADE
+  // Historical: ATS generated +25.35 units more profit than ML
+  // across 55 Prime Picks. ATS is superior for heavy favorites.
+  //
+  // Two-pronged trigger — upgrade to ATS when EITHER:
+  // 1. MOS >= 2 (68% cover rate, +30.2% ROI at -110)
+  // 2. ML odds <= -200 (heavy favorite, ML risk-reward terrible)
+  //
+  // ATS Unit Sizing (confidence-based, tuned for -110 economics):
+  //   ELITE  (3u):   MOS 3+ & bothCover — 80%+ cover, massive edge
+  //   STRONG (2.5u): MOS 3+ — 80% cover rate
+  //   PRIME  (2u):   MOS 2-3 & EV sweet spot (2-5%) — proven best combo
+  //   SOLID  (1.5u): MOS 2-3 — 68% cover, reliable
+  //   BASE   (1u):   MOS < 2, odds trigger only — minimum size
+  // ═══════════════════════════════════════════════════════════════
+  const mlOdds = prediction.bestOdds;
+  const mos = marginOverSpread;
+  const shouldUpgradeATS = mos >= 2 || mlOdds <= -200;
+  
+  let betRecommendation;
+  if (shouldUpgradeATS) {
+    const inATS_SweetSpot = ev >= 2 && ev < 5;
+    
+    let atsTier, atsUnits;
+    if (mos >= 3 && bothCover) {
+      atsTier = 'ELITE';
+      atsUnits = 3;
+    } else if (mos >= 3) {
+      atsTier = 'STRONG';
+      atsUnits = 2.5;
+    } else if (mos >= 2 && inATS_SweetSpot) {
+      atsTier = 'PRIME';
+      atsUnits = 2;
+    } else if (mos >= 2) {
+      atsTier = 'SOLID';
+      atsUnits = 1.5;
+    } else {
+      // MOS < 2 but triggered by odds threshold (-200 or worse)
+      atsTier = 'BASE';
+      atsUnits = 1;
+    }
+    
+    const atsCoverProb = Math.min(0.95, 0.50 + (mos * 0.03));
+    const atsSpreadEV = (atsCoverProb * (100 / 110)) - ((1 - atsCoverProb) * 1);
+    
+    betRecommendation = {
+      type: 'ATS',
+      reason: mos >= 2 ? 'MOS_UPGRADE' : 'ODDS_UPGRADE',
+      atsUnits,
+      atsTier,
+      atsSpread: spreadAnalysis.spread,
+      atsOdds: -110,
+      estimatedCoverProb: Math.round(atsCoverProb * 1000) / 10,
+      estimatedSpreadEV: Math.round(atsSpreadEV * 1000) / 10,
+      marginOverSpread: mos,
+      bothModelsCover: bothCover,
+      mlOdds: mlOdds,
+      mlUnits: totalUnits,
+    };
+  } else {
+    betRecommendation = {
+      type: 'ML',
+      reason: 'ML_PREFERRED',
+      mlUnits: totalUnits,
+      mlOdds: mlOdds,
+      marginOverSpread: mos,
+    };
+  }
+  
   const betData = {
     id: betId,
     date: date,
@@ -438,6 +512,14 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     
     // 🌟 Prime Pick flag
     savantPick: true, // Prime picks are automatically savantPicks
+    isPrimePick: true,
+    isATSPick: shouldUpgradeATS,
+    
+    // ═══════════════════════════════════════════════════════════════
+    // BET RECOMMENDATION — ML vs ATS
+    // Tells the UI and user which bet type to follow
+    // ═══════════════════════════════════════════════════════════════
+    betRecommendation,
     
     // ═══════════════════════════════════════════════════════════════
     // 🎯 SPREAD BET RECOMMENDATION (v2 — with EV sweet spot)
@@ -520,24 +602,200 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   const evIcon = evTier === 'HIGH' ? '🔥' : '📊';
   const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : spreadTier === 'SOLID' ? '💪' : '📊';
   
-  console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
-  console.log(`      ┌─ TOTAL: ${totalUnits}u (ML)`);
-  console.log(`      ├─ EV:     ${evUnits}u ${evIcon} ${evTier} (${prediction.bestEV.toFixed(1)}% edge)`);
+  // Show bet recommendation prominently
+  if (betRecommendation.type === 'ATS') {
+    const atsIcon = betRecommendation.atsTier === 'ELITE' ? '🎯' : betRecommendation.atsTier === 'STRONG' ? '💎' : betRecommendation.atsTier === 'PRIME' ? '⭐' : betRecommendation.atsTier === 'SOLID' ? '💪' : '📊';
+    const reasonTag = betRecommendation.reason === 'MOS_UPGRADE' ? `MOS +${mos}` : `Heavy fav ${mlOdds}`;
+    console.log(`   🌟 PRIME PICK → ATS UPGRADE: ${pickTeam} ${spreadAnalysis.spread} @ -110`);
+    console.log(`      ┌─ 🏈 ATS BET: ${betRecommendation.atsUnits}u ${atsIcon} [${betRecommendation.atsTier}] (${reasonTag})`);
+    console.log(`      ├─ Cover: ${betRecommendation.estimatedCoverProb}% | SpreadEV: +${betRecommendation.estimatedSpreadEV}% | MOS: +${mos}`);
+    console.log(`      ├─ ML ref: ${totalUnits}u @ ${prediction.bestOdds} (+${prediction.bestEV.toFixed(1)}% EV)`);
+  } else {
+    console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
+    console.log(`      ┌─ TOTAL: ${totalUnits}u (ML)`);
+    console.log(`      ├─ EV:     ${evUnits}u ${evIcon} ${evTier} (${prediction.bestEV.toFixed(1)}% edge)`);
+  }
   console.log(`      ├─ Spread: ${spreadUnits}u ${spreadIcon} ${spreadTier} (blend +${spreadAnalysis.marginOverSpread >= 0 ? '' : ''}${spreadAnalysis.marginOverSpread} pts over spread)`);
   console.log(`      ├─ Line:   ${spreadAnalysis.spread} | DR +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✓' : '✗'} | HS +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✓' : '✗'} | Blend +${spreadAnalysis.blendedMargin}`);
   
-  // Log spread bet recommendation
+  // Log spread bet recommendation (legacy)
   const sb = betData.spreadBet;
-  if (sb.recommended) {
+  if (sb.recommended && betRecommendation.type !== 'ATS') {
     const sbIcon = sb.tier === 'ELITE' ? '🎯' : sb.tier === 'STRONG' ? '💎' : sb.tier === 'PRIME' ? '⭐' : sb.tier === 'CAUTION' ? '⚠️' : '📈';
     const evTag = sb.inSweetSpot ? ' ⭐ EV SWEET SPOT' : sb.inCautionZone ? ' ⚠️ EV CAUTION (reduced)' : '';
     console.log(`      ├─ ${sbIcon} SPREAD BET: ${pickTeam} ${spreadAnalysis.spread} @ -110 → ${sb.units}u [${sb.tier}]${evTag}`);
     console.log(`      │    Cover: ${sb.estimatedCoverProb}% | EV: +${sb.estimatedSpreadEV}% | MOS: +${sb.marginOverSpread} | ML EV: ${sb.mlEV}%`);
-  } else {
+  } else if (!sb.recommended && betRecommendation.type !== 'ATS') {
     console.log(`      ├─ ❌ No spread bet (MOS ${spreadAnalysis.marginOverSpread} < 2.0 threshold)`);
   }
   
   console.log(`      └─ Grade: ${prediction.grade} | Odds: ${prediction.bestOdds}`);
+  
+  return { action: 'created', betId, betRecommendation };
+}
+
+/**
+ * Estimate cover probability from margin over spread
+ * Each point of predicted edge ≈ 3% above 50% baseline
+ */
+function estimateCoverProb(mos) {
+  return Math.max(0.01, Math.min(0.95, 0.50 + (mos * 0.03)));
+}
+
+/**
+ * Calculate Spread EV at -110 odds
+ * Returns as decimal (multiply by 100 for percentage)
+ */
+function calcSpreadEV(coverProb) {
+  return (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
+}
+
+/**
+ * Save Standalone ATS Pick to Firebase
+ * For games that qualify via SpreadEV 5%+ but are NOT Prime Picks
+ */
+async function saveATSPick(db, game, spreadAnalysis, prediction) {
+  const date = new Date().toISOString().split('T')[0];
+  const pickTeam = spreadAnalysis.pickedTeam;
+  const side = spreadAnalysis.pickedSide === 'away' ? 'AWAY' : 'HOME';
+  const awayNorm = game.awayTeam.replace(/\s+/g, '_').toUpperCase();
+  const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
+  const teamNorm = pickTeam.replace(/\s+/g, '_').toUpperCase();
+  const betId = `${date}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`;
+  
+  const betRef = doc(db, 'basketball_bets', betId);
+  
+  // Check if bet already exists
+  const existingBet = await getDoc(betRef);
+  if (existingBet.exists()) {
+    console.log(`   🔒 Already exists: ${pickTeam} ATS`);
+    return { action: 'skipped', betId };
+  }
+  
+  const mos = spreadAnalysis.marginOverSpread || 0;
+  const bothCover = spreadAnalysis.bothCover || false;
+  
+  // ═══════════════════════════════════════════════════════════════
+  // STANDALONE ATS UNIT SIZING
+  // Historical (non-Prime SpreadEV 5%+): 9-2 ATS, 81.8%, +56.2% ROI
+  //   HIGH (2u):  MOS 3+ — dominant margin even without ML EV
+  //   MID  (1.5u): MOS 2-3 — solid margin, strong SpreadEV
+  //   BASE (1u):  MOS 1.5-2 — minimum qualifying, still SpreadEV 5%+
+  // ═══════════════════════════════════════════════════════════════
+  let atsTier, atsUnits;
+  if (mos >= 3) {
+    atsTier = 'HIGH';
+    atsUnits = 2;
+  } else if (mos >= 2) {
+    atsTier = 'MID';
+    atsUnits = 1.5;
+  } else {
+    atsTier = 'BASE';
+    atsUnits = 1;
+  }
+  
+  const coverProb = estimateCoverProb(mos);
+  const spreadEV = calcSpreadEV(coverProb);
+  
+  const betData = {
+    id: betId,
+    date: date,
+    timestamp: Date.now(),
+    sport: 'BASKETBALL',
+    
+    game: {
+      awayTeam: game.awayTeam,
+      homeTeam: game.homeTeam,
+      gameTime: game.odds?.gameTime || 'TBD'
+    },
+    
+    bet: {
+      market: 'SPREAD',
+      pick: pickTeam,
+      odds: -110,
+      spread: spreadAnalysis.spread,
+      team: pickTeam
+    },
+    
+    spreadAnalysis: {
+      spreadConfirmed: spreadAnalysis.spreadConfirmed || false,
+      spread: spreadAnalysis.spread,
+      drMargin: spreadAnalysis.drMargin,
+      hsMargin: spreadAnalysis.hsMargin,
+      blendedMargin: spreadAnalysis.blendedMargin,
+      marginOverSpread: spreadAnalysis.marginOverSpread,
+      drCovers: spreadAnalysis.drCovers,
+      hsCovers: spreadAnalysis.hsCovers,
+      blendCovers: spreadAnalysis.blendCovers,
+      bothModelsCover: spreadAnalysis.bothCover,
+      convictionTier: spreadAnalysis.convictionTier
+    },
+    
+    prediction: {
+      bestTeam: pickTeam,
+      bestBet: spreadAnalysis.pickedSide,
+      bestOdds: prediction?.bestOdds || null,
+      bestEV: prediction?.bestEV || null,
+      evPercent: prediction?.bestEV || null,
+      grade: prediction?.grade || null,
+      unitSize: atsUnits,
+      
+      // Model scores (always available via game.dratings/haslametrics)
+      dratingsAwayScore: game.dratings?.awayScore || 0,
+      dratingsHomeScore: game.dratings?.homeScore || 0,
+      haslametricsAwayScore: game.haslametrics?.awayScore || 0,
+      haslametricsHomeScore: game.haslametrics?.homeScore || 0,
+      ensembleAwayScore: prediction?.ensembleAwayScore || null,
+      ensembleHomeScore: prediction?.ensembleHomeScore || null,
+      ensembleAwayProb: prediction?.ensembleAwayProb || null,
+      ensembleHomeProb: prediction?.ensembleHomeProb || null,
+    },
+    
+    result: {
+      awayScore: null,
+      homeScore: null,
+      totalScore: null,
+      winner: null,
+      outcome: null,
+      profit: null,
+      fetched: false,
+      fetchedAt: null,
+      source: null
+    },
+    
+    status: 'PENDING',
+    firstRecommendedAt: Date.now(),
+    source: 'ATS_SPREAD_EV',
+    
+    // Segment flags
+    isPrimePick: false,
+    isATSPick: true,
+    savantPick: false,
+    atsSegment: 'SPREAD_EV_5_PLUS',
+    
+    // ATS recommendation details
+    betRecommendation: {
+      type: 'ATS',
+      reason: 'SPREAD_EV_STANDALONE',
+      atsUnits,
+      atsTier,
+      atsSpread: spreadAnalysis.spread,
+      atsOdds: -110,
+      estimatedCoverProb: Math.round(coverProb * 1000) / 10,
+      estimatedSpreadEV: Math.round(spreadEV * 1000) / 10,
+      marginOverSpread: mos,
+      bothModelsCover: bothCover,
+    },
+    
+    // Barttorvik data
+    barttorvik: game.barttorvik || null
+  };
+  
+  await setDoc(betRef, betData);
+  
+  const tierIcon = atsTier === 'HIGH' ? '🔥' : atsTier === 'MID' ? '💪' : '📊';
+  console.log(`   ${tierIcon} ATS PICK: ${pickTeam} ${spreadAnalysis.spread} @ -110 → ${atsUnits}u [${atsTier}]`);
+  console.log(`      MOS: +${mos} | Cover: ${betData.betRecommendation.estimatedCoverProb}% | SpreadEV: +${betData.betRecommendation.estimatedSpreadEV}%`);
   
   return { action: 'created', betId };
 }
@@ -647,6 +905,7 @@ async function fetchPrimePicks() {
     // Track EV picks and Spread picks separately, then find intersection
     const evPicks = new Map(); // game key -> { game, prediction, evPickedSide }
     const spreadPicks = new Map(); // game key -> { game, spreadAnalysis, spreadPickedSide }
+    const allGameSpreadData = new Map(); // ALL games with spread data — for standalone ATS screening
     
     console.log(`\n   ─────────────────────────────────────────────────────────────────`);
     console.log(`   GAME-BY-GAME ANALYSIS:`);
@@ -713,6 +972,15 @@ async function fetchPrimePicks() {
         }
       } else {
         spreadDetail = 'No spread data or models disagree on winner';
+      }
+      
+      // Store ALL games with spread analysis for standalone ATS screening
+      if (spreadAnalysis) {
+        allGameSpreadData.set(gameKey, {
+          game,
+          spreadAnalysis,
+          prediction: (prediction && !prediction.error) ? prediction : null
+        });
       }
       
       // Log the game
@@ -797,12 +1065,6 @@ async function fetchPrimePicks() {
     console.log(`   ❌ Spread Only (skip): ${spreadOnlyCount} (-19.5% ROI historically)`);
     console.log(`   🌟 PRIME PICKS: ${primePicks.length} (+11.8% ROI historically)\n`);
     
-    if (primePicks.length === 0) {
-      console.log('⚠️  No Prime Picks found today.');
-      console.log('   (Requires EV workflow AND Spread workflow to pick SAME team)\n');
-      return;
-    }
-    
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 4: SAVE PRIME PICKS TO FIREBASE
     // ═══════════════════════════════════════════════════════════════════════
@@ -812,14 +1074,99 @@ async function fetchPrimePicks() {
     
     let created = 0;
     let skipped = 0;
+    const savedRecommendations = []; // Track bet recommendations for summary
     
-    // Sort by blend margin over spread (largest first) for easier scanning
-    primePicks.sort((a, b) => (b.spreadAnalysis.marginOverSpread || 0) - (a.spreadAnalysis.marginOverSpread || 0));
+    if (primePicks.length === 0) {
+      console.log('   ⚠️  No Prime Picks found today.');
+      console.log('   (Requires EV workflow AND Spread workflow to pick SAME team)\n');
+    } else {
+      // Sort by blend margin over spread (largest first) for easier scanning
+      primePicks.sort((a, b) => (b.spreadAnalysis.marginOverSpread || 0) - (a.spreadAnalysis.marginOverSpread || 0));
+      
+      for (const { game, prediction, spreadAnalysis } of primePicks) {
+        const result = await savePrimePick(db, game, prediction, spreadAnalysis, confidenceWeights);
+        if (result.action === 'created') {
+          created++;
+          if (result.betRecommendation) savedRecommendations.push(result.betRecommendation);
+        } else {
+          skipped++;
+        }
+      }
+    }
     
-    for (const { game, prediction, spreadAnalysis } of primePicks) {
-      const result = await savePrimePick(db, game, prediction, spreadAnalysis, confidenceWeights);
-      if (result.action === 'created') created++;
-      else skipped++;
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 5: FIND STANDALONE ATS PICKS (SpreadEV 5%+ segment)
+    // Games with strong spread edge that DIDN'T qualify as Prime Picks
+    // Historical: Non-Prime SpreadEV 5%+ = 9-2 ATS, 81.8% cover, +56.2% ROI
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│ STEP 5: SCANNING FOR STANDALONE ATS PICKS (SpreadEV 5%+)                     │');
+    console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
+    
+    // Build set of Prime Pick game keys to exclude
+    const primePickKeys = new Set(primePicks.map(p => `${p.game.awayTeam}_${p.game.homeTeam}`));
+    
+    const standaloneATSPicks = [];
+    let atsScanned = 0;
+    let atsSkippedPrime = 0;
+    let atsSkippedLowMOS = 0;
+    let atsSkippedLowEV = 0;
+    
+    for (const [gameKey, data] of allGameSpreadData) {
+      atsScanned++;
+      
+      // Skip games that are already Prime Picks
+      if (primePickKeys.has(gameKey)) {
+        atsSkippedPrime++;
+        continue;
+      }
+      
+      const { game, spreadAnalysis, prediction } = data;
+      const mos = spreadAnalysis.marginOverSpread || 0;
+      
+      // MOS >= 1.5 minimum safety net
+      if (mos < 1.5) {
+        atsSkippedLowMOS++;
+        continue;
+      }
+      
+      // Calculate SpreadEV
+      const coverProb = estimateCoverProb(mos);
+      const spreadEV = calcSpreadEV(coverProb);
+      const spreadEVPct = spreadEV * 100;
+      
+      // SpreadEV must be >= 5%
+      if (spreadEVPct < 5) {
+        atsSkippedLowEV++;
+        continue;
+      }
+      
+      console.log(`   ✅ ${spreadAnalysis.pickedTeam}: MOS +${mos} | SpreadEV +${spreadEVPct.toFixed(1)}% | Spread ${spreadAnalysis.spread}`);
+      standaloneATSPicks.push(data);
+    }
+    
+    console.log(`\n   📊 Scanned: ${atsScanned} games with spread data`);
+    console.log(`   🌟 Already Prime Picks: ${atsSkippedPrime}`);
+    console.log(`   ❌ MOS < 1.5: ${atsSkippedLowMOS}`);
+    console.log(`   ❌ SpreadEV < 5%: ${atsSkippedLowEV}`);
+    console.log(`   ✅ Standalone ATS Qualifying: ${standaloneATSPicks.length}\n`);
+    
+    let atsCreated = 0;
+    let atsSkipped = 0;
+    
+    if (standaloneATSPicks.length > 0) {
+      console.log('   Saving standalone ATS picks...\n');
+      
+      // Sort by MOS descending
+      standaloneATSPicks.sort((a, b) => (b.spreadAnalysis.marginOverSpread || 0) - (a.spreadAnalysis.marginOverSpread || 0));
+      
+      for (const { game, spreadAnalysis, prediction } of standaloneATSPicks) {
+        const result = await saveATSPick(db, game, spreadAnalysis, prediction);
+        if (result.action === 'created') atsCreated++;
+        else atsSkipped++;
+      }
+    } else {
+      console.log('   ⚠️  No standalone ATS picks found today.\n');
     }
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -827,108 +1174,164 @@ async function fetchPrimePicks() {
     // ═══════════════════════════════════════════════════════════════════════
     console.log('\n');
     console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-    console.log('║                           PRIME PICKS SUMMARY                                 ║');
+    console.log('║                        PICKS SUMMARY                                          ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
-    // Calculate unit breakdown for summary
-    const evHighPicks = primePicks.filter(p => p.prediction.bestEV >= 5);
-    const evBasePicks = primePicks.filter(p => p.prediction.bestEV < 5);
-    
-    const spreadMaxPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 3 && p.spreadAnalysis.bothCover);
-    const spreadStrongPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 3 && !p.spreadAnalysis.bothCover);
-    const spreadSolidPicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread >= 2 && p.spreadAnalysis.marginOverSpread < 3);
-    const spreadBasePicks = primePicks.filter(p => p.spreadAnalysis.marginOverSpread < 2);
-    
-    const avgMarginOverSpread = primePicks.length > 0 
-      ? primePicks.reduce((sum, p) => sum + (p.spreadAnalysis.marginOverSpread || 0), 0) / primePicks.length
-      : 0;
-    const avgEV = primePicks.length > 0
-      ? primePicks.reduce((sum, p) => sum + (p.prediction.bestEV || 0), 0) / primePicks.length
-      : 0;
-    
-    // Total units allocated with V3 system
-    const totalUnitsAllocated = primePicks.reduce((sum, p) => {
-      const ev = p.prediction.bestEV || 0;
-      const mos = p.spreadAnalysis.marginOverSpread || 0;
-      const both = p.spreadAnalysis.bothCover || false;
-      const evU = ev >= 5 ? 2 : 1;
-      const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
-      return sum + evU + spU;
-    }, 0);
-    
+    // ── PRIME PICKS BREAKDOWN ──
+    console.log('   ─── PRIME PICKS ───────────────────────────────────────────────');
     console.log(`   🌟 Prime Picks Found: ${primePicks.length}`);
     console.log(`   ✅ New bets created: ${created}`);
     console.log(`   🔒 Already existed: ${skipped}`);
-    console.log(`\n   💰 EV UNITS (1-2u per pick) — secondary signal:`);
-    console.log(`   🔥 HIGH (2u):  ${evHighPicks.length} picks  — EV ≥ 5%`);
-    console.log(`   📊 BASE (1u):  ${evBasePicks.length} picks  — EV 2-5%`);
-    console.log(`\n   📈 SPREAD UNITS (1-3u per pick) — primary signal:`);
-    console.log(`   🎯 MAX    (3u):   ${spreadMaxPicks.length} picks  — Blend 3+ pts over + both cover`);
-    console.log(`   💎 STRONG (2.5u): ${spreadStrongPicks.length} picks  — Blend 3+ pts over`);
-    console.log(`   💪 SOLID  (2u):   ${spreadSolidPicks.length} picks  — Blend 2-3 pts over`);
-    console.log(`   📊 BASE   (1u):   ${spreadBasePicks.length} picks  — Blend 0-2 pts over`);
-    console.log(`\n   📊 EDGE METRICS:`);
-    console.log(`   Avg EV: +${avgEV.toFixed(1)}%`);
-    console.log(`   Avg 90/10 Blend Over Spread: +${avgMarginOverSpread.toFixed(1)} pts`);
-    console.log(`   Total Units Allocated: ${totalUnitsAllocated.toFixed(1)}u`);
-    // Spread bet summary (v2 with EV sweet spot)
-    const spreadBetAll = primePicks.map(p => {
-      const mos = p.spreadAnalysis.marginOverSpread || 0;
-      const both = p.spreadAnalysis.bothCover || false;
-      const mlEV = p.prediction.bestEV || 0;
-      const inCautionZone = mlEV >= 5 && mlEV < 10;
-      const inSweetSpot = mlEV >= 2 && mlEV < 5;
-      const qualifies = mos >= 2; // MOS is the primary filter, EV zones adjust sizing only
-      let tier;
-      if (mos >= 3 && both) tier = 'ELITE';
-      else if (mos >= 3) tier = 'STRONG';
-      else if (mos >= 2 && inSweetSpot) tier = 'PRIME';
-      else if (mos >= 2 && inCautionZone) tier = 'CAUTION';
-      else if (mos >= 2) tier = 'SOLID';
-      else tier = 'SKIP';
-      return { ...p, mos, both, mlEV, inCautionZone, inSweetSpot, qualifies, tier };
-    });
     
-    const spreadBetPicks = spreadBetAll.filter(p => p.qualifies);
-    const spreadCautionZone = spreadBetAll.filter(p => p.tier === 'CAUTION');
-    const spreadBetElite = spreadBetPicks.filter(p => p.tier === 'ELITE');
-    const spreadBetStrong = spreadBetPicks.filter(p => p.tier === 'STRONG');
-    const spreadBetPrime = spreadBetPicks.filter(p => p.tier === 'PRIME');
-    const spreadBetSolid = spreadBetPicks.filter(p => p.tier === 'SOLID');
-    
-    const totalSpreadUnits = spreadBetPicks.reduce((sum, p) => {
-      if (p.tier === 'ELITE') return sum + 2;
-      if (p.tier === 'STRONG') return sum + 1.5;
-      if (p.tier === 'PRIME') return sum + 1.5;
-      return sum + 1;
-    }, 0);
-
-    console.log('\n   🏗️ UNIT SIZING V3 (data-driven rebalance):');
-    console.log(`   • EV Component:     1u (2-5%) | 2u (5%+)           ← secondary signal`);
-    console.log(`   • Spread Component:  1u (0-2) | 2u (2-3) | 2.5u (3+) | 3u (3+ & both cover)  ← PRIMARY`);
-    console.log(`   • Range: 2u min → 5u max`);
-    console.log(`   • EV Threshold: ≥${MIN_EV_THRESHOLD}%`);
-    
-    console.log(`\n   🎯 SPREAD BET RECOMMENDATIONS v2 (MOS ≥ 2.0 + EV filter):`);
-    console.log(`   Historical: MOS 2+ = 68% ATS, +30.2% ROI | MOS 3+ = 80%, +52.7%`);
-    console.log(`   🔑 EV Sweet Spot: 2-5% EV = 67-91% ATS | ⚠️ 5-10% EV = 30% ATS (excluded)`);
-    console.log(`   ─────────────────────────────────────────────────`);
-    if (spreadBetPicks.length > 0) {
-      console.log(`   🎯 ELITE  (2u):   ${spreadBetElite.length} picks  — MOS 3+ & both models cover`);
-      console.log(`   💎 STRONG (1.5u): ${spreadBetStrong.length} picks  — MOS 3+`);
-      console.log(`   ⭐ PRIME  (1.5u): ${spreadBetPrime.length} picks  — MOS 2+ & EV sweet spot (2-5%)`);
-      console.log(`   📈 SOLID  (1u):   ${spreadBetSolid.length} picks  — MOS 2-3`);
-      if (spreadCautionZone.length > 0) {
-        console.log(`   ⚠️  CAUTION (0.5u): ${spreadCautionZone.length} picks — MOS 2+ but EV 5-10% (reduced sizing)`);
-      }
-      console.log(`   Total spread bets: ${spreadBetPicks.length} | Units: ${totalSpreadUnits.toFixed(1)}u @ -110`);
-      spreadBetPicks.forEach(p => {
-        const evTag = p.inSweetSpot ? ' ⭐ SWEET SPOT' : p.inCautionZone ? ' ⚠️ CAUTION' : '';
-        console.log(`      → ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} @ -110 [${p.tier}] MOS: +${p.mos} | ML EV: ${p.mlEV.toFixed(1)}%${evTag}`);
+    if (primePicks.length > 0) {
+      // Compute ATS upgrade breakdown
+      const atsUpgradedPicks = primePicks.filter(p => {
+        const mos = p.spreadAnalysis.marginOverSpread || 0;
+        const odds = p.prediction.bestOdds;
+        return mos >= 2 || odds <= -200;
       });
-    } else {
-      console.log(`   ⚠️  No spread bets today (no picks with MOS ≥ 2.0)`);
+      const mlKeptPicks = primePicks.filter(p => {
+        const mos = p.spreadAnalysis.marginOverSpread || 0;
+        const odds = p.prediction.bestOdds;
+        return mos < 2 && odds > -200;
+      });
+      
+      const mosUpgrades = atsUpgradedPicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 2);
+      const oddsOnlyUpgrades = atsUpgradedPicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) < 2 && p.prediction.bestOdds <= -200);
+      
+      console.log(`\n   🏈 BET RECOMMENDATION BREAKDOWN:`);
+      console.log(`   ├─ ATS Upgraded: ${atsUpgradedPicks.length} picks`);
+      if (mosUpgrades.length > 0) console.log(`   │  ├─ MOS ≥ 2 trigger: ${mosUpgrades.length}`);
+      if (oddsOnlyUpgrades.length > 0) console.log(`   │  └─ Odds ≤ -200 trigger: ${oddsOnlyUpgrades.length}`);
+      console.log(`   └─ ML Kept: ${mlKeptPicks.length} picks (MOS < 2 & odds > -200)`);
+      
+      // ATS tier breakdown for upgraded picks
+      if (atsUpgradedPicks.length > 0) {
+        const elitePicks = atsUpgradedPicks.filter(p => {
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          return mos >= 3 && (p.spreadAnalysis.bothCover || false);
+        });
+        const strongPicks = atsUpgradedPicks.filter(p => {
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          return mos >= 3 && !(p.spreadAnalysis.bothCover || false);
+        });
+        const primeTierPicks = atsUpgradedPicks.filter(p => {
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          const ev = p.prediction.bestEV || 0;
+          return mos >= 2 && mos < 3 && ev >= 2 && ev < 5;
+        });
+        const solidPicks = atsUpgradedPicks.filter(p => {
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          const ev = p.prediction.bestEV || 0;
+          return mos >= 2 && mos < 3 && !(ev >= 2 && ev < 5);
+        });
+        const basePicks = atsUpgradedPicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) < 2);
+        
+        const totalATSUnits = (elitePicks.length * 3) + (strongPicks.length * 2.5) + (primeTierPicks.length * 2) + (solidPicks.length * 1.5) + (basePicks.length * 1);
+        
+        console.log(`\n   🎯 ATS TIER BREAKDOWN:`);
+        if (elitePicks.length > 0) console.log(`   🎯 ELITE  (3u):   ${elitePicks.length} picks — MOS 3+ & both models cover`);
+        if (strongPicks.length > 0) console.log(`   💎 STRONG (2.5u): ${strongPicks.length} picks — MOS 3+`);
+        if (primeTierPicks.length > 0) console.log(`   ⭐ PRIME  (2u):   ${primeTierPicks.length} picks — MOS 2-3 & EV sweet spot`);
+        if (solidPicks.length > 0) console.log(`   💪 SOLID  (1.5u): ${solidPicks.length} picks — MOS 2-3`);
+        if (basePicks.length > 0) console.log(`   📊 BASE   (1u):   ${basePicks.length} picks — odds trigger only`);
+        console.log(`   Total ATS units: ${totalATSUnits.toFixed(1)}u @ -110`);
+        
+        // List each ATS upgraded pick
+        console.log();
+        atsUpgradedPicks.forEach(p => {
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          const both = p.spreadAnalysis.bothCover || false;
+          const ev = p.prediction.bestEV || 0;
+          const inSS = ev >= 2 && ev < 5;
+          let tier;
+          if (mos >= 3 && both) tier = 'ELITE';
+          else if (mos >= 3) tier = 'STRONG';
+          else if (mos >= 2 && inSS) tier = 'PRIME';
+          else if (mos >= 2) tier = 'SOLID';
+          else tier = 'BASE';
+          const units = tier === 'ELITE' ? 3 : tier === 'STRONG' ? 2.5 : tier === 'PRIME' ? 2 : tier === 'SOLID' ? 1.5 : 1;
+          console.log(`      → ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} @ -110 [${tier}] ${units}u | MOS: +${mos} | ML: ${p.prediction.bestOdds} (+${ev.toFixed(1)}% EV)`);
+        });
+      }
+      
+      // ML kept picks
+      if (mlKeptPicks.length > 0) {
+        const totalMLUnits = mlKeptPicks.reduce((sum, p) => {
+          const ev = p.prediction.bestEV || 0;
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          const both = p.spreadAnalysis.bothCover || false;
+          const evU = ev >= 5 ? 2 : 1;
+          const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
+          return sum + evU + spU;
+        }, 0);
+        
+        console.log(`\n   💰 ML PICKS (kept as moneyline):`);
+        console.log(`   Total ML units: ${totalMLUnits.toFixed(1)}u`);
+        mlKeptPicks.forEach(p => {
+          const ev = p.prediction.bestEV || 0;
+          const mos = p.spreadAnalysis.marginOverSpread || 0;
+          const both = p.spreadAnalysis.bothCover || false;
+          const evU = ev >= 5 ? 2 : 1;
+          const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
+          console.log(`      → ${p.prediction.bestTeam} ML @ ${p.prediction.bestOdds} → ${evU + spU}u | MOS: +${mos} | EV: +${ev.toFixed(1)}%`);
+        });
+      }
     }
+    
+    // ── STANDALONE ATS PICKS ──
+    console.log('\n   ─── STANDALONE ATS PICKS (SpreadEV 5%+) ───────────────────');
+    console.log(`   📈 Standalone ATS Found: ${standaloneATSPicks.length}`);
+    console.log(`   ✅ New ATS bets created: ${atsCreated}`);
+    console.log(`   🔒 Already existed: ${atsSkipped}`);
+    
+    if (standaloneATSPicks.length > 0) {
+      const totalStandaloneUnits = standaloneATSPicks.reduce((sum, d) => {
+        const mos = d.spreadAnalysis.marginOverSpread || 0;
+        return sum + (mos >= 3 ? 2 : mos >= 2 ? 1.5 : 1);
+      }, 0);
+      
+      console.log(`   Total standalone ATS units: ${totalStandaloneUnits.toFixed(1)}u @ -110`);
+      standaloneATSPicks.forEach(d => {
+        const mos = d.spreadAnalysis.marginOverSpread || 0;
+        const tier = mos >= 3 ? 'HIGH' : mos >= 2 ? 'MID' : 'BASE';
+        const units = mos >= 3 ? 2 : mos >= 2 ? 1.5 : 1;
+        const coverProb = estimateCoverProb(mos);
+        const spreadEVPct = calcSpreadEV(coverProb) * 100;
+        console.log(`      → ${d.spreadAnalysis.pickedTeam} ${d.spreadAnalysis.spread} @ -110 [${tier}] ${units}u | MOS: +${mos} | SpreadEV: +${spreadEVPct.toFixed(1)}%`);
+      });
+    }
+    
+    // ── TOTAL ALLOCATION ──
+    console.log('\n   ─── TOTAL ALLOCATION ────────────────────────────────────────');
+    const totalAllPicks = primePicks.length + standaloneATSPicks.length;
+    const totalAllUnits = primePicks.reduce((sum, p) => {
+      const mos = p.spreadAnalysis.marginOverSpread || 0;
+      const odds = p.prediction.bestOdds;
+      const isATS = mos >= 2 || odds <= -200;
+      if (isATS) {
+        const both = p.spreadAnalysis.bothCover || false;
+        const ev = p.prediction.bestEV || 0;
+        const inSS = ev >= 2 && ev < 5;
+        if (mos >= 3 && both) return sum + 3;
+        if (mos >= 3) return sum + 2.5;
+        if (mos >= 2 && inSS) return sum + 2;
+        if (mos >= 2) return sum + 1.5;
+        return sum + 1;
+      } else {
+        const ev = p.prediction.bestEV || 0;
+        const both = p.spreadAnalysis.bothCover || false;
+        const evU = ev >= 5 ? 2 : 1;
+        const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
+        return sum + evU + spU;
+      }
+    }, 0) + standaloneATSPicks.reduce((sum, d) => {
+      const mos = d.spreadAnalysis.marginOverSpread || 0;
+      return sum + (mos >= 3 ? 2 : mos >= 2 ? 1.5 : 1);
+    }, 0);
+    
+    console.log(`   Total picks today: ${totalAllPicks}`);
+    console.log(`   Total units allocated: ${totalAllUnits.toFixed(1)}u`);
     console.log();
     
     console.log('   Files updated:');
