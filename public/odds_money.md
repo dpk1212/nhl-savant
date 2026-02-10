@@ -51,7 +51,7 @@ Yesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLMon 03/09
+NHLWed 02/25
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -70,8 +70,11 @@ NHLMon 03/09
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 03/091:00 PM<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>23-33<br>30%<br>+100BetOnline | -102 | +100 | +100 | -105 | -101 | -104 | -104 |
-| ![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)<br>Columbus<br>29-27<br>70%<br>-111Bet105 | -112 | -114 | -120 | -115 | -115 | -116 | -116 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/257:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>25-31<br>-<br>+145Heritage | - | - | - | - | +145 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>29-30<br>-<br>-161Heritage | - | - | - | - | -161 | - | - |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/257:00 PM<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>32-25<br>-<br>-127Heritage | - | - | - | - | -127 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>28-29<br>-<br>+115Heritage | - | - | - | - | +115 | - | - |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
