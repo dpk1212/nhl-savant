@@ -2146,7 +2146,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
     );
   }
   
-  const starRating = getStarRating(pred.unitSize);
+  // Use ATS units for star rating when ATS-recommended, otherwise ML units
+  const effectiveUnits = isATSRecommended ? (betRec?.atsUnits || pred.unitSize) : pred.unitSize;
+  const starRating = getStarRating(effectiveUnits);
   const gradeColors = starRating; // alias for backward compat within card
   
   // Format game time (remove "ET" suffix for cleaner look)
@@ -2581,7 +2583,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 fontFeatureSettings: "'tnum'",
                 boxShadow: `0 2px 8px ${starRating.borderColor}20`
               }}>
-                {pred.unitSize}u
+                {effectiveUnits}u
               </div>
             </div>
             
@@ -2660,7 +2662,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   color: 'rgba(255,255,255,0.75)',
                   letterSpacing: '-0.01em'
                 }}>
-                  {pred.unitSize} unit{pred.unitSize !== 1 ? 's' : ''} allocated
+                  {effectiveUnits} unit{effectiveUnits !== 1 ? 's' : ''} allocated
                 </div>
               </div>
               
@@ -3183,7 +3185,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               fontFeatureSettings: "'tnum'",
               marginBottom: '0.25rem'
             }}>
-              {pred.unitSize > 0 ? `${pred.unitSize}u` : 'No Bet'}
+              {effectiveUnits > 0 ? `${effectiveUnits}u` : 'No Bet'}
             </div>
             <div style={{ 
               fontSize: isMobile ? '0.563rem' : '0.625rem',
