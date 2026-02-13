@@ -144,8 +144,8 @@ const Divider = ({ color = 'rgba(99,102,241,0.25)' }: { color?: string }) => (
 
 const SectionHeader = ({ title, subtitle, color = '#FBBF24', isMobile }: { title: string; subtitle: string; color?: string; isMobile: boolean }) => (
   <div style={{ marginBottom: isMobile ? '12px' : '14px' }}>
-    <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color, letterSpacing: '0.1em' }}>{title}</div>
-    <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{subtitle}</div>
+    <div style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '900', color, letterSpacing: '0.1em', textShadow: `0 0 20px ${color}30` }}>{title}</div>
+    <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.55)', marginTop: '3px' }}>{subtitle}</div>
   </div>
 );
 
@@ -344,7 +344,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                   const c = pctileColor(chip.rank);
                   return (
                     <div key={chip.label} style={{ padding: '3px 6px', borderRadius: '5px', background: `${c}10`, border: `1px solid ${c}18`, textAlign: 'center' }}>
-                      <div style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.45)' }}>{chip.label}</div>
+                      <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.75)' }}>{chip.label}</div>
                       <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: c, fontFamily: mono }}>#{chip.rank}</div>
                     </div>
                   );
@@ -353,7 +353,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
             </div>
           ))}
 
-          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>VS</div>
+          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>VS</div>
 
           {/* Home */}
           {[{ rank: homeRank, tier: homeTier, name: homeA, isWinner: powerWinner === 'home', offR: hOffR, defR: hDefR }].map(t => (
@@ -365,14 +365,14 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
               boxShadow: t.isWinner ? `inset 0 0 30px ${t.tier.color}08, 0 0 15px ${t.tier.color}10` : 'none',
             }}>
               <div style={{ fontSize: isMobile ? '32px' : '42px', fontWeight: '900', color: t.tier.color, fontFamily: mono, lineHeight: 1, textShadow: `0 0 ${t.isWinner ? '25px' : '10px'} ${t.tier.color}${t.isWinner ? '60' : '20'}` }}>#{t.rank}</div>
-              <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white', marginTop: '4px', opacity: t.isWinner ? 1 : 0.55 }}>{t.name}</div>
+              <div style={{ fontSize: isMobile ? '14px' : '16px', fontWeight: '700', color: 'white', marginTop: '4px', opacity: t.isWinner ? 1 : 0.65 }}>{t.name}</div>
               <div style={{ display: 'inline-block', marginTop: '6px', padding: '3px 10px', borderRadius: '20px', background: t.tier.bg, border: `1px solid ${t.tier.color}30`, fontSize: isMobile ? '9px' : '10px', fontWeight: '700', color: t.tier.color, letterSpacing: '0.08em' }}>{t.tier.label}</div>
               <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', marginTop: '8px' }}>
                 {[{ label: 'OFF', rank: t.offR }, { label: 'DEF', rank: t.defR }].map(chip => {
                   const c = pctileColor(chip.rank);
                   return (
                     <div key={chip.label} style={{ padding: '3px 6px', borderRadius: '5px', background: `${c}10`, border: `1px solid ${c}18`, textAlign: 'center' }}>
-                      <div style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.45)' }}>{chip.label}</div>
+                      <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.75)' }}>{chip.label}</div>
                       <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: c, fontFamily: mono }}>#{chip.rank}</div>
                     </div>
                   );
@@ -410,17 +410,17 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
           SECTION 2: EDGE METER
          ═══════════════════════════════════════════════════════════ */}
       <div style={{ padding: pad }}>
-        <SectionHeader title="WHO HAS THE EDGE?" subtitle="Category-by-category breakdown" color="rgba(255,255,255,0.5)" isMobile={isMobile} />
+        <SectionHeader title="WHO HAS THE EDGE?" subtitle="Category-by-category breakdown" color="rgba(255,255,255,0.85)" isMobile={isMobile} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-          <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: awayWins >= homeWins ? awayTier.color : 'rgba(255,255,255,0.3)', minWidth: isMobile ? '40px' : '50px', textAlign: 'right' }}>{awayA}</span>
+          <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: awayWins >= homeWins ? awayTier.color : 'rgba(255,255,255,0.5)', minWidth: isMobile ? '40px' : '50px', textAlign: 'right' }}>{awayA}</span>
           <div style={{ flex: 1, position: 'relative', height: '16px', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', overflow: 'visible' }}>
             <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: isVisible ? `${edgePct}%` : '50%', background: `linear-gradient(90deg, ${awayTier.color}40, ${awayTier.color})`, borderRadius: '8px 0 0 8px', transition: 'width 1.2s cubic-bezier(0.4,0,0.2,1)', boxShadow: awayWins > homeWins ? `0 0 12px ${awayTier.color}50` : 'none' }} />
             <div style={{ position: 'absolute', right: 0, top: 0, height: '100%', width: isVisible ? `${100 - edgePct}%` : '50%', background: `linear-gradient(270deg, ${homeTier.color}40, ${homeTier.color})`, borderRadius: '0 8px 8px 0', transition: 'width 1.2s cubic-bezier(0.4,0,0.2,1)', boxShadow: homeWins > awayWins ? `0 0 12px ${homeTier.color}50` : 'none' }} />
             <div style={{ position: 'absolute', left: '50%', top: '-1px', width: '2px', height: '18px', background: 'rgba(255,255,255,0.3)', transform: 'translateX(-50%)', borderRadius: '1px', zIndex: 2 }} />
             <div style={{ position: 'absolute', top: '50%', left: `${edgePct}%`, width: '12px', height: '12px', borderRadius: '50%', background: winnerTier.color, border: '2px solid rgba(255,255,255,0.8)', transform: 'translate(-50%,-50%)', animation: 'mi5-dotPulse 2s infinite', boxShadow: `0 0 10px ${winnerTier.color}80`, zIndex: 3, transition: 'left 1.2s cubic-bezier(0.4,0,0.2,1)' }} />
           </div>
-          <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: homeWins >= awayWins ? homeTier.color : 'rgba(255,255,255,0.3)', minWidth: isMobile ? '40px' : '50px' }}>{homeA}</span>
+          <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: homeWins >= awayWins ? homeTier.color : 'rgba(255,255,255,0.5)', minWidth: isMobile ? '40px' : '50px' }}>{homeA}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px' }}>
@@ -442,11 +442,11 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 border: `1px solid ${even ? 'rgba(255,255,255,0.05)' : `${chipColor}20`}`,
                 textAlign: 'center',
               }}>
-                <div style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', marginBottom: '3px' }}>{chip.label}</div>
-                <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '800', color: even ? 'rgba(255,255,255,0.35)' : chipColor }}>
+                <div style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.75)', letterSpacing: '0.06em', marginBottom: '3px', textTransform: 'uppercase' }}>{chip.label}</div>
+                <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: even ? 'rgba(255,255,255,0.6)' : chipColor }}>
                   {even ? '~EVEN' : chipWinner}
                 </div>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: mono, marginTop: '2px' }}>
+                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)', fontFamily: mono, marginTop: '2px' }}>
                   {chip.isRank ? `#${chip.awayVal} vs #${chip.homeVal}` : `${chip.awayVal.toFixed(1)} vs ${chip.homeVal.toFixed(1)}`}
                 </div>
               </div>
@@ -458,7 +458,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
           textAlign: 'center', padding: '10px 14px', borderRadius: '10px',
           background: `${winnerTier.color}08`, borderLeft: `3px solid ${winnerTier.color}40`,
         }}>
-          <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>
+          <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>
             {winnerName} wins <strong style={{ color: winnerTier.color }}>{winCount} of {6 - evenCount}</strong> decided categories{evenCount > 0 ? ` (${evenCount} too close)` : ''}
           </span>
         </div>
@@ -558,18 +558,18 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '8px' : '12px' }}>
                         <div>
                           <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '800', color: 'rgba(255,255,255,0.9)', letterSpacing: '0.04em' }}>
-                            {offA} <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: '600' }}>vs</span> {defA}
+                            {offA} <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: '600' }}>vs</span> {defA}
                           </div>
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>Tap a zone for the full matchup breakdown</div>
+                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>Tap a zone for the full matchup breakdown</div>
                         </div>
                         {/* Mini legend */}
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                           <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#10B981' }} />
-                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>Edge</span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.6)' }}>Edge</span>
                           <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#F59E0B' }} />
-                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>Even</span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.6)' }}>Even</span>
                           <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#EF4444' }} />
-                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)' }}>Tough</span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.6)' }}>Tough</span>
                         </div>
                       </div>
 
@@ -707,11 +707,11 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                     <text x="150" y="48" textAnchor="middle" fill={zoneMap.three.color} fontFamily={mono} fontSize="26" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.three.offFg.toFixed(1)}%</text>
                                     <text x="150" y="63" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="8.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
                                       <tspan fill={zoneMap.three.offRank <= 100 ? '#10B981' : zoneMap.three.offRank <= 200 ? '#F59E0B' : '#EF4444'}>#{zoneMap.three.offRank}</tspan>
-                                      <tspan fill="rgba(255,255,255,0.25)"> OFF vs </tspan>
+                                      <tspan fill="rgba(255,255,255,0.4)"> OFF vs </tspan>
                                       <tspan fill={zoneMap.three.defRank >= 250 ? '#10B981' : zoneMap.three.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.three.defRank}</tspan>
-                                      <tspan fill="rgba(255,255,255,0.25)"> DEF</tspan>
+                                      <tspan fill="rgba(255,255,255,0.4)"> DEF</tspan>
                                     </text>
-                                    <text x="150" y="75" textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7.5" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
+                                    <text x="150" y="75" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="7.5" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.three.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="108" y="10" width="84" height="72" rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'three' ? `${zoneMap.three.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="150" y="27" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>3-POINT</text>
@@ -731,7 +731,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                       <tspan fill="rgba(255,255,255,0.2)"> vs </tspan>
                                       <tspan fill={zoneMap.mid.defRank >= 250 ? '#10B981' : zoneMap.mid.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.mid.defRank}</tspan>
                                     </text>
-                                    <text x="34" y={arcY + 100} textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.mid.offShare.toFixed(0)}% of shots</text>
+                                    <text x="34" y={arcY + 100} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="7" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.mid.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="8" y="170" width="78" height="66" rx="8" fill="rgba(0,0,0,0.55)" stroke={activeKey === 'mid' ? `${zoneMap.mid.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="47" y="186" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>MID-RANGE</text>
@@ -748,11 +748,11 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                     <text x="150" y={arcY + 42} textAnchor="middle" fill={zoneMap.close2.color} fontFamily={mono} fontSize="28" fontWeight="900" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.2s' }}>{zoneMap.close2.offFg.toFixed(1)}%</text>
                                     <text x="150" y={arcY + 58} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontFamily={mono} fontSize="8.5" fontWeight="700" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.3s' }}>
                                       <tspan fill={zoneMap.close2.offRank <= 100 ? '#10B981' : zoneMap.close2.offRank <= 200 ? '#F59E0B' : '#EF4444'}>#{zoneMap.close2.offRank}</tspan>
-                                      <tspan fill="rgba(255,255,255,0.25)"> OFF vs </tspan>
+                                      <tspan fill="rgba(255,255,255,0.4)"> OFF vs </tspan>
                                       <tspan fill={zoneMap.close2.defRank >= 250 ? '#10B981' : zoneMap.close2.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.close2.defRank}</tspan>
-                                      <tspan fill="rgba(255,255,255,0.25)"> DEF</tspan>
+                                      <tspan fill="rgba(255,255,255,0.4)"> DEF</tspan>
                                     </text>
-                                    <text x="150" y={arcY + 71} textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7.5" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
+                                    <text x="150" y={arcY + 71} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="7.5" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.close2.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="113" y="120" width="74" height="76" rx="8" fill="rgba(0,0,0,0.5)" stroke={activeKey === 'close2' ? `${zoneMap.close2.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="150" y="137" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>PAINT</text>
@@ -772,7 +772,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                       <tspan fill="rgba(255,255,255,0.2)"> vs </tspan>
                                       <tspan fill={zoneMap.rim.defRank >= 250 ? '#10B981' : zoneMap.rim.defRank >= 150 ? '#F59E0B' : '#EF4444'}>#{zoneMap.rim.defRank}</tspan>
                                     </text>
-                                    <text x="260" y={bY + 22} textAnchor="middle" fill="rgba(255,255,255,0.22)" fontSize="7" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.rim.offShare.toFixed(0)}% of shots</text>
+                                    <text x="260" y={bY + 22} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="7" fontWeight="600" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.4s ease 0.35s' }}>{zoneMap.rim.offShare.toFixed(0)}% of shots</text>
                                   </>) : (<>
                                     <rect x="214" y="248" width="78" height="52" rx="8" fill="rgba(0,0,0,0.6)" stroke={activeKey === 'rim' ? `${zoneMap.rim.color}40` : 'rgba(255,255,255,0.04)'} strokeWidth="1" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.1s' }} />
                                     <text x="253" y="262" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize={ns} fontWeight="700" letterSpacing="0.1em" opacity={isVisible ? 1 : 0} style={{ transition: 'opacity 0.5s ease 0.15s' }}>RIM</text>
@@ -802,8 +802,8 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                       {/* ── SHOT DISTRIBUTION BAR (enriched on mobile with rank + edge) ── */}
                       <div style={{ marginTop: '10px', padding: '0 2px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}>SHOT DISTRIBUTION</span>
-                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)', marginLeft: 'auto' }}>{offA}'s shot attempts by zone</span>
+                          <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.08em' }}>SHOT DISTRIBUTION</span>
+                          <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.6)', marginLeft: 'auto' }}>{offA}'s shot attempts by zone</span>
                         </div>
                         <div style={{ display: 'flex', gap: '3px', borderRadius: '8px', overflow: 'hidden' }}>
                           {offSorted.map((z, i) => {
@@ -827,7 +827,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                                 <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '900', color: zm.color, fontFamily: mono, lineHeight: 1 }}>
                                   {z.offShare.toFixed(0)}%
                                 </span>
-                                <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.03em', marginTop: '2px' }}>
+                                <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: 'rgba(255,255,255,0.65)', letterSpacing: '0.03em', marginTop: '2px' }}>
                                   {z.shortLabel}
                                 </span>
                                 {isMobile && (
@@ -874,13 +874,13 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                               {/* Offense */}
                               <div style={{ flex: 1, padding: isMobile ? '8px' : '10px', borderRadius: '8px', background: `${offFgColor}08`, border: `1px solid ${offFgColor}15`, textAlign: 'center' }}>
-                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '3px' }}>{offA} SHOOTS</div>
+                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.08em', marginBottom: '3px' }}>{offA} SHOOTS</div>
                                 <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: offFgColor, fontFamily: mono, lineHeight: '1.1' }}>{active.offFg.toFixed(1)}%</div>
                                 <div style={{ fontSize: '9px', fontWeight: '700', color: offFgColor, marginTop: '3px' }}>#{active.offRank} in D1</div>
                               </div>
                               {/* Defense */}
                               <div style={{ flex: 1, padding: isMobile ? '8px' : '10px', borderRadius: '8px', background: `${defFgColor}08`, border: `1px solid ${defFgColor}15`, textAlign: 'center' }}>
-                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', marginBottom: '3px' }}>{defA} ALLOWS</div>
+                                <div style={{ fontSize: '8px', fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.08em', marginBottom: '3px' }}>{defA} ALLOWS</div>
                                 <div style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: defFgColor, fontFamily: mono, lineHeight: '1.1' }}>{active.defFg.toFixed(1)}%</div>
                                 <div style={{ fontSize: '9px', fontWeight: '700', color: defFgColor, marginTop: '3px' }}>#{active.defRank} in D1</div>
                               </div>
@@ -892,8 +892,8 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
 
                             {/* Volume + D1 context */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>D1 avg: {active.avg.toFixed(0)}% FG · {active.offShare.toFixed(0)}% of {offA}'s shots</span>
-                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)' }}>{active.offRank < active.defRank ? `${offA} has the edge` : active.defRank < active.offRank ? `${defA} has the edge` : 'Even matchup'}</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)' }}>D1 avg: {active.avg.toFixed(0)}% FG · {active.offShare.toFixed(0)}% of {offA}'s shots</span>
+                              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)' }}>{active.offRank < active.defRank ? `${offA} has the edge` : active.defRank < active.offRank ? `${defA} has the edge` : 'Even matchup'}</span>
                             </div>
                           </div>
                         );
@@ -928,7 +928,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                             <div style={{ fontSize: '9px', fontWeight: '700', color: matchupColor, letterSpacing: '0.06em', marginBottom: '4px' }}>
                               {goToMatchesWeak ? 'FAVORABLE MATCHUP' : goToMatchesStrong ? 'TOUGH MATCHUP' : 'MIXED MATCHUP'}
                             </div>
-                            <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{matchupInsight}</span>
+                            <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.75)', lineHeight: '1.5' }}>{matchupInsight}</span>
                           </div>
                         );
                       })()}
@@ -950,7 +950,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
          ═══════════════════════════════════════════════════════════ */}
       <div style={{ padding: pad }}>
         <SectionHeader title="HEAD-TO-HEAD BATTLES" subtitle="Direct matchup confrontations that decide games" isMobile={isMobile} />
-        <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '14px', marginTop: '-6px' }}>{offA} offense vs {defA} defense</div>
+        <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '14px', marginTop: '-6px' }}>{offA} offense vs {defA} defense</div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* eFG% Battle */}
@@ -989,7 +989,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.04em' }}>SHOOTING BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Effective FG% — the best measure of shooting quality</div>
+                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Effective FG% — the best measure of shooting quality</div>
                   </div>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
                     {edge > 8 ? 'BIG EDGE' : edge > 3 ? 'EDGE' : edge > -3 ? 'NEUTRAL' : 'TOUGH'}
@@ -1000,7 +1000,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{offA} shoots</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} shoots</span>
                       <RankBadge rank={offRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(eFG.off, D1_AVG.eFG, true), fontFamily: mono }}>{eFG.off.toFixed(1)}</span>
@@ -1014,7 +1014,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: !offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{defA} allows</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} allows</span>
                       <RankBadge rank={defRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(eFG.def, D1_AVG.eFG, false), fontFamily: mono }}>{eFG.def.toFixed(1)}</span>
@@ -1025,7 +1025,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 </div>
 
                 <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5' }}>{verdict}</span>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
@@ -1062,7 +1062,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#F87171', letterSpacing: '0.04em' }}>TURNOVER BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Ball security vs defensive pressure</div>
+                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Ball security vs defensive pressure</div>
                   </div>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
                     {offWins ? `${offA}` : `${defA}`}
@@ -1072,12 +1072,12 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{offA} commits</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} commits</span>
                       <RankBadge rank={offRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(to.off, D1_AVG.to, false), fontFamily: mono }}>{to.off.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>turnovers per 100 poss — lower is better</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>turnovers per 100 poss — lower is better</div>
                   <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min(((30 - to.off) / 20) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.off, D1_AVG.to, false)}40, ${statColor(to.off, D1_AVG.to, false)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
                   </div>
@@ -1086,19 +1086,19 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: !offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{defA} forces</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} forces</span>
                       <RankBadge rank={defRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(to.def, D1_AVG.to, true), fontFamily: mono }}>{to.def.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>turnovers forced per 100 poss — higher is better</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>turnovers forced per 100 poss — higher is better</div>
                   <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min((to.def / 30) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.def, D1_AVG.to, true)}40, ${statColor(to.def, D1_AVG.to, true)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
                   </div>
                 </div>
 
                 <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5' }}>{verdict}</span>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
@@ -1138,7 +1138,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#60A5FA', letterSpacing: '0.04em' }}>REBOUNDING BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Second chances vs defensive glass control</div>
+                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Second chances vs defensive glass control</div>
                   </div>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
                     {offWins ? `${offA}` : `${defA}`}
@@ -1148,12 +1148,12 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{offA} grabs</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} grabs</span>
                       <RankBadge rank={offRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(oreb.off, D1_AVG.oreb, true), fontFamily: mono }}>{oreb.off.toFixed(1)}%</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>offensive rebound rate</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>offensive rebound rate</div>
                   <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min((oreb.off / 45) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(oreb.off, D1_AVG.oreb, true)}40, ${statColor(oreb.off, D1_AVG.oreb, true)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
                   </div>
@@ -1162,19 +1162,19 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: !offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{defA} allows</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} allows</span>
                       <RankBadge rank={defRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(oreb.def, D1_AVG.oreb, false), fontFamily: mono }}>{oreb.def.toFixed(1)}%</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>offensive rebounds allowed</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>offensive rebounds allowed</div>
                   <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min((oreb.def / 45) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(oreb.def, D1_AVG.oreb, false)}40, ${statColor(oreb.def, D1_AVG.oreb, false)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
                   </div>
                 </div>
 
                 <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5' }}>{verdict}</span>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
@@ -1214,7 +1214,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#34D399', letterSpacing: '0.04em' }}>FREE THROW BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>Getting to the line vs keeping them off it</div>
+                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Getting to the line vs keeping them off it</div>
                   </div>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
                     {offWins ? `${offA}` : `${defA}`}
@@ -1224,12 +1224,12 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{offA} draws</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} draws</span>
                       <RankBadge rank={offRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(ftRate.off, D1_AVG.ftRate, true), fontFamily: mono }}>{ftRate.off.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>free throw attempts per field goal attempt</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>free throw attempts per field goal attempt</div>
                   <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min((ftRate.off / 50) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(ftRate.off, D1_AVG.ftRate, true)}40, ${statColor(ftRate.off, D1_AVG.ftRate, true)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
                   </div>
@@ -1238,19 +1238,19 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: !offWins ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)' }}>{defA} allows</span>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} allows</span>
                       <RankBadge rank={defRank} isMobile={isMobile} />
                     </div>
                     <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(ftRate.def, D1_AVG.ftRate, false), fontFamily: mono }}>{ftRate.def.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>free throw attempts allowed per FGA</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>free throw attempts allowed per FGA</div>
                   <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: isVisible ? `${Math.min((ftRate.def / 50) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(ftRate.def, D1_AVG.ftRate, false)}40, ${statColor(ftRate.def, D1_AVG.ftRate, false)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
                   </div>
                 </div>
 
                 <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5' }}>{verdict}</span>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
@@ -1259,10 +1259,10 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
 
         {/* Pace */}
         <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em' }}>EXPECTED PACE</span>
+          <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em' }}>EXPECTED PACE</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: '800', color: '#A78BFA', fontFamily: mono }}>{((tempo.away + tempo.home) / 2).toFixed(1)}</span>
-            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>poss/40</span>
+            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)' }}>poss/40</span>
           </div>
         </div>
       </div>
@@ -1362,9 +1362,9 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: pathColor, animation: 'mi5-pulse 2s infinite' }} />
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em' }}>PATH TO VICTORY</span>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: 'rgba(255,255,255,0.65)', letterSpacing: '0.12em' }}>PATH TO VICTORY</span>
                 </div>
-                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)' }}>{offA}'s offensive checklist</span>
+                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)' }}>{offA}'s offensive checklist</span>
               </div>
 
               {/* Score banner */}
@@ -1377,7 +1377,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                   <span style={{ fontSize: isMobile ? '28px' : '34px', fontWeight: '900', color: pathColor, fontFamily: mono, lineHeight: 1 }}>
                     {totalWins}/5
                   </span>
-                  <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'rgba(255,255,255,0.5)' }}>checkpoints cleared</span>
+                  <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: '700', color: 'rgba(255,255,255,0.7)' }}>checkpoints cleared</span>
                 </div>
                 <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: pathColor, padding: '4px 10px', borderRadius: '6px', background: `${pathColor}15`, border: `1px solid ${pathColor}20`, letterSpacing: '0.06em' }}>
                   {pathLabel}
@@ -1411,15 +1411,15 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                       {/* Content */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>{cp.label}</span>
+                          <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: 'rgba(255,255,255,0.9)', letterSpacing: '0.04em' }}>{cp.label}</span>
                         </div>
-                        <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.35)', lineHeight: '1.3' }}>{cp.question}</div>
+                        <div style={{ fontSize: isMobile ? '9px' : '10px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.3' }}>{cp.question}</div>
                       </div>
 
                       {/* Rank comparison */}
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
-                        <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: cp.win ? '#10B981' : 'rgba(255,255,255,0.4)', fontFamily: mono }}>{cp.offLabel}</span>
-                        <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: !cp.win ? '#EF4444' : 'rgba(255,255,255,0.4)', fontFamily: mono }}>{cp.defLabel}</span>
+                        <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: cp.win ? '#10B981' : 'rgba(255,255,255,0.55)', fontFamily: mono }}>{cp.offLabel}</span>
+                        <span style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '700', color: !cp.win ? '#EF4444' : 'rgba(255,255,255,0.55)', fontFamily: mono }}>{cp.defLabel}</span>
                       </div>
                     </div>
                   );
@@ -1451,7 +1451,7 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
                   : `${offA} faces an uphill battle. ${defA} controls most checkpoints.`
                 }
               </div>
-              <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>
+              <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.65)', lineHeight: '1.5' }}>
                 {totalWins >= 4
                   ? `${offA} clears ${totalWins} of 5 offensive checkpoints. When teams check this many boxes, scoring comes easy.`
                   : totalWins >= 3
