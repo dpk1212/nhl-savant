@@ -17,7 +17,7 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
   }
   
   try {
-    // 🔧 FIX: Use ET date instead of UTC to match bet creation date
+    // Use ET date to match bet creation date
     const now = new Date();
     const etString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
     const etDate = new Date(etString);
@@ -26,17 +26,29 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     const day = String(etDate.getDate()).padStart(2, '0');
     const date = `${year}-${month}-${day}`;
     
+    // Also try yesterday (games finishing after midnight ET)
+    const yesterday = new Date(etDate);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yYear = yesterday.getFullYear();
+    const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const yDay = String(yesterday.getDate()).padStart(2, '0');
+    const prevDate = `${yYear}-${yMonth}-${yDay}`;
+    
     const normalizeForId = (name) => name.replace(/\s+/g, '_').toUpperCase();
     
     const awayNorm = normalizeForId(awayTeam);
     const homeNorm = normalizeForId(homeTeam);
     
-    // Try all possible bet IDs (MONEYLINE + SPREAD for ATS picks)
+    // Try all possible bet IDs: today + yesterday × MONEYLINE + SPREAD
     const possibleBetIds = [
       `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${awayNorm}_(AWAY)`,
       `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${homeNorm}_(HOME)`,
       `${date}_${awayNorm}_${homeNorm}_SPREAD_${awayNorm}_(AWAY)`,
-      `${date}_${awayNorm}_${homeNorm}_SPREAD_${homeNorm}_(HOME)`
+      `${date}_${awayNorm}_${homeNorm}_SPREAD_${homeNorm}_(HOME)`,
+      `${prevDate}_${awayNorm}_${homeNorm}_MONEYLINE_${awayNorm}_(AWAY)`,
+      `${prevDate}_${awayNorm}_${homeNorm}_MONEYLINE_${homeNorm}_(HOME)`,
+      `${prevDate}_${awayNorm}_${homeNorm}_SPREAD_${awayNorm}_(AWAY)`,
+      `${prevDate}_${awayNorm}_${homeNorm}_SPREAD_${homeNorm}_(HOME)`
     ];
     
     let gradedBet = null;
