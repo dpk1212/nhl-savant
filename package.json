@@ -10,7 +10,6 @@
     "preview": "vite preview",
     "deploy": "rm -rf dist && npm run build && gh-pages -d dist",
     "deploy:functions": "cd functions && npm install && cd .. && firebase deploy --only functions",
-    "backtest": "node backtesting/runBacktest.js",
     "update-results": "node updateTuesdayResults.js",
     "fetch-data": "node scripts/fetchData.js",
     "fetch-goalies": "node scripts/fetchGoaliesPerplexity.js",
