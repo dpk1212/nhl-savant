@@ -72,6 +72,9 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     // Detect ATS bets (upgraded Prime Picks or standalone ATS)
     const isATSBet = gradedBet.betRecommendation?.type === 'ATS' || gradedBet.isATSPick;
     
+    // Determine winner (needed for Firebase update regardless of bet type)
+    const winnerTeam = liveScore.awayScore > liveScore.homeScore ? awayTeam : homeTeam;
+    
     // Determine outcome
     const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
     let outcome;
@@ -90,7 +93,6 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       console.log(`   📐 ATS: margin ${margin}, spread ${spread}, adjusted ${adjusted} → ${outcome}`);
     } else {
       // ML: check outright winner
-      const winnerTeam = liveScore.awayScore > liveScore.homeScore ? awayTeam : homeTeam;
       const betTeamNorm = normalizeTeam(gradedBet.bet.team);
       const winnerNorm = normalizeTeam(winnerTeam);
       outcome = betTeamNorm === winnerNorm ? 'WIN' : 'LOSS';
