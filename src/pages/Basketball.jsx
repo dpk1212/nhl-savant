@@ -186,21 +186,44 @@ const Basketball = () => {
           const bet = betsMap.get(betKey);
           
           if (bet && bet.result?.outcome) {
-            // 🔧 FIX: Recalculate profit from ACTUAL units (not stored profit which may be wrong)
-            const actualUnits = bet.bet?.units || bet.prediction?.unitSize || 1;
-            const odds = bet.bet?.odds;
-            const isWin = bet.result.outcome === 'WIN';
+            // Detect ATS bets (upgraded Prime Picks or standalone ATS)
+            const isATSBet = bet.betRecommendation?.type === 'ATS' || bet.isATSPick;
             
+            // Use ATS units/odds when it's an ATS bet, ML values otherwise
+            const actualUnits = isATSBet
+              ? (bet.betRecommendation?.atsUnits || bet.prediction?.unitSize || 1)
+              : (bet.bet?.units || bet.prediction?.unitSize || 1);
+            const odds = isATSBet ? -110 : (bet.bet?.odds);
+            
+            // For ATS bets: determine cover from scores + spread (not outright win)
+            let outcome = bet.result.outcome;
+            if (isATSBet && bet.result?.awayScore != null && bet.result?.homeScore != null) {
+              const spread = bet.betRecommendation?.atsSpread || bet.spreadAnalysis?.spread || bet.bet?.spread;
+              if (spread != null) {
+                const betTeamNorm = normalizeTeam(bet.bet?.team || '');
+                const awayNorm = normalizeTeam(bet.game?.awayTeam || '');
+                const isAway = betTeamNorm === awayNorm;
+                const pickedScore = isAway ? bet.result.awayScore : bet.result.homeScore;
+                const oppScore = isAway ? bet.result.homeScore : bet.result.awayScore;
+                const margin = pickedScore - oppScore;
+                // spread is negative for favorites (e.g. -5.5), positive for underdogs
+                outcome = (margin + spread) > 0 ? 'WIN' : (margin + spread) === 0 ? 'PUSH' : 'LOSS';
+              }
+            }
+            
+            const isWin = outcome === 'WIN';
             let calculatedProfit;
             if (isWin && odds) {
               const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
               calculatedProfit = actualUnits * decimal;
+            } else if (outcome === 'PUSH') {
+              calculatedProfit = 0;
             } else {
               calculatedProfit = -actualUnits;
             }
             
             gameData.betOutcome = {
-              outcome: bet.result.outcome,
+              outcome,
               profit: calculatedProfit,
               units: actualUnits
             };

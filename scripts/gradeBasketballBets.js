@@ -98,28 +98,30 @@ async function gradeBasketballBets() {
         continue;
       }
       
-      // Determine outcome
+      // Detect ATS bets (upgraded Prime Picks or standalone ATS)
+      const isATSBet = bet.betRecommendation?.type === 'ATS' || bet.isATSPick;
       const betTeam = bet.bet.team;
+      
+      // Determine outcome — outright winner for ML, also works for most ATS (high-MOS picks)
+      // Note: OddsTrader results don't include scores, so true cover check
+      // happens in the client-side grader or date-specific grader with NCAA API
       const normalizedBetTeam = normalizeTeam(betTeam);
       const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
       const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
       
-      // USE THE STORED UNIT SIZE from when bet was written (dynamic confidence system)
-      // Do NOT recalculate - the displayed units should match the graded units
+      // Use correct units and odds for the bet type
       const grade = bet.prediction?.grade || 'B';
-      const odds = bet.bet.odds;
+      const odds = isATSBet ? -110 : bet.bet.odds;
+      const units = isATSBet
+        ? (bet.betRecommendation?.atsUnits || bet.prediction?.unitSize || 1)
+        : (bet.prediction?.unitSize ?? bet.unitSize ?? getOptimizedUnitSize(grade, odds));
       
-      // Priority: prediction.unitSize (dynamic) > bet.unitSize > fallback to ABC matrix
-      const units = bet.prediction?.unitSize ?? bet.unitSize ?? getOptimizedUnitSize(grade, odds);
-      
-      // Calculate profit based on ACTUAL stored units, not recalculated
       let profit;
       if (outcome === 'WIN') {
-        // American odds to decimal payout
         const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
         profit = units * decimal;
       } else {
-        profit = -units; // Lost the staked amount
+        profit = -units;
       }
       
       // Update bet in Firebase (using Admin SDK)
@@ -136,9 +138,10 @@ async function gradeBasketballBets() {
       });
       
       gradedCount++;
+      const marketLabel = isATSBet ? 'ATS' : 'ML';
       console.log(`✅ ${outcome}: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
-      console.log(`   Pick: ${betTeam} (${bet.bet.odds > 0 ? '+' : ''}${bet.bet.odds})`);
-      console.log(`   Grade: ${grade} • Units: ${units}u (stored from bet)`);
+      console.log(`   Pick: ${betTeam} ${marketLabel} (${odds > 0 ? '+' : ''}${odds})`);
+      console.log(`   Grade: ${grade} • Units: ${units}u • ${marketLabel}`);
       console.log(`   Winner: ${matchingResult.winnerTeam}`);
       console.log(`   Profit: ${profit > 0 ? '+' : ''}${profit.toFixed(2)}u\n`);
     }
