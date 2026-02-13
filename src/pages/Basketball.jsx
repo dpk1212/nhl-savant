@@ -2827,47 +2827,121 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         
             </div>
             
-        {/* Predicted Score — Compact Inline */}
+        {/* Predicted Score — Premium Block */}
         {pred.ensembleTotal && (
           <div style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: isMobile ? '0.5rem' : '0.75rem',
-            padding: isMobile ? '0.438rem 0.625rem' : '0.5rem 0.75rem',
-            background: 'rgba(0,0,0,0.2)',
-            borderRadius: '6px',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%)',
+            borderRadius: '8px',
+            border: '1px solid rgba(139, 92, 246, 0.18)',
+            padding: isMobile ? '0.625rem 0.75rem' : '0.75rem 1rem',
             position: 'relative',
             zIndex: 2
           }}>
-            <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem', lineHeight: 1 }}>🔮</span>
-            <span style={{
-              fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: 'rgba(255,255,255,0.45)',
-              fontWeight: '700',
+            <div style={{
+              fontSize: isMobile ? '0.563rem' : '0.625rem',
+              color: 'rgba(167, 139, 250, 0.7)',
               textTransform: 'uppercase',
-              letterSpacing: '0.04em'
-            }}>Prediction</span>
-            <span style={{
-              fontSize: isMobile ? '0.938rem' : '1.063rem',
-              fontWeight: '900',
-              color: 'white',
-              fontFeatureSettings: "'tnum'",
-              letterSpacing: '-0.02em'
+              letterSpacing: '0.08em',
+              fontWeight: '700',
+              marginBottom: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
             }}>
-              {pred.ensembleAwayScore}
-            </span>
-            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem', fontWeight: '700' }}>-</span>
-            <span style={{
-              fontSize: isMobile ? '0.938rem' : '1.063rem',
-              fontWeight: '900',
-              color: 'white',
-              fontFeatureSettings: "'tnum'",
-              letterSpacing: '-0.02em'
+              <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem', lineHeight: 1 }}>🔮</span> PREDICTED SCORE
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: isMobile ? '0.5rem' : '0.75rem'
             }}>
-              {pred.ensembleHomeScore}
-            </span>
+              {/* Away Team */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: isMobile ? '0.375rem' : '0.5rem',
+                flex: 1,
+                justifyContent: 'flex-end'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontWeight: '600',
+                  textAlign: 'right',
+                  lineHeight: 1.2,
+                  maxWidth: isMobile ? '80px' : '120px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {game.awayTeam}
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontWeight: '900',
+                  color: 'white',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.02em',
+                  minWidth: '1.75rem',
+                  textAlign: 'center'
+                }}>
+                  {Math.round(pred.ensembleAwayScore)}
+                </span>
+              </div>
+              
+              {/* Divider */}
+              <span style={{ 
+                color: 'rgba(139, 92, 246, 0.4)', 
+                fontSize: isMobile ? '0.875rem' : '1rem', 
+                fontWeight: '300',
+                lineHeight: 1
+              }}>—</span>
+              
+              {/* Home Team */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: isMobile ? '0.375rem' : '0.5rem',
+                flex: 1,
+                justifyContent: 'flex-start'
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontWeight: '900',
+                  color: 'white',
+                  fontFeatureSettings: "'tnum'",
+                  letterSpacing: '-0.02em',
+                  minWidth: '1.75rem',
+                  textAlign: 'center'
+                }}>
+                  {Math.round(pred.ensembleHomeScore)}
+                </span>
+                <span style={{
+                  fontSize: isMobile ? '0.688rem' : '0.75rem',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontWeight: '600',
+                  lineHeight: 1.2,
+                  maxWidth: isMobile ? '80px' : '120px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {game.homeTeam}
+                </span>
+              </div>
+            </div>
+            {/* Total line */}
+            <div style={{
+              textAlign: 'center',
+              marginTop: '0.375rem',
+              fontSize: isMobile ? '0.563rem' : '0.625rem',
+              color: 'rgba(167, 139, 250, 0.5)',
+              fontWeight: '600',
+              letterSpacing: '0.03em'
+            }}>
+              TOTAL: {Math.round(pred.ensembleTotal)}
+            </div>
           </div>
         )}
         
