@@ -508,7 +508,7 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     source: 'PRIME_PICK', // New source identifier
     
     // 🌟 Prime Pick flag
-    savantPick: true, // Prime picks are automatically savantPicks
+    savantPick: totalUnits >= 3, // Savant badge reserved for high-conviction picks (3u+)
     isPrimePick: true,
     isATSPick: shouldUpgradeATS,
     

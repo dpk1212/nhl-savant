@@ -3052,42 +3052,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             display: 'grid',
             gap: '1rem'
           }}>
-            {/* Market Odds Detail */}
-            <div style={{
-              background: 'rgba(255,255,255,0.03)',
-              padding: '1rem',
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.08)'
-            }}>
-              <div style={{ 
-                fontSize: TYPOGRAPHY.label.size,
-                color: '#FF8C42',
-                fontWeight: TYPOGRAPHY.label.weight,
-                textTransform: TYPOGRAPHY.label.textTransform,
-                marginBottom: '0.75rem'
-              }}>
-                💰 MARKET ODDS
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-                    {game.awayTeam}
-                  </div>
-                  <div style={{ fontSize: TYPOGRAPHY.body.size, color: 'var(--color-text-primary)', fontWeight: TYPOGRAPHY.body.weight }}>
-                    {odds.awayOdds > 0 ? '+' : ''}{odds.awayOdds}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-                    {game.homeTeam}
-                  </div>
-                  <div style={{ fontSize: TYPOGRAPHY.body.size, color: 'var(--color-text-primary)', fontWeight: TYPOGRAPHY.body.weight }}>
-                    {odds.homeOdds > 0 ? '+' : ''}{odds.homeOdds}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
             {/* Advanced Statistical Analysis - Inside Model Breakdown */}
             {game.barttorvik && (
               <AdvancedMatchupCard
