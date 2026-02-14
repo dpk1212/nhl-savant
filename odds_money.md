@@ -55,7 +55,7 @@ RECORD\\
 \\
 29/56\\
 \\
-52%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771000406965&eid=4771756&g=game&m=money)
+52%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771085899618&eid=4771756&g=game&m=money)
 
 Analysis [Bet105 REVIEW](https://www.oddstrader.com/sportsbooks/bet105/)
 
@@ -97,7 +97,7 @@ RECORD\\
 \\
 33/56\\
 \\
-59%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771000406965&eid=4771756&g=game&m=money)
+59%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771085899618&eid=4771756&g=game&m=money)
 
 Analysis [Bet105 REVIEW](https://www.oddstrader.com/sportsbooks/bet105/)
 
@@ -253,6 +253,8 @@ It depends on the matchup. If the favorite is strong but overpriced, puck line b
 Look for short answers to common questions like how the puck line works or how to track movement across sportsbooks.
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
+
+Thinking...Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
