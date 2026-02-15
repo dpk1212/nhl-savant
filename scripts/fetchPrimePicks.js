@@ -309,7 +309,7 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   }, confidenceWeights);
   
   // Spread boost for backward compat (stored in Firebase for filtering)
-  const spreadBoost = spreadUnits; // Now 1-2 instead of 0-0.5
+  const spreadBoost = totalUnits; // V4: same as totalUnits (MOS-based)
   
   // Calculate conviction score
   const dr = game.dratings;
@@ -576,9 +576,6 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   };
   
   await setDoc(betRef, betData);
-  
-  const evIcon = evTier === 'HIGH' ? '🔥' : '📊';
-  const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : spreadTier === 'SOLID' ? '💪' : '📊';
   
   // Show bet recommendation prominently
   const starRating = totalUnits >= 3 ? '★★★★★' : totalUnits >= 2.5 ? '★★★★' : totalUnits >= 2 ? '★★★' : '★★';
