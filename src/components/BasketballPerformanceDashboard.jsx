@@ -54,7 +54,15 @@ export function BasketballPerformanceDashboard() {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const gradedBets = allBets.filter(b => b.result && b.result.outcome);
+    const gradedBets = allBets.filter(b => {
+      if (!b.result || !b.result.outcome) return false;
+      // Match the same model filter as the main stats
+      if (showPrimeOnly) {
+        return b.prediction?.spreadBoost > 0 || b.isPrimePick || b.isATSPick;
+      } else {
+        return b.savantPick;
+      }
+    });
 
     // Sort chronologically (newest first)
     const sortedBets = [...gradedBets].sort((a, b) => {
@@ -111,7 +119,7 @@ export function BasketballPerformanceDashboard() {
       showTimeBreakdown,
       bestRecent
     };
-  }, [allBets]);
+  }, [allBets, showPrimeOnly]);
 
   // Filter stats based on selected time period and savant filter
   const filteredStats = useMemo(() => {
@@ -125,11 +133,12 @@ export function BasketballPerformanceDashboard() {
     let gradedBets = allBets.filter(b => {
       if (!b.result || !b.result.outcome) return false;
       
-      // PRIME V2: Default to Prime picks only (EV + spread confirmed)
+      // PRIME V2: Default to Prime picks only (EV + spread confirmed) + ATS standalone
       // Legacy mode shows all Savant picks
       if (showPrimeOnly) {
-        // Prime = EV bet with spread boost
-        if (!(b.prediction?.spreadBoost > 0)) return false;
+        // Prime = EV bet with spread boost OR ATS standalone pick
+        const isPrime = b.prediction?.spreadBoost > 0 || b.isPrimePick || b.isATSPick;
+        if (!isPrime) return false;
       } else {
         // Legacy = all Savant picks
         if (!b.savantPick) return false;
@@ -180,11 +189,11 @@ export function BasketballPerformanceDashboard() {
     return allBets.filter(b => b.savantPick && b.result?.outcome).length;
   }, [allBets]);
   
-  // Count Prime picks for display (EV bets with spread boost ONLY)
+  // Count Prime picks for display (EV bets with spread boost + ATS standalone)
   const primeCount = useMemo(() => {
     return allBets.filter(b => {
       if (!b.result?.outcome) return false;
-      return b.prediction?.spreadBoost > 0;
+      return b.prediction?.spreadBoost > 0 || b.isPrimePick || b.isATSPick;
     }).length;
   }, [allBets]);
 
