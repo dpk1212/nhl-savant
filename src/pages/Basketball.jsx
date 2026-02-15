@@ -397,52 +397,30 @@ const Basketball = () => {
       
       console.log(`📊 Total games: ${mergedGames.length} locked picks (${qualityGames.length} passed client filter, ignored — V4 server picks are source of truth)`);
       
-      // SORT BY VALUE: Prioritize games where our model is MORE CONFIDENT than market
-      // This ensures we recommend teams we believe in more than the market does
+      // SORT BY CONFIDENCE: Highest units (stars) first, then MOS, then EV
       const sortedGames = mergedGames.sort((a, b) => {
-        // 🔒 PRIORITY 0: Locked picks always at top
-        const aLocked = a.prediction?.isLockedPick || false;
-        const bLocked = b.prediction?.isLockedPick || false;
+        // PRIORITY 1: Unit size (directly reflects V4 MOS-based confidence tiers)
+        const unitsA = a.prediction?.unitSize || 0;
+        const unitsB = b.prediction?.unitSize || 0;
         
-        if (aLocked !== bLocked) {
-          return bLocked ? 1 : -1; // Locked picks first
+        if (unitsA !== unitsB) {
+          return unitsB - unitsA; // Higher units first (3u > 2.5u > 2u > 1.5u)
         }
         
-        // Calculate "model advantage" - how much more confident we are than market
-        const getModelAdvantage = (game) => {
-          const pred = game.prediction;
-          if (!pred) return 0;
-          
-          // Get the probabilities for the team we're picking
-          const modelProb = pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb;
-          const marketProb = pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb;
-          
-          return modelProb - marketProb; // Positive = we're more confident than market
-        };
+        // PRIORITY 2: MOS (margin over spread) — the core V4 metric
+        const mosA = a.prediction?.spreadBoost || 0;
+        const mosB = b.prediction?.spreadBoost || 0;
         
-        const advantageA = getModelAdvantage(a);
-        const advantageB = getModelAdvantage(b);
-        
-        // PRIORITY 1: Sort by whether we're MORE confident than market
-        const aHasAdvantage = advantageA > 0;
-        const bHasAdvantage = advantageB > 0;
-        
-        if (aHasAdvantage !== bHasAdvantage) {
-          return bHasAdvantage ? 1 : -1; // Games with advantage first
+        if (mosA !== mosB) {
+          return mosB - mosA; // Higher MOS first
         }
         
-        // PRIORITY 2: Among similar advantage types, sort by grade
-        const gradeOrder = { 'A+': 4, 'A': 3, 'B+': 2, 'B': 1, 'C': 0 };
-        const gradeA = gradeOrder[a.prediction?.grade] || 0;
-        const gradeB = gradeOrder[b.prediction?.grade] || 0;
+        // PRIORITY 3: EV edge
+        const evA = a.prediction?.bestEV || a.prediction?.evPercent || 0;
+        const evB = b.prediction?.bestEV || b.prediction?.evPercent || 0;
         
-        if (gradeA !== gradeB) {
-          return gradeB - gradeA; // Higher grade first
-        }
-        
-        // PRIORITY 3: Among same grade, sort by size of advantage
-        if (Math.abs(advantageA - advantageB) > 0.001) {
-          return advantageB - advantageA; // Bigger advantage first
+        if (Math.abs(evA - evB) > 0.1) {
+          return evB - evA; // Higher EV first
         }
         
         // PRIORITY 4: Finally sort by time
