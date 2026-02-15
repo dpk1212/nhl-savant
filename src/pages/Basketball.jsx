@@ -328,23 +328,20 @@ const Basketball = () => {
       
       console.log(`🔒 Found ${lockedPicks.length} locked picks for today`);
       
-      // Merge: Replace games in qualityGames with locked picks, or add new locked picks
-      const mergedGames = [...qualityGames];
+      // V4: Only show Firebase locked picks (server-side V4 filters are the source of truth)
+      // Client-side qualityGames are used ONLY for fresh model data (dratings, barttorvik, etc.)
+      const mergedGames = [];
       const normalizeForMatch = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      // Deduplicate: if Firebase has multiple bets for same game (ML + ATS), only show first
+      const seenGames = new Set();
       
       for (const lockedBet of lockedPicks) {
         const betKey = `${normalizeForMatch(lockedBet.game.awayTeam)}_${normalizeForMatch(lockedBet.game.homeTeam)}`;
         
-        // Check if this game already exists in qualityGames
-        const existingIndex = mergedGames.findIndex(g => 
-          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
-        );
-        
-        // 🔧 FIX: Try to find fresh barttorvik data from todaysGames (pre-filter)
-        // This preserves Matchup Intelligence even when a bet drops off qualityGames
-        const freshGameData = todaysGames.find(g => 
-          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
-        );
+        // Skip duplicate games (e.g., same game has both ML and ATS picks)
+        if (seenGames.has(betKey)) continue;
+        seenGames.add(betKey);
         
         // Build locked pick object
         const lockedGameObj = {
@@ -372,32 +369,33 @@ const Basketball = () => {
             initialOdds: lockedBet.initialOdds,
             initialEV: lockedBet.initialEV
           },
-          // 🔧 FIX: Use fresh data from todaysGames, then Firebase, then null
-          dratings: freshGameData?.dratings || null,
-          haslametrics: freshGameData?.haslametrics || null,
-          barttorvik: freshGameData?.barttorvik || lockedBet.barttorvik || null,
-          // 📈 CLV data from Firebase
           clv: lockedBet.clv || null
         };
         
-        if (existingIndex >= 0) {
-          // 🔒 REPLACE prediction with locked version, but KEEP fresh model data
-          console.log(`   🔒 Replacing with locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
-          const freshGame = mergedGames[existingIndex];
-          mergedGames[existingIndex] = {
-            ...freshGame, // Keep fresh dratings, haslametrics, barttorvik for insights
-            prediction: lockedGameObj.prediction, // Override with locked prediction
-            odds: lockedGameObj.odds, // Use locked odds
-            clv: lockedBet.clv || null // 📈 Include CLV data
-          };
+        // Find fresh model data from today's scraped games (for Advanced Stats, dratings, barttorvik, etc.)
+        const freshGame = qualityGames.find(g => 
+          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
+        ) || todaysGames.find(g => 
+          `${normalizeForMatch(g.awayTeam)}_${normalizeForMatch(g.homeTeam)}` === betKey
+        );
+        
+        if (freshGame) {
+          // Merge: locked prediction + fresh model data
+          console.log(`   🔒 Locked pick with fresh data: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
+          mergedGames.push({
+            ...freshGame,
+            prediction: lockedGameObj.prediction,
+            odds: lockedGameObj.odds,
+            clv: lockedBet.clv || null
+          });
         } else {
-          // Add locked pick (game no longer in today's scraped data)
-          console.log(`   🔒 Adding locked pick: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam} (with ${lockedGameObj.barttorvik ? 'fresh' : 'no'} barttorvik)`);
+          // No fresh data available, use locked pick as-is
+          console.log(`   🔒 Locked pick (no fresh data): ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
           mergedGames.push(lockedGameObj);
         }
       }
       
-      console.log(`📊 Total games: ${mergedGames.length} (${qualityGames.length} current + ${mergedGames.length - qualityGames.length} locked)`);
+      console.log(`📊 Total games: ${mergedGames.length} locked picks (${qualityGames.length} passed client filter, ignored — V4 server picks are source of truth)`);
       
       // SORT BY VALUE: Prioritize games where our model is MORE CONFIDENT than market
       // This ensures we recommend teams we believe in more than the market does
