@@ -24,7 +24,8 @@
  * 
  *   1 star = 1 unit. No cap. Stars are data-driven confidence.
  * 
- * ATS UPGRADE: When MOS ≥ 2, recommend spread bet instead of ML
+ * ATS UPGRADE: When MOS ≥ 2 AND EV < 10%, recommend spread bet instead of ML
+ *   EV 10%+ ATS upgrades: 1-5, -61.8% ROI → KILLED
  * STANDALONE ATS: SpreadEV 5%+ & MOS ≥ 1.6 (non-Prime games)
  * 
  * Key insight from 251-bet MOS analysis (Jan 23 - Feb 14):
@@ -344,12 +345,14 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   // ═══════════════════════════════════════════════════════════════
   // BET RECOMMENDATION V5 — ML vs ATS UPGRADE
   //
-  // Trigger: MOS >= 2 → recommend ATS instead of ML
+  // Trigger: MOS >= 2 AND EV < 10% → recommend ATS instead of ML
+  // EV 10%+ ATS upgrades were 1-5, -61.8% ROI — killed.
+  // EV 3-10% ATS upgrades were 6-3, +27.3% ROI — kept.
   // ATS units use same composite star system as ML picks
   // ═══════════════════════════════════════════════════════════════
   const mlOdds = prediction.bestOdds;
   const mos = marginOverSpread;
-  const shouldUpgradeATS = mos >= 2;
+  const shouldUpgradeATS = mos >= 2 && ev < 10; // No ATS upgrade for EV 10%+
   
   let betRecommendation;
   if (shouldUpgradeATS) {
