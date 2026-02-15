@@ -1683,7 +1683,7 @@ const EnhancedTierHeader = ({
             </div>
             
             {topPlays.map((game, idx) => {
-              const playStarRating = getStarRating(game.prediction?.unitSize || 2);
+              const playStarRating = getStarRating(game.prediction?.unitSize || 2, game.prediction?.stars);
               const rankColors = ['#10B981', '#14B8A6', '#3B82F6'];
               const rankColor = rankColors[idx] || color;
               
@@ -2145,9 +2145,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
     );
   }
   
-  // Use ATS units for star rating when ATS-recommended, otherwise ML units
+  // V5: Use stored star count from Firebase (prediction.stars), fallback to unit-based calculation
   const effectiveUnits = isATSRecommended ? (betRec?.atsUnits || pred.unitSize) : pred.unitSize;
-  const starRating = getStarRating(effectiveUnits);
+  const starRating = getStarRating(effectiveUnits, pred.stars);
   const gradeColors = starRating; // alias for backward compat within card
   
   // Format game time (remove "ET" suffix for cleaner look)

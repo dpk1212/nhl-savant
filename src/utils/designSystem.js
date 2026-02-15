@@ -150,47 +150,55 @@ export const getGradeColorScale = (grade) => {
   }
 };
 
-// Star Rating System — maps unit size (2-5u) to a 2-5 star visual rating
-// Based on data-driven V3 unit sizing where spread margin is primary signal
-export const getStarRating = (unitSize) => {
-  const clamped = Math.max(1, Math.min(5, unitSize || 2));
-  const fullStars = Math.floor(clamped);
-  const hasHalf = (clamped % 1) >= 0.4 && (clamped % 1) <= 0.6;
-  const displayStars = hasHalf ? fullStars + 0.5 : fullStars;
+// Star Rating System V5 — Composite MOS×EV scoring → 1-5 stars
+// Accepts either star count (from Firebase prediction.stars) or unit size (backward compat)
+// Stars stored in Firebase: 5★=3u, 4★=2.5u, 3★=2u, 2★=1.5u, 1★=1u
+export const getStarRating = (unitSizeOrStars, storedStars) => {
+  // If storedStars is provided directly (from Firebase prediction.stars), use it
+  // Otherwise derive from unitSize for backward compatibility
+  let starCount;
+  if (storedStars != null) {
+    starCount = storedStars;
+  } else {
+    // Backward compat: map unitSize → stars
+    const u = unitSizeOrStars || 1;
+    if (u >= 3) starCount = 5;
+    else if (u >= 2.5) starCount = 4;
+    else if (u >= 2) starCount = 3;
+    else if (u >= 1.5) starCount = 2;
+    else starCount = 1;
+  }
+  
+  const fullStars = Math.min(5, Math.max(1, starCount));
+  const hasHalf = false; // V5: clean integer stars only
 
-  if (clamped >= 4.5) {
+  if (fullStars >= 5) {
     return {
-      stars: displayStars,
-      fullStars,
-      hasHalf,
+      stars: 5, fullStars: 5, hasHalf,
       color: '#10B981',
       bg: 'rgba(16, 185, 129, 0.15)',
       bgColor: 'rgba(16, 185, 129, 0.15)',
       borderColor: '#10B981',
-      label: 'MAX CONVICTION',
-      tier: 'MAX CONVICTION',
+      label: 'ELITE',
+      tier: 'ELITE',
       intensity: 5
     };
   }
-  if (clamped >= 3.5) {
+  if (fullStars >= 4) {
     return {
-      stars: displayStars,
-      fullStars,
-      hasHalf,
+      stars: 4, fullStars: 4, hasHalf,
       color: '#14B8A6',
       bg: 'rgba(20, 184, 166, 0.12)',
       bgColor: 'rgba(20, 184, 166, 0.15)',
       borderColor: '#14B8A6',
-      label: 'HIGH CONVICTION',
-      tier: 'HIGH CONVICTION',
+      label: 'STRONG',
+      tier: 'STRONG',
       intensity: 4
     };
   }
-  if (clamped >= 2.5) {
+  if (fullStars >= 3) {
     return {
-      stars: displayStars,
-      fullStars,
-      hasHalf,
+      stars: 3, fullStars: 3, hasHalf,
       color: '#3B82F6',
       bg: 'rgba(59, 130, 246, 0.12)',
       bgColor: 'rgba(59, 130, 246, 0.15)',
@@ -200,18 +208,28 @@ export const getStarRating = (unitSize) => {
       intensity: 3
     };
   }
-  // 2u or below
+  if (fullStars >= 2) {
+    return {
+      stars: 2, fullStars: 2, hasHalf,
+      color: '#8B5CF6',
+      bg: 'rgba(139, 92, 246, 0.12)',
+      bgColor: 'rgba(139, 92, 246, 0.15)',
+      borderColor: '#8B5CF6',
+      label: 'STANDARD',
+      tier: 'STANDARD',
+      intensity: 2
+    };
+  }
+  // 1 star — minimum qualifying pick
   return {
-    stars: displayStars,
-    fullStars,
-    hasHalf,
-    color: '#8B5CF6',
-    bg: 'rgba(139, 92, 246, 0.12)',
-    bgColor: 'rgba(139, 92, 246, 0.15)',
-    borderColor: '#8B5CF6',
-    label: 'STANDARD',
-    tier: 'STANDARD',
-    intensity: 2
+    stars: 1, fullStars: 1, hasHalf,
+    color: '#94A3B8',
+    bg: 'rgba(148, 163, 184, 0.10)',
+    bgColor: 'rgba(148, 163, 184, 0.12)',
+    borderColor: '#94A3B8',
+    label: 'TRACKING',
+    tier: 'TRACKING',
+    intensity: 1
   };
 };
 
