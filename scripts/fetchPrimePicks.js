@@ -235,7 +235,13 @@ function checkSpreadConfirmation(game, spreadGames) {
     drMargin: Math.round(drPickedMargin * 10) / 10,
     hsMargin: Math.round(hsPickedMargin * 10) / 10,
     blendedMargin: Math.round(blendedMargin * 10) / 10,
-    marginOverSpread: Math.round((blendedMargin - Math.abs(spread)) * 10) / 10,
+    // MOS = how much the predicted margin exceeds what's needed to cover
+    // For favorites (spread negative, e.g. -5.5): margin must exceed |spread|
+    // For underdogs (spread positive, e.g. +3.5): margin + spread = total cushion
+    // Formula: blendedMargin + spread works for both:
+    //   Fav: margin 7.0, spread -5.5 → 7.0 + (-5.5) = +1.5 (covers by 1.5)
+    //   Dog: margin 2.6, spread +3.5 → 2.6 + (+3.5) = +6.1 (covers by 6.1)
+    marginOverSpread: Math.round((blendedMargin + spread) * 10) / 10,
     pickedTeam: pickedTeamName,
     pickedSide: pickedTeam
   };
