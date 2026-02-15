@@ -1,23 +1,29 @@
 /**
- * 🏀 PRIME PICKS - Unified Basketball Betting Workflow
+ * 🏀 PRIME PICKS V4 - Data-Driven Basketball Betting Workflow
  * 
- * Writes to Firebase in TWO segments:
+ * QUALIFYING FILTERS (all must pass):
+ *   1. EV ≥ 3%  — market must be meaningfully mispricing the game
+ *   2. MOS ≥ 1.6 — model must see real margin over spread
+ *   3. EV 10%+ requires MOS ≥ 2 — skepticism on inflated EV underdogs
+ *   4. Spread confirmed — D-Ratings must cover the spread
+ *   5. EV + Spread must agree on SAME TEAM
  * 
- * 1. PRIME PICKS — game has BOTH EV edge (≥2%) AND spread confirmation
- *    → ATS Upgrade: When MOS ≥ 2, recommend ATS instead of ML
- *      ATS tiers (Kelly-optimized): ELITE (5u), STRONG (4u), PRIME (3u), SOLID (2u)
- *    → ML Kept: When MOS < 2, keep as moneyline bet
+ * UNIT SIZING (MOS-based, capped at 3u):
+ *   ★★★★★ 3.0u — MOS 3+ (historically 79% WR, +5% ROI)
+ *   ★★★★  2.5u — MOS 2.5-3
+ *   ★★★   2.0u — MOS 2-2.5
+ *   ★★    1.5u — MOS 1.6-2
  * 
- * 2. STANDALONE ATS PICKS — SpreadEV 5%+ segment (non-Prime games)
- *    → Qualifying: SpreadEV ≥ 5% AND MOS ≥ 1.5 AND NOT already a Prime Pick
- *    → Historical: 9-2 ATS (81.8% cover, +56.2% ROI)
- *    → ATS tiers: HIGH (2u), MID (1.5u), BASE (1u)
+ * ATS UPGRADE: When MOS ≥ 2, recommend spread bet instead of ML
+ *   → ATS units: 3u (MOS 3+), 2.5u (MOS 2.5-3), 2u (MOS 2-2.5)
  * 
- * Based on analysis (since 1/23/2026):
- * - Prime Picks (EV + Spread): +11.8% ROI, 69% win rate ✅
- * - ATS generated +25.35 units MORE profit than ML across Prime Picks
- * - EV Only: -11.2% ROI (not enough) ❌
- * - Spread Only: -19.5% ROI (not enough) ❌
+ * STANDALONE ATS: SpreadEV 5%+ & MOS ≥ 1.5 (non-Prime games)
+ * 
+ * Key insight from 1311-bet analysis:
+ *   MOS 1.6+ alone = -7% ROI (losing)
+ *   EV 3%+ alone = +2% ROI (marginal)
+ *   MOS 1.6+ AND EV 3%+ = +8.6% ROI, 67% WR ✅
+ *   EV <3% within MOS 1.6+ = -41% ROI ❌ (the cancer we cut)
  * 
  * Usage: npm run fetch-prime-picks
  */
@@ -60,18 +66,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Minimum EV threshold for Prime Picks
-// Lowered from 3% to 2% since spread confirmation provides additional quality filter
-const MIN_EV_THRESHOLD = 2.0;
+// Raised to 3% — analysis of 1311 bets shows EV <3% within MOS 1.6+ = -41% ROI
+const MIN_EV_THRESHOLD = 3.0;
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-console.log('║              🏀 PRIME PICKS + ATS - Basketball Workflow                        ║');
+console.log('║              🏀 PRIME PICKS V4 - Data-Driven Workflow                          ║');
 console.log('║                                                                               ║');
-console.log('║  SEGMENT 1 — PRIME PICKS (EV + Spread intersection):                          ║');
-console.log('║    → ATS Upgrade when MOS ≥ 2 (Kelly-optimized: 2-5u)                         ║');
-console.log('║    → ML Kept when MOS < 2                                                     ║');
-console.log('║  SEGMENT 2 — STANDALONE ATS (SpreadEV 5%+ non-Prime):                         ║');
-console.log('║    → MOS ≥ 1.5 & SpreadEV ≥ 5% (81.8% cover, +56.2% ROI)                     ║');
+console.log('║  FILTERS: EV ≥ 3% AND MOS ≥ 1.6 (EV 10%+ needs MOS ≥ 2)                      ║');
+console.log('║  UNITS:   MOS-based, capped at 3u (3/2.5/2/1.5)                               ║');
+console.log('║  ATS:     Upgrade when MOS ≥ 2, Standalone when SpreadEV 5%+                   ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
 
@@ -259,50 +263,37 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   }
   
   // ═══════════════════════════════════════════════════════════════
-  // PRIME PICKS UNIT SIZING V3 — DATA-DRIVEN REBALANCE
-  // Historical analysis: margin over spread is the strongest
-  // predictor of wins (linear relationship). EV% is noisy and
-  // nearly inverted (low EV outperforms high EV).
+  // PRIME PICKS UNIT SIZING V4 — MOS-BASED, CAPPED AT 3u
+  // 
+  // Analysis of 1311 bets: MOS is the only reliable sizing signal.
+  // Old EV-based component was noisy and inverted. Simplified to
+  // pure MOS tiers. ★★★ (2.5-3u) was the only profitable star
+  // rating — now it's the ceiling.
   //
-  // EV (1-2u) + Spread (1-3u) = 2-5u
+  // ★★★★★ 3.0u — MOS 3+   (79% WR, +5% ROI historically)
+  // ★★★★  2.5u — MOS 2.5-3
+  // ★★★   2.0u — MOS 2-2.5
+  // ★★    1.5u — MOS 1.6-2
   // ═══════════════════════════════════════════════════════════════
-  
-  // COMPONENT 1: EV UNITS (1-2u) — less predictive signal, keep simple
-  // Data: 2-4% EV = 88% WR / +33% ROI, 6-8% = 22% WR / -66% ROI
-  // Low EV = market agrees with model = safer. High EV = volatile.
   const ev = prediction.bestEV || 0;
-  let evUnits;
-  let evTier;
-  if (ev >= 5) {
-    evUnits = 2;
-    evTier = 'HIGH';      // Solid edge (5%+ EV)
-  } else {
-    evUnits = 1;
-    evTier = 'BASE';      // Standard qualifying edge (2-5% EV)
-  }
-  
-  // COMPONENT 2: SPREAD UNITS (1-3u) — strongest predictor of wins
-  // Data: 0-2 pts = 63% WR, 2-3 pts = 67% WR, 3+ pts = 88% WR / +31% ROI
-  // Clean linear relationship: more margin = more wins.
   const marginOverSpread = spreadAnalysis.marginOverSpread || 0;
   const bothCover = spreadAnalysis.bothCover || false;
-  let spreadUnits;
-  let spreadTier;
-  if (marginOverSpread >= 3 && bothCover) {
-    spreadUnits = 3;
-    spreadTier = 'MAX';    // Elite: wide margin + both models agree (historically 88%+ WR)
-  } else if (marginOverSpread >= 3) {
-    spreadUnits = 2.5;
-    spreadTier = 'STRONG'; // Strong: wide margin, blend 3+ pts over
-  } else if (marginOverSpread >= 2) {
-    spreadUnits = 2;
-    spreadTier = 'SOLID';  // Solid: comfortable margin, 2-3 pts over
-  } else {
-    spreadUnits = 1;
-    spreadTier = 'BASE';   // Covers but tight (0-2 pts over)
-  }
   
-  const totalUnits = evUnits + spreadUnits; // Range: 2u to 5u
+  let totalUnits;
+  let spreadTier;
+  if (marginOverSpread >= 3) {
+    totalUnits = 3;
+    spreadTier = 'MAX';      // ★★★★★ — wide margin, historically 79% WR
+  } else if (marginOverSpread >= 2.5) {
+    totalUnits = 2.5;
+    spreadTier = 'STRONG';   // ★★★★ — solid margin
+  } else if (marginOverSpread >= 2) {
+    totalUnits = 2;
+    spreadTier = 'SOLID';    // ★★★ — comfortable margin
+  } else {
+    totalUnits = 1.5;
+    spreadTier = 'BASE';     // ★★ — qualifying margin (MOS 1.6-2)
+  }
   
   // Legacy: still compute dynamic result for tracking/display purposes
   const dynamicResult = calculateDynamicUnits({
@@ -333,43 +324,30 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   }
   
   // ═══════════════════════════════════════════════════════════════
-  // BET RECOMMENDATION V2 — ML vs ATS UPGRADE (Kelly-optimized)
+  // BET RECOMMENDATION V4 — ML vs ATS UPGRADE (capped at 3u)
   //
-  // Backtested 83 upgrade-eligible bets (since 1/23):
-  //   ML at V3 units:        -16.95u (-8.4% ROI)
-  //   ATS at old units:       +9.36u (+8.6% ROI)
-  //   ATS at Kelly-optimized: +29.95u (+20.0% ROI)
-  //
-  // Trigger: MOS >= 2 ONLY (odds-only trigger removed —
-  //   BASE tier was 47.5% cover = below 52.4% break-even)
-  //
-  // ATS Unit Sizing (half-Kelly optimized from backtest):
-  //   ELITE  (5u):   MOS 3+ & bothCover — 75% cover, +43% ROI
-  //   STRONG (4u):   MOS 3+ — 100% cover (small sample, stay aggressive)
-  //   PRIME  (3u):   MOS 2-3 & EV sweet spot (2-5%) — 64% cover, +23% ROI
-  //   SOLID  (2u):   MOS 2-3 — 60% cover, +14.5% ROI
+  // Trigger: MOS >= 2 → recommend ATS instead of ML
+  // ATS units mirror the MOS-based tiers (capped at 3u):
+  //   MAX    (3u):   MOS 3+
+  //   STRONG (2.5u): MOS 2.5-3
+  //   SOLID  (2u):   MOS 2-2.5
   // ═══════════════════════════════════════════════════════════════
   const mlOdds = prediction.bestOdds;
   const mos = marginOverSpread;
-  const shouldUpgradeATS = mos >= 2; // MOS only — odds trigger removed (BASE was -9.4% ROI)
+  const shouldUpgradeATS = mos >= 2;
   
   let betRecommendation;
   if (shouldUpgradeATS) {
-    const inATS_SweetSpot = ev >= 2 && ev < 5;
-    
     let atsTier, atsUnits;
-    if (mos >= 3 && bothCover) {
-      atsTier = 'ELITE';
-      atsUnits = 5;        // Was 3u → Kelly says 5u (75% cover, +43% ROI)
-    } else if (mos >= 3) {
+    if (mos >= 3) {
+      atsTier = 'MAX';
+      atsUnits = 3;
+    } else if (mos >= 2.5) {
       atsTier = 'STRONG';
-      atsUnits = 4;        // Was 2.5u → Kelly says 4u (100% cover, small sample)
-    } else if (mos >= 2 && inATS_SweetSpot) {
-      atsTier = 'PRIME';
-      atsUnits = 3;        // Was 2u → Kelly says 3u (64% cover, +23% ROI)
+      atsUnits = 2.5;
     } else {
       atsTier = 'SOLID';
-      atsUnits = 2;        // Was 1.5u → Kelly says 2u (60% cover, +14.5% ROI)
+      atsUnits = 2;
     }
     
     const atsCoverProb = Math.min(0.95, 0.50 + (mos * 0.03));
@@ -439,14 +417,11 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
       simplifiedGrade: prediction.simplifiedGrade,
       confidence: prediction.confidence,
       
-      // PRIME V3 UNIT SIZING: EV (1-2u) + Spread (1-3u) = 2-5u
-      // Spread is primary signal (linear WR predictor), EV is secondary
+      // PRIME V4 UNIT SIZING: MOS-based, capped at 3u
+      // ★★★★★ 3u (MOS 3+), ★★★★ 2.5u (MOS 2.5-3), ★★★ 2u (MOS 2-2.5), ★★ 1.5u (MOS 1.6-2)
       unitSize: totalUnits,
-      evUnits: evUnits,
-      evTier: evTier,           // HIGH (2u), BASE (1u)
-      spreadUnits: spreadUnits,
-      spreadTier: spreadTier,   // MAX (3u), STRONG (2.5u), SOLID (2u), BASE (1u)
-      spreadBoost: spreadBoost, // backward compat (= spreadUnits)
+      spreadTier: spreadTier,
+      spreadBoost: totalUnits, // backward compat for Prime filter
       
       // Legacy dynamic confidence (for tracking, not used for sizing)
       confidenceTier: dynamicResult.tier,
@@ -508,7 +483,7 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
     source: 'PRIME_PICK', // New source identifier
     
     // 🌟 Prime Pick flag
-    savantPick: totalUnits >= 3, // Savant badge reserved for high-conviction picks (3u+)
+    savantPick: totalUnits >= 3, // Savant badge reserved for top-tier picks (MOS 3+, 3u)
     isPrimePick: true,
     isATSPick: shouldUpgradeATS,
     
@@ -600,32 +575,18 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   const spreadIcon = spreadTier === 'MAX' ? '🎯' : spreadTier === 'STRONG' ? '💎' : spreadTier === 'SOLID' ? '💪' : '📊';
   
   // Show bet recommendation prominently
+  const starRating = totalUnits >= 3 ? '★★★★★' : totalUnits >= 2.5 ? '★★★★' : totalUnits >= 2 ? '★★★' : '★★';
   if (betRecommendation.type === 'ATS') {
-    const atsIcon = betRecommendation.atsTier === 'ELITE' ? '🎯' : betRecommendation.atsTier === 'STRONG' ? '💎' : betRecommendation.atsTier === 'PRIME' ? '⭐' : betRecommendation.atsTier === 'SOLID' ? '💪' : '📊';
-    const reasonTag = betRecommendation.reason === 'MOS_UPGRADE' ? `MOS +${mos}` : `Heavy fav ${mlOdds}`;
-    console.log(`   🌟 PRIME PICK → ATS UPGRADE: ${pickTeam} ${spreadAnalysis.spread} @ -110`);
-    console.log(`      ┌─ 🏈 ATS BET: ${betRecommendation.atsUnits}u ${atsIcon} [${betRecommendation.atsTier}] (${reasonTag})`);
-    console.log(`      ├─ Cover: ${betRecommendation.estimatedCoverProb}% | SpreadEV: +${betRecommendation.estimatedSpreadEV}% | MOS: +${mos}`);
+    console.log(`   🌟 PRIME PICK → ATS: ${pickTeam} ${spreadAnalysis.spread} @ -110`);
+    console.log(`      ┌─ ${starRating} ${betRecommendation.atsUnits}u ATS [${betRecommendation.atsTier}] (MOS +${mos})`);
+    console.log(`      ├─ Cover: ${betRecommendation.estimatedCoverProb}% | SpreadEV: +${betRecommendation.estimatedSpreadEV}%`);
     console.log(`      ├─ ML ref: ${totalUnits}u @ ${prediction.bestOdds} (+${prediction.bestEV.toFixed(1)}% EV)`);
   } else {
     console.log(`   🌟 PRIME PICK: ${pickTeam} ML @ ${prediction.bestOdds}`);
-    console.log(`      ┌─ TOTAL: ${totalUnits}u (ML)`);
-    console.log(`      ├─ EV:     ${evUnits}u ${evIcon} ${evTier} (${prediction.bestEV.toFixed(1)}% edge)`);
+    console.log(`      ┌─ ${starRating} ${totalUnits}u ML [${spreadTier}]`);
+    console.log(`      ├─ EV: +${prediction.bestEV.toFixed(1)}% | MOS: +${mos}`);
   }
-  console.log(`      ├─ Spread: ${spreadUnits}u ${spreadIcon} ${spreadTier} (blend +${spreadAnalysis.marginOverSpread >= 0 ? '' : ''}${spreadAnalysis.marginOverSpread} pts over spread)`);
-  console.log(`      ├─ Line:   ${spreadAnalysis.spread} | DR +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✓' : '✗'} | HS +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✓' : '✗'} | Blend +${spreadAnalysis.blendedMargin}`);
-  
-  // Log spread bet recommendation (legacy)
-  const sb = betData.spreadBet;
-  if (sb.recommended && betRecommendation.type !== 'ATS') {
-    const sbIcon = sb.tier === 'ELITE' ? '🎯' : sb.tier === 'STRONG' ? '💎' : sb.tier === 'PRIME' ? '⭐' : sb.tier === 'CAUTION' ? '⚠️' : '📈';
-    const evTag = sb.inSweetSpot ? ' ⭐ EV SWEET SPOT' : sb.inCautionZone ? ' ⚠️ EV CAUTION (reduced)' : '';
-    console.log(`      ├─ ${sbIcon} SPREAD BET: ${pickTeam} ${spreadAnalysis.spread} @ -110 → ${sb.units}u [${sb.tier}]${evTag}`);
-    console.log(`      │    Cover: ${sb.estimatedCoverProb}% | EV: +${sb.estimatedSpreadEV}% | MOS: +${sb.marginOverSpread} | ML EV: ${sb.mlEV}%`);
-  } else if (!sb.recommended && betRecommendation.type !== 'ATS') {
-    console.log(`      ├─ ❌ No spread bet (MOS ${spreadAnalysis.marginOverSpread} < 2.0 threshold)`);
-  }
-  
+  console.log(`      ├─ Line: ${spreadAnalysis.spread} | DR +${spreadAnalysis.drMargin} ${spreadAnalysis.drCovers ? '✓' : '✗'} | HS +${spreadAnalysis.hsMargin} ${spreadAnalysis.hsCovers ? '✓' : '✗'} | Blend +${spreadAnalysis.blendedMargin}`);
   console.log(`      └─ Grade: ${prediction.grade} | Odds: ${prediction.bestOdds}`);
   
   return { action: 'created', betId, betRecommendation };
@@ -1033,8 +994,26 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // 🌟 PRIME PICK: Both workflows picked THE SAME TEAM
-      console.log(`      🌟 ${evData.evPickedTeam}: EV ✓ Spread ✓ SAME TEAM → PRIME PICK!`);
+      // Both workflows agree — now apply V4 quality gates
+      const mos = spreadData.spreadAnalysis.marginOverSpread || 0;
+      const ev = evData.prediction.bestEV || 0;
+      
+      // GATE 1: MOS must be ≥ 1.6 (analysis: below 1.6 = -41% ROI even with EV 3%+)
+      if (mos < 1.6) {
+        console.log(`      ⛔ ${evData.evPickedTeam}: EV ✓ Spread ✓ but MOS ${mos} < 1.6 → FILTERED OUT`);
+        evOnlyCount++;
+        continue;
+      }
+      
+      // GATE 2: EV 10%+ requires MOS ≥ 2 (inflated EV skepticism)
+      if (ev >= 10 && mos < 2) {
+        console.log(`      ⛔ ${evData.evPickedTeam}: EV ${ev.toFixed(1)}% ≥ 10% but MOS ${mos} < 2 → FILTERED OUT`);
+        evOnlyCount++;
+        continue;
+      }
+      
+      // 🌟 PRIME PICK: Passes all V4 quality gates
+      console.log(`      🌟 ${evData.evPickedTeam}: EV +${ev.toFixed(1)}% ✓ MOS +${mos} ✓ → PRIME PICK!`);
       primePicks.push({
         game: evData.game,
         prediction: evData.prediction,
@@ -1121,8 +1100,8 @@ async function fetchPrimePicks() {
       const { game, spreadAnalysis, prediction } = data;
       const mos = spreadAnalysis.marginOverSpread || 0;
       
-      // MOS >= 1.5 minimum safety net
-      if (mos < 1.5) {
+      // MOS >= 1.6 minimum (V4 — analysis shows 1.6 is the profitable cutoff)
+      if (mos < 1.6) {
         atsSkippedLowMOS++;
         continue;
       }
@@ -1144,7 +1123,7 @@ async function fetchPrimePicks() {
     
     console.log(`\n   📊 Scanned: ${atsScanned} games with spread data`);
     console.log(`   🌟 Already Prime Picks: ${atsSkippedPrime}`);
-    console.log(`   ❌ MOS < 1.5: ${atsSkippedLowMOS}`);
+    console.log(`   ❌ MOS < 1.6: ${atsSkippedLowMOS}`);
     console.log(`   ❌ SpreadEV < 5%: ${atsSkippedLowEV}`);
     console.log(`   ✅ Standalone ATS Qualifying: ${standaloneATSPicks.length}\n`);
     
@@ -1181,86 +1160,46 @@ async function fetchPrimePicks() {
     console.log(`   🔒 Already existed: ${skipped}`);
     
     if (primePicks.length > 0) {
-      // Compute ATS upgrade breakdown
-      const atsUpgradedPicks = primePicks.filter(p => {
-        const mos = p.spreadAnalysis.marginOverSpread || 0;
-        return mos >= 2;
-      });
-      const mlKeptPicks = primePicks.filter(p => {
-        const mos = p.spreadAnalysis.marginOverSpread || 0;
-        return mos < 2;
-      });
+      // Compute ATS upgrade vs ML breakdown
+      const atsUpgradedPicks = primePicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 2);
+      const mlKeptPicks = primePicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) < 2);
       
       console.log(`\n   🏈 BET RECOMMENDATION BREAKDOWN:`);
       console.log(`   ├─ ATS Upgraded: ${atsUpgradedPicks.length} picks (MOS ≥ 2)`);
-      console.log(`   └─ ML Kept: ${mlKeptPicks.length} picks (MOS < 2)`);
+      console.log(`   └─ ML Kept: ${mlKeptPicks.length} picks (MOS 1.6-2)`);
       
-      // ATS tier breakdown for upgraded picks
+      // ATS tier breakdown (V4 — capped at 3u)
       if (atsUpgradedPicks.length > 0) {
-        const elitePicks = atsUpgradedPicks.filter(p => {
-          const mos = p.spreadAnalysis.marginOverSpread || 0;
-          return mos >= 3 && (p.spreadAnalysis.bothCover || false);
-        });
-        const strongPicks = atsUpgradedPicks.filter(p => {
-          const mos = p.spreadAnalysis.marginOverSpread || 0;
-          return mos >= 3 && !(p.spreadAnalysis.bothCover || false);
-        });
-        const primeTierPicks = atsUpgradedPicks.filter(p => {
-          const mos = p.spreadAnalysis.marginOverSpread || 0;
-          const ev = p.prediction.bestEV || 0;
-          return mos >= 2 && mos < 3 && ev >= 2 && ev < 5;
-        });
-        const solidPicks = atsUpgradedPicks.filter(p => {
-          const mos = p.spreadAnalysis.marginOverSpread || 0;
-          const ev = p.prediction.bestEV || 0;
-          return mos >= 2 && mos < 3 && !(ev >= 2 && ev < 5);
-        });
-        const totalATSUnits = (elitePicks.length * 5) + (strongPicks.length * 4) + (primeTierPicks.length * 3) + (solidPicks.length * 2);
+        const maxPicks = atsUpgradedPicks.filter(p => (p.spreadAnalysis.marginOverSpread || 0) >= 3);
+        const strongPicks = atsUpgradedPicks.filter(p => { const m = p.spreadAnalysis.marginOverSpread || 0; return m >= 2.5 && m < 3; });
+        const solidPicks = atsUpgradedPicks.filter(p => { const m = p.spreadAnalysis.marginOverSpread || 0; return m >= 2 && m < 2.5; });
+        const totalATSUnits = (maxPicks.length * 3) + (strongPicks.length * 2.5) + (solidPicks.length * 2);
         
-        console.log(`\n   🎯 ATS TIER BREAKDOWN (Kelly-optimized):`);
-        if (elitePicks.length > 0) console.log(`   🎯 ELITE  (5u): ${elitePicks.length} picks — MOS 3+ & both models cover (75% cover)`);
-        if (strongPicks.length > 0) console.log(`   💎 STRONG (4u): ${strongPicks.length} picks — MOS 3+ (80%+ cover)`);
-        if (primeTierPicks.length > 0) console.log(`   ⭐ PRIME  (3u): ${primeTierPicks.length} picks — MOS 2-3 & EV sweet spot (64% cover)`);
-        if (solidPicks.length > 0) console.log(`   💪 SOLID  (2u): ${solidPicks.length} picks — MOS 2-3 (60% cover)`);
+        console.log(`\n   🎯 ATS TIER BREAKDOWN (V4, capped at 3u):`);
+        if (maxPicks.length > 0) console.log(`   ★★★★★ MAX    (3u):   ${maxPicks.length} picks — MOS 3+`);
+        if (strongPicks.length > 0) console.log(`   ★★★★  STRONG (2.5u): ${strongPicks.length} picks — MOS 2.5-3`);
+        if (solidPicks.length > 0) console.log(`   ★★★   SOLID  (2u):   ${solidPicks.length} picks — MOS 2-2.5`);
         console.log(`   Total ATS units: ${totalATSUnits.toFixed(1)}u @ -110`);
         
-        // List each ATS upgraded pick
         console.log();
         atsUpgradedPicks.forEach(p => {
           const mos = p.spreadAnalysis.marginOverSpread || 0;
-          const both = p.spreadAnalysis.bothCover || false;
           const ev = p.prediction.bestEV || 0;
-          const inSS = ev >= 2 && ev < 5;
-          let tier;
-          if (mos >= 3 && both) tier = 'ELITE';
-          else if (mos >= 3) tier = 'STRONG';
-          else if (mos >= 2 && inSS) tier = 'PRIME';
-          else tier = 'SOLID';
-          const units = tier === 'ELITE' ? 5 : tier === 'STRONG' ? 4 : tier === 'PRIME' ? 3 : 2;
-          console.log(`      → ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} @ -110 [${tier}] ${units}u | MOS: +${mos} | ML: ${p.prediction.bestOdds} (+${ev.toFixed(1)}% EV)`);
+          const units = mos >= 3 ? 3 : mos >= 2.5 ? 2.5 : 2;
+          const stars = units >= 3 ? '★★★★★' : units >= 2.5 ? '★★★★' : '★★★';
+          console.log(`      → ${stars} ${p.prediction.bestTeam} ${p.spreadAnalysis.spread} @ -110 → ${units}u | MOS: +${mos} | EV: +${ev.toFixed(1)}%`);
         });
       }
       
-      // ML kept picks
+      // ML kept picks (MOS 1.6-2)
       if (mlKeptPicks.length > 0) {
-        const totalMLUnits = mlKeptPicks.reduce((sum, p) => {
-          const ev = p.prediction.bestEV || 0;
-          const mos = p.spreadAnalysis.marginOverSpread || 0;
-          const both = p.spreadAnalysis.bothCover || false;
-          const evU = ev >= 5 ? 2 : 1;
-          const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
-          return sum + evU + spU;
-        }, 0);
-        
-        console.log(`\n   💰 ML PICKS (kept as moneyline):`);
+        const totalMLUnits = mlKeptPicks.length * 1.5; // All ML kept are 1.5u (MOS 1.6-2)
+        console.log(`\n   💰 ML PICKS (MOS 1.6-2, kept as moneyline):`);
         console.log(`   Total ML units: ${totalMLUnits.toFixed(1)}u`);
         mlKeptPicks.forEach(p => {
           const ev = p.prediction.bestEV || 0;
           const mos = p.spreadAnalysis.marginOverSpread || 0;
-          const both = p.spreadAnalysis.bothCover || false;
-          const evU = ev >= 5 ? 2 : 1;
-          const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
-          console.log(`      → ${p.prediction.bestTeam} ML @ ${p.prediction.bestOdds} → ${evU + spU}u | MOS: +${mos} | EV: +${ev.toFixed(1)}%`);
+          console.log(`      → ★★ ${p.prediction.bestTeam} ML @ ${p.prediction.bestOdds} → 1.5u | MOS: +${mos} | EV: +${ev.toFixed(1)}%`);
         });
       }
     }
@@ -1291,24 +1230,14 @@ async function fetchPrimePicks() {
     // ── TOTAL ALLOCATION ──
     console.log('\n   ─── TOTAL ALLOCATION ────────────────────────────────────────');
     const totalAllPicks = primePicks.length + standaloneATSPicks.length;
+    // V4: MOS-based units, capped at 3u
     const totalAllUnits = primePicks.reduce((sum, p) => {
       const mos = p.spreadAnalysis.marginOverSpread || 0;
-      const isATS = mos >= 2;
-      if (isATS) {
-        const both = p.spreadAnalysis.bothCover || false;
-        const ev = p.prediction.bestEV || 0;
-        const inSS = ev >= 2 && ev < 5;
-        if (mos >= 3 && both) return sum + 5;
-        if (mos >= 3) return sum + 4;
-        if (mos >= 2 && inSS) return sum + 3;
-        return sum + 2;
-      } else {
-        const ev = p.prediction.bestEV || 0;
-        const both = p.spreadAnalysis.bothCover || false;
-        const evU = ev >= 5 ? 2 : 1;
-        const spU = (mos >= 3 && both) ? 3 : mos >= 3 ? 2.5 : mos >= 2 ? 2 : 1;
-        return sum + evU + spU;
-      }
+      // V4 tiers: 3u (MOS 3+), 2.5u (MOS 2.5-3), 2u (MOS 2-2.5), 1.5u (MOS 1.6-2)
+      if (mos >= 3) return sum + 3;
+      if (mos >= 2.5) return sum + 2.5;
+      if (mos >= 2) return sum + 2;
+      return sum + 1.5;
     }, 0) + standaloneATSPicks.reduce((sum, d) => {
       const mos = d.spreadAnalysis.marginOverSpread || 0;
       return sum + (mos >= 3 ? 2 : mos >= 2 ? 1.5 : 1);
