@@ -151,8 +151,8 @@ export const getGradeColorScale = (grade) => {
 };
 
 // Star Rating System V5 — Composite MOS×EV scoring → 1-5 stars
+// 1 star = 1 unit, no cap. Stars are data-driven confidence.
 // Accepts either star count (from Firebase prediction.stars) or unit size (backward compat)
-// Stars stored in Firebase: 5★=3u, 4★=2.5u, 3★=2u, 2★=1.5u, 1★=1u
 export const getStarRating = (unitSizeOrStars, storedStars) => {
   // If storedStars is provided directly (from Firebase prediction.stars), use it
   // Otherwise derive from unitSize for backward compatibility
@@ -160,13 +160,8 @@ export const getStarRating = (unitSizeOrStars, storedStars) => {
   if (storedStars != null) {
     starCount = storedStars;
   } else {
-    // Backward compat: map unitSize → stars
-    const u = unitSizeOrStars || 1;
-    if (u >= 3) starCount = 5;
-    else if (u >= 2.5) starCount = 4;
-    else if (u >= 2) starCount = 3;
-    else if (u >= 1.5) starCount = 2;
-    else starCount = 1;
+    // Backward compat: map unitSize → stars (1 star = 1 unit)
+    starCount = Math.round(unitSizeOrStars || 1);
   }
   
   const fullStars = Math.min(5, Math.max(1, starCount));

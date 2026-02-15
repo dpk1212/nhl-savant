@@ -13,14 +13,16 @@
  *   EV points:  3-5% → 2pts | 5-10% → 1pt | 10%+ → 0pts
  *   Score = MOS_pts + EV_pts → Stars:
  *
- *   ★★★★★ 3.0u (score 5) — MOS 3+ & EV 3-5%       (+16.4% ROI)
- *   ★★★★  2.5u (score 4) — MOS 3+ & EV 5-10%       (+11.3% ROI)
- *                          — MOS 2-3 & EV 3-5%       (+31.6% ROI)
- *   ★★★   2.0u (score 3) — MOS 3+ & EV 10%+
- *                          — MOS 2-3 & EV 5-10%       (+5-10% ROI)
- *   ★★    1.5u (score 2) — MOS 2-3 & EV 10%+
- *                          — MOS 1.6-2 & EV 3-5%     (+19.3% ROI)
- *   ★     1.0u (score 1) — MOS 1.6-2 & EV 5-10%     (-9.9% ROI)
+ *   ★★★★★ 5u (score 5) — MOS 3+ & EV 3-5%          (+37.4% ROI)
+ *   ★★★★  4u (score 4) — MOS 3+ & EV 5-10%          (+16.3% ROI)
+ *                        — MOS 2-3 & EV 3-5%          (+17.0% ROI)
+ *   ★★★   3u (score 3) — MOS 3+ & EV 10%+            (+2.5% ROI)
+ *                        — MOS 2-3 & EV 5-10%          (-4.6% ROI)
+ *   ★★    2u (score 2) — MOS 2-3 & EV 10%+
+ *                        — MOS 1.6-2 & EV 3-5%        (+30.0% ROI)
+ *   ★     1u (score 1) — MOS 1.6-2 & EV 5-10%        (-16.5% ROI)
+ * 
+ *   1 star = 1 unit. No cap. Stars are data-driven confidence.
  * 
  * ATS UPGRADE: When MOS ≥ 2, recommend spread bet instead of ML
  * STANDALONE ATS: SpreadEV 5%+ & MOS ≥ 1.6 (non-Prime games)
@@ -80,7 +82,7 @@ console.log('╔═════════════════════�
 console.log('║              🏀 PRIME PICKS V5 - Composite MOS×EV Star System                  ║');
 console.log('║                                                                               ║');
 console.log('║  FILTERS: EV ≥ 3% AND MOS ≥ 1.6 (EV 10%+ needs MOS ≥ 2)                      ║');
-console.log('║  STARS:   MOS pts + EV pts → 1-5★ (3u/2.5u/2u/1.5u/1u)                       ║');
+console.log('║  STARS:   MOS pts + EV pts → 1-5★ = 1-5u (no cap)                              ║');
 console.log('║  ATS:     Upgrade when MOS ≥ 2, Standalone when SpreadEV 5%+                   ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
@@ -302,25 +304,14 @@ async function savePrimePick(db, game, prediction, spreadAnalysis, confidenceWei
   // Composite confidence score
   const confidenceScore = mosPoints + evPoints;
   
-  let totalUnits;
-  let spreadTier;
-  let stars;
-  if (confidenceScore >= 5) {
-    totalUnits = 3;   stars = 5;
-    spreadTier = 'ELITE';    // ★★★★★ — MOS 3+ & EV sweet spot
-  } else if (confidenceScore >= 4) {
-    totalUnits = 2.5; stars = 4;
-    spreadTier = 'STRONG';   // ★★★★ — one elite metric + one good
-  } else if (confidenceScore >= 3) {
-    totalUnits = 2;   stars = 3;
-    spreadTier = 'SOLID';    // ★★★ — solid composite edge
-  } else if (confidenceScore >= 2) {
-    totalUnits = 1.5; stars = 2;
-    spreadTier = 'BASE';     // ★★ — moderate confidence
-  } else {
-    totalUnits = 1;   stars = 1;
-    spreadTier = 'MIN';      // ★ — minimum qualifying (MOS 1.6-2 & EV 5-10%)
-  }
+  // Stars = confidence score (1-5), Units = Stars (no cap)
+  const stars = Math.max(1, Math.min(5, confidenceScore));
+  const totalUnits = stars; // 1★ = 1u, 2★ = 2u, 3★ = 3u, 4★ = 4u, 5★ = 5u
+  const spreadTier = stars >= 5 ? 'ELITE'
+    : stars >= 4 ? 'STRONG'
+    : stars >= 3 ? 'SOLID'
+    : stars >= 2 ? 'BASE'
+    : 'MIN';
   
   // Legacy: still compute dynamic result for tracking/display purposes
   const dynamicResult = calculateDynamicUnits({
@@ -1185,8 +1176,8 @@ async function fetchPrimePicks() {
         const mosPts = mos >= 3 ? 3 : mos >= 2 ? 2 : 0;
         const evPts = (ev >= 3 && ev < 5) ? 2 : (ev >= 5 && ev < 10) ? 1 : 0;
         const score = mosPts + evPts;
-        const stars = score >= 5 ? 5 : score >= 4 ? 4 : score >= 3 ? 3 : score >= 2 ? 2 : 1;
-        const units = stars >= 5 ? 3 : stars >= 4 ? 2.5 : stars >= 3 ? 2 : stars >= 2 ? 1.5 : 1;
+        const stars = Math.max(1, Math.min(5, score));
+        const units = stars; // 1★ = 1u, no cap
         const isATS = mos >= 2;
         return { mos, ev, mosPts, evPts, score, stars, units, isATS };
       };
@@ -1249,8 +1240,8 @@ async function fetchPrimePicks() {
       const mosPts = mos >= 3 ? 3 : mos >= 2 ? 2 : 0;
       const evPts = (ev >= 3 && ev < 5) ? 2 : (ev >= 5 && ev < 10) ? 1 : 0;
       const score = mosPts + evPts;
-      const units = score >= 5 ? 3 : score >= 4 ? 2.5 : score >= 3 ? 2 : score >= 2 ? 1.5 : 1;
-      return sum + units;
+      const starCount = Math.max(1, Math.min(5, score));
+      return sum + starCount; // 1★ = 1u, no cap
     }, 0) + standaloneATSPicks.reduce((sum, d) => {
       const mos = d.spreadAnalysis.marginOverSpread || 0;
       return sum + (mos >= 3 ? 2 : mos >= 2 ? 1.5 : 1);
