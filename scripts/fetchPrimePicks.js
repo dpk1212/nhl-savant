@@ -43,7 +43,7 @@ import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
 import { parseHaslametrics } from '../src/utils/haslametricsParser.js';
 import { parseDRatings } from '../src/utils/dratingsParser.js';
@@ -1092,7 +1092,18 @@ async function fetchPrimePicks() {
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
     // Build set of Prime Pick game keys to exclude
+    // Include BOTH current run's picks AND any existing Firebase bets for today
     const primePickKeys = new Set(primePicks.map(p => `${p.game.awayTeam}_${p.game.homeTeam}`));
+    
+    // Also check Firebase for today's existing bets (from previous runs)
+    const existingBetsSnap = await getDocs(query(collection(db, 'basketball_bets'), where('date', '==', date)));
+    existingBetsSnap.forEach(docSnap => {
+      const b = docSnap.data();
+      if (b.game?.awayTeam && b.game?.homeTeam) {
+        primePickKeys.add(`${b.game.awayTeam}_${b.game.homeTeam}`);
+      }
+    });
+    console.log(`   Excluding ${primePickKeys.size} games (${primePicks.length} current + ${primePickKeys.size - primePicks.length} from Firebase)\n`);
     
     const standaloneATSPicks = [];
     let atsScanned = 0;
