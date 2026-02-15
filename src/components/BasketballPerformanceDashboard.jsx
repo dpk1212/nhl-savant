@@ -151,9 +151,12 @@ export function BasketballPerformanceDashboard() {
     const losses = gradedBets.filter(b => b.result?.outcome === 'LOSS').length;
     const unitsWon = gradedBets.reduce((sum, b) => sum + (b.result?.profit || 0), 0);
     
-    // Calculate total risked - use stored units or calculate from prediction
+    // Calculate total risked - use ATS units for ATS bets, stored/predicted otherwise
     const totalRisked = gradedBets.reduce((sum, b) => {
-      const units = b.result?.units || b.prediction?.unitSize || 0;
+      const isATS = b.betRecommendation?.type === 'ATS' || (b.isATSPick && !b.isPrimePick);
+      const units = isATS 
+        ? (b.betRecommendation?.atsUnits || b.prediction?.unitSize || 0)
+        : (b.result?.units || b.prediction?.unitSize || 0);
       return sum + units;
     }, 0);
     
@@ -1141,9 +1144,13 @@ function BetHistoryList({ bets, isMobile }) {
         {visibleBets.map((bet, idx) => {
           const isWin = bet.result?.outcome === 'WIN';
           const profit = bet.result?.profit || 0;
-          const units = bet.result?.units || bet.prediction?.unitSize || 1;
+          // Use ATS units when bet is ATS-upgraded or standalone ATS
+          const isATSBet = bet.betRecommendation?.type === 'ATS' || (bet.isATSPick && !bet.isPrimePick);
+          const units = isATSBet 
+            ? (bet.betRecommendation?.atsUnits || bet.prediction?.unitSize || 1)
+            : (bet.result?.units || bet.prediction?.unitSize || 1);
           const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
-          const odds = bet.bet?.odds;
+          const odds = isATSBet ? -110 : bet.bet?.odds;
           
           return (
             <div

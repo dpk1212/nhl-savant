@@ -507,24 +507,30 @@ export function BetHistoryPanel({ bets, isMobile }) {
               {visibleBets.map((bet, idx) => {
                 const isWin = bet.result?.outcome === 'WIN';
                 const profit = bet.result?.profit || 0;
-                const odds = bet.bet?.odds;
                 
-                // Unit priority: use stored values, or back-calculate from profit
-                let units = bet.result?.units 
-                  ?? bet.staticUnitSize 
-                  ?? bet.prediction?.staticUnitSize 
-                  ?? bet.prediction?.unitSize 
-                  ?? bet.unitSize;
+                // Use ATS units/odds when bet is ATS-upgraded or standalone ATS
+                const isATSBet = bet.betRecommendation?.type === 'ATS' || (bet.isATSPick && !bet.isPrimePick);
+                const odds = isATSBet ? -110 : bet.bet?.odds;
                 
-                // If no units stored but profit exists, back-calculate
-                if (!units && profit !== 0) {
-                  if (!isWin) {
-                    // LOSS: you lose exactly what you bet
-                    units = Math.abs(profit);
-                  } else if (odds) {
-                    // WIN: profit = units * decimal_odds
-                    const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
-                    units = Math.round(profit / decimal * 10) / 10; // Round to 1 decimal
+                // Unit priority: ATS bets use atsUnits, otherwise stored/predicted values
+                let units;
+                if (isATSBet) {
+                  units = bet.betRecommendation?.atsUnits || bet.prediction?.unitSize || 1;
+                } else {
+                  units = bet.result?.units 
+                    ?? bet.staticUnitSize 
+                    ?? bet.prediction?.staticUnitSize 
+                    ?? bet.prediction?.unitSize 
+                    ?? bet.unitSize;
+                  
+                  // If no units stored but profit exists, back-calculate
+                  if (!units && profit !== 0) {
+                    if (!isWin) {
+                      units = Math.abs(profit);
+                    } else if (odds) {
+                      const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+                      units = Math.round(profit / decimal * 10) / 10;
+                    }
                   }
                 }
                 units = units || 1; // Final fallback
