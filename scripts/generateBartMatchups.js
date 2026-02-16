@@ -97,6 +97,26 @@ async function generateMatchups() {
 
   console.log(`📊 Loaded ${Object.keys(bartData).length} teams (T-Rank), ${Object.keys(pbpData).length} teams (PBP)\n`);
 
+  // Compute per-stat ranks from PBP data (rank 1 = best)
+  const pbpTeams = Object.values(pbpData);
+  const pbpRanks = {};
+  const rankStats = [
+    { key: 'close2_off_fg', higher: true }, { key: 'close2_def_fg', higher: false },
+    { key: 'far2_off_fg', higher: true }, { key: 'far2_def_fg', higher: false },
+    { key: 'three_off_fg', higher: true }, { key: 'three_def_fg', higher: false },
+    { key: 'close2_off_share', higher: true }, { key: 'close2_def_share', higher: false },
+    { key: 'far2_off_share', higher: true }, { key: 'far2_def_share', higher: false },
+    { key: 'three_off_share', higher: true }, { key: 'three_def_share', higher: false },
+  ];
+  for (const { key, higher } of rankStats) {
+    const sorted = [...pbpTeams].sort((a, b) => higher ? (b[key] || 0) - (a[key] || 0) : (a[key] || 0) - (b[key] || 0));
+    sorted.forEach((t, i) => {
+      if (!pbpRanks[t.teamName]) pbpRanks[t.teamName] = {};
+      pbpRanks[t.teamName][key] = i + 1;
+    });
+  }
+  const r = (team, stat) => pbpRanks[team]?.[stat] ? `#${pbpRanks[team][stat]}` : '';
+
   // 2. Fetch today's bets from Firebase
   const today = new Date().toISOString().split('T')[0];
   const betsSnap = await getDocs(query(collection(db, 'basketball_bets'), where('date', '==', today)));
@@ -201,16 +221,18 @@ async function generateMatchups() {
 
     // SHOOTING SPLITS (PBP)
     if (awayPbp && homePbp) {
+      const aN = awayBartName;
+      const hN = homeBartName;
       lines.push(`  SHOT DISTRIBUTION & EFFICIENCY`);
-      lines.push(`  ${away}:`);
-      lines.push(`    Close 2: ${awayPbp.close2_off_fg}% FG (${awayPbp.close2_off_share}% of shots) | 3PT: ${awayPbp.three_off_fg}% FG (${awayPbp.three_off_share}% of shots) | Mid: ${awayPbp.far2_off_fg}% FG (${awayPbp.far2_off_share}% of shots)`);
-      lines.push(`  ${home}:`);
-      lines.push(`    Close 2: ${homePbp.close2_off_fg}% FG (${homePbp.close2_off_share}% of shots) | 3PT: ${homePbp.three_off_fg}% FG (${homePbp.three_off_share}% of shots) | Mid: ${homePbp.far2_off_fg}% FG (${homePbp.far2_off_share}% of shots)`);
+      lines.push(`  ${away} OFFENSE:`);
+      lines.push(`    Close 2: ${awayPbp.close2_off_fg}% FG (${r(aN,'close2_off_fg')}) — ${awayPbp.close2_off_share}% of shots | 3PT: ${awayPbp.three_off_fg}% FG (${r(aN,'three_off_fg')}) — ${awayPbp.three_off_share}% of shots | Mid: ${awayPbp.far2_off_fg}% FG (${r(aN,'far2_off_fg')}) — ${awayPbp.far2_off_share}% of shots`);
+      lines.push(`  ${home} OFFENSE:`);
+      lines.push(`    Close 2: ${homePbp.close2_off_fg}% FG (${r(hN,'close2_off_fg')}) — ${homePbp.close2_off_share}% of shots | 3PT: ${homePbp.three_off_fg}% FG (${r(hN,'three_off_fg')}) — ${homePbp.three_off_share}% of shots | Mid: ${homePbp.far2_off_fg}% FG (${r(hN,'far2_off_fg')}) — ${homePbp.far2_off_share}% of shots`);
       lines.push('');
       
       lines.push(`  DEFENSIVE SHOT PROFILE (what they ALLOW)`);
-      lines.push(`    ${away} allows: Close 2 ${awayPbp.close2_def_fg}% | 3PT ${awayPbp.three_def_fg}% | Mid ${awayPbp.far2_def_fg}%`);
-      lines.push(`    ${home} allows: Close 2 ${homePbp.close2_def_fg}% | 3PT ${homePbp.three_def_fg}% | Mid ${homePbp.far2_def_fg}%`);
+      lines.push(`    ${away} allows: Close 2 ${awayPbp.close2_def_fg}% (${r(aN,'close2_def_fg')}) | 3PT ${awayPbp.three_def_fg}% (${r(aN,'three_def_fg')}) | Mid ${awayPbp.far2_def_fg}% (${r(aN,'far2_def_fg')})`);
+      lines.push(`    ${home} allows: Close 2 ${homePbp.close2_def_fg}% (${r(hN,'close2_def_fg')}) | 3PT ${homePbp.three_def_fg}% (${r(hN,'three_def_fg')}) | Mid ${homePbp.far2_def_fg}% (${r(hN,'far2_def_fg')})`);
       lines.push('');
 
       // Key matchup: where does each team shoot vs what opponent allows
