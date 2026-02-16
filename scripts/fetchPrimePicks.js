@@ -1096,7 +1096,8 @@ async function fetchPrimePicks() {
     const primePickKeys = new Set(primePicks.map(p => `${p.game.awayTeam}_${p.game.homeTeam}`));
     
     // Also check Firebase for today's existing bets (from previous runs)
-    const existingBetsSnap = await getDocs(query(collection(db, 'basketball_bets'), where('date', '==', date)));
+    const todayDate = new Date().toISOString().split('T')[0];
+    const existingBetsSnap = await getDocs(query(collection(db, 'basketball_bets'), where('date', '==', todayDate)));
     existingBetsSnap.forEach(docSnap => {
       const b = docSnap.data();
       if (b.game?.awayTeam && b.game?.homeTeam) {
