@@ -25,6 +25,90 @@ NHL
 
 # NHL Betting Odds
 
+![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)
+
+LA
+
+MON 03/094:00 PM
+
+CBJ
+
+![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)
+
+[![team](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=60x60)\\
+\\
+CBJMoney\\
+\\
+-111\\
+\\
+![buttonBook](https://i.virginia.us-east-1.oddstrader.com/logos-sportsbooks/bgc/bet105.webp)\\
+\\
+PROBABILITY\\
+\\
+66%\\
+\\
+EXPECTED VALUE\\
+\\
++13.3%\\
+\\
+RECORD\\
+\\
+29/56\\
+\\
+52%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771259546900&eid=4771756&g=game&m=money)
+
+Analysis [Bet105 REVIEW](https://www.oddstrader.com/sportsbooks/bet105/)
+
+Kings vs Blue Jackets shows a 66% coverage probability. Bet on Columbus at -111 now with Bet105 and claim your $50 Free Bet with $100 deposit.
+
+$50 Free Betwith $100 deposit
+
+[![Bet105 logo](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/logo-h-black-color.png)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
+
+[CLAIM](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
+
+![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)
+
+LA
+
+MON 03/094:00 PM
+
+CBJ
+
+![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)
+
+[![team](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=60x60)\\
+\\
+CBJPuck Line\\
+\\
+-1½(+221)\\
+\\
+![buttonBook](https://i.virginia.us-east-1.oddstrader.com/logos-sportsbooks/bgc/bet105.webp)\\
+\\
+PROBABILITY\\
+\\
+47%\\
+\\
+EXPECTED VALUE\\
+\\
++15.9%\\
+\\
+RECORD\\
+\\
+33/56\\
+\\
+59%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771259546900&eid=4771756&g=game&m=money)
+
+Analysis [Bet105 REVIEW](https://www.oddstrader.com/sportsbooks/bet105/)
+
+Bet105 offers a 47% coverage probability on Kings vs Blue Jackets with -1.5 for Columbus. Claim your $50 Free Bet with $100 deposit today!
+
+$50 Free Betwith $100 deposit
+
+[![Bet105 logo](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/logo-h-black-color.png)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
+
+[CLAIM](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
+
 Money
 
 - Puck Line
@@ -68,10 +152,10 @@ NHLWed 02/25
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/257:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>25-31<br>-<br>+145Heritage | - | - | - | - | +145 | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/257:00 PM<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>25-31<br>-<br>+145Heritage | - | - | - | - | +145 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/e83b8824-4198-4a1c-8edb-ff6a63acaeb1-original.PNG?d=100x100)<br>Washington<br>29-30<br>-<br>-161Heritage | - | - | - | - | -161 | - | - |
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/257:00 PM<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>32-25<br>-<br>-127Heritage | - | - | - | - | -127 | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/257:00 PM<br>![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>32-25<br>-<br>-127Heritage | - | - | - | - | -127 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/4a8be655-2cf4-4eb4-b4ab-9e303e29b09e-original.png?d=100x100)<br>New Jersey<br>28-29<br>-<br>+115Heritage | - | - | - | - | +115 | - | - |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
