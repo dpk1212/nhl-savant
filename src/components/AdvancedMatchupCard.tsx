@@ -952,305 +952,236 @@ export function AdvancedMatchupCard({ barttorvik, awayTeam, homeTeam, pbpData = 
         <SectionHeader title="HEAD-TO-HEAD BATTLES" subtitle="Direct matchup confrontations that decide games" isMobile={isMobile} />
         <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '14px', marginTop: '-6px' }}>{offA} offense vs {defA} defense</div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* eFG% Battle */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '8px' : '10px' }}>
+          {/* SHOOTING - Concentric Rings */}
           {(() => {
             const offRank = offTeam.eFG_off_rank || 182;
             const defRank = defTeam.eFG_def_rank || 182;
-            // Combined edge: offense above avg + defense weakness above avg
+            const offPct = Math.max(0.05, (TOTAL_TEAMS - offRank) / TOTAL_TEAMS);
+            const defPct = Math.max(0.05, (TOTAL_TEAMS - defRank) / TOTAL_TEAMS);
+            const offC = pctileColor(offRank);
+            const defC = pctileColor(defRank);
             const edge = (eFG.off - D1_AVG.eFG) + (eFG.def - D1_AVG.eFG);
-            const edgeColor = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
-            // Use ranks: lower rank = better at their job
-            const offWins = offRank < defRank;
-            const verdict = offRank <= 50 && defRank > 200
-              ? `${offA}'s elite shooting (#${offRank} in D1) against ${defA}'s weak defense (#${defRank}) is a major scoring advantage.`
-              : offRank <= 100 && edge > 3
-              ? `${offA}'s efficient offense (#${offRank}) should exploit ${defA}'s defensive gaps (#${defRank}). Expect above-average shooting.`
-              : offRank > 250 && defRank > 250
-              ? `Neither team excels — ${offA} is a poor shooting team (#${offRank}) and ${defA}'s defense is also weak (#${defRank}). Sloppy shooting likely.`
-              : defRank <= 50 && offRank > 200
-              ? `${defA}'s elite defense (#${defRank} in D1) should contain ${offA}'s weak offense (#${offRank}). Tough shooting night expected.`
-              : defRank <= 100 && edge < -3
-              ? `${defA}'s strong defense (#${defRank}) should limit ${offA}'s shooting (#${offRank}). Low-scoring battle.`
-              : Math.abs(offRank - defRank) < 50
-              ? `Evenly matched — ${offA} (#${offRank}) and ${defA}'s defense (#${defRank}) are at similar levels. Execution will decide this.`
-              : offWins
-              ? `${offA}'s shooting (#${offRank}) has the edge over ${defA}'s defense (#${defRank}). Slight offensive advantage.`
-              : `${defA}'s defense (#${defRank}) is stronger than ${offA}'s shooting (#${offRank}). Defense has the edge.`;
+            const ec = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+            const el = edge > 8 ? 'BIG EDGE' : edge > 3 ? 'EDGE' : edge > -3 ? 'EVEN' : 'TOUGH';
+            const outerArc = Math.PI * 42;
+            const innerArc = Math.PI * 32;
 
             return (
               <div style={{
-                padding: isMobile ? '14px' : '18px', borderRadius: '12px',
-                background: 'linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.15) 100%)',
-                border: `1px solid ${edgeColor}15`, position: 'relative', overflow: 'hidden',
+                padding: isMobile ? '12px' : '16px', borderRadius: '14px', position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.3) 100%)',
+                border: `1px solid ${ec}20`,
               }}>
-                {edge > 3 && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${edgeColor}90, transparent)` }} />}
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <div>
-                    <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.04em' }}>SHOOTING BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Effective FG% — the best measure of shooting quality</div>
-                  </div>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
-                    {edge > 8 ? 'BIG EDGE' : edge > 3 ? 'EDGE' : edge > -3 ? 'NEUTRAL' : 'TOUGH'}
-                  </span>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, #FBBF24, transparent)`, opacity: 0.5 }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: '#FBBF24', letterSpacing: '0.08em' }}>SHOOTING</span>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: ec, padding: '2px 6px', borderRadius: '3px', background: `${ec}15`, border: `1px solid ${ec}25` }}>{el}</span>
                 </div>
-
-                {/* Offense stat */}
-                <div style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} shoots</span>
-                      <RankBadge rank={offRank} isMobile={isMobile} />
-                    </div>
-                    <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(eFG.off, D1_AVG.eFG, true), fontFamily: mono }}>{eFG.off.toFixed(1)}</span>
-                  </div>
-                  <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min(eFG.off, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(eFG.off, D1_AVG.eFG, true)}40, ${statColor(eFG.off, D1_AVG.eFG, true)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '2px 0' }}>
+                  <svg viewBox="0 0 100 58" style={{ width: '100%', maxWidth: isMobile ? '130px' : '150px' }}>
+                    <path d="M 8 52 A 42 42 0 0 1 92 52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="7" strokeLinecap="round" />
+                    <path d="M 8 52 A 42 42 0 0 1 92 52" fill="none" stroke={defC} strokeWidth="7" strokeLinecap="round"
+                      strokeDasharray={String(outerArc)} strokeDashoffset={String(isVisible ? outerArc * (1 - defPct) : outerArc)}
+                      style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1) 0.3s' }} opacity={0.75} />
+                    <path d="M 18 52 A 32 32 0 0 1 82 52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" strokeLinecap="round" />
+                    <path d="M 18 52 A 32 32 0 0 1 82 52" fill="none" stroke={offC} strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={String(innerArc)} strokeDashoffset={String(isVisible ? innerArc * (1 - offPct) : innerArc)}
+                      style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s' }} />
+                    <text x="50" y="40" textAnchor="middle" fill={ec} fontSize="15" fontWeight="900" fontFamily="ui-monospace, monospace">
+                      {edge > 0 ? '+' : ''}{edge.toFixed(1)}
+                    </text>
+                    <text x="50" y="51" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize="6" fontWeight="700" letterSpacing="0.06em">NET eFG%</text>
+                  </svg>
                 </div>
-
-                {/* Defense stat */}
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} allows</span>
-                      <RankBadge rank={defRank} isMobile={isMobile} />
-                    </div>
-                    <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(eFG.def, D1_AVG.eFG, false), fontFamily: mono }}>{eFG.def.toFixed(1)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <div style={{ width: '8px', height: '3px', borderRadius: '2px', background: offC }} />
+                    <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.5)' }}>{offA}</span>
+                    <span style={{ fontSize: '7.5px', color: offC, fontWeight: '700', fontFamily: mono }}>#{offRank}</span>
                   </div>
-                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min(eFG.def, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(eFG.def, D1_AVG.eFG, false)}40, ${statColor(eFG.def, D1_AVG.eFG, false)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <div style={{ width: '8px', height: '3px', borderRadius: '2px', background: defC }} />
+                    <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.5)' }}>{defA}</span>
+                    <span style={{ fontSize: '7.5px', color: defC, fontWeight: '700', fontFamily: mono }}>#{defRank}</span>
                   </div>
-                </div>
-
-                <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
           })()}
 
-          {/* TURNOVER BATTLE */}
+          {/* TURNOVERS - Split Face */}
           {(() => {
-            const offRank = offTeam.to_off_rank || 182;  // Rank 1 = fewest TOs committed (best ball security)
-            const defRank = defTeam.to_def_rank || 182;  // Rank 1 = most TOs forced (best pressure defense)
-            // Use ranks to determine winner: lower rank = better at their job
+            const offRank = offTeam.to_off_rank || 182;
+            const defRank = defTeam.to_def_rank || 182;
             const offWins = offRank < defRank;
             const rankGap = Math.abs(offRank - defRank);
-            const edgeColor = offWins
+            const offC = pctileColor(offRank);
+            const defC = pctileColor(defRank);
+            const ec = offWins
               ? (rankGap > 80 ? '#10B981' : rankGap > 30 ? '#22D3EE' : '#F59E0B')
               : (rankGap > 80 ? '#EF4444' : rankGap > 30 ? '#F59E0B' : '#F59E0B');
-            const verdict = to.off < 14 && to.def < 15
-              ? `${offA} protects the ball well (${to.off.toFixed(1)} TO rate, #${offRank} in D1) and ${defA} doesn't generate many steals (#${defRank}). Clean game expected.`
-              : to.off > 19 && to.def > 19
-              ? `${offA} is turnover-prone (${to.off.toFixed(1)} per 100) and ${defA} forces a lot (${to.def.toFixed(1)}). Expect a chaotic, turnover-heavy game.`
-              : to.off > 19
-              ? `${offA} is turnover-prone (${to.off.toFixed(1)} per 100, #${offRank}). Even though ${defA} isn't elite at forcing TOs (#${defRank}), careless play could still lead to transition points.`
-              : to.def > 20
-              ? `${defA}'s pressure defense forces ${to.def.toFixed(1)} turnovers per 100 (#${defRank} in D1). ${offA} must handle the ball or risk getting sped up.`
-              : offWins
-              ? `${offA} protects the ball (#${offRank} in D1) better than ${defA} can disrupt it (#${defRank}). Ball security shouldn't be an issue.`
-              : `${defA}'s defensive pressure (#${defRank} in D1) is stronger than ${offA}'s ball security (#${offRank}). Turnovers could be a factor.`;
+            const el = rankGap > 80 ? 'BIG EDGE' : rankGap > 30 ? 'EDGE' : 'EVEN';
 
             return (
               <div style={{
-                padding: isMobile ? '14px' : '18px', borderRadius: '12px',
-                background: 'linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.15) 100%)',
-                border: `1px solid ${edgeColor}15`, position: 'relative', overflow: 'hidden',
+                padding: isMobile ? '12px' : '16px', borderRadius: '14px', position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.3) 100%)',
+                border: `1px solid ${ec}20`,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                {/* Diagonal split background */}
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1 }}>
+                  <div style={{ position: 'absolute', inset: 0, background: offC, clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: defC, clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
+                </div>
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                  <line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                </svg>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, #F87171, transparent)`, opacity: 0.5 }} />
+
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: '#F87171', letterSpacing: '0.08em' }}>TURNOVERS</span>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: ec, padding: '2px 6px', borderRadius: '3px', background: `${ec}15`, border: `1px solid ${ec}25` }}>{el}</span>
+                </div>
+
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '10px 0' : '14px 0' }}>
+                  <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: ec, fontFamily: mono, lineHeight: 1 }}>
+                    {offWins ? offA : defA}
+                  </div>
+                  <div style={{ fontSize: '7px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginTop: '3px' }}>WINS BATTLE</div>
+                </div>
+
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#F87171', letterSpacing: '0.04em' }}>TURNOVER BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Ball security vs defensive pressure</div>
-                  </div>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
-                    {offWins ? `${offA}` : `${defA}`}
-                  </span>
-                </div>
-
-                <div style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} commits</span>
-                      <RankBadge rank={offRank} isMobile={isMobile} />
+                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', marginBottom: '2px' }}>{offA} BALL SEC.</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: statColor(to.off, D1_AVG.to, false), fontFamily: mono }}>{to.off.toFixed(1)}</span>
+                      <span style={{ fontSize: '7px', color: offC, fontWeight: '700' }}>#{offRank}</span>
                     </div>
-                    <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(to.off, D1_AVG.to, false), fontFamily: mono }}>{to.off.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>turnovers per 100 poss — lower is better</div>
-                  <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min(((30 - to.off) / 20) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.off, D1_AVG.to, false)}40, ${statColor(to.off, D1_AVG.to, false)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} forces</span>
-                      <RankBadge rank={defRank} isMobile={isMobile} />
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', marginBottom: '2px' }}>{defA} PRESSURE</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '7px', color: defC, fontWeight: '700' }}>#{defRank}</span>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: statColor(to.def, D1_AVG.to, true), fontFamily: mono }}>{to.def.toFixed(1)}</span>
                     </div>
-                    <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(to.def, D1_AVG.to, true), fontFamily: mono }}>{to.def.toFixed(1)}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>turnovers forced per 100 poss — higher is better</div>
-                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min((to.def / 30) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(to.def, D1_AVG.to, true)}40, ${statColor(to.def, D1_AVG.to, true)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
-                  </div>
-                </div>
-
-                <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
           })()}
 
-          {/* REBOUNDING BATTLE */}
+          {/* REBOUNDING - Split Face */}
           {(() => {
             const offRank = offTeam.oreb_off_rank || 182;
             const defRank = defTeam.oreb_def_rank || 182;
-            // Combined edge: offense above avg at crashing + defense allows above avg (weak)
-            const edge = (oreb.off - D1_AVG.oreb) + (oreb.def - D1_AVG.oreb);
-            const edgeColor = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
-            // Use ranks: lower = better at their job
             const offWins = offRank < defRank;
-            const verdict = offRank <= 50 && defRank > 200
-              ? `${offA}'s elite crashing ability (#${offRank}) against ${defA}'s weak glass control (#${defRank}) means tons of second chances.`
-              : offRank <= 100 && edge > 3
-              ? `${offA} (#${offRank}) hits the offensive glass hard and ${defA}'s defense (#${defRank}) struggles to box out. Extra possessions expected.`
-              : offRank > 250 && defRank > 250
-              ? `Neither team excels — ${offA} rarely crashes (#${offRank}) and ${defA} also allows boards (#${defRank}). Sporadic second chances.`
-              : defRank <= 50 && offRank > 200
-              ? `${defA}'s elite rebounding defense (#${defRank}) should shut down ${offA}'s weak crashing (#${offRank}). One-shot possessions expected.`
-              : defRank <= 100 && edge < -3
-              ? `${defA} controls the glass (#${defRank}), limiting ${offA} (#${offRank}). Few second-chance points.`
-              : Math.abs(offRank - defRank) < 50
-              ? `Evenly matched on the glass — ${offA} (#${offRank}) and ${defA}'s defense (#${defRank}) are similar. Effort decides second chances.`
-              : offWins
-              ? `${offA}'s rebounding (#${offRank}) outclasses ${defA}'s glass control (#${defRank}). Extra possessions likely.`
-              : `${defA}'s glass defense (#${defRank}) is stronger than ${offA}'s crashing (#${offRank}). Limited second chances.`;
+            const rankGap = Math.abs(offRank - defRank);
+            const offC = pctileColor(offRank);
+            const defC = pctileColor(defRank);
+            const edge = (oreb.off - D1_AVG.oreb) + (oreb.def - D1_AVG.oreb);
+            const ec = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+            const el = Math.abs(edge) > 8 ? 'BIG EDGE' : Math.abs(edge) > 3 ? 'EDGE' : 'EVEN';
 
             return (
               <div style={{
-                padding: isMobile ? '14px' : '18px', borderRadius: '12px',
-                background: 'linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.15) 100%)',
-                border: `1px solid ${edgeColor}15`, position: 'relative', overflow: 'hidden',
+                padding: isMobile ? '12px' : '16px', borderRadius: '14px', position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.3) 100%)',
+                border: `1px solid ${ec}20`,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1 }}>
+                  <div style={{ position: 'absolute', inset: 0, background: offC, clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: defC, clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
+                </div>
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                  <line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                </svg>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, #60A5FA, transparent)`, opacity: 0.5 }} />
+
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: '#60A5FA', letterSpacing: '0.08em' }}>BOARDS</span>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: ec, padding: '2px 6px', borderRadius: '3px', background: `${ec}15`, border: `1px solid ${ec}25` }}>{el}</span>
+                </div>
+
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '10px 0' : '14px 0' }}>
+                  <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: ec, fontFamily: mono, lineHeight: 1 }}>
+                    {offWins ? offA : defA}
+                  </div>
+                  <div style={{ fontSize: '7px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginTop: '3px' }}>WINS BATTLE</div>
+                </div>
+
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#60A5FA', letterSpacing: '0.04em' }}>REBOUNDING BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Second chances vs defensive glass control</div>
-                  </div>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
-                    {offWins ? `${offA}` : `${defA}`}
-                  </span>
-                </div>
-
-                <div style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} grabs</span>
-                      <RankBadge rank={offRank} isMobile={isMobile} />
+                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', marginBottom: '2px' }}>{offA} CRASHES</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: statColor(oreb.off, D1_AVG.oreb, true), fontFamily: mono }}>{oreb.off.toFixed(1)}%</span>
+                      <span style={{ fontSize: '7px', color: offC, fontWeight: '700' }}>#{offRank}</span>
                     </div>
-                    <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(oreb.off, D1_AVG.oreb, true), fontFamily: mono }}>{oreb.off.toFixed(1)}%</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>offensive rebound rate</div>
-                  <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min((oreb.off / 45) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(oreb.off, D1_AVG.oreb, true)}40, ${statColor(oreb.off, D1_AVG.oreb, true)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} allows</span>
-                      <RankBadge rank={defRank} isMobile={isMobile} />
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em', marginBottom: '2px' }}>{defA} GLASS</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '7px', color: defC, fontWeight: '700' }}>#{defRank}</span>
+                      <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '800', color: statColor(oreb.def, D1_AVG.oreb, false), fontFamily: mono }}>{oreb.def.toFixed(1)}%</span>
                     </div>
-                    <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(oreb.def, D1_AVG.oreb, false), fontFamily: mono }}>{oreb.def.toFixed(1)}%</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>offensive rebounds allowed</div>
-                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min((oreb.def / 45) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(oreb.def, D1_AVG.oreb, false)}40, ${statColor(oreb.def, D1_AVG.oreb, false)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
-                  </div>
-                </div>
-
-                <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
           })()}
 
-          {/* FREE THROW BATTLE */}
+          {/* FREE THROWS - Concentric Rings */}
           {(() => {
             const offRank = offTeam.ftRate_off_rank || 182;
             const defRank = defTeam.ftRate_def_rank || 182;
-            // Combined edge: offense draws fouls above avg + defense allows fouls above avg (weak)
+            const offPct = Math.max(0.05, (TOTAL_TEAMS - offRank) / TOTAL_TEAMS);
+            const defPct = Math.max(0.05, (TOTAL_TEAMS - defRank) / TOTAL_TEAMS);
+            const offC = pctileColor(offRank);
+            const defC = pctileColor(defRank);
             const edge = (ftRate.off - D1_AVG.ftRate) + (ftRate.def - D1_AVG.ftRate);
-            const edgeColor = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
-            // Use ranks: lower = better at their job
-            const offWins = offRank < defRank;
-            const verdict = offRank <= 50 && defRank > 200
-              ? `${offA} elite at drawing fouls (#${offRank}) and ${defA} is foul-prone (#${defRank}). Expect a parade to the line.`
-              : offRank <= 100 && edge > 3
-              ? `${offA} (#${offRank}) attacks the basket and draws contact. ${defA}'s defense (#${defRank}) tends to foul — free points likely.`
-              : offRank > 250 && defRank > 250
-              ? `Neither team excels — ${offA} rarely draws fouls (#${offRank}) and ${defA} also sends opponents to the line (#${defRank}). Few free throws either way.`
-              : defRank <= 50 && offRank > 200
-              ? `${defA}'s disciplined defense (#${defRank}) keeps ${offA} (#${offRank}) off the line. Very few free throw opportunities.`
-              : defRank <= 100 && edge < -3
-              ? `${defA} keeps opponents off the line (#${defRank}). ${offA} (#${offRank}) may not get the whistles they need.`
-              : Math.abs(offRank - defRank) < 50
-              ? `Evenly matched — ${offA} (#${offRank}) and ${defA}'s foul discipline (#${defRank}) are similar. Free throws won't swing this.`
-              : offWins
-              ? `${offA} draws fouls (#${offRank}) at a higher rate than ${defA} prevents them (#${defRank}). Free throw edge to ${offA}.`
-              : `${defA}'s foul discipline (#${defRank}) is stronger than ${offA}'s ability to draw contact (#${offRank}). Limited free throws.`;
+            const ec = edge > 8 ? '#10B981' : edge > 3 ? '#22D3EE' : edge > -3 ? '#F59E0B' : '#EF4444';
+            const el = edge > 8 ? 'BIG EDGE' : edge > 3 ? 'EDGE' : edge > -3 ? 'EVEN' : 'TOUGH';
+            const outerArc = Math.PI * 42;
+            const innerArc = Math.PI * 32;
 
             return (
               <div style={{
-                padding: isMobile ? '14px' : '18px', borderRadius: '12px',
-                background: 'linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.15) 100%)',
-                border: `1px solid ${edgeColor}15`, position: 'relative', overflow: 'hidden',
+                padding: isMobile ? '12px' : '16px', borderRadius: '14px', position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.3) 100%)',
+                border: `1px solid ${ec}20`,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <div>
-                    <div style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '800', color: '#34D399', letterSpacing: '0.04em' }}>FREE THROW BATTLE</div>
-                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>Getting to the line vs keeping them off it</div>
-                  </div>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: edgeColor, padding: '3px 8px', borderRadius: '4px', background: `${edgeColor}15`, border: `1px solid ${edgeColor}20` }}>
-                    {offWins ? `${offA}` : `${defA}`}
-                  </span>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, #34D399, transparent)`, opacity: 0.5 }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: '#34D399', letterSpacing: '0.08em' }}>FT RATE</span>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: ec, padding: '2px 6px', borderRadius: '3px', background: `${ec}15`, border: `1px solid ${ec}25` }}>{el}</span>
                 </div>
-
-                <div style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{offA} draws</span>
-                      <RankBadge rank={offRank} isMobile={isMobile} />
-                    </div>
-                    <span style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '900', color: statColor(ftRate.off, D1_AVG.ftRate, true), fontFamily: mono }}>{ftRate.off.toFixed(1)}</span>
-                  </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>free throw attempts per field goal attempt</div>
-                  <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min((ftRate.off / 50) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(ftRate.off, D1_AVG.ftRate, true)}40, ${statColor(ftRate.off, D1_AVG.ftRate, true)})`, borderRadius: '4px', transition: 'width 1s ease 0.2s' }} />
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '2px 0' }}>
+                  <svg viewBox="0 0 100 58" style={{ width: '100%', maxWidth: isMobile ? '130px' : '150px' }}>
+                    <path d="M 8 52 A 42 42 0 0 1 92 52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="7" strokeLinecap="round" />
+                    <path d="M 8 52 A 42 42 0 0 1 92 52" fill="none" stroke={defC} strokeWidth="7" strokeLinecap="round"
+                      strokeDasharray={String(outerArc)} strokeDashoffset={String(isVisible ? outerArc * (1 - defPct) : outerArc)}
+                      style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1) 0.3s' }} opacity={0.75} />
+                    <path d="M 18 52 A 32 32 0 0 1 82 52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" strokeLinecap="round" />
+                    <path d="M 18 52 A 32 32 0 0 1 82 52" fill="none" stroke={offC} strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={String(innerArc)} strokeDashoffset={String(isVisible ? innerArc * (1 - offPct) : innerArc)}
+                      style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1) 0.2s' }} />
+                    <text x="50" y="40" textAnchor="middle" fill={ec} fontSize="15" fontWeight="900" fontFamily="ui-monospace, monospace">
+                      {edge > 0 ? '+' : ''}{edge.toFixed(1)}
+                    </text>
+                    <text x="50" y="51" textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize="6" fontWeight="700" letterSpacing="0.06em">NET FT RATE</text>
+                  </svg>
                 </div>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '700', color: !offWins ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>{defA} allows</span>
-                      <RankBadge rank={defRank} isMobile={isMobile} />
-                    </div>
-                    <span style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: statColor(ftRate.def, D1_AVG.ftRate, false), fontFamily: mono }}>{ftRate.def.toFixed(1)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <div style={{ width: '8px', height: '3px', borderRadius: '2px', background: offC }} />
+                    <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.5)' }}>{offA}</span>
+                    <span style={{ fontSize: '7.5px', color: offC, fontWeight: '700', fontFamily: mono }}>#{offRank}</span>
                   </div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>free throw attempts allowed per FGA</div>
-                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: isVisible ? `${Math.min((ftRate.def / 50) * 100, 100)}%` : '0%', background: `linear-gradient(90deg, ${statColor(ftRate.def, D1_AVG.ftRate, false)}40, ${statColor(ftRate.def, D1_AVG.ftRate, false)})`, borderRadius: '3px', transition: 'width 1s ease 0.4s' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <div style={{ width: '8px', height: '3px', borderRadius: '2px', background: defC }} />
+                    <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.5)' }}>{defA}</span>
+                    <span style={{ fontSize: '7.5px', color: defC, fontWeight: '700', fontFamily: mono }}>#{defRank}</span>
                   </div>
-                </div>
-
-                <div style={{ padding: '8px 10px', borderRadius: '8px', background: `${edgeColor}06`, borderLeft: `3px solid ${edgeColor}30` }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.5' }}>{verdict}</span>
                 </div>
               </div>
             );
