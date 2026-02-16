@@ -1,0 +1,37 @@
+name: Fetch Barttorvik Data
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 12 * * *'  # Daily at 7am ET (12:00 UTC)
+
+jobs:
+  fetch-bart-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Create .env file
+        run: |
+          echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
+      
+      - name: Fetch Barttorvik data
+        run: node scripts/fetchBartData.js
+      
+      - name: Commit and push if changed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/Bart.md public/bart_pbp.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Barttorvik data [$(date +'%Y-%m-%d %H:%M')]" && git push)
