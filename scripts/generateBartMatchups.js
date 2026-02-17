@@ -92,25 +92,48 @@ function styleTag(team) {
   return tags.length ? tags.join(', ') : 'balanced';
 }
 
-function shotZoneNarrative(offFg, defFg, zone, offTeam, defTeam, offRank, defRank) {
-  const edge = offFg - defFg;
-  const offVsAvg = offFg - (zone === 'close2' ? D1.close2 : zone === 'three' ? D1.three : D1.far2);
-  const defVsAvg = defFg - (zone === 'close2' ? D1.close2 : zone === 'three' ? D1.three : D1.far2);
+// Rank-driven matchup narrative — ranks are the truth, raw gaps lie
+function matchupVerdict(offRank, defRank) {
+  // Parse numeric rank from "#124" format
+  const oR = typeof offRank === 'string' ? parseInt(offRank.replace('#', '')) : offRank;
+  const dR = typeof defRank === 'string' ? parseInt(defRank.replace('#', '')) : defRank;
+  if (!oR || !dR) return { label: 'NO DATA', detail: '' };
+
+  const offTier = tier(oR);
+  const defTier = tier(dR);
+  const offGood = oR <= 100;
+  const defGood = dR <= 100;
+  const offElite = oR <= 50;
+  const defElite = dR <= 50;
+  const offWeak = oR > 250;
+  const defWeak = dR > 250;
+
+  if (offElite && defWeak) return { label: 'MAJOR MISMATCH', detail: `Elite offense (${offTier}) vs weak defense (${defTier}) — expect big numbers here` };
+  if (offWeak && defElite) return { label: 'LOCKDOWN', detail: `Weak offense (${offTier}) vs elite defense (${defTier}) — this zone is shut down` };
+  if (offElite && defElite) return { label: 'ELITE VS ELITE', detail: `Both are top-tier here (off ${offTier}, def ${defTier}) — unstoppable force meets immovable object` };
+  if (offGood && defWeak) return { label: 'CLEAR ADVANTAGE', detail: `Strong offense (${offTier}) vs poor defense (${defTier}) — exploitable` };
+  if (offWeak && defGood) return { label: 'TOUGH', detail: `Poor offense (${offTier}) against solid defense (${defTier}) — low efficiency expected` };
+  if (offGood && defGood) return { label: 'COMPETITIVE', detail: `Both competent here (off ${offTier}, def ${defTier}) — execution decides this` };
+  if (offWeak && defWeak) return { label: 'SLOPPY', detail: `Neither team excels (off ${offTier}, def ${defTier}) — ugly but unpredictable` };
+  
+  // Mixed / average
+  const gap = oR - dR; // negative = offense ranked higher (better)
+  if (gap < -80) return { label: 'OFFENSE FAVORED', detail: `Offense significantly better ranked (#${oR} vs #${dR} defense)` };
+  if (gap > 80) return { label: 'DEFENSE FAVORED', detail: `Defense significantly better ranked (#${dR} vs #${oR} offense)` };
+  return { label: 'TOSS-UP', detail: `Similar quality (off #${oR} vs def #${dR}) — no clear edge` };
+}
+
+function shotZoneNarrative(offFg, defFg, zone, offTeam, defTeam, offRankStr, defRankStr) {
+  const avg = zone === 'close2' ? D1.close2 : zone === 'three' ? D1.three : D1.far2;
+  const offVsAvg = offFg - avg;
+  const defVsAvg = defFg - avg;
   const zoneName = zone === 'close2' ? 'at the rim/close 2' : zone === 'three' ? 'from 3PT' : 'from mid-range';
+  const verdict = matchupVerdict(offRankStr, defRankStr);
   
-  let narrative = `${offTeam} shoots ${offFg}% ${zoneName} (${offRank} in D1, `;
-  narrative += offVsAvg > 0 ? `+${offVsAvg.toFixed(1)}% above D1 avg` : `${offVsAvg.toFixed(1)}% below D1 avg`;
-  narrative += `). ${defTeam} allows ${defFg}% ${zoneName} (${defRank} in D1, `;
-  narrative += defVsAvg > 0 ? `+${defVsAvg.toFixed(1)}% worse than D1 avg — vulnerable` : `${defVsAvg.toFixed(1)}% better than D1 avg — tough`;
-  narrative += `). `;
-  
-  if (edge > 5) narrative += `MAJOR MISMATCH: ${offTeam}'s strength directly exploits ${defTeam}'s weakness here.`;
-  else if (edge > 2) narrative += `FAVORABLE: ${offTeam} should find success in this zone.`;
-  else if (edge > -2) narrative += `NEUTRAL: Neither team has a clear edge — execution matters.`;
-  else if (edge > -5) narrative += `DIFFICULT: ${defTeam}'s defense is better than ${offTeam}'s offense in this zone.`;
-  else narrative += `LOCKDOWN: ${defTeam} dominates this zone defensively. ${offTeam} must avoid this area.`;
-  
-  return narrative;
+  let n = `${offTeam} shoots ${offFg}% ${zoneName} (${offRankStr} in D1, ${offVsAvg > 0 ? '+' : ''}${offVsAvg.toFixed(1)}% vs D1 avg). `;
+  n += `${defTeam} allows ${defFg}% ${zoneName} (${defRankStr} in D1, ${defVsAvg > 0 ? '+' : ''}${defVsAvg.toFixed(1)}% vs D1 avg). `;
+  n += `${verdict.label}: ${verdict.detail}`;
+  return n;
 }
 
 async function generateMatchups() {
@@ -245,46 +268,57 @@ async function generateMatchups() {
     // eFG%
     L.push(`  SHOOTING (eFG%)`);
     for (const [offTeam, off, defTeam, def] of [[away, aB, home, hB], [home, hB, away, aB]]) {
-      const edge = off.eFG_off - def.eFG_def;
+      const v = matchupVerdict(off.eFG_off_rank, def.eFG_def_rank);
       L.push(`    ${offTeam} offense: ${off.eFG_off}% eFG (#${off.eFG_off_rank}, ${tier(off.eFG_off_rank)})`);
       L.push(`      ${vsAvg(off.eFG_off, D1.eFG, true)}`);
       L.push(`      vs ${defTeam} defense: allows ${def.eFG_def}% eFG (#${def.eFG_def_rank}, ${tier(def.eFG_def_rank)})`);
       L.push(`      ${vsAvg(def.eFG_def, D1.eFG, false)}`);
-      L.push(`      → Matchup edge: ${edge > 0 ? '+' : ''}${edge.toFixed(1)} (${edge > 3 ? 'BIG advantage for offense' : edge > 0 ? 'slight advantage for offense' : edge > -3 ? 'slight advantage for defense' : 'defense dominates'})`);
+      L.push(`      → ${v.label}: ${v.detail}`);
       L.push('');
     }
 
-    // Turnovers
+    // Turnovers — rank-driven narrative
     L.push(`  TURNOVER BATTLE`);
     for (const [offTeam, off, defTeam, def] of [[away, aB, home, hB], [home, hB, away, aB]]) {
-      L.push(`    ${offTeam} commits ${off.to_off} TOs/100 (#${off.to_off_rank}, ${tier(off.to_off_rank)}) — ${vsAvg(off.to_off, D1.to, false)}`);
-      L.push(`    ${defTeam} forces ${def.to_def} TOs/100 (#${def.to_def_rank}, ${tier(def.to_def_rank)}) — ${vsAvg(def.to_def, D1.to, true)}`);
-      const risk = off.to_off > 19 && def.to_def > 19 ? 'HIGH RISK: Careless offense meets aggressive defense — expect live-ball turnovers and transition points'
-        : off.to_off < 15 && def.to_def < 16 ? 'LOW RISK: Secure ball-handler vs passive defense — clean possessions expected'
-        : off.to_off > 19 ? `WATCH: ${offTeam} is turnover-prone even vs average pressure`
-        : def.to_def > 20 ? `WATCH: ${defTeam}'s pressure causes problems for everyone`
-        : 'NEUTRAL: No major turnover storyline here';
+      const offR = off.to_off_rank;
+      const defR = def.to_def_rank;
+      L.push(`    ${offTeam} commits ${off.to_off} TOs/100 (#${offR}, ${tier(offR)}) — ${vsAvg(off.to_off, D1.to, false)}`);
+      L.push(`    ${defTeam} forces ${def.to_def} TOs/100 (#${defR}, ${tier(defR)}) — ${vsAvg(def.to_def, D1.to, true)}`);
+      let risk;
+      if (offR > 250 && defR <= 75) risk = `HIGH RISK: ${offTeam} is turnover-prone (#${offR}) and ${defTeam}'s defense forces turnovers at an elite rate (#${defR}) — expect live balls and transition points`;
+      else if (offR <= 75 && defR > 250) risk = `LOW RISK: ${offTeam} takes care of the ball (#${offR}) and ${defTeam}'s defense rarely creates turnovers (#${defR}) — clean possessions expected`;
+      else if (offR > 250) risk = `WATCH: ${offTeam} is turnover-prone (#${offR}) regardless of opponent — any pressure could be damaging`;
+      else if (defR <= 50) risk = `WATCH: ${defTeam}'s defense is elite at forcing turnovers (#${defR}) — even good ball-handlers struggle here`;
+      else if (offR <= 75 && defR <= 75) risk = `COMPETITIVE: ${offTeam} protects the ball (#${offR}) but ${defTeam}'s pressure is legit (#${defR}) — execution battle`;
+      else risk = `NEUTRAL: Neither team's turnover profile (#${offR} offense, #${defR} defense) creates a clear narrative`;
       L.push(`      → ${risk}`);
       L.push('');
     }
 
-    // Rebounding
+    // Rebounding — rank-driven
     L.push(`  REBOUNDING (ORB%)`);
     for (const [offTeam, off, defTeam, def] of [[away, aB, home, hB], [home, hB, away, aB]]) {
-      L.push(`    ${offTeam} crashes: ${off.oreb_off}% ORB (#${off.oreb_off_rank}, ${tier(off.oreb_off_rank)}) — ${vsAvg(off.oreb_off, D1.oreb, true)}`);
-      L.push(`    ${defTeam} protects: ${def.oreb_def}% allowed (#${def.oreb_def_rank}, ${tier(def.oreb_def_rank)}) — ${vsAvg(def.oreb_def, D1.oreb, false)}`);
-      const edge = off.oreb_off - def.oreb_def;
-      L.push(`      → ${edge > 4 ? `SECOND CHANCES: ${offTeam} should dominate the offensive glass here` : edge > 0 ? `Slight rebounding edge for ${offTeam}` : edge > -4 ? `${defTeam} should limit second chances` : `${defTeam} controls the glass — one-and-done possessions`}`);
+      const offR = off.oreb_off_rank;
+      const defR = def.oreb_def_rank;
+      L.push(`    ${offTeam} crashes: ${off.oreb_off}% ORB (#${offR}, ${tier(offR)}) — ${vsAvg(off.oreb_off, D1.oreb, true)}`);
+      L.push(`    ${defTeam} protects: ${def.oreb_def}% allowed (#${defR}, ${tier(defR)}) — ${vsAvg(def.oreb_def, D1.oreb, false)}`);
+      const v = matchupVerdict(offR, defR);
+      L.push(`      → ${v.label}: ${v.detail}`);
       L.push('');
     }
 
-    // FT Rate
+    // FT Rate — rank-driven
     L.push(`  FREE THROW RATE (FTA/FGA)`);
     for (const [offTeam, off, defTeam, def] of [[away, aB, home, hB], [home, hB, away, aB]]) {
-      L.push(`    ${offTeam} draws: ${off.ftRate_off} FTA/FGA (#${off.ftRate_off_rank}, ${tier(off.ftRate_off_rank)}) — ${vsAvg(off.ftRate_off, D1.ftRate, true)}`);
-      L.push(`    ${defTeam} allows: ${def.ftRate_def} FTA/FGA (#${def.ftRate_def_rank}, ${tier(def.ftRate_def_rank)}) — ${vsAvg(def.ftRate_def, D1.ftRate, false)}`);
-      const foulGame = off.ftRate_off > 36 && def.ftRate_def > 36;
-      L.push(`      → ${foulGame ? `FOUL TROUBLE: ${offTeam} attacks aggressively and ${defTeam} is foul-prone — bonus situations likely` : off.ftRate_off > 36 ? `${offTeam} lives at the line — could be a factor` : def.ftRate_def < 28 ? `${defTeam} is very disciplined — ${offTeam} won't get cheap points` : 'Standard free throw expectations'}`);
+      const offR = off.ftRate_off_rank;
+      const defR = def.ftRate_def_rank;
+      L.push(`    ${offTeam} draws: ${off.ftRate_off} FTA/FGA (#${offR}, ${tier(offR)}) — ${vsAvg(off.ftRate_off, D1.ftRate, true)}`);
+      L.push(`    ${defTeam} allows: ${def.ftRate_def} FTA/FGA (#${defR}, ${tier(defR)}) — ${vsAvg(def.ftRate_def, D1.ftRate, false)}`);
+      const v = matchupVerdict(offR, defR);
+      let extra = '';
+      if (offR <= 50 && defR > 250) extra = ` ${offTeam} draws fouls at an elite rate (#${offR}) and ${defTeam} is foul-prone (#${defR}) — bonus situations likely.`;
+      else if (offR > 250 && defR <= 50) extra = ` ${defTeam} is extremely disciplined (#${defR}) — ${offTeam} won't get cheap points at the line.`;
+      L.push(`      → ${v.label}: ${v.detail}${extra}`);
       L.push('');
     }
 
@@ -319,25 +353,33 @@ async function generateMatchups() {
         L.push(`      ${shotZoneNarrative(offPbp.far2_off_fg, defPbp.far2_def_fg, 'far2', offTeam, defTeam, rk(offName, 'far2_off_fg'), rk(defName, 'far2_def_fg'))}`);
         L.push('');
 
-        // Vulnerability spotlight
-        const defWeakest = [
-          { zone: 'close 2', fg: defPbp.close2_def_fg, avg: D1.close2, diff: defPbp.close2_def_fg - D1.close2 },
-          { zone: '3PT', fg: defPbp.three_def_fg, avg: D1.three, diff: defPbp.three_def_fg - D1.three },
-          { zone: 'mid-range', fg: defPbp.far2_def_fg, avg: D1.far2, diff: defPbp.far2_def_fg - D1.far2 },
-        ].sort((a, b) => b.diff - a.diff);
+        // Vulnerability spotlight — RANK-DRIVEN, not raw avg gaps
+        const defZoneRanks = [
+          { zone: 'close 2', fg: defPbp.close2_def_fg, rank: pbpRanks[defName]?.close2_def_fg || 999, offFg: offPbp.close2_off_fg, offRank: pbpRanks[offName]?.close2_off_fg || 999 },
+          { zone: '3PT', fg: defPbp.three_def_fg, rank: pbpRanks[defName]?.three_def_fg || 999, offFg: offPbp.three_off_fg, offRank: pbpRanks[offName]?.three_off_fg || 999 },
+          { zone: 'mid-range', fg: defPbp.far2_def_fg, rank: pbpRanks[defName]?.far2_def_fg || 999, offFg: offPbp.far2_off_fg, offRank: pbpRanks[offName]?.far2_off_fg || 999 },
+        ].sort((a, b) => b.rank - a.rank); // worst defensive rank first
 
-        if (defWeakest[0].diff > 1) {
-          L.push(`    🎯 VULNERABILITY: ${defTeam}'s biggest defensive weakness is ${defWeakest[0].zone} (allows ${defWeakest[0].fg}%, +${defWeakest[0].diff.toFixed(1)}% above D1 avg).`);
-          const offShootsWell = defWeakest[0].zone === 'close 2' ? offPbp.close2_off_fg > D1.close2
-            : defWeakest[0].zone === '3PT' ? offPbp.three_off_fg > D1.three
-            : offPbp.far2_off_fg > D1.far2;
-          if (offShootsWell) {
-            L.push(`    → ${offTeam} CAN exploit this — they shoot above D1 avg in this zone.`);
+        const weakest = defZoneRanks[0];
+        const strongest = defZoneRanks[defZoneRanks.length - 1];
+
+        if (weakest.rank > 200) {
+          L.push(`    🎯 VULNERABILITY: ${defTeam}'s worst defensive zone is ${weakest.zone} — ranked #${weakest.rank} in D1 (allows ${weakest.fg}%).`);
+          if (weakest.offRank <= 100) {
+            L.push(`    → ${offTeam} CAN exploit this — they're ranked #${weakest.offRank} offensively in this zone (${weakest.offFg}%). This is a real mismatch.`);
+          } else if (weakest.offRank <= 200) {
+            L.push(`    → ${offTeam} is average here (#${weakest.offRank}, ${weakest.offFg}%) — they might benefit from the weak defense but it's not a true mismatch.`);
           } else {
-            L.push(`    → ${offTeam} may NOT exploit this — they shoot below D1 avg here despite the defensive weakness.`);
+            L.push(`    → ${offTeam} is also poor here (#${weakest.offRank}, ${weakest.offFg}%) — the defensive weakness exists but ${offTeam} can't exploit it.`);
           }
+        } else if (weakest.rank > 150) {
+          L.push(`    ⚠️ SOFT SPOT: ${defTeam}'s least effective zone is ${weakest.zone} (#${weakest.rank}, allows ${weakest.fg}%) — below average but not terrible.`);
         } else {
-          L.push(`    ✅ ${defTeam} has no major shot-zone vulnerabilities (all zones at or below D1 avg allowed).`);
+          L.push(`    ✅ ${defTeam} is solid across all zones — weakest is ${weakest.zone} at #${weakest.rank}. No clear vulnerabilities.`);
+        }
+
+        if (strongest.rank <= 50) {
+          L.push(`    🛡️ STRENGTH: ${defTeam} is elite at defending ${strongest.zone} — ranked #${strongest.rank} (allows ${strongest.fg}%). ${offTeam} should avoid this zone.`);
         }
         L.push('');
       }
@@ -422,29 +464,42 @@ async function generateMatchups() {
       L.push(`  KEY SHOT MATCHUP EDGES:`);
       
       const zones = [
-        { name: 'Close 2', offFg: pickP.close2_off_fg, defFg: oppP.close2_def_fg, share: pickP.close2_off_share, avg: D1.close2 },
-        { name: '3PT', offFg: pickP.three_off_fg, defFg: oppP.three_def_fg, share: pickP.three_off_share, avg: D1.three },
-        { name: 'Mid', offFg: pickP.far2_off_fg, defFg: oppP.far2_def_fg, share: pickP.far2_off_share, avg: D1.far2 },
+        { name: 'Close 2', offFg: pickP.close2_off_fg, defFg: oppP.close2_def_fg, share: pickP.close2_off_share,
+          offRank: pbpRanks[pickName]?.close2_off_fg || 999, defRank: pbpRanks[oppName]?.close2_def_fg || 999 },
+        { name: '3PT', offFg: pickP.three_off_fg, defFg: oppP.three_def_fg, share: pickP.three_off_share,
+          offRank: pbpRanks[pickName]?.three_off_fg || 999, defRank: pbpRanks[oppName]?.three_def_fg || 999 },
+        { name: 'Mid', offFg: pickP.far2_off_fg, defFg: oppP.far2_def_fg, share: pickP.far2_off_share,
+          offRank: pbpRanks[pickName]?.far2_off_fg || 999, defRank: pbpRanks[oppName]?.far2_def_fg || 999 },
       ];
       
       for (const z of zones) {
-        const edge = z.offFg - z.defFg;
-        const offVsAvg = z.offFg - z.avg;
-        if (Math.abs(edge) > 2 && z.share > 15) {
-          L.push(`    ${edge > 0 ? '✓' : '✗'} ${z.name}: ${pick} shoots ${z.offFg}% (${offVsAvg > 0 ? 'above' : 'below'} D1 avg), ${opp} allows ${z.defFg}% → ${edge > 0 ? '+' : ''}${edge.toFixed(1)} edge (${z.share}% of ${pick}'s shots)`);
+        if (z.share < 10) continue;
+        const v = matchupVerdict(z.offRank, z.defRank);
+        const favorable = z.offRank < z.defRank;
+        const significant = Math.abs(z.offRank - z.defRank) > 50;
+        if (significant || z.offRank <= 75 || z.defRank > 200) {
+          L.push(`    ${favorable ? '✓' : '✗'} ${z.name}: ${pick} #${z.offRank} offense (${z.offFg}%) vs ${opp} #${z.defRank} defense (allows ${z.defFg}%) — ${v.label} (${z.share}% of shots)`);
         }
       }
       
-      // Opponent's biggest vulnerability our pick can exploit
-      const oppVulnerabilities = [
-        { zone: 'close 2', fg: oppP.close2_def_fg, avg: D1.close2, pickFg: pickP.close2_off_fg },
-        { zone: '3PT', fg: oppP.three_def_fg, avg: D1.three, pickFg: pickP.three_off_fg },
-        { zone: 'mid', fg: oppP.far2_def_fg, avg: D1.far2, pickFg: pickP.far2_off_fg },
-      ].filter(v => v.fg - v.avg > 1.5).sort((a, b) => (b.fg - b.avg) - (a.fg - a.avg));
+      // Opponent's biggest vulnerability — by rank, not raw averages
+      const oppWeakZones = [
+        { zone: 'close 2', defRank: pbpRanks[oppName]?.close2_def_fg || 999, fg: oppP.close2_def_fg,
+          pickOffRank: pbpRanks[pickName]?.close2_off_fg || 999, pickFg: pickP.close2_off_fg },
+        { zone: '3PT', defRank: pbpRanks[oppName]?.three_def_fg || 999, fg: oppP.three_def_fg,
+          pickOffRank: pbpRanks[pickName]?.three_off_fg || 999, pickFg: pickP.three_off_fg },
+        { zone: 'mid', defRank: pbpRanks[oppName]?.far2_def_fg || 999, fg: oppP.far2_def_fg,
+          pickOffRank: pbpRanks[pickName]?.far2_off_fg || 999, pickFg: pickP.far2_off_fg },
+      ].sort((a, b) => b.defRank - a.defRank);
       
-      if (oppVulnerabilities.length > 0) {
-        const v = oppVulnerabilities[0];
-        L.push(`    🎯 ${opp}'s weakest zone: ${v.zone} (allows ${v.fg}%, +${(v.fg - v.avg).toFixed(1)} above D1 avg). ${pick} shoots ${v.pickFg}% here.`);
+      if (oppWeakZones[0].defRank > 200) {
+        const v = oppWeakZones[0];
+        L.push(`    🎯 ${opp}'s weakest zone: ${v.zone} (#${v.defRank} defense, allows ${v.fg}%).`);
+        if (v.pickOffRank <= 100) {
+          L.push(`       ${pick} is #${v.pickOffRank} in this zone (${v.pickFg}%) — EXPLOITABLE MISMATCH`);
+        } else {
+          L.push(`       ${pick} is #${v.pickOffRank} here (${v.pickFg}%) — weak defense exists but ${pick} may not capitalize`);
+        }
       }
       L.push('');
     }
