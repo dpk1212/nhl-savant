@@ -25,90 +25,6 @@ NHL
 
 # NHL Betting Odds
 
-![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)
-
-LA
-
-MON 03/094:00 PM
-
-CBJ
-
-![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)
-
-[![team](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=60x60)\\
-\\
-CBJMoney\\
-\\
--111\\
-\\
-![buttonBook](https://i.virginia.us-east-1.oddstrader.com/logos-sportsbooks/bgc/bet105.webp)\\
-\\
-PROBABILITY\\
-\\
-66%\\
-\\
-EXPECTED VALUE\\
-\\
-+13.3%\\
-\\
-RECORD\\
-\\
-29/56\\
-\\
-52%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771259546900&eid=4771756&g=game&m=money)
-
-Analysis [Bet105 REVIEW](https://www.oddstrader.com/sportsbooks/bet105/)
-
-Kings vs Blue Jackets shows a 66% coverage probability. Bet on Columbus at -111 now with Bet105 and claim your $50 Free Bet with $100 deposit.
-
-$50 Free Betwith $100 deposit
-
-[![Bet105 logo](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/logo-h-black-color.png)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
-
-[CLAIM](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
-
-![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)
-
-LA
-
-MON 03/094:00 PM
-
-CBJ
-
-![](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=100x100)
-
-[![team](https://logos.oddstrader.com/logos-original/1690b138-a2a2-4ea9-9d8b-284c29f6370f-original.PNG?d=60x60)\\
-\\
-CBJPuck Line\\
-\\
--1½(+221)\\
-\\
-![buttonBook](https://i.virginia.us-east-1.oddstrader.com/logos-sportsbooks/bgc/bet105.webp)\\
-\\
-PROBABILITY\\
-\\
-47%\\
-\\
-EXPECTED VALUE\\
-\\
-+15.9%\\
-\\
-RECORD\\
-\\
-33/56\\
-\\
-59%](https://www.oddstrader.com/nhl/event/columbus-blue-jackets-vs-los-angeles-kings/prediction/?_=1771259546900&eid=4771756&g=game&m=money)
-
-Analysis [Bet105 REVIEW](https://www.oddstrader.com/sportsbooks/bet105/)
-
-Bet105 offers a 47% coverage probability on Kings vs Blue Jackets with -1.5 for Columbus. Claim your $50 Free Bet with $100 deposit today!
-
-$50 Free Betwith $100 deposit
-
-[![Bet105 logo](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/logo-h-black-color.png)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
-
-[CLAIM](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a08c5b037e3308546bf)
-
 Money
 
 - Puck Line
@@ -253,6 +169,8 @@ It depends on the matchup. If the favorite is strong but overpriced, puck line b
 Look for short answers to common questions like how the puck line works or how to track movement across sportsbooks.
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
+
+What are the top NHL predictions for today?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
