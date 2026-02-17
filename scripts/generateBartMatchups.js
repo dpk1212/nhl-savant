@@ -211,7 +211,7 @@ async function generateMatchups() {
 
     const stars = bet.prediction?.stars || Math.round(bet.unitSize || 1);
     const units = bet.unitSize || stars;
-    const pick = bet.prediction?.team || bet.team || home;
+    const pick = bet.prediction?.bestTeam || bet.pick || bet.team || home;
     const opp = pick === home ? away : home;
     const pickIsHome = pick === home;
     const betType = bet.betType || 'ML';
