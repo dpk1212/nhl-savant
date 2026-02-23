@@ -117,8 +117,8 @@ NCAAB Mon 02/23
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6639454-9399-498c-b15c-a0b020fb3a85-original.PNG?d=100x100)<br>#21Louisville<br>20-7<br>-<br>-142BetOnline | -145 | -142 | -145 | -145 | -149 | - | - |
-| ![](https://logos.oddstrader.com/logos-original/b96bf048-54c8-47ef-9626-1e6c8b794494-original.PNG?d=100x100)<br>#16North Carolina<br>21-6<br>-<br>+125BetAnything | +125 | +122 | +125 | +125 | +121 | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6639454-9399-498c-b15c-a0b020fb3a85-original.PNG?d=100x100)<br>#21Louisville<br>20-7<br>-<br>-138Bet105 | -145 | -147 | -145 | -145 | -149 | - | - |
+| ![](https://logos.oddstrader.com/logos-original/b96bf048-54c8-47ef-9626-1e6c8b794494-original.PNG?d=100x100)<br>#16North Carolina<br>21-6<br>-<br>+127BetOnline | +125 | +127 | +125 | +125 | +121 | - | - |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/b1a76f5f-5897-4414-a295-6949e1d5a82a-original.png?d=100x100)<br>Texas A&M-CC<br>14-14<br>-<br>-150Bovada | - | - | - | -150 | -156 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/8e142f18-1a75-4f6a-857f-50f6451e13f9-original.png?d=100x100)<br>Southeastern Louisiana<br>8-20<br>-<br>+130Bovada | - | - | - | +130 | +128 | - | - |
@@ -141,7 +141,7 @@ NCAAB Mon 02/23
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/238:00 PM<br>![](https://logos.oddstrader.com/logos-original/1831d3bc-7afc-421a-b931-897a509e0738-original.png?d=100x100)<br>Mississippi Valley State<br>2-26<br>-<br>+1300Everygame | - | - | - | +1200 | +1283 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/e8f38263-b710-4588-a66b-62afd38af4ec-original.png?d=100x100)<br>Grambling State<br>11-15<br>-<br>-2857Everygame | - | - | - | -4000 | -3968 | - | - |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/239:00 PM<br>![](https://logos.oddstrader.com/logos-original/d358c871-58ef-45dd-98b7-401a7fde3d2f-original.PNG?d=100x100)<br>#2Houston<br>23-4<br>-<br>-150BetOnline | -150 | -150 | -150 | -150 | -154 | - | - |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/239:00 PM<br>![](https://logos.oddstrader.com/logos-original/d358c871-58ef-45dd-98b7-401a7fde3d2f-original.PNG?d=100x100)<br>#2Houston<br>23-4<br>-<br>-149Bet105 | -150 | -150 | -150 | -150 | -154 | - | - |
 | ![](https://logos.oddstrader.com/logos-original/773de14c-3caf-4553-90ab-9abbf190e355-original.png?d=100x100)<br>#8Kansas<br>20-7<br>-<br>+130BetOnline | +130 | +130 | +130 | +130 | +126 | - | - |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 02/256:00 PM<br>![](https://logos.oddstrader.com/logos-original/73966c6a-a613-439d-bdd2-560b1529d6b6-original.png?d=100x100)<br>Morgan State<br>11-14<br>-<br>-104Bet105 | - | - | - | -105 | - | - | - |
@@ -184,7 +184,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-What are the top NCAAB predictions for today?Generate
+Will North Carolina cover at home vs Louisville?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
