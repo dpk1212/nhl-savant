@@ -36,7 +36,7 @@ RECORD\\
 \\
 22/28\\
 \\
-79%](https://www.oddstrader.com/ncaa-college-basketball/event/new-orleans-privateers-vs-stephen-f-austin-lumberjacks/prediction/?_=1771873799694&eid=4777565&g=game&m=spread)
+79%](https://www.oddstrader.com/ncaa-college-basketball/event/new-orleans-privateers-vs-stephen-f-austin-lumberjacks/prediction/?_=1771873894488&eid=4777565&g=game&m=spread)
 
 Analysis [BetAnything REVIEW](https://www.oddstrader.com/sportsbooks/betanything/)
 
@@ -78,7 +78,7 @@ RECORD\\
 \\
 14/28\\
 \\
-50%](https://www.oddstrader.com/ncaa-college-basketball/event/lamar-cardinals-vs-nicholls-state-colonels/prediction/?_=1771873799694&eid=4777551&g=game&m=spread)
+50%](https://www.oddstrader.com/ncaa-college-basketball/event/lamar-cardinals-vs-nicholls-state-colonels/prediction/?_=1771873894488&eid=4777551&g=game&m=spread)
 
 Analysis [Bovada REVIEW](https://www.oddstrader.com/sportsbooks/bovada/)
 
@@ -271,7 +271,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-How has North Carolina done ATS at home lately?Generate
+Does North Carolina win outright vs Louisville?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
