@@ -36,7 +36,7 @@ RECORD\\
 \\
 14/28\\
 \\
-50%](https://www.oddstrader.com/ncaa-college-basketball/event/lamar-cardinals-vs-nicholls-state-colonels/prediction/?_=1771863847562&eid=4777551&g=game&m=spread)
+50%](https://www.oddstrader.com/ncaa-college-basketball/event/lamar-cardinals-vs-nicholls-state-colonels/prediction/?_=1771864087618&eid=4777551&g=game&m=spread)
 
 Analysis [BetOnline REVIEW](https://www.oddstrader.com/sportsbooks/betonline/)
 
@@ -162,8 +162,8 @@ NCAAB Mon 02/23
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6639454-9399-498c-b15c-a0b020fb3a85-original.PNG?d=100x100)<br>#21Louisville<br>20-7<br>65%<br>-2½ -108Heritage | -2½ -110 | -2½ -113 | -2½ -115 | -3 -110 | -2½ -108 | -2½ -115 | -2½ -115 |
 | ![](https://logos.oddstrader.com/logos-original/b96bf048-54c8-47ef-9626-1e6c8b794494-original.PNG?d=100x100)<br>#16North Carolina<br>21-6<br>35%<br>+3 -107Bet105 | +2½ -110 | +2½ -107 | +2½ -105 | +3 -110 | +2½ -108 | +2½ -105 | +2½ -105 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/b1a76f5f-5897-4414-a295-6949e1d5a82a-original.png?d=100x100)<br>Texas A&M-CC<br>14-14<br>0%<br>-2 -108Heritage | -2 -110 | -2 -110 | -2 -110 | -2 -120 | -2 -108 | -2 -111 | -2 -110 |
-| ![](https://logos.oddstrader.com/logos-original/8e142f18-1a75-4f6a-857f-50f6451e13f9-original.png?d=100x100)<br>Southeastern Louisiana<br>8-20<br>100%<br>+2½ -116Bet105 | +2 -110 | +2 -110 | +2 -110 | +2 +100 | +2 -108 | +2 -109 | +2 -110 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/b1a76f5f-5897-4414-a295-6949e1d5a82a-original.png?d=100x100)<br>Texas A&M-CC<br>14-14<br>0%<br>-2 -108Heritage | -2 -110 | -2 -110 | -2 -110 | -2 -120 | -2 -108 | -2 -111 | -2 -111 |
+| ![](https://logos.oddstrader.com/logos-original/8e142f18-1a75-4f6a-857f-50f6451e13f9-original.png?d=100x100)<br>Southeastern Louisiana<br>8-20<br>100%<br>+2½ -116Bet105 | +2 -110 | +2 -110 | +2 -110 | +2 +100 | +2 -108 | +2 -109 | +2 -109 |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/9ee54ccf-39a3-4356-a091-483d57299c72-original.png?d=100x100)<br>Nicholls State<br>11-17<br>100%<br>+2½ -110BetAnything | +4½ -110 | +1½ -105 | +2½ -110 | +2½ -110 | +2 -108 | +2 -110 | +2 -110 |
 | ![](https://logos.oddstrader.com/logos-original/8c6a2f24-8633-4f2d-968c-be808424ce3f-original.png?d=100x100)<br>Lamar<br>12-16<br>0%<br>-1½ -115BetOnline | -4½ -110 | -1½ -115 | -2½ -110 | -2½ -110 | -2 -108 | -2 -110 | -2 -110 |
@@ -226,7 +226,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-Why is Kansas the underdog vs Houston?Generate
+What are the best available NCAAB odds?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
