@@ -31,13 +31,12 @@ export default function DailySpinModal({
     }
   };
 
-  const handleUpgrade = (tier = 'elite') => {
+  const handleUpgrade = async (tier = 'elite') => {
     logEvent('daily_spin_checkout_click', { tier, spins_remaining: spinsRemaining });
     
     if (user) {
-      redirectToCheckout(tier, user);
+      await redirectToCheckout(tier, user);
     } else {
-      // Close modal and let them sign in first
       onClose();
     }
   };

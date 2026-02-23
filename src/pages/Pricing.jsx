@@ -137,18 +137,16 @@ const Pricing = () => {
     return `$${discounted.toFixed(2)}`;
   };
 
-  const handleSelectPlan = (tier) => {
+  const handleSelectPlan = async (tier) => {
     logEvent('pricing_page_click', { tier });
     
     if (!user) {
-      // User needs to sign in first
       setSelectedTier(tier);
       setAuthModalOpen(true);
       return;
     }
 
-    // Redirect to Stripe checkout
-    redirectToCheckout(tier, user);
+    await redirectToCheckout(tier, user);
   };
 
   // All tiers get the same features - only commitment level differs

@@ -15,16 +15,10 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
     try {
       const result = await signInWithGoogle();
       if (result) {
-        // User signed in successfully!
-        // If they were trying to subscribe, redirect to Stripe immediately
         if (tier) {
-          console.log('🎯 User signed in, redirecting to Stripe checkout for tier:', tier);
-          // Small delay to ensure Firebase user document is created
-          setTimeout(() => {
-            redirectToCheckout(tier, result);
-          }, 500);
+          console.log('User signed in, creating checkout session for tier:', tier);
+          await redirectToCheckout(tier, result);
         } else {
-          // Just close the modal
           setTimeout(() => {
             onClose();
             setIsSigningIn(false);

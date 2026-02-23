@@ -46,34 +46,34 @@ exports.createPortalSession = functions.https.onCall(async (data, context) => {
 
     console.log(`Creating portal session for user: ${userId}, email: ${userEmail}`);
 
-    // Step 1: Find Stripe customer by email
-    const customers = await stripe.customers.list({
-      email: userEmail,
-      limit: 1
-    });
+    const db = admin.firestore();
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    let customerId = userDoc.exists ? userDoc.data().stripeCustomerId : null;
 
-    let customerId;
-
-    if (customers.data.length === 0) {
-      // No customer exists - create one
-      console.log('No customer found, creating new customer');
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: {
-          firebaseUID: userId
-        }
-      });
-      customerId = customer.id;
-
-      // Save customer ID to Firestore
-      await admin.firestore().collection('users').doc(userId).set({
-        stripeCustomerId: customerId,
-        email: userEmail
-      }, { merge: true });
-    } else {
-      customerId = customers.data[0].id;
-      console.log(`Found existing customer: ${customerId}`);
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if (existing.deleted) customerId = null;
+      } catch {
+        customerId = null;
+      }
     }
+
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        await userRef.set({ stripeCustomerId: customerId }, { merge: true });
+      } else {
+        throw new functions.https.HttpsError(
+          'not-found',
+          'No billing account found. Please subscribe first from the Pricing page.'
+        );
+      }
+    }
+
+    console.log(`Using customer: ${customerId}`);
 
     // Step 2: Create portal session
     const session = await stripe.billingPortal.sessions.create({
