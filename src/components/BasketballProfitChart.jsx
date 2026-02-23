@@ -53,8 +53,7 @@ const BasketballProfitChart = ({ bets, timeFilter = 'all', showSavantLine = fals
       const profit = bet.result?.profit || 0;
       const grade = bet.prediction?.grade || 'B';
       const isSavant = bet.savantPick === true;
-      // Prime = EV bet with spread boost ONLY (not spread-only bets)
-      const isPrime = bet.prediction?.spreadBoost > 0;
+      const isPrime = bet.prediction?.spreadBoost > 0 || bet.isPrimePick || bet.isATSPick;
       
       // Update cumulative profits
       cumulativeAll += profit;
