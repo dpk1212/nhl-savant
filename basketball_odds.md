@@ -36,7 +36,7 @@ RECORD\\
 \\
 22/28\\
 \\
-79%](https://www.oddstrader.com/ncaa-college-basketball/event/new-orleans-privateers-vs-stephen-f-austin-lumberjacks/prediction/?_=1771873799694&eid=4777565&g=game&m=money)
+79%](https://www.oddstrader.com/ncaa-college-basketball/event/new-orleans-privateers-vs-stephen-f-austin-lumberjacks/prediction/?_=1771873894488&eid=4777565&g=game&m=money)
 
 Analysis [BetAnything REVIEW](https://www.oddstrader.com/sportsbooks/betanything/)
 
@@ -78,7 +78,7 @@ RECORD\\
 \\
 14/28\\
 \\
-50%](https://www.oddstrader.com/ncaa-college-basketball/event/lamar-cardinals-vs-nicholls-state-colonels/prediction/?_=1771873799694&eid=4777551&g=game&m=money)
+50%](https://www.oddstrader.com/ncaa-college-basketball/event/lamar-cardinals-vs-nicholls-state-colonels/prediction/?_=1771873894488&eid=4777551&g=game&m=money)
 
 Analysis [Bovada REVIEW](https://www.oddstrader.com/sportsbooks/bovada/)
 
@@ -202,7 +202,7 @@ NCAAB Mon 02/23
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/c6639454-9399-498c-b15c-a0b020fb3a85-original.PNG?d=100x100)<br>#21Louisville<br>20-7<br>38%<br>-160BetOnline | -145 | -160 | -165 | -170 | -163 | -166 | -166 |
-| ![](https://logos.oddstrader.com/logos-original/b96bf048-54c8-47ef-9626-1e6c8b794494-original.PNG?d=100x100)<br>#16North Carolina<br>21-6<br>62%<br>+145BetAnything | +125 | +140 | +145 | +145 | +133 | +144 | +144 |
+| ![](https://logos.oddstrader.com/logos-original/b96bf048-54c8-47ef-9626-1e6c8b794494-original.PNG?d=100x100)<br>#16North Carolina<br>21-6<br>62%<br>+150Bovada | +125 | +140 | +145 | +145 | +133 | +144 | +144 |
 
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 02/237:00 PM<br>![](https://logos.oddstrader.com/logos-original/b1a76f5f-5897-4414-a295-6949e1d5a82a-original.png?d=100x100)<br>Texas A&M-CC<br>14-14<br>-<br>-135BetOnline | -135 | -135 | - | -135 | -140 | -157 | -157 |
 | ![](https://logos.oddstrader.com/logos-original/8e142f18-1a75-4f6a-857f-50f6451e13f9-original.png?d=100x100)<br>Southeastern Louisiana<br>8-20<br>-<br>+136Bookmaker | +115 | +115 | - | +115 | +116 | +136 | +136 |
@@ -271,7 +271,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-How has Houston done ATS in recent games?Generate
+Does North Carolina win outright vs Louisville?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 

@@ -36,23 +36,23 @@ Close
 
 # NCAA Basketball Predictions
 
-Updated 4 sec ago
+Updated 52 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#scroll-related)
 
 ## Upcoming Games for February 23, 2026
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [02/23/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/4491f26f-8d49-5963-97f2-2e108e5268d6) | [Louisville Cardinals](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3003-louisville-cardinals)(20-7)<br>[UNC Tar Heels](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3037-unc-tar-heels)(21-6) | 59.5%<br>40.5% | -160<br>+145<br>-155<br>+150 | -3-110<br>+3½-110<br>-3-109<br>+3-109 | 83.5<br>80.1 | 163.6 | o162-110<br>u162-105<br>o162-110<br>u162½-110 | Volatility Bet Value Active |  |
+| [02/23/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/4491f26f-8d49-5963-97f2-2e108e5268d6) | [Louisville Cardinals](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3003-louisville-cardinals)(20-7)<br>[UNC Tar Heels](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3037-unc-tar-heels)(21-6) | 59.5%<br>40.5% | -160<br>+150<br>-155<br>+150 | -3-110<br>+3-104<br>-3-109<br>+3-109 | 83.5<br>80.1 | 163.6 | o162-110<br>u162-105<br>o162-110<br>u162½-110 | Volatility Bet Value Active |  |
 | [02/23/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/16d82f71-3ccf-530f-9ada-5936cdc66533) | [Texas A&M CC Islanders](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3326-texas-a-m-cc-islanders)(14-14)<br>[Southeastern Louisiana Lions](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3328-southeastern-louisiana-lions)(8-20) | 60.8%<br>39.2% | -135<br>+115<br>-120<br>+115 | -2-105<br>+2-105<br>-1-110<br>+2-109 | 68.2<br>64.5 | 132.7 | o129½-117<br>u130½-110<br>o130-110<br>u131-110 |  |  |
 | [02/23/2026\<br>\<br>07:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/e54e76a4-1e1c-5e8d-a3c5-5012fb71d953) | [Nicholls State Colonels](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3316-nicholls-state-colonels)(11-17)<br>[Lamar Cardinals](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3311-lamar-cardinals)(12-16) | 35.4%<br>64.6% | +131<br>-140<br>+140<br>-135 | +2½-105<br>-2½-105<br>+3½-110<br>-2-110 | 69.2<br>74.0 | 143.2 | o144-110<br>u145½-115<br>o145-110<br>u145½-110 | Volatility Bet Value Active |  |
 | [02/23/2026\<br>\<br>07:30 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/7c4a5570-0cf4-5a11-a696-f450c4a9c821) | [Incarnate Word Cardinals](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3350-incarnate-word-cardinals)(11-17)<br>[Northwestern State Demons](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3155-northwestern-state-demons)(9-19) | 44.6%<br>55.4% | +165<br>-183<br>+160<br>-155 | +4-105<br>-4-110<br>+4-109<br>-3-110 | 68.5<br>70.7 | 139.2 | o139½-110<br>u140-110<br>o139-110<br>u139½-110 | Volatility Bet Value Active |  |
@@ -68,7 +68,7 @@ Games for Feb 22, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -95,7 +95,7 @@ Games for Feb 22, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873799694#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1771873894488#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
