@@ -876,6 +876,102 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
 }
 
 /**
+ * Save a game evaluation to Firebase for EVERY matched game.
+ * Stores raw model outputs so checkLineMovement can re-evaluate
+ * against new lines throughout the day without re-running models.
+ */
+async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalculator) {
+  const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z]/g, '') || '';
+  const date = new Date().toISOString().split('T')[0];
+  const awayNorm = game.awayTeam.replace(/\s+/g, '_').toUpperCase();
+  const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
+  const evalId = `${date}_${awayNorm}_${homeNorm}`;
+
+  const dr = game.dratings;
+  const hs = game.haslametrics;
+  if (!dr || !hs) return;
+
+  const drRawMargin = dr.awayScore - dr.homeScore;
+  const hsRawMargin = hs.awayScore - hs.homeScore;
+  const blendedMargin = (drRawMargin * 0.90) + (hsRawMargin * 0.10);
+  const drTotal = dr.awayScore + dr.homeScore;
+  const hsTotal = hs.awayScore + hs.homeScore;
+  const blendedTotal = (drTotal * 0.90) + (hsTotal * 0.10);
+
+  const spreadGame = spreadGames.find(sg => {
+    const awayMatch = normalizeTeam(game.awayTeam).includes(normalizeTeam(sg.awayTeam)) ||
+                      normalizeTeam(sg.awayTeam).includes(normalizeTeam(game.awayTeam));
+    const homeMatch = normalizeTeam(game.homeTeam).includes(normalizeTeam(sg.homeTeam)) ||
+                      normalizeTeam(sg.homeTeam).includes(normalizeTeam(game.homeTeam));
+    return awayMatch && homeMatch;
+  });
+
+  const totalsGame = totalsGames.find(tg => {
+    const awayMatch = normalizeTeam(game.awayTeam).includes(normalizeTeam(tg.awayTeam)) ||
+                      normalizeTeam(tg.awayTeam).includes(normalizeTeam(game.awayTeam));
+    const homeMatch = normalizeTeam(game.homeTeam).includes(normalizeTeam(tg.homeTeam)) ||
+                      normalizeTeam(tg.homeTeam).includes(normalizeTeam(game.homeTeam));
+    return awayMatch && homeMatch;
+  });
+
+  let prediction = null;
+  try {
+    const pred = edgeCalculator.calculateEnsemblePrediction(game);
+    if (pred && !pred.error) prediction = pred;
+  } catch (e) { /* skip prediction if calculator errors */ }
+
+  const evalData = {
+    id: evalId,
+    date,
+    game: {
+      awayTeam: game.awayTeam,
+      homeTeam: game.homeTeam,
+      gameTime: game.odds?.gameTime || 'TBD',
+    },
+    modelData: {
+      dratingsAwayScore: Math.round(dr.awayScore * 10) / 10,
+      dratingsHomeScore: Math.round(dr.homeScore * 10) / 10,
+      haslametricsAwayScore: Math.round(hs.awayScore * 10) / 10,
+      haslametricsHomeScore: Math.round(hs.homeScore * 10) / 10,
+      drRawMargin: Math.round(drRawMargin * 10) / 10,
+      hsRawMargin: Math.round(hsRawMargin * 10) / 10,
+      blendedMargin: Math.round(blendedMargin * 10) / 10,
+      drTotal: Math.round(drTotal * 10) / 10,
+      hsTotal: Math.round(hsTotal * 10) / 10,
+      blendedTotal: Math.round(blendedTotal * 10) / 10,
+    },
+    openers: {
+      awaySpread: spreadGame?.awaySpread ?? null,
+      homeSpread: spreadGame?.homeSpread ?? null,
+      awayOpener: spreadGame?.awayOpener ?? null,
+      homeOpener: spreadGame?.homeOpener ?? null,
+      total: totalsGame?.total ?? null,
+      openerTotal: totalsGame?.openerTotal ?? null,
+    },
+    prediction: prediction ? {
+      ensembleAwayScore: prediction.ensembleAwayScore ?? null,
+      ensembleHomeScore: prediction.ensembleHomeScore ?? null,
+      ensembleAwayProb: prediction.ensembleAwayProb ?? null,
+      ensembleHomeProb: prediction.ensembleHomeProb ?? null,
+      dratingsAwayProb: prediction.dratingsAwayProb ?? null,
+      dratingsHomeProb: prediction.dratingsHomeProb ?? null,
+      haslametricsAwayProb: prediction.haslametricsAwayProb ?? null,
+      haslametricsHomeProb: prediction.haslametricsHomeProb ?? null,
+      marketAwayProb: prediction.marketAwayProb ?? null,
+      marketHomeProb: prediction.marketHomeProb ?? null,
+      bestEV: prediction.bestEV ?? null,
+      bestOdds: prediction.bestOdds ?? null,
+      grade: prediction.grade ?? null,
+    } : null,
+    barttorvik: game.barttorvik || null,
+    createdAt: Date.now(),
+    lastUpdatedAt: Date.now(),
+  };
+
+  await setDoc(doc(db, 'game_evaluations', evalId), evalData);
+}
+
+/**
  * Main execution
  */
 async function fetchPrimePicks() {
@@ -972,14 +1068,30 @@ async function fetchPrimePicks() {
     console.log(`   🎯 D-Ratings predictions: ${dratePreds.length}`);
     console.log(`   ✅ Matched games: ${matchedGames.length}\n`);
     
+    const edgeCalculator = new BasketballEdgeCalculator();
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 2.5: SAVE GAME EVALUATIONS (raw model data for line monitoring)
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│ STEP 2.5: SAVING GAME EVALUATIONS (model data for line monitoring)            │');
+    console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
+    
+    let evalsSaved = 0;
+    for (const game of matchedGames) {
+      if (!game.dratings || !game.haslametrics) continue;
+      await saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalculator);
+      evalsSaved++;
+    }
+    console.log(`   ✅ ${evalsSaved} game evaluations saved to Firebase\n`);
+    console.log(`   📡 Line monitor can now track all ${evalsSaved} games via Odds API\n`);
+    
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 3: EVALUATE ALL GAMES (MOS-Primary — both sides)
     // ═══════════════════════════════════════════════════════════════════════
     console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
     console.log('│ STEP 3: MOS-PRIMARY ANALYSIS (both sides of every game)                      │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
-    
-    const edgeCalculator = new BasketballEdgeCalculator();
     
     const picks = [];
     let noModelData = 0;
