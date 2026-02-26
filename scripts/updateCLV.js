@@ -1,9 +1,12 @@
 /**
  * CLV (Closing Line Value) Update Script
  * 
- * Supports both MONEYLINE and SPREAD bets:
- *   ML:  Compares original odds to current odds (implied prob shift)
- *   ATS: Compares original spread to current spread (points of value)
+ * Supports MONEYLINE, SPREAD, and TOTAL bets:
+ *   ML:     Compares original odds to current odds (implied prob shift)
+ *   ATS:    Compares original spread to current spread (points of value)
+ *   TOTAL:  Compares original total line to current total line
+ *           OVER:  CLV = currentTotal - originalTotal (line moved up = steam)
+ *           UNDER: CLV = originalTotal - currentTotal (line moved down = steam)
  * 
  * Positive CLV = Line moved in our favor = Good bet timing
  * Negative CLV = Line moved against us = Bought at wrong time
@@ -75,8 +78,81 @@ function calculateSpreadCLV(originalSpread, currentSpread) {
   return parseFloat(clv.toFixed(1));
 }
 
+/**
+ * Calculate CLV for TOTAL bets (points movement)
+ * 
+ * OVER:  Bet O 145, now 147 → 147 - 145 = +2 (steam — market moved toward over)
+ * UNDER: Bet U 145, now 143 → 145 - 143 = +2 (steam — market moved toward under)
+ */
+function calculateTotalsCLV(originalTotal, currentTotal, direction) {
+  const clv = direction === 'OVER'
+    ? currentTotal - originalTotal
+    : originalTotal - currentTotal;
+  return parseFloat(clv.toFixed(1));
+}
+
 function calculateCLV(originalOdds, currentOdds) {
   return calculateMLCLV(originalOdds, currentOdds);
+}
+
+/**
+ * Parse totals data from OddsTrader markdown
+ */
+function parseTotalsData(markdown) {
+  const games = [];
+  const lines = markdown.split('\n');
+
+  const today = new Date();
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const todayDay = days[today.getDay()];
+  const todayDate = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+  const todayDateAlt = `${today.getMonth() + 1}/${today.getDate()}`;
+
+  let currentGame = null;
+  let isToday = false;
+
+  for (const line of lines) {
+    const dateMatch = line.match(/(FRI|SAT|SUN|MON|TUE|WED|THU)\s+(\d{1,2}\/\d{1,2})/i);
+    if (dateMatch) {
+      const dayStr = dateMatch[1].toUpperCase();
+      const dateStr = dateMatch[2];
+      isToday = dayStr === todayDay && (dateStr === todayDate || dateStr === todayDateAlt);
+    }
+
+    if (line.includes('|') && line.includes('<br>')) {
+      const teamMatch = line.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>(\d{1,2}-\d{1,2})/);
+      if (!teamMatch) continue;
+
+      let teamName = teamMatch[1].trim().replace(/^#\d+/, '').trim();
+
+      let total = null;
+      const ouMatch = line.match(/[OU]\s+(\d{2,3}½?(?:\.\d)?)\s*-?\d{3}/);
+      if (ouMatch) {
+        total = parseFloat(ouMatch[1].replace('½', '.5'));
+      }
+      if (!total) {
+        const allNums = [...line.matchAll(/(\d{3}½?(?:\.\d)?)\s+-?\d{3}/g)];
+        for (const m of allNums) {
+          const num = parseFloat(m[1].replace('½', '.5'));
+          if (num >= 100 && num <= 250) { total = num; break; }
+        }
+      }
+
+      if (!currentGame) {
+        currentGame = { awayTeam: teamName, homeTeam: null, awayTotal: total, homeTotal: null, isToday };
+      } else if (!currentGame.homeTeam) {
+        currentGame.homeTeam = teamName;
+        currentGame.homeTotal = total;
+        const gameTotal = currentGame.awayTotal || currentGame.homeTotal;
+        if (currentGame.isToday && currentGame.awayTeam && currentGame.homeTeam && gameTotal) {
+          games.push({ awayTeam: currentGame.awayTeam, homeTeam: currentGame.homeTeam, total: gameTotal });
+        }
+        currentGame = null;
+      }
+    }
+  }
+
+  return games;
 }
 
 /**
@@ -202,11 +278,27 @@ async function updateCLV() {
     await fs.writeFile(join(__dirname, '../public/basketball_spreads_clv.md'), spreadResult.markdown, 'utf8');
     console.log('   ✅ Spread lines fetched\n');
     
-    // 2. Parse both
-    console.log('📋 Step 2: Parsing current odds and spreads...');
+    // 1c. Fetch current totals
+    console.log('📊 Step 1c: Fetching current totals lines...');
+    const totalsResult = await firecrawl.scrape(
+      `https://www.oddstrader.com/ncaa-college-basketball/?eid=0&g=game&m=total&_=${cacheBuster}`,
+      {
+        formats: ['markdown'],
+        onlyMainContent: true,
+        waitFor: 3000,
+        timeout: 300000,
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+      }
+    );
+    await fs.writeFile(join(__dirname, '../public/basketball_totals_clv.md'), totalsResult.markdown, 'utf8');
+    console.log('   ✅ Totals lines fetched\n');
+    
+    // 2. Parse all
+    console.log('📋 Step 2: Parsing current odds, spreads, and totals...');
     const currentGames = parseBasketballOdds(oddsResult.markdown);
     const currentSpreads = parseSpreadData(spreadResult.markdown);
-    console.log(`   ✅ Found ${currentGames.length} ML games, ${currentSpreads.length} spread games\n`);
+    const currentTotals = parseTotalsData(totalsResult.markdown);
+    console.log(`   ✅ Found ${currentGames.length} ML games, ${currentSpreads.length} spread games, ${currentTotals.length} totals games\n`);
     
     // 3. Get pending bets from Firebase
     console.log('🔥 Step 3: Fetching pending bets from Firebase...');
@@ -247,13 +339,55 @@ async function updateCLV() {
       const awayTeam = String(bet.game?.awayTeam || bet.awayTeam || '');
       const homeTeam = String(bet.game?.homeTeam || bet.homeTeam || '');
       
-      if (!betTeam || !awayTeam || !homeTeam) continue;
+      if (!awayTeam || !homeTeam) continue;
       
-      const isSpreadBet = bet.bet?.market === 'SPREAD' || bet.isATSPick;
+      const isTotalsBet = bet.bet?.market === 'TOTAL' || bet.isTotalsPick;
+      const isSpreadBet = !isTotalsBet && (bet.bet?.market === 'SPREAD' || bet.isATSPick);
       const betTeamStr = String(betTeam);
       const isAwayBet = nameMatch(betTeamStr, awayTeam);
       
-      if (isSpreadBet) {
+      if (isTotalsBet) {
+        // ── TOTALS CLV ──
+        const originalTotal = bet.totalsAnalysis?.marketTotal ?? bet.bet?.total ?? bet.betRecommendation?.totalLine;
+        const direction = bet.totalsAnalysis?.direction ?? bet.betRecommendation?.totalDirection ?? bet.bet?.pick;
+        if (originalTotal == null || !direction) continue;
+        
+        const matchedTotal = currentTotals.find(tg =>
+          nameMatch(awayTeam, tg.awayTeam) && nameMatch(homeTeam, tg.homeTeam)
+        );
+        if (!matchedTotal) continue;
+        
+        matchedCount++;
+        const currentTotal = matchedTotal.total;
+        if (currentTotal == null) continue;
+        
+        const clv = calculateTotalsCLV(originalTotal, currentTotal, direction);
+        const movement = getLineMovement(clv);
+        const tierInfo = getCLVTier(clv);
+        
+        const gameDisplay = `${awayTeam.substring(0, 15)} @ ${homeTeam.substring(0, 15)}`.padEnd(35);
+        const origDisp = `${direction === 'OVER' ? 'O' : 'U'} ${originalTotal}`;
+        const currDisp = String(currentTotal);
+        const clvDisp = (clv >= 0 ? '+' : '') + clv.toFixed(1) + ' pts';
+        
+        console.log(`│ ${gameDisplay} │ ${origDisp.padStart(8)} │ ${currDisp.padStart(8)} │ ${clvDisp.padStart(7)} │ ${tierInfo.emoji} ${movement.padEnd(7)} │ O/U`);
+        
+        const betRef = db.collection('basketball_bets').doc(bet.id);
+        batch.update(betRef, {
+          clv: {
+            value: clv,
+            originalTotal: originalTotal,
+            currentTotal: currentTotal,
+            direction: direction,
+            movement: movement,
+            tier: tierInfo.tier,
+            market: 'TOTAL',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          }
+        });
+        updatedCount++;
+        
+      } else if (isSpreadBet) {
         // ── SPREAD CLV ──
         const originalSpread = bet.spreadAnalysis?.spread ?? bet.bet?.spread ?? bet.betRecommendation?.atsSpread;
         if (originalSpread == null) continue;

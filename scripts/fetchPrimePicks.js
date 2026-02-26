@@ -1,22 +1,25 @@
 /**
- * PRIME PICKS V6 — MOS-Primary System
+ * PRIME PICKS V7 — MOS-Primary + Totals System
  *
- * MOS (Margin Over Spread) is the SOLE gate for pick selection.
- * EV is stored for display only — it plays no role in filtering or sizing.
+ * SPREADS (ATS):
+ *   MOS (Margin Over Spread) is the SOLE gate for ATS pick selection.
+ *   Both sides of every game are evaluated independently.
+ *   Both models must agree on the cover direction.
  *
- * Both sides of every game are evaluated independently, fixing the
- * underdog blind spot where the old modelsAgree requirement filtered
- * out profitable underdog covers.
+ * TOTALS (O/U):
+ *   MOT (Margin Over Total) uses the same logic for Over/Under picks.
+ *   Both models must agree on direction (both OVER or both UNDER).
+ *   Blended predicted total (90% DR / 10% HS) vs market total line.
  *
- * All picks are ATS (Against The Spread) at -110 odds.
+ * All picks are at -110 odds.
  *
- * UNIT SIZING (1-5 scale, based on MOS):
- *   MOS 4.0+   → 5u  MAXIMUM  (~80% cover historically)
- *   MOS 3.0-4  → 4u  ELITE    (~81% cover)
- *   MOS 2.5-3  → 3u  STRONG   (~65% cover — proven profitable zone)
- *   MOS 2.25-2.5 → 2u SOLID   (~55% cover est.)
- *   MOS 2.0-2.25 → 1u BASE    (~48% cover est., volume play)
- *   MOS < 2.0  → SKIP
+ * UNIT SIZING (1-5 scale, based on MOS/MOT):
+ *   4.0+     → 5u  MAXIMUM
+ *   3.0-4    → 4u  ELITE
+ *   2.5-3    → 3u  STRONG
+ *   2.25-2.5 → 2u  SOLID
+ *   2.0-2.25 → 1u  BASE
+ *   < 2.0    → SKIP
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -61,11 +64,11 @@ const MOS_FLOOR = 2.0;
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-console.log('║              PRIME PICKS V6 — MOS-Primary System                              ║');
+console.log('║              PRIME PICKS V7 — MOS-Primary + Totals                             ║');
 console.log('║                                                                               ║');
-console.log('║  GATE:  MOS >= 2.0 (sole qualifier — EV stored for display only)               ║');
+console.log('║  ATS:   MOS >= 2.0 • Both models cover • -110                                  ║');
+console.log('║  O/U:   MOT >= 2.0 • Both models agree direction • -110                        ║');
 console.log('║  UNITS: 5u(4+) | 4u(3-4) | 3u(2.5-3) | 2u(2.25-2.5) | 1u(2-2.25)             ║');
-console.log('║  TYPE:  All ATS at -110 — both sides evaluated independently                   ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
 
@@ -141,6 +144,87 @@ function parseSpreadData(markdown) {
         
         if (currentGame.isToday && currentGame.awayTeam && currentGame.homeTeam) {
           games.push(currentGame);
+        }
+        currentGame = null;
+      }
+    }
+  }
+  
+  return games;
+}
+
+/**
+ * Parse totals (O/U) data from OddsTrader markdown (m=total)
+ */
+function parseTotalsData(markdown) {
+  const games = [];
+  const lines = markdown.split('\n');
+  
+  const today = new Date();
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const todayDay = days[today.getDay()];
+  const todayDate = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+  const todayDateAlt = `${today.getMonth() + 1}/${today.getDate()}`;
+  
+  let currentGame = null;
+  let isToday = false;
+  
+  for (const line of lines) {
+    const dateMatch = line.match(/(FRI|SAT|SUN|MON|TUE|WED|THU)\s+(\d{1,2}\/\d{1,2})/i);
+    if (dateMatch) {
+      const dayStr = dateMatch[1].toUpperCase();
+      const dateStr = dateMatch[2];
+      isToday = dayStr === todayDay && (dateStr === todayDate || dateStr === todayDateAlt);
+    }
+    
+    if (line.includes('|') && line.includes('<br>')) {
+      const teamMatch = line.match(/\.(?:png|PNG)\?d=100x100\)<br>([^<]+)<br>(\d{1,2}-\d{1,2})/);
+      if (!teamMatch) continue;
+      
+      let teamName = teamMatch[1].trim();
+      teamName = teamName.replace(/^#\d+/, '').trim();
+      
+      let total = null;
+      
+      // Pattern: "O 145½ -110" or "U 145½ -110"
+      const ouMatch = line.match(/[OU]\s+(\d{2,3}½?(?:\.\d)?)\s*-?\d{3}/);
+      if (ouMatch) {
+        total = parseFloat(ouMatch[1].replace('½', '.5'));
+      }
+      
+      // Pattern: standalone number in CBB total range (100-250) with odds
+      if (!total) {
+        const allNums = [...line.matchAll(/(\d{3}½?(?:\.\d)?)\s+-?\d{3}/g)];
+        for (const m of allNums) {
+          const num = parseFloat(m[1].replace('½', '.5'));
+          if (num >= 100 && num <= 250) {
+            total = num;
+            break;
+          }
+        }
+      }
+      
+      if (!currentGame) {
+        currentGame = { 
+          awayTeam: teamName, 
+          homeTeam: null, 
+          awayTotal: total, 
+          homeTotal: null,
+          isToday: isToday
+        };
+      } else if (!currentGame.homeTeam) {
+        currentGame.homeTeam = teamName;
+        currentGame.homeTotal = total;
+        
+        const gameTotal = currentGame.awayTotal || currentGame.homeTotal;
+        
+        if (currentGame.isToday && currentGame.awayTeam && currentGame.homeTeam && gameTotal) {
+          games.push({
+            awayTeam: currentGame.awayTeam,
+            homeTeam: currentGame.homeTeam,
+            total: gameTotal,
+            isToday: true
+          });
         }
         currentGame = null;
       }
@@ -227,6 +311,60 @@ function evaluateBothSides(game, spreadGames) {
   const bestSide = (!homeValid || (awayValid && away.marginOverSpread >= home.marginOverSpread)) ? away : home;
   
   return { away, home, bestSide };
+}
+
+/**
+ * Evaluate totals (O/U) for a game.
+ * Both models must agree on direction (both OVER or both UNDER).
+ * MOT = |blendedTotal - marketTotal|
+ */
+function evaluateTotals(game, totalsGames) {
+  const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z]/g, '') || '';
+  
+  const totalsGame = totalsGames.find(tg => {
+    const awayMatch = normalizeTeam(game.awayTeam).includes(normalizeTeam(tg.awayTeam)) ||
+                      normalizeTeam(tg.awayTeam).includes(normalizeTeam(game.awayTeam));
+    const homeMatch = normalizeTeam(game.homeTeam).includes(normalizeTeam(tg.homeTeam)) ||
+                      normalizeTeam(tg.homeTeam).includes(normalizeTeam(game.homeTeam));
+    return awayMatch && homeMatch;
+  });
+  
+  if (!totalsGame || !game.dratings || !game.haslametrics) {
+    return null;
+  }
+  
+  const dr = game.dratings;
+  const hs = game.haslametrics;
+  
+  const drTotal = dr.awayScore + dr.homeScore;
+  const hsTotal = hs.awayScore + hs.homeScore;
+  const blendedTotal = (drTotal * 0.90) + (hsTotal * 0.10);
+  const marketTotal = totalsGame.total;
+  
+  const drOver = drTotal > marketTotal;
+  const hsOver = hsTotal > marketTotal;
+  
+  const bothAgreeOver = drOver && hsOver;
+  const bothAgreeUnder = !drOver && !hsOver;
+  
+  if (!bothAgreeOver && !bothAgreeUnder) return null;
+  
+  const direction = bothAgreeOver ? 'OVER' : 'UNDER';
+  const margin = blendedTotal - marketTotal;
+  const mot = Math.round(Math.abs(margin) * 10) / 10;
+  
+  return {
+    direction,
+    marketTotal,
+    drTotal: Math.round(drTotal * 10) / 10,
+    hsTotal: Math.round(hsTotal * 10) / 10,
+    blendedTotal: Math.round(blendedTotal * 10) / 10,
+    marginOverTotal: mot,
+    drOver,
+    hsOver,
+    bothAgreeOver,
+    bothAgreeUnder,
+  };
 }
 
 /**
@@ -396,6 +534,132 @@ async function savePick(db, game, sideData, prediction) {
 }
 
 /**
+ * Save a totals (O/U) pick to Firebase.
+ */
+async function saveTotalsPick(db, game, totalsData, prediction) {
+  const date = new Date().toISOString().split('T')[0];
+  const awayNorm = game.awayTeam.replace(/\s+/g, '_').toUpperCase();
+  const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
+  const betId = `${date}_${awayNorm}_${homeNorm}_TOTAL_${totalsData.direction}`;
+  
+  const betRef = doc(db, 'basketball_bets', betId);
+  
+  const existingBet = await getDoc(betRef);
+  if (existingBet.exists()) {
+    console.log(`   🔒 Already exists: ${totalsData.direction} ${totalsData.marketTotal}`);
+    return { action: 'skipped', betId };
+  }
+  
+  const mot = totalsData.marginOverTotal;
+  const tierInfo = getMOSTier(mot);
+  const units = tierInfo.units;
+  const tier = tierInfo.tier;
+  
+  const coverProb = estimateCoverProb(mot);
+  const totalsEV = calcSpreadEV(coverProb);
+  
+  const betData = {
+    id: betId,
+    date,
+    timestamp: Date.now(),
+    sport: 'BASKETBALL',
+    
+    game: {
+      awayTeam: game.awayTeam,
+      homeTeam: game.homeTeam,
+      gameTime: game.odds?.gameTime || 'TBD'
+    },
+    
+    bet: {
+      market: 'TOTAL',
+      pick: totalsData.direction,
+      total: totalsData.marketTotal,
+      odds: -110,
+      units,
+      team: null
+    },
+    
+    totalsAnalysis: {
+      marketTotal: totalsData.marketTotal,
+      drTotal: totalsData.drTotal,
+      hsTotal: totalsData.hsTotal,
+      blendedTotal: totalsData.blendedTotal,
+      marginOverTotal: mot,
+      direction: totalsData.direction,
+      drOver: totalsData.drOver,
+      hsOver: totalsData.hsOver,
+      bothModelsAgree: totalsData.bothAgreeOver || totalsData.bothAgreeUnder,
+      unitTier: tier,
+    },
+    
+    prediction: {
+      bestTeam: null,
+      bestBet: totalsData.direction,
+      bestOdds: -110,
+      bestEV: prediction?.bestEV || null,
+      evPercent: prediction?.bestEV || null,
+      grade: prediction?.grade || null,
+      unitSize: units,
+      
+      dratingsAwayScore: game.dratings?.awayScore || 0,
+      dratingsHomeScore: game.dratings?.homeScore || 0,
+      haslametricsAwayScore: game.haslametrics?.awayScore || 0,
+      haslametricsHomeScore: game.haslametrics?.homeScore || 0,
+      ensembleAwayScore: prediction?.ensembleAwayScore || null,
+      ensembleHomeScore: prediction?.ensembleHomeScore || null,
+      ensembleAwayProb: prediction?.ensembleAwayProb || null,
+      ensembleHomeProb: prediction?.ensembleHomeProb || null,
+    },
+    
+    result: {
+      awayScore: null,
+      homeScore: null,
+      totalScore: null,
+      winner: null,
+      outcome: null,
+      profit: null,
+      fetched: false,
+      fetchedAt: null,
+      source: null
+    },
+    
+    status: 'PENDING',
+    firstRecommendedAt: Date.now(),
+    source: 'PRIME_MOT',
+    
+    isPrimePick: true,
+    isTotalsPick: true,
+    savantPick: mot >= 4,
+    
+    betRecommendation: {
+      type: 'TOTAL',
+      reason: 'MOT_PRIMARY',
+      totalUnits: units,
+      totalTier: tier,
+      totalLine: totalsData.marketTotal,
+      totalDirection: totalsData.direction,
+      totalOdds: -110,
+      estimatedCoverProb: Math.round(coverProb * 1000) / 10,
+      estimatedTotalsEV: Math.round(totalsEV * 1000) / 10,
+      marginOverTotal: mot,
+      bothModelsAgree: totalsData.bothAgreeOver || totalsData.bothAgreeUnder,
+    },
+    
+    barttorvik: game.barttorvik || null
+  };
+  
+  await setDoc(betRef, betData);
+  
+  const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
+  const starDisplay = '★'.repeat(units) + '☆'.repeat(5 - units);
+  console.log(`   ${tierIcon} ${totalsData.direction} ${totalsData.marketTotal} → ${units}u [${tier}] (${game.awayTeam} @ ${game.homeTeam})`);
+  console.log(`      ${starDisplay} MOT: +${mot} | Cover: ${betData.betRecommendation.estimatedCoverProb}%`);
+  console.log(`      DR: ${totalsData.drTotal} ${totalsData.drOver ? 'O' : 'U'} | HS: ${totalsData.hsTotal} ${totalsData.hsOver ? 'O' : 'U'} | Blend: ${totalsData.blendedTotal} | Line: ${totalsData.marketTotal}`);
+  
+  return { action: 'created', betId };
+}
+
+/**
  * Main execution
  */
 async function fetchPrimePicks() {
@@ -431,7 +695,18 @@ async function fetchPrimePicks() {
     await fs.writeFile(join(__dirname, '../public/basketball_spreads.md'), spreadResult.markdown, 'utf8');
     console.log('   ✅ Spreads saved\n');
     
-    // 1c. Fetch Haslametrics
+    // 1c. Fetch totals odds
+    console.log('📊 Fetching NCAAB totals from OddsTrader...');
+    const totalsResult = await retryWithBackoff(async () => {
+      return await firecrawl.scrape(
+        `https://www.oddstrader.com/ncaa-college-basketball/?eid=0&g=game&m=total&_=${cacheBuster}`,
+        { formats: ['markdown'], onlyMainContent: true, waitFor: 3000, timeout: 300000 }
+      );
+    });
+    await fs.writeFile(join(__dirname, '../public/basketball_totals.md'), totalsResult.markdown, 'utf8');
+    console.log('   ✅ Totals saved\n');
+    
+    // 1d. Fetch Haslametrics
     console.log('📈 Fetching Haslametrics ratings...');
     const haslaResult = await retryWithBackoff(async () => {
       return await firecrawl.scrape(
@@ -462,6 +737,7 @@ async function fetchPrimePicks() {
     
     const oddsData = parseBasketballOdds(oddsResult.markdown);
     const spreadGames = parseSpreadData(spreadResult.markdown);
+    const totalsGames = parseTotalsData(totalsResult.markdown);
     const haslaData = parseHaslametrics(haslaResult.markdown);
     const dratePreds = parseDRatings(drateResult.markdown);
     
@@ -475,6 +751,7 @@ async function fetchPrimePicks() {
     
     console.log(`   📊 Moneyline games: ${oddsData.length}`);
     console.log(`   📊 Spread games: ${spreadGames.length}`);
+    console.log(`   📊 Totals games: ${totalsGames.length}`);
     console.log(`   📈 Haslametrics teams: ${haslaData.length}`);
     console.log(`   🎯 D-Ratings predictions: ${dratePreds.length}`);
     console.log(`   ✅ Matched games: ${matchedGames.length}\n`);
@@ -540,25 +817,109 @@ async function fetchPrimePicks() {
     console.log(`   ❌ No model data: ${noModelData}`);
     console.log(`   ❌ No spread data: ${noSpreadData}`);
     console.log(`   ⬇️  Below MOS floor (${MOS_FLOOR}): ${belowFloor}`);
-    console.log(`   ✅ QUALIFYING PICKS: ${picks.length}\n`);
+    console.log(`   ✅ QUALIFYING ATS PICKS: ${picks.length}\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 4: SAVE PICKS TO FIREBASE
+    // STEP 3B: EVALUATE TOTALS (O/U — both models must agree direction)
     // ═══════════════════════════════════════════════════════════════════════
     console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│ STEP 4: SAVING PICKS TO FIREBASE (all ATS @ -110)                            │');
+    console.log('│ STEP 3B: TOTALS ANALYSIS (Over/Under — both models agree)                    │');
+    console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
+    
+    const totalsPicks = [];
+    let noTotalsLine = 0;
+    let totalsDisagree = 0;
+    let totalsBelowFloor = 0;
+    
+    for (const game of matchedGames) {
+      if (!game.dratings || !game.haslametrics) continue;
+      
+      const totalsEval = evaluateTotals(game, totalsGames);
+      
+      if (!totalsEval) {
+        const dr = game.dratings;
+        const hs = game.haslametrics;
+        const drT = dr.awayScore + dr.homeScore;
+        const hsT = hs.awayScore + hs.homeScore;
+        const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z]/g, '') || '';
+        const hasLine = totalsGames.some(tg => {
+          const awayMatch = normalizeTeam(game.awayTeam).includes(normalizeTeam(tg.awayTeam)) ||
+                            normalizeTeam(tg.awayTeam).includes(normalizeTeam(game.awayTeam));
+          const homeMatch = normalizeTeam(game.homeTeam).includes(normalizeTeam(tg.homeTeam)) ||
+                            normalizeTeam(tg.homeTeam).includes(normalizeTeam(game.homeTeam));
+          return awayMatch && homeMatch;
+        });
+        
+        if (!hasLine) {
+          noTotalsLine++;
+        } else {
+          totalsDisagree++;
+          console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — Models disagree (DR: ${Math.round(drT)}, HS: ${Math.round(hsT)})`);
+        }
+        continue;
+      }
+      
+      const mot = totalsEval.marginOverTotal;
+      const tierInfo = getMOSTier(mot);
+      
+      if (!tierInfo) {
+        totalsBelowFloor++;
+        console.log(`   ⬇️  ${game.awayTeam} @ ${game.homeTeam} — ${totalsEval.direction} MOT +${mot} < ${MOS_FLOOR}`);
+        continue;
+      }
+      
+      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      
+      console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${tierInfo.units}u [${tierInfo.tier}] (${game.awayTeam} @ ${game.homeTeam})`);
+      
+      totalsPicks.push({
+        game,
+        totalsData: totalsEval,
+        prediction: (prediction && !prediction.error) ? prediction : null,
+      });
+    }
+    
+    totalsPicks.sort((a, b) => b.totalsData.marginOverTotal - a.totalsData.marginOverTotal);
+    
+    console.log(`\n   📊 Games with totals lines: ${totalsGames.length}`);
+    console.log(`   ❌ No totals line: ${noTotalsLine}`);
+    console.log(`   ❌ Models disagree: ${totalsDisagree}`);
+    console.log(`   ⬇️  Below MOT floor (${MOS_FLOOR}): ${totalsBelowFloor}`);
+    console.log(`   ✅ QUALIFYING TOTALS PICKS: ${totalsPicks.length}\n`);
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 4: SAVE ALL PICKS TO FIREBASE
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│ STEP 4: SAVING PICKS TO FIREBASE (ATS + TOTALS @ -110)                       │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
     let created = 0;
     let skipped = 0;
+    let totalsCreated = 0;
+    let totalsSkipped = 0;
     
+    // Save ATS picks
     if (picks.length === 0) {
-      console.log('   ⚠️  No picks found today (no games with MOS >= 2.0).\n');
+      console.log('   ⚠️  No ATS picks today.\n');
     } else {
+      console.log('   ── ATS PICKS ─────────────────────────────────────────────────');
       for (const { game, sideData, prediction } of picks) {
         const result = await savePick(db, game, sideData, prediction);
         if (result.action === 'created') created++;
         else skipped++;
+      }
+    }
+    
+    // Save Totals picks
+    if (totalsPicks.length === 0) {
+      console.log('   ⚠️  No totals picks today.\n');
+    } else {
+      console.log('\n   ── TOTALS PICKS ──────────────────────────────────────────────');
+      for (const { game, totalsData, prediction } of totalsPicks) {
+        const result = await saveTotalsPick(db, game, totalsData, prediction);
+        if (result.action === 'created') totalsCreated++;
+        else totalsSkipped++;
       }
     }
     
@@ -567,48 +928,67 @@ async function fetchPrimePicks() {
     // ═══════════════════════════════════════════════════════════════════════
     console.log('\n');
     console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-    console.log('║                    MOS-PRIMARY PICKS SUMMARY                                  ║');
+    console.log('║                    PRIME PICKS V7 SUMMARY                                    ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
-    console.log(`   Total qualifying picks: ${picks.length}`);
-    console.log(`   ✅ New bets created: ${created}`);
-    console.log(`   🔒 Already existed: ${skipped}\n`);
+    console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);
+    console.log(`   Qualifying: ${picks.length} | Created: ${created} | Existed: ${skipped}`);
     
     if (picks.length > 0) {
       const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
       const tierIcons = { MAXIMUM: '💎', ELITE: '🔥', STRONG: '💪', SOLID: '📊', BASE: '📌' };
       
-      console.log('   ─── TIER BREAKDOWN ──────────────────────────────────────────');
       for (const tName of tierNames) {
         const tierPicks = picks.filter(p => getMOSTier(p.sideData.marginOverSpread)?.tier === tName);
         if (tierPicks.length === 0) continue;
-        
         const tInfo = getMOSTier(tierPicks[0].sideData.marginOverSpread);
         const starStr = '★'.repeat(tInfo.units) + '☆'.repeat(5 - tInfo.units);
-        console.log(`\n   ${tierIcons[tName]} ${starStr} ${tName} (${tInfo.units}u): ${tierPicks.length} pick${tierPicks.length > 1 ? 's' : ''}`);
-        
+        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${tInfo.units}u): ${tierPicks.length} pick${tierPicks.length > 1 ? 's' : ''}`);
         tierPicks.forEach(p => {
-          const favDog = p.sideData.isFavorite ? 'FAV' : 'DOG';
-          const evStr = p.prediction?.bestEV ? ` | EV ${p.prediction.bestEV.toFixed(1)}%` : '';
-          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} @ -110 [${favDog}] MOS +${p.sideData.marginOverSpread}${evStr}`);
+          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} @ -110 [${p.sideData.isFavorite ? 'FAV' : 'DOG'}] MOS +${p.sideData.marginOverSpread}`);
         });
       }
       
       const favPicks = picks.filter(p => p.sideData.isFavorite);
       const dogPicks = picks.filter(p => !p.sideData.isFavorite);
-      console.log(`\n   ─── FAV / DOG SPLIT ─────────────────────────────────────────`);
-      console.log(`   Favorites: ${favPicks.length} picks (${favPicks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0)}u)`);
-      console.log(`   Underdogs: ${dogPicks.length} picks (${dogPicks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0)}u)`);
-      
-      const totalUnits = picks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0);
-      console.log(`\n   ─── TOTAL ALLOCATION ────────────────────────────────────────`);
-      console.log(`   Total picks: ${picks.length}`);
-      console.log(`   Total units: ${totalUnits}u @ -110`);
+      const atsUnits = picks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0);
+      console.log(`   Favorites: ${favPicks.length} | Underdogs: ${dogPicks.length} | Total: ${atsUnits}u`);
     }
+    
+    console.log(`\n   ── TOTALS (O/U) ────────────────────────────────────────────`);
+    console.log(`   Qualifying: ${totalsPicks.length} | Created: ${totalsCreated} | Existed: ${totalsSkipped}`);
+    
+    if (totalsPicks.length > 0) {
+      const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
+      const tierIcons = { MAXIMUM: '💎', ELITE: '🔥', STRONG: '💪', SOLID: '📊', BASE: '📌' };
+      
+      for (const tName of tierNames) {
+        const tierPicks = totalsPicks.filter(p => getMOSTier(p.totalsData.marginOverTotal)?.tier === tName);
+        if (tierPicks.length === 0) continue;
+        const tInfo = getMOSTier(tierPicks[0].totalsData.marginOverTotal);
+        const starStr = '★'.repeat(tInfo.units) + '☆'.repeat(5 - tInfo.units);
+        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${tInfo.units}u): ${tierPicks.length} pick${tierPicks.length > 1 ? 's' : ''}`);
+        tierPicks.forEach(p => {
+          console.log(`      → ${p.totalsData.direction} ${p.totalsData.marketTotal} [${p.game.awayTeam} @ ${p.game.homeTeam}] MOT +${p.totalsData.marginOverTotal}`);
+        });
+      }
+      
+      const overPicks = totalsPicks.filter(p => p.totalsData.direction === 'OVER');
+      const underPicks = totalsPicks.filter(p => p.totalsData.direction === 'UNDER');
+      const totalsUnits = totalsPicks.reduce((s, p) => s + getMOSTier(p.totalsData.marginOverTotal).units, 0);
+      console.log(`   Overs: ${overPicks.length} | Unders: ${underPicks.length} | Total: ${totalsUnits}u`);
+    }
+    
+    const allUnits = picks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0)
+                   + totalsPicks.reduce((s, p) => s + getMOSTier(p.totalsData.marginOverTotal).units, 0);
+    console.log(`\n   ── COMBINED ─────────────────────────────────────────────────`);
+    console.log(`   Total picks: ${picks.length + totalsPicks.length} (${picks.length} ATS + ${totalsPicks.length} O/U)`);
+    console.log(`   Total units: ${allUnits}u @ -110`);
     
     console.log('\n   Files updated:');
     console.log('   ✓ public/basketball_odds.md');
     console.log('   ✓ public/basketball_spreads.md');
+    console.log('   ✓ public/basketball_totals.md');
     console.log('   ✓ public/haslametrics.md');
     console.log('   ✓ public/dratings.md\n');
     

@@ -39,7 +39,7 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/basketball_odds.md public/basketball_spreads.md public/haslametrics.md public/dratings.md
+          git add public/basketball_odds.md public/basketball_spreads.md public/basketball_totals.md public/haslametrics.md public/dratings.md
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Prime Picks data [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
       # Build and deploy

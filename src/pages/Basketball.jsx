@@ -94,10 +94,20 @@ const Basketball = () => {
         
         betsSnapshot.forEach((doc) => {
           const bet = doc.data();
-          // Create a normalized key for matching: awayTeam_homeTeam
           const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
           const key = `${normalizeTeam(bet.game.awayTeam)}_${normalizeTeam(bet.game.homeTeam)}`;
-          betsData.set(key, bet);
+          
+          const existing = betsData.get(key);
+          if (existing) {
+            if (bet.isTotalsPick) {
+              existing._totalsBet = bet;
+            } else {
+              bet._totalsBet = existing.isTotalsPick ? existing : existing._totalsBet;
+              betsData.set(key, bet);
+            }
+          } else {
+            betsData.set(key, bet);
+          }
         });
         
         setBetsMap(betsData);
@@ -2111,12 +2121,23 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   const spreadData = betData?.spreadAnalysis;
   const spreadBet = betData?.spreadBet;
   
-  // Bet recommendation — ATS upgrade or ML
+  // Bet recommendation — ATS, Totals, or ML
   const betRec = betData?.betRecommendation;
   const isATSRecommended = betRec?.type === 'ATS';
+  const isTotalsRecommended = betRec?.type === 'TOTAL';
   const isStandaloneATS = betData?.isATSPick && !betData?.isPrimePick;
-  const displayUnits = isATSRecommended ? betRec.atsUnits : (pred?.unitSize || 0);
-  const displayMarket = isATSRecommended ? 'ATS' : (isStandaloneATS ? 'ATS' : 'ML');
+  const totalsData = betData?.totalsAnalysis;
+  
+  // Totals companion bet (when game has both ATS + O/U picks)
+  const totalsBet = betData?._totalsBet;
+  const totalsRec = totalsBet?.betRecommendation;
+  const totalsAnalysis = totalsBet?.totalsAnalysis;
+  const hasTotalsCompanion = !!totalsBet;
+  
+  const displayUnits = isTotalsRecommended ? (betRec.totalUnits || pred?.unitSize || 0)
+    : isATSRecommended ? betRec.atsUnits 
+    : (pred?.unitSize || 0);
+  const displayMarket = isTotalsRecommended ? 'O/U' : isATSRecommended ? 'ATS' : (isStandaloneATS ? 'ATS' : 'ML');
   
   // If no prediction, show minimal card with just game info
   if (!pred || pred.error) {
@@ -2146,7 +2167,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   }
   
   // V5: Use stored star count from Firebase (prediction.stars), fallback to unit-based calculation
-  const effectiveUnits = isATSRecommended ? (betRec?.atsUnits || pred.unitSize) : pred.unitSize;
+  const effectiveUnits = isTotalsRecommended ? (betRec?.totalUnits || pred.unitSize) 
+    : isATSRecommended ? (betRec?.atsUnits || pred.unitSize) 
+    : pred.unitSize;
   const starRating = getStarRating(effectiveUnits, pred.stars);
   const gradeColors = starRating; // alias for backward compat within card
   
@@ -2316,12 +2339,16 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           gap: isMobile ? '0.375rem' : '0.5rem',
           padding: isMobile ? '0.5rem 0.75rem' : '0.563rem 0.875rem',
           borderRadius: '10px',
-          background: isATSRecommended 
+          background: isTotalsRecommended
+            ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.04) 100%)'
+            : isATSRecommended 
             ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.04) 100%)'
             : isStandaloneATS
             ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.04) 100%)'
             : `linear-gradient(135deg, ${starRating.borderColor}12 0%, ${starRating.borderColor}06 100%)`,
-          border: isATSRecommended 
+          border: isTotalsRecommended
+            ? '1px solid rgba(168, 85, 247, 0.25)'
+            : isATSRecommended 
             ? '1px solid rgba(6, 182, 212, 0.25)'
             : isStandaloneATS
             ? '1px solid rgba(16, 185, 129, 0.25)'
@@ -2332,14 +2359,14 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           <span style={{
             fontSize: isMobile ? '0.625rem' : '0.688rem',
             fontWeight: '800',
-            color: isATSRecommended ? '#22D3EE' : isStandaloneATS ? '#10B981' : 'rgba(255,255,255,0.6)',
+            color: isTotalsRecommended ? '#A855F7' : isATSRecommended ? '#22D3EE' : isStandaloneATS ? '#10B981' : 'rgba(255,255,255,0.6)',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
             display: 'flex',
             alignItems: 'center',
             gap: '0.25rem'
           }}>
-            {isATSRecommended && !isStandaloneATS ? '🏈 ATS UPGRADE' : isStandaloneATS ? '📈 ATS' : '💰 ML'}
+            {isTotalsRecommended ? `🎯 ${betRec.totalDirection}` : isATSRecommended && !isStandaloneATS ? '🏈 ATS UPGRADE' : isStandaloneATS ? '📈 ATS' : '💰 ML'}
           </span>
           
           <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.625rem' }}>|</span>
@@ -2351,7 +2378,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             color: 'white',
             fontFeatureSettings: "'tnum'"
           }}>
-            {isATSRecommended || isStandaloneATS 
+            {isTotalsRecommended
+              ? `${betRec.totalLine} @ -110`
+              : isATSRecommended || isStandaloneATS 
               ? `${betRec?.atsSpread > 0 ? '+' : ''}${betRec?.atsSpread} @ -110`
               : `@ ${pred.bestOdds > 0 ? '+' : ''}${pred.bestOdds}`
             }
@@ -2366,11 +2395,25 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             color: starRating.color,
             fontFeatureSettings: "'tnum'"
           }}>
-            {isATSRecommended ? `${betRec.atsUnits}u` : (pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u')}
+            {isTotalsRecommended ? `${betRec.totalUnits}u` : isATSRecommended ? `${betRec.atsUnits}u` : (pred.unitSize > 0 ? `${pred.unitSize}u` : '0.5u')}
           </span>
           
           {/* Edge or Cover metric */}
-          {pred.bestEV > 0 && !isATSRecommended && !isStandaloneATS && (
+          {isTotalsRecommended && betRec && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.625rem' }}>|</span>
+              <span style={{
+                fontSize: isMobile ? '0.688rem' : '0.75rem',
+                fontWeight: '800',
+                color: '#A855F7',
+                fontFeatureSettings: "'tnum'"
+              }}>
+                +{betRec.marginOverTotal} MOT
+              </span>
+            </>
+          )}
+          
+          {pred.bestEV > 0 && !isATSRecommended && !isStandaloneATS && !isTotalsRecommended && (
             <>
               <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.625rem' }}>|</span>
               <span style={{
@@ -2510,7 +2553,25 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           const spread = betRec?.atsSpread ?? spreadData?.spread;
           
           let title, subtitle;
-          if (isATS) {
+          if (isTotalsRecommended) {
+            const dir = betRec?.totalDirection || totalsData?.direction || 'OVER';
+            const mot = totalsData?.marginOverTotal ?? betRec?.marginOverTotal;
+            const line = betRec?.totalLine ?? totalsData?.marketTotal;
+            const motStr = mot != null ? ` by +${mot} pts` : '';
+            if (mot >= 4) {
+              title = `${dir} ${line} — Maximum Confidence`;
+              subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
+            } else if (mot >= 3) {
+              title = `${dir} ${line} — Strong Edge`;
+              subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
+            } else if (mot >= 2) {
+              title = `${dir} ${line} — Totals Value`;
+              subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
+            } else {
+              title = `${dir} ${line}`;
+              subtitle = `Models project ${dir.toLowerCase()}`;
+            }
+          } else if (isATS) {
             const side = isFav ? 'Favorite' : 'Underdog';
             const coverStr = bothCover ? 'Both models project cover' : 'Model projects cover';
             const mosStr = mos != null ? ` by +${mos} pts` : '';
@@ -2540,8 +2601,12 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           
           return (
             <div style={{ 
-              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
+              background: isTotalsRecommended
+                ? 'linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)'
+                : 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              border: isTotalsRecommended
+                ? '1px solid rgba(168, 85, 247, 0.25)'
+                : '1px solid rgba(16, 185, 129, 0.25)',
               borderRadius: '8px',
               padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
               marginBottom: isMobile ? '0.5rem' : '0.75rem',
@@ -2550,13 +2615,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               gap: isMobile ? '0.5rem' : '0.625rem'
             }}>
               <div style={{ fontSize: isMobile ? '1.125rem' : '1.25rem', lineHeight: 1, flexShrink: 0 }}>
-                {isATS ? (isFav ? '🏠' : '🎯') : '📊'}
+                {isTotalsRecommended ? (betRec?.totalDirection === 'OVER' ? '🔥' : '🧊') : isATS ? (isFav ? '🏠' : '🎯') : '📊'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ 
                   fontSize: isMobile ? '0.813rem' : '0.938rem',
                   fontWeight: '800',
-                  color: '#10B981',
+                  color: isTotalsRecommended ? '#A855F7' : '#10B981',
                   marginBottom: '0.125rem',
                   letterSpacing: '-0.01em'
                 }}>
@@ -2607,8 +2672,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               const isATS = isATSRecommended || isStandaloneATS;
               const coverProb = betRec?.estimatedCoverProb;
               const winProb = ((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) || 0) * 100;
-              const displayProb = isATS && coverProb ? coverProb : (isNaN(winProb) ? 0 : winProb);
-              const label = isATS ? 'Cover probability' : 'Win probability';
+              const displayProb = (isTotalsRecommended || isATS) && coverProb ? coverProb : (isNaN(winProb) ? 0 : winProb);
+              const label = isTotalsRecommended ? `${betRec?.totalDirection || 'O/U'} probability` : isATS ? 'Cover probability' : 'Win probability';
               return (
                 <>
                   <div style={{ 
@@ -2633,20 +2698,26 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             })()}
           </div>
 
-          {/* MARKET + SPREAD */}
+          {/* MARKET + SPREAD + TOTAL */}
           <div style={{
-            background: isATSRecommended 
+            background: isTotalsRecommended
+              ? (betRec?.totalDirection === 'OVER' ? 'rgba(239, 68, 68, 0.06)' : 'rgba(59, 130, 246, 0.06)')
+              : isATSRecommended 
               ? 'rgba(6, 182, 212, 0.06)' 
               : 'rgba(255,255,255,0.03)',
             borderRadius: '8px',
             padding: isMobile ? '0.5rem' : '0.625rem',
-            border: isATSRecommended 
+            border: isTotalsRecommended
+              ? (betRec?.totalDirection === 'OVER' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(59, 130, 246, 0.2)')
+              : isATSRecommended 
               ? '1px solid rgba(6, 182, 212, 0.2)' 
               : '1px solid rgba(255,255,255,0.08)'
           }}>
             <div style={{ 
               fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: isATSRecommended ? 'rgba(34, 211, 238, 0.7)' : 'rgba(255,255,255,0.5)',
+              color: isTotalsRecommended 
+                ? (betRec?.totalDirection === 'OVER' ? 'rgba(239, 68, 68, 0.7)' : 'rgba(59, 130, 246, 0.7)')
+                : isATSRecommended ? 'rgba(34, 211, 238, 0.7)' : 'rgba(255,255,255,0.5)',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
               fontWeight: '700',
@@ -2655,16 +2726,79 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               alignItems: 'center',
               gap: '0.25rem'
             }}>
-              {isATSRecommended || isStandaloneATS ? (
+              {isTotalsRecommended ? (
+                <><span>{betRec?.totalDirection === 'OVER' ? '🔥' : '🧊'}</span> TOTAL LINE</>
+              ) : isATSRecommended || isStandaloneATS ? (
                 <><span>🏈</span> SPREAD LINE</>
               ) : (
                 <><span>💵</span> MARKET</>
               )}
             </div>
             
-            {isATSRecommended || isStandaloneATS ? (
+            {isTotalsRecommended ? (
               <>
-                {/* ATS: Show spread as primary, ML odds as secondary */}
+                {/* TOTALS: Show O/U line as primary */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.5rem',
+                  marginBottom: '0.25rem'
+                }}>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.125rem' : '1.25rem',
+                    fontWeight: '900',
+                    color: betRec?.totalDirection === 'OVER' ? '#f87171' : '#60a5fa',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.01em'
+                  }}>
+                    {betRec?.totalDirection} {betRec?.totalLine}
+                  </div>
+                  <div style={{
+                    fontSize: isMobile ? '0.813rem' : '0.875rem',
+                    fontWeight: '800',
+                    color: 'rgba(255,255,255,0.7)',
+                    fontFeatureSettings: "'tnum'"
+                  }}>
+                    @ -110
+                  </div>
+                </div>
+                {(() => {
+                  const mot = totalsData?.marginOverTotal ?? betRec?.marginOverTotal;
+                  if (mot != null) {
+                    const isOver = betRec?.totalDirection === 'OVER';
+                    return (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        padding: '0.125rem 0.375rem',
+                        background: isOver ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                        border: isOver ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(59, 130, 246, 0.25)',
+                        borderRadius: '4px',
+                        marginTop: '0.25rem'
+                      }}>
+                        <span style={{
+                          fontSize: isMobile ? '0.563rem' : '0.625rem',
+                          color: 'rgba(255,255,255,0.5)',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em'
+                        }}>MOT</span>
+                        <span style={{
+                          fontSize: isMobile ? '0.688rem' : '0.75rem',
+                          fontWeight: '900',
+                          color: isOver ? '#f87171' : '#60a5fa',
+                          fontFeatureSettings: "'tnum'"
+                        }}>+{mot} pts</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </>
+            ) : isATSRecommended || isStandaloneATS ? (
+              <>
+                {/* ATS: Show spread as primary */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'baseline',
@@ -2757,7 +2891,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   color: 'rgba(255,255,255,0.45)',
                   lineHeight: 1.2
                 }}>
-                  {((pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb) * 100).toFixed(1)}% implied
+                  {(() => {
+                    const p = pred.bestBet === 'away' ? pred.marketAwayProb : pred.marketHomeProb;
+                    return p ? `${(p * 100).toFixed(1)}% implied` : '';
+                  })()}
                 </div>
               </>
             )}
@@ -2945,6 +3082,51 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         
         {/* Model Confluence Box */}
         {(() => {
+          if (isTotalsRecommended) {
+            const mot = totalsData?.marginOverTotal ?? betRec?.marginOverTotal;
+            const dir = betRec?.totalDirection || totalsData?.direction;
+            const bothAgree = totalsData?.bothModelsAgree ?? betRec?.bothModelsAgree;
+            const isOver = dir === 'OVER';
+            if (mot === undefined && !dir) return null;
+            return (
+              <div style={{ 
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '6px',
+                padding: isMobile ? '0.5rem' : '0.625rem',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: isMobile ? '1rem' : '1.5rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Direction
+                    </span>
+                    <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: '700', color: bothAgree ? '#10b981' : '#fbbf24' }}>
+                      Both Models
+                    </span>
+                  </div>
+                  <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
+                  <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem', fontWeight: '700', color: isOver ? '#f87171' : '#60a5fa', letterSpacing: '0.02em' }}>
+                    {dir}
+                  </span>
+                  {mot !== undefined && (
+                    <>
+                      <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MOT</span>
+                        <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '800', color: mot >= 4 ? '#10b981' : mot >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)', letterSpacing: '-0.01em' }}>+{mot}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          }
+          
           const bothCover = spreadData?.bothModelsCover ?? betRec?.bothModelsCover;
           const mos = spreadData?.marginOverSpread ?? betRec?.marginOverSpread;
           const isFav = spreadData?.isFavorite;
@@ -2964,88 +3146,125 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 justifyContent: 'center',
                 gap: isMobile ? '1rem' : '1.5rem'
               }}>
-                {/* Model Cover Agreement */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.375rem'
-                }}>
-                  <span style={{ 
-                    fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.4)',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em'
-                  }}>
-                    Cover
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '0.75rem' : '0.813rem',
-                    fontWeight: '700',
-                    color: bothCover ? '#10b981' : '#fbbf24'
-                  }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Cover</span>
+                  <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: '700', color: bothCover ? '#10b981' : '#fbbf24' }}>
                     {bothCover ? 'Both Models' : 'Single Model'}
                   </span>
                 </div>
-                
-                <div style={{
-                  width: '1px',
-                  height: '12px',
-                  background: 'rgba(255,255,255,0.1)'
-                }} />
-                
-                {/* Side Label */}
+                <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
                 {isFav !== undefined && (
                   <>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.375rem'
-                    }}>
-                      <span style={{
-                        fontSize: isMobile ? '0.688rem' : '0.75rem',
-                        fontWeight: '700',
-                        color: isFav ? '#60a5fa' : '#fbbf24',
-                        letterSpacing: '0.02em'
-                      }}>
-                        {isFav ? 'FAVORITE' : 'UNDERDOG'}
-                      </span>
-                    </div>
-                    
-                    <div style={{
-                      width: '1px',
-                      height: '12px',
-                      background: 'rgba(255,255,255,0.1)'
-                    }} />
+                    <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem', fontWeight: '700', color: isFav ? '#60a5fa' : '#fbbf24', letterSpacing: '0.02em' }}>
+                      {isFav ? 'FAVORITE' : 'UNDERDOG'}
+                    </span>
+                    <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
                   </>
                 )}
-                
-                {/* MOS */}
                 {mos !== undefined && (
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.375rem'
-                  }}>
-                    <span style={{ 
-                      fontSize: isMobile ? '0.625rem' : '0.688rem',
-                      color: 'rgba(255,255,255,0.4)',
-                      fontWeight: '600',
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MOS</span>
+                    <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '800', color: mos >= 4 ? '#10b981' : mos >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)', letterSpacing: '-0.01em' }}>+{mos}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+        
+        {/* Totals Companion Pick */}
+        {hasTotalsCompanion && totalsRec && (() => {
+          const dir = totalsRec.totalDirection;
+          const mot = totalsRec.marginOverTotal ?? totalsAnalysis?.marginOverTotal;
+          const line = totalsRec.totalLine ?? totalsAnalysis?.marketTotal;
+          const tUnits = totalsRec.totalUnits || 1;
+          const tTier = totalsAnalysis?.unitTier || 'BASE';
+          const isOver = dir === 'OVER';
+          const drT = totalsAnalysis?.drTotal;
+          const hsT = totalsAnalysis?.hsTotal;
+          const blendT = totalsAnalysis?.blendedTotal;
+          
+          return (
+            <div style={{
+              background: isOver 
+                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%)',
+              border: isOver
+                ? '1px solid rgba(239, 68, 68, 0.2)'
+                : '1px solid rgba(59, 130, 246, 0.2)',
+              borderRadius: '8px',
+              padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>
+                    {isOver ? '🔥' : '🧊'}
+                  </span>
+                  <div>
+                    <div style={{
+                      fontSize: isMobile ? '0.688rem' : '0.75rem',
+                      fontWeight: '800',
+                      color: isOver ? '#f87171' : '#60a5fa',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em'
                     }}>
-                      MOS
-                    </span>
-                    <span style={{
-                      fontSize: isMobile ? '0.813rem' : '0.875rem',
-                      fontWeight: '800',
-                      color: mos >= 4 ? '#10b981' : mos >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)',
-                      letterSpacing: '-0.01em'
+                      {dir} {line}
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      color: 'rgba(255,255,255,0.45)',
+                      fontWeight: '600',
+                      marginTop: '0.125rem'
                     }}>
-                      +{mos}
-                    </span>
+                      {tUnits}u @ -110 • Both models agree
+                    </div>
                   </div>
-                )}
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    padding: '0.125rem 0.375rem',
+                    background: isOver ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                    border: isOver ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(59, 130, 246, 0.25)',
+                    borderRadius: '4px',
+                  }}>
+                    <span style={{
+                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      color: 'rgba(255,255,255,0.5)',
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em'
+                    }}>MOT</span>
+                    <span style={{
+                      fontSize: isMobile ? '0.688rem' : '0.75rem',
+                      fontWeight: '900',
+                      color: isOver ? '#f87171' : '#60a5fa',
+                      fontFeatureSettings: "'tnum'"
+                    }}>+{mot}</span>
+                  </div>
+                  
+                  {blendT && (
+                    <div style={{
+                      fontSize: isMobile ? '0.563rem' : '0.625rem',
+                      color: 'rgba(255,255,255,0.4)',
+                      fontWeight: '600',
+                      textAlign: 'right',
+                      lineHeight: 1.3
+                    }}>
+                      <div>Blend: {blendT}</div>
+                      <div>Line: {line}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );

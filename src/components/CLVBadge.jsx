@@ -82,7 +82,7 @@ const getCLVTierStyle = (clv) => {
  */
 const formatCLV = (clv, market) => {
   const sign = clv >= 0 ? '+' : '';
-  const suffix = market === 'SPREAD' ? ' pts' : '%';
+  const suffix = (market === 'SPREAD' || market === 'TOTAL') ? ' pts' : '%';
   return `${sign}${clv.toFixed(1)}${suffix}`;
 };
 
@@ -210,10 +210,11 @@ export const CLVBadge = ({ clvData, compact = false, showDetails = false }) => {
       {/* Line comparison (optional) */}
       {showDetails && (() => {
         const isSpread = market === 'SPREAD';
-        const origVal = isSpread ? clvData.originalSpread : clvData.originalOdds;
-        const currVal = isSpread ? clvData.currentSpread : clvData.currentOdds;
+        const isTotal = market === 'TOTAL';
+        const origVal = isTotal ? clvData.originalTotal : isSpread ? clvData.originalSpread : clvData.originalOdds;
+        const currVal = isTotal ? clvData.currentTotal : isSpread ? clvData.currentSpread : clvData.currentOdds;
         if (origVal == null || currVal == null) return null;
-        const fmtVal = (v) => (v > 0 ? '+' : '') + v;
+        const fmtVal = (v) => isTotal ? String(v) : ((v > 0 ? '+' : '') + v);
         return (
           <div style={{
             display: 'flex',

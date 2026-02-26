@@ -39,16 +39,20 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     const awayNorm = normalizeForId(awayTeam);
     const homeNorm = normalizeForId(homeTeam);
     
-    // Try all possible bet IDs: today + yesterday × MONEYLINE + SPREAD
+    // Try all possible bet IDs: today + yesterday × MONEYLINE + SPREAD + TOTAL
     const possibleBetIds = [
       `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${awayNorm}_(AWAY)`,
       `${date}_${awayNorm}_${homeNorm}_MONEYLINE_${homeNorm}_(HOME)`,
       `${date}_${awayNorm}_${homeNorm}_SPREAD_${awayNorm}_(AWAY)`,
       `${date}_${awayNorm}_${homeNorm}_SPREAD_${homeNorm}_(HOME)`,
+      `${date}_${awayNorm}_${homeNorm}_TOTAL_OVER`,
+      `${date}_${awayNorm}_${homeNorm}_TOTAL_UNDER`,
       `${prevDate}_${awayNorm}_${homeNorm}_MONEYLINE_${awayNorm}_(AWAY)`,
       `${prevDate}_${awayNorm}_${homeNorm}_MONEYLINE_${homeNorm}_(HOME)`,
       `${prevDate}_${awayNorm}_${homeNorm}_SPREAD_${awayNorm}_(AWAY)`,
-      `${prevDate}_${awayNorm}_${homeNorm}_SPREAD_${homeNorm}_(HOME)`
+      `${prevDate}_${awayNorm}_${homeNorm}_SPREAD_${homeNorm}_(HOME)`,
+      `${prevDate}_${awayNorm}_${homeNorm}_TOTAL_OVER`,
+      `${prevDate}_${awayNorm}_${homeNorm}_TOTAL_UNDER`
     ];
     
     let gradedBet = null;
