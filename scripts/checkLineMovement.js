@@ -20,6 +20,7 @@
 import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, where, updateDoc, setDoc, getDoc, doc } from 'firebase/firestore';
 
@@ -89,7 +90,46 @@ function calcSpreadEV(coverProb) {
   return (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
 }
 
-// ─── Team Name Matching ──────────────────────────────────────────────
+// ─── Team Name Matching (CSV-based) ─────────────────────────────────
+
+const teamNameMap = buildTeamNameMap();
+
+function buildTeamNameMap() {
+  const csvPath = join(__dirname, '../public/basketball_teams.csv');
+  let csvData;
+  try {
+    csvData = readFileSync(csvPath, 'utf-8');
+  } catch {
+    console.warn('⚠️  Could not load basketball_teams.csv — falling back to fuzzy matching');
+    return null;
+  }
+
+  const lines = csvData.trim().split('\n');
+  const headers = lines[0].split(',');
+  const oddsApiIdx = headers.indexOf('odds_api_name');
+  if (oddsApiIdx === -1) {
+    console.warn('⚠️  No odds_api_name column in CSV — falling back to fuzzy matching');
+    return null;
+  }
+
+  // Map: normalized_name (lowercase) → odds_api_name
+  const map = new Map();
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const normName = (cols[0] || '').trim();
+    const oddsApiName = (cols[oddsApiIdx] || '').trim();
+    if (normName && oddsApiName) {
+      map.set(normName.toLowerCase(), oddsApiName);
+    }
+  }
+  console.log(`   📋 Loaded ${map.size} team name mappings from CSV`);
+  return map;
+}
+
+function getOddsApiName(firebaseTeamName) {
+  if (!teamNameMap || !firebaseTeamName) return null;
+  return teamNameMap.get(firebaseTeamName.toLowerCase()) || null;
+}
 
 function normalizeTeam(name) {
   return (name || '')
@@ -99,7 +139,7 @@ function normalizeTeam(name) {
     .replace(/[^a-z]/g, '');
 }
 
-function teamsMatch(a, b) {
+function teamsMatchFuzzy(a, b) {
   const na = normalizeTeam(a);
   const nb = normalizeTeam(b);
   return na.length >= 4 && nb.length >= 4 && (na.includes(nb) || nb.includes(na));
@@ -109,10 +149,25 @@ function findOddsApiGame(evalData, oddsGames) {
   const away = evalData.game?.awayTeam;
   const home = evalData.game?.homeTeam;
   if (!away || !home) return null;
+
+  // Primary: exact match via CSV mapping
+  const awayApi = getOddsApiName(away);
+  const homeApi = getOddsApiName(home);
+
+  if (awayApi && homeApi) {
+    const match = oddsGames.find(g =>
+      g.away_team === awayApi && g.home_team === homeApi
+    ) || oddsGames.find(g =>
+      g.away_team === homeApi && g.home_team === awayApi
+    );
+    if (match) return match;
+  }
+
+  // Fallback: fuzzy matching for teams not yet in CSV
   return oddsGames.find(g =>
-    teamsMatch(away, g.away_team) && teamsMatch(home, g.home_team)
+    teamsMatchFuzzy(away, g.away_team) && teamsMatchFuzzy(home, g.home_team)
   ) || oddsGames.find(g =>
-    teamsMatch(away, g.home_team) && teamsMatch(home, g.away_team)
+    teamsMatchFuzzy(away, g.home_team) && teamsMatchFuzzy(home, g.away_team)
   ) || null;
 }
 
@@ -149,8 +204,8 @@ async function fetchCurrentLines() {
     const spreads = {};
     if (spreadMarket) {
       for (const o of spreadMarket.outcomes) {
-        if (teamsMatch(o.name, game.away_team)) spreads.away = o.point;
-        else if (teamsMatch(o.name, game.home_team)) spreads.home = o.point;
+        if (teamsMatchFuzzy(o.name, game.away_team)) spreads.away = o.point;
+        else if (teamsMatchFuzzy(o.name, game.home_team)) spreads.home = o.point;
       }
     }
 
@@ -623,6 +678,7 @@ async function checkLineMovement() {
 
     if (!oddsGame) {
       counters.noMatch++;
+      console.log(`   ❓ No match: ${gameLabel}`);
       continue;
     }
 
