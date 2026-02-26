@@ -94,6 +94,7 @@ const Basketball = () => {
         
         betsSnapshot.forEach((doc) => {
           const bet = doc.data();
+          if (bet.type === 'EVALUATION') return;
           const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
           const key = `${normalizeTeam(bet.game.awayTeam)}_${normalizeTeam(bet.game.homeTeam)}`;
           
