@@ -195,7 +195,7 @@ async function retryFetch(url, retries = 3, delay = 2000) {
 }
 
 async function fetchCurrentLines() {
-  const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads,totals&oddsFormat=american&bookmakers=draftkings`;
+  const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads,totals&oddsFormat=american`;
   const res = await retryFetch(url);
   if (!res.ok) throw new Error(`Odds API error: ${res.status} ${res.statusText}`);
 
@@ -205,15 +205,46 @@ async function fetchCurrentLines() {
 
   const raw = await res.json();
   return raw.map(game => {
-    const bk = game.bookmakers?.[0];
-    const spreadMarket = bk?.markets?.find(m => m.key === 'spreads');
-    const totalMarket = bk?.markets?.find(m => m.key === 'totals');
+    let bestAwaySpread = null;
+    let bestHomeSpread = null;
+    let lowestTotal = null;
+    let highestTotal = null;
+    let awayBook = null;
+    let homeBook = null;
+    let overBook = null;
+    let underBook = null;
 
-    const spreads = {};
-    if (spreadMarket) {
-      for (const o of spreadMarket.outcomes) {
-        if (teamsMatchFuzzy(o.name, game.away_team)) spreads.away = o.point;
-        else if (teamsMatchFuzzy(o.name, game.home_team)) spreads.home = o.point;
+    for (const bk of (game.bookmakers || [])) {
+      const spreadMarket = bk.markets?.find(m => m.key === 'spreads');
+      if (spreadMarket) {
+        for (const o of spreadMarket.outcomes) {
+          const isAway = teamsMatchFuzzy(o.name, game.away_team);
+          const isHome = teamsMatchFuzzy(o.name, game.home_team);
+          if (isAway && (bestAwaySpread === null || o.point > bestAwaySpread)) {
+            bestAwaySpread = o.point;
+            awayBook = bk.key;
+          }
+          if (isHome && (bestHomeSpread === null || o.point > bestHomeSpread)) {
+            bestHomeSpread = o.point;
+            homeBook = bk.key;
+          }
+        }
+      }
+
+      const totalMarket = bk.markets?.find(m => m.key === 'totals');
+      if (totalMarket) {
+        for (const o of totalMarket.outcomes) {
+          if (o.name === 'Over') {
+            if (lowestTotal === null || o.point < lowestTotal) {
+              lowestTotal = o.point;
+              overBook = bk.key;
+            }
+            if (highestTotal === null || o.point > highestTotal) {
+              highestTotal = o.point;
+              underBook = bk.key;
+            }
+          }
+        }
       }
     }
 
@@ -222,9 +253,12 @@ async function fetchCurrentLines() {
       away_team: game.away_team,
       home_team: game.home_team,
       commence_time: game.commence_time,
-      awaySpread: spreads.away ?? null,
-      homeSpread: spreads.home ?? null,
-      total: totalMarket?.outcomes?.[0]?.point ?? null,
+      awaySpread: bestAwaySpread,
+      homeSpread: bestHomeSpread,
+      lowestTotal,
+      highestTotal,
+      total: lowestTotal,
+      bestBooks: { away: awayBook, home: homeBook, over: overBook, under: underBook },
     };
   });
 }
@@ -793,8 +827,13 @@ async function checkLineMovement() {
       processedBetIds.add(`${today}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`);
     }
 
-    // ── Totals: evaluate at current total ──
-    const totalsResult = evaluateTotalsFromEval(evalData, oddsGame.total);
+    // ── Totals: evaluate at best available total for the model's direction ──
+    const blendedTotal = model.blendedTotal;
+    const prelimDirection = blendedTotal > (oddsGame.lowestTotal ?? oddsGame.total) ? 'OVER' : 'UNDER';
+    const bestTotal = prelimDirection === 'OVER'
+      ? (oddsGame.lowestTotal ?? oddsGame.total)
+      : (oddsGame.highestTotal ?? oddsGame.total);
+    const totalsResult = evaluateTotalsFromEval(evalData, bestTotal);
 
     if (totalsResult) {
       const openerTotal = totalsResult.openerTotal;
