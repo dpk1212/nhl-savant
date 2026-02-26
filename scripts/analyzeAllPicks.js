@@ -1,8 +1,14 @@
 /**
- * V5 PERFORMANCE MATRIX — MOS × EV Star System Analysis
+ * V6 PERFORMANCE ANALYSIS — MOS-Primary System
  * 
- * Clean output: Matrix view for ALL PICKS, ML, ATS UPGRADED, ATS STANDALONE
- * Time periods: ALL TIME, THIS WEEK, YESTERDAY
+ * 5-tier MOS breakdown matching the new unit sizing:
+ *   MAXIMUM (5u): MOS 4+
+ *   ELITE   (4u): MOS 3-4
+ *   STRONG  (3u): MOS 2.5-3
+ *   SOLID   (2u): MOS 2.25-2.5
+ *   BASE    (1u): MOS 2-2.25
+ *
+ * Includes fav/dog split and bothCover split for each tier.
  */
 
 import 'dotenv/config';
@@ -27,34 +33,25 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 
-// ═══════════════════════════════════════════════════════════
-// V5 SCORING
-// ═══════════════════════════════════════════════════════════
-function v5Score(mos, ev) {
-  const mosPts = mos >= 3 ? 3 : mos >= 2 ? 2 : 0;
-  const evPts = (ev >= 3 && ev < 5) ? 2 : (ev >= 5 && ev < 10) ? 1 : 0;
-  const score = mosPts + evPts;
-  const stars = Math.max(1, Math.min(5, score));
-  return { mosPts, evPts, score, stars, units: stars };
+// V6 unit sizing
+function v6Units(mos) {
+  if (mos >= 4)    return 5;
+  if (mos >= 3)    return 4;
+  if (mos >= 2.5)  return 3;
+  if (mos >= 2.25) return 2;
+  if (mos >= 2)    return 1;
+  return 0;
 }
 
-function mosBucket(mos) {
-  if (mos >= 3) return 'MOS 3+';
-  if (mos >= 2) return 'MOS 2-3';
-  if (mos >= 1.6) return 'MOS 1.6-2';
+function v6Tier(mos) {
+  if (mos >= 4)    return 'MAXIMUM';
+  if (mos >= 3)    return 'ELITE';
+  if (mos >= 2.5)  return 'STRONG';
+  if (mos >= 2.25) return 'SOLID';
+  if (mos >= 2)    return 'BASE';
   return null;
 }
 
-function evBucket(ev) {
-  if (ev >= 10) return 'EV 10%+';
-  if (ev >= 5) return 'EV 5-10%';
-  if (ev >= 3) return 'EV 3-5%';
-  return null;
-}
-
-// ═══════════════════════════════════════════════════════════
-// DATE HELPERS
-// ═══════════════════════════════════════════════════════════
 function getETDate(offset = 0) {
   const now = new Date();
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -71,71 +68,24 @@ function getMonday() {
   return `${et.getFullYear()}-${String(et.getMonth() + 1).padStart(2, '0')}-${String(et.getDate()).padStart(2, '0')}`;
 }
 
-// ═══════════════════════════════════════════════════════════
-// MATRIX PRINTER
-// ═══════════════════════════════════════════════════════════
-const MOS_ROWS = ['MOS 3+', 'MOS 2-3', 'MOS 1.6-2'];
-const EV_COLS = ['EV 3-5%', 'EV 5-10%', 'EV 10%+'];
-
-function buildMatrix(bets) {
-  const m = {};
-  for (const mr of MOS_ROWS) for (const ec of EV_COLS) m[`${mr}|${ec}`] = [];
-  
-  for (const b of bets) {
-    const mr = mosBucket(b.mos);
-    const ec = evBucket(b.ev);
-    if (!mr || !ec) continue;
-    const key = `${mr}|${ec}`;
-    if (m[key]) m[key].push(b);
-  }
-  return m;
-}
-
-function cellStr(bets, stars) {
-  if (!bets.length) return '  --                       ';
+function calcStats(bets) {
+  if (!bets.length) return null;
   const w = bets.filter(b => b.won).length;
   const l = bets.length - w;
   const u = bets.reduce((s, b) => s + b.units, 0);
   const p = bets.reduce((s, b) => s + b.profit, 0);
   const roi = u > 0 ? (p / u * 100) : 0;
-  const icon = roi >= 5 ? '🟢' : roi >= 0 ? '🟡' : '🔴';
-  return `${icon} ${stars}★ ${w}-${l}`.padEnd(14) + `${p >= 0 ? '+' : ''}${p.toFixed(1)}u ${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`;
+  return { w, l, pct: w / (w + l) * 100, units: u, profit: p, roi };
 }
 
-function printMatrix(label, bets) {
-  if (!bets.length) {
-    console.log(`\n  ${label}: No data\n`);
+function fmtRow(label, stats) {
+  if (!stats) {
+    console.log(`  ${label.padEnd(28)}│   --`);
     return;
   }
-  
-  const matrix = buildMatrix(bets);
-  
-  // Summary line
-  const w = bets.filter(b => b.won).length;
-  const l = bets.length - w;
-  const u = bets.reduce((s, b) => s + b.units, 0);
-  const p = bets.reduce((s, b) => s + b.profit, 0);
-  const roi = u > 0 ? (p / u * 100) : 0;
-  const roiIcon = roi >= 5 ? '🟢' : roi >= 0 ? '🟡' : '🔴';
-  
-  console.log(`\n  ┌─ ${label}`);
-  console.log(`  │  ${roiIcon} ${w}-${l} (${(w/(w+l)*100).toFixed(1)}%) | ${u.toFixed(0)}u risked | ${p >= 0 ? '+' : ''}${p.toFixed(1)}u | ${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI`);
-  console.log(`  │`);
-  console.log(`  │  ${''.padEnd(20)}│  EV 3-5% (+2pts)          │  EV 5-10% (+1pt)          │  EV 10%+ (0pts)`);
-  console.log(`  │  ${'─'.repeat(20)}┼${'─'.repeat(28)}┼${'─'.repeat(28)}┼${'─'.repeat(28)}`);
-  
-  for (const mr of MOS_ROWS) {
-    const cells = EV_COLS.map(ec => {
-      const key = `${mr}|${ec}`;
-      const mosPts = mr === 'MOS 3+' ? 3 : mr === 'MOS 2-3' ? 2 : 0;
-      const evPts = ec === 'EV 3-5%' ? 2 : ec === 'EV 5-10%' ? 1 : 0;
-      const stars = Math.max(1, Math.min(5, mosPts + evPts));
-      return cellStr(matrix[key], stars);
-    });
-    const pts = mr === 'MOS 3+' ? '3pts' : mr === 'MOS 2-3' ? '2pts' : '0pts';
-    console.log(`  │  ${(mr + ' (' + pts + ')').padEnd(20)}│  ${cells[0].padEnd(27)}│  ${cells[1].padEnd(27)}│  ${cells[2]}`);
-  }
-  console.log(`  └${'─'.repeat(110)}`);
+  const icon = stats.roi >= 5 ? '🟢' : stats.roi >= 0 ? '🟡' : '🔴';
+  const record = `${stats.w}-${stats.l}`;
+  console.log(`  ${icon} ${label.padEnd(26)}│ ${String(stats.w + stats.l).padStart(4)} │ ${record.padStart(7)} │ ${stats.pct.toFixed(1).padStart(5)}% │ ${stats.units.toFixed(0).padStart(5)}u │ ${(stats.profit >= 0 ? '+' : '') + stats.profit.toFixed(1) + 'u'}${' '.repeat(Math.max(1, 8 - ((stats.profit >= 0 ? '+' : '') + stats.profit.toFixed(1) + 'u').length))}│ ${(stats.roi >= 0 ? '+' : '') + stats.roi.toFixed(1)}%`);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -148,14 +98,11 @@ async function analyze() {
   
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║              V5 PERFORMANCE MATRIX — MOS × EV Star System                     ║');
+  console.log('║              V6 PERFORMANCE ANALYSIS — MOS-Primary System                     ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
   console.log(`\n  Today: ${today} | Yesterday: ${yesterday} | Week start: ${monday}`);
   
-  // Fetch all completed bets
   const snap = await getDocs(query(collection(db, 'basketball_bets'), where('status', '==', 'COMPLETED')));
-  
-  // Also check for alternate status values
   const snap2 = await getDocs(query(collection(db, 'basketball_bets'), where('status', '==', 'COMPLETEd')));
   const snap3 = await getDocs(query(collection(db, 'basketball_bets'), where('status', '==', 'COMPLETE')));
   
@@ -164,30 +111,28 @@ async function analyze() {
   const processBet = (docSnap) => {
     const d = docSnap.data();
     const mos = d.spreadAnalysis?.marginOverSpread ?? null;
-    const ev = d.prediction?.evPercent ?? null;
-    const odds = d.bet?.odds || 0;
     const won = d.result?.outcome === 'WIN';
     const date = d.date || '';
+    const spread = d.spreadAnalysis?.spread ?? d.bet?.spread ?? null;
+    const isFavorite = d.spreadAnalysis?.isFavorite ?? (spread !== null ? spread < 0 : null);
+    const bothCover = d.spreadAnalysis?.bothModelsCover ?? false;
     
-    const isATSUpgrade = d.betRecommendation?.type === 'ATS' && d.isPrimePick;
-    const isATSStandalone = d.isATSPick && !d.isPrimePick;
-    const isML = !isATSUpgrade && !isATSStandalone;
+    // Use V6 unit sizing for all bets with MOS data
+    const units = (mos !== null) ? Math.max(1, v6Units(mos)) : (d.prediction?.unitSize || 1);
     
-    // V5 units (based on composite score)
-    const v5 = (mos !== null && ev !== null) ? v5Score(mos, ev) : null;
-    const units = v5 ? v5.units : (d.prediction?.unitSize || 1);
-    
-    // For ATS bets, odds are always -110
-    const betOdds = (isATSUpgrade || isATSStandalone) ? -110 : odds;
+    // All V6 picks are ATS at -110; for legacy ML picks use stored odds
+    const isATS = d.bet?.market === 'SPREAD' || d.isATSPick || d.betRecommendation?.type === 'ATS';
+    const betOdds = isATS ? -110 : (d.bet?.odds || 0);
     const profit = won
       ? (betOdds > 0 ? units * (betOdds / 100) : units * (100 / Math.abs(betOdds)))
       : -units;
     
     allBets.push({
-      date, mos: mos || 0, ev: ev || 0, odds: betOdds, won, units, profit,
-      isML, isATSUpgrade, isATSStandalone,
+      date, mos: mos || 0, won, units, profit,
+      isFavorite, bothCover, isATS,
       team: d.bet?.pick, id: docSnap.id,
-      hasMOS: mos !== null
+      hasMOS: mos !== null,
+      tier: mos !== null ? v6Tier(mos) : null,
     });
   };
   
@@ -197,55 +142,120 @@ async function analyze() {
   
   console.log(`  Loaded ${allBets.length} completed bets\n`);
   
-  // Filter by time period
+  const withMOS = (bets) => bets.filter(b => b.hasMOS);
+  
   const allTime = allBets;
   const thisWeek = allBets.filter(b => b.date >= monday);
   const yest = allBets.filter(b => b.date === yesterday);
   
-  // Filter by bet type
-  const filterType = (bets, type) => {
-    if (type === 'all') return bets;
-    if (type === 'ml') return bets.filter(b => b.isML);
-    if (type === 'ats_upgrade') return bets.filter(b => b.isATSUpgrade);
-    if (type === 'ats_standalone') return bets.filter(b => b.isATSStandalone);
-    return bets;
-  };
-  
-  // Only include bets with MOS data for matrix view
-  const withMOS = (bets) => bets.filter(b => b.hasMOS);
-  
-  const betTypes = [
-    { key: 'all', label: 'ALL PICKS' },
-    { key: 'ml', label: 'ML ONLY' },
-    { key: 'ats_upgrade', label: 'ATS UPGRADED' },
-    { key: 'ats_standalone', label: 'ATS STANDALONE' },
+  const periods = [
+    { label: 'ALL TIME', bets: allTime },
+    { label: 'THIS WEEK', bets: thisWeek },
+    { label: 'YESTERDAY', bets: yest },
   ];
   
-  const periods = [
-    { key: 'allTime', label: 'ALL TIME', bets: allTime },
-    { key: 'thisWeek', label: 'THIS WEEK', bets: thisWeek },
-    { key: 'yesterday', label: 'YESTERDAY', bets: yest },
+  const MOS_TIERS = [
+    { name: 'MAXIMUM (5u)', label: 'MOS 4+',      filter: b => b.mos >= 4 },
+    { name: 'ELITE (4u)',   label: 'MOS 3-4',      filter: b => b.mos >= 3 && b.mos < 4 },
+    { name: 'STRONG (3u)',  label: 'MOS 2.5-3',    filter: b => b.mos >= 2.5 && b.mos < 3 },
+    { name: 'SOLID (2u)',   label: 'MOS 2.25-2.5', filter: b => b.mos >= 2.25 && b.mos < 2.5 },
+    { name: 'BASE (1u)',    label: 'MOS 2-2.25',   filter: b => b.mos >= 2 && b.mos < 2.25 },
+  ];
+  
+  const CUMULATIVE_TIERS = [
+    { label: 'MOS 4+',   filter: b => b.mos >= 4 },
+    { label: 'MOS 3+',   filter: b => b.mos >= 3 },
+    { label: 'MOS 2.5+', filter: b => b.mos >= 2.5 },
+    { label: 'MOS 2+',   filter: b => b.mos >= 2 },
+    { label: 'MOS 1.5+', filter: b => b.mos >= 1.5 },
+    { label: 'ALL',       filter: () => true },
   ];
   
   for (const period of periods) {
-    console.log('\n' + '═'.repeat(112));
-    console.log(`  ${period.label} (${period.bets.length} bets total, ${withMOS(period.bets).length} with MOS data)`);
-    console.log('═'.repeat(112));
+    const bets = withMOS(period.bets);
     
-    for (const type of betTypes) {
-      const bets = withMOS(filterType(period.bets, type.key));
-      printMatrix(`${type.label}`, bets);
+    console.log('\n' + '═'.repeat(100));
+    console.log(`  ${period.label} (${period.bets.length} total, ${bets.length} with MOS data)`);
+    console.log('═'.repeat(100));
+    
+    if (!bets.length) {
+      console.log('  No data\n');
+      continue;
     }
+    
+    // Overall
+    const overall = calcStats(bets);
+    console.log(`\n  OVERALL: ${overall.w}-${overall.l} (${overall.pct.toFixed(1)}%) | ${overall.units.toFixed(0)}u risked | ${overall.profit >= 0 ? '+' : ''}${overall.profit.toFixed(1)}u | ${overall.roi >= 0 ? '+' : ''}${overall.roi.toFixed(1)}% ROI\n`);
+    
+    // ── MOS TIER BREAKDOWN ──
+    console.log('  ─── MOS TIER BREAKDOWN ──────────────────────────────────────────────────────');
+    console.log('  Tier                        │ Bets │  Record │ Cover% │ Units │ Profit  │ ROI');
+    console.log('  ' + '─'.repeat(96));
+    
+    for (const tier of MOS_TIERS) {
+      const tierBets = bets.filter(tier.filter);
+      fmtRow(`${tier.name} ${tier.label}`, calcStats(tierBets));
+    }
+    
+    // Sub-floor tiers for historical context
+    const below2 = bets.filter(b => b.mos >= 1.5 && b.mos < 2);
+    const below15 = bets.filter(b => b.mos >= 1 && b.mos < 1.5);
+    const below1 = bets.filter(b => b.mos < 1);
+    if (below2.length) fmtRow('(below floor) MOS 1.5-2', calcStats(below2));
+    if (below15.length) fmtRow('(below floor) MOS 1-1.5', calcStats(below15));
+    if (below1.length) fmtRow('(below floor) MOS <1', calcStats(below1));
+    
+    // ── CUMULATIVE THRESHOLDS ──
+    console.log('\n  ─── CUMULATIVE THRESHOLDS ────────────────────────────────────────────────────');
+    console.log('  Threshold                   │ Bets │  Record │ Cover% │ Units │ Profit  │ ROI');
+    console.log('  ' + '─'.repeat(96));
+    
+    for (const tier of CUMULATIVE_TIERS) {
+      fmtRow(tier.label, calcStats(bets.filter(tier.filter)));
+    }
+    
+    // ── FAV / DOG SPLIT ──
+    console.log('\n  ─── FAVORITE vs UNDERDOG ─────────────────────────────────────────────────────');
+    console.log('  Segment                     │ Bets │  Record │ Cover% │ Units │ Profit  │ ROI');
+    console.log('  ' + '─'.repeat(96));
+    
+    const favs = bets.filter(b => b.isFavorite === true);
+    const dogs = bets.filter(b => b.isFavorite === false);
+    const unknown = bets.filter(b => b.isFavorite === null);
+    
+    fmtRow('ALL FAVORITES', calcStats(favs));
+    fmtRow('ALL UNDERDOGS', calcStats(dogs));
+    if (unknown.length) fmtRow('UNKNOWN', calcStats(unknown));
+    
+    // Fav/Dog within qualifying tiers
+    const qualifying = bets.filter(b => b.mos >= 2);
+    const qualFavs = qualifying.filter(b => b.isFavorite === true);
+    const qualDogs = qualifying.filter(b => b.isFavorite === false);
+    
+    console.log('  ' + '─'.repeat(96));
+    fmtRow('MOS 2+ FAVORITES', calcStats(qualFavs));
+    fmtRow('MOS 2+ UNDERDOGS', calcStats(qualDogs));
+    
+    // ── BOTH COVER SPLIT ──
+    console.log('\n  ─── BOTH MODELS COVER vs SINGLE ─────────────────────────────────────────────');
+    console.log('  Segment                     │ Bets │  Record │ Cover% │ Units │ Profit  │ ROI');
+    console.log('  ' + '─'.repeat(96));
+    
+    const both = bets.filter(b => b.bothCover && b.mos >= 2);
+    const single = bets.filter(b => !b.bothCover && b.mos >= 2);
+    
+    fmtRow('MOS 2+ & Both Cover', calcStats(both));
+    fmtRow('MOS 2+ & Single Cover', calcStats(single));
   }
   
   // ═══════════════════════════════════════════════════════════
   // DAILY TREND (last 7 days)
   // ═══════════════════════════════════════════════════════════
-  console.log('\n' + '═'.repeat(112));
+  console.log('\n' + '═'.repeat(100));
   console.log('  DAILY TREND (Last 7 Days)');
-  console.log('═'.repeat(112));
+  console.log('═'.repeat(100));
   console.log();
-  console.log('  Date          Picks   W-L       Win%     Units    Profit     ROI%');
+  console.log('  Date          Picks   W-L       Cover%   Units    Profit     ROI%');
   console.log('  ' + '─'.repeat(75));
   
   for (let i = 1; i <= 7; i++) {
@@ -253,24 +263,21 @@ async function analyze() {
     const dayBets = withMOS(allBets.filter(b => b.date === d));
     if (!dayBets.length) continue;
     
-    const w = dayBets.filter(b => b.won).length;
-    const l = dayBets.length - w;
-    const u = dayBets.reduce((s, b) => s + b.units, 0);
-    const p = dayBets.reduce((s, b) => s + b.profit, 0);
-    const roi = u > 0 ? (p / u * 100) : 0;
-    const icon = roi >= 5 ? '🟢' : roi >= 0 ? '🟡' : '🔴';
+    const s = calcStats(dayBets);
+    const icon = s.roi >= 5 ? '🟢' : s.roi >= 0 ? '🟡' : '🔴';
+    const record = `${s.w}-${s.l}`;
     
-    console.log(`  ${icon} ${d}    ${String(dayBets.length).padEnd(8)}${(w + '-' + l).padEnd(10)}${(w/(w+l)*100).toFixed(1).padStart(5)}%    ${u.toFixed(0).padStart(5)}u    ${(p >= 0 ? '+' : '') + p.toFixed(1) + 'u'}${' '.repeat(Math.max(1, 8 - ((p >= 0 ? '+' : '') + p.toFixed(1) + 'u').length))}${(roi >= 0 ? '+' : '') + roi.toFixed(1)}%`);
+    console.log(`  ${icon} ${d}    ${String(dayBets.length).padEnd(8)}${record.padEnd(10)}${s.pct.toFixed(1).padStart(5)}%    ${s.units.toFixed(0).padStart(5)}u    ${(s.profit >= 0 ? '+' : '') + s.profit.toFixed(1) + 'u'}${' '.repeat(Math.max(1, 8 - ((s.profit >= 0 ? '+' : '') + s.profit.toFixed(1) + 'u').length))}${(s.roi >= 0 ? '+' : '') + s.roi.toFixed(1)}%`);
   }
   
-  console.log('\n' + '═'.repeat(112));
+  console.log('\n' + '═'.repeat(100));
   console.log('  ANALYSIS COMPLETE');
-  console.log('═'.repeat(112) + '\n');
+  console.log('═'.repeat(100) + '\n');
   
   process.exit(0);
 }
 
 analyze().catch(err => {
-  console.error('❌ Analysis failed:', err.message);
+  console.error('Analysis failed:', err.message);
   process.exit(1);
 });
