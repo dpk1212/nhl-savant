@@ -65,6 +65,32 @@ const MOS_FLOOR_CONFIRMED = 1.5;
 const MOT_FLOOR = 4.5;
 const MOT_FLOOR_CONFIRMED = 3.5;
 
+// ─── Movement Classification ────────────────────────────────────────
+// Spreads: books price tightly, 1.0pt+ = real signal
+// Totals:  public over-bias creates 0.5-1.0pt noise, 1.5pt+ = real signal
+
+function classifySpreadMovement(lm) {
+  if (lm == null) return { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
+  const abs = Math.abs(lm);
+  const dir = lm >= 0 ? 'FOR' : 'AGAINST';
+  if (abs >= 2.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STEAM',       signal: dir, magnitude: abs };
+  if (abs >= 1.5)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STRONG',      signal: dir, magnitude: abs };
+  if (abs >= 1.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'SIGNIFICANT', signal: dir, magnitude: abs };
+  if (abs >= 0.5)  return { tier: 'NEUTRAL',                             label: 'MINOR',       signal: dir, magnitude: abs };
+  return              { tier: 'NEUTRAL',                             label: 'NOISE',       signal: 'flat', magnitude: abs };
+}
+
+function classifyTotalsMovement(lm) {
+  if (lm == null) return { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
+  const abs = Math.abs(lm);
+  const dir = lm >= 0 ? 'FOR' : 'AGAINST';
+  if (abs >= 3.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STEAM',       signal: dir, magnitude: abs };
+  if (abs >= 2.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STRONG',      signal: dir, magnitude: abs };
+  if (abs >= 1.5)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'SIGNIFICANT', signal: dir, magnitude: abs };
+  if (abs >= 1.0)  return { tier: 'NEUTRAL',                             label: 'MINOR',       signal: dir, magnitude: abs };
+  return              { tier: 'NEUTRAL',                             label: 'NOISE',       signal: 'flat', magnitude: abs };
+}
+
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
 console.log('║              PRIME PICKS V7 — MOS-Primary + Totals                             ║');
@@ -328,12 +354,10 @@ function evaluateBothSides(game, spreadGames) {
     //   DOG +7 opens, +5.5 now: 7 - 5.5 = +1.5 (CONFIRM — sharps on dog)
     //   FAV -4 opens, -5.5 now: -4 - (-5.5) = +1.5 (CONFIRM — sharps on fav)
     let lineMovement = null;
-    let movementTier = 'UNKNOWN';
+    let movement = { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
     if (openerSpread != null) {
       lineMovement = Math.round((openerSpread - spread) * 10) / 10;
-      if (lineMovement >= 1.0) movementTier = 'CONFIRM';
-      else if (lineMovement >= -0.5) movementTier = 'NEUTRAL';
-      else movementTier = 'FLAGGED';
+      movement = classifySpreadMovement(lineMovement);
     }
     
     return {
@@ -342,7 +366,9 @@ function evaluateBothSides(game, spreadGames) {
       spread,
       openerSpread,
       lineMovement,
-      movementTier,
+      movementTier: movement.tier,
+      movementLabel: movement.label,
+      movementSignal: movement.signal,
       drMargin: Math.round(drMargin * 10) / 10,
       hsMargin: Math.round(hsMargin * 10) / 10,
       blendedMargin: Math.round(blendedMargin * 10) / 10,
@@ -413,14 +439,12 @@ function evaluateTotals(game, totalsGames) {
   //   UNDER: line moves down = CONFIRM (sharps betting under)
   const openerTotal = totalsGame.openerTotal;
   let lineMovement = null;
-  let movementTier = 'UNKNOWN';
+  let movement = { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
   if (openerTotal != null) {
     lineMovement = direction === 'OVER'
       ? Math.round((marketTotal - openerTotal) * 10) / 10
       : Math.round((openerTotal - marketTotal) * 10) / 10;
-    if (lineMovement >= 1.0) movementTier = 'CONFIRM';
-    else if (lineMovement >= -0.5) movementTier = 'NEUTRAL';
-    else movementTier = 'FLAGGED';
+    movement = classifyTotalsMovement(lineMovement);
   }
   
   return {
@@ -428,7 +452,9 @@ function evaluateTotals(game, totalsGames) {
     marketTotal,
     openerTotal,
     lineMovement,
-    movementTier,
+    movementTier: movement.tier,
+    movementLabel: movement.label,
+    movementSignal: movement.signal,
     drTotal: Math.round(drTotal * 10) / 10,
     hsTotal: Math.round(hsTotal * 10) / 10,
     blendedTotal: Math.round(blendedTotal * 10) / 10,
@@ -472,10 +498,12 @@ function getMOTTier(mot, floor = MOT_FLOOR) {
  *   NEUTRAL: no change
  *   FLAGGED: hard skip (return null to reject the pick)
  */
-function applyMovementGate(baseUnits, movementTier) {
+function applyMovementGate(baseUnits, movementTier, movementLabel) {
   if (movementTier === 'FLAGGED') return null;
-  if (movementTier === 'CONFIRM') return Math.min(baseUnits + 1, 5);
-  return baseUnits;
+  if (movementTier !== 'CONFIRM') return baseUnits;
+  if (movementLabel === 'STEAM')  return Math.min(baseUnits + 2, 5);
+  if (movementLabel === 'STRONG') return Math.min(baseUnits + 1, 5);
+  return Math.min(baseUnits + 1, 5);
 }
 
 /**
@@ -511,7 +539,7 @@ async function savePick(db, game, sideData, prediction) {
   const effectiveFloor = sideData.movementTier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
   const tierInfo = getMOSTier(mos, effectiveFloor);
   if (!tierInfo) return { action: 'skipped', betId };
-  const adjustedUnits = applyMovementGate(tierInfo.units, sideData.movementTier);
+  const adjustedUnits = applyMovementGate(tierInfo.units, sideData.movementTier, sideData.movementLabel);
   const isFlagged = adjustedUnits === null;
   const units = isFlagged ? 0 : adjustedUnits;
   const tier = tierInfo.tier;
@@ -604,6 +632,8 @@ async function savePick(db, game, sideData, prediction) {
       openerSpread: sideData.openerSpread,
       lineMovement: sideData.lineMovement,
       movementTier: sideData.movementTier,
+      movementLabel: sideData.movementLabel,
+      movementSignal: sideData.movementSignal,
       drMargin: sideData.drMargin,
       hsMargin: sideData.hsMargin,
       blendedMargin: sideData.blendedMargin,
@@ -681,6 +711,7 @@ async function savePick(db, game, sideData, prediction) {
       openerSpread: sideData.openerSpread,
       lineMovement: sideData.lineMovement,
       movementTier: sideData.movementTier,
+      movementLabel: sideData.movementLabel,
     },
     
     barttorvik: game.barttorvik || null
@@ -721,7 +752,7 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   const effectiveFloor = totalsData.movementTier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
   const tierInfo = getMOTTier(mot, effectiveFloor);
   if (!tierInfo) return { action: 'skipped', betId };
-  const adjustedUnits = applyMovementGate(tierInfo.units, totalsData.movementTier);
+  const adjustedUnits = applyMovementGate(tierInfo.units, totalsData.movementTier, totalsData.movementLabel);
   const isFlagged = adjustedUnits === null;
   const units = isFlagged ? 0 : adjustedUnits;
   const tier = tierInfo.tier;

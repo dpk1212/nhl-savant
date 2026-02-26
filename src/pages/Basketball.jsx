@@ -2472,15 +2472,21 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 letterSpacing: '0.06em',
                 background: betRec.movementTier === 'CONFIRM'
                   ? 'rgba(34, 197, 94, 0.15)'
+                  : betRec.movementTier === 'FLAGGED'
+                  ? 'rgba(239, 68, 68, 0.15)'
                   : 'rgba(255, 255, 255, 0.06)',
                 color: betRec.movementTier === 'CONFIRM'
                   ? '#22C55E'
+                  : betRec.movementTier === 'FLAGGED'
+                  ? '#EF4444'
                   : 'rgba(255,255,255,0.45)',
                 border: betRec.movementTier === 'CONFIRM'
                   ? '1px solid rgba(34, 197, 94, 0.3)'
+                  : betRec.movementTier === 'FLAGGED'
+                  ? '1px solid rgba(239, 68, 68, 0.3)'
                   : '1px solid rgba(255,255,255,0.1)',
               }}>
-                {betRec.movementTier === 'CONFIRM' ? 'STEAM' : 'NEUTRAL'}
+                {betRec.movementLabel || (betRec.movementTier === 'CONFIRM' ? 'STEAM' : 'NEUTRAL')}
                 {betRec.lineMovement != null && (
                   <span style={{ opacity: 0.7, marginLeft: '0.2rem' }}>
                     {betRec.lineMovement > 0 ? '+' : ''}{betRec.lineMovement}
@@ -2595,10 +2601,11 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const mot = totalsData?.marginOverTotal ?? betRec?.marginOverTotal;
             const line = betRec?.totalLine ?? totalsData?.marketTotal;
             const tMvTier = totalsData?.movementTier ?? betRec?.movementTier;
+            const tMvLabel = totalsData?.movementLabel ?? betRec?.movementLabel;
             const tUnitTier = totalsData?.unitTier ?? betRec?.totalTier;
             const isTotMktConf = tUnitTier === 'MARKET_CONFIRMED';
             const motStr = mot != null ? ` by +${mot} pts` : '';
-            const steamTag = tMvTier === 'CONFIRM' ? ' • STEAM' : '';
+            const steamTag = tMvTier === 'CONFIRM' ? ` • ${tMvLabel || 'STEAM'}` : '';
             if (mot >= 4) {
               title = `${dir} ${line} — Maximum Confidence${steamTag}`;
               subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
@@ -2620,9 +2627,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const coverStr = bothCover ? 'Both models project cover' : 'Model projects cover';
             const mosStr = mos != null ? ` by +${mos} pts` : '';
             const sMvTier = spreadData?.movementTier ?? betRec?.movementTier;
+            const sMvLabel = spreadData?.movementLabel ?? betRec?.movementLabel;
             const sUnitTier = spreadData?.unitTier ?? betRec?.atsTier;
             const isMarketConfirmed = sUnitTier === 'MARKET_CONFIRMED';
-            const steamTag = sMvTier === 'CONFIRM' ? ' • STEAM' : '';
+            const steamTag = sMvTier === 'CONFIRM' ? ` • ${sMvLabel || 'STEAM'}` : '';
             if (mos >= 4) {
               title = `${pickTeam} — Maximum Confidence${steamTag}`;
               subtitle = `${side} • ${coverStr}${mosStr}`;
@@ -2914,14 +2922,21 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   const tier = sa.movementTier;
                   if (!tier || tier === 'UNKNOWN') return null;
                   const isConfirm = tier === 'CONFIRM';
+                  const isFlagged = tier === 'FLAGGED';
+                  const label = sa.movementLabel || (isConfirm ? 'STEAM' : 'FLAT');
+                  const labelColor = isFlagged ? '#EF4444'
+                    : label === 'STEAM' ? '#22C55E'
+                    : label === 'STRONG' ? '#10B981'
+                    : label === 'SIGNIFICANT' ? '#22C55E'
+                    : 'rgba(255,255,255,0.5)';
                   return (
                     <div style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '0.25rem',
                       padding: '0.125rem 0.375rem',
-                      background: isConfirm ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.04)',
-                      border: isConfirm ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(255,255,255,0.08)',
+                      background: isFlagged ? 'rgba(239, 68, 68, 0.12)' : isConfirm ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.04)',
+                      border: isFlagged ? '1px solid rgba(239, 68, 68, 0.25)' : isConfirm ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(255,255,255,0.08)',
                       borderRadius: '4px',
                       marginTop: '0.125rem'
                     }}>
@@ -2935,10 +2950,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                       <span style={{
                         fontSize: isMobile ? '0.563rem' : '0.625rem',
                         fontWeight: '800',
-                        color: isConfirm ? '#22C55E' : 'rgba(255,255,255,0.5)',
+                        color: labelColor,
                         fontFeatureSettings: "'tnum'"
                       }}>
-                        {mv > 0 ? '+' : ''}{mv} {isConfirm ? 'STEAM' : 'FLAT'}
+                        {mv > 0 ? '+' : ''}{mv} {label}
                       </span>
                     </div>
                   );
@@ -3226,7 +3241,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                           color: tMvTier === 'CONFIRM' ? '#10b981' : 'rgba(255,255,255,0.5)',
                           letterSpacing: '0.02em'
                         }}>
-                          {tMvTier === 'CONFIRM' ? 'STEAM' : 'HOLD'}
+                          {totalsAnalysis?.movementLabel || totalsRec?.movementLabel || (tMvTier === 'CONFIRM' ? 'STEAM' : 'HOLD')}
                         </span>
                         {tMvVal != null && (
                           <span style={{ 
@@ -3304,7 +3319,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                         color: mvTier === 'CONFIRM' ? '#10b981' : 'rgba(255,255,255,0.5)',
                         letterSpacing: '0.02em'
                       }}>
-                        {mvTier === 'CONFIRM' ? 'STEAM' : 'HOLD'}
+                        {spreadData?.movementLabel || betRec?.movementLabel || (mvTier === 'CONFIRM' ? 'STEAM' : 'HOLD')}
                       </span>
                       {mvVal != null && (
                         <span style={{ 
@@ -3375,7 +3390,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                       fontWeight: '600',
                       marginTop: '0.125rem'
                     }}>
-                      {tUnits}u @ -110 • Both models agree{cMvTier === 'CONFIRM' ? ' • 🟢 STEAM' : ''}
+                      {tUnits}u @ -110 • Both models agree{cMvTier === 'CONFIRM' ? ` • 🟢 ${totalsAnalysis?.movementLabel || 'STEAM'}` : ''}
                     </div>
                   </div>
                 </div>

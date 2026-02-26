@@ -78,16 +78,45 @@ function getMOTTier(mot, floor = MOT_FLOOR) {
   return null;
 }
 
-function applyMovementGate(baseUnits, movementTier) {
-  if (movementTier === 'FLAGGED') return null;
-  if (movementTier === 'CONFIRM') return Math.min(baseUnits + 1, 5);
-  return baseUnits;
+// ─── Movement Classification ────────────────────────────────────────
+//
+// Spreads: books price tightly, any 1.0pt move = meaningful signal.
+// Totals:  natural public over-bias creates 0.5-1.0pt noise on most
+//          games, so the real-signal threshold is 1.5pts.
+//
+// Positive lineMovement = market moved toward our thesis (FOR us).
+// Negative lineMovement = market moved against our thesis (AGAINST us).
+
+function classifySpreadMovement(lm) {
+  if (lm == null) return { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
+  const abs = Math.abs(lm);
+  const dir = lm >= 0 ? 'FOR' : 'AGAINST';
+
+  if (abs >= 2.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STEAM',       signal: dir, magnitude: abs };
+  if (abs >= 1.5)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STRONG',      signal: dir, magnitude: abs };
+  if (abs >= 1.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'SIGNIFICANT', signal: dir, magnitude: abs };
+  if (abs >= 0.5)  return { tier: 'NEUTRAL',                             label: 'MINOR',       signal: dir, magnitude: abs };
+  return              { tier: 'NEUTRAL',                             label: 'NOISE',       signal: 'flat', magnitude: abs };
 }
 
-function getMovementTier(lineMovement) {
-  if (lineMovement >= 1.0)  return 'CONFIRM';
-  if (lineMovement >= -0.5) return 'NEUTRAL';
-  return 'FLAGGED';
+function classifyTotalsMovement(lm) {
+  if (lm == null) return { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
+  const abs = Math.abs(lm);
+  const dir = lm >= 0 ? 'FOR' : 'AGAINST';
+
+  if (abs >= 3.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STEAM',       signal: dir, magnitude: abs };
+  if (abs >= 2.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STRONG',      signal: dir, magnitude: abs };
+  if (abs >= 1.5)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'SIGNIFICANT', signal: dir, magnitude: abs };
+  if (abs >= 1.0)  return { tier: 'NEUTRAL',                             label: 'MINOR',       signal: dir, magnitude: abs };
+  return              { tier: 'NEUTRAL',                             label: 'NOISE',       signal: 'flat', magnitude: abs };
+}
+
+function applyMovementGate(baseUnits, movementTier, movementLabel) {
+  if (movementTier === 'FLAGGED') return null;
+  if (movementTier !== 'CONFIRM') return baseUnits;
+  if (movementLabel === 'STEAM')       return Math.min(baseUnits + 2, 5);
+  if (movementLabel === 'STRONG')      return Math.min(baseUnits + 1, 5);
+  return Math.min(baseUnits + 1, 5);
 }
 
 function estimateCoverProb(mos) {
@@ -292,13 +321,13 @@ function evaluateATSFromEval(evalData, awaySpread, homeSpread) {
     const mos = Math.round((blendedMargin + spread) * 10) / 10;
 
     let lineMovement = null;
-    let movementTier = 'UNKNOWN';
+    let movement = { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
     if (openerSpread != null) {
       lineMovement = Math.round((openerSpread - spread) * 10) / 10;
-      movementTier = getMovementTier(lineMovement);
+      movement = classifySpreadMovement(lineMovement);
     }
 
-    const effectiveFloor = movementTier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
+    const effectiveFloor = movement.tier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
     const tierInfo = getMOSTier(mos, effectiveFloor);
     const qualifies = tierInfo != null;
 
@@ -309,7 +338,8 @@ function evaluateATSFromEval(evalData, awaySpread, homeSpread) {
       blendedMargin: Math.round(blendedMargin * 10) / 10,
       drCovers, hsCovers, blendCovers, bothCover,
       mos, tierInfo, qualifies,
-      lineMovement, movementTier,
+      lineMovement, movementTier: movement.tier,
+      movementLabel: movement.label, movementSignal: movement.signal,
       isFavorite: spread < 0,
     });
   }
@@ -333,22 +363,23 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
   const mot = Math.round(Math.abs(margin) * 10) / 10;
 
   let lineMovement = null;
-  let movementTier = 'UNKNOWN';
+  let movement = { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
   if (openerTotal != null) {
     lineMovement = direction === 'OVER'
       ? Math.round((currentTotal - openerTotal) * 10) / 10
       : Math.round((openerTotal - currentTotal) * 10) / 10;
-    movementTier = getMovementTier(lineMovement);
+    movement = classifyTotalsMovement(lineMovement);
   }
 
-  const effectiveFloor = movementTier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
+  const effectiveFloor = movement.tier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
   const tierInfo = getMOTTier(mot, effectiveFloor);
   const qualifies = tierInfo != null;
 
   return {
     direction, marketTotal: currentTotal, openerTotal,
     mot, tierInfo, qualifies,
-    lineMovement, movementTier,
+    lineMovement, movementTier: movement.tier,
+    movementLabel: movement.label, movementSignal: movement.signal,
     drTotal: model.drTotal, hsTotal: model.hsTotal,
     blendedTotal: model.blendedTotal,
     drOver, hsOver, bothAgreeOver, bothAgreeUnder,
@@ -367,7 +398,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
   const teamNorm = pickTeam.replace(/\s+/g, '_').toUpperCase();
   const betId = `${date}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`;
 
-  const adjustedUnits = applyMovementGate(sideResult.tierInfo.units, sideResult.movementTier);
+  const adjustedUnits = applyMovementGate(sideResult.tierInfo.units, sideResult.movementTier, sideResult.movementLabel);
   const isFlagged = adjustedUnits === null;
   const units = isFlagged ? 0 : adjustedUnits;
   const tier = sideResult.tierInfo.tier;
@@ -473,6 +504,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       spreadConfirmed: true, spread: sideResult.spread,
       openerSpread: sideResult.openerSpread,
       lineMovement: sideResult.lineMovement, movementTier: sideResult.movementTier,
+      movementLabel: sideResult.movementLabel, movementSignal: sideResult.movementSignal,
       drMargin: sideResult.drMargin, hsMargin: sideResult.hsMargin,
       blendedMargin: sideResult.blendedMargin, marginOverSpread: sideResult.mos,
       drCovers: sideResult.drCovers, hsCovers: sideResult.hsCovers,
@@ -517,12 +549,13 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       marginOverSpread: sideResult.mos, bothModelsCover: sideResult.bothCover,
       openerSpread: sideResult.openerSpread,
       lineMovement: sideResult.lineMovement, movementTier: sideResult.movementTier,
+      movementLabel: sideResult.movementLabel, movementSignal: sideResult.movementSignal,
     },
     barttorvik: evalData.barttorvik || null,
   };
 
   await setDoc(betRef, betData);
-  const mvTag = sideResult.movementTier === 'CONFIRM' ? '🟢 STEAM' : '';
+  const mvTag = sideResult.movementLabel ? `${sideResult.movementLabel} ${sideResult.movementSignal}` : '';
   console.log(`   🆕 NEW BET: ${pickTeam} ${sideResult.spread} → ${units}u [${tier}] MOS +${sideResult.mos} ${mvTag}`);
   counters.created++;
 }
@@ -534,7 +567,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
   const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
   const betId = `${date}_${awayNorm}_${homeNorm}_TOTAL_${totalsResult.direction}`;
 
-  const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier);
+  const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier, totalsResult.movementLabel);
   const isFlagged = adjustedUnits === null;
   const units = isFlagged ? 0 : adjustedUnits;
   const tier = totalsResult.tierInfo.tier;
@@ -640,6 +673,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     totalsAnalysis: {
       marketTotal: totalsResult.marketTotal, openerTotal: totalsResult.openerTotal,
       lineMovement: totalsResult.lineMovement, movementTier: totalsResult.movementTier,
+      movementLabel: totalsResult.movementLabel, movementSignal: totalsResult.movementSignal,
       drTotal: totalsResult.drTotal, hsTotal: totalsResult.hsTotal,
       blendedTotal: totalsResult.blendedTotal, marginOverTotal: totalsResult.mot,
       direction: totalsResult.direction,
@@ -680,12 +714,13 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       bothModelsAgree: totalsResult.bothAgreeOver || totalsResult.bothAgreeUnder,
       openerTotal: totalsResult.openerTotal,
       lineMovement: totalsResult.lineMovement, movementTier: totalsResult.movementTier,
+      movementLabel: totalsResult.movementLabel, movementSignal: totalsResult.movementSignal,
     },
     barttorvik: evalData.barttorvik || null,
   };
 
   await setDoc(betRef, betData);
-  const mvTag = totalsResult.movementTier === 'CONFIRM' ? '🟢 STEAM' : '';
+  const mvTag = totalsResult.movementLabel ? `${totalsResult.movementLabel} ${totalsResult.movementSignal}` : '';
   console.log(`   🆕 NEW BET: ${totalsResult.direction} ${totalsResult.marketTotal} → ${units}u [${tier}] MOT +${totalsResult.mot} ${mvTag} (${gameLabel})`);
   counters.created++;
 }
@@ -833,7 +868,7 @@ async function checkLineMovement() {
     const qualifyingATS = atsResults.filter(r => r.qualifies);
     if (qualifyingATS.length > 0) {
       const bestQ = qualifyingATS.sort((a, b) => b.mos - a.mos)[0];
-      const adjustedUnits = applyMovementGate(bestQ.tierInfo.units, bestQ.movementTier);
+      const adjustedUnits = applyMovementGate(bestQ.tierInfo.units, bestQ.movementTier, bestQ.movementLabel);
       if (adjustedUnits !== null || bestQ.movementTier !== 'FLAGGED') {
         await createOrUpdateATSBet(evalData, bestQ, counters);
       }
@@ -886,7 +921,7 @@ async function checkLineMovement() {
 
     // ── Totals: handle bet actions ──
     if (totalsResult?.qualifies) {
-      const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier);
+      const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier, totalsResult.movementLabel);
       if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
         await createOrUpdateTotalsBet(evalData, totalsResult, counters);
       }
@@ -922,15 +957,11 @@ async function checkLineMovement() {
   const fmt = n => n != null ? (n >= 0 ? '+' + n : '' + n) : '??';
   const pad = (s, w) => String(s).padStart(w);
 
-  function moveLabel(lm, tier) {
-    if (lm == null) return '   ??   '.padEnd(14);
-    const abs = Math.abs(lm);
-    const str = abs.toFixed(1);
-    if (lm >= 1.0)  return `▲ ${str} FOR   `.substring(0, 14);
-    if (lm > 0)     return `△ ${str} for   `.substring(0, 14);
-    if (lm === 0)   return `= 0.0 flat  `.substring(0, 14);
-    if (lm >= -0.5) return `▽ ${str} vs    `.substring(0, 14);
-    return             `▼ ${str} AGAINST`.substring(0, 14);
+  function moveLabel(lm, label, signal) {
+    if (lm == null) return '   ??      '.padEnd(14);
+    const abs = Math.abs(lm).toFixed(1);
+    const icon = signal === 'FOR' ? '▲' : signal === 'AGAINST' ? '▼' : '=';
+    return `${icon} ${abs} ${(label || '').padEnd(6)}`.substring(0, 14);
   }
 
   // ── ATS DASHBOARD ──
@@ -951,7 +982,7 @@ async function checkLineMovement() {
     const current = pad(fmt(row.current), 7);
     const mosC = pad(fmt(row.currentMOS), 6);
     const lm = row.sideResult.lineMovement;
-    const move = moveLabel(lm, row.movementTier);
+    const move = moveLabel(lm, row.sideResult.movementLabel, row.sideResult.movementSignal);
     const models = row.bothCover ? '✓ both' : (row.sideResult.blendCovers ? '△ blend' : '✗ no');
     const status = row.status.padEnd(10);
     console.log(`║  ${team} │ ${margin} │ ${opener} │ ${mosO} │ ${current} │ ${mosC} │ ${move} │ ${models} │ ${status} ║`);
@@ -991,7 +1022,7 @@ async function checkLineMovement() {
     const current = pad(row.current, 7);
     const motC = pad(fmt(row.currentMOT), 6);
     const lm = row.totalsResult.lineMovement;
-    const move = moveLabel(lm, row.movementTier);
+    const move = moveLabel(lm, row.totalsResult.movementLabel, row.totalsResult.movementSignal);
     const status = row.status.padEnd(6);
     console.log(`║  ${dir} │ ${game} │ ${mdl} │ ${opener} │ ${motO} │ ${current} │ ${motC} │ ${move} │ ${status} ║`);
   }
