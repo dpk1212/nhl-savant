@@ -333,10 +333,11 @@ const Basketball = () => {
       const lockedPicks = [];
       firebaseBetsSnapshot.forEach((doc) => {
         const bet = doc.data();
+        if (bet.betStatus === 'FLAGGED' || bet.betStatus === 'KILLED') return;
         lockedPicks.push(bet);
       });
       
-      console.log(`🔒 Found ${lockedPicks.length} locked picks for today`);
+      console.log(`🔒 Found ${lockedPicks.length} live picks for today`);
       
       // V4: Only show Firebase locked picks (server-side V4 filters are the source of truth)
       // Client-side qualityGames are used ONLY for fresh model data (dratings, barttorvik, etc.)
@@ -788,7 +789,7 @@ const Basketball = () => {
                     return gamesToCount.filter(g => {
                       const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
                       const bet = betsMap.get(key);
-                      return bet?.savantPick === true;
+                      return bet?.savantPick === true && bet?.betStatus !== 'FLAGGED' && bet?.betStatus !== 'KILLED';
                     }).length;
                   })()}
                 </span>
@@ -834,8 +835,7 @@ const Basketball = () => {
                     return gamesToCount.filter(g => {
                       const key = `${normalizeTeam(g.awayTeam)}_${normalizeTeam(g.homeTeam)}`;
                       const bet = betsMap.get(key);
-                      // Prime = EV bet with spread confirmation (spreadBoost only exists on upgraded EV bets)
-                      return bet?.prediction?.spreadBoost > 0;
+                      return bet?.prediction?.spreadBoost > 0 && bet?.betStatus !== 'FLAGGED' && bet?.betStatus !== 'KILLED';
                     }).length;
                   })()}
                 </span>
@@ -965,7 +965,7 @@ const Basketball = () => {
               const isGameSavantPick = (game) => {
                 const key = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
                 const bet = betsMap.get(key);
-                return bet?.savantPick === true;
+                return bet?.savantPick === true && bet?.betStatus !== 'FLAGGED' && bet?.betStatus !== 'KILLED';
               };
               
               // Apply status filter
