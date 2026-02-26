@@ -573,32 +573,31 @@ async function checkLineMovement() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // 1. Load game evaluations
-  console.log(`📋 Loading game evaluations for ${today}...`);
-  const evalsRef = collection(db, 'game_evaluations');
-  const evalsQuery = query(evalsRef, where('date', '==', today));
-  const evalsSnapshot = await getDocs(evalsQuery);
-  console.log(`   ✅ ${evalsSnapshot.size} game evaluations loaded\n`);
+  // 1. Load everything for today from basketball_bets
+  console.log(`📋 Loading data for ${today}...`);
+  const betsRef = collection(db, 'basketball_bets');
+  const betsQuery = query(betsRef, where('date', '==', today));
+  const allDocs = await getDocs(betsQuery);
 
-  if (evalsSnapshot.size === 0) {
+  // Split into evaluations vs actual bets
+  const evalDocs = [];
+  const activeBetDocs = [];
+  for (const d of allDocs.docs) {
+    const data = d.data();
+    if (data.type === 'EVALUATION') {
+      evalDocs.push(d);
+    } else {
+      if (data.betStatus !== 'KILLED') activeBetDocs.push(d);
+    }
+  }
+
+  const evalsSnapshot = { size: evalDocs.length, docs: evalDocs };
+  console.log(`   ✅ ${evalDocs.length} game evaluations, ${activeBetDocs.length} active bets\n`);
+
+  if (evalDocs.length === 0) {
     console.log('   ⚠️  No evaluations found. Run fetch-prime-picks first.\n');
     return;
   }
-
-  // 2. Load existing bets (to detect kills for bets with no qualifying evaluation)
-  console.log('📋 Loading existing bets...');
-  const betsRef = collection(db, 'basketball_bets');
-  const betsQuery = query(betsRef, where('date', '==', today));
-  const betsSnapshot = await getDocs(betsQuery);
-
-  const existingBetIds = new Set();
-  const activeBetDocs = [];
-  for (const betDoc of betsSnapshot.docs) {
-    const status = betDoc.data().betStatus;
-    existingBetIds.add(betDoc.id);
-    if (status !== 'KILLED') activeBetDocs.push(betDoc);
-  }
-  console.log(`   ✅ ${betsSnapshot.size} total bets (${activeBetDocs.length} active)\n`);
 
   // 3. Fetch current lines
   console.log('📡 Fetching current NCAAB lines from The Odds API...');
@@ -624,7 +623,7 @@ async function checkLineMovement() {
     }
 
     // Update evaluation with latest lines
-    await updateDoc(doc(db, 'game_evaluations', evalDoc.id), {
+    await updateDoc(doc(db, 'basketball_bets', evalDoc.id), {
       'currentLines.awaySpread': oddsGame.awaySpread,
       'currentLines.homeSpread': oddsGame.homeSpread,
       'currentLines.total': oddsGame.total,

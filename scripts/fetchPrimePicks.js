@@ -922,6 +922,7 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
 
   const evalData = {
     id: evalId,
+    type: 'EVALUATION',
     date,
     game: {
       awayTeam: game.awayTeam,
@@ -968,7 +969,7 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
     lastUpdatedAt: Date.now(),
   };
 
-  await setDoc(doc(db, 'game_evaluations', evalId), evalData);
+  await setDoc(doc(db, 'basketball_bets', evalId), evalData);
 }
 
 /**

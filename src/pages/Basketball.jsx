@@ -333,7 +333,7 @@ const Basketball = () => {
       const lockedPicks = [];
       firebaseBetsSnapshot.forEach((doc) => {
         const bet = doc.data();
-        if (bet.betStatus === 'FLAGGED' || bet.betStatus === 'KILLED') return;
+        if (bet.betStatus === 'FLAGGED' || bet.betStatus === 'KILLED' || bet.type === 'EVALUATION') return;
         lockedPicks.push(bet);
       });
       
