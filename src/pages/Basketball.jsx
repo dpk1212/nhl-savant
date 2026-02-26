@@ -2607,7 +2607,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                     color: 'rgba(255,255,255,0.6)',
                     lineHeight: 1.2
                   }}>
-                    {label} • <span style={{ color: '#10B981', fontWeight: '700' }}>{pred.bestEV > 0 ? '+' : ''}{pred.bestEV.toFixed(1)}% edge</span>
+                    {label}
                   </div>
                 </>
               );
@@ -2676,7 +2676,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   lineHeight: 1.2
                 }}>
                   ML ref: {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
-                  {pred.bestEV > 0 && <span> • +{pred.bestEV.toFixed(1)}% edge</span>}
                 </div>
               </>
             ) : (
@@ -2815,7 +2814,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             </div>
             
         {/* Predicted Score — Premium Block */}
-        {pred.ensembleTotal && (
+        {pred.ensembleAwayScore && pred.ensembleHomeScore && (
           <div style={{ 
             background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%)',
             borderRadius: '8px',
