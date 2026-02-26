@@ -266,7 +266,7 @@ function evaluateATSFromEval(evalData, awaySpread, homeSpread) {
 
     const effectiveFloor = movementTier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
     const tierInfo = getMOSTier(mos, effectiveFloor);
-    const qualifies = bothCover && tierInfo != null;
+    const qualifies = tierInfo != null;
 
     results.push({
       side, teamName, spread, openerSpread,
@@ -294,9 +294,7 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
   const bothAgreeOver = drOver && hsOver;
   const bothAgreeUnder = !drOver && !hsOver;
 
-  if (!bothAgreeOver && !bothAgreeUnder) return null;
-
-  const direction = bothAgreeOver ? 'OVER' : 'UNDER';
+  const direction = model.blendedTotal > currentTotal ? 'OVER' : 'UNDER';
   const margin = model.blendedTotal - currentTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
 
@@ -757,9 +755,9 @@ async function checkLineMovement() {
       else if (best.qualifies && isMarketConfirmed) status = '🟢 MKTCONF';
       else if (best.qualifies && best.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
       else if (best.qualifies) status = '🟡 HOLD';
-      else if (best.bothCover && best.mos >= 1.0) status = '👀 NEAR';
-      else if (best.bothCover) status = '· agree';
-      else status = '· split';
+      else if (best.mos >= 1.0) status = '👀 NEAR';
+      else if (best.blendCovers) status = '· edge';
+      else status = '· no';
 
       allAtsRows.push({
         team: best.teamName,
@@ -897,7 +895,7 @@ async function checkLineMovement() {
     const mosC = pad(fmt(row.currentMOS), 6);
     const lm = row.sideResult.lineMovement;
     const move = moveLabel(lm, row.movementTier);
-    const models = row.bothCover ? '✓ both' : '✗ split';
+    const models = row.bothCover ? '✓ both' : (row.sideResult.blendCovers ? '△ blend' : '✗ no');
     const status = row.status.padEnd(10);
     console.log(`║  ${team} │ ${margin} │ ${opener} │ ${mosO} │ ${current} │ ${mosC} │ ${move} │ ${models} │ ${status} ║`);
   }
@@ -905,7 +903,7 @@ async function checkLineMovement() {
   const atsQualified = allAtsRows.filter(r => r.qualifies);
   const atsStandard = atsQualified.filter(r => r.sideResult.tierInfo?.tier !== 'MARKET_CONFIRMED');
   const atsMktConf = atsQualified.filter(r => r.sideResult.tierInfo?.tier === 'MARKET_CONFIRMED');
-  const atsNear = allAtsRows.filter(r => !r.qualifies && r.bothCover && r.currentMOS >= 1.0);
+  const atsNear = allAtsRows.filter(r => !r.qualifies && r.currentMOS >= 1.0);
   const atsFlagged = atsQualified.filter(r => r.movementTier === 'FLAGGED');
   const atsForUs = allAtsRows.filter(r => r.sideResult.lineMovement > 0).length;
   const atsAgainst = allAtsRows.filter(r => r.sideResult.lineMovement != null && r.sideResult.lineMovement < 0).length;

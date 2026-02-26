@@ -61,7 +61,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
+const MOS_FLOOR_CONFIRMED = 1.5;
 const MOT_FLOOR = 4.5;
+const MOT_FLOOR_CONFIRMED = 3.5;
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
@@ -358,9 +360,8 @@ function evaluateBothSides(game, spreadGames) {
   
   if (!away && !home) return null;
   
-  // FILTER: Both models must agree the pick covers the spread
-  const awayValid = away && away.bothCover;
-  const homeValid = home && home.bothCover;
+  const awayValid = away && away.marginOverSpread > 0;
+  const homeValid = home && home.marginOverSpread > 0;
   
   if (!awayValid && !homeValid) return null;
   
@@ -371,7 +372,7 @@ function evaluateBothSides(game, spreadGames) {
 
 /**
  * Evaluate totals (O/U) for a game.
- * Both models must agree on direction (both OVER or both UNDER).
+ * Uses blended model to determine direction.
  * MOT = |blendedTotal - marketTotal|
  */
 function evaluateTotals(game, totalsGames) {
@@ -403,9 +404,7 @@ function evaluateTotals(game, totalsGames) {
   const bothAgreeOver = drOver && hsOver;
   const bothAgreeUnder = !drOver && !hsOver;
   
-  if (!bothAgreeOver && !bothAgreeUnder) return null;
-  
-  const direction = bothAgreeOver ? 'OVER' : 'UNDER';
+  const direction = blendedTotal > marketTotal ? 'OVER' : 'UNDER';
   const margin = blendedTotal - marketTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
   
@@ -444,24 +443,26 @@ function evaluateTotals(game, totalsGames) {
 /**
  * MOS tier → base unit sizing (1-5 scale)
  */
-function getMOSTier(mos) {
+function getMOSTier(mos, floor = MOS_FLOOR) {
   if (mos >= 4)    return { tier: 'MAXIMUM', units: 5 };
   if (mos >= 3)    return { tier: 'ELITE',   units: 4 };
   if (mos >= 2.5)  return { tier: 'STRONG',  units: 3 };
   if (mos >= 2.25) return { tier: 'SOLID',   units: 2 };
-  if (mos >= MOS_FLOOR) return { tier: 'BASE', units: 1 };
+  if (mos >= 2.0)  return { tier: 'BASE',    units: 1 };
+  if (mos >= floor) return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
 }
 
 /**
  * MOT tier → base unit sizing for totals (floor = 4.5)
  */
-function getMOTTier(mot) {
+function getMOTTier(mot, floor = MOT_FLOOR) {
   if (mot >= 7)          return { tier: 'MAXIMUM', units: 5 };
   if (mot >= 6)          return { tier: 'ELITE',   units: 4 };
   if (mot >= 5.5)        return { tier: 'STRONG',  units: 3 };
   if (mot >= 5)          return { tier: 'SOLID',   units: 2 };
-  if (mot >= MOT_FLOOR)  return { tier: 'BASE',    units: 1 };
+  if (mot >= 4.5)        return { tier: 'BASE',    units: 1 };
+  if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
 }
 
@@ -507,7 +508,8 @@ async function savePick(db, game, sideData, prediction) {
   const betRef = doc(db, 'basketball_bets', betId);
   
   const mos = sideData.marginOverSpread;
-  const tierInfo = getMOSTier(mos);
+  const effectiveFloor = sideData.movementTier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
+  const tierInfo = getMOSTier(mos, effectiveFloor);
   if (!tierInfo) return { action: 'skipped', betId };
   const adjustedUnits = applyMovementGate(tierInfo.units, sideData.movementTier);
   const isFlagged = adjustedUnits === null;
@@ -716,7 +718,8 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   const betRef = doc(db, 'basketball_bets', betId);
   
   const mot = totalsData.marginOverTotal;
-  const tierInfo = getMOTTier(mot);
+  const effectiveFloor = totalsData.movementTier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
+  const tierInfo = getMOTTier(mot, effectiveFloor);
   if (!tierInfo) return { action: 'skipped', betId };
   const adjustedUnits = applyMovementGate(tierInfo.units, totalsData.movementTier);
   const isFlagged = adjustedUnits === null;
