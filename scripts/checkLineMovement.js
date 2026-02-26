@@ -663,13 +663,11 @@ async function checkLineMovement() {
   const oddsGames = await fetchCurrentLines();
   console.log(`   ✅ ${oddsGames.length} games with lines\n`);
 
-  // 4. Process each evaluation
+  // 4. Evaluate every game: model vs opener vs current
   const counters = { created: 0, updated: 0, stable: 0, killed: 0, skipped: 0, noMatch: 0 };
   const processedBetIds = new Set();
-
-  console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
-  console.log('│ EVALUATING ALL GAMES AGAINST CURRENT LINES                                    │');
-  console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
+  const allAtsRows = [];
+  const allTotalsRows = [];
 
   for (const evalDoc of evalsSnapshot.docs) {
     const evalData = evalDoc.data();
@@ -691,65 +689,186 @@ async function checkLineMovement() {
       lastUpdatedAt: Date.now(),
     });
 
-    // ── ATS: evaluate both sides ──
-    const atsResults = evaluateATSFromEval(evalData, oddsGame.awaySpread, oddsGame.homeSpread);
-    const qualifyingATS = atsResults.filter(r => r.qualifies);
+    const model = evalData.modelData;
+    const openers = evalData.openers;
 
+    // ── ATS: evaluate both sides, pick best ──
+    const atsResults = evaluateATSFromEval(evalData, oddsGame.awaySpread, oddsGame.homeSpread);
+    const best = atsResults.sort((a, b) => b.mos - a.mos)[0];
+
+    if (best) {
+      const openerSpread = best.openerSpread;
+      const openerMOS = openerSpread != null ? Math.round((best.blendedMargin + openerSpread) * 10) / 10 : null;
+      const lineShift = (openerSpread != null && best.spread != null) ? Math.round((best.spread - openerSpread) * 10) / 10 : null;
+
+      let status = '—';
+      if (best.qualifies && best.movementTier === 'FLAGGED') status = '🚫 FLAGGED';
+      else if (best.qualifies && best.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
+      else if (best.qualifies) status = '🟡 HOLD';
+      else if (best.bothCover && best.mos >= 1.0) status = '👀 NEAR';
+      else if (best.bothCover) status = '· agree';
+      else status = '· split';
+
+      allAtsRows.push({
+        team: best.teamName,
+        modelMargin: best.blendedMargin,
+        opener: openerSpread,
+        current: best.spread,
+        openerMOS,
+        currentMOS: best.mos,
+        lineShift,
+        bothCover: best.bothCover,
+        movementTier: best.movementTier,
+        status,
+        qualifies: best.qualifies,
+        gameLabel,
+        sideResult: best,
+        evalData,
+      });
+    }
+
+    // ── ATS: handle bet actions ──
+    const qualifyingATS = atsResults.filter(r => r.qualifies);
     if (qualifyingATS.length > 0) {
-      const best = qualifyingATS.sort((a, b) => b.mos - a.mos)[0];
-      const adjustedUnits = applyMovementGate(best.tierInfo.units, best.movementTier);
-      if (adjustedUnits !== null || best.movementTier !== 'FLAGGED') {
-        await createOrUpdateATSBet(evalData, best, counters);
-      } else {
-        console.log(`   🚫 FLAGGED: ${best.teamName} ${best.spread} MOS +${best.mos} — line moved ${best.lineMovement > 0 ? '+' : ''}${best.lineMovement} (${gameLabel})`);
+      const bestQ = qualifyingATS.sort((a, b) => b.mos - a.mos)[0];
+      const adjustedUnits = applyMovementGate(bestQ.tierInfo.units, bestQ.movementTier);
+      if (adjustedUnits !== null || bestQ.movementTier !== 'FLAGGED') {
+        await createOrUpdateATSBet(evalData, bestQ, counters);
       }
 
-      const side = best.side === 'away' ? 'AWAY' : 'HOME';
-      const teamNorm = best.teamName.replace(/\s+/g, '_').toUpperCase();
+      const side = bestQ.side === 'away' ? 'AWAY' : 'HOME';
+      const teamNorm = bestQ.teamName.replace(/\s+/g, '_').toUpperCase();
       const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
       const homeNorm = evalData.game.homeTeam.replace(/\s+/g, '_').toUpperCase();
       processedBetIds.add(`${today}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`);
-    } else {
-      // Log near-misses: games with MOS 1.0-1.9 where both models cover
-      const nearMisses = atsResults.filter(r => r.bothCover && r.mos >= 1.0 && r.mos < MOS_FLOOR);
-      for (const nm of nearMisses) {
-        const need = Math.round((MOS_FLOOR - nm.mos) * 10) / 10;
-        console.log(`   👀 NEAR: ${nm.teamName} ${nm.spread} MOS +${nm.mos} — needs ${need} more pts of line movement (${gameLabel})`);
-      }
     }
 
     // ── Totals: evaluate at current total ──
     const totalsResult = evaluateTotalsFromEval(evalData, oddsGame.total);
+
+    if (totalsResult) {
+      const openerTotal = totalsResult.openerTotal;
+      const lineShift = (openerTotal != null) ? Math.round((totalsResult.marketTotal - openerTotal) * 10) / 10 : null;
+      const openerMOT = openerTotal != null ? Math.round(Math.abs(model.blendedTotal - openerTotal) * 10) / 10 : null;
+
+      let status = '—';
+      if (totalsResult.qualifies && totalsResult.movementTier === 'FLAGGED') status = '🚫 FLAGGED';
+      else if (totalsResult.qualifies && totalsResult.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
+      else if (totalsResult.qualifies) status = '🟡 HOLD';
+      else if (totalsResult.mot >= 3.0) status = '👀 NEAR';
+      else status = '·';
+
+      allTotalsRows.push({
+        direction: totalsResult.direction,
+        modelTotal: Math.round(model.blendedTotal * 10) / 10,
+        opener: openerTotal,
+        current: totalsResult.marketTotal,
+        openerMOT,
+        currentMOT: totalsResult.mot,
+        lineShift,
+        movementTier: totalsResult.movementTier,
+        status,
+        qualifies: totalsResult.qualifies,
+        gameLabel,
+        totalsResult,
+        evalData,
+      });
+    }
+
+    // ── Totals: handle bet actions ──
     if (totalsResult?.qualifies) {
       const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier);
       if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
         await createOrUpdateTotalsBet(evalData, totalsResult, counters);
-      } else {
-        console.log(`   🚫 FLAGGED: ${totalsResult.direction} ${totalsResult.marketTotal} MOT +${totalsResult.mot} — line moved ${totalsResult.lineMovement > 0 ? '+' : ''}${totalsResult.lineMovement} (${gameLabel})`);
       }
 
       const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
       const homeNorm = evalData.game.homeTeam.replace(/\s+/g, '_').toUpperCase();
       processedBetIds.add(`${today}_${awayNorm}_${homeNorm}_TOTAL_${totalsResult.direction}`);
-    } else if (totalsResult && !totalsResult.qualifies && totalsResult.mot >= 3.0) {
-      const need = Math.round((MOT_FLOOR - totalsResult.mot) * 10) / 10;
-      console.log(`   👀 NEAR: ${totalsResult.direction} ${totalsResult.marketTotal} MOT +${totalsResult.mot} — needs ${need} more pts (${gameLabel})`);
     }
   }
 
   // 5. Kill existing bets that no longer qualify at current lines
-  console.log('');
   for (const betDoc of activeBetDocs) {
     if (processedBetIds.has(betDoc.id)) continue;
     const data = betDoc.data();
-    if (data.betStatus === 'FLAGGED') continue; // already flagged from morning
+    if (data.betStatus === 'FLAGGED') continue;
     await killExistingBet(betDoc, 'no longer qualifies at current line', counters);
   }
 
-  // 6. Summary
+  // ════════════════════════════════════════════════════════════════════════
+  // 6. FULL DASHBOARD — Model vs Opener vs Current for EVERY game
+  // ════════════════════════════════════════════════════════════════════════
+
+  const r = n => n != null ? (n >= 0 ? '+' + n : '' + n) : '??';
+  const pad = (s, w) => String(s).padStart(w);
+
+  // ── ATS DASHBOARD ──
+  allAtsRows.sort((a, b) => b.currentMOS - a.currentMOS);
+
+  console.log('\n');
+  console.log('╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+  console.log('║  ATS DASHBOARD — Model vs Opener vs Current Line (all games, sorted by current MOS)                        ║');
+  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log('║  Team                        │ Model  │ Opener │  MOS@O │ Current │  MOS@C │  Δ Line │ Models │ Status      ║');
+  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+
+  for (const row of allAtsRows) {
+    const team = row.team.substring(0, 28).padEnd(28);
+    const margin = pad(r(row.modelMargin), 6);
+    const opener = pad(r(row.opener), 6);
+    const mosO = pad(row.openerMOS != null ? r(row.openerMOS) : '??', 6);
+    const current = pad(r(row.current), 7);
+    const mosC = pad(r(row.currentMOS), 6);
+    const shift = pad(row.lineShift != null ? r(row.lineShift) : '??', 7);
+    const models = row.bothCover ? '✓ both' : '✗ split';
+    const status = row.status.padEnd(11);
+    console.log(`║  ${team} │ ${margin} │ ${opener} │ ${mosO} │ ${current} │ ${mosC} │ ${shift} │ ${models} │ ${status} ║`);
+  }
+
+  const atsQualified = allAtsRows.filter(r => r.qualifies);
+  const atsNear = allAtsRows.filter(r => !r.qualifies && r.bothCover && r.currentMOS >= 1.0);
+  const atsFlagged = atsQualified.filter(r => r.movementTier === 'FLAGGED');
+
+  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log(`║  MOS >= 2.0 + both cover: ${atsQualified.length}    │  Near (1.0-1.9): ${atsNear.length}    │  Flagged: ${atsFlagged.length}    │  Total games: ${allAtsRows.length}`.padEnd(111) + '║');
+  console.log('╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+
+  // ── TOTALS DASHBOARD ──
+  allTotalsRows.sort((a, b) => b.currentMOT - a.currentMOT);
+
+  console.log('\n');
+  console.log('╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+  console.log('║  TOTALS DASHBOARD — Model vs Opener vs Current Total (all games, sorted by current MOT)                    ║');
+  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log('║  Dir   │ Game                              │ Model  │ Opener │ MOT@O  │ Current │ MOT@C  │  Δ Line │ Status ║');
+  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+
+  for (const row of allTotalsRows) {
+    const dir = row.direction.padEnd(5);
+    const game = row.gameLabel.substring(0, 33).padEnd(33);
+    const mdl = pad(row.modelTotal, 6);
+    const opener = pad(row.opener != null ? row.opener : '??', 6);
+    const motO = pad(row.openerMOT != null ? r(row.openerMOT) : '??', 6);
+    const current = pad(row.current, 7);
+    const motC = pad(r(row.currentMOT), 6);
+    const shift = pad(row.lineShift != null ? r(row.lineShift) : '??', 7);
+    const status = row.status.padEnd(6);
+    console.log(`║  ${dir} │ ${game} │ ${mdl} │ ${opener} │ ${motO} │ ${current} │ ${motC} │ ${shift} │ ${status} ║`);
+  }
+
+  const totQualified = allTotalsRows.filter(r => r.qualifies);
+  const totNear = allTotalsRows.filter(r => !r.qualifies && r.currentMOT >= 3.0);
+  const totFlagged = totQualified.filter(r => r.movementTier === 'FLAGGED');
+
+  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log(`║  MOT >= 4.5 qualified: ${totQualified.length}    │  Near (3.0-4.4): ${totNear.length}    │  Flagged: ${totFlagged.length}    │  Total games: ${allTotalsRows.length}`.padEnd(111) + '║');
+  console.log('╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+
+  // ── BET ACTIONS SUMMARY ──
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║                    LINE MONITOR SUMMARY                                       ║');
+  console.log('║                       BET ACTIONS THIS RUN                                    ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
 
   console.log(`   Games evaluated:  ${evalsSnapshot.size}`);
