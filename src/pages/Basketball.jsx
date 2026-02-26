@@ -1173,7 +1173,7 @@ const Basketball = () => {
                     <>
                       <TierHeader 
                         emoji="🔥" 
-                        title={isMobile ? "MAX CONVICTION" : "MAXIMUM CONVICTION"}
+                        title={isMobile ? "MAX CONFIDENCE" : "MAXIMUM CONFIDENCE"}
                         subtitle={`${gamesByTier.max.length} game${gamesByTier.max.length !== 1 ? 's' : ''} • Top-tier opportunities with 5.0 unit allocation`}
                         color="#10B981"
                         unitRange="5.0u"
@@ -2584,23 +2584,34 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             }}>
               <span>📊</span> OUR MODEL
             </div>
-            <div style={{ 
-              fontSize: isMobile ? '1.25rem' : '1.375rem',
-              fontWeight: '900',
-              color: '#10B981', 
-              lineHeight: 1.1,
-              letterSpacing: '-0.02em',
-              marginBottom: '0.25rem'
-            }}>
-              {((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100).toFixed(1)}%
-            </div>
-            <div style={{ 
-              fontSize: isMobile ? '0.625rem' : '0.688rem',
-              color: 'rgba(255,255,255,0.6)',
-              lineHeight: 1.2
-            }}>
-              Win probability • <span style={{ color: '#10B981', fontWeight: '700' }}>{pred.bestEV > 0 ? '+' : ''}{pred.bestEV.toFixed(1)}% edge</span>
-            </div>
+            {(() => {
+              const isATS = isATSRecommended || isStandaloneATS;
+              const coverProb = betRec?.estimatedCoverProb;
+              const winProb = ((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100);
+              const displayProb = isATS && coverProb ? coverProb : winProb;
+              const label = isATS ? 'Cover probability' : 'Win probability';
+              return (
+                <>
+                  <div style={{ 
+                    fontSize: isMobile ? '1.25rem' : '1.375rem',
+                    fontWeight: '900',
+                    color: '#10B981', 
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.02em',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {displayProb.toFixed(1)}%
+                  </div>
+                  <div style={{ 
+                    fontSize: isMobile ? '0.625rem' : '0.688rem',
+                    color: 'rgba(255,255,255,0.6)',
+                    lineHeight: 1.2
+                  }}>
+                    {label} • <span style={{ color: '#10B981', fontWeight: '700' }}>{pred.bestEV > 0 ? '+' : ''}{pred.bestEV.toFixed(1)}% edge</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* MARKET + SPREAD */}
@@ -2921,29 +2932,13 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           </div>
         )}
         
-        {/* Model Confluence Box - Subtle premium styling */}
+        {/* Model Confluence Box */}
         {(() => {
-          const dr = game.dratings;
-          const hs = game.haslametrics;
-          if (!dr?.awayScore || !dr?.homeScore || !hs?.awayScore || !hs?.homeScore) return null;
+          const bothCover = spreadData?.bothModelsCover ?? betRec?.bothModelsCover;
+          const mos = spreadData?.marginOverSpread ?? betRec?.marginOverSpread;
+          const isFav = spreadData?.isFavorite;
           
-          // Calculate margins FOR THE PICKED TEAM
-          // pred.bestBet is 'away' or 'home'
-          const pickIsAway = pred.bestBet === 'away';
-          
-          // Margin from picked team's perspective (positive = picked team favored)
-          const drMargin = pickIsAway 
-            ? (dr.awayScore - dr.homeScore) 
-            : (dr.homeScore - dr.awayScore);
-          const hsMargin = pickIsAway 
-            ? (hs.awayScore - hs.homeScore) 
-            : (hs.homeScore - hs.awayScore);
-          
-          // Both models agree if both margins are positive (both favor our pick)
-          const modelsAgree = drMargin > 0 && hsMargin > 0;
-          
-          // Conviction = combined margin for the picked team
-          const convictionScore = Math.round((drMargin + hsMargin) * 10) / 10;
+          if (mos === undefined && bothCover === undefined) return null;
           
           return (
             <div style={{ 
@@ -2958,7 +2953,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 justifyContent: 'center',
                 gap: isMobile ? '1rem' : '1.5rem'
               }}>
-                {/* Model Agreement */}
+                {/* Model Cover Agreement */}
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -2971,48 +2966,75 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em'
                   }}>
-                    Models
+                    Cover
                   </span>
                   <span style={{
                     fontSize: isMobile ? '0.75rem' : '0.813rem',
                     fontWeight: '700',
-                    color: modelsAgree ? '#10b981' : '#fbbf24'
+                    color: bothCover ? '#10b981' : '#fbbf24'
                   }}>
-                    {modelsAgree ? 'Aligned' : 'Split'}
+                    {bothCover ? 'Both Models' : 'Single Model'}
                   </span>
                 </div>
                 
-                {/* Subtle Divider */}
                 <div style={{
                   width: '1px',
                   height: '12px',
                   background: 'rgba(255,255,255,0.1)'
                 }} />
                 
-                {/* Conviction Score */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.375rem'
-                }}>
-                  <span style={{ 
-                    fontSize: isMobile ? '0.625rem' : '0.688rem',
-                    color: 'rgba(255,255,255,0.4)',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em'
+                {/* Side Label */}
+                {isFav !== undefined && (
+                  <>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.375rem'
+                    }}>
+                      <span style={{
+                        fontSize: isMobile ? '0.688rem' : '0.75rem',
+                        fontWeight: '700',
+                        color: isFav ? '#60a5fa' : '#fbbf24',
+                        letterSpacing: '0.02em'
+                      }}>
+                        {isFav ? 'FAVORITE' : 'UNDERDOG'}
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      width: '1px',
+                      height: '12px',
+                      background: 'rgba(255,255,255,0.1)'
+                    }} />
+                  </>
+                )}
+                
+                {/* MOS */}
+                {mos !== undefined && (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.375rem'
                   }}>
-                    Conviction
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '0.813rem' : '0.875rem',
-                    fontWeight: '800',
-                    color: convictionScore >= 15 ? '#10b981' : convictionScore >= 8 ? '#fbbf24' : 'rgba(255,255,255,0.8)',
-                    letterSpacing: '-0.01em'
-                  }}>
-                    {convictionScore}
-                  </span>
-                </div>
+                    <span style={{ 
+                      fontSize: isMobile ? '0.625rem' : '0.688rem',
+                      color: 'rgba(255,255,255,0.4)',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em'
+                    }}>
+                      MOS
+                    </span>
+                    <span style={{
+                      fontSize: isMobile ? '0.813rem' : '0.875rem',
+                      fontWeight: '800',
+                      color: mos >= 4 ? '#10b981' : mos >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)',
+                      letterSpacing: '-0.01em'
+                    }}>
+                      +{mos}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           );
