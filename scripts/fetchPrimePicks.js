@@ -1178,56 +1178,91 @@ async function fetchPrimePicks() {
     console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);
     console.log(`   Evaluated: ${picks.length} | New: ${created} | Updated: ${updated} | Stable: ${stable} | Killed: ${killed} | Skipped: ${skippedATS}`);
     
-    if (picks.length > 0) {
+    // Filter to only LIVE picks (not FLAGGED) for summary
+    const livePicks = picks.filter(p => p.sideData.movementTier !== 'FLAGGED');
+    const liveTotals = totalsPicks.filter(p => p.totalsData.movementTier !== 'FLAGGED');
+    
+    if (livePicks.length > 0) {
       const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
       const tierIcons = { MAXIMUM: '💎', ELITE: '🔥', STRONG: '💪', SOLID: '📊', BASE: '📌' };
       
       for (const tName of tierNames) {
-        const tierPicks = picks.filter(p => getMOSTier(p.sideData.marginOverSpread)?.tier === tName);
-        if (tierPicks.length === 0) continue;
-        const tInfo = getMOSTier(tierPicks[0].sideData.marginOverSpread);
-        const starStr = '★'.repeat(tInfo.units) + '☆'.repeat(5 - tInfo.units);
-        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${tInfo.units}u): ${tierPicks.length} pick${tierPicks.length > 1 ? 's' : ''}`);
-        tierPicks.forEach(p => {
-          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} @ -110 [${p.sideData.isFavorite ? 'FAV' : 'DOG'}] MOS +${p.sideData.marginOverSpread}`);
+        const tierArr = livePicks.filter(p => {
+          const t = getMOSTier(p.sideData.marginOverSpread);
+          const adj = applyMovementGate(t?.units, p.sideData.movementTier);
+          return t?.tier === tName && adj != null;
+        });
+        if (tierArr.length === 0) continue;
+        const tInfo = getMOSTier(tierArr[0].sideData.marginOverSpread);
+        const adjUnits = applyMovementGate(tInfo.units, tierArr[0].sideData.movementTier);
+        const starStr = '★'.repeat(adjUnits) + '☆'.repeat(5 - adjUnits);
+        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${adjUnits}u): ${tierArr.length} pick${tierArr.length > 1 ? 's' : ''}`);
+        tierArr.forEach(p => {
+          const mvLabel = p.sideData.movementTier === 'CONFIRM' ? ' 🟢 STEAM' : '';
+          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} @ -110 [${p.sideData.isFavorite ? 'FAV' : 'DOG'}] MOS +${p.sideData.marginOverSpread}${mvLabel}`);
         });
       }
       
-      const favPicks = picks.filter(p => p.sideData.isFavorite);
-      const dogPicks = picks.filter(p => !p.sideData.isFavorite);
-      const atsUnits = picks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0);
-      console.log(`   Favorites: ${favPicks.length} | Underdogs: ${dogPicks.length} | Total: ${atsUnits}u`);
+      const favPicks = livePicks.filter(p => p.sideData.isFavorite);
+      const dogPicks = livePicks.filter(p => !p.sideData.isFavorite);
+      const atsUnits = livePicks.reduce((s, p) => {
+        const t = getMOSTier(p.sideData.marginOverSpread);
+        return s + (applyMovementGate(t.units, p.sideData.movementTier) || 0);
+      }, 0);
+      console.log(`   Live: ${livePicks.length} | Favorites: ${favPicks.length} | Underdogs: ${dogPicks.length} | Total: ${atsUnits}u`);
+    } else {
+      console.log(`   No live ATS picks.`);
     }
     
     console.log(`\n   ── TOTALS (O/U) ────────────────────────────────────────────`);
     console.log(`   Evaluated: ${totalsPicks.length} | New: ${totalsCreated} | Updated: ${totalsUpdated} | Stable: ${totalsStable} | Killed: ${totalsKilled} | Skipped: ${totalsSkipped}`);
     
-    if (totalsPicks.length > 0) {
+    if (liveTotals.length > 0) {
       const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
       const tierIcons = { MAXIMUM: '💎', ELITE: '🔥', STRONG: '💪', SOLID: '📊', BASE: '📌' };
       
       for (const tName of tierNames) {
-        const tierPicks = totalsPicks.filter(p => getMOSTier(p.totalsData.marginOverTotal)?.tier === tName);
-        if (tierPicks.length === 0) continue;
-        const tInfo = getMOSTier(tierPicks[0].totalsData.marginOverTotal);
-        const starStr = '★'.repeat(tInfo.units) + '☆'.repeat(5 - tInfo.units);
-        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${tInfo.units}u): ${tierPicks.length} pick${tierPicks.length > 1 ? 's' : ''}`);
-        tierPicks.forEach(p => {
-          console.log(`      → ${p.totalsData.direction} ${p.totalsData.marketTotal} [${p.game.awayTeam} @ ${p.game.homeTeam}] MOT +${p.totalsData.marginOverTotal}`);
+        const tierArr = liveTotals.filter(p => {
+          const t = getMOTTier(p.totalsData.marginOverTotal);
+          const adj = applyMovementGate(t?.units, p.totalsData.movementTier);
+          return t?.tier === tName && adj != null;
+        });
+        if (tierArr.length === 0) continue;
+        const tInfo = getMOTTier(tierArr[0].totalsData.marginOverTotal);
+        const adjUnits = applyMovementGate(tInfo.units, tierArr[0].totalsData.movementTier);
+        const starStr = '★'.repeat(adjUnits) + '☆'.repeat(5 - adjUnits);
+        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${adjUnits}u): ${tierArr.length} pick${tierArr.length > 1 ? 's' : ''}`);
+        tierArr.forEach(p => {
+          const mvLabel = p.totalsData.movementTier === 'CONFIRM' ? ' 🟢 STEAM' : '';
+          console.log(`      → ${p.totalsData.direction} ${p.totalsData.marketTotal} [${p.game.awayTeam} @ ${p.game.homeTeam}] MOT +${p.totalsData.marginOverTotal}${mvLabel}`);
         });
       }
       
-      const overPicks = totalsPicks.filter(p => p.totalsData.direction === 'OVER');
-      const underPicks = totalsPicks.filter(p => p.totalsData.direction === 'UNDER');
-      const totalsUnits = totalsPicks.reduce((s, p) => s + getMOSTier(p.totalsData.marginOverTotal).units, 0);
-      console.log(`   Overs: ${overPicks.length} | Unders: ${underPicks.length} | Total: ${totalsUnits}u`);
+      const overPicks = liveTotals.filter(p => p.totalsData.direction === 'OVER');
+      const underPicks = liveTotals.filter(p => p.totalsData.direction === 'UNDER');
+      const totalsUnits = liveTotals.reduce((s, p) => {
+        const t = getMOTTier(p.totalsData.marginOverTotal);
+        return s + (applyMovementGate(t.units, p.totalsData.movementTier) || 0);
+      }, 0);
+      console.log(`   Live: ${liveTotals.length} | Overs: ${overPicks.length} | Unders: ${underPicks.length} | Total: ${totalsUnits}u`);
+    } else {
+      console.log(`   No live totals picks.`);
     }
     
-    const allUnits = picks.reduce((s, p) => s + getMOSTier(p.sideData.marginOverSpread).units, 0)
-                   + totalsPicks.reduce((s, p) => s + getMOSTier(p.totalsData.marginOverTotal).units, 0);
+    const liveAtsUnits = livePicks.reduce((s, p) => {
+      const t = getMOSTier(p.sideData.marginOverSpread);
+      return s + (applyMovementGate(t.units, p.sideData.movementTier) || 0);
+    }, 0);
+    const liveTotalsUnits = liveTotals.reduce((s, p) => {
+      const t = getMOTTier(p.totalsData.marginOverTotal);
+      return s + (applyMovementGate(t.units, p.totalsData.movementTier) || 0);
+    }, 0);
     console.log(`\n   ── COMBINED ─────────────────────────────────────────────────`);
-    console.log(`   Total picks: ${picks.length + totalsPicks.length} (${picks.length} ATS + ${totalsPicks.length} O/U)`);
-    console.log(`   Total units: ${allUnits}u @ -110`);
+    console.log(`   Live picks: ${livePicks.length + liveTotals.length} (${livePicks.length} ATS + ${liveTotals.length} O/U)`);
+    console.log(`   Total units: ${liveAtsUnits + liveTotalsUnits}u @ -110`);
+    if (killed + totalsKilled > 0) {
+      console.log(`   ⚠️  Killed this run: ${killed + totalsKilled} pick${killed + totalsKilled > 1 ? 's' : ''}`);
+    }
     
     console.log('\n   Files updated:');
     console.log('   ✓ public/basketball_odds.md');
