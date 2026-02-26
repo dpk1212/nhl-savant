@@ -61,6 +61,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
+const MOT_FLOOR = 4.5;
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
@@ -449,6 +450,18 @@ function getMOSTier(mos) {
   if (mos >= 2.5)  return { tier: 'STRONG',  units: 3 };
   if (mos >= 2.25) return { tier: 'SOLID',   units: 2 };
   if (mos >= MOS_FLOOR) return { tier: 'BASE', units: 1 };
+  return null;
+}
+
+/**
+ * MOT tier → base unit sizing for totals (floor = 4.5)
+ */
+function getMOTTier(mot) {
+  if (mot >= 7)          return { tier: 'MAXIMUM', units: 5 };
+  if (mot >= 6)          return { tier: 'ELITE',   units: 4 };
+  if (mot >= 5.5)        return { tier: 'STRONG',  units: 3 };
+  if (mot >= 5)          return { tier: 'SOLID',   units: 2 };
+  if (mot >= MOT_FLOOR)  return { tier: 'BASE',    units: 1 };
   return null;
 }
 
@@ -977,11 +990,11 @@ async function fetchPrimePicks() {
       }
       
       const mot = totalsEval.marginOverTotal;
-      const tierInfo = getMOSTier(mot);
+      const tierInfo = getMOTTier(mot);
       
       if (!tierInfo) {
         totalsBelowFloor++;
-        console.log(`   ⬇️  ${game.awayTeam} @ ${game.homeTeam} — ${totalsEval.direction} MOT +${mot} < ${MOS_FLOOR}`);
+        console.log(`   ⬇️  ${game.awayTeam} @ ${game.homeTeam} — ${totalsEval.direction} MOT +${mot} < ${MOT_FLOOR}`);
         continue;
       }
       
@@ -1013,7 +1026,7 @@ async function fetchPrimePicks() {
     console.log(`\n   📊 Games with totals lines: ${totalsGames.length}`);
     console.log(`   ❌ No totals line: ${noTotalsLine}`);
     console.log(`   ❌ Models disagree: ${totalsDisagree}`);
-    console.log(`   ⬇️  Below MOT floor (${MOS_FLOOR}): ${totalsBelowFloor}`);
+    console.log(`   ⬇️  Below MOT floor (${MOT_FLOOR}): ${totalsBelowFloor}`);
     console.log(`   🚫 FLAGGED (line moved against): ${totalsFlaggedCount}`);
     console.log(`   ✅ QUALIFYING TOTALS PICKS: ${totalsPicks.length}\n`);
     
