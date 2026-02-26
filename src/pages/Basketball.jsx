@@ -2132,7 +2132,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   const totalsBet = betData?._totalsBet;
   const totalsRec = totalsBet?.betRecommendation;
   const totalsAnalysis = totalsBet?.totalsAnalysis;
-  const hasTotalsCompanion = !!totalsBet;
+  const hasTotalsCompanion = !!totalsBet && totalsBet.betStatus !== 'KILLED';
+  
+  // Hide KILLED picks — line moved against, do not display
+  if (betData?.betStatus === 'KILLED') return null;
   
   const displayUnits = isTotalsRecommended ? (betRec.totalUnits || pred?.unitSize || 0)
     : isATSRecommended ? betRec.atsUnits 

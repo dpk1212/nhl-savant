@@ -30,7 +30,7 @@ import * as dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
 import { parseHaslametrics } from '../src/utils/haslametricsParser.js';
 import { parseDRatings } from '../src/utils/dratingsParser.js';
@@ -506,19 +506,64 @@ async function savePick(db, game, sideData, prediction) {
   
   const betRef = doc(db, 'basketball_bets', betId);
   
-  const existingBet = await getDoc(betRef);
-  if (existingBet.exists()) {
-    console.log(`   🔒 Already exists: ${pickTeam}`);
-    return { action: 'skipped', betId };
-  }
-  
   const mos = sideData.marginOverSpread;
   const tierInfo = getMOSTier(mos);
   if (!tierInfo) return { action: 'skipped', betId };
   const adjustedUnits = applyMovementGate(tierInfo.units, sideData.movementTier);
-  if (adjustedUnits === null) return { action: 'skipped', betId };
-  const units = adjustedUnits;
+  const isFlagged = adjustedUnits === null;
+  const units = isFlagged ? 0 : adjustedUnits;
   const tier = tierInfo.tier;
+  
+  const existingBet = await getDoc(betRef);
+  if (existingBet.exists()) {
+    const prev = existingBet.data();
+    const prevTier = prev.spreadAnalysis?.movementTier || prev.betRecommendation?.movementTier || 'UNKNOWN';
+    const newTier = sideData.movementTier;
+    const tierChanged = prevTier !== newTier;
+    
+    const updateData = {
+      'spreadAnalysis.spread': sideData.spread,
+      'spreadAnalysis.lineMovement': sideData.lineMovement,
+      'spreadAnalysis.movementTier': newTier,
+      'spreadAnalysis.marginOverSpread': mos,
+      'betRecommendation.lineMovement': sideData.lineMovement,
+      'betRecommendation.movementTier': newTier,
+      'betRecommendation.atsSpread': sideData.spread,
+      'betRecommendation.marginOverSpread': mos,
+      lastUpdatedAt: Date.now(),
+    };
+    
+    if (isFlagged) {
+      updateData['betStatus'] = 'KILLED';
+      updateData['bet.units'] = 0;
+      updateData['betRecommendation.atsUnits'] = 0;
+      updateData['prediction.unitSize'] = 0;
+      await updateDoc(betRef, updateData);
+      console.log(`   💀 KILLED: ${pickTeam} ${sideData.spread} — was ${prevTier}, now FLAGGED (line moved ${sideData.lineMovement > 0 ? '+' : ''}${sideData.lineMovement})`);
+      return { action: 'killed', betId };
+    }
+    
+    if (tierChanged || newTier === 'CONFIRM') {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.atsUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+      updateData['spreadAnalysis.unitTier'] = tier;
+      updateData['betStatus'] = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      await updateDoc(betRef, updateData);
+      const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
+      console.log(`   ${arrow}: ${pickTeam} ${sideData.spread} — ${prevTier} → ${newTier} | ${units}u [${tier}]`);
+      return { action: 'updated', betId };
+    }
+    
+    await updateDoc(betRef, updateData);
+    console.log(`   🔒 Stable: ${pickTeam} — still ${newTier} | ${units}u`);
+    return { action: 'stable', betId };
+  }
+  
+  // NEW PICK — only create if not FLAGGED
+  if (isFlagged) {
+    return { action: 'skipped', betId };
+  }
   
   const coverProb = estimateCoverProb(mos);
   const spreadEV = calcSpreadEV(coverProb);
@@ -602,7 +647,9 @@ async function savePick(db, game, sideData, prediction) {
     },
     
     status: 'PENDING',
+    betStatus: sideData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
     firstRecommendedAt: Date.now(),
+    lastUpdatedAt: Date.now(),
     source: 'PRIME_MOS',
     
     isPrimePick: true,
@@ -653,19 +700,64 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   
   const betRef = doc(db, 'basketball_bets', betId);
   
-  const existingBet = await getDoc(betRef);
-  if (existingBet.exists()) {
-    console.log(`   🔒 Already exists: ${totalsData.direction} ${totalsData.marketTotal}`);
-    return { action: 'skipped', betId };
-  }
-  
   const mot = totalsData.marginOverTotal;
   const tierInfo = getMOTTier(mot);
   if (!tierInfo) return { action: 'skipped', betId };
   const adjustedUnits = applyMovementGate(tierInfo.units, totalsData.movementTier);
-  if (adjustedUnits === null) return { action: 'skipped', betId };
-  const units = adjustedUnits;
+  const isFlagged = adjustedUnits === null;
+  const units = isFlagged ? 0 : adjustedUnits;
   const tier = tierInfo.tier;
+  
+  const existingBet = await getDoc(betRef);
+  if (existingBet.exists()) {
+    const prev = existingBet.data();
+    const prevTier = prev.totalsAnalysis?.movementTier || prev.betRecommendation?.movementTier || 'UNKNOWN';
+    const newTier = totalsData.movementTier;
+    const tierChanged = prevTier !== newTier;
+    
+    const updateData = {
+      'totalsAnalysis.marketTotal': totalsData.marketTotal,
+      'totalsAnalysis.lineMovement': totalsData.lineMovement,
+      'totalsAnalysis.movementTier': newTier,
+      'totalsAnalysis.marginOverTotal': mot,
+      'betRecommendation.lineMovement': totalsData.lineMovement,
+      'betRecommendation.movementTier': newTier,
+      'betRecommendation.totalLine': totalsData.marketTotal,
+      'betRecommendation.marginOverTotal': mot,
+      lastUpdatedAt: Date.now(),
+    };
+    
+    if (isFlagged) {
+      updateData['betStatus'] = 'KILLED';
+      updateData['bet.units'] = 0;
+      updateData['betRecommendation.totalUnits'] = 0;
+      updateData['prediction.unitSize'] = 0;
+      await updateDoc(betRef, updateData);
+      console.log(`   💀 KILLED: ${totalsData.direction} ${totalsData.marketTotal} — was ${prevTier}, now FLAGGED (line moved ${totalsData.lineMovement > 0 ? '+' : ''}${totalsData.lineMovement}) (${game.awayTeam} @ ${game.homeTeam})`);
+      return { action: 'killed', betId };
+    }
+    
+    if (tierChanged || newTier === 'CONFIRM') {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.totalUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+      updateData['totalsAnalysis.unitTier'] = tier;
+      updateData['betStatus'] = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      await updateDoc(betRef, updateData);
+      const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
+      console.log(`   ${arrow}: ${totalsData.direction} ${totalsData.marketTotal} — ${prevTier} → ${newTier} | ${units}u [${tier}] (${game.awayTeam} @ ${game.homeTeam})`);
+      return { action: 'updated', betId };
+    }
+    
+    await updateDoc(betRef, updateData);
+    console.log(`   🔒 Stable: ${totalsData.direction} ${totalsData.marketTotal} — still ${newTier} | ${units}u (${game.awayTeam} @ ${game.homeTeam})`);
+    return { action: 'stable', betId };
+  }
+  
+  // NEW PICK — only create if not FLAGGED
+  if (isFlagged) {
+    return { action: 'skipped', betId };
+  }
   
   const coverProb = estimateCoverProb(mot);
   const totalsEV = calcSpreadEV(coverProb);
@@ -739,7 +831,9 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     },
     
     status: 'PENDING',
+    betStatus: totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
     firstRecommendedAt: Date.now(),
+    lastUpdatedAt: Date.now(),
     source: 'PRIME_MOT',
     
     isPrimePick: true,
@@ -918,24 +1012,22 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // LINE MOVEMENT GATE — skip picks where sharp money disagrees
+      // LINE MOVEMENT GATE
       const adjustedUnits = applyMovementGate(tierInfo.units, best.movementTier);
-      if (adjustedUnits === null) {
-        flaggedCount++;
-        const mvStr = best.lineMovement != null ? `${best.lineMovement > 0 ? '+' : ''}${best.lineMovement}` : '?';
-        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} FLAGGED (line moved ${mvStr} against pick, opener: ${best.openerSpread})`);
-        continue;
-      }
-      
-      // Override units with movement-adjusted value
-      tierInfo.units = adjustedUnits;
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       const evDisplay = (prediction && !prediction.error) ? `EV ${prediction.bestEV?.toFixed(1)}%` : '';
       const favDog = best.isFavorite ? 'FAV' : 'DOG';
-      const mvTag = best.movementTier === 'CONFIRM' ? '🟢 STEAM' : best.movementTier === 'NEUTRAL' ? '⚪' : '';
       
-      console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${mvTag} ${evDisplay}`);
+      if (adjustedUnits === null) {
+        flaggedCount++;
+        const mvStr = best.lineMovement != null ? `${best.lineMovement > 0 ? '+' : ''}${best.lineMovement}` : '?';
+        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} FLAGGED (line moved ${mvStr} against pick, opener: ${best.openerSpread})`);
+      } else {
+        tierInfo.units = adjustedUnits;
+        const mvTag = best.movementTier === 'CONFIRM' ? '🟢 STEAM' : best.movementTier === 'NEUTRAL' ? '⚪' : '';
+        console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${mvTag} ${evDisplay}`);
+      }
       
       picks.push({
         game,
@@ -1006,19 +1098,18 @@ async function fetchPrimePicks() {
       
       // LINE MOVEMENT GATE for totals
       const adjustedTotalUnits = applyMovementGate(tierInfo.units, totalsEval.movementTier);
+      
+      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      
       if (adjustedTotalUnits === null) {
         totalsFlaggedCount++;
         const mvStr = totalsEval.lineMovement != null ? `${totalsEval.lineMovement > 0 ? '+' : ''}${totalsEval.lineMovement}` : '?';
         console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal}) (${game.awayTeam} @ ${game.homeTeam})`);
-        continue;
+      } else {
+        tierInfo.units = adjustedTotalUnits;
+        const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : totalsEval.movementTier === 'NEUTRAL' ? '⚪' : '';
+        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${tierInfo.units}u [${tierInfo.tier}] ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       }
-      
-      tierInfo.units = adjustedTotalUnits;
-      
-      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
-      const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : totalsEval.movementTier === 'NEUTRAL' ? '⚪' : '';
-      
-      console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${tierInfo.units}u [${tierInfo.tier}] ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       
       totalsPicks.push({
         game,
@@ -1043,10 +1134,8 @@ async function fetchPrimePicks() {
     console.log('│ STEP 4: SAVING PICKS TO FIREBASE (ATS + TOTALS @ -110)                       │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
-    let created = 0;
-    let skipped = 0;
-    let totalsCreated = 0;
-    let totalsSkipped = 0;
+    let created = 0, updated = 0, stable = 0, killed = 0, skippedATS = 0;
+    let totalsCreated = 0, totalsUpdated = 0, totalsStable = 0, totalsKilled = 0, totalsSkipped = 0;
     
     // Save ATS picks
     if (picks.length === 0) {
@@ -1056,7 +1145,10 @@ async function fetchPrimePicks() {
       for (const { game, sideData, prediction } of picks) {
         const result = await savePick(db, game, sideData, prediction);
         if (result.action === 'created') created++;
-        else skipped++;
+        else if (result.action === 'updated') updated++;
+        else if (result.action === 'killed') killed++;
+        else if (result.action === 'stable') stable++;
+        else skippedATS++;
       }
     }
     
@@ -1068,6 +1160,9 @@ async function fetchPrimePicks() {
       for (const { game, totalsData, prediction } of totalsPicks) {
         const result = await saveTotalsPick(db, game, totalsData, prediction);
         if (result.action === 'created') totalsCreated++;
+        else if (result.action === 'updated') totalsUpdated++;
+        else if (result.action === 'killed') totalsKilled++;
+        else if (result.action === 'stable') totalsStable++;
         else totalsSkipped++;
       }
     }
@@ -1081,7 +1176,7 @@ async function fetchPrimePicks() {
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
     console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);
-    console.log(`   Qualifying: ${picks.length} | Created: ${created} | Existed: ${skipped}`);
+    console.log(`   Evaluated: ${picks.length} | New: ${created} | Updated: ${updated} | Stable: ${stable} | Killed: ${killed} | Skipped: ${skippedATS}`);
     
     if (picks.length > 0) {
       const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
@@ -1105,7 +1200,7 @@ async function fetchPrimePicks() {
     }
     
     console.log(`\n   ── TOTALS (O/U) ────────────────────────────────────────────`);
-    console.log(`   Qualifying: ${totalsPicks.length} | Created: ${totalsCreated} | Existed: ${totalsSkipped}`);
+    console.log(`   Evaluated: ${totalsPicks.length} | New: ${totalsCreated} | Updated: ${totalsUpdated} | Stable: ${totalsStable} | Killed: ${totalsKilled} | Skipped: ${totalsSkipped}`);
     
     if (totalsPicks.length > 0) {
       const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
