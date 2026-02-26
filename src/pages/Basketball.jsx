@@ -2891,7 +2891,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 })()}
                 {/* Opening line movement indicator */}
                 {(() => {
-                  const sa = bet.spreadAnalysis || spreadAnalysis;
+                  const sa = spreadData || betData?.spreadAnalysis;
                   if (!sa || sa.openerSpread == null) return null;
                   const mv = sa.lineMovement;
                   const tier = sa.movementTier;
