@@ -218,7 +218,13 @@ function evaluateBothSides(game, spreadGames) {
   
   if (!away && !home) return null;
   
-  const bestSide = (!home || (away && away.marginOverSpread >= home.marginOverSpread)) ? away : home;
+  // FILTER: Both models must agree the pick covers the spread
+  const awayValid = away && away.bothCover;
+  const homeValid = home && home.bothCover;
+  
+  if (!awayValid && !homeValid) return null;
+  
+  const bestSide = (!homeValid || (awayValid && away.marginOverSpread >= home.marginOverSpread)) ? away : home;
   
   return { away, home, bestSide };
 }
@@ -498,7 +504,7 @@ async function fetchPrimePicks() {
       
       if (!evaluation) {
         noSpreadData++;
-        console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — No spread data`);
+        console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — No spread match or models disagree on cover`);
         continue;
       }
       
