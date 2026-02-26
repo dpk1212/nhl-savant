@@ -48,25 +48,33 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ─── Constants & Tier Functions ──────────────────────────────────────
+//
+// When market confirms thesis (CONFIRM), we accept a lower edge
+// because we have two signals: model + sharp money agreement.
+// Standard thresholds apply when no confirmation (NEUTRAL).
 
 const MOS_FLOOR = 2.0;
+const MOS_FLOOR_CONFIRMED = 1.5;
 const MOT_FLOOR = 4.5;
+const MOT_FLOOR_CONFIRMED = 3.5;
 
-function getMOSTier(mos) {
-  if (mos >= 4)    return { tier: 'MAXIMUM', units: 5 };
-  if (mos >= 3)    return { tier: 'ELITE',   units: 4 };
-  if (mos >= 2.5)  return { tier: 'STRONG',  units: 3 };
-  if (mos >= 2.25) return { tier: 'SOLID',   units: 2 };
-  if (mos >= MOS_FLOOR) return { tier: 'BASE', units: 1 };
+function getMOSTier(mos, floor = MOS_FLOOR) {
+  if (mos >= 4)     return { tier: 'MAXIMUM', units: 5 };
+  if (mos >= 3)     return { tier: 'ELITE',   units: 4 };
+  if (mos >= 2.5)   return { tier: 'STRONG',  units: 3 };
+  if (mos >= 2.25)  return { tier: 'SOLID',   units: 2 };
+  if (mos >= 2.0)   return { tier: 'BASE',    units: 1 };
+  if (mos >= floor)  return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
 }
 
-function getMOTTier(mot) {
+function getMOTTier(mot, floor = MOT_FLOOR) {
   if (mot >= 7)          return { tier: 'MAXIMUM', units: 5 };
   if (mot >= 6)          return { tier: 'ELITE',   units: 4 };
   if (mot >= 5.5)        return { tier: 'STRONG',  units: 3 };
   if (mot >= 5)          return { tier: 'SOLID',   units: 2 };
-  if (mot >= MOT_FLOOR)  return { tier: 'BASE',    units: 1 };
+  if (mot >= 4.5)        return { tier: 'BASE',    units: 1 };
+  if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
 }
 
@@ -256,7 +264,8 @@ function evaluateATSFromEval(evalData, awaySpread, homeSpread) {
       movementTier = getMovementTier(lineMovement);
     }
 
-    const tierInfo = getMOSTier(mos);
+    const effectiveFloor = movementTier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
+    const tierInfo = getMOSTier(mos, effectiveFloor);
     const qualifies = bothCover && tierInfo != null;
 
     results.push({
@@ -300,7 +309,8 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
     movementTier = getMovementTier(lineMovement);
   }
 
-  const tierInfo = getMOTTier(mot);
+  const effectiveFloor = movementTier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
+  const tierInfo = getMOTTier(mot, effectiveFloor);
   const qualifies = tierInfo != null;
 
   return {
@@ -359,6 +369,12 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     };
 
     if (isFlagged) {
+      if (prev.isLocked) {
+        await updateDoc(betRef, updateData);
+        console.log(`   🔒 LOCKED: ${pickTeam} ${sideResult.spread} — line moved against but bet is locked for user`);
+        counters.stable++;
+        return;
+      }
       updateData.betStatus = 'KILLED';
       updateData['bet.units'] = 0;
       updateData['betRecommendation.atsUnits'] = 0;
@@ -373,7 +389,14 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       updateData['bet.units'] = units;
       updateData['betRecommendation.atsUnits'] = units;
       updateData['prediction.unitSize'] = units;
-      updateData.betStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      if (!prev.isLocked) {
+        updateData.betStatus = newStatus;
+        if (newStatus === 'BET_NOW') {
+          updateData.isLocked = true;
+          updateData.lockedAt = Date.now();
+        }
+      }
       await updateDoc(betRef, updateData);
       const wasRevived = prevStatus === 'KILLED' || prevStatus === 'FLAGGED';
       const label = wasRevived ? '🔄 REVIVED' : (newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED');
@@ -438,6 +461,8 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     result: { awayScore: null, homeScore: null, totalScore: null, winner: null, outcome: null, profit: null, fetched: false, fetchedAt: null, source: null },
     status: 'PENDING',
     betStatus: sideResult.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
+    isLocked: sideResult.movementTier === 'CONFIRM',
+    lockedAt: sideResult.movementTier === 'CONFIRM' ? Date.now() : null,
     firstRecommendedAt: Date.now(), lastUpdatedAt: Date.now(),
     lastLineCheckAt: Date.now(),
     source: 'LINE_MONITOR',
@@ -503,6 +528,12 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     };
 
     if (isFlagged) {
+      if (prev.isLocked) {
+        await updateDoc(betRef, updateData);
+        console.log(`   🔒 LOCKED: ${totalsResult.direction} ${totalsResult.marketTotal} — line moved against but bet is locked for user (${gameLabel})`);
+        counters.stable++;
+        return;
+      }
       updateData.betStatus = 'KILLED';
       updateData['bet.units'] = 0;
       updateData['betRecommendation.totalUnits'] = 0;
@@ -517,7 +548,14 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       updateData['bet.units'] = units;
       updateData['betRecommendation.totalUnits'] = units;
       updateData['prediction.unitSize'] = units;
-      updateData.betStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      if (!prev.isLocked) {
+        updateData.betStatus = newStatus;
+        if (newStatus === 'BET_NOW') {
+          updateData.isLocked = true;
+          updateData.lockedAt = Date.now();
+        }
+      }
       await updateDoc(betRef, updateData);
       const wasRevived = prevStatus === 'KILLED' || prevStatus === 'FLAGGED';
       const label = wasRevived ? '🔄 REVIVED' : (newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED');
@@ -575,6 +613,8 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     result: { awayScore: null, homeScore: null, totalScore: null, winner: null, outcome: null, profit: null, fetched: false, fetchedAt: null, source: null },
     status: 'PENDING',
     betStatus: totalsResult.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
+    isLocked: totalsResult.movementTier === 'CONFIRM',
+    lockedAt: totalsResult.movementTier === 'CONFIRM' ? Date.now() : null,
     firstRecommendedAt: Date.now(), lastUpdatedAt: Date.now(),
     lastLineCheckAt: Date.now(),
     source: 'LINE_MONITOR',
@@ -603,12 +643,22 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
 async function killExistingBet(betDoc, reason, counters) {
   const data = betDoc.data();
   const status = data.betStatus;
-  if (status === 'KILLED') return; // already dead
+  if (status === 'KILLED') return;
 
   const market = data.bet?.market;
   const label = market === 'SPREAD'
     ? `${data.bet?.pick} ${data.bet?.spread}`
     : `${data.bet?.pick} ${data.bet?.total}`;
+
+  if (data.isLocked) {
+    await updateDoc(doc(db, 'basketball_bets', betDoc.id), {
+      lastLineCheckAt: Date.now(),
+      lastUpdatedAt: Date.now(),
+    });
+    console.log(`   🔒 LOCKED: ${label} — ${reason}, but bet is locked for user`);
+    counters.stable++;
+    return;
+  }
 
   await updateDoc(doc(db, 'basketball_bets', betDoc.id), {
     betStatus: 'KILLED',
@@ -702,7 +752,9 @@ async function checkLineMovement() {
       const lineShift = (openerSpread != null && best.spread != null) ? Math.round((best.spread - openerSpread) * 10) / 10 : null;
 
       let status = '—';
+      const isMarketConfirmed = best.tierInfo?.tier === 'MARKET_CONFIRMED';
       if (best.qualifies && best.movementTier === 'FLAGGED') status = '🚫 FLAGGED';
+      else if (best.qualifies && isMarketConfirmed) status = '🟢 MKTCONF';
       else if (best.qualifies && best.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
       else if (best.qualifies) status = '🟡 HOLD';
       else if (best.bothCover && best.mos >= 1.0) status = '👀 NEAR';
@@ -752,7 +804,9 @@ async function checkLineMovement() {
       const openerMOT = openerTotal != null ? Math.round(Math.abs(model.blendedTotal - openerTotal) * 10) / 10 : null;
 
       let status = '—';
+      const isTotMktConf = totalsResult.tierInfo?.tier === 'MARKET_CONFIRMED';
       if (totalsResult.qualifies && totalsResult.movementTier === 'FLAGGED') status = '🚫 FLAGGED';
+      else if (totalsResult.qualifies && isTotMktConf) status = '🟢 MKTCONF';
       else if (totalsResult.qualifies && totalsResult.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
       else if (totalsResult.qualifies) status = '🟡 HOLD';
       else if (totalsResult.mot >= 3.0) status = '👀 NEAR';
@@ -849,6 +903,8 @@ async function checkLineMovement() {
   }
 
   const atsQualified = allAtsRows.filter(r => r.qualifies);
+  const atsStandard = atsQualified.filter(r => r.sideResult.tierInfo?.tier !== 'MARKET_CONFIRMED');
+  const atsMktConf = atsQualified.filter(r => r.sideResult.tierInfo?.tier === 'MARKET_CONFIRMED');
   const atsNear = allAtsRows.filter(r => !r.qualifies && r.bothCover && r.currentMOS >= 1.0);
   const atsFlagged = atsQualified.filter(r => r.movementTier === 'FLAGGED');
   const atsForUs = allAtsRows.filter(r => r.sideResult.lineMovement > 0).length;
@@ -856,7 +912,9 @@ async function checkLineMovement() {
   const atsFlat = allAtsRows.filter(r => r.sideResult.lineMovement === 0).length;
 
   console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log(`║  QUALIFIES: ${atsQualified.length}  │  NEAR: ${atsNear.length}  │  FLAGGED: ${atsFlagged.length}  │  Market: ▲${atsForUs} for us / =${atsFlat} flat / ▼${atsAgainst} against  │  Total: ${allAtsRows.length} games`.padEnd(117) + '║');
+  const mktLabel = atsMktConf.length > 0 ? ` (${atsMktConf.length} via market confirm)` : '';
+  console.log(`║  QUALIFIES: ${atsQualified.length}${mktLabel}  │  NEAR: ${atsNear.length}  │  FLAGGED: ${atsFlagged.length}  │  ▲${atsForUs} for / =${atsFlat} flat / ▼${atsAgainst} vs  │  ${allAtsRows.length} games`.padEnd(117) + '║');
+  console.log(`║  Thresholds: MOS ≥ ${MOS_FLOOR} standard │ MOS ≥ ${MOS_FLOOR_CONFIRMED} with market confirm (line moved ≥1.0 FOR)`.padEnd(117) + '║');
   console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
   // ── TOTALS DASHBOARD ──
@@ -884,6 +942,8 @@ async function checkLineMovement() {
   }
 
   const totQualified = allTotalsRows.filter(r => r.qualifies);
+  const totStandard = totQualified.filter(r => r.totalsResult.tierInfo?.tier !== 'MARKET_CONFIRMED');
+  const totMktConf = totQualified.filter(r => r.totalsResult.tierInfo?.tier === 'MARKET_CONFIRMED');
   const totNear = allTotalsRows.filter(r => !r.qualifies && r.currentMOT >= 3.0);
   const totFlagged = totQualified.filter(r => r.movementTier === 'FLAGGED');
   const totForUs = allTotalsRows.filter(r => r.totalsResult.lineMovement > 0).length;
@@ -891,7 +951,9 @@ async function checkLineMovement() {
   const totFlat = allTotalsRows.filter(r => r.totalsResult.lineMovement === 0).length;
 
   console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log(`║  QUALIFIES: ${totQualified.length}  │  NEAR: ${totNear.length}  │  FLAGGED: ${totFlagged.length}  │  Market: ▲${totForUs} for us / =${totFlat} flat / ▼${totAgainst} against  │  Total: ${allTotalsRows.length} games`.padEnd(117) + '║');
+  const totMktLabel = totMktConf.length > 0 ? ` (${totMktConf.length} via market confirm)` : '';
+  console.log(`║  QUALIFIES: ${totQualified.length}${totMktLabel}  │  NEAR: ${totNear.length}  │  FLAGGED: ${totFlagged.length}  │  ▲${totForUs} for / =${totFlat} flat / ▼${totAgainst} vs  │  ${allTotalsRows.length} games`.padEnd(117) + '║');
+  console.log(`║  Thresholds: MOT ≥ ${MOT_FLOOR} standard │ MOT ≥ ${MOT_FLOOR_CONFIRMED} with market confirm (line moved ≥1.0 FOR)`.padEnd(117) + '║');
   console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
   // ── BET ACTIONS SUMMARY ──

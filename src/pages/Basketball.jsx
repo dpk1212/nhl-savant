@@ -376,7 +376,8 @@ const Basketball = () => {
             ensembleHomeProb: lockedBet.prediction?.ensembleHomeProb || 0.5,
             marketAwayProb: lockedBet.prediction?.marketAwayProb || 0.5,
             marketHomeProb: lockedBet.prediction?.marketHomeProb || 0.5,
-            isLockedPick: true, // 🔒 Flag for UI display
+            isLockedPick: true,
+            isFirebaseLocked: lockedBet.isLocked === true,
             lockedAt: lockedBet.firstRecommendedAt,
             initialOdds: lockedBet.initialOdds,
             initialEV: lockedBet.initialEV
@@ -2489,18 +2490,20 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             </>
           )}
           
-          {/* Locked indicator */}
+          {/* Locked indicator — protected bets show gold lock, unprotected show outline */}
           {pred.isLockedPick && (
             <span style={{
               fontSize: isMobile ? '0.625rem' : '0.688rem',
               fontWeight: '800',
-              color: '#D4AF37',
+              color: pred.isFirebaseLocked ? '#D4AF37' : '#666',
               display: 'flex',
               alignItems: 'center',
               gap: '0.188rem',
               marginLeft: 'auto'
-            }}>
-              🔒
+            }}
+            title={pred.isFirebaseLocked ? 'Locked — protected from line movement' : 'Active — monitoring line movement'}
+            >
+              {pred.isFirebaseLocked ? '🔒' : '🔓'}
             </span>
           )}
         </div>
@@ -2592,6 +2595,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const mot = totalsData?.marginOverTotal ?? betRec?.marginOverTotal;
             const line = betRec?.totalLine ?? totalsData?.marketTotal;
             const tMvTier = totalsData?.movementTier ?? betRec?.movementTier;
+            const tUnitTier = totalsData?.unitTier ?? betRec?.totalTier;
+            const isTotMktConf = tUnitTier === 'MARKET_CONFIRMED';
             const motStr = mot != null ? ` by +${mot} pts` : '';
             const steamTag = tMvTier === 'CONFIRM' ? ' • STEAM' : '';
             if (mot >= 4) {
@@ -2603,6 +2608,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             } else if (mot >= 2) {
               title = `${dir} ${line} — Totals Value${steamTag}`;
               subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
+            } else if (isTotMktConf) {
+              title = `${dir} ${line} — Market Validated${steamTag}`;
+              subtitle = `Both models project ${dir.toLowerCase()}${motStr} • Line moving our way`;
             } else {
               title = `${dir} ${line}${steamTag}`;
               subtitle = `Models project ${dir.toLowerCase()}`;
@@ -2612,6 +2620,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const coverStr = bothCover ? 'Both models project cover' : 'Model projects cover';
             const mosStr = mos != null ? ` by +${mos} pts` : '';
             const sMvTier = spreadData?.movementTier ?? betRec?.movementTier;
+            const sUnitTier = spreadData?.unitTier ?? betRec?.atsTier;
+            const isMarketConfirmed = sUnitTier === 'MARKET_CONFIRMED';
             const steamTag = sMvTier === 'CONFIRM' ? ' • STEAM' : '';
             if (mos >= 4) {
               title = `${pickTeam} — Maximum Confidence${steamTag}`;
@@ -2622,6 +2632,9 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             } else if (mos >= 2) {
               title = `${pickTeam} — Spread Value${steamTag}`;
               subtitle = `${side} • ${coverStr}${mosStr}`;
+            } else if (isMarketConfirmed) {
+              title = `${pickTeam} — Market Validated${steamTag}`;
+              subtitle = `${side} • ${coverStr}${mosStr} • Line moving our way`;
             } else {
               title = `${pickTeam} — ATS Play${steamTag}`;
               subtitle = `${side} • ${coverStr}`;

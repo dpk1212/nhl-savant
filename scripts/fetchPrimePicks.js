@@ -534,6 +534,11 @@ async function savePick(db, game, sideData, prediction) {
     };
     
     if (isFlagged) {
+      if (prev.isLocked) {
+        await updateDoc(betRef, updateData);
+        console.log(`   🔒 LOCKED: ${pickTeam} ${sideData.spread} — line moved against but bet is locked for user`);
+        return { action: 'stable', betId };
+      }
       updateData['betStatus'] = 'KILLED';
       updateData['bet.units'] = 0;
       updateData['betRecommendation.atsUnits'] = 0;
@@ -548,7 +553,14 @@ async function savePick(db, game, sideData, prediction) {
       updateData['betRecommendation.atsUnits'] = units;
       updateData['prediction.unitSize'] = units;
       updateData['spreadAnalysis.unitTier'] = tier;
-      updateData['betStatus'] = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      if (!prev.isLocked) {
+        updateData['betStatus'] = newStatus;
+        if (newStatus === 'BET_NOW') {
+          updateData.isLocked = true;
+          updateData.lockedAt = Date.now();
+        }
+      }
       await updateDoc(betRef, updateData);
       const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
       console.log(`   ${arrow}: ${pickTeam} ${sideData.spread} — ${prevTier} → ${newTier} | ${units}u [${tier}]`);
@@ -643,6 +655,8 @@ async function savePick(db, game, sideData, prediction) {
     
     status: 'PENDING',
     betStatus: isFlagged ? 'FLAGGED' : (sideData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
+    isLocked: !isFlagged && sideData.movementTier === 'CONFIRM',
+    lockedAt: (!isFlagged && sideData.movementTier === 'CONFIRM') ? Date.now() : null,
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOS',
@@ -729,6 +743,11 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     };
     
     if (isFlagged) {
+      if (prev.isLocked) {
+        await updateDoc(betRef, updateData);
+        console.log(`   🔒 LOCKED: ${totalsData.direction} ${totalsData.marketTotal} — line moved against but bet is locked for user (${game.awayTeam} @ ${game.homeTeam})`);
+        return { action: 'stable', betId };
+      }
       updateData['betStatus'] = 'KILLED';
       updateData['bet.units'] = 0;
       updateData['betRecommendation.totalUnits'] = 0;
@@ -743,7 +762,14 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       updateData['betRecommendation.totalUnits'] = units;
       updateData['prediction.unitSize'] = units;
       updateData['totalsAnalysis.unitTier'] = tier;
-      updateData['betStatus'] = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
+      if (!prev.isLocked) {
+        updateData['betStatus'] = newStatus;
+        if (newStatus === 'BET_NOW') {
+          updateData.isLocked = true;
+          updateData.lockedAt = Date.now();
+        }
+      }
       await updateDoc(betRef, updateData);
       const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
       console.log(`   ${arrow}: ${totalsData.direction} ${totalsData.marketTotal} — ${prevTier} → ${newTier} | ${units}u [${tier}] (${game.awayTeam} @ ${game.homeTeam})`);
@@ -828,6 +854,8 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     
     status: 'PENDING',
     betStatus: isFlagged ? 'FLAGGED' : (totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
+    isLocked: !isFlagged && totalsData.movementTier === 'CONFIRM',
+    lockedAt: (!isFlagged && totalsData.movementTier === 'CONFIRM') ? Date.now() : null,
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOT',
