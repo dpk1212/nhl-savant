@@ -119,15 +119,32 @@ function parseSpreadData(markdown) {
       let teamName = teamMatch[1].trim();
       teamName = teamName.replace(/^#\d+/, '').trim();
       
+      // Extract consensus spread (first spread pattern on the line)
       const spreadPatterns = line.match(/([+-]?\d+½?)\s+-?\d{3}/g);
       let spread = null;
       
       if (spreadPatterns && spreadPatterns.length > 0) {
         const spreadStr = spreadPatterns[0].split(/\s/)[0];
-        const cleanSpread = spreadStr.replace('½', '.5');
-        spread = parseFloat(cleanSpread);
+        spread = parseFloat(spreadStr.replace('½', '.5'));
       } else if (line.includes('PK')) {
         spread = 0;
+      }
+      
+      // Extract opening line from the second pipe-separated column (Opener)
+      const columns = line.split('|');
+      let openerSpread = null;
+      if (columns.length >= 3) {
+        const openerCol = columns[2]?.trim();
+        if (openerCol && openerCol !== '-') {
+          if (openerCol.includes('PK')) {
+            openerSpread = 0;
+          } else {
+            const openerMatch = openerCol.match(/([+-]?\d+½?(?:\.\d)?)/);
+            if (openerMatch) {
+              openerSpread = parseFloat(openerMatch[1].replace('½', '.5'));
+            }
+          }
+        }
       }
       
       if (!currentGame) {
@@ -135,12 +152,15 @@ function parseSpreadData(markdown) {
           awayTeam: teamName, 
           homeTeam: null, 
           awaySpread: spread, 
+          awayOpener: openerSpread,
           homeSpread: null,
+          homeOpener: null,
           isToday: isToday
         };
       } else if (!currentGame.homeTeam) {
         currentGame.homeTeam = teamName;
         currentGame.homeSpread = spread;
+        currentGame.homeOpener = openerSpread;
         
         if (currentGame.isToday && currentGame.awayTeam && currentGame.homeTeam) {
           games.push(currentGame);
@@ -204,25 +224,44 @@ function parseTotalsData(markdown) {
         }
       }
       
+      // Extract opening total from second pipe-separated column (Opener)
+      let openerTotal = null;
+      const columns = line.split('|');
+      if (columns.length >= 3) {
+        const openerCol = columns[2]?.trim();
+        if (openerCol && openerCol !== '-') {
+          const openerOUMatch = openerCol.match(/[OU]?\s*(\d{2,3}½?(?:\.\d)?)/);
+          if (openerOUMatch) {
+            const num = parseFloat(openerOUMatch[1].replace('½', '.5'));
+            if (num >= 100 && num <= 250) openerTotal = num;
+          }
+        }
+      }
+      
       if (!currentGame) {
         currentGame = { 
           awayTeam: teamName, 
           homeTeam: null, 
           awayTotal: total, 
+          awayOpenerTotal: openerTotal,
           homeTotal: null,
+          homeOpenerTotal: null,
           isToday: isToday
         };
       } else if (!currentGame.homeTeam) {
         currentGame.homeTeam = teamName;
         currentGame.homeTotal = total;
+        currentGame.homeOpenerTotal = openerTotal;
         
         const gameTotal = currentGame.awayTotal || currentGame.homeTotal;
+        const openerGameTotal = currentGame.awayOpenerTotal || currentGame.homeOpenerTotal;
         
         if (currentGame.isToday && currentGame.awayTeam && currentGame.homeTeam && gameTotal) {
           games.push({
             awayTeam: currentGame.awayTeam,
             homeTeam: currentGame.homeTeam,
             total: gameTotal,
+            openerTotal: openerGameTotal,
             isToday: true
           });
         }
@@ -264,6 +303,7 @@ function evaluateBothSides(game, spreadGames) {
     const isAway = side === 'away';
     const teamName = isAway ? game.awayTeam : game.homeTeam;
     const spread = isAway ? spreadGame.awaySpread : spreadGame.homeSpread;
+    const openerSpread = isAway ? spreadGame.awayOpener : spreadGame.homeOpener;
     
     if (spread === null || spread === undefined) return null;
     
@@ -276,15 +316,30 @@ function evaluateBothSides(game, spreadGames) {
     const blendCovers = blendedMargin > -spread;
     const bothCover = drCovers && hsCovers;
     
-    // MOS: blendedMargin + spread
-    //   Fav: margin 7.0, spread -5.5 → 7.0 + (-5.5) = +1.5
-    //   Dog: margin -1.7, spread +5.5 → -1.7 + 5.5 = +3.8
     const marginOverSpread = Math.round((blendedMargin + spread) * 10) / 10;
+    
+    // LINE MOVEMENT: openerSpread - currentSpread
+    //   Positive = line moved toward our pick (CONFIRM / STEAM)
+    //   Negative = line moved against our pick (FLAGGED)
+    //   DOG +4 opens, +5.5 now: 4 - 5.5 = -1.5 (FLAGGED — sharps on fav)
+    //   DOG +7 opens, +5.5 now: 7 - 5.5 = +1.5 (CONFIRM — sharps on dog)
+    //   FAV -4 opens, -5.5 now: -4 - (-5.5) = +1.5 (CONFIRM — sharps on fav)
+    let lineMovement = null;
+    let movementTier = 'UNKNOWN';
+    if (openerSpread != null) {
+      lineMovement = Math.round((openerSpread - spread) * 10) / 10;
+      if (lineMovement >= 1.0) movementTier = 'CONFIRM';
+      else if (lineMovement >= -0.5) movementTier = 'NEUTRAL';
+      else movementTier = 'FLAGGED';
+    }
     
     return {
       side,
       teamName,
       spread,
+      openerSpread,
+      lineMovement,
+      movementTier,
       drMargin: Math.round(drMargin * 10) / 10,
       hsMargin: Math.round(hsMargin * 10) / 10,
       blendedMargin: Math.round(blendedMargin * 10) / 10,
@@ -353,9 +408,27 @@ function evaluateTotals(game, totalsGames) {
   const margin = blendedTotal - marketTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
   
+  // LINE MOVEMENT for totals
+  //   OVER:  line moves up = CONFIRM (sharps betting over)
+  //   UNDER: line moves down = CONFIRM (sharps betting under)
+  const openerTotal = totalsGame.openerTotal;
+  let lineMovement = null;
+  let movementTier = 'UNKNOWN';
+  if (openerTotal != null) {
+    lineMovement = direction === 'OVER'
+      ? Math.round((marketTotal - openerTotal) * 10) / 10
+      : Math.round((openerTotal - marketTotal) * 10) / 10;
+    if (lineMovement >= 1.0) movementTier = 'CONFIRM';
+    else if (lineMovement >= -0.5) movementTier = 'NEUTRAL';
+    else movementTier = 'FLAGGED';
+  }
+  
   return {
     direction,
     marketTotal,
+    openerTotal,
+    lineMovement,
+    movementTier,
     drTotal: Math.round(drTotal * 10) / 10,
     hsTotal: Math.round(hsTotal * 10) / 10,
     blendedTotal: Math.round(blendedTotal * 10) / 10,
@@ -368,7 +441,7 @@ function evaluateTotals(game, totalsGames) {
 }
 
 /**
- * MOS tier → unit sizing (1-5 scale)
+ * MOS tier → base unit sizing (1-5 scale)
  */
 function getMOSTier(mos) {
   if (mos >= 4)    return { tier: 'MAXIMUM', units: 5 };
@@ -377,6 +450,18 @@ function getMOSTier(mos) {
   if (mos >= 2.25) return { tier: 'SOLID',   units: 2 };
   if (mos >= MOS_FLOOR) return { tier: 'BASE', units: 1 };
   return null;
+}
+
+/**
+ * Adjust units based on line movement tier.
+ *   CONFIRM: +1u boost (capped at 5)
+ *   NEUTRAL: no change
+ *   FLAGGED: hard skip (return null to reject the pick)
+ */
+function applyMovementGate(baseUnits, movementTier) {
+  if (movementTier === 'FLAGGED') return null;
+  if (movementTier === 'CONFIRM') return Math.min(baseUnits + 1, 5);
+  return baseUnits;
 }
 
 /**
@@ -446,6 +531,9 @@ async function savePick(db, game, sideData, prediction) {
     spreadAnalysis: {
       spreadConfirmed: true,
       spread: sideData.spread,
+      openerSpread: sideData.openerSpread,
+      lineMovement: sideData.lineMovement,
+      movementTier: sideData.movementTier,
       drMargin: sideData.drMargin,
       hsMargin: sideData.hsMargin,
       blendedMargin: sideData.blendedMargin,
@@ -516,6 +604,9 @@ async function savePick(db, game, sideData, prediction) {
       estimatedSpreadEV: Math.round(spreadEV * 1000) / 10,
       marginOverSpread: mos,
       bothModelsCover: sideData.bothCover,
+      openerSpread: sideData.openerSpread,
+      lineMovement: sideData.lineMovement,
+      movementTier: sideData.movementTier,
     },
     
     barttorvik: game.barttorvik || null
@@ -525,9 +616,11 @@ async function savePick(db, game, sideData, prediction) {
   
   const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
   const favDog = sideData.isFavorite ? 'FAV' : 'DOG';
+  const mvIcon = sideData.movementTier === 'CONFIRM' ? '🟢' : '⚪';
+  const mvStr = sideData.lineMovement != null ? ` | Line: ${sideData.lineMovement > 0 ? '+' : ''}${sideData.lineMovement} [${sideData.movementTier}]` : '';
   const starDisplay = '★'.repeat(units) + '☆'.repeat(5 - units);
-  console.log(`   ${tierIcon} ${pickTeam} ${sideData.spread} @ -110 → ${units}u [${tier}] ${favDog}`);
-  console.log(`      ${starDisplay} MOS: +${mos} | Cover: ${betData.betRecommendation.estimatedCoverProb}% | SpreadEV: +${betData.betRecommendation.estimatedSpreadEV}%`);
+  console.log(`   ${tierIcon} ${mvIcon} ${pickTeam} ${sideData.spread} @ -110 → ${units}u [${tier}] ${favDog}`);
+  console.log(`      ${starDisplay} MOS: +${mos} | Cover: ${betData.betRecommendation.estimatedCoverProb}%${mvStr}`);
   console.log(`      DR: +${sideData.drMargin} ${sideData.drCovers ? '✓' : '✗'} | HS: +${sideData.hsMargin} ${sideData.hsCovers ? '✓' : '✗'} | Blend: +${sideData.blendedMargin} ${sideData.blendCovers ? '✓' : '✗'}`);
   
   return { action: 'created', betId };
@@ -581,6 +674,9 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     
     totalsAnalysis: {
       marketTotal: totalsData.marketTotal,
+      openerTotal: totalsData.openerTotal,
+      lineMovement: totalsData.lineMovement,
+      movementTier: totalsData.movementTier,
       drTotal: totalsData.drTotal,
       hsTotal: totalsData.hsTotal,
       blendedTotal: totalsData.blendedTotal,
@@ -643,6 +739,9 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       estimatedTotalsEV: Math.round(totalsEV * 1000) / 10,
       marginOverTotal: mot,
       bothModelsAgree: totalsData.bothAgreeOver || totalsData.bothAgreeUnder,
+      openerTotal: totalsData.openerTotal,
+      lineMovement: totalsData.lineMovement,
+      movementTier: totalsData.movementTier,
     },
     
     barttorvik: game.barttorvik || null
@@ -651,9 +750,11 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   await setDoc(betRef, betData);
   
   const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
+  const mvIcon = totalsData.movementTier === 'CONFIRM' ? '🟢' : '⚪';
+  const mvStr = totalsData.lineMovement != null ? ` | Line: ${totalsData.lineMovement > 0 ? '+' : ''}${totalsData.lineMovement} [${totalsData.movementTier}]` : '';
   const starDisplay = '★'.repeat(units) + '☆'.repeat(5 - units);
-  console.log(`   ${tierIcon} ${totalsData.direction} ${totalsData.marketTotal} → ${units}u [${tier}] (${game.awayTeam} @ ${game.homeTeam})`);
-  console.log(`      ${starDisplay} MOT: +${mot} | Cover: ${betData.betRecommendation.estimatedCoverProb}%`);
+  console.log(`   ${tierIcon} ${mvIcon} ${totalsData.direction} ${totalsData.marketTotal} → ${units}u [${tier}] (${game.awayTeam} @ ${game.homeTeam})`);
+  console.log(`      ${starDisplay} MOT: +${mot} | Cover: ${betData.betRecommendation.estimatedCoverProb}%${mvStr}`);
   console.log(`      DR: ${totalsData.drTotal} ${totalsData.drOver ? 'O' : 'U'} | HS: ${totalsData.hsTotal} ${totalsData.hsOver ? 'O' : 'U'} | Blend: ${totalsData.blendedTotal} | Line: ${totalsData.marketTotal}`);
   
   return { action: 'created', betId };
@@ -769,6 +870,7 @@ async function fetchPrimePicks() {
     let noModelData = 0;
     let noSpreadData = 0;
     let belowFloor = 0;
+    let flaggedCount = 0;
     
     for (const game of matchedGames) {
       if (!game.dratings || !game.haslametrics) {
@@ -797,11 +899,24 @@ async function fetchPrimePicks() {
         continue;
       }
       
+      // LINE MOVEMENT GATE — skip picks where sharp money disagrees
+      const adjustedUnits = applyMovementGate(tierInfo.units, best.movementTier);
+      if (adjustedUnits === null) {
+        flaggedCount++;
+        const mvStr = best.lineMovement != null ? `${best.lineMovement > 0 ? '+' : ''}${best.lineMovement}` : '?';
+        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} FLAGGED (line moved ${mvStr} against pick, opener: ${best.openerSpread})`);
+        continue;
+      }
+      
+      // Override units with movement-adjusted value
+      tierInfo.units = adjustedUnits;
+      
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       const evDisplay = (prediction && !prediction.error) ? `EV ${prediction.bestEV?.toFixed(1)}%` : '';
       const favDog = best.isFavorite ? 'FAV' : 'DOG';
+      const mvTag = best.movementTier === 'CONFIRM' ? '🟢 STEAM' : best.movementTier === 'NEUTRAL' ? '⚪' : '';
       
-      console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${evDisplay}`);
+      console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${mvTag} ${evDisplay}`);
       
       picks.push({
         game,
@@ -817,6 +932,7 @@ async function fetchPrimePicks() {
     console.log(`   ❌ No model data: ${noModelData}`);
     console.log(`   ❌ No spread data: ${noSpreadData}`);
     console.log(`   ⬇️  Below MOS floor (${MOS_FLOOR}): ${belowFloor}`);
+    console.log(`   🚫 FLAGGED (line moved against): ${flaggedCount}`);
     console.log(`   ✅ QUALIFYING ATS PICKS: ${picks.length}\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -830,6 +946,7 @@ async function fetchPrimePicks() {
     let noTotalsLine = 0;
     let totalsDisagree = 0;
     let totalsBelowFloor = 0;
+    let totalsFlaggedCount = 0;
     
     for (const game of matchedGames) {
       if (!game.dratings || !game.haslametrics) continue;
@@ -868,9 +985,21 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      // LINE MOVEMENT GATE for totals
+      const adjustedTotalUnits = applyMovementGate(tierInfo.units, totalsEval.movementTier);
+      if (adjustedTotalUnits === null) {
+        totalsFlaggedCount++;
+        const mvStr = totalsEval.lineMovement != null ? `${totalsEval.lineMovement > 0 ? '+' : ''}${totalsEval.lineMovement}` : '?';
+        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal}) (${game.awayTeam} @ ${game.homeTeam})`);
+        continue;
+      }
       
-      console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${tierInfo.units}u [${tierInfo.tier}] (${game.awayTeam} @ ${game.homeTeam})`);
+      tierInfo.units = adjustedTotalUnits;
+      
+      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : totalsEval.movementTier === 'NEUTRAL' ? '⚪' : '';
+      
+      console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${tierInfo.units}u [${tierInfo.tier}] ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       
       totalsPicks.push({
         game,
@@ -885,6 +1014,7 @@ async function fetchPrimePicks() {
     console.log(`   ❌ No totals line: ${noTotalsLine}`);
     console.log(`   ❌ Models disagree: ${totalsDisagree}`);
     console.log(`   ⬇️  Below MOT floor (${MOS_FLOOR}): ${totalsBelowFloor}`);
+    console.log(`   🚫 FLAGGED (line moved against): ${totalsFlaggedCount}`);
     console.log(`   ✅ QUALIFYING TOTALS PICKS: ${totalsPicks.length}\n`);
     
     // ═══════════════════════════════════════════════════════════════════════

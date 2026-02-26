@@ -2455,6 +2455,36 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             </>
           )}
           
+          {/* Line Movement Badge */}
+          {betRec?.movementTier && betRec.movementTier !== 'UNKNOWN' && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.625rem' }}>|</span>
+              <span style={{
+                fontSize: isMobile ? '0.563rem' : '0.625rem',
+                fontWeight: '800',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '0.25rem',
+                letterSpacing: '0.06em',
+                background: betRec.movementTier === 'CONFIRM'
+                  ? 'rgba(34, 197, 94, 0.15)'
+                  : 'rgba(255, 255, 255, 0.06)',
+                color: betRec.movementTier === 'CONFIRM'
+                  ? '#22C55E'
+                  : 'rgba(255,255,255,0.45)',
+                border: betRec.movementTier === 'CONFIRM'
+                  ? '1px solid rgba(34, 197, 94, 0.3)'
+                  : '1px solid rgba(255,255,255,0.1)',
+              }}>
+                {betRec.movementTier === 'CONFIRM' ? 'STEAM' : 'NEUTRAL'}
+                {betRec.lineMovement != null && (
+                  <span style={{ opacity: 0.7, marginLeft: '0.2rem' }}>
+                    {betRec.lineMovement > 0 ? '+' : ''}{betRec.lineMovement}
+                  </span>
+                )}
+              </span>
+            </>
+          )}
+          
           {/* Locked indicator */}
           {pred.isLockedPick && (
             <span style={{
@@ -2557,35 +2587,39 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const dir = betRec?.totalDirection || totalsData?.direction || 'OVER';
             const mot = totalsData?.marginOverTotal ?? betRec?.marginOverTotal;
             const line = betRec?.totalLine ?? totalsData?.marketTotal;
+            const tMvTier = totalsData?.movementTier ?? betRec?.movementTier;
             const motStr = mot != null ? ` by +${mot} pts` : '';
+            const steamTag = tMvTier === 'CONFIRM' ? ' • STEAM' : '';
             if (mot >= 4) {
-              title = `${dir} ${line} — Maximum Confidence`;
+              title = `${dir} ${line} — Maximum Confidence${steamTag}`;
               subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
             } else if (mot >= 3) {
-              title = `${dir} ${line} — Strong Edge`;
+              title = `${dir} ${line} — Strong Edge${steamTag}`;
               subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
             } else if (mot >= 2) {
-              title = `${dir} ${line} — Totals Value`;
+              title = `${dir} ${line} — Totals Value${steamTag}`;
               subtitle = `Both models project ${dir.toLowerCase()}${motStr}`;
             } else {
-              title = `${dir} ${line}`;
+              title = `${dir} ${line}${steamTag}`;
               subtitle = `Models project ${dir.toLowerCase()}`;
             }
           } else if (isATS) {
             const side = isFav ? 'Favorite' : 'Underdog';
             const coverStr = bothCover ? 'Both models project cover' : 'Model projects cover';
             const mosStr = mos != null ? ` by +${mos} pts` : '';
+            const sMvTier = spreadData?.movementTier ?? betRec?.movementTier;
+            const steamTag = sMvTier === 'CONFIRM' ? ' • STEAM' : '';
             if (mos >= 4) {
-              title = `${pickTeam} — Maximum Confidence`;
+              title = `${pickTeam} — Maximum Confidence${steamTag}`;
               subtitle = `${side} • ${coverStr}${mosStr}`;
             } else if (mos >= 3) {
-              title = `${pickTeam} — Strong Edge`;
+              title = `${pickTeam} — Strong Edge${steamTag}`;
               subtitle = `${side} • ${coverStr}${mosStr}`;
             } else if (mos >= 2) {
-              title = `${pickTeam} — Spread Value`;
+              title = `${pickTeam} — Spread Value${steamTag}`;
               subtitle = `${side} • ${coverStr}${mosStr}`;
             } else {
-              title = `${pickTeam} — ATS Play`;
+              title = `${pickTeam} — ATS Play${steamTag}`;
               subtitle = `${side} • ${coverStr}`;
             }
           } else {
@@ -2855,6 +2889,43 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   }
                   return null;
                 })()}
+                {/* Opening line movement indicator */}
+                {(() => {
+                  const sa = bet.spreadAnalysis || spreadAnalysis;
+                  if (!sa || sa.openerSpread == null) return null;
+                  const mv = sa.lineMovement;
+                  const tier = sa.movementTier;
+                  if (!tier || tier === 'UNKNOWN') return null;
+                  const isConfirm = tier === 'CONFIRM';
+                  return (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      padding: '0.125rem 0.375rem',
+                      background: isConfirm ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.04)',
+                      border: isConfirm ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '4px',
+                      marginTop: '0.125rem'
+                    }}>
+                      <span style={{
+                        fontSize: isMobile ? '0.5rem' : '0.563rem',
+                        color: 'rgba(255,255,255,0.4)',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em'
+                      }}>OPEN {sa.openerSpread > 0 ? '+' : ''}{sa.openerSpread}</span>
+                      <span style={{
+                        fontSize: isMobile ? '0.563rem' : '0.625rem',
+                        fontWeight: '800',
+                        color: isConfirm ? '#22C55E' : 'rgba(255,255,255,0.5)',
+                        fontFeatureSettings: "'tnum'"
+                      }}>
+                        {mv > 0 ? '+' : ''}{mv} {isConfirm ? 'STEAM' : 'FLAT'}
+                      </span>
+                    </div>
+                  );
+                })()}
               </>
             ) : (
               <>
@@ -3087,6 +3158,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const dir = betRec?.totalDirection || totalsData?.direction;
             const bothAgree = totalsData?.bothModelsAgree ?? betRec?.bothModelsAgree;
             const isOver = dir === 'OVER';
+            const tMvTier = totalsData?.movementTier ?? betRec?.movementTier;
+            const tMvVal = totalsData?.lineMovement ?? betRec?.lineMovement;
             if (mot === undefined && !dir) return null;
             return (
               <div style={{ 
@@ -3099,7 +3172,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: isMobile ? '1rem' : '1.5rem'
+                  gap: isMobile ? '0.75rem' : '1.25rem',
+                  flexWrap: 'wrap'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                     <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -3122,6 +3196,34 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                       </div>
                     </>
                   )}
+                  {tMvTier && tMvTier !== 'UNKNOWN' && (
+                    <>
+                      <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
+                          {tMvTier === 'CONFIRM' ? '🟢' : '⚪'}
+                        </span>
+                        <span style={{ 
+                          fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                          fontWeight: '700', 
+                          color: tMvTier === 'CONFIRM' ? '#10b981' : 'rgba(255,255,255,0.5)',
+                          letterSpacing: '0.02em'
+                        }}>
+                          {tMvTier === 'CONFIRM' ? 'STEAM' : 'HOLD'}
+                        </span>
+                        {tMvVal != null && (
+                          <span style={{ 
+                            fontSize: isMobile ? '0.563rem' : '0.625rem', 
+                            color: 'rgba(255,255,255,0.35)', 
+                            fontWeight: '600',
+                            fontFeatureSettings: "'tnum'"
+                          }}>
+                            ({tMvVal > 0 ? '+' : ''}{tMvVal})
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -3130,6 +3232,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           const bothCover = spreadData?.bothModelsCover ?? betRec?.bothModelsCover;
           const mos = spreadData?.marginOverSpread ?? betRec?.marginOverSpread;
           const isFav = spreadData?.isFavorite;
+          const mvTier = spreadData?.movementTier ?? betRec?.movementTier;
+          const mvVal = spreadData?.lineMovement ?? betRec?.lineMovement;
           
           if (mos === undefined && bothCover === undefined) return null;
           
@@ -3144,7 +3248,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: isMobile ? '1rem' : '1.5rem'
+                gap: isMobile ? '0.75rem' : '1.25rem',
+                flexWrap: 'wrap'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Cover</span>
@@ -3162,10 +3267,40 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   </>
                 )}
                 {mos !== undefined && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MOS</span>
-                    <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '800', color: mos >= 4 ? '#10b981' : mos >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)', letterSpacing: '-0.01em' }}>+{mos}</span>
-                  </div>
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                      <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MOS</span>
+                      <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '800', color: mos >= 4 ? '#10b981' : mos >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)', letterSpacing: '-0.01em' }}>+{mos}</span>
+                    </div>
+                  </>
+                )}
+                {mvTier && mvTier !== 'UNKNOWN' && (
+                  <>
+                    <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
+                        {mvTier === 'CONFIRM' ? '🟢' : '⚪'}
+                      </span>
+                      <span style={{ 
+                        fontSize: isMobile ? '0.625rem' : '0.688rem', 
+                        fontWeight: '700', 
+                        color: mvTier === 'CONFIRM' ? '#10b981' : 'rgba(255,255,255,0.5)',
+                        letterSpacing: '0.02em'
+                      }}>
+                        {mvTier === 'CONFIRM' ? 'STEAM' : 'HOLD'}
+                      </span>
+                      {mvVal != null && (
+                        <span style={{ 
+                          fontSize: isMobile ? '0.563rem' : '0.625rem', 
+                          color: 'rgba(255,255,255,0.35)', 
+                          fontWeight: '600',
+                          fontFeatureSettings: "'tnum'"
+                        }}>
+                          ({mvVal > 0 ? '+' : ''}{mvVal})
+                        </span>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -3183,6 +3318,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           const drT = totalsAnalysis?.drTotal;
           const hsT = totalsAnalysis?.hsTotal;
           const blendT = totalsAnalysis?.blendedTotal;
+          const cMvTier = totalsAnalysis?.movementTier ?? totalsRec?.movementTier;
           
           return (
             <div style={{
@@ -3222,7 +3358,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                       fontWeight: '600',
                       marginTop: '0.125rem'
                     }}>
-                      {tUnits}u @ -110 • Both models agree
+                      {tUnits}u @ -110 • Both models agree{cMvTier === 'CONFIRM' ? ' • 🟢 STEAM' : ''}
                     </div>
                   </div>
                 </div>
