@@ -2123,8 +2123,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   
   // Bet recommendation — ATS, Totals, or ML
   const betRec = betData?.betRecommendation;
-  const isATSRecommended = betRec?.type === 'ATS';
-  const isTotalsRecommended = betRec?.type === 'TOTAL';
+  const isATSRecommended = betRec?.type === 'ATS' || (betData?.isATSPick === true && betData?.bet?.market === 'SPREAD');
+  const isTotalsRecommended = betRec?.type === 'TOTAL' || betData?.isTotalsPick === true || betData?.bet?.market === 'TOTAL';
   const isStandaloneATS = betData?.isATSPick && !betData?.isPrimePick;
   const totalsData = betData?.totalsAnalysis;
   
