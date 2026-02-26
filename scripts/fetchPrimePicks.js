@@ -657,8 +657,8 @@ async function savePick(db, game, sideData, prediction) {
     
     status: 'PENDING',
     betStatus: isFlagged ? 'FLAGGED' : (sideData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
-    isLocked: !isFlagged && sideData.movementTier === 'CONFIRM',
-    lockedAt: (!isFlagged && sideData.movementTier === 'CONFIRM') ? Date.now() : null,
+    isLocked: !isFlagged,
+    lockedAt: !isFlagged ? Date.now() : null,
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOS',
@@ -857,8 +857,8 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     
     status: 'PENDING',
     betStatus: isFlagged ? 'FLAGGED' : (totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
-    isLocked: !isFlagged && totalsData.movementTier === 'CONFIRM',
-    lockedAt: (!isFlagged && totalsData.movementTier === 'CONFIRM') ? Date.now() : null,
+    isLocked: !isFlagged,
+    lockedAt: !isFlagged ? Date.now() : null,
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOT',
