@@ -514,7 +514,10 @@ async function savePick(db, game, sideData, prediction) {
   
   const mos = sideData.marginOverSpread;
   const tierInfo = getMOSTier(mos);
-  const units = tierInfo.units;
+  if (!tierInfo) return { action: 'skipped', betId };
+  const adjustedUnits = applyMovementGate(tierInfo.units, sideData.movementTier);
+  if (adjustedUnits === null) return { action: 'skipped', betId };
+  const units = adjustedUnits;
   const tier = tierInfo.tier;
   
   const coverProb = estimateCoverProb(mos);
@@ -657,8 +660,11 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   }
   
   const mot = totalsData.marginOverTotal;
-  const tierInfo = getMOSTier(mot);
-  const units = tierInfo.units;
+  const tierInfo = getMOTTier(mot);
+  if (!tierInfo) return { action: 'skipped', betId };
+  const adjustedUnits = applyMovementGate(tierInfo.units, totalsData.movementTier);
+  if (adjustedUnits === null) return { action: 'skipped', betId };
+  const units = adjustedUnits;
   const tier = tierInfo.tier;
   
   const coverProb = estimateCoverProb(mot);
