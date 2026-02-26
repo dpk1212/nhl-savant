@@ -383,7 +383,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     const tierChanged = prevTier !== newTier;
 
     const updateData = {
-      'spreadAnalysis.spread': sideResult.spread,
+      'spreadAnalysis.currentSpread': sideResult.spread,
       'spreadAnalysis.lineMovement': sideResult.lineMovement,
       'spreadAnalysis.movementTier': newTier,
       'spreadAnalysis.marginOverSpread': sideResult.mos,
@@ -393,12 +393,16 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       'spreadAnalysis.unitTier': tier,
       'betRecommendation.lineMovement': sideResult.lineMovement,
       'betRecommendation.movementTier': newTier,
-      'betRecommendation.atsSpread': sideResult.spread,
       'betRecommendation.marginOverSpread': sideResult.mos,
-      'bet.spread': sideResult.spread,
       lastUpdatedAt: Date.now(),
       lastLineCheckAt: Date.now(),
     };
+
+    if (!prev.isLocked) {
+      updateData['spreadAnalysis.spread'] = sideResult.spread;
+      updateData['betRecommendation.atsSpread'] = sideResult.spread;
+      updateData['bet.spread'] = sideResult.spread;
+    }
 
     if (isFlagged) {
       if (prev.isLocked) {
@@ -547,7 +551,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     const tierChanged = prevTier !== newTier;
 
     const updateData = {
-      'totalsAnalysis.marketTotal': totalsResult.marketTotal,
+      'totalsAnalysis.currentTotal': totalsResult.marketTotal,
       'totalsAnalysis.lineMovement': totalsResult.lineMovement,
       'totalsAnalysis.movementTier': newTier,
       'totalsAnalysis.marginOverTotal': totalsResult.mot,
@@ -557,12 +561,16 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       'totalsAnalysis.unitTier': tier,
       'betRecommendation.lineMovement': totalsResult.lineMovement,
       'betRecommendation.movementTier': newTier,
-      'betRecommendation.totalLine': totalsResult.marketTotal,
       'betRecommendation.marginOverTotal': totalsResult.mot,
-      'bet.total': totalsResult.marketTotal,
       lastUpdatedAt: Date.now(),
       lastLineCheckAt: Date.now(),
     };
+
+    if (!prev.isLocked) {
+      updateData['totalsAnalysis.marketTotal'] = totalsResult.marketTotal;
+      updateData['betRecommendation.totalLine'] = totalsResult.marketTotal;
+      updateData['bet.total'] = totalsResult.marketTotal;
+    }
 
     if (isFlagged) {
       if (prev.isLocked) {
