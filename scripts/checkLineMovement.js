@@ -92,7 +92,11 @@ function calcSpreadEV(coverProb) {
 // ─── Team Name Matching ──────────────────────────────────────────────
 
 function normalizeTeam(name) {
-  return (name || '').toLowerCase().replace(/[^a-z]/g, '');
+  return (name || '')
+    .toLowerCase()
+    .replace(/state/g, 'st')
+    .replace(/saint/g, 'st')
+    .replace(/[^a-z]/g, '');
 }
 
 function teamsMatch(a, b) {
@@ -637,23 +641,43 @@ async function checkLineMovement() {
 
     if (qualifyingATS.length > 0) {
       const best = qualifyingATS.sort((a, b) => b.mos - a.mos)[0];
-      await createOrUpdateATSBet(evalData, best, counters);
+      const adjustedUnits = applyMovementGate(best.tierInfo.units, best.movementTier);
+      if (adjustedUnits !== null || best.movementTier !== 'FLAGGED') {
+        await createOrUpdateATSBet(evalData, best, counters);
+      } else {
+        console.log(`   🚫 FLAGGED: ${best.teamName} ${best.spread} MOS +${best.mos} — line moved ${best.lineMovement > 0 ? '+' : ''}${best.lineMovement} (${gameLabel})`);
+      }
 
       const side = best.side === 'away' ? 'AWAY' : 'HOME';
       const teamNorm = best.teamName.replace(/\s+/g, '_').toUpperCase();
       const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
       const homeNorm = evalData.game.homeTeam.replace(/\s+/g, '_').toUpperCase();
       processedBetIds.add(`${today}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`);
+    } else {
+      // Log near-misses: games with MOS 1.0-1.9 where both models cover
+      const nearMisses = atsResults.filter(r => r.bothCover && r.mos >= 1.0 && r.mos < MOS_FLOOR);
+      for (const nm of nearMisses) {
+        const need = Math.round((MOS_FLOOR - nm.mos) * 10) / 10;
+        console.log(`   👀 NEAR: ${nm.teamName} ${nm.spread} MOS +${nm.mos} — needs ${need} more pts of line movement (${gameLabel})`);
+      }
     }
 
     // ── Totals: evaluate at current total ──
     const totalsResult = evaluateTotalsFromEval(evalData, oddsGame.total);
     if (totalsResult?.qualifies) {
-      await createOrUpdateTotalsBet(evalData, totalsResult, counters);
+      const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier);
+      if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
+        await createOrUpdateTotalsBet(evalData, totalsResult, counters);
+      } else {
+        console.log(`   🚫 FLAGGED: ${totalsResult.direction} ${totalsResult.marketTotal} MOT +${totalsResult.mot} — line moved ${totalsResult.lineMovement > 0 ? '+' : ''}${totalsResult.lineMovement} (${gameLabel})`);
+      }
 
       const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
       const homeNorm = evalData.game.homeTeam.replace(/\s+/g, '_').toUpperCase();
       processedBetIds.add(`${today}_${awayNorm}_${homeNorm}_TOTAL_${totalsResult.direction}`);
+    } else if (totalsResult && !totalsResult.qualifies && totalsResult.mot >= 3.0) {
+      const need = Math.round((MOT_FLOOR - totalsResult.mot) * 10) / 10;
+      console.log(`   👀 NEAR: ${totalsResult.direction} ${totalsResult.marketTotal} MOT +${totalsResult.mot} — needs ${need} more pts (${gameLabel})`);
     }
   }
 
