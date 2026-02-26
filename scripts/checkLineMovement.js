@@ -798,72 +798,101 @@ async function checkLineMovement() {
 
   // ════════════════════════════════════════════════════════════════════════
   // 6. FULL DASHBOARD — Model vs Opener vs Current for EVERY game
+  //
+  //    "Market Movement" uses the pick-relative calculation:
+  //      ATS:    openerSpread - currentSpread
+  //      Totals: (OVER) currentTotal - openerTotal
+  //              (UNDER) openerTotal - currentTotal
+  //
+  //    Positive = market confirms your thesis (sharps agree)
+  //    Negative = market moves against your thesis (sharps disagree)
+  //
+  //    Thresholds: >= +1.0 CONFIRM | >= -0.5 NEUTRAL | < -0.5 FLAGGED
   // ════════════════════════════════════════════════════════════════════════
 
-  const r = n => n != null ? (n >= 0 ? '+' + n : '' + n) : '??';
+  const fmt = n => n != null ? (n >= 0 ? '+' + n : '' + n) : '??';
   const pad = (s, w) => String(s).padStart(w);
+
+  function moveLabel(lm, tier) {
+    if (lm == null) return '   ??   '.padEnd(14);
+    const abs = Math.abs(lm);
+    const str = abs.toFixed(1);
+    if (lm >= 1.0)  return `▲ ${str} FOR   `.substring(0, 14);
+    if (lm > 0)     return `△ ${str} for   `.substring(0, 14);
+    if (lm === 0)   return `= 0.0 flat  `.substring(0, 14);
+    if (lm >= -0.5) return `▽ ${str} vs    `.substring(0, 14);
+    return             `▼ ${str} AGAINST`.substring(0, 14);
+  }
 
   // ── ATS DASHBOARD ──
   allAtsRows.sort((a, b) => b.currentMOS - a.currentMOS);
 
   console.log('\n');
-  console.log('╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║  ATS DASHBOARD — Model vs Opener vs Current Line (all games, sorted by current MOS)                        ║');
-  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log('║  Team                        │ Model  │ Opener │  MOS@O │ Current │  MOS@C │  Δ Line │ Models │ Status      ║');
-  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log('╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+  console.log('║  ATS DASHBOARD — Model Projection vs Market Lines  (▲ FOR us / ▼ AGAINST us)                                    ║');
+  console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log('║  Team                        │ Proj   │ Open   │ MOS@O  │ Now     │ MOS@C  │ Market Move    │ Models │ Status     ║');
+  console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
 
   for (const row of allAtsRows) {
     const team = row.team.substring(0, 28).padEnd(28);
-    const margin = pad(r(row.modelMargin), 6);
-    const opener = pad(r(row.opener), 6);
-    const mosO = pad(row.openerMOS != null ? r(row.openerMOS) : '??', 6);
-    const current = pad(r(row.current), 7);
-    const mosC = pad(r(row.currentMOS), 6);
-    const shift = pad(row.lineShift != null ? r(row.lineShift) : '??', 7);
+    const margin = pad(fmt(row.modelMargin), 6);
+    const opener = pad(fmt(row.opener), 6);
+    const mosO = pad(row.openerMOS != null ? fmt(row.openerMOS) : '??', 6);
+    const current = pad(fmt(row.current), 7);
+    const mosC = pad(fmt(row.currentMOS), 6);
+    const lm = row.sideResult.lineMovement;
+    const move = moveLabel(lm, row.movementTier);
     const models = row.bothCover ? '✓ both' : '✗ split';
-    const status = row.status.padEnd(11);
-    console.log(`║  ${team} │ ${margin} │ ${opener} │ ${mosO} │ ${current} │ ${mosC} │ ${shift} │ ${models} │ ${status} ║`);
+    const status = row.status.padEnd(10);
+    console.log(`║  ${team} │ ${margin} │ ${opener} │ ${mosO} │ ${current} │ ${mosC} │ ${move} │ ${models} │ ${status} ║`);
   }
 
   const atsQualified = allAtsRows.filter(r => r.qualifies);
   const atsNear = allAtsRows.filter(r => !r.qualifies && r.bothCover && r.currentMOS >= 1.0);
   const atsFlagged = atsQualified.filter(r => r.movementTier === 'FLAGGED');
+  const atsForUs = allAtsRows.filter(r => r.sideResult.lineMovement > 0).length;
+  const atsAgainst = allAtsRows.filter(r => r.sideResult.lineMovement != null && r.sideResult.lineMovement < 0).length;
+  const atsFlat = allAtsRows.filter(r => r.sideResult.lineMovement === 0).length;
 
-  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log(`║  MOS >= 2.0 + both cover: ${atsQualified.length}    │  Near (1.0-1.9): ${atsNear.length}    │  Flagged: ${atsFlagged.length}    │  Total games: ${allAtsRows.length}`.padEnd(111) + '║');
-  console.log('╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+  console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log(`║  QUALIFIES: ${atsQualified.length}  │  NEAR: ${atsNear.length}  │  FLAGGED: ${atsFlagged.length}  │  Market: ▲${atsForUs} for us / =${atsFlat} flat / ▼${atsAgainst} against  │  Total: ${allAtsRows.length} games`.padEnd(117) + '║');
+  console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
   // ── TOTALS DASHBOARD ──
   allTotalsRows.sort((a, b) => b.currentMOT - a.currentMOT);
 
   console.log('\n');
-  console.log('╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║  TOTALS DASHBOARD — Model vs Opener vs Current Total (all games, sorted by current MOT)                    ║');
-  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log('║  Dir   │ Game                              │ Model  │ Opener │ MOT@O  │ Current │ MOT@C  │  Δ Line │ Status ║');
-  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log('╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗');
+  console.log('║  TOTALS DASHBOARD — Model Projection vs Market Lines  (▲ FOR us / ▼ AGAINST us)                                 ║');
+  console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log('║  Dir   │ Game                              │ Model  │ Open   │ MOT@O  │ Now     │ MOT@C  │ Market Move    │ Status ║');
+  console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
 
   for (const row of allTotalsRows) {
     const dir = row.direction.padEnd(5);
     const game = row.gameLabel.substring(0, 33).padEnd(33);
     const mdl = pad(row.modelTotal, 6);
     const opener = pad(row.opener != null ? row.opener : '??', 6);
-    const motO = pad(row.openerMOT != null ? r(row.openerMOT) : '??', 6);
+    const motO = pad(row.openerMOT != null ? fmt(row.openerMOT) : '??', 6);
     const current = pad(row.current, 7);
-    const motC = pad(r(row.currentMOT), 6);
-    const shift = pad(row.lineShift != null ? r(row.lineShift) : '??', 7);
+    const motC = pad(fmt(row.currentMOT), 6);
+    const lm = row.totalsResult.lineMovement;
+    const move = moveLabel(lm, row.movementTier);
     const status = row.status.padEnd(6);
-    console.log(`║  ${dir} │ ${game} │ ${mdl} │ ${opener} │ ${motO} │ ${current} │ ${motC} │ ${shift} │ ${status} ║`);
+    console.log(`║  ${dir} │ ${game} │ ${mdl} │ ${opener} │ ${motO} │ ${current} │ ${motC} │ ${move} │ ${status} ║`);
   }
 
   const totQualified = allTotalsRows.filter(r => r.qualifies);
   const totNear = allTotalsRows.filter(r => !r.qualifies && r.currentMOT >= 3.0);
   const totFlagged = totQualified.filter(r => r.movementTier === 'FLAGGED');
+  const totForUs = allTotalsRows.filter(r => r.totalsResult.lineMovement > 0).length;
+  const totAgainst = allTotalsRows.filter(r => r.totalsResult.lineMovement != null && r.totalsResult.lineMovement < 0).length;
+  const totFlat = allTotalsRows.filter(r => r.totalsResult.lineMovement === 0).length;
 
-  console.log('╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log(`║  MOT >= 4.5 qualified: ${totQualified.length}    │  Near (3.0-4.4): ${totNear.length}    │  Flagged: ${totFlagged.length}    │  Total games: ${allTotalsRows.length}`.padEnd(111) + '║');
-  console.log('╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+  console.log('╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣');
+  console.log(`║  QUALIFIES: ${totQualified.length}  │  NEAR: ${totNear.length}  │  FLAGGED: ${totFlagged.length}  │  Market: ▲${totForUs} for us / =${totFlat} flat / ▼${totAgainst} against  │  Total: ${allTotalsRows.length} games`.padEnd(117) + '║');
+  console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
   // ── BET ACTIONS SUMMARY ──
   console.log('\n');
