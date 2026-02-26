@@ -85,18 +85,25 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     
     console.log(`🎯 Grading bet for: ${awayTeam} @ ${homeTeam}`);
     
-    // Detect ATS bets (upgraded Prime Picks or standalone ATS)
     const isATSBet = gradedBet.betRecommendation?.type === 'ATS' || gradedBet.isATSPick;
+    const isTotalsBet = gradedBet.betRecommendation?.type === 'TOTAL' || gradedBet.isTotalsPick || gradedBet.bet?.market === 'TOTAL';
     
-    // Determine winner (needed for Firebase update regardless of bet type)
     const winnerTeam = liveScore.awayScore > liveScore.homeScore ? awayTeam : homeTeam;
+    const totalScore = liveScore.awayScore + liveScore.homeScore;
     
-    // Determine outcome
     const normalizeTeam = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
     let outcome;
     
-    if (isATSBet) {
-      // ATS: check if team covered the spread
+    if (isTotalsBet) {
+      const direction = gradedBet.bet?.pick || gradedBet.totalsAnalysis?.direction || gradedBet.betRecommendation?.totalDirection;
+      const line = gradedBet.bet?.total || gradedBet.totalsAnalysis?.marketTotal || gradedBet.betRecommendation?.totalLine;
+      if (direction === 'OVER') {
+        outcome = totalScore > line ? 'WIN' : totalScore === line ? 'PUSH' : 'LOSS';
+      } else {
+        outcome = totalScore < line ? 'WIN' : totalScore === line ? 'PUSH' : 'LOSS';
+      }
+      console.log(`   📐 TOTAL: ${direction} ${line}, actual ${totalScore} → ${outcome}`);
+    } else if (isATSBet) {
       const spread = gradedBet.betRecommendation?.atsSpread || gradedBet.spreadAnalysis?.spread || gradedBet.bet?.spread;
       const betTeamNorm = normalizeTeam(gradedBet.bet.team);
       const awayNorm2 = normalizeTeam(awayTeam);
@@ -108,17 +115,13 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
       outcome = adjusted > 0 ? 'WIN' : adjusted === 0 ? 'PUSH' : 'LOSS';
       console.log(`   📐 ATS: margin ${margin}, spread ${spread}, adjusted ${adjusted} → ${outcome}`);
     } else {
-      // ML: check outright winner
       const betTeamNorm = normalizeTeam(gradedBet.bet.team);
       const winnerNorm = normalizeTeam(winnerTeam);
       outcome = betTeamNorm === winnerNorm ? 'WIN' : 'LOSS';
     }
     
-    // Use correct units and odds for the bet type
-    const actualUnits = isATSBet
-      ? (gradedBet.betRecommendation?.atsUnits || gradedBet.prediction?.unitSize || 1)
-      : (gradedBet.bet?.units || gradedBet.prediction?.unitSize || 1);
-    const odds = isATSBet ? -110 : gradedBet.bet.odds;
+    const actualUnits = gradedBet.bet?.units || gradedBet.prediction?.unitSize || 1;
+    const odds = (isATSBet || isTotalsBet) ? -110 : gradedBet.bet.odds;
     
     let profit;
     if (outcome === 'WIN') {
@@ -137,10 +140,12 @@ export async function gradeBasketballBet(awayTeam, homeTeam, liveScore, currentP
     await updateDoc(betRef, {
       'result.awayScore': liveScore.awayScore,
       'result.homeScore': liveScore.homeScore,
+      'result.totalScore': totalScore,
       'result.winner': liveScore.awayScore > liveScore.homeScore ? 'AWAY' : 'HOME',
       'result.winnerTeam': winnerTeam,
       'result.outcome': outcome,
       'result.profit': profit,
+      'result.units': actualUnits,
       'result.fetched': true,
       'result.fetchedAt': Date.now(),
       'result.source': `${liveScore.source || 'NCAA'}_API_LIVE`,

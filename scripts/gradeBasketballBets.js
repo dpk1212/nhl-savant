@@ -98,23 +98,25 @@ async function gradeBasketballBets() {
         continue;
       }
       
-      // Detect ATS bets (upgraded Prime Picks or standalone ATS)
       const isATSBet = bet.betRecommendation?.type === 'ATS' || bet.isATSPick;
+      const isTotalsBet = bet.betRecommendation?.type === 'TOTAL' || bet.isTotalsPick || bet.bet?.market === 'TOTAL';
       const betTeam = bet.bet.team;
       
-      // Determine outcome — outright winner for ML, also works for most ATS (high-MOS picks)
-      // Note: OddsTrader results don't include scores, so true cover check
-      // happens in the client-side grader or date-specific grader with NCAA API
+      // Skip ATS and Totals bets — OddsTrader only has winner, not scores.
+      // These are graded client-side via the NCAA/ESPN live score API with actual
+      // score data for proper spread cover and total checks.
+      if (isATSBet || isTotalsBet) {
+        console.log(`⏭️  Skipping ${isATSBet ? 'ATS' : 'TOTALS'} bet (needs live scores): ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+        continue;
+      }
+      
       const normalizedBetTeam = normalizeTeam(betTeam);
       const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
       const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
       
-      // Use correct units and odds for the bet type
       const grade = bet.prediction?.grade || 'B';
-      const odds = isATSBet ? -110 : bet.bet.odds;
-      const units = isATSBet
-        ? (bet.betRecommendation?.atsUnits || bet.prediction?.unitSize || 1)
-        : (bet.prediction?.unitSize ?? bet.unitSize ?? getOptimizedUnitSize(grade, odds));
+      const odds = bet.bet.odds;
+      const units = bet.bet?.units || bet.prediction?.unitSize || 1;
       
       let profit;
       if (outcome === 'WIN') {

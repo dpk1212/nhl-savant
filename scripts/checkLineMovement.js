@@ -418,11 +418,11 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     }
 
     if (tierChanged || prevStatus === 'KILLED' || prevStatus === 'FLAGGED') {
-      updateData['bet.units'] = units;
-      updateData['betRecommendation.atsUnits'] = units;
-      updateData['prediction.unitSize'] = units;
-      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
       if (!prev.isLocked) {
+        updateData['bet.units'] = units;
+        updateData['betRecommendation.atsUnits'] = units;
+        updateData['prediction.unitSize'] = units;
+        const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
         updateData.betStatus = newStatus;
         if (newStatus === 'BET_NOW') {
           updateData.isLocked = true;
@@ -430,18 +430,23 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
         }
       }
       await updateDoc(betRef, updateData);
+      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
+      const displayUnits = prev.isLocked ? prevUnits : units;
       const wasRevived = prevStatus === 'KILLED' || prevStatus === 'FLAGGED';
       const label = wasRevived ? '🔄 REVIVED' : (newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED');
-      console.log(`   ${label}: ${pickTeam} ${sideResult.spread} — ${prevTier} → ${newTier} | ${units}u [${tier}]`);
+      console.log(`   ${label}: ${pickTeam} ${sideResult.spread} — ${prevTier} → ${newTier} | ${displayUnits}u [${tier}]${prev.isLocked ? ' (locked)' : ''}`);
       counters.updated++;
       return;
     }
 
-    updateData['bet.units'] = units;
-    updateData['betRecommendation.atsUnits'] = units;
-    updateData['prediction.unitSize'] = units;
+    if (!prev.isLocked) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.atsUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+    }
     await updateDoc(betRef, updateData);
-    console.log(`   🔒 Stable: ${pickTeam} ${sideResult.spread} — still ${newTier} | ${units}u`);
+    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    console.log(`   🔒 Stable: ${pickTeam} ${sideResult.spread} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''}`);
     counters.stable++;
     return;
   }
@@ -577,11 +582,11 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     }
 
     if (tierChanged || prevStatus === 'KILLED' || prevStatus === 'FLAGGED') {
-      updateData['bet.units'] = units;
-      updateData['betRecommendation.totalUnits'] = units;
-      updateData['prediction.unitSize'] = units;
-      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
       if (!prev.isLocked) {
+        updateData['bet.units'] = units;
+        updateData['betRecommendation.totalUnits'] = units;
+        updateData['prediction.unitSize'] = units;
+        const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
         updateData.betStatus = newStatus;
         if (newStatus === 'BET_NOW') {
           updateData.isLocked = true;
@@ -589,18 +594,23 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
         }
       }
       await updateDoc(betRef, updateData);
+      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
+      const displayUnits = prev.isLocked ? prevUnits : units;
       const wasRevived = prevStatus === 'KILLED' || prevStatus === 'FLAGGED';
       const label = wasRevived ? '🔄 REVIVED' : (newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED');
-      console.log(`   ${label}: ${totalsResult.direction} ${totalsResult.marketTotal} — ${prevTier} → ${newTier} | ${units}u [${tier}] (${gameLabel})`);
+      console.log(`   ${label}: ${totalsResult.direction} ${totalsResult.marketTotal} — ${prevTier} → ${newTier} | ${displayUnits}u [${tier}]${prev.isLocked ? ' (locked)' : ''} (${gameLabel})`);
       counters.updated++;
       return;
     }
 
-    updateData['bet.units'] = units;
-    updateData['betRecommendation.totalUnits'] = units;
-    updateData['prediction.unitSize'] = units;
+    if (!prev.isLocked) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.totalUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+    }
     await updateDoc(betRef, updateData);
-    console.log(`   🔒 Stable: ${totalsResult.direction} ${totalsResult.marketTotal} — still ${newTier} | ${units}u (${gameLabel})`);
+    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    console.log(`   🔒 Stable: ${totalsResult.direction} ${totalsResult.marketTotal} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''} (${gameLabel})`);
     counters.stable++;
     return;
   }
