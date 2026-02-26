@@ -560,11 +560,6 @@ async function savePick(db, game, sideData, prediction) {
     return { action: 'stable', betId };
   }
   
-  // NEW PICK — only create if not FLAGGED
-  if (isFlagged) {
-    return { action: 'skipped', betId };
-  }
-  
   const coverProb = estimateCoverProb(mos);
   const spreadEV = calcSpreadEV(coverProb);
   
@@ -647,7 +642,7 @@ async function savePick(db, game, sideData, prediction) {
     },
     
     status: 'PENDING',
-    betStatus: sideData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
+    betStatus: isFlagged ? 'FLAGGED' : (sideData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOS',
@@ -676,6 +671,12 @@ async function savePick(db, game, sideData, prediction) {
   };
   
   await setDoc(betRef, betData);
+  
+  if (isFlagged) {
+    const mvStr = sideData.lineMovement != null ? `${sideData.lineMovement > 0 ? '+' : ''}${sideData.lineMovement}` : '?';
+    console.log(`   🚩 STORED (FLAGGED): ${pickTeam} ${sideData.spread} — MOS +${mos} [${tier}] | line moved ${mvStr} (opener: ${sideData.openerSpread}) — watching for stabilization`);
+    return { action: 'created_flagged', betId };
+  }
   
   const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
   const favDog = sideData.isFavorite ? 'FAV' : 'DOG';
@@ -754,11 +755,6 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     return { action: 'stable', betId };
   }
   
-  // NEW PICK — only create if not FLAGGED
-  if (isFlagged) {
-    return { action: 'skipped', betId };
-  }
-  
   const coverProb = estimateCoverProb(mot);
   const totalsEV = calcSpreadEV(coverProb);
   
@@ -831,7 +827,7 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     },
     
     status: 'PENDING',
-    betStatus: totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
+    betStatus: isFlagged ? 'FLAGGED' : (totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOT',
@@ -861,6 +857,12 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   };
   
   await setDoc(betRef, betData);
+  
+  if (isFlagged) {
+    const mvStr = totalsData.lineMovement != null ? `${totalsData.lineMovement > 0 ? '+' : ''}${totalsData.lineMovement}` : '?';
+    console.log(`   🚩 STORED (FLAGGED): ${totalsData.direction} ${totalsData.marketTotal} — MOT +${mot} [${tier}] | line moved ${mvStr} (opener: ${totalsData.openerTotal}) — watching (${game.awayTeam} @ ${game.homeTeam})`);
+    return { action: 'created_flagged', betId };
+  }
   
   const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
   const mvIcon = totalsData.movementTier === 'CONFIRM' ? '🟢' : '⚪';
@@ -1134,8 +1136,8 @@ async function fetchPrimePicks() {
     console.log('│ STEP 4: SAVING PICKS TO FIREBASE (ATS + TOTALS @ -110)                       │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
-    let created = 0, updated = 0, stable = 0, killed = 0, skippedATS = 0;
-    let totalsCreated = 0, totalsUpdated = 0, totalsStable = 0, totalsKilled = 0, totalsSkipped = 0;
+    let created = 0, createdFlagged = 0, updated = 0, stable = 0, killed = 0, skippedATS = 0;
+    let totalsCreated = 0, totalsCreatedFlagged = 0, totalsUpdated = 0, totalsStable = 0, totalsKilled = 0, totalsSkipped = 0;
     
     // Save ATS picks
     if (picks.length === 0) {
@@ -1145,6 +1147,7 @@ async function fetchPrimePicks() {
       for (const { game, sideData, prediction } of picks) {
         const result = await savePick(db, game, sideData, prediction);
         if (result.action === 'created') created++;
+        else if (result.action === 'created_flagged') createdFlagged++;
         else if (result.action === 'updated') updated++;
         else if (result.action === 'killed') killed++;
         else if (result.action === 'stable') stable++;
@@ -1160,6 +1163,7 @@ async function fetchPrimePicks() {
       for (const { game, totalsData, prediction } of totalsPicks) {
         const result = await saveTotalsPick(db, game, totalsData, prediction);
         if (result.action === 'created') totalsCreated++;
+        else if (result.action === 'created_flagged') totalsCreatedFlagged++;
         else if (result.action === 'updated') totalsUpdated++;
         else if (result.action === 'killed') totalsKilled++;
         else if (result.action === 'stable') totalsStable++;
@@ -1176,7 +1180,7 @@ async function fetchPrimePicks() {
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
     console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);
-    console.log(`   Evaluated: ${picks.length} | New: ${created} | Updated: ${updated} | Stable: ${stable} | Killed: ${killed} | Skipped: ${skippedATS}`);
+    console.log(`   Evaluated: ${picks.length} | New: ${created} | Watching: ${createdFlagged} | Updated: ${updated} | Stable: ${stable} | Killed: ${killed}`);
     
     // Filter to only LIVE picks (not FLAGGED) for summary
     const livePicks = picks.filter(p => p.sideData.movementTier !== 'FLAGGED');
@@ -1215,7 +1219,7 @@ async function fetchPrimePicks() {
     }
     
     console.log(`\n   ── TOTALS (O/U) ────────────────────────────────────────────`);
-    console.log(`   Evaluated: ${totalsPicks.length} | New: ${totalsCreated} | Updated: ${totalsUpdated} | Stable: ${totalsStable} | Killed: ${totalsKilled} | Skipped: ${totalsSkipped}`);
+    console.log(`   Evaluated: ${totalsPicks.length} | New: ${totalsCreated} | Watching: ${totalsCreatedFlagged} | Updated: ${totalsUpdated} | Stable: ${totalsStable} | Killed: ${totalsKilled}`);
     
     if (liveTotals.length > 0) {
       const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
