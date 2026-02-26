@@ -62,20 +62,16 @@ function calculateMLCLV(originalOdds, currentOdds) {
 /**
  * Calculate CLV for SPREAD bets (points of value)
  * 
- * Positive CLV = spread moved in our favor (we got a better number)
- * Examples:
- *   Bet +5.5, now +4.5 → CLV = -1.0 (BAD, we could've gotten less)
- *   Bet +5.5, now +6.5 → CLV = +1.0 (GOOD, we locked in a better number... wait)
+ * CLV = originalSpread - currentSpread
+ * Positive = we got a better number than what's available now
  * 
- * Actually for the bettor: a LARGER positive spread is better for dogs,
- * a SMALLER negative spread is better for favorites.
- *   Dog:  Bet +5.5, now +4.5 → line moved against us = CLV -1.0
- *   Dog:  Bet +5.5, now +6.5 → line moved for us   = CLV +1.0
- *   Fav:  Bet -5.5, now -6.5 → line moved against us = CLV -1.0
- *   Fav:  Bet -5.5, now -4.5 → line moved for us   = CLV +1.0
+ *   Dog:  Bet +12.5, now +12 → 12.5 - 12 = +0.5 (STEAM — we got more points)
+ *   Dog:  Bet +3, now +3.5   → 3 - 3.5   = -0.5 (FADE — could've gotten more)
+ *   Fav:  Bet -5.5, now -6.5 → -5.5-(-6.5) = +1.0 (STEAM — we laid fewer points)
+ *   Fav:  Bet -5.5, now -4.5 → -5.5-(-4.5) = -1.0 (FADE — could've laid fewer)
  */
 function calculateSpreadCLV(originalSpread, currentSpread) {
-  const clv = currentSpread - originalSpread;
+  const clv = originalSpread - currentSpread;
   return parseFloat(clv.toFixed(1));
 }
 

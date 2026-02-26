@@ -80,9 +80,10 @@ const getCLVTierStyle = (clv) => {
 /**
  * Format CLV for display
  */
-const formatCLV = (clv) => {
+const formatCLV = (clv, market) => {
   const sign = clv >= 0 ? '+' : '';
-  return `${sign}${clv.toFixed(1)}%`;
+  const suffix = market === 'SPREAD' ? ' pts' : '%';
+  return `${sign}${clv.toFixed(1)}${suffix}`;
 };
 
 /**
@@ -98,8 +99,9 @@ export const CLVBadge = ({ clvData, compact = false, showDetails = false }) => {
     return null;
   }
   
+  const market = clvData.market || 'MONEYLINE';
   const style = getCLVTierStyle(clvData.value);
-  const formattedCLV = formatCLV(clvData.value);
+  const formattedCLV = formatCLV(clvData.value, market);
   
   // Compact badge for inline display
   if (compact) {
@@ -205,41 +207,42 @@ export const CLVBadge = ({ clvData, compact = false, showDetails = false }) => {
         </span>
       </div>
       
-      {/* Odds comparison (optional) */}
-      {showDetails && clvData.originalOdds && clvData.currentOdds && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginTop: '0.25rem',
-          paddingTop: '0.375rem',
-          borderTop: '1px solid rgba(148, 163, 184, 0.15)'
-        }}>
+      {/* Line comparison (optional) */}
+      {showDetails && (() => {
+        const isSpread = market === 'SPREAD';
+        const origVal = isSpread ? clvData.originalSpread : clvData.originalOdds;
+        const currVal = isSpread ? clvData.currentSpread : clvData.currentOdds;
+        if (origVal == null || currVal == null) return null;
+        const fmtVal = (v) => (v > 0 ? '+' : '') + v;
+        return (
           <div style={{
-            fontSize: '0.7rem',
-            color: 'rgba(148, 163, 184, 0.7)'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginTop: '0.25rem',
+            paddingTop: '0.375rem',
+            borderTop: '1px solid rgba(148, 163, 184, 0.15)'
           }}>
-            <span style={{ color: 'rgba(148, 163, 184, 0.5)' }}>Opened: </span>
-            <span style={{ fontWeight: '600', fontFeatureSettings: "'tnum'" }}>
-              {clvData.originalOdds > 0 ? '+' : ''}{clvData.originalOdds}
-            </span>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(148, 163, 184, 0.7)' }}>
+              <span style={{ color: 'rgba(148, 163, 184, 0.5)' }}>Opened: </span>
+              <span style={{ fontWeight: '600', fontFeatureSettings: "'tnum'" }}>
+                {fmtVal(origVal)}
+              </span>
+            </div>
+            <span style={{ color: 'rgba(148, 163, 184, 0.3)' }}>→</span>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(148, 163, 184, 0.7)' }}>
+              <span style={{ color: 'rgba(148, 163, 184, 0.5)' }}>Current: </span>
+              <span style={{ 
+                fontWeight: '600', 
+                fontFeatureSettings: "'tnum'",
+                color: clvData.value > 0 ? style.color : 'rgba(148, 163, 184, 0.8)'
+              }}>
+                {fmtVal(currVal)}
+              </span>
+            </div>
           </div>
-          <span style={{ color: 'rgba(148, 163, 184, 0.3)' }}>→</span>
-          <div style={{
-            fontSize: '0.7rem',
-            color: 'rgba(148, 163, 184, 0.7)'
-          }}>
-            <span style={{ color: 'rgba(148, 163, 184, 0.5)' }}>Current: </span>
-            <span style={{ 
-              fontWeight: '600', 
-              fontFeatureSettings: "'tnum'",
-              color: clvData.value > 0 ? style.color : 'rgba(148, 163, 184, 0.8)'
-            }}>
-              {clvData.currentOdds > 0 ? '+' : ''}{clvData.currentOdds}
-            </span>
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
@@ -252,8 +255,9 @@ export const CLVIndicator = ({ clvData }) => {
     return null;
   }
   
+  const market = clvData.market || 'MONEYLINE';
   const style = getCLVTierStyle(clvData.value);
-  const formattedCLV = formatCLV(clvData.value);
+  const formattedCLV = formatCLV(clvData.value, market);
   
   return (
     <div
