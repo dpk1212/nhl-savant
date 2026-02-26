@@ -2500,19 +2500,48 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Dynamic Pick Context */}
+        {/* Pick Context */}
         {(() => {
-          const isPositiveEV = pred.bestEV > 0;
-          const isSystemPick = pred.spreadContext?.title; // Spread-based system picks
-          const showPositive = isPositiveEV || isSystemPick; // Green for EV+ OR system picks
-          const context = getBasketballContext(game, pred, odds);
+          const isATS = isATSRecommended || isStandaloneATS;
+          const isFav = spreadData?.isFavorite ?? (betRec?.atsSpread < 0);
+          const mos = spreadData?.marginOverSpread ?? betRec?.marginOverSpread;
+          const bothCover = spreadData?.bothModelsCover ?? betRec?.bothModelsCover;
+          const pickTeam = betData?.bet?.team || pred.bestTeam || (pred.bestBet === 'away' ? game.awayTeam : game.homeTeam);
+          const spread = betRec?.atsSpread ?? spreadData?.spread;
+          
+          let title, subtitle;
+          if (isATS) {
+            const side = isFav ? 'Favorite' : 'Underdog';
+            const coverStr = bothCover ? 'Both models project cover' : 'Model projects cover';
+            const mosStr = mos != null ? ` by +${mos} pts` : '';
+            if (mos >= 4) {
+              title = `${pickTeam} — Maximum Confidence`;
+              subtitle = `${side} • ${coverStr}${mosStr}`;
+            } else if (mos >= 3) {
+              title = `${pickTeam} — Strong Edge`;
+              subtitle = `${side} • ${coverStr}${mosStr}`;
+            } else if (mos >= 2) {
+              title = `${pickTeam} — Spread Value`;
+              subtitle = `${side} • ${coverStr}${mosStr}`;
+            } else {
+              title = `${pickTeam} — ATS Play`;
+              subtitle = `${side} • ${coverStr}`;
+            }
+          } else {
+            try {
+              const context = getBasketballContext(game, pred, odds);
+              title = context.title;
+              subtitle = context.subtitle;
+            } catch {
+              title = `${pred.bestTeam || 'Pick'} — Model Edge`;
+              subtitle = `${(pred.bestBet === 'home' ? 'Home' : 'Away')} play`;
+            }
+          }
           
           return (
             <div style={{ 
-              background: showPositive
-                ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
-                : 'linear-gradient(90deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-              border: `1px solid ${showPositive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
               borderRadius: '8px',
               padding: isMobile ? '0.5rem 0.625rem' : '0.625rem 0.75rem',
               marginBottom: isMobile ? '0.5rem' : '0.75rem',
@@ -2520,35 +2549,25 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               alignItems: 'center',
               gap: isMobile ? '0.5rem' : '0.625rem'
             }}>
-              {/* Icon */}
-              <div style={{ 
-                fontSize: isMobile ? '1.125rem' : '1.25rem', 
-                lineHeight: 1, 
-                flexShrink: 0 
-              }}>
-                {context.icon}
+              <div style={{ fontSize: isMobile ? '1.125rem' : '1.25rem', lineHeight: 1, flexShrink: 0 }}>
+                {isATS ? (isFav ? '🏠' : '🎯') : '📊'}
               </div>
-              
-              {/* Content */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Title */}
                 <div style={{ 
                   fontSize: isMobile ? '0.813rem' : '0.938rem',
                   fontWeight: '800',
-                  color: showPositive ? '#10B981' : '#EF4444',
+                  color: '#10B981',
                   marginBottom: '0.125rem',
                   letterSpacing: '-0.01em'
                 }}>
-                  {context.title}
+                  {title}
                 </div>
-                
-                {/* Subtitle */}
                 <div style={{ 
                   fontSize: isMobile ? '0.625rem' : '0.688rem',
                   color: 'rgba(255,255,255,0.6)',
                   lineHeight: 1.35
                 }}>
-                  {context.subtitle}
+                  {subtitle}
                 </div>
               </div>
             </div>
@@ -2587,8 +2606,8 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             {(() => {
               const isATS = isATSRecommended || isStandaloneATS;
               const coverProb = betRec?.estimatedCoverProb;
-              const winProb = ((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) * 100);
-              const displayProb = isATS && coverProb ? coverProb : winProb;
+              const winProb = ((pred.bestBet === 'away' ? pred.ensembleAwayProb : pred.ensembleHomeProb) || 0) * 100;
+              const displayProb = isATS && coverProb ? coverProb : (isNaN(winProb) ? 0 : winProb);
               const label = isATS ? 'Cover probability' : 'Win probability';
               return (
                 <>
@@ -2670,13 +2689,38 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                     @ -110
                   </div>
                 </div>
-                <div style={{ 
-                  fontSize: isMobile ? '0.625rem' : '0.688rem',
-                  color: 'rgba(255,255,255,0.45)',
-                  lineHeight: 1.2
-                }}>
-                  ML ref: {pred.bestOdds > 0 ? `+${pred.bestOdds}` : pred.bestOdds}
-                </div>
+                {(() => {
+                  const mos = spreadData?.marginOverSpread ?? betRec?.marginOverSpread;
+                  if (mos != null) {
+                    return (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        padding: '0.125rem 0.375rem',
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        borderRadius: '4px',
+                        marginTop: '0.25rem'
+                      }}>
+                        <span style={{
+                          fontSize: isMobile ? '0.563rem' : '0.625rem',
+                          color: 'rgba(255,255,255,0.5)',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em'
+                        }}>COVER</span>
+                        <span style={{
+                          fontSize: isMobile ? '0.688rem' : '0.75rem',
+                          fontWeight: '900',
+                          color: '#10B981',
+                          fontFeatureSettings: "'tnum'"
+                        }}>+{mos} pts</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </>
             ) : (
               <>
@@ -2718,42 +2762,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               </>
             )}
 
-            {/* Margin covering spread - from Firebase spread analysis */}
-            {spreadData?.marginOverSpread !== undefined && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                padding: '0.313rem 0.5rem',
-                background: spreadData.marginOverSpread > 0 
-                  ? 'rgba(16, 185, 129, 0.12)' 
-                  : 'rgba(239, 68, 68, 0.12)',
-                border: `1px solid ${spreadData.marginOverSpread > 0 
-                  ? 'rgba(16, 185, 129, 0.3)' 
-                  : 'rgba(239, 68, 68, 0.3)'}`,
-                borderRadius: '6px',
-                marginTop: '0.5rem'
-              }}>
-                <span style={{
-                  fontSize: isMobile ? '0.563rem' : '0.625rem',
-                  color: 'rgba(255,255,255,0.5)',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}>
-                  COVER
-                </span>
-                <span style={{
-                  fontSize: isMobile ? '0.813rem' : '0.875rem',
-                  fontWeight: '900',
-                  color: spreadData.marginOverSpread > 0 ? '#10B981' : '#EF4444',
-                  fontFeatureSettings: "'tnum'",
-                  letterSpacing: '-0.02em'
-                }}>
-                  {spreadData.marginOverSpread > 0 ? '+' : ''}{spreadData.marginOverSpread} pts
-                </span>
-              </div>
-            )}
+            {/* CLV badge if available */}
 
             {/* Compact spread bet recommendation — only for ML picks */}
             {!isATSRecommended && !isStandaloneATS && spreadBet?.recommended && (
@@ -2926,7 +2935,10 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
               fontWeight: '600',
               letterSpacing: '0.03em'
             }}>
-              TOTAL: {Math.round(pred.ensembleTotal)}
+              {(() => {
+                const total = Math.round(Number(pred.ensembleAwayScore) + Number(pred.ensembleHomeScore));
+                return isNaN(total) ? null : `TOTAL: ${total}`;
+              })()}
             </div>
           </div>
         )}

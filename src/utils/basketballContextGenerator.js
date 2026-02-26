@@ -35,8 +35,9 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
     };
   }
   
+  const safeEV = bestEV || 0;
   const isHome = bestBet === 'home';
-  const modelProb = (bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb) * 100;
+  const modelProb = ((bestBet === 'away' ? ensembleAwayProb : ensembleHomeProb) || 0) * 100;
   const predictedTotal = (ensembleAwayScore || 0) + (ensembleHomeScore || 0);
   
   // Calculate market implied probability
@@ -46,10 +47,10 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
   
   // Categorize edge tier
   let edgeTier;
-  if (bestEV >= 5) edgeTier = 'ELITE';
-  else if (bestEV >= 3.5) edgeTier = 'STRONG';
-  else if (bestEV >= 2.5) edgeTier = 'QUALITY';
-  else if (bestEV >= 1.5) edgeTier = 'VALUE';
+  if (safeEV >= 5) edgeTier = 'ELITE';
+  else if (safeEV >= 3.5) edgeTier = 'STRONG';
+  else if (safeEV >= 2.5) edgeTier = 'QUALITY';
+  else if (safeEV >= 1.5) edgeTier = 'VALUE';
   else edgeTier = 'MINIMAL';
   
   // Categorize win probability
@@ -81,13 +82,13 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '⚡',
           title: `${bestTeam} High Conviction Favorite`,
-          subtitle: `${modelProb.toFixed(0)}% to win • +${bestEV.toFixed(1)}% value despite high probability`
+          subtitle: `${modelProb.toFixed(0)}% to win • +${safeEV.toFixed(1)}% value despite high probability`
         };
       }
       return {
         icon: '📊',
         title: `${bestTeam} Statistical Dominance`,
-        subtitle: `Model projects ${modelProb.toFixed(0)}% • Market underprices by ${bestEV.toFixed(1)}%`
+        subtitle: `Model projects ${modelProb.toFixed(0)}% • Market underprices by ${safeEV.toFixed(1)}%`
       };
     }
     
@@ -97,20 +98,20 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '💎',
           title: `${bestTeam} Premium Mismatch`,
-          subtitle: `Model sees ${modelProb.toFixed(0)}% • ${marketDiff.toFixed(0)}% higher than market, +${bestEV.toFixed(1)}% edge`
+          subtitle: `Model sees ${modelProb.toFixed(0)}% • ${marketDiff.toFixed(0)}% higher than market, +${safeEV.toFixed(1)}% edge`
         };
       }
       if (highConfidence) {
         return {
           icon: '⚡',
           title: `${bestTeam} High Conviction Play`,
-          subtitle: `${modelProb.toFixed(0)}% win probability • +${bestEV.toFixed(1)}% edge with both systems aligned`
+          subtitle: `${modelProb.toFixed(0)}% win probability • +${safeEV.toFixed(1)}% edge with both systems aligned`
         };
       }
       return {
         icon: '📊',
         title: `${bestTeam} Efficiency Advantage`,
-        subtitle: `Superior metrics project ${modelProb.toFixed(0)}% • +${bestEV.toFixed(1)}% value`
+        subtitle: `Superior metrics project ${modelProb.toFixed(0)}% • +${safeEV.toFixed(1)}% value`
       };
     }
     
@@ -120,20 +121,20 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '🎯',
           title: `${bestTeam} Mispriced Opportunity`,
-          subtitle: `${modelProb.toFixed(0)}% to win • Market ${marketDiff.toFixed(0)}% lower, +${bestEV.toFixed(1)}% edge`
+          subtitle: `${modelProb.toFixed(0)}% to win • Market ${marketDiff.toFixed(0)}% lower, +${safeEV.toFixed(1)}% edge`
         };
       }
       if (highConfidence) {
         return {
           icon: '💎',
           title: `${bestTeam} Undervalued Pick`,
-          subtitle: `Close game analysis favors ${bestTeam} • +${bestEV.toFixed(1)}% value with system agreement`
+          subtitle: `Close game analysis favors ${bestTeam} • +${safeEV.toFixed(1)}% value with system agreement`
         };
       }
       return {
         icon: '⚡',
         title: `${bestTeam} Model Disagreement`,
-        subtitle: `Systems see ${modelProb.toFixed(0)}% • Public line creates +${bestEV.toFixed(1)}% edge`
+        subtitle: `Systems see ${modelProb.toFixed(0)}% • Public line creates +${safeEV.toFixed(1)}% edge`
       };
     }
     
@@ -142,14 +143,14 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
       return {
         icon: '🔥',
         title: `${bestTeam} High-Pace Value`,
-        subtitle: `Fast tempo (${predictedTotal.toFixed(0)} pts projected) • ${bestTeam} advantages translate to +${bestEV.toFixed(1)}%`
+        subtitle: `Fast tempo (${predictedTotal.toFixed(0)} pts projected) • ${bestTeam} advantages translate to +${safeEV.toFixed(1)}%`
       };
     }
     if (isLowScoring) {
       return {
         icon: '🛡️',
         title: `${bestTeam} Low-Scoring Edge`,
-        subtitle: `Defensive matchup (${predictedTotal.toFixed(0)} pts) • ${bestTeam} style creates +${bestEV.toFixed(1)}% value`
+        subtitle: `Defensive matchup (${predictedTotal.toFixed(0)} pts) • ${bestTeam} style creates +${safeEV.toFixed(1)}% value`
       };
     }
     
@@ -158,14 +159,14 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
       return {
         icon: '🏠',
         title: `${bestTeam} Elite Home Value`,
-        subtitle: `+${bestEV.toFixed(1)}% edge at home • ${modelProb.toFixed(0)}% with venue advantage`
+        subtitle: `+${safeEV.toFixed(1)}% edge at home • ${modelProb.toFixed(0)}% with venue advantage`
       };
     }
     if (!isHome && bestEV >= 6) {
       return {
         icon: '✈️',
         title: `${bestTeam} Road Undervalue`,
-        subtitle: `+${bestEV.toFixed(1)}% away • Market overweights travel factor`
+        subtitle: `+${safeEV.toFixed(1)}% away • Market overweights travel factor`
       };
     }
   }
@@ -181,20 +182,20 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '✅',
           title: `${bestTeam} Strong Favorite Play`,
-          subtitle: `${modelProb.toFixed(0)}% favorite • +${bestEV.toFixed(1)}% value with system consensus`
+          subtitle: `${modelProb.toFixed(0)}% favorite • +${safeEV.toFixed(1)}% value with system consensus`
         };
       }
       if (bigMarketDiff) {
         return {
           icon: '📊',
           title: `${bestTeam} Model Confidence`,
-          subtitle: `Systems project ${modelProb.toFixed(0)}% • Market ${marketDiff.toFixed(0)}% lower for +${bestEV.toFixed(1)}% edge`
+          subtitle: `Systems project ${modelProb.toFixed(0)}% • Market ${marketDiff.toFixed(0)}% lower for +${safeEV.toFixed(1)}% edge`
         };
       }
       return {
         icon: '💎',
         title: `${bestTeam} Quality Mismatch`,
-        subtitle: `Metrics edge at ${modelProb.toFixed(0)}% • +${bestEV.toFixed(1)}% value vs current line`
+        subtitle: `Metrics edge at ${modelProb.toFixed(0)}% • +${safeEV.toFixed(1)}% value vs current line`
       };
     }
     
@@ -204,20 +205,20 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '✅',
           title: `${bestTeam} Strong Value Pick`,
-          subtitle: `${modelProb.toFixed(0)}% to win • +${bestEV.toFixed(1)}% market inefficiency identified`
+          subtitle: `${modelProb.toFixed(0)}% to win • +${safeEV.toFixed(1)}% market inefficiency identified`
         };
       }
       if (isHighScoring) {
         return {
           icon: '⚡',
           title: `${bestTeam} Pace Mismatch`,
-          subtitle: `Tempo advantage in high-scoring game • Model projects +${bestEV.toFixed(1)}% value`
+          subtitle: `Tempo advantage in high-scoring game • Model projects +${safeEV.toFixed(1)}% value`
         };
       }
       return {
         icon: '📊',
         title: `${bestTeam} Analytical Edge`,
-        subtitle: `Model favors ${bestTeam} at ${modelProb.toFixed(0)}% • +${bestEV.toFixed(1)}% value identified`
+        subtitle: `Model favors ${bestTeam} at ${modelProb.toFixed(0)}% • +${safeEV.toFixed(1)}% value identified`
       };
     }
     
@@ -234,13 +235,13 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '💎',
           title: `${bestTeam} Close Game Value`,
-          subtitle: `Model gives ${bestTeam} ${modelProb.toFixed(0)}% • +${bestEV.toFixed(1)}% edge opportunity`
+          subtitle: `Model gives ${bestTeam} ${modelProb.toFixed(0)}% • +${safeEV.toFixed(1)}% edge opportunity`
         };
       }
       return {
         icon: '⚖️',
         title: `${bestTeam} Balanced Value`,
-        subtitle: `Near 50/50 matchup • Analysis finds +${bestEV.toFixed(1)}% edge for ${bestTeam}`
+        subtitle: `Near 50/50 matchup • Analysis finds +${safeEV.toFixed(1)}% edge for ${bestTeam}`
       };
     }
     
@@ -249,7 +250,7 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
       return {
         icon: '🛡️',
         title: `${bestTeam} Defensive Profile`,
-        subtitle: `Low-scoring strength (${predictedTotal.toFixed(0)} pts) • +${bestEV.toFixed(1)}% in grind game`
+        subtitle: `Low-scoring strength (${predictedTotal.toFixed(0)} pts) • +${safeEV.toFixed(1)}% in grind game`
       };
     }
   }
@@ -265,13 +266,13 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '📈',
           title: `${bestTeam} Solid Favorite`,
-          subtitle: `${modelProb.toFixed(0)}% to win • +${bestEV.toFixed(1)}% value with model agreement`
+          subtitle: `${modelProb.toFixed(0)}% to win • +${safeEV.toFixed(1)}% value with model agreement`
         };
       }
       return {
         icon: '✅',
         title: `${bestTeam} Quality Pick`,
-        subtitle: `Model backs ${bestTeam} • +${bestEV.toFixed(1)}% edge vs current line`
+        subtitle: `Model backs ${bestTeam} • +${safeEV.toFixed(1)}% edge vs current line`
       };
     }
     
@@ -281,20 +282,20 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '📊',
           title: `${bestTeam} Model Edge`,
-          subtitle: `${modelProb.toFixed(0)}% win probability • Market ${marketDiff.toFixed(0)}% off for +${bestEV.toFixed(1)}% value`
+          subtitle: `${modelProb.toFixed(0)}% win probability • Market ${marketDiff.toFixed(0)}% off for +${safeEV.toFixed(1)}% value`
         };
       }
       if (isHighScoring) {
         return {
           icon: '🔥',
           title: `${bestTeam} Tempo Edge`,
-          subtitle: `High-scoring game (${predictedTotal.toFixed(0)} pts) • Style favors ${bestTeam} +${bestEV.toFixed(1)}%`
+          subtitle: `High-scoring game (${predictedTotal.toFixed(0)} pts) • Style favors ${bestTeam} +${safeEV.toFixed(1)}%`
         };
       }
       return {
         icon: '💡',
         title: `${bestTeam} Statistical Lean`,
-        subtitle: `Analysis favors ${bestTeam} at ${modelProb.toFixed(0)}% • +${bestEV.toFixed(1)}% market gap`
+        subtitle: `Analysis favors ${bestTeam} at ${modelProb.toFixed(0)}% • +${safeEV.toFixed(1)}% market gap`
       };
     }
     
@@ -304,13 +305,13 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
         return {
           icon: '🎯',
           title: `${bestTeam} Underdog Value`,
-          subtitle: `${modelProb.toFixed(0)}% as underdog • Systems identify +${bestEV.toFixed(1)}% edge`
+          subtitle: `${modelProb.toFixed(0)}% as underdog • Systems identify +${safeEV.toFixed(1)}% edge`
         };
       }
       return {
         icon: '💡',
         title: `${bestTeam} Close Game Edge`,
-        subtitle: `${modelProb.toFixed(0)}% in tight matchup • +${bestEV.toFixed(1)}% value vs line`
+        subtitle: `${modelProb.toFixed(0)}% in tight matchup • +${safeEV.toFixed(1)}% value vs line`
       };
     }
     
@@ -319,14 +320,14 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
       return {
         icon: '🏠',
         title: `${bestTeam} Home Advantage`,
-        subtitle: `+${bestEV.toFixed(1)}% edge at home • ${modelProb.toFixed(0)}% with venue factor`
+        subtitle: `+${safeEV.toFixed(1)}% edge at home • ${modelProb.toFixed(0)}% with venue factor`
       };
     }
     if (!isHome) {
       return {
         icon: '✈️',
         title: `${bestTeam} Road Value`,
-        subtitle: `+${bestEV.toFixed(1)}% away • Market reaction creates opportunity`
+        subtitle: `+${safeEV.toFixed(1)}% away • Market reaction creates opportunity`
       };
     }
   }
@@ -340,20 +341,20 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
       return {
         icon: '📈',
         title: `${bestTeam} Modest Edge`,
-        subtitle: `${modelProb.toFixed(0)}% favorite • +${bestEV.toFixed(1)}% value cushion`
+        subtitle: `${modelProb.toFixed(0)}% favorite • +${safeEV.toFixed(1)}% value cushion`
       };
     }
     if (probTier === 'LEAN' || probTier === 'TOSS_UP') {
       return {
         icon: '💡',
         title: `${bestTeam} Value Opportunity`,
-        subtitle: `${modelProb.toFixed(0)}% to win • +${bestEV.toFixed(1)}% edge identified`
+        subtitle: `${modelProb.toFixed(0)}% to win • +${safeEV.toFixed(1)}% edge identified`
       };
     }
     return {
       icon: '🎯',
       title: `${bestTeam} Slight Value`,
-      subtitle: `Model leans ${bestTeam} at ${modelProb.toFixed(0)}% • +${bestEV.toFixed(1)}% edge`
+      subtitle: `Model leans ${bestTeam} at ${modelProb.toFixed(0)}% • +${safeEV.toFixed(1)}% edge`
     };
   }
   
@@ -374,14 +375,14 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
     return {
       icon: '📊',
       title: `${bestTeam} Minimal Edge Play`,
-      subtitle: `${modelProb.toFixed(0)}% to win • Small +${bestEV.toFixed(1)}% edge, reduced allocation`
+      subtitle: `${modelProb.toFixed(0)}% to win • Small +${safeEV.toFixed(1)}% edge, reduced allocation`
     };
   }
   
   return {
     icon: '💡',
     title: `${bestTeam} Standard Opportunity`,
-    subtitle: `${modelProb.toFixed(0)}% to win • +${bestEV.toFixed(1)}% edge, moderate sizing`
+    subtitle: `${modelProb.toFixed(0)}% to win • +${safeEV.toFixed(1)}% edge, moderate sizing`
   };
 }
 
