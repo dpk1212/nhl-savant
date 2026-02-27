@@ -77,8 +77,8 @@ NHLFri 02/27
 | ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/279:00 PM<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>35-24<br>25%<br>+122Bet105 | +119 | +119 | +115 | +120 | +119 | +115 | +115 |
 | ![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>30-28<br>75%<br>-131Heritage | -135 | -135 | -135 | -140 | -131 | -135 | -135 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/2710:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>23-34<br>0%<br>+113Heritage | +113 | +110 | +110 | +112 | +113 | +110 | +110 |
-| ![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>31-26<br>100%<br>-125BetOnline | -128 | -125 | -130 | -133 | -125 | -130 | -130 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FRI 02/2710:00 PM<br>![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>23-34<br>17%<br>+113Heritage | +113 | +111 | +110 | +112 | +113 | +110 | +110 |
+| ![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>31-26<br>83%<br>-125Heritage | -128 | -126 | -130 | -133 | -125 | -130 | -130 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
@@ -176,7 +176,7 @@ Look for short answers to common questions like how the puck line works or how t
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://oddstrader.onelink.me/AqrU/ce002cdc)
 
-Have Panthers been covering the spread lately?Generate
+Have Wild been covering the spread on the road?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
