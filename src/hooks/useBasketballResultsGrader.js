@@ -10,10 +10,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { getETGameDate } from '../utils/dateUtils';
-import { getOptimizedUnitSize, calculateUnitProfit } from '../utils/abcUnits';
 import { updateAllPatternROI } from '../utils/clientPatternROI';
 import { updatePendingBets } from '../utils/clientPendingUpdater';
 
@@ -97,14 +95,13 @@ export function useBasketballResultsGrader() {
         const bet = betDoc.data();
         const betId = betDoc.id;
         
-        console.log(`🔍 [${bet.date}] Grading bet: ${bet.game.awayTeam} @ ${bet.game.homeTeam}`);
+        console.log(`🔍 [${bet.date}] Grading bet: ${bet.game?.awayTeam} @ ${bet.game?.homeTeam}`);
         
-        // Find matching result using normalized team names
         const matchingResult = results.find(result => {
           const normalizedResultAway = normalizeTeam(result.awayTeam);
           const normalizedResultHome = normalizeTeam(result.homeTeam);
-          const normalizedBetAway = normalizeTeam(bet.game.awayTeam);
-          const normalizedBetHome = normalizeTeam(bet.game.homeTeam);
+          const normalizedBetAway = normalizeTeam(bet.game?.awayTeam || '');
+          const normalizedBetHome = normalizeTeam(bet.game?.homeTeam || '');
           
           return normalizedResultAway === normalizedBetAway && normalizedResultHome === normalizedBetHome;
         });
@@ -114,28 +111,75 @@ export function useBasketballResultsGrader() {
           continue;
         }
         
-        // Determine outcome
-        const betTeam = bet.bet.team;
-        const normalizedBetTeam = normalizeTeam(betTeam);
-        const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
-        const outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
+        // Need actual scores for ATS/Totals grading
+        const awayScore = matchingResult.awayScore ?? null;
+        const homeScore = matchingResult.homeScore ?? null;
+        const hasScores = awayScore !== null && homeScore !== null;
         
-        // ✅ USE STORED KELLY UNITS from prediction
-        const grade = bet.prediction?.grade;
-        const odds = bet.bet?.odds;
-        const units = bet.prediction?.unitSize || 1.0;
+        const isATSBet = bet.betRecommendation?.type === 'ATS' || bet.isATSPick;
+        const isTotalsBet = bet.betRecommendation?.type === 'TOTAL' || bet.isTotalsPick || bet.bet?.market === 'TOTAL';
         
-        // Calculate profit based on actual units risked
-        const profit = calculateUnitProfit(grade, odds, outcome === 'WIN', units);
+        let outcome;
         
-        // Update bet in Firebase (CLIENT SDK - already works!)
+        if (isTotalsBet) {
+          if (!hasScores) {
+            console.log(`   ⏭️  Totals bet but no scores available — skipping for live grader`);
+            continue;
+          }
+          const totalScore = awayScore + homeScore;
+          const direction = bet.bet?.pick || bet.totalsAnalysis?.direction || bet.betRecommendation?.totalDirection;
+          const line = bet.bet?.total || bet.totalsAnalysis?.marketTotal || bet.betRecommendation?.totalLine;
+          if (direction === 'OVER') {
+            outcome = totalScore > line ? 'WIN' : totalScore === line ? 'PUSH' : 'LOSS';
+          } else {
+            outcome = totalScore < line ? 'WIN' : totalScore === line ? 'PUSH' : 'LOSS';
+          }
+          console.log(`   📐 TOTAL: ${direction} ${line}, actual ${totalScore} → ${outcome}`);
+        } else if (isATSBet) {
+          if (!hasScores) {
+            console.log(`   ⏭️  ATS bet but no scores available — skipping for live grader`);
+            continue;
+          }
+          const spread = bet.betRecommendation?.atsSpread || bet.spreadAnalysis?.spread || bet.bet?.spread;
+          const betTeamNorm = normalizeTeam(bet.bet?.team || '');
+          const awayNorm = normalizeTeam(bet.game?.awayTeam || '');
+          const isAway = betTeamNorm === awayNorm;
+          const pickedScore = isAway ? awayScore : homeScore;
+          const oppScore = isAway ? homeScore : awayScore;
+          const margin = pickedScore - oppScore;
+          const adjusted = margin + spread;
+          outcome = adjusted > 0 ? 'WIN' : adjusted === 0 ? 'PUSH' : 'LOSS';
+          console.log(`   📐 ATS: margin ${margin}, spread ${spread}, adjusted ${adjusted} → ${outcome}`);
+        } else {
+          const betTeam = bet.bet?.team || '';
+          const normalizedBetTeam = normalizeTeam(betTeam);
+          const normalizedWinner = normalizeTeam(matchingResult.winnerTeam);
+          outcome = normalizedBetTeam === normalizedWinner ? 'WIN' : 'LOSS';
+        }
+        
+        const units = bet.bet?.units || bet.prediction?.unitSize || 1.0;
+        const odds = (isATSBet || isTotalsBet) ? -110 : (bet.bet?.odds || -110);
+        
+        let profit;
+        if (outcome === 'WIN') {
+          const decimal = odds > 0 ? (odds / 100) : (100 / Math.abs(odds));
+          profit = units * decimal;
+        } else if (outcome === 'PUSH') {
+          profit = 0;
+        } else {
+          profit = -units;
+        }
+        
         await updateDoc(doc(db, 'basketball_bets', betId), {
           'result.winner': matchingResult.winner,
           'result.winnerTeam': matchingResult.winnerTeam,
           'result.loserTeam': matchingResult.loserTeam,
+          'result.awayScore': awayScore,
+          'result.homeScore': homeScore,
+          'result.totalScore': hasScores ? awayScore + homeScore : null,
           'result.outcome': outcome,
           'result.profit': profit,
-          'result.units': units,  // ✅ Store actual units risked
+          'result.units': units,
           'result.fetched': true,
           'result.fetchedAt': Date.now(),
           'result.source': 'OddsTrader',
@@ -145,7 +189,7 @@ export function useBasketballResultsGrader() {
         graded++;
         const emoji = outcome === 'WIN' ? '✅' : '❌';
         const profitStr = profit > 0 ? `+${profit.toFixed(2)}u` : `${profit.toFixed(2)}u`;
-        console.log(`   ${emoji} ${outcome}: Pick ${betTeam} (${bet.bet.odds}) → Winner: ${matchingResult.winnerTeam} → ${profitStr}`);
+        console.log(`   ${emoji} ${outcome}: ${betId} → ${profitStr}`);
       }
       
       setGradedCount(graded);

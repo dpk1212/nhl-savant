@@ -171,14 +171,29 @@ async function generateMatchups() {
     return tier(rank);
   };
 
-  // Fetch today's bets
-  const today = new Date().toISOString().split('T')[0];
+  // Fetch today's live picks only — must match what the site displays
+  // Use ET date (matches Basketball.jsx logic)
+  const now = new Date();
+  const etString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const etDate = new Date(etString);
+  const today = `${etDate.getFullYear()}-${String(etDate.getMonth() + 1).padStart(2, '0')}-${String(etDate.getDate()).padStart(2, '0')}`;
+  console.log(`   Date (ET): ${today}`);
+
   const betsSnap = await getDocs(query(collection(db, 'basketball_bets'), where('date', '==', today)));
-  const bets = [];
-  betsSnap.forEach(d => bets.push({ id: d.id, ...d.data() }));
+  const allBets = [];
+  betsSnap.forEach(d => allBets.push({ id: d.id, ...d.data() }));
+
+  // Same filter as Basketball.jsx (line 337): exclude FLAGGED, KILLED, EVALUATION
+  const bets = allBets.filter(b =>
+    b.type !== 'EVALUATION' &&
+    b.betStatus !== 'KILLED' &&
+    b.betStatus !== 'FLAGGED'
+  );
+
+  console.log(`   Found ${allBets.length} total documents, ${bets.length} live picks (filtered out ${allBets.length - bets.length} evaluations/killed/flagged)\n`);
 
   if (bets.length === 0) {
-    console.log('❌ No bets found for today.');
+    console.log('❌ No posted plays found for today.');
     process.exit(1);
   }
 
@@ -186,16 +201,20 @@ async function generateMatchups() {
   for (const bet of bets) {
     const key = `${bet.game?.awayTeam}_${bet.game?.homeTeam}`;
     const existing = gameMap.get(key);
-    if (!existing || (bet.unitSize || 0) > (existing.unitSize || 0)) gameMap.set(key, bet);
+    const betUnits = bet.bet?.units || bet.prediction?.unitSize || 0;
+    const existingUnits = existing?.bet?.units || existing?.prediction?.unitSize || 0;
+    if (!existing || betUnits > existingUnits) gameMap.set(key, bet);
   }
-  const games = Array.from(gameMap.values()).sort((a, b) => (b.unitSize || 0) - (a.unitSize || 0));
+  const games = Array.from(gameMap.values()).sort((a, b) => 
+    (b.bet?.units || b.prediction?.unitSize || 0) - (a.bet?.units || a.prediction?.unitSize || 0)
+  );
 
   const L = [];
   const dateFmt = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   
   L.push(`BARTTORVIK MATCHUP INTELLIGENCE — ${dateFmt}`);
   L.push('='.repeat(80));
-  L.push(`${games.length} games with active picks | Source: barttorvik.com T-Rank + Shooting Splits`);
+  L.push(`${games.length} posted plays (BET_NOW / HOLD only) | Source: barttorvik.com T-Rank + Shooting Splits`);
   L.push(`D1 Averages: eFG% ${D1.eFG} | TO Rate ${D1.to} | ORB% ${D1.oreb} | FT Rate ${D1.ftRate} | Tempo ${D1.tempo}`);
   L.push('');
 
@@ -209,19 +228,24 @@ async function generateMatchups() {
     const aP = pbpData[aN];
     const hP = pbpData[hN];
 
-    const stars = bet.prediction?.stars || Math.round(bet.unitSize || 1);
-    const units = bet.unitSize || stars;
-    const pick = bet.prediction?.bestTeam || bet.pick || bet.team || home;
+    const units = bet.bet?.units || bet.prediction?.unitSize || 1;
+    const stars = Math.min(units, 5);
+    const pick = bet.bet?.team || bet.bet?.pick || bet.prediction?.bestTeam || home;
     const opp = pick === home ? away : home;
     const pickIsHome = pick === home;
-    const betType = bet.betType || 'ML';
-    const spread = bet.prediction?.spread || '';
-    const ev = bet.prediction?.ev ? `${bet.prediction.ev.toFixed(1)}%` : 'N/A';
-    const mos = bet.prediction?.marginOverSpread ? `+${bet.prediction.marginOverSpread.toFixed(1)}` : 'N/A';
+    const isATS = bet.isATSPick || bet.betRecommendation?.type === 'ATS' || bet.bet?.market === 'SPREAD';
+    const isTotals = bet.isTotalsPick || bet.betRecommendation?.type === 'TOTAL' || bet.bet?.market === 'TOTAL';
+    const betType = isTotals ? `${bet.bet?.pick || bet.totalsAnalysis?.direction || 'TOTAL'}` : isATS ? 'ATS' : 'ML';
+    const spread = isATS ? (bet.bet?.spread || bet.spreadAnalysis?.spread || '') : isTotals ? (bet.bet?.total || bet.totalsAnalysis?.marketTotal || '') : '';
+    const mos = bet.spreadAnalysis?.marginOverSpread || bet.betRecommendation?.marginOverSpread;
+    const mot = bet.totalsAnalysis?.marginOverTotal || bet.betRecommendation?.marginOverTotal;
+    const edgeStr = isTotals ? (mot != null ? `MOT +${mot}` : 'N/A') : (mos != null ? `MOS +${mos}` : 'N/A');
+    const mvLabel = bet.spreadAnalysis?.movementLabel || bet.totalsAnalysis?.movementLabel || bet.betRecommendation?.movementLabel || '';
+    const mvTier = bet.spreadAnalysis?.movementTier || bet.totalsAnalysis?.movementTier || bet.betRecommendation?.movementTier || '';
 
     L.push('─'.repeat(80));
     L.push(`${'★'.repeat(stars)} ${away} (AWAY) @ ${home} (HOME)`);
-    L.push(`PICK: ${pick} ${betType}${spread ? ` ${spread}` : ''} | ${units}u | EV: ${ev} | MOS: ${mos}`);
+    L.push(`PICK: ${pick} ${betType}${spread ? ` ${spread}` : ''} | ${units}u | ${edgeStr}${mvLabel ? ` | ${mvLabel}` : ''}${mvTier ? ` [${mvTier}]` : ''}`);
     L.push(`${pick} is ${pickIsHome ? 'HOME' : 'AWAY'} — ${pickIsHome ? 'home court advantage in play' : 'must win on the road'}`);
     L.push('');
 
@@ -514,8 +538,8 @@ async function generateMatchups() {
 
     // Betting context
     L.push(`  BETTING CONTEXT:`);
-    L.push(`    EV: ${ev} — ${parseFloat(ev) > 5 ? 'strong market mispricing' : parseFloat(ev) > 3 ? 'meaningful edge over closing line' : 'moderate edge'}`);
-    L.push(`    MOS: ${mos} — model projects ${pick} to cover by this margin beyond the spread`);
+    L.push(`    ${edgeStr} — model projects ${pick} to ${isTotals ? 'hit the ' + betType + ' by this margin' : 'cover by this margin beyond the spread'}`);
+    if (mvLabel) L.push(`    Line Movement: ${mvLabel} [${mvTier}] — ${mvTier === 'CONFIRM' ? 'market confirms our thesis' : mvTier === 'FLAGGED' ? 'market moving against' : 'neutral'}`);
     L.push(`    Confidence: ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} (${units}u)`);
     L.push('');
   }

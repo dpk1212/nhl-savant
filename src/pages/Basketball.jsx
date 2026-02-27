@@ -382,7 +382,8 @@ const Basketball = () => {
             initialOdds: lockedBet.initialOdds,
             initialEV: lockedBet.initialEV
           },
-          clv: lockedBet.clv || null
+          clv: lockedBet.clv || null,
+          barttorvik: lockedBet.barttorvik || null
         };
         
         // Find fresh model data from today's scraped games (for Advanced Stats, dratings, barttorvik, etc.)
@@ -393,10 +394,11 @@ const Basketball = () => {
         );
         
         if (freshGame) {
-          // Merge: locked prediction + fresh model data
+          // Merge: locked prediction + fresh model data; prefer fresh barttorvik, fall back to Firebase
           console.log(`   🔒 Locked pick with fresh data: ${lockedBet.game.awayTeam} @ ${lockedBet.game.homeTeam}`);
           mergedGames.push({
             ...freshGame,
+            barttorvik: freshGame.barttorvik || lockedBet.barttorvik || null,
             prediction: lockedGameObj.prediction,
             odds: lockedGameObj.odds,
             clv: lockedBet.clv || null

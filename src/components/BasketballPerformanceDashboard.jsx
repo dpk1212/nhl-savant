@@ -1158,7 +1158,10 @@ function BetHistoryList({ bets, isMobile }) {
           const units = isATSBet 
             ? (bet.betRecommendation?.atsUnits || bet.prediction?.unitSize || 1)
             : (bet.result?.units || bet.prediction?.unitSize || 1);
-          const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
+          const isTotalsBet = bet.betRecommendation?.type === 'TOTAL' || bet.isTotalsPick || bet.bet?.market === 'TOTAL';
+          const team = isTotalsBet
+            ? `${bet.bet?.pick || 'TOTAL'} ${bet.bet?.total || ''}`
+            : (bet.bet?.team || bet.prediction?.pick || 'Unknown');
           const odds = isATSBet ? -110 : bet.bet?.odds;
           
           return (

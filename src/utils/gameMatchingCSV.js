@@ -11,11 +11,11 @@ import { loadTeamMappings, findTeamMapping, findDRatingsPrediction, findHaslamet
  * @param {array} oddsGames - Parsed odds from OddsTrader
  * @param {object} haslametricsData - { games: [], teams: {} } from Haslametrics
  * @param {array} dratePredictions - Predictions from D-Ratings
- * @param {object} barttorвikData - Barttorvik team stats keyed by team name
+ * @param {object} barttorvikData - Barttorvik team stats keyed by team name
  * @param {string} csvContent - CSV content from basketball_teams.csv
  * @returns {array} - Matched games with all data
  */
-export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions, barttorвikData, csvContent) {
+export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions, barttorvikData, csvContent) {
   const matchedGames = [];
   
   // Load CSV mappings
@@ -143,8 +143,8 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     let awayBartt = null;
     let homeBartt = null;
     if (awayMapping.barttorvik && homeMapping.barttorvik) {
-      awayBartt = barttorвikData[awayMapping.barttorvik];
-      homeBartt = barttorвikData[homeMapping.barttorvik];
+      awayBartt = barttorvikData[awayMapping.barttorvik];
+      homeBartt = barttorvikData[homeMapping.barttorvik];
     }
     
     // Track data sources

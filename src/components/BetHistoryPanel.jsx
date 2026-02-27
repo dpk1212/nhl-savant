@@ -535,7 +535,10 @@ export function BetHistoryPanel({ bets, isMobile }) {
                 }
                 units = units || 1; // Final fallback
                 
-                const team = bet.bet?.team || bet.prediction?.pick || 'Unknown';
+                const isTotalsBet = bet.betRecommendation?.type === 'TOTAL' || bet.isTotalsPick || bet.bet?.market === 'TOTAL';
+                const team = isTotalsBet
+                  ? `${bet.bet?.pick || 'TOTAL'} ${bet.bet?.total || ''}`
+                  : (bet.bet?.team || bet.prediction?.pick || 'Unknown');
                 
                 return (
                   <div
