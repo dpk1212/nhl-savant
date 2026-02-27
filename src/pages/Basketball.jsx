@@ -2115,24 +2115,25 @@ const LineMovementSparkline = ({ lineHistory, opener, current, movementTier, mov
   const field = isTotals ? 'total' : 'spread';
   const uid = `spark-${Math.random().toString(36).slice(2, 9)}`;
 
-  let points = [];
+  if (opener == null && current == null) return null;
+
+  let midPoints = [];
   if (lineHistory && lineHistory.length > 0) {
-    points = lineHistory
+    midPoints = lineHistory
       .filter(p => p[field] != null)
       .sort((a, b) => a.t - b.t)
       .map(p => p[field]);
   }
-  if (points.length === 0 && opener != null) points.push(opener);
-  if (current != null && (points.length === 0 || points[points.length - 1] !== current)) {
-    points.push(current);
-  }
-  if (points.length < 2) {
-    if (points.length === 1) points = [points[0], points[0]];
-    else return null;
-  }
 
-  const openerVal = points[0];
-  const currentVal = points[points.length - 1];
+  const openerVal = opener ?? midPoints[0] ?? current;
+  const currentVal = current ?? midPoints[midPoints.length - 1] ?? opener;
+
+  let points = [openerVal];
+  for (const mp of midPoints) {
+    if (points[points.length - 1] !== mp) points.push(mp);
+  }
+  if (points[points.length - 1] !== currentVal) points.push(currentVal);
+  if (points.length < 2) points = [openerVal, currentVal];
   const rawDelta = currentVal - openerVal;
   const isConfirm = movementTier === 'CONFIRM';
   const isFlagged = movementTier === 'FLAGGED';
