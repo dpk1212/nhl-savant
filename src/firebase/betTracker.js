@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, setDoc, getDoc, arrayUnion, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDocs, query, where, orderBy, setDoc, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from './config';
 import { getETDate, getETGameDate } from '../utils/dateUtils';
 import { calculateNHLDynamicUnits, loadNHLConfidenceWeights } from '../utils/nhlDynamicConfidence';
@@ -27,46 +27,59 @@ export class BetTracker {
     return `${awayTeam}_${homeTeam}_${market}_${edge.pick.replace(/\s+/g, '_')}`;
   }
   
-  // Save a recommended bet with history tracking using Firebase transactions
+  // Sanitize an object for Firestore: replace undefined with null, NaN with 0
+  sanitize(obj) {
+    if (obj === null || obj === undefined) return null;
+    if (typeof obj !== 'object') {
+      if (typeof obj === 'number' && isNaN(obj)) return 0;
+      return obj;
+    }
+    if (Array.isArray(obj)) return obj.map(item => this.sanitize(item));
+    const clean = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === undefined) {
+        clean[key] = null;
+      } else if (typeof value === 'number' && isNaN(value)) {
+        clean[key] = 0;
+      } else if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
+        clean[key] = this.sanitize(value);
+      } else {
+        clean[key] = value;
+      }
+    }
+    return clean;
+  }
+  
+  // Save a recommended bet with history tracking
   async saveBet(game, bestEdge, prediction) {
-    // ⚠️ TOTALS BETTING DISABLED - Skip totals bets
     if (!bestEdge || bestEdge.market === 'TOTAL' || bestEdge.market?.includes('TOTAL')) {
-      console.log('⏭️ Skipping totals bet (disabled) - Focus on moneyline edge');
       return;
     }
     
-    // 🎯 QUALITY GATE: Only save MONEYLINE bets with DRatings calibration
-    // DRatings data becomes available when odds are fetched
-    // This ensures we never save inferior market-ensemble bets
-    // Note: Puck line bets don't have DRatings calibration yet, so skip this check for them
-    if (bestEdge.market === 'MONEYLINE' && !bestEdge.dratingsProb && !bestEdge.calibratedProb) {
+    if (bestEdge.market === 'MONEYLINE' && !bestEdge.calibratedProb && !bestEdge.moneyPuckProb && !bestEdge.ensembleProb) {
+      console.warn(`⚠️ Skipping ${bestEdge.pick}: no model probability available`);
       return null;
     }
     
-    // CRITICAL FIX: Get date using ET game date (treats 12am-6am as previous day)
-    // This matches NHL's operational day boundaries for after-midnight scrapes
     const gameDate = game.date || getETGameDate();
     const betId = this.generateBetId(gameDate, game.awayTeam, game.homeTeam, bestEdge.market, bestEdge);
     
-    // If generateBetId returns null (totals bet), skip
     if (!betId) {
       return;
     }
     
-    const betData = {
+    console.log(`🔄 saveBet called for ${betId} (${bestEdge.pick}, ${bestEdge.odds}, +${bestEdge.evPercent?.toFixed(1)}% EV)`);
+    
+    const betData = this.sanitize({
       id: betId,
       date: gameDate,
       timestamp: Date.now(),
-      
-      // Game Info
       game: {
         awayTeam: game.awayTeam,
         homeTeam: game.homeTeam,
-        gameTime: game.gameTime,
+        gameTime: game.gameTime || null,
         actualStartTime: game.startTimestamp || null
       },
-      
-      // Bet Details
       bet: {
         market: bestEdge.market,
         pick: bestEdge.pick,
@@ -75,45 +88,32 @@ export class BetTracker {
         team: bestEdge.team || null,
         side: this.extractSide(bestEdge)
       },
-      
-      // Model Prediction
       prediction: {
-        awayScore: prediction.awayScore,
-        homeScore: prediction.homeScore,
-        totalScore: prediction.totalScore,
-        awayWinProb: prediction.awayWinProb,
-        homeWinProb: prediction.homeWinProb,
-        modelProb: bestEdge.modelProb,
+        awayScore: prediction.awayScore || 0,
+        homeScore: prediction.homeScore || 0,
+        totalScore: prediction.totalScore || 0,
+        awayWinProb: prediction.awayWinProb || 0.5,
+        homeWinProb: prediction.homeWinProb || 0.5,
+        modelProb: bestEdge.modelProb || 0,
         marketProb: bestEdge.marketProb || this.calculateMarketProb(bestEdge.odds),
-        evPercent: bestEdge.evPercent,
-        ev: bestEdge.ev,
-        kelly: bestEdge.kelly,
-        
-        // ENSEMBLE FIELDS: Track market-validated quality metrics
-        ensembleProb: bestEdge.ensembleProb || null,           // Blended model+market probability
-        agreement: bestEdge.agreement || null,                  // Model-market disagreement %
-        confidence: bestEdge.confidence || 'MEDIUM',            // HIGH/MEDIUM/LOW based on agreement
-        qualityGrade: bestEdge.qualityGrade || null,           // A/B/C/D from ensemble strategy
-        recommendedUnit: bestEdge.recommendedUnit || null,     // Kelly-based bet sizing
-        
-        // Legacy EV-based rating (for comparison with ensemble grades)
-        rating: bestEdge.rating || this.getRating(bestEdge.evPercent),  // A+/A/B+/B/C
-        tier: bestEdge.tier || this.getTier(bestEdge.evPercent),        // ELITE/EXCELLENT/STRONG/GOOD
-        
-        // 🎯 Dynamic Confidence-Based Unit Sizing (0.5u - 1.5u)
-        // Calculated from ROI patterns: rating, odds, EV%, confidence, side, modelProb
-        dynamicUnits: null,  // Will be calculated below
-        dynamicTier: null,   // Confidence tier label
-        dynamicScore: null   // Raw confidence score
+        evPercent: bestEdge.evPercent || 0,
+        ev: bestEdge.ev || 0,
+        kelly: bestEdge.kelly || null,
+        ensembleProb: bestEdge.ensembleProb || null,
+        agreement: bestEdge.agreement || null,
+        confidence: bestEdge.confidence || 'MEDIUM',
+        qualityGrade: bestEdge.qualityGrade || null,
+        recommendedUnit: bestEdge.recommendedUnit || null,
+        rating: bestEdge.rating || this.getRating(bestEdge.evPercent || 0),
+        tier: bestEdge.tier || this.getTier(bestEdge.evPercent || 0),
+        dynamicUnits: null,
+        dynamicTier: null,
+        dynamicScore: null
       },
-      
-      // Starting Goalies (if available)
       goalies: {
         away: game.goalies?.away || null,
         home: game.goalies?.home || null
       },
-      
-      // Result (populated after game)
       result: {
         awayScore: null,
         homeScore: null,
@@ -126,151 +126,112 @@ export class BetTracker {
         fetchedAt: null,
         source: null
       },
-      
-      // Metadata
       status: "PENDING",
       recommended: true,
       tracked: true,
       modelVersion: "v2.2-ensemble",
-      
-      // Display tracking: When and how this bet was shown to users
-      displayedAt: Date.now(),                           // Timestamp when first displayed
-      displayedGrade: bestEdge.qualityGrade || null,    // Ensemble grade when first shown
-      displayedEV: bestEdge.evPercent,                   // EV when first shown
-      displayedOdds: bestEdge.odds,                      // Odds when first shown
-      
+      displayedAt: Date.now(),
+      displayedGrade: bestEdge.qualityGrade || null,
+      displayedEV: bestEdge.evPercent || 0,
+      displayedOdds: bestEdge.odds,
       notes: ""
-    };
+    });
     
-    // 🎯 Calculate Dynamic Confidence-Based Units
-    // Uses ROI patterns from historical bets to optimize unit sizing
     try {
-      const weights = await this.weightsPromise; // Ensure weights are loaded
+      const weights = await this.weightsPromise;
       const dynamicResult = calculateNHLDynamicUnits(betData, weights);
       betData.prediction.dynamicUnits = dynamicResult.units;
       betData.prediction.dynamicTier = dynamicResult.tier;
       betData.prediction.dynamicScore = dynamicResult.score;
-      console.log(`🎯 Dynamic Units: ${dynamicResult.units}u (${dynamicResult.tier}) - Score: ${dynamicResult.rawScore.toFixed(2)}`);
     } catch (err) {
       console.warn('⚠️ Could not calculate dynamic units:', err.message);
-      betData.prediction.dynamicUnits = 1.0; // Default
+      betData.prediction.dynamicUnits = 1.0;
       betData.prediction.dynamicTier = '✅ STANDARD';
       betData.prediction.dynamicScore = 0;
     }
     
     try {
       const betRef = doc(db, 'bets', betId);
+      const existingBet = await getDoc(betRef);
       
-      // Use Firebase transaction for atomic read-check-write
-      await runTransaction(db, async (transaction) => {
-        const existingBet = await transaction.get(betRef);
+      if (existingBet.exists()) {
+        const currentData = existingBet.data();
         
-        if (existingBet.exists()) {
-          // Bet already exists - add to history and update current values
-          const currentData = existingBet.data();
-          
-          // Check if odds, line, EV, or grade changed significantly (avoid spam)
-          const oddsChanged = Math.abs(currentData.bet.odds - bestEdge.odds) >= 5;
-          const evChanged = Math.abs(currentData.prediction.evPercent - bestEdge.evPercent) >= 1;
-          const lineChanged = bestEdge.line && currentData.bet.line && 
-                             Math.abs(currentData.bet.line - bestEdge.line) >= 0.5;
-          const gradeChanged = currentData.prediction.qualityGrade && 
-                              bestEdge.qualityGrade &&
-                              currentData.prediction.qualityGrade !== bestEdge.qualityGrade;
-          
-          if (oddsChanged || evChanged || lineChanged || gradeChanged) {
-            // Build history entry with ensemble metrics
-            const historyEntry = {
-              timestamp: Date.now(),
-              odds: bestEdge.odds,
-              evPercent: bestEdge.evPercent,
-              modelProb: bestEdge.modelProb,
-              marketProb: bestEdge.marketProb || this.calculateMarketProb(bestEdge.odds),
-              
-              // ENSEMBLE TRACKING: Record quality metrics at each update
-              qualityGrade: bestEdge.qualityGrade || null,
-              agreement: bestEdge.agreement || null,
-              ensembleProb: bestEdge.ensembleProb || null,
-              confidence: bestEdge.confidence || null
-            };
-            
-            // Add line to history for total bets
-            if (bestEdge.line) {
-              historyEntry.line = bestEdge.line;
-            }
-            
-            // Update bet document with ensemble fields
-            transaction.update(betRef, {
-              // Add current state to history
-              history: arrayUnion(historyEntry),
-              // Update current values
-              'bet.odds': bestEdge.odds,
-              'bet.line': bestEdge.line || null,
-              'prediction.evPercent': bestEdge.evPercent,
-              'prediction.ev': bestEdge.ev,
-              'prediction.modelProb': bestEdge.modelProb,
-              'prediction.marketProb': bestEdge.marketProb || this.calculateMarketProb(bestEdge.odds),
-              'prediction.kelly': bestEdge.kelly,
-              'prediction.rating': bestEdge.rating || this.getRating(bestEdge.evPercent),
-              
-              // ENSEMBLE FIELDS: Update quality metrics
-              'prediction.ensembleProb': bestEdge.ensembleProb || null,
-              'prediction.agreement': bestEdge.agreement || null,
-              'prediction.qualityGrade': bestEdge.qualityGrade || null,
-              'prediction.confidence': bestEdge.confidence || null,
-              'prediction.recommendedUnit': bestEdge.recommendedUnit || null,
-              
-              timestamp: Date.now()
-            });
-            
-            const changes = [];
-            if (oddsChanged) changes.push(`odds: ${currentData.bet.odds} → ${bestEdge.odds}`);
-            if (lineChanged) changes.push(`line: ${currentData.bet.line} → ${bestEdge.line}`);
-            if (evChanged) changes.push(`EV: ${currentData.prediction.evPercent.toFixed(1)}% → ${bestEdge.evPercent.toFixed(1)}%`);
-            if (gradeChanged) {
-              changes.push(`grade: ${currentData.prediction.qualityGrade} → ${bestEdge.qualityGrade}`);
-              console.log(`🔄 Grade changed for ${betId}: ${currentData.prediction.qualityGrade} → ${bestEdge.qualityGrade}`);
-            }
-            console.log(`📊 Updated bet: ${betId} (${changes.join(', ')})`);
-          } else {
-            console.log(`⏭️ Skipped update (no significant change): ${betId}`);
-          }
-        } else {
-          // New bet - create with initial history entry including ensemble metrics
-          const historyEntry = {
+        const oddsChanged = Math.abs((currentData.bet?.odds || 0) - bestEdge.odds) >= 5;
+        const evChanged = Math.abs((currentData.prediction?.evPercent || 0) - (bestEdge.evPercent || 0)) >= 1;
+        const lineChanged = bestEdge.line && currentData.bet?.line && 
+                           Math.abs(currentData.bet.line - bestEdge.line) >= 0.5;
+        const gradeChanged = currentData.prediction?.qualityGrade && 
+                            bestEdge.qualityGrade &&
+                            currentData.prediction.qualityGrade !== bestEdge.qualityGrade;
+        
+        if (oddsChanged || evChanged || lineChanged || gradeChanged) {
+          const historyEntry = this.sanitize({
             timestamp: Date.now(),
             odds: bestEdge.odds,
-            evPercent: bestEdge.evPercent,
-            modelProb: bestEdge.modelProb,
+            evPercent: bestEdge.evPercent || 0,
+            modelProb: bestEdge.modelProb || 0,
             marketProb: bestEdge.marketProb || this.calculateMarketProb(bestEdge.odds),
-            
-            // ENSEMBLE TRACKING: Initial quality metrics
             qualityGrade: bestEdge.qualityGrade || null,
             agreement: bestEdge.agreement || null,
             ensembleProb: bestEdge.ensembleProb || null,
             confidence: bestEdge.confidence || null
-          };
-          
-          // Add line to history for total bets
-          if (bestEdge.line) {
-            historyEntry.line = bestEdge.line;
-          }
-          
-          transaction.set(betRef, {
-            ...betData,
-            history: [historyEntry],
-            firstRecommendedAt: Date.now(), // Track when first recommended
-            initialOdds: bestEdge.odds,
-            initialLine: bestEdge.line || null, // Track initial line for totals
-            initialEV: bestEdge.evPercent
           });
-          console.log(`✅ Saved new bet: ${betId} (${bestEdge.odds}, +${bestEdge.evPercent.toFixed(1)}% EV)`);
+          
+          if (bestEdge.line) historyEntry.line = bestEdge.line;
+          
+          await updateDoc(betRef, this.sanitize({
+            history: arrayUnion(historyEntry),
+            'bet.odds': bestEdge.odds,
+            'bet.line': bestEdge.line || null,
+            'prediction.evPercent': bestEdge.evPercent || 0,
+            'prediction.ev': bestEdge.ev || 0,
+            'prediction.modelProb': bestEdge.modelProb || 0,
+            'prediction.marketProb': bestEdge.marketProb || this.calculateMarketProb(bestEdge.odds),
+            'prediction.kelly': bestEdge.kelly || null,
+            'prediction.rating': bestEdge.rating || this.getRating(bestEdge.evPercent || 0),
+            'prediction.ensembleProb': bestEdge.ensembleProb || null,
+            'prediction.agreement': bestEdge.agreement || null,
+            'prediction.qualityGrade': bestEdge.qualityGrade || null,
+            'prediction.confidence': bestEdge.confidence || null,
+            'prediction.recommendedUnit': bestEdge.recommendedUnit || null,
+            timestamp: Date.now()
+          }));
+          
+          console.log(`📊 Updated bet: ${betId}`);
+        } else {
+          console.log(`⏭️ No significant change: ${betId}`);
         }
-      });
+      } else {
+        const historyEntry = this.sanitize({
+          timestamp: Date.now(),
+          odds: bestEdge.odds,
+          evPercent: bestEdge.evPercent || 0,
+          modelProb: bestEdge.modelProb || 0,
+          marketProb: bestEdge.marketProb || this.calculateMarketProb(bestEdge.odds),
+          qualityGrade: bestEdge.qualityGrade || null,
+          agreement: bestEdge.agreement || null,
+          ensembleProb: bestEdge.ensembleProb || null,
+          confidence: bestEdge.confidence || null
+        });
+        
+        if (bestEdge.line) historyEntry.line = bestEdge.line;
+        
+        await setDoc(betRef, this.sanitize({
+          ...betData,
+          history: [historyEntry],
+          firstRecommendedAt: Date.now(),
+          initialOdds: bestEdge.odds,
+          initialLine: bestEdge.line || null,
+          initialEV: bestEdge.evPercent || 0
+        }));
+        console.log(`✅ SAVED NEW BET: ${betId} (${bestEdge.odds}, +${(bestEdge.evPercent || 0).toFixed(1)}% EV)`);
+      }
       
       return betId;
     } catch (error) {
-      console.error('❌ Error saving bet:', error);
+      console.error(`❌ FIREBASE WRITE FAILED for ${betId}:`, error.code, error.message);
+      console.error('Full error:', JSON.stringify(error, null, 2));
       throw error;
     }
   }

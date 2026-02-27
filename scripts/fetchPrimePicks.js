@@ -550,23 +550,29 @@ async function savePick(db, game, sideData, prediction) {
     const prevTier = prev.spreadAnalysis?.movementTier || prev.betRecommendation?.movementTier || 'UNKNOWN';
     const newTier = sideData.movementTier;
     const tierChanged = prevTier !== newTier;
+    const lockedSpread = prev.bet?.spread;
     
     const updateData = {
-      'spreadAnalysis.spread': sideData.spread,
+      'spreadAnalysis.currentSpread': sideData.spread,
       'spreadAnalysis.lineMovement': sideData.lineMovement,
       'spreadAnalysis.movementTier': newTier,
       'spreadAnalysis.marginOverSpread': mos,
       'betRecommendation.lineMovement': sideData.lineMovement,
       'betRecommendation.movementTier': newTier,
-      'betRecommendation.atsSpread': sideData.spread,
       'betRecommendation.marginOverSpread': mos,
       lastUpdatedAt: Date.now(),
     };
+
+    if (!prev.isLocked) {
+      updateData['spreadAnalysis.spread'] = sideData.spread;
+      updateData['betRecommendation.atsSpread'] = sideData.spread;
+      updateData['bet.spread'] = sideData.spread;
+    }
     
     if (isFlagged) {
       if (prev.isLocked) {
         await updateDoc(betRef, updateData);
-        console.log(`   🔒 LOCKED: ${pickTeam} ${sideData.spread} — line moved against but bet is locked for user`);
+        console.log(`   🔒 LOCKED: ${pickTeam} ${lockedSpread || sideData.spread} — line moved against but bet is locked for user`);
         return { action: 'stable', betId };
       }
       updateData['betStatus'] = 'KILLED';
@@ -579,12 +585,12 @@ async function savePick(db, game, sideData, prediction) {
     }
     
     if (tierChanged || newTier === 'CONFIRM') {
-      updateData['bet.units'] = units;
-      updateData['betRecommendation.atsUnits'] = units;
-      updateData['prediction.unitSize'] = units;
-      updateData['spreadAnalysis.unitTier'] = tier;
-      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
       if (!prev.isLocked) {
+        updateData['bet.units'] = units;
+        updateData['betRecommendation.atsUnits'] = units;
+        updateData['prediction.unitSize'] = units;
+        updateData['spreadAnalysis.unitTier'] = tier;
+        const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
         updateData['betStatus'] = newStatus;
         if (newStatus === 'BET_NOW') {
           updateData.isLocked = true;
@@ -592,13 +598,23 @@ async function savePick(db, game, sideData, prediction) {
         }
       }
       await updateDoc(betRef, updateData);
+      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
+      const displayUnits = prev.isLocked ? prevUnits : units;
+      const displaySpread = prev.isLocked ? lockedSpread : sideData.spread;
       const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
-      console.log(`   ${arrow}: ${pickTeam} ${sideData.spread} — ${prevTier} → ${newTier} | ${units}u [${tier}]`);
+      console.log(`   ${arrow}: ${pickTeam} ${displaySpread} — ${prevTier} → ${newTier} | ${displayUnits}u [${tier}]${prev.isLocked ? ' (locked)' : ''}`);
       return { action: 'updated', betId };
     }
     
+    if (!prev.isLocked) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.atsUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+    }
     await updateDoc(betRef, updateData);
-    console.log(`   🔒 Stable: ${pickTeam} — still ${newTier} | ${units}u`);
+    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    const stableSpread = prev.isLocked ? lockedSpread : sideData.spread;
+    console.log(`   🔒 Stable: ${pickTeam} ${stableSpread} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''}`);
     return { action: 'stable', betId };
   }
   
@@ -714,7 +730,13 @@ async function savePick(db, game, sideData, prediction) {
       movementLabel: sideData.movementLabel,
     },
     
-    barttorvik: game.barttorvik || null
+    barttorvik: game.barttorvik || null,
+    
+    lineHistory: [{
+      t: Date.now(),
+      spread: sideData.openerSpread ?? sideData.spread,
+      total: null
+    }]
   };
   
   await setDoc(betRef, betData);
@@ -763,23 +785,29 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     const prevTier = prev.totalsAnalysis?.movementTier || prev.betRecommendation?.movementTier || 'UNKNOWN';
     const newTier = totalsData.movementTier;
     const tierChanged = prevTier !== newTier;
+    const lockedTotal = prev.bet?.total;
     
     const updateData = {
-      'totalsAnalysis.marketTotal': totalsData.marketTotal,
+      'totalsAnalysis.currentTotal': totalsData.marketTotal,
       'totalsAnalysis.lineMovement': totalsData.lineMovement,
       'totalsAnalysis.movementTier': newTier,
       'totalsAnalysis.marginOverTotal': mot,
       'betRecommendation.lineMovement': totalsData.lineMovement,
       'betRecommendation.movementTier': newTier,
-      'betRecommendation.totalLine': totalsData.marketTotal,
       'betRecommendation.marginOverTotal': mot,
       lastUpdatedAt: Date.now(),
     };
+
+    if (!prev.isLocked) {
+      updateData['totalsAnalysis.marketTotal'] = totalsData.marketTotal;
+      updateData['betRecommendation.totalLine'] = totalsData.marketTotal;
+      updateData['bet.total'] = totalsData.marketTotal;
+    }
     
     if (isFlagged) {
       if (prev.isLocked) {
         await updateDoc(betRef, updateData);
-        console.log(`   🔒 LOCKED: ${totalsData.direction} ${totalsData.marketTotal} — line moved against but bet is locked for user (${game.awayTeam} @ ${game.homeTeam})`);
+        console.log(`   🔒 LOCKED: ${totalsData.direction} ${lockedTotal || totalsData.marketTotal} — line moved against but bet is locked for user (${game.awayTeam} @ ${game.homeTeam})`);
         return { action: 'stable', betId };
       }
       updateData['betStatus'] = 'KILLED';
@@ -792,12 +820,12 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     }
     
     if (tierChanged || newTier === 'CONFIRM') {
-      updateData['bet.units'] = units;
-      updateData['betRecommendation.totalUnits'] = units;
-      updateData['prediction.unitSize'] = units;
-      updateData['totalsAnalysis.unitTier'] = tier;
-      const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
       if (!prev.isLocked) {
+        updateData['bet.units'] = units;
+        updateData['betRecommendation.totalUnits'] = units;
+        updateData['prediction.unitSize'] = units;
+        updateData['totalsAnalysis.unitTier'] = tier;
+        const newStatus = newTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD';
         updateData['betStatus'] = newStatus;
         if (newStatus === 'BET_NOW') {
           updateData.isLocked = true;
@@ -805,13 +833,23 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
         }
       }
       await updateDoc(betRef, updateData);
+      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
+      const displayUnits = prev.isLocked ? prevUnits : units;
+      const displayTotal = prev.isLocked ? lockedTotal : totalsData.marketTotal;
       const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
-      console.log(`   ${arrow}: ${totalsData.direction} ${totalsData.marketTotal} — ${prevTier} → ${newTier} | ${units}u [${tier}] (${game.awayTeam} @ ${game.homeTeam})`);
+      console.log(`   ${arrow}: ${totalsData.direction} ${displayTotal} — ${prevTier} → ${newTier} | ${displayUnits}u [${tier}]${prev.isLocked ? ' (locked)' : ''} (${game.awayTeam} @ ${game.homeTeam})`);
       return { action: 'updated', betId };
     }
     
+    if (!prev.isLocked) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.totalUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+    }
     await updateDoc(betRef, updateData);
-    console.log(`   🔒 Stable: ${totalsData.direction} ${totalsData.marketTotal} — still ${newTier} | ${units}u (${game.awayTeam} @ ${game.homeTeam})`);
+    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    const stableTotal = prev.isLocked ? lockedTotal : totalsData.marketTotal;
+    console.log(`   🔒 Stable: ${totalsData.direction} ${stableTotal} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''} (${game.awayTeam} @ ${game.homeTeam})`);
     return { action: 'stable', betId };
   }
   
@@ -915,7 +953,13 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       movementTier: totalsData.movementTier,
     },
     
-    barttorvik: game.barttorvik || null
+    barttorvik: game.barttorvik || null,
+    
+    lineHistory: [{
+      t: Date.now(),
+      spread: null,
+      total: totalsData.openerTotal ?? totalsData.marketTotal
+    }]
   };
   
   await setDoc(betRef, betData);
@@ -982,56 +1026,78 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
     if (pred && !pred.error) prediction = pred;
   } catch (e) { /* skip prediction if calculator errors */ }
 
-  const evalData = {
-    id: evalId,
-    type: 'EVALUATION',
-    date,
-    game: {
-      awayTeam: game.awayTeam,
-      homeTeam: game.homeTeam,
-      gameTime: game.odds?.gameTime || 'TBD',
-    },
-    modelData: {
-      dratingsAwayScore: Math.round(dr.awayScore * 10) / 10,
-      dratingsHomeScore: Math.round(dr.homeScore * 10) / 10,
-      haslametricsAwayScore: Math.round(hs.awayScore * 10) / 10,
-      haslametricsHomeScore: Math.round(hs.homeScore * 10) / 10,
-      drRawMargin: Math.round(drRawMargin * 10) / 10,
-      hsRawMargin: Math.round(hsRawMargin * 10) / 10,
-      blendedMargin: Math.round(blendedMargin * 10) / 10,
-      drTotal: Math.round(drTotal * 10) / 10,
-      hsTotal: Math.round(hsTotal * 10) / 10,
-      blendedTotal: Math.round(blendedTotal * 10) / 10,
-    },
-    openers: {
-      awaySpread: spreadGame?.awaySpread ?? null,
-      homeSpread: spreadGame?.homeSpread ?? null,
-      awayOpener: spreadGame?.awayOpener ?? null,
-      homeOpener: spreadGame?.homeOpener ?? null,
-      total: totalsGame?.total ?? null,
-      openerTotal: totalsGame?.openerTotal ?? null,
-    },
-    prediction: prediction ? {
-      ensembleAwayScore: prediction.ensembleAwayScore ?? null,
-      ensembleHomeScore: prediction.ensembleHomeScore ?? null,
-      ensembleAwayProb: prediction.ensembleAwayProb ?? null,
-      ensembleHomeProb: prediction.ensembleHomeProb ?? null,
-      dratingsAwayProb: prediction.dratingsAwayProb ?? null,
-      dratingsHomeProb: prediction.dratingsHomeProb ?? null,
-      haslametricsAwayProb: prediction.haslametricsAwayProb ?? null,
-      haslametricsHomeProb: prediction.haslametricsHomeProb ?? null,
-      marketAwayProb: prediction.marketAwayProb ?? null,
-      marketHomeProb: prediction.marketHomeProb ?? null,
-      bestEV: prediction.bestEV ?? null,
-      bestOdds: prediction.bestOdds ?? null,
-      grade: prediction.grade ?? null,
-    } : null,
-    barttorvik: game.barttorvik || null,
-    createdAt: Date.now(),
-    lastUpdatedAt: Date.now(),
+  const currentModelData = {
+    dratingsAwayScore: Math.round(dr.awayScore * 10) / 10,
+    dratingsHomeScore: Math.round(dr.homeScore * 10) / 10,
+    haslametricsAwayScore: Math.round(hs.awayScore * 10) / 10,
+    haslametricsHomeScore: Math.round(hs.homeScore * 10) / 10,
+    drRawMargin: Math.round(drRawMargin * 10) / 10,
+    hsRawMargin: Math.round(hsRawMargin * 10) / 10,
+    blendedMargin: Math.round(blendedMargin * 10) / 10,
+    drTotal: Math.round(drTotal * 10) / 10,
+    hsTotal: Math.round(hsTotal * 10) / 10,
+    blendedTotal: Math.round(blendedTotal * 10) / 10,
   };
 
-  await setDoc(doc(db, 'basketball_bets', evalId), evalData);
+  const currentOpeners = {
+    awaySpread: spreadGame?.awaySpread ?? null,
+    homeSpread: spreadGame?.homeSpread ?? null,
+    awayOpener: spreadGame?.awayOpener ?? null,
+    homeOpener: spreadGame?.homeOpener ?? null,
+    total: totalsGame?.total ?? null,
+    openerTotal: totalsGame?.openerTotal ?? null,
+  };
+
+  const currentPrediction = prediction ? {
+    ensembleAwayScore: prediction.ensembleAwayScore ?? null,
+    ensembleHomeScore: prediction.ensembleHomeScore ?? null,
+    ensembleAwayProb: prediction.ensembleAwayProb ?? null,
+    ensembleHomeProb: prediction.ensembleHomeProb ?? null,
+    dratingsAwayProb: prediction.dratingsAwayProb ?? null,
+    dratingsHomeProb: prediction.dratingsHomeProb ?? null,
+    haslametricsAwayProb: prediction.haslametricsAwayProb ?? null,
+    haslametricsHomeProb: prediction.haslametricsHomeProb ?? null,
+    marketAwayProb: prediction.marketAwayProb ?? null,
+    marketHomeProb: prediction.marketHomeProb ?? null,
+    bestEV: prediction.bestEV ?? null,
+    bestOdds: prediction.bestOdds ?? null,
+    grade: prediction.grade ?? null,
+  } : null;
+
+  const evalRef = doc(db, 'basketball_bets', evalId);
+  const existingEval = await getDoc(evalRef);
+
+  if (existingEval.exists()) {
+    // Preserve original modelData/openers — only store latest as a separate field
+    await updateDoc(evalRef, {
+      latestModelData: currentModelData,
+      latestPrediction: currentPrediction,
+      latestOpeners: currentOpeners,
+      barttorvik: game.barttorvik || null,
+      lastUpdatedAt: Date.now(),
+      lastRefetchAt: Date.now(),
+    });
+    console.log(`   🔒 Eval preserved: ${evalId} (original modelData kept, latest stored separately)`);
+  } else {
+    const evalData = {
+      id: evalId,
+      type: 'EVALUATION',
+      date,
+      game: {
+        awayTeam: game.awayTeam,
+        homeTeam: game.homeTeam,
+        gameTime: game.odds?.gameTime || 'TBD',
+      },
+      modelData: currentModelData,
+      openers: currentOpeners,
+      prediction: currentPrediction,
+      barttorvik: game.barttorvik || null,
+      createdAt: Date.now(),
+      lastUpdatedAt: Date.now(),
+    };
+
+    await setDoc(evalRef, evalData);
+  }
 }
 
 /**

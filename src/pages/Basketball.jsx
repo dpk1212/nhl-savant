@@ -1817,29 +1817,29 @@ const EnhancedTierHeader = ({
                     fontFeatureSettings: "'tnum'",
                     letterSpacing: '-0.01em'
                   }}>
-                    {game.prediction?.unitSize.toFixed(1)}u
+                    {(game.prediction?.unitSize || 0).toFixed(1)}u
                   </div>
                   
                   {/* ROI Badge */}
                   <div style={{
                     padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.625rem',
-                    background: game.prediction?.historicalROI >= 0 
+                    background: (game.prediction?.historicalROI || 0) >= 0 
                       ? 'linear-gradient(135deg, rgba(16,185,129,0.20) 0%, rgba(16,185,129,0.12) 100%)'
                       : 'linear-gradient(135deg, rgba(245,158,11,0.20) 0%, rgba(245,158,11,0.12) 100%)',
-                    border: game.prediction?.historicalROI >= 0
+                    border: (game.prediction?.historicalROI || 0) >= 0
                       ? '1.5px solid rgba(16,185,129,0.35)'
                       : '1.5px solid rgba(245,158,11,0.35)',
                     borderRadius: '8px',
                     fontSize: isMobile ? '0.688rem' : '0.75rem',
                     fontWeight: '900',
-                    color: game.prediction?.historicalROI >= 0 ? '#10B981' : '#F59E0B',
+                    color: (game.prediction?.historicalROI || 0) >= 0 ? '#10B981' : '#F59E0B',
                     whiteSpace: 'nowrap',
                     fontFeatureSettings: "'tnum'",
-                    boxShadow: game.prediction?.historicalROI >= 0
+                    boxShadow: (game.prediction?.historicalROI || 0) >= 0
                       ? '0 2px 8px rgba(16,185,129,0.15)'
                       : '0 2px 8px rgba(245,158,11,0.15)'
                   }}>
-                    {game.prediction?.historicalROI >= 0 ? '+' : ''}{game.prediction?.historicalROI.toFixed(1)}%
+                    {(game.prediction?.historicalROI || 0) >= 0 ? '+' : ''}{(game.prediction?.historicalROI || 0).toFixed(1)}%
                   </div>
                 </div>
               );
@@ -2107,6 +2107,136 @@ const TierHeader = ({ emoji, title, subtitle, color, unitRange, isMobile }) => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+const LineMovementSparkline = ({ lineHistory, opener, current, movementTier, movementLabel, isTotals = false, isMobile = false }) => {
+  const field = isTotals ? 'total' : 'spread';
+  const uid = `spark-${Math.random().toString(36).slice(2, 9)}`;
+
+  let points = [];
+  if (lineHistory && lineHistory.length > 0) {
+    points = lineHistory
+      .filter(p => p[field] != null)
+      .sort((a, b) => a.t - b.t)
+      .map(p => p[field]);
+  }
+  if (points.length === 0 && opener != null) points.push(opener);
+  if (current != null && (points.length === 0 || points[points.length - 1] !== current)) {
+    points.push(current);
+  }
+  if (points.length < 2) {
+    if (points.length === 1) points = [points[0], points[0]];
+    else return null;
+  }
+
+  const openerVal = points[0];
+  const currentVal = points[points.length - 1];
+  const rawDelta = currentVal - openerVal;
+  const isConfirm = movementTier === 'CONFIRM';
+  const isFlagged = movementTier === 'FLAGGED';
+
+  const accent = isConfirm ? '#22C55E' : isFlagged ? '#EF4444' : '#64748B';
+  const accentRgb = isConfirm ? '34,197,94' : isFlagged ? '239,68,68' : '100,116,139';
+  const label = movementLabel || (isConfirm ? 'STEAM' : isFlagged ? 'FLAGGED' : rawDelta === 0 ? 'FLAT' : 'MINOR');
+
+  const w = isMobile ? 160 : 200;
+  const h = 44;
+  const pad = { l: 6, r: 6, t: 8, b: 8 };
+  const plotW = w - pad.l - pad.r;
+  const plotH = h - pad.t - pad.b;
+
+  const minVal = Math.min(...points) - 0.5;
+  const maxVal = Math.max(...points) + 0.5;
+  const range = maxVal - minVal || 1;
+
+  const toX = (i) => pad.l + (i / (points.length - 1)) * plotW;
+  const toY = (v) => pad.t + plotH - ((v - minVal) / range) * plotH;
+
+  const openerY = toY(openerVal);
+  const lastX = toX(points.length - 1);
+  const lastY = toY(currentVal);
+  const pathD = points.map((v, i) => `${i === 0 ? 'M' : 'L'}${toX(i)},${toY(v)}`).join(' ');
+  const fillD = `${pathD} L${lastX},${openerY} L${toX(0)},${openerY} Z`;
+
+  const fmtVal = (v) => {
+    if (isTotals) return v;
+    return v > 0 ? `+${v}` : `${v}`;
+  };
+
+  return (
+    <div style={{
+      marginTop: '0.375rem',
+      background: `linear-gradient(135deg, rgba(${accentRgb},0.04) 0%, rgba(0,0,0,0.15) 100%)`,
+      border: `1px solid rgba(${accentRgb},0.15)`,
+      borderRadius: '8px',
+      padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.625rem',
+    }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: '0.25rem',
+      }}>
+        <span style={{
+          fontSize: isMobile ? '0.5625rem' : '0.625rem', fontWeight: '700',
+          color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}>
+          OPEN {fmtVal(openerVal)}
+        </span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.3rem',
+        }}>
+          <span style={{
+            fontSize: isMobile ? '0.625rem' : '0.6875rem',
+            fontWeight: '900', color: accent,
+            fontFeatureSettings: "'tnum'",
+            letterSpacing: '0.02em',
+            textShadow: `0 0 8px rgba(${accentRgb},0.4)`,
+          }}>
+            {rawDelta !== 0 ? (rawDelta > 0 ? '+' : '') + rawDelta : '0'} {label}
+          </span>
+        </div>
+        <span style={{
+          fontSize: isMobile ? '0.5625rem' : '0.625rem', fontWeight: '800',
+          color: accent, fontFeatureSettings: "'tnum'",
+          letterSpacing: '0.02em',
+        }}>
+          NOW {fmtVal(currentVal)}
+        </span>
+      </div>
+
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block', width: '100%', height: h }}>
+        <defs>
+          <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={accent} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={accent} stopOpacity="0.02" />
+          </linearGradient>
+          <filter id={`${uid}-glow`}>
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        <line x1={pad.l} y1={openerY} x2={w - pad.r} y2={openerY}
+          stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4,4" />
+
+        <path d={fillD} fill={`url(#${uid}-fill)`} />
+
+        <path d={pathD} fill="none" stroke={accent} strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 3px rgba(${accentRgb},0.5))` }} />
+
+        {points.length > 2 && points.map((v, i) => i > 0 && i < points.length - 1 ? (
+          <circle key={i} cx={toX(i)} cy={toY(v)} r="2" fill={accent} opacity="0.6" />
+        ) : null)}
+
+        <circle cx={lastX} cy={lastY} r="3.5" fill={accent} filter={`url(#${uid}-glow)`} />
+        <circle cx={lastX} cy={lastY} r="6" fill={accent} opacity="0.15" />
+
+        <circle cx={toX(0)} cy={toY(openerVal)} r="2.5" fill="rgba(255,255,255,0.4)"
+          stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+      </svg>
     </div>
   );
 };
@@ -2856,6 +2986,23 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   }
                   return null;
                 })()}
+                {(() => {
+                  const ta = totalsData || betData?.totalsAnalysis;
+                  const opTotal = ta?.openerTotal ?? betRec?.openerTotal;
+                  if (opTotal == null) return null;
+                  const curTotal = ta?.currentTotal ?? ta?.marketTotal ?? betRec?.totalLine;
+                  return (
+                    <LineMovementSparkline
+                      lineHistory={betData?.lineHistory}
+                      opener={opTotal}
+                      current={curTotal}
+                      movementTier={ta?.movementTier ?? betRec?.movementTier}
+                      movementLabel={ta?.movementLabel ?? betRec?.movementLabel}
+                      isTotals
+                      isMobile={isMobile}
+                    />
+                  );
+                })()}
               </>
             ) : isATSRecommended || isStandaloneATS ? (
               <>
@@ -2916,48 +3063,19 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   }
                   return null;
                 })()}
-                {/* Opening line movement indicator */}
                 {(() => {
                   const sa = spreadData || betData?.spreadAnalysis;
                   if (!sa || sa.openerSpread == null) return null;
-                  const mv = sa.lineMovement;
-                  const tier = sa.movementTier;
-                  if (!tier || tier === 'UNKNOWN') return null;
-                  const isConfirm = tier === 'CONFIRM';
-                  const isFlagged = tier === 'FLAGGED';
-                  const label = sa.movementLabel || (isConfirm ? 'STEAM' : 'FLAT');
-                  const labelColor = isFlagged ? '#EF4444'
-                    : label === 'STEAM' ? '#22C55E'
-                    : label === 'STRONG' ? '#10B981'
-                    : label === 'SIGNIFICANT' ? '#22C55E'
-                    : 'rgba(255,255,255,0.5)';
+                  const currentSpread = sa.currentSpread ?? sa.spread ?? betRec?.atsSpread;
                   return (
-                    <div style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      padding: '0.125rem 0.375rem',
-                      background: isFlagged ? 'rgba(239, 68, 68, 0.12)' : isConfirm ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.04)',
-                      border: isFlagged ? '1px solid rgba(239, 68, 68, 0.25)' : isConfirm ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '4px',
-                      marginTop: '0.125rem'
-                    }}>
-                      <span style={{
-                        fontSize: isMobile ? '0.5rem' : '0.563rem',
-                        color: 'rgba(255,255,255,0.4)',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em'
-                      }}>OPEN {sa.openerSpread > 0 ? '+' : ''}{sa.openerSpread}</span>
-                      <span style={{
-                        fontSize: isMobile ? '0.563rem' : '0.625rem',
-                        fontWeight: '800',
-                        color: labelColor,
-                        fontFeatureSettings: "'tnum'"
-                      }}>
-                        {mv > 0 ? '+' : ''}{mv} {label}
-                      </span>
-                    </div>
+                    <LineMovementSparkline
+                      lineHistory={betData?.lineHistory}
+                      opener={sa.openerSpread}
+                      current={currentSpread}
+                      movementTier={sa.movementTier}
+                      movementLabel={sa.movementLabel ?? betRec?.movementLabel}
+                      isMobile={isMobile}
+                    />
                   );
                 })()}
               </>
@@ -3192,8 +3310,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
             const dir = betRec?.totalDirection || totalsData?.direction;
             const bothAgree = totalsData?.bothModelsAgree ?? betRec?.bothModelsAgree;
             const isOver = dir === 'OVER';
-            const tMvTier = totalsData?.movementTier ?? betRec?.movementTier;
-            const tMvVal = totalsData?.lineMovement ?? betRec?.lineMovement;
             if (mot === undefined && !dir) return null;
             return (
               <div style={{ 
@@ -3230,34 +3346,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                       </div>
                     </>
                   )}
-                  {tMvTier && tMvTier !== 'UNKNOWN' && (
-                    <>
-                      <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
-                          {tMvTier === 'CONFIRM' ? '🟢' : '⚪'}
-                        </span>
-                        <span style={{ 
-                          fontSize: isMobile ? '0.625rem' : '0.688rem', 
-                          fontWeight: '700', 
-                          color: tMvTier === 'CONFIRM' ? '#10b981' : 'rgba(255,255,255,0.5)',
-                          letterSpacing: '0.02em'
-                        }}>
-                          {totalsAnalysis?.movementLabel || totalsRec?.movementLabel || (tMvTier === 'CONFIRM' ? 'STEAM' : 'HOLD')}
-                        </span>
-                        {tMvVal != null && (
-                          <span style={{ 
-                            fontSize: isMobile ? '0.563rem' : '0.625rem', 
-                            color: 'rgba(255,255,255,0.35)', 
-                            fontWeight: '600',
-                            fontFeatureSettings: "'tnum'"
-                          }}>
-                            ({tMvVal > 0 ? '+' : ''}{tMvVal})
-                          </span>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             );
@@ -3266,8 +3354,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           const bothCover = spreadData?.bothModelsCover ?? betRec?.bothModelsCover;
           const mos = spreadData?.marginOverSpread ?? betRec?.marginOverSpread;
           const isFav = spreadData?.isFavorite;
-          const mvTier = spreadData?.movementTier ?? betRec?.movementTier;
-          const mvVal = spreadData?.lineMovement ?? betRec?.lineMovement;
           
           if (mos === undefined && bothCover === undefined) return null;
           
@@ -3305,34 +3391,6 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                       <span style={{ fontSize: isMobile ? '0.625rem' : '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MOS</span>
                       <span style={{ fontSize: isMobile ? '0.813rem' : '0.875rem', fontWeight: '800', color: mos >= 4 ? '#10b981' : mos >= 2.5 ? '#fbbf24' : 'rgba(255,255,255,0.8)', letterSpacing: '-0.01em' }}>+{mos}</span>
-                    </div>
-                  </>
-                )}
-                {mvTier && mvTier !== 'UNKNOWN' && (
-                  <>
-                    <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <span style={{ fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
-                        {mvTier === 'CONFIRM' ? '🟢' : '⚪'}
-                      </span>
-                      <span style={{ 
-                        fontSize: isMobile ? '0.625rem' : '0.688rem', 
-                        fontWeight: '700', 
-                        color: mvTier === 'CONFIRM' ? '#10b981' : 'rgba(255,255,255,0.5)',
-                        letterSpacing: '0.02em'
-                      }}>
-                        {spreadData?.movementLabel || betRec?.movementLabel || (mvTier === 'CONFIRM' ? 'STEAM' : 'HOLD')}
-                      </span>
-                      {mvVal != null && (
-                        <span style={{ 
-                          fontSize: isMobile ? '0.563rem' : '0.625rem', 
-                          color: 'rgba(255,255,255,0.35)', 
-                          fontWeight: '600',
-                          fontFeatureSettings: "'tnum'"
-                        }}>
-                          ({mvVal > 0 ? '+' : ''}{mvVal})
-                        </span>
-                      )}
                     </div>
                   </>
                 )}

@@ -20,7 +20,7 @@ import AdvancedMatchupDetails from './AdvancedMatchupDetails';
 import { SkeletonHero, SkeletonCard } from './LoadingStates';
 import { LiveClock, AnimatedStatPill, GameCountdown, FlipNumbers } from './PremiumComponents';
 import { validatePredictions } from '../utils/modelValidator';
-import { useBetTracking } from '../hooks/useBetTracking';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useLiveScores } from '../hooks/useLiveScores';
 import { useFirebaseBets } from '../hooks/useFirebaseBets';
 import { 
@@ -2681,11 +2681,8 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
     loadUsage();
   }, [user, isFree, isPremium]);
   
-  // FIREBASE: Auto-track ensemble-filtered bets (only bets shown to users)
-  // ENSEMBLE STRATEGY: Pass topEdges to track only Grade A/B quality bets
-  // 🎯 CRITICAL: Filter out preliminary picks - only track MoneyPuck-calibrated bets
-  const confirmedEdges = topEdges.filter(edge => !edge.isPreliminary);
-  useBetTracking(confirmedEdges, allEdges, dataProcessor);
+  // Bet tracking is now handled directly in the edge calculation effect below
+  // This ensures every displayed pick is saved - no decoupled lifecycle issues
   
   // Initialize GoalieProcessor when goalies.csv data is available
   useEffect(() => {
@@ -2810,10 +2807,64 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
       trackBetsLoaded(edges.length, betsWithEV);
       
       // Get all opportunities (games with quality-filtered bets)
-      // NOTE: Ensemble EVs are lower than raw model EVs due to market blending
-      // Using 1.5% threshold to capture even slightly positive EV bets
       const topOpportunities = calculator.getTopEdges(0.025); // 2.5% minimum (B+ or higher)
       setTopEdges(topOpportunities);
+      
+      // SAVE BETS DIRECTLY TO FIREBASE - same code path as rendering
+      const confirmedEdges = topOpportunities.filter(edge => !edge.isPreliminary);
+      console.log(`🔒 SAVE: ${topOpportunities.length} total picks, ${confirmedEdges.length} confirmed`);
+      topOpportunities.forEach(e => console.log(`   ${e.game} ${e.pick} | prelim=${e.isPreliminary} | mp=${e.moneyPuckProb} | cal=${e.calibratedProb}`));
+      
+      (async () => {
+        for (const edge of confirmedEdges) {
+          const game = edges.find(g => g.game === edge.game);
+          if (!game) continue;
+          
+          const team = edge.team || edge.pick?.split(' ')[0];
+          const [awayTeam, homeTeam] = edge.game.split(' @ ');
+          const betId = `${awayTeam}_${homeTeam}_MONEYLINE_${team}`;
+          
+          try {
+            const betRef = doc(db, 'bets', betId);
+            const existing = await getDoc(betRef);
+            
+            if (!existing.exists()) {
+              const now = Date.now();
+              await setDoc(betRef, {
+                id: betId,
+                date: game.date || getETDate(),
+                timestamp: now,
+                game: { awayTeam: game.awayTeam, homeTeam: game.homeTeam, gameTime: game.gameTime || null, actualStartTime: game.startTimestamp || null },
+                bet: { market: edge.market || 'MONEYLINE', pick: edge.pick, line: edge.line || null, odds: edge.odds, team: team, side: edge.pick?.includes('HOME') ? 'HOME' : 'AWAY' },
+                prediction: {
+                  awayScore: 0, homeScore: 0, totalScore: 0,
+                  awayWinProb: game.edges?.moneyline?.away?.modelProb || 0.5,
+                  homeWinProb: game.edges?.moneyline?.home?.modelProb || 0.5,
+                  modelProb: edge.modelProb || 0, marketProb: edge.marketProb || 0,
+                  evPercent: edge.evPercent || 0, ev: edge.ev || 0,
+                  kelly: null, ensembleProb: edge.ensembleProb || null,
+                  agreement: edge.agreement || null, confidence: edge.confidence || 'MEDIUM',
+                  qualityGrade: edge.qualityGrade || null, recommendedUnit: edge.recommendedUnit || null,
+                  rating: edge.qualityGrade || 'B', tier: edge.evPercent >= 5 ? 'ELITE' : 'EXCELLENT',
+                  dynamicUnits: 1.0, dynamicTier: 'STANDARD', dynamicScore: 0
+                },
+                goalies: { away: game.goalies?.away || null, home: game.goalies?.home || null },
+                result: { awayScore: null, homeScore: null, totalScore: null, winner: null, outcome: null, profit: null, actualProfit: null, fetched: false, fetchedAt: null, source: null },
+                status: 'PENDING', recommended: true, tracked: true, modelVersion: 'v2.2-ensemble',
+                displayedAt: now, displayedGrade: edge.qualityGrade || null, displayedEV: edge.evPercent || 0, displayedOdds: edge.odds,
+                notes: '',
+                history: [{ timestamp: now, odds: edge.odds, evPercent: edge.evPercent || 0, modelProb: edge.modelProb || 0, marketProb: edge.marketProb || 0, qualityGrade: edge.qualityGrade || null, agreement: edge.agreement || null, ensembleProb: edge.ensembleProb || null, confidence: edge.confidence || null }],
+                firstRecommendedAt: now, initialOdds: edge.odds, initialLine: null, initialEV: edge.evPercent || 0
+              });
+              console.log(`✅ SAVED: ${betId} (${edge.qualityGrade}, +${(edge.evPercent || 0).toFixed(1)}% EV)`);
+            } else {
+              console.log(`⏭️ Already exists: ${betId}`);
+            }
+          } catch (err) {
+            console.error(`❌ WRITE FAILED ${betId}:`, err);
+          }
+        }
+      })();
     }
   }, [dataProcessor, oddsData, startingGoalies, dratingsPredictions, dratingsLoading, moneyPuckPredictions, moneyPuckLoading]);
   

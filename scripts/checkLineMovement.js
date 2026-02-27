@@ -22,7 +22,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, where, updateDoc, setDoc, getDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where, updateDoc, setDoc, getDoc, doc, arrayUnion } from 'firebase/firestore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -427,6 +427,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       'betRecommendation.marginOverSpread': sideResult.mos,
       lastUpdatedAt: Date.now(),
       lastLineCheckAt: Date.now(),
+      lineHistory: arrayUnion({ t: Date.now(), spread: sideResult.spread, total: null }),
     };
 
     if (!prev.isLocked) {
@@ -552,6 +553,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       movementLabel: sideResult.movementLabel, movementSignal: sideResult.movementSignal,
     },
     barttorvik: evalData.barttorvik || null,
+    lineHistory: [{ t: Date.now(), spread: sideResult.openerSpread ?? sideResult.spread, total: null }],
   };
 
   await setDoc(betRef, betData);
@@ -597,6 +599,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       'betRecommendation.marginOverTotal': totalsResult.mot,
       lastUpdatedAt: Date.now(),
       lastLineCheckAt: Date.now(),
+      lineHistory: arrayUnion({ t: Date.now(), spread: null, total: totalsResult.marketTotal }),
     };
 
     if (!prev.isLocked) {
@@ -717,6 +720,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       movementLabel: totalsResult.movementLabel, movementSignal: totalsResult.movementSignal,
     },
     barttorvik: evalData.barttorvik || null,
+    lineHistory: [{ t: Date.now(), spread: null, total: totalsResult.openerTotal ?? totalsResult.marketTotal }],
   };
 
   await setDoc(betRef, betData);

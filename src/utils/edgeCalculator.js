@@ -344,16 +344,22 @@ export class EdgeCalculator {
     // AWAY TEAM: Use 70% MoneyPuck + 30% DRatings if both available
     let awayEnsemble;
     if (moneyPuckPrediction && dratingsPrediction && this.config.useEnsemble) {
-      // Use MoneyPuck + DRatings ensemble (70/30)
       awayEnsemble = this.calibrateWithDRatings(
-        moneyPuckPrediction.awayProb,  // 70% MoneyPuck
-        dratingsPrediction.awayProb,   // 30% DRatings
+        moneyPuckPrediction.awayProb,
+        dratingsPrediction.awayProb,
         game.moneyline.away
       );
       console.log(`🎯 ${game.awayTeam}: MP ${(moneyPuckPrediction.awayProb * 100).toFixed(1)}% + DR ${(dratingsPrediction.awayProb * 100).toFixed(1)}% → ${(awayEnsemble.calibratedProb * 100).toFixed(1)}%`);
+    } else if (moneyPuckPrediction && this.config.useEnsemble) {
+      const prob = moneyPuckPrediction.awayProb;
+      console.log(`🎯 ${game.awayTeam}: MP-only ${(prob * 100).toFixed(1)}% (DRatings unavailable)`);
+      awayEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.away);
+    } else if (dratingsPrediction && this.config.useEnsemble) {
+      const prob = dratingsPrediction.awayProb;
+      console.log(`🎯 ${game.awayTeam}: DR-only ${(prob * 100).toFixed(1)}% (MoneyPuck unavailable)`);
+      awayEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.away);
     } else if (this.config.useEnsemble) {
-      // Fallback: Missing MoneyPuck or DRatings - skip this game
-      console.warn(`⚠️ Missing predictions for ${game.awayTeam} @ ${game.homeTeam} - MP:${!!moneyPuckPrediction} DR:${!!dratingsPrediction}`);
+      console.warn(`⚠️ Missing ALL predictions for ${game.awayTeam} @ ${game.homeTeam}`);
       awayEnsemble = { 
         ensembleProb: 0.50, 
         modelProb: 0.50, 
@@ -363,7 +369,6 @@ export class EdgeCalculator {
         qualityGrade: 'N/A'
       };
     } else {
-      // No ensemble - use raw model
       awayEnsemble = { 
         ensembleProb: awayWinProb, 
         modelProb: awayWinProb, 
@@ -377,15 +382,21 @@ export class EdgeCalculator {
     // HOME TEAM: Use 70% MoneyPuck + 30% DRatings if both available
     let homeEnsemble;
     if (moneyPuckPrediction && dratingsPrediction && this.config.useEnsemble) {
-      // Use MoneyPuck + DRatings ensemble (70/30)
       homeEnsemble = this.calibrateWithDRatings(
-        moneyPuckPrediction.homeProb,  // 70% MoneyPuck
-        dratingsPrediction.homeProb,   // 30% DRatings
+        moneyPuckPrediction.homeProb,
+        dratingsPrediction.homeProb,
         game.moneyline.home
       );
       console.log(`🏠 ${game.homeTeam}: MP ${(moneyPuckPrediction.homeProb * 100).toFixed(1)}% + DR ${(dratingsPrediction.homeProb * 100).toFixed(1)}% → ${(homeEnsemble.calibratedProb * 100).toFixed(1)}%`);
+    } else if (moneyPuckPrediction && this.config.useEnsemble) {
+      const prob = moneyPuckPrediction.homeProb;
+      console.log(`🏠 ${game.homeTeam}: MP-only ${(prob * 100).toFixed(1)}% (DRatings unavailable)`);
+      homeEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.home);
+    } else if (dratingsPrediction && this.config.useEnsemble) {
+      const prob = dratingsPrediction.homeProb;
+      console.log(`🏠 ${game.homeTeam}: DR-only ${(prob * 100).toFixed(1)}% (MoneyPuck unavailable)`);
+      homeEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.home);
     } else if (this.config.useEnsemble) {
-      // Fallback: Missing MoneyPuck or DRatings - skip this game
       homeEnsemble = { 
         ensembleProb: 0.50, 
         modelProb: 0.50, 
@@ -395,7 +406,6 @@ export class EdgeCalculator {
         qualityGrade: 'N/A'
       };
     } else {
-      // No ensemble - use raw model
       homeEnsemble = { 
         ensembleProb: homeWinProb, 
         modelProb: homeWinProb, 
