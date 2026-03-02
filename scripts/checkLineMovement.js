@@ -55,8 +55,8 @@ const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
-const MOT_FLOOR = 1.5;
-const MOT_FLOOR_CONFIRMED = 1.0;
+const MOT_FLOOR = 0.5;
+const MOT_FLOOR_CONFIRMED = 0.5;
 
 function getMOSTier(mos, floor = MOS_FLOOR) {
   if (mos >= 4)     return { tier: 'MAXIMUM', units: 5 };
@@ -76,6 +76,32 @@ function getMOTTier(mot, floor = MOT_FLOOR) {
   if (mot >= 2.0)        return { tier: 'BASE',    units: 1 };
   if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
+}
+
+function applyDRUnderBoost(baseUnits, totalsResult) {
+  const { drTotal, openerTotal, direction } = totalsResult;
+  if (openerTotal == null || drTotal == null) return { units: baseUnits, boost: 0, drTier: null };
+  if (direction !== 'UNDER') return { units: baseUnits, boost: 0, drTier: null };
+
+  const drMargin = drTotal - openerTotal;
+  if (drMargin >= 0) return { units: baseUnits, boost: 0, drTier: null };
+
+  if (drMargin <= -5 && drMargin > -8) {
+    const boost = 2;
+    return { units: Math.min(baseUnits + boost, 5), boost, drTier: 'DR_SWEET_SPOT' };
+  }
+  if (drMargin <= -3 && drMargin > -5) {
+    const boost = 1;
+    return { units: Math.min(baseUnits + boost, 5), boost, drTier: 'DR_UNDER' };
+  }
+
+  return { units: baseUnits, boost: 0, drTier: null };
+}
+
+function applyMOTCap(units, mot) {
+  if (mot >= 6) return Math.min(units, 1);
+  if (mot >= 4) return Math.min(units, 2);
+  return units;
 }
 
 // ─── Movement Classification ────────────────────────────────────────
@@ -573,10 +599,12 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
   const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
   const betId = `${date}_${awayNorm}_${homeNorm}_TOTAL_${totalsResult.direction}`;
 
-  const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier, totalsResult.movementLabel);
+  const drBoost = applyDRUnderBoost(totalsResult.tierInfo.units, totalsResult);
+  const cappedUnits = applyMOTCap(drBoost.units, totalsResult.mot);
+  const adjustedUnits = applyMovementGate(cappedUnits, totalsResult.movementTier, totalsResult.movementLabel);
   const isFlagged = adjustedUnits === null;
   const units = isFlagged ? 0 : adjustedUnits;
-  const tier = totalsResult.tierInfo.tier;
+  const tier = drBoost.drTier || totalsResult.tierInfo.tier;
   const gameLabel = `${game.awayTeam} @ ${game.homeTeam}`;
 
   const betRef = doc(db, 'basketball_bets', betId);
@@ -929,7 +957,9 @@ async function checkLineMovement() {
 
     // ── Totals: handle bet actions ──
     if (totalsResult?.qualifies) {
-      const adjustedUnits = applyMovementGate(totalsResult.tierInfo.units, totalsResult.movementTier, totalsResult.movementLabel);
+      const drB = applyDRUnderBoost(totalsResult.tierInfo.units, totalsResult);
+      const capped = applyMOTCap(drB.units, totalsResult.mot);
+      const adjustedUnits = applyMovementGate(capped, totalsResult.movementTier, totalsResult.movementLabel);
       if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
         await createOrUpdateTotalsBet(evalData, totalsResult, counters);
       }

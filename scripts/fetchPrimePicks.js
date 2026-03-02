@@ -62,8 +62,8 @@ const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
-const MOT_FLOOR = 1.5;
-const MOT_FLOOR_CONFIRMED = 1.0;
+const MOT_FLOOR = 0.5;
+const MOT_FLOOR_CONFIRMED = 0.5;
 
 // ─── Movement Classification ────────────────────────────────────────
 // Spreads: books price tightly, 1.0pt+ = real signal
@@ -482,7 +482,8 @@ function getMOSTier(mos, floor = MOS_FLOOR) {
 }
 
 /**
- * MOT tier → base unit sizing for totals (floor = 1.5, scaled for 20/80 blend)
+ * MOT tier → base unit sizing for totals.
+ * Lower floor (0.5) lets tight calls through — data shows MOT < 1 is 70%+ accurate.
  */
 function getMOTTier(mot, floor = MOT_FLOOR) {
   if (mot >= 5)          return { tier: 'MAXIMUM', units: 5 };
@@ -492,6 +493,47 @@ function getMOTTier(mot, floor = MOT_FLOOR) {
   if (mot >= 2.0)        return { tier: 'BASE',    units: 1 };
   if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
+}
+
+/**
+ * DR contrarian UNDER boost — applied ON TOP of MOT base units.
+ *
+ * DR has a systematic OVER bias (calls OVER 65% of the time).
+ * When DR projects UNDER vs the opener, it's going against its own bias:
+ *   - DR margin -5 to -8 vs opener: historically 100% accurate → +2u
+ *   - DR margin -3 to -5 vs opener: historically 62.5% accurate → +1u
+ *
+ * Only fires when the 20/80 blend also says UNDER (confirming the signal).
+ */
+function applyDRUnderBoost(baseUnits, totalsData) {
+  const { drTotal, openerTotal, direction } = totalsData;
+  if (openerTotal == null || drTotal == null) return { units: baseUnits, boost: 0, drTier: null };
+  if (direction !== 'UNDER') return { units: baseUnits, boost: 0, drTier: null };
+
+  const drMargin = drTotal - openerTotal;
+  if (drMargin >= 0) return { units: baseUnits, boost: 0, drTier: null };
+
+  if (drMargin <= -5 && drMargin > -8) {
+    const boost = 2;
+    return { units: Math.min(baseUnits + boost, 5), boost, drTier: 'DR_SWEET_SPOT' };
+  }
+  if (drMargin <= -3 && drMargin > -5) {
+    const boost = 1;
+    return { units: Math.min(baseUnits + boost, 5), boost, drTier: 'DR_UNDER' };
+  }
+
+  return { units: baseUnits, boost: 0, drTier: null };
+}
+
+/**
+ * MOT outlier dampener — cap units when diverging too far from market.
+ * Higher MOT = more disagreement with market = more risk.
+ * Data shows MOT 3+ accuracy drops to ~50% or worse.
+ */
+function applyMOTCap(units, mot) {
+  if (mot >= 6) return Math.min(units, 1);
+  if (mot >= 4) return Math.min(units, 2);
+  return units;
 }
 
 /**
@@ -776,10 +818,13 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   const effectiveFloor = totalsData.movementTier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
   const tierInfo = getMOTTier(mot, effectiveFloor);
   if (!tierInfo) return { action: 'skipped', betId };
-  const adjustedUnits = applyMovementGate(tierInfo.units, totalsData.movementTier, totalsData.movementLabel);
+
+  const drBoost = applyDRUnderBoost(tierInfo.units, totalsData);
+  const cappedUnits = applyMOTCap(drBoost.units, mot);
+  const adjustedUnits = applyMovementGate(cappedUnits, totalsData.movementTier, totalsData.movementLabel);
   const isFlagged = adjustedUnits === null;
   const units = isFlagged ? 0 : adjustedUnits;
-  const tier = tierInfo.tier;
+  const tier = drBoost.drTier || tierInfo.tier;
   
   const existingBet = await getDoc(betRef);
   if (existingBet.exists()) {
@@ -1322,19 +1367,23 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // LINE MOVEMENT GATE for totals
-      const adjustedTotalUnits = applyMovementGate(tierInfo.units, totalsEval.movementTier);
+      const drBoost = applyDRUnderBoost(tierInfo.units, totalsEval);
+      const cappedUnits = applyMOTCap(drBoost.units, mot);
+      const adjustedTotalUnits = applyMovementGate(cappedUnits, totalsEval.movementTier);
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      
+      const drTag = drBoost.drTier ? ` 🔥 ${drBoost.drTier} (+${drBoost.boost}u)` : '';
+      const capTag = cappedUnits < drBoost.units ? ` ⚠️  MOT_CAP(${drBoost.units}→${cappedUnits})` : '';
       
       if (adjustedTotalUnits === null) {
         totalsFlaggedCount++;
         const mvStr = totalsEval.lineMovement != null ? `${totalsEval.lineMovement > 0 ? '+' : ''}${totalsEval.lineMovement}` : '?';
-        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal}) (${game.awayTeam} @ ${game.homeTeam})`);
+        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal})${drTag} (${game.awayTeam} @ ${game.homeTeam})`);
       } else {
-        tierInfo.units = adjustedTotalUnits;
+        const finalTier = drBoost.drTier || tierInfo.tier;
         const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : totalsEval.movementTier === 'NEUTRAL' ? '⚪' : '';
-        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${tierInfo.units}u [${tierInfo.tier}] ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
+        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${adjustedTotalUnits}u [${finalTier}]${drTag}${capTag} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       }
       
       totalsPicks.push({

@@ -100,7 +100,7 @@ async function analyze() {
   console.log('║                    CBB PERFORMANCE ANALYSIS — Full System Tracker                               ║');
   console.log('╠═══════════════════════════════════════════════════════════════════════════════════════════════════╣');
   console.log('║  SPREADS: 90/10 DR/HS blend │ Both models must cover │ Kill if line moves ≥0.5 against         ║');
-  console.log('║  TOTALS:  20/80 DR/HS blend │ No agreement required  │ MOT floor 1.5 (1.0 w/ confirm)         ║');
+  console.log('║  TOTALS:  20/80 DR/HS blend │ DR UNDER boost │ MOT cap on outliers │ floor 0.5              ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════════════════════════╝');
   console.log(`\n  Today: ${today} | Yesterday: ${yesterday} | Week start: ${monday}\n`);
 
@@ -157,16 +157,28 @@ async function analyze() {
       const units = d.bet?.units ?? d.prediction?.unitSize ?? 1;
       const profit = won ? units * (100 / 110) : -units;
 
+      const openerTotal = d.totalsAnalysis?.openerTotal ?? d.betRecommendation?.openerTotal ?? null;
+
       let retroBlendDir = null;
       if (drTotal != null && hsTotal != null && marketTotal != null) {
         const blend2080 = (drTotal * 0.20) + (hsTotal * 0.80);
         retroBlendDir = blend2080 > marketTotal ? 'OVER' : 'UNDER';
       }
 
+      let drMarginVsOpener = null;
+      let drSignal = null;
+      if (drTotal != null && openerTotal != null) {
+        drMarginVsOpener = drTotal - openerTotal;
+        if (drMarginVsOpener <= -5 && drMarginVsOpener > -8) drSignal = 'DR_SWEET_SPOT';
+        else if (drMarginVsOpener <= -3 && drMarginVsOpener > -5) drSignal = 'DR_UNDER';
+        else if (drMarginVsOpener < 0) drSignal = 'DR_SLIGHT_UNDER';
+      }
+
       totals.push({
         date, mot: mot || 0, won, units, profit,
         direction, modelsAgree, movementTier, lineMovement,
-        drTotal, hsTotal, marketTotal, retroBlendDir,
+        drTotal, hsTotal, marketTotal, openerTotal, retroBlendDir,
+        drMarginVsOpener, drSignal,
         hasMOT: mot !== null,
         id: docSnap.id,
       });
@@ -308,6 +320,24 @@ async function analyze() {
     fmtRow('OVER + models disagree', calcStats(tBets.filter(b => b.direction === 'OVER' && b.modelsAgree === false)));
     fmtRow('UNDER + models agree', calcStats(tBets.filter(b => b.direction === 'UNDER' && b.modelsAgree === true)));
     fmtRow('UNDER + models disagree', calcStats(tBets.filter(b => b.direction === 'UNDER' && b.modelsAgree === false)));
+
+    // DR UNDER contrarian signal
+    const withDRSignal = tBets.filter(b => b.drSignal != null);
+    if (withDRSignal.length || tBets.some(b => b.drMarginVsOpener != null)) {
+      printHeader('DR CONTRARIAN UNDER SIGNAL (vs opener)');
+      fmtRow('DR_SWEET_SPOT (-5 to -8)', calcStats(tBets.filter(b => b.drSignal === 'DR_SWEET_SPOT')));
+      fmtRow('DR_UNDER (-3 to -5)', calcStats(tBets.filter(b => b.drSignal === 'DR_UNDER')));
+      fmtRow('DR slight under (0 to -3)', calcStats(tBets.filter(b => b.drSignal === 'DR_SLIGHT_UNDER')));
+      fmtRow('DR says OVER (with bias)', calcStats(tBets.filter(b => b.drMarginVsOpener != null && b.drMarginVsOpener >= 0)));
+    }
+
+    // MOT outlier analysis
+    printHeader('MOT OUTLIER ANALYSIS');
+    fmtRow('MOT < 1.0 (tight calls)', calcStats(tBets.filter(b => b.mot > 0 && b.mot < 1)));
+    fmtRow('MOT 1.0 - 2.0', calcStats(tBets.filter(b => b.mot >= 1 && b.mot < 2)));
+    fmtRow('MOT 2.0 - 3.0', calcStats(tBets.filter(b => b.mot >= 2 && b.mot < 3)));
+    fmtRow('MOT 3.0 - 4.0', calcStats(tBets.filter(b => b.mot >= 3 && b.mot < 4)));
+    fmtRow('MOT 4.0+ (outlier)', calcStats(tBets.filter(b => b.mot >= 4)));
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -361,16 +391,19 @@ async function analyze() {
   console.log('  TOTALS:');
   console.log('    Blend:          20% DRatings / 80% Haslametrics');
   console.log('    Agreement:      Not required (blend handles direction)');
-  console.log('    MOT Floor:      1.5 standard / 1.0 with market confirm');
+  console.log('    MOT Floor:      0.5 (tight calls are 70%+ accurate)');
+  console.log('    MOT Cap:        MOT 4+ capped at 2u, MOT 6+ capped at 1u');
+  console.log('    DR UNDER Boost: +2u sweet spot (-5 to -8), +1u moderate (-3 to -5)');
   console.log('    Movement Gate:  Kill if FLAGGED');
-  console.log('    Sizing:         MOT-tiered (1-5u)');
+  console.log('    Sizing:         MOT base + DR boost + MOT cap + movement gate');
   console.log('');
   console.log('  RATIONALE:');
   console.log('    - HS has 57.5% directional accuracy on totals vs DR 45%');
-  console.log('    - DR has systematic +1.67pt OVER bias on totals');
-  console.log('    - 20/80 blend achieved 64.7% WR on historical totals bets');
-  console.log('    - Model disagreement at 20/80 is actually MORE accurate (78.3%)');
-  console.log('    - Line movement is non-predictive for totals');
+  console.log('    - DR has systematic OVER bias (calls OVER 65% of the time)');
+  console.log('    - When DR goes AGAINST its bias (projects UNDER), accuracy spikes');
+  console.log('    - DR margin -5 to -8 vs opener: 100% accurate (7/7) = sweet spot');
+  console.log('    - Higher MOT = market divergence = lower accuracy (50% at MOT 3+)');
+  console.log('    - Lower MOT = tight calls = higher accuracy (70%+ at MOT < 1)');
 
   console.log('\n' + '═'.repeat(105));
   console.log('  ANALYSIS COMPLETE');
