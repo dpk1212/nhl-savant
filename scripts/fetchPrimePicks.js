@@ -62,8 +62,8 @@ const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
-const MOT_FLOOR = 4.5;
-const MOT_FLOOR_CONFIRMED = 3.5;
+const MOT_FLOOR = 1.5;
+const MOT_FLOOR_CONFIRMED = 1.0;
 
 // ─── Movement Classification ────────────────────────────────────────
 // Spreads: books price tightly, 1.0pt+ = real signal
@@ -398,7 +398,8 @@ function evaluateBothSides(game, spreadGames) {
 
 /**
  * Evaluate totals (O/U) for a game.
- * Uses blended model to determine direction.
+ * Uses 20% DR / 80% HS blend to determine direction — HS dominates
+ * because it has significantly better directional accuracy (57.5% vs 45%).
  * MOT = |blendedTotal - marketTotal|
  */
 function evaluateTotals(game, totalsGames) {
@@ -421,7 +422,7 @@ function evaluateTotals(game, totalsGames) {
   
   const drTotal = dr.awayScore + dr.homeScore;
   const hsTotal = hs.awayScore + hs.homeScore;
-  const blendedTotal = (drTotal * 0.90) + (hsTotal * 0.10);
+  const blendedTotal = (drTotal * 0.20) + (hsTotal * 0.80);
   const marketTotal = totalsGame.total;
   
   const drOver = drTotal > marketTotal;
@@ -429,10 +430,6 @@ function evaluateTotals(game, totalsGames) {
   
   const bothAgreeOver = drOver && hsOver;
   const bothAgreeUnder = !drOver && !hsOver;
-  
-  if (!bothAgreeOver && !bothAgreeUnder) {
-    return null;
-  }
   
   const direction = blendedTotal > marketTotal ? 'OVER' : 'UNDER';
   const margin = blendedTotal - marketTotal;
@@ -484,14 +481,14 @@ function getMOSTier(mos, floor = MOS_FLOOR) {
 }
 
 /**
- * MOT tier → base unit sizing for totals (floor = 4.5)
+ * MOT tier → base unit sizing for totals (floor = 1.5, scaled for 20/80 blend)
  */
 function getMOTTier(mot, floor = MOT_FLOOR) {
-  if (mot >= 7)          return { tier: 'MAXIMUM', units: 5 };
-  if (mot >= 6)          return { tier: 'ELITE',   units: 4 };
-  if (mot >= 5.5)        return { tier: 'STRONG',  units: 3 };
-  if (mot >= 5)          return { tier: 'SOLID',   units: 2 };
-  if (mot >= 4.5)        return { tier: 'BASE',    units: 1 };
+  if (mot >= 5)          return { tier: 'MAXIMUM', units: 5 };
+  if (mot >= 4)          return { tier: 'ELITE',   units: 4 };
+  if (mot >= 3)          return { tier: 'STRONG',  units: 3 };
+  if (mot >= 2.5)        return { tier: 'SOLID',   units: 2 };
+  if (mot >= 2.0)        return { tier: 'BASE',    units: 1 };
   if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
 }
@@ -1006,7 +1003,7 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
   const blendedMargin = (drRawMargin * 0.90) + (hsRawMargin * 0.10);
   const drTotal = dr.awayScore + dr.homeScore;
   const hsTotal = hs.awayScore + hs.homeScore;
-  const blendedTotal = (drTotal * 0.90) + (hsTotal * 0.10);
+  const blendedTotal = (drTotal * 0.20) + (hsTotal * 0.80);
 
   const spreadGame = spreadGames.find(sg => {
     const awayMatch = normalizeTeam(game.awayTeam).includes(normalizeTeam(sg.awayTeam)) ||
@@ -1294,15 +1291,14 @@ async function fetchPrimePicks() {
     console.log(`   ✅ QUALIFYING ATS PICKS: ${picks.length}\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 3B: EVALUATE TOTALS (O/U — both models must agree direction)
+    // STEP 3B: EVALUATE TOTALS (O/U — 20/80 DR/HS blend for direction)
     // ═══════════════════════════════════════════════════════════════════════
     console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│ STEP 3B: TOTALS ANALYSIS (Over/Under — both models agree)                    │');
+    console.log('│ STEP 3B: TOTALS ANALYSIS (Over/Under — 20% DR / 80% HS blend)                │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
     const totalsPicks = [];
     let noTotalsLine = 0;
-    let totalsDisagree = 0;
     let totalsBelowFloor = 0;
     let totalsFlaggedCount = 0;
     
@@ -1312,25 +1308,7 @@ async function fetchPrimePicks() {
       const totalsEval = evaluateTotals(game, totalsGames);
       
       if (!totalsEval) {
-        const dr = game.dratings;
-        const hs = game.haslametrics;
-        const drT = dr.awayScore + dr.homeScore;
-        const hsT = hs.awayScore + hs.homeScore;
-        const normalizeTeam = (name) => name?.toLowerCase().replace(/[^a-z]/g, '') || '';
-        const hasLine = totalsGames.some(tg => {
-          const awayMatch = normalizeTeam(game.awayTeam).includes(normalizeTeam(tg.awayTeam)) ||
-                            normalizeTeam(tg.awayTeam).includes(normalizeTeam(game.awayTeam));
-          const homeMatch = normalizeTeam(game.homeTeam).includes(normalizeTeam(tg.homeTeam)) ||
-                            normalizeTeam(tg.homeTeam).includes(normalizeTeam(game.homeTeam));
-          return awayMatch && homeMatch;
-        });
-        
-        if (!hasLine) {
-          noTotalsLine++;
-        } else {
-          totalsDisagree++;
-          console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — Models disagree (DR: ${Math.round(drT)}, HS: ${Math.round(hsT)})`);
-        }
+        noTotalsLine++;
         continue;
       }
       
@@ -1368,8 +1346,7 @@ async function fetchPrimePicks() {
     totalsPicks.sort((a, b) => b.totalsData.marginOverTotal - a.totalsData.marginOverTotal);
     
     console.log(`\n   📊 Games with totals lines: ${totalsGames.length}`);
-    console.log(`   ❌ No totals line: ${noTotalsLine}`);
-    console.log(`   ❌ Models disagree: ${totalsDisagree}`);
+    console.log(`   ❌ No totals line / no model data: ${noTotalsLine}`);
     console.log(`   ⬇️  Below MOT floor (${MOT_FLOOR}): ${totalsBelowFloor}`);
     console.log(`   🚫 FLAGGED (line moved against): ${totalsFlaggedCount}`);
     console.log(`   ✅ QUALIFYING TOTALS PICKS: ${totalsPicks.length}\n`);

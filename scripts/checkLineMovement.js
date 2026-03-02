@@ -55,8 +55,8 @@ const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
-const MOT_FLOOR = 4.5;
-const MOT_FLOOR_CONFIRMED = 3.5;
+const MOT_FLOOR = 1.5;
+const MOT_FLOOR_CONFIRMED = 1.0;
 
 function getMOSTier(mos, floor = MOS_FLOOR) {
   if (mos >= 4)     return { tier: 'MAXIMUM', units: 5 };
@@ -69,11 +69,11 @@ function getMOSTier(mos, floor = MOS_FLOOR) {
 }
 
 function getMOTTier(mot, floor = MOT_FLOOR) {
-  if (mot >= 7)          return { tier: 'MAXIMUM', units: 5 };
-  if (mot >= 6)          return { tier: 'ELITE',   units: 4 };
-  if (mot >= 5.5)        return { tier: 'STRONG',  units: 3 };
-  if (mot >= 5)          return { tier: 'SOLID',   units: 2 };
-  if (mot >= 4.5)        return { tier: 'BASE',    units: 1 };
+  if (mot >= 5)          return { tier: 'MAXIMUM', units: 5 };
+  if (mot >= 4)          return { tier: 'ELITE',   units: 4 };
+  if (mot >= 3)          return { tier: 'STRONG',  units: 3 };
+  if (mot >= 2.5)        return { tier: 'SOLID',   units: 2 };
+  if (mot >= 2.0)        return { tier: 'BASE',    units: 1 };
   if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
   return null;
 }
@@ -353,13 +353,16 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
 
   if (currentTotal == null) return null;
 
+  const blendedTotal = (model.drTotal * 0.20) + (model.hsTotal * 0.80);
+
   const drOver = model.drTotal > currentTotal;
   const hsOver = model.hsTotal > currentTotal;
   const bothAgreeOver = drOver && hsOver;
   const bothAgreeUnder = !drOver && !hsOver;
+  const modelsAgree = bothAgreeOver || bothAgreeUnder;
 
-  const direction = model.blendedTotal > currentTotal ? 'OVER' : 'UNDER';
-  const margin = model.blendedTotal - currentTotal;
+  const direction = blendedTotal > currentTotal ? 'OVER' : 'UNDER';
+  const margin = blendedTotal - currentTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
 
   let lineMovement = null;
@@ -373,8 +376,7 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
 
   const effectiveFloor = movement.tier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
   const tierInfo = getMOTTier(mot, effectiveFloor);
-  const modelsAgree = bothAgreeOver || bothAgreeUnder;
-  const qualifies = tierInfo != null && modelsAgree;
+  const qualifies = tierInfo != null;
 
   return {
     direction, marketTotal: currentTotal, openerTotal,
@@ -382,7 +384,7 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
     lineMovement, movementTier: movement.tier,
     movementLabel: movement.label, movementSignal: movement.signal,
     drTotal: model.drTotal, hsTotal: model.hsTotal,
-    blendedTotal: model.blendedTotal,
+    blendedTotal: Math.round(blendedTotal * 10) / 10,
     drOver, hsOver, bothAgreeOver, bothAgreeUnder,
   };
 }
@@ -886,7 +888,7 @@ async function checkLineMovement() {
     }
 
     // ── Totals: evaluate at best available total for the model's direction ──
-    const blendedTotal = model.blendedTotal;
+    const blendedTotal = (model.drTotal * 0.20) + (model.hsTotal * 0.80);
     const prelimDirection = blendedTotal > (oddsGame.lowestTotal ?? oddsGame.total) ? 'OVER' : 'UNDER';
     const bestTotal = prelimDirection === 'OVER'
       ? (oddsGame.lowestTotal ?? oddsGame.total)
@@ -896,7 +898,7 @@ async function checkLineMovement() {
     if (totalsResult) {
       const openerTotal = totalsResult.openerTotal;
       const lineShift = (openerTotal != null) ? Math.round((totalsResult.marketTotal - openerTotal) * 10) / 10 : null;
-      const openerMOT = openerTotal != null ? Math.round(Math.abs(model.blendedTotal - openerTotal) * 10) / 10 : null;
+      const openerMOT = openerTotal != null ? Math.round(Math.abs(blendedTotal - openerTotal) * 10) / 10 : null;
 
       let status = '—';
       const isTotMktConf = totalsResult.tierInfo?.tier === 'MARKET_CONFIRMED';
@@ -904,12 +906,12 @@ async function checkLineMovement() {
       else if (totalsResult.qualifies && isTotMktConf) status = '🟢 MKTCONF';
       else if (totalsResult.qualifies && totalsResult.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
       else if (totalsResult.qualifies) status = '🟡 HOLD';
-      else if (totalsResult.mot >= 3.0) status = '👀 NEAR';
+      else if (totalsResult.mot >= 1.0) status = '👀 NEAR';
       else status = '·';
 
       allTotalsRows.push({
         direction: totalsResult.direction,
-        modelTotal: Math.round(model.blendedTotal * 10) / 10,
+        modelTotal: Math.round(blendedTotal * 10) / 10,
         opener: openerTotal,
         current: totalsResult.marketTotal,
         openerMOT,
@@ -1035,7 +1037,7 @@ async function checkLineMovement() {
   const totQualified = allTotalsRows.filter(r => r.qualifies);
   const totStandard = totQualified.filter(r => r.totalsResult.tierInfo?.tier !== 'MARKET_CONFIRMED');
   const totMktConf = totQualified.filter(r => r.totalsResult.tierInfo?.tier === 'MARKET_CONFIRMED');
-  const totNear = allTotalsRows.filter(r => !r.qualifies && r.currentMOT >= 3.0);
+  const totNear = allTotalsRows.filter(r => !r.qualifies && r.currentMOT >= 1.0);
   const totFlagged = totQualified.filter(r => r.movementTier === 'FLAGGED');
   const totForUs = allTotalsRows.filter(r => r.totalsResult.lineMovement > 0).length;
   const totAgainst = allTotalsRows.filter(r => r.totalsResult.lineMovement != null && r.totalsResult.lineMovement < 0).length;
