@@ -76,7 +76,7 @@ function classifySpreadMovement(lm) {
   if (abs >= 2.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STEAM',       signal: dir, magnitude: abs };
   if (abs >= 1.5)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STRONG',      signal: dir, magnitude: abs };
   if (abs >= 1.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'SIGNIFICANT', signal: dir, magnitude: abs };
-  if (abs >= 0.5)  return { tier: 'NEUTRAL',                             label: 'MINOR',       signal: dir, magnitude: abs };
+  if (abs >= 0.5)  return { tier: dir === 'FOR' ? 'NEUTRAL' : 'FLAGGED', label: 'MINOR',       signal: dir, magnitude: abs };
   return              { tier: 'NEUTRAL',                             label: 'NOISE',       signal: 'flat', magnitude: abs };
 }
 
@@ -386,8 +386,8 @@ function evaluateBothSides(game, spreadGames) {
   
   if (!away && !home) return null;
   
-  const awayValid = away && away.marginOverSpread > 0;
-  const homeValid = home && home.marginOverSpread > 0;
+  const awayValid = away && away.marginOverSpread > 0 && away.bothCover;
+  const homeValid = home && home.marginOverSpread > 0 && home.bothCover;
   
   if (!awayValid && !homeValid) return null;
   
@@ -429,6 +429,10 @@ function evaluateTotals(game, totalsGames) {
   
   const bothAgreeOver = drOver && hsOver;
   const bothAgreeUnder = !drOver && !hsOver;
+  
+  if (!bothAgreeOver && !bothAgreeUnder) {
+    return null;
+  }
   
   const direction = blendedTotal > marketTotal ? 'OVER' : 'UNDER';
   const margin = blendedTotal - marketTotal;

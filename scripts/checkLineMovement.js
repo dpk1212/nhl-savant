@@ -95,7 +95,7 @@ function classifySpreadMovement(lm) {
   if (abs >= 2.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STEAM',       signal: dir, magnitude: abs };
   if (abs >= 1.5)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'STRONG',      signal: dir, magnitude: abs };
   if (abs >= 1.0)  return { tier: dir === 'FOR' ? 'CONFIRM' : 'FLAGGED', label: 'SIGNIFICANT', signal: dir, magnitude: abs };
-  if (abs >= 0.5)  return { tier: 'NEUTRAL',                             label: 'MINOR',       signal: dir, magnitude: abs };
+  if (abs >= 0.5)  return { tier: dir === 'FOR' ? 'NEUTRAL' : 'FLAGGED', label: 'MINOR',       signal: dir, magnitude: abs };
   return              { tier: 'NEUTRAL',                             label: 'NOISE',       signal: 'flat', magnitude: abs };
 }
 
@@ -329,7 +329,7 @@ function evaluateATSFromEval(evalData, awaySpread, homeSpread) {
 
     const effectiveFloor = movement.tier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
     const tierInfo = getMOSTier(mos, effectiveFloor);
-    const qualifies = tierInfo != null;
+    const qualifies = tierInfo != null && bothCover;
 
     results.push({
       side, teamName, spread, openerSpread,
@@ -373,11 +373,12 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
 
   const effectiveFloor = movement.tier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
   const tierInfo = getMOTTier(mot, effectiveFloor);
-  const qualifies = tierInfo != null;
+  const modelsAgree = bothAgreeOver || bothAgreeUnder;
+  const qualifies = tierInfo != null && modelsAgree;
 
   return {
     direction, marketTotal: currentTotal, openerTotal,
-    mot, tierInfo, qualifies,
+    mot, tierInfo, qualifies, modelsAgree,
     lineMovement, movementTier: movement.tier,
     movementLabel: movement.label, movementSignal: movement.signal,
     drTotal: model.drTotal, hsTotal: model.hsTotal,
