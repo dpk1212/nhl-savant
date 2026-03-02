@@ -374,8 +374,7 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
   const effectiveFloor = movement.tier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
   const tierInfo = getMOTTier(mot, effectiveFloor);
   const modelsAgree = bothAgreeOver || bothAgreeUnder;
-  const isOver = direction === 'OVER';
-  const qualifies = tierInfo != null && modelsAgree && !isOver;
+  const qualifies = tierInfo != null && modelsAgree;
 
   return {
     direction, marketTotal: currentTotal, openerTotal,
