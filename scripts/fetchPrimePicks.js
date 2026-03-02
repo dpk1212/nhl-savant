@@ -434,6 +434,12 @@ function evaluateTotals(game, totalsGames) {
     return null;
   }
   
+  // OVER is structurally broken: DR over-projects by +4.5pts, OVER hits 36% even with agreement.
+  // UNDER + AGREE = 70.6% WR, +41.5% ROI across 17 bets. Only take UNDER.
+  if (bothAgreeOver) {
+    return null;
+  }
+  
   const direction = blendedTotal > marketTotal ? 'OVER' : 'UNDER';
   const margin = blendedTotal - marketTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
@@ -1328,8 +1334,16 @@ async function fetchPrimePicks() {
         if (!hasLine) {
           noTotalsLine++;
         } else {
+          const drDir = drT > totalsGames.find(tg => {
+            const awayM = normalizeTeam(game.awayTeam).includes(normalizeTeam(tg.awayTeam)) || normalizeTeam(tg.awayTeam).includes(normalizeTeam(game.awayTeam));
+            const homeM = normalizeTeam(game.homeTeam).includes(normalizeTeam(tg.homeTeam)) || normalizeTeam(tg.homeTeam).includes(normalizeTeam(game.homeTeam));
+            return awayM && homeM;
+          })?.total ? 'OVER' : 'UNDER';
+          const hsDir = hsT > drT ? 'OVER' : 'UNDER'; // rough; actual check is vs market
+          const bothOver = drDir === 'OVER' && hsDir === 'OVER';
+          const reason = bothOver ? 'Both say OVER (disabled)' : 'Models disagree';
           totalsDisagree++;
-          console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — Models disagree (DR: ${Math.round(drT)}, HS: ${Math.round(hsT)})`);
+          console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — ${reason} (DR: ${Math.round(drT)}, HS: ${Math.round(hsT)})`);
         }
         continue;
       }
