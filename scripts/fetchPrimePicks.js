@@ -340,12 +340,13 @@ function evaluateBothSides(game, spreadGames) {
     const hsMargin = isAway ? hsRawMargin : -hsRawMargin;
     const blendedMargin = (drMargin * 0.90) + (hsMargin * 0.10);
     
-    const drCovers = drMargin > -spread;
-    const hsCovers = hsMargin > -spread;
-    const blendCovers = blendedMargin > -spread;
+    const evalSpread = openerSpread ?? spread;
+    const drCovers = drMargin > -evalSpread;
+    const hsCovers = hsMargin > -evalSpread;
+    const blendCovers = blendedMargin > -evalSpread;
     const bothCover = drCovers && hsCovers;
     
-    const marginOverSpread = Math.round((blendedMargin + spread) * 10) / 10;
+    const marginOverSpread = Math.round((blendedMargin + evalSpread) * 10) / 10;
     
     // LINE MOVEMENT: openerSpread - currentSpread
     //   Positive = line moved toward our pick (CONFIRM / STEAM)

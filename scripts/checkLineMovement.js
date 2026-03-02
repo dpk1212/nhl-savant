@@ -314,11 +314,12 @@ function evaluateATSFromEval(evalData, awaySpread, homeSpread) {
     const hsMargin = isAway ? model.hsRawMargin : -model.hsRawMargin;
     const blendedMargin = isAway ? model.blendedMargin : -model.blendedMargin;
 
-    const drCovers = drMargin > -spread;
-    const hsCovers = hsMargin > -spread;
+    const evalSpread = openerSpread ?? spread;
+    const drCovers = drMargin > -evalSpread;
+    const hsCovers = hsMargin > -evalSpread;
     const bothCover = drCovers && hsCovers;
-    const blendCovers = blendedMargin > -spread;
-    const mos = Math.round((blendedMargin + spread) * 10) / 10;
+    const blendCovers = blendedMargin > -evalSpread;
+    const mos = Math.round((blendedMargin + evalSpread) * 10) / 10;
 
     let lineMovement = null;
     let movement = { tier: 'UNKNOWN', label: 'UNKNOWN', signal: 'none' };
