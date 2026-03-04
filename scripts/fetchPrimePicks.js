@@ -1624,32 +1624,27 @@ async function fetchPrimePicks() {
     const liveTotals = totalsPicks.filter(p => p.totalsData.movementTier !== 'FLAGGED');
     
     if (livePicks.length > 0) {
-      const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
-      const tierIcons = { MAXIMUM: '💎', ELITE: '🔥', STRONG: '💪', SOLID: '📊', BASE: '📌' };
+      const threeSignal = livePicks.filter(p => p.sideData.signalCount === 3);
+      const twoSignal = livePicks.filter(p => p.sideData.signalCount === 2);
       
-      for (const tName of tierNames) {
-        const tierArr = livePicks.filter(p => {
-          const t = getMOSTier(p.sideData.marginOverSpread);
-          const adj = applyMovementGate(t?.units, p.sideData.movementTier);
-          return t?.tier === tName && adj != null;
+      if (threeSignal.length > 0) {
+        console.log(`   🔥 THREE SIGNALS (${threeSignal.length} pick${threeSignal.length > 1 ? 's' : ''}):`);
+        threeSignal.forEach(p => {
+          const bookTag = p.sideData.bestBook ? ` @ ${p.sideData.bestBook.toUpperCase()} ${p.sideData.bestBookSpread > 0 ? '+' : ''}${p.sideData.bestBookSpread}` : '';
+          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} → ${p.sideData.units}u [${p.sideData.isFavorite ? 'FAV' : 'DOG'}] MOS +${p.sideData.marginOverSpread}${bookTag}`);
         });
-        if (tierArr.length === 0) continue;
-        const tInfo = getMOSTier(tierArr[0].sideData.marginOverSpread);
-        const adjUnits = applyMovementGate(tInfo.units, tierArr[0].sideData.movementTier);
-        const starStr = '★'.repeat(adjUnits) + '☆'.repeat(5 - adjUnits);
-        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${adjUnits}u): ${tierArr.length} pick${tierArr.length > 1 ? 's' : ''}`);
-        tierArr.forEach(p => {
-          const mvLabel = p.sideData.movementTier === 'CONFIRM' ? ' 🟢 STEAM' : '';
-          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} @ -110 [${p.sideData.isFavorite ? 'FAV' : 'DOG'}] MOS +${p.sideData.marginOverSpread}${mvLabel}`);
+      }
+      if (twoSignal.length > 0) {
+        console.log(`   ⚡ TWO SIGNALS (${twoSignal.length} pick${twoSignal.length > 1 ? 's' : ''}):`);
+        twoSignal.forEach(p => {
+          const bookTag = p.sideData.bestBook ? ` @ ${p.sideData.bestBook.toUpperCase()} ${p.sideData.bestBookSpread > 0 ? '+' : ''}${p.sideData.bestBookSpread}` : '';
+          console.log(`      → ${p.sideData.teamName} ${p.sideData.spread} → ${p.sideData.units}u [${p.sideData.isFavorite ? 'FAV' : 'DOG'}] MOS +${p.sideData.marginOverSpread}${bookTag}`);
         });
       }
       
       const favPicks = livePicks.filter(p => p.sideData.isFavorite);
       const dogPicks = livePicks.filter(p => !p.sideData.isFavorite);
-      const atsUnits = livePicks.reduce((s, p) => {
-        const t = getMOSTier(p.sideData.marginOverSpread);
-        return s + (applyMovementGate(t.units, p.sideData.movementTier) || 0);
-      }, 0);
+      const atsUnits = livePicks.reduce((s, p) => s + (p.sideData.units || 1), 0);
       console.log(`   Live: ${livePicks.length} | Favorites: ${favPicks.length} | Underdogs: ${dogPicks.length} | Total: ${atsUnits}u`);
     } else {
       console.log(`   No live ATS picks.`);
@@ -1690,13 +1685,10 @@ async function fetchPrimePicks() {
       console.log(`   No live totals picks.`);
     }
     
-    const liveAtsUnits = livePicks.reduce((s, p) => {
-      const t = getMOSTier(p.sideData.marginOverSpread);
-      return s + (applyMovementGate(t.units, p.sideData.movementTier) || 0);
-    }, 0);
+    const liveAtsUnits = livePicks.reduce((s, p) => s + (p.sideData.units || 1), 0);
     const liveTotalsUnits = liveTotals.reduce((s, p) => {
       const t = getMOTTier(p.totalsData.marginOverTotal);
-      return s + (applyMovementGate(t.units, p.totalsData.movementTier) || 0);
+      return s + (t ? (applyMovementGate(t.units, p.totalsData.movementTier) || 0) : 0);
     }, 0);
     console.log(`\n   ── COMBINED ─────────────────────────────────────────────────`);
     console.log(`   Live picks: ${livePicks.length + liveTotals.length} (${livePicks.length} ATS + ${liveTotals.length} O/U)`);
