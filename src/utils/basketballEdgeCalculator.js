@@ -294,30 +294,42 @@ export class BasketballEdgeCalculator {
   }
   
   /**
-   * Estimate Haslametrics probability using efficiency ratings
-   * This is a simplified model - in practice would use full tempo-free calculations
+   * Derive Haslametrics win probability from predicted scores.
+   * Uses the standard margin-to-probability conversion (normal CDF approximation).
+   * CBB scoring std dev ≈ 11 points — margin / 11 gives z-score.
    * @param {object} game - Matched game
    * @param {string} team - 'away' or 'home'
-   * @returns {number} - Estimated win probability
+   * @returns {number} - Estimated win probability (0-1)
    */
   estimateHaslaProbability(game, team) {
     const { haslametrics } = game;
     
-    if (!haslametrics || !haslametrics.awayOffEff || !haslametrics.homeOffEff) {
-      return 0.5; // Default to 50/50 if no data
+    if (!haslametrics || !haslametrics.awayScore || !haslametrics.homeScore) {
+      return 0.5;
     }
     
-    // Simple model: efficiency differential with home court advantage
-    const homeAdvantage = 3; // ~3 points home advantage
-    const awayEffAdj = haslametrics.awayOffEff;
-    const homeEffAdj = haslametrics.homeOffEff + homeAdvantage;
+    // Predicted margin from the perspective of away team (positive = away wins)
+    const margin = haslametrics.awayScore - haslametrics.homeScore;
     
-    const diff = homeEffAdj - awayEffAdj;
+    // Convert margin to win probability using normal CDF approximation
+    // CBB game-to-game std dev ≈ 11 points
+    const z = margin / 11;
+    const awayProb = this.normalCDF(z);
     
-    // Logistic function to convert differential to probability
-    const homeProb = 1 / (1 + Math.exp(-diff / 10));
-    
-    return team === 'away' ? (1 - homeProb) : homeProb;
+    return team === 'away' ? awayProb : (1 - awayProb);
+  }
+  
+  /**
+   * Standard normal CDF approximation (Abramowitz & Stegun)
+   */
+  normalCDF(x) {
+    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+    const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x) / Math.SQRT2;
+    const t = 1.0 / (1.0 + p * x);
+    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    return 0.5 * (1.0 + sign * y);
   }
   
   /**

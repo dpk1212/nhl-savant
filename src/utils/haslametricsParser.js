@@ -30,6 +30,7 @@ export function parseHaslametrics(markdown) {
     const line = lines[i].trim();
     
     // Look for team rating rows: | 1 | [Duke](link)(7-0) | 127.39 | ...
+    // Must have record (XX-XX) to distinguish from bracket/seed lines
     if (line.startsWith('|') && line.includes('](https://haslametrics.com/ratings2.php')) {
       const cells = line.split('|').map(c => c.trim()).filter(c => c);
       
@@ -39,17 +40,20 @@ export function parseHaslametrics(markdown) {
       const teamMatch = cells[1].match(/\[([^\]]+)\]/);
       if (!teamMatch) continue;
       
-      const teamName = teamMatch[1];  // EXACT name from Haslametrics
+      const teamName = teamMatch[1];
       
-      // Extract record
+      // Require record format (XX-XX) — this is ONLY present in the ratings table,
+      // NOT in bracket/seed prediction lines which would otherwise overwrite with garbage
       const recordMatch = cells[1].match(/\((\d+-\d+)\)/);
-      const record = recordMatch ? recordMatch[1] : null;
+      if (!recordMatch) continue;
       
-      // Extract offensive efficiency (3rd column)
+      const record = recordMatch[1];
       const offEff = parseFloat(cells[2]) || null;
       
+      if (offEff != null && offEff < 50) continue;
+      
       teams[teamName] = {
-        name: teamName,  // Store EXACT name for CSV matching
+        name: teamName,
         record: record,
         offensiveEff: offEff,
         source: 'Haslametrics'
