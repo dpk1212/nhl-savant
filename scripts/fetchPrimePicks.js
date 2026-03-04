@@ -14,8 +14,9 @@
  *   Output includes WHICH BOOK offers the best number.
  *
  * TOTALS (O/U):
- *   20% DR / 80% HS blend for direction.
- *   DR UNDER contrarian boost, MOT outlier cap.
+ *   20% DR / 80% HS blend for direction.  MOT floor = 2.0.
+ *   Pinnacle totals gate: skip if Pinn data exists but no ≥0.5pt retail edge.
+ *   Pinnacle edge ≥1.0pt = +1u boost.  DR UNDER contrarian boost, MOT outlier cap.
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -60,8 +61,8 @@ const ODDS_API_KEY = process.env.ODDS_API_KEY;
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
-const MOT_FLOOR = 0.5;
-const MOT_FLOOR_CONFIRMED = 0.5;
+const MOT_FLOOR = 2.0;
+const MOT_FLOOR_CONFIRMED = 1.5;
 
 // ─── Movement Classification ────────────────────────────────────────
 // Spreads: books price tightly, 1.0pt+ = real signal
@@ -577,16 +578,16 @@ function calcSpreadEV(coverProb) {
 // Fetches Pinnacle (sharp) + DraftKings/FanDuel/BetMGM (retail) spreads.
 // Edge = retail spread softer than Pinnacle = you're getting a better number.
 
-async function fetchSpreadData() {
+async function fetchSharpMarketData() {
   if (!ODDS_API_KEY) {
     console.log('   ⚠️  No ODDS_API_KEY — skipping sharp line fetch');
     return [];
   }
   try {
-    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=spreads&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm,caesars`;
+    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=spreads,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm,caesars`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.log(`   ⚠️  Spread data fetch failed: ${res.status}`);
+      console.log(`   ⚠️  Sharp market data fetch failed: ${res.status}`);
       return [];
     }
     const remaining = res.headers.get('x-requests-remaining');
@@ -598,37 +599,57 @@ async function fetchSpreadData() {
         homeTeam: game.home_team,
         pinnacle: null,
         retail: [],
+        pinnacleTotals: null,
+        retailTotals: [],
       };
       for (const bm of (game.bookmakers || [])) {
+        // Spreads
         const sp = bm.markets?.find(m => m.key === 'spreads');
-        if (!sp) continue;
-        const awayOut = sp.outcomes.find(o => o.name === game.away_team);
-        const homeOut = sp.outcomes.find(o => o.name === game.home_team);
-        if (!awayOut || !homeOut) continue;
-        const entry = {
-          book: bm.key,
-          awaySpread: awayOut.point,
-          homeSpread: homeOut.point,
-          awayOdds: awayOut.price,
-          homeOdds: homeOut.price,
-        };
-        if (bm.key === 'pinnacle') result.pinnacle = entry;
-        else result.retail.push(entry);
+        if (sp) {
+          const awayOut = sp.outcomes.find(o => o.name === game.away_team);
+          const homeOut = sp.outcomes.find(o => o.name === game.home_team);
+          if (awayOut && homeOut) {
+            const entry = {
+              book: bm.key,
+              awaySpread: awayOut.point,
+              homeSpread: homeOut.point,
+              awayOdds: awayOut.price,
+              homeOdds: homeOut.price,
+            };
+            if (bm.key === 'pinnacle') result.pinnacle = entry;
+            else result.retail.push(entry);
+          }
+        }
+        // Totals
+        const tot = bm.markets?.find(m => m.key === 'totals');
+        if (tot) {
+          const overOut = tot.outcomes.find(o => o.name === 'Over');
+          const underOut = tot.outcomes.find(o => o.name === 'Under');
+          if (overOut && underOut) {
+            const totEntry = {
+              book: bm.key,
+              total: overOut.point,
+              overOdds: overOut.price,
+              underOdds: underOut.price,
+            };
+            if (bm.key === 'pinnacle') result.pinnacleTotals = totEntry;
+            else result.retailTotals.push(totEntry);
+          }
+        }
       }
-      if (!result.pinnacle) return null;
       return result;
-    }).filter(Boolean);
+    });
   } catch (err) {
-    console.log(`   ⚠️  Spread data fetch error: ${err.message}`);
+    console.log(`   ⚠️  Sharp market data fetch error: ${err.message}`);
     return [];
   }
 }
 
-function attachSpreadData(matchedGames, spreadData) {
+function attachSharpData(matchedGames, sharpData) {
   const norm = n => n?.toLowerCase().replace(/[^a-z]/g, '') || '';
   let matched = 0;
   for (const game of matchedGames) {
-    const sd = spreadData.find(p =>
+    const sd = sharpData.find(p =>
       (norm(game.awayTeam).includes(norm(p.awayTeam)) || norm(p.awayTeam).includes(norm(game.awayTeam))) &&
       (norm(game.homeTeam).includes(norm(p.homeTeam)) || norm(p.homeTeam).includes(norm(game.homeTeam)))
     );
@@ -910,7 +931,8 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   const cappedUnits = applyMOTCap(drBoost.units, mot);
   const adjustedUnits = applyMovementGate(cappedUnits, totalsData.movementTier, totalsData.movementLabel);
   const isFlagged = adjustedUnits === null;
-  const units = isFlagged ? 0 : adjustedUnits;
+  // Use finalUnits from evaluation (includes Pinnacle boost) if available
+  const units = isFlagged ? 0 : (totalsData.finalUnits ?? adjustedUnits);
   const tier = drBoost.drTier || tierInfo.tier;
   
   const existingBet = await getDoc(betRef);
@@ -1025,6 +1047,11 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       hsOver: totalsData.hsOver,
       bothModelsAgree: totalsData.bothAgreeOver || totalsData.bothAgreeUnder,
       unitTier: tier,
+      pinnacleTotal: totalsData.pinnTotal || null,
+      pinnTotalEdge: totalsData.pinnTotalEdge || 0,
+      bestTotalBook: totalsData.bestTotalBook || null,
+      bestTotalBookLine: totalsData.bestTotalBookLine || null,
+      hasPinnEdge: totalsData.hasPinnEdge || false,
     },
     
     prediction: {
@@ -1314,9 +1341,9 @@ async function fetchPrimePicks() {
     console.log('   ✅ D-Ratings saved\n');
     
     // 1e. Fetch sharp (Pinnacle) + retail spread lines
-    console.log('📊 Fetching Pinnacle + retail spread lines...');
-    const spreadMarketData = await fetchSpreadData();
-    console.log(`   ✅ Sharp + retail data: ${spreadMarketData.length} games\n`);
+    console.log('📊 Fetching Pinnacle + retail lines (spreads + totals)...');
+    const sharpMarketData = await fetchSharpMarketData();
+    console.log(`   ✅ Sharp + retail data: ${sharpMarketData.length} games\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 2: PARSE AND MATCH DATA
@@ -1346,9 +1373,9 @@ async function fetchPrimePicks() {
     console.log(`   🎯 D-Ratings predictions: ${dratePreds.length}`);
     console.log(`   ✅ Matched games: ${matchedGames.length}`);
     
-    // Attach sharp + retail spread data to matched games
-    const sharpMatched = attachSpreadData(matchedGames, spreadMarketData);
-    console.log(`   🎯 Sharp spread data matched: ${sharpMatched}/${matchedGames.length}\n`);
+    // Attach sharp + retail data (spreads + totals) to matched games
+    const sharpMatched = attachSharpData(matchedGames, sharpMarketData);
+    console.log(`   🎯 Sharp market data matched: ${sharpMatched}/${matchedGames.length}\n`);
     
     const edgeCalculator = new BasketballEdgeCalculator();
     
@@ -1452,12 +1479,12 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // SIZE: 3 signals by Pinnacle edge, 2 signals = 1u
+      // SIZE: 3 signals → MOS-based conviction, 2 signals → 1u
       let units;
       if (signalCount === 3) {
-        if (pinnEdgePts >= 1.5) units = 3;
-        else if (pinnEdgePts >= 1.0) units = 2;
-        else units = 1;
+        if (mos >= 3) units = 4;
+        else if (mos >= 2) units = 3;
+        else units = 2;
       } else {
         units = 1;
       }
@@ -1513,6 +1540,8 @@ async function fetchPrimePicks() {
     let totalsBelowFloor = 0;
     let totalsFlaggedCount = 0;
     
+    let pinnTotalsSkipped = 0;
+    
     for (const game of matchedGames) {
       if (!game.dratings || !game.haslametrics) continue;
       
@@ -1528,10 +1557,44 @@ async function fetchPrimePicks() {
       
       if (!tierInfo) {
         totalsBelowFloor++;
-        console.log(`   ⬇️  ${game.awayTeam} @ ${game.homeTeam} — ${totalsEval.direction} MOT +${mot} < ${MOT_FLOOR}`);
         continue;
       }
       
+      // ── PINNACLE TOTALS CHECK ─────────────────────────────────────
+      // OVER: want retail total LOWER than Pinnacle (buying cheap)
+      // UNDER: want retail total HIGHER than Pinnacle (selling high)
+      let pinnTotalEdge = 0;
+      let bestTotalBook = null;
+      let bestTotalBookLine = null;
+      let pinnTotal = null;
+      let hasPinnEdge = false;
+      
+      if (game.sharpData?.pinnacleTotals) {
+        pinnTotal = game.sharpData.pinnacleTotals.total;
+        for (const r of game.sharpData.retailTotals) {
+          let edge;
+          if (totalsEval.direction === 'OVER') {
+            edge = pinnTotal - r.total;
+          } else {
+            edge = r.total - pinnTotal;
+          }
+          if (edge >= 0.5 && edge > pinnTotalEdge) {
+            pinnTotalEdge = Math.round(edge * 10) / 10;
+            bestTotalBook = r.book;
+            bestTotalBookLine = r.total;
+            hasPinnEdge = true;
+          }
+        }
+      }
+      
+      // Store Pinnacle totals data on eval
+      totalsEval.pinnTotal = pinnTotal;
+      totalsEval.pinnTotalEdge = pinnTotalEdge;
+      totalsEval.bestTotalBook = bestTotalBook;
+      totalsEval.bestTotalBookLine = bestTotalBookLine;
+      totalsEval.hasPinnEdge = hasPinnEdge;
+      
+      // ── MOVEMENT GATE ─────────────────────────────────────────────
       const drBoost = applyDRUnderBoost(tierInfo.units, totalsEval);
       const cappedUnits = applyMOTCap(drBoost.units, mot);
       const adjustedTotalUnits = applyMovementGate(cappedUnits, totalsEval.movementTier);
@@ -1540,15 +1603,30 @@ async function fetchPrimePicks() {
       
       const drTag = drBoost.drTier ? ` 🔥 ${drBoost.drTier} (+${drBoost.boost}u)` : '';
       const capTag = cappedUnits < drBoost.units ? ` ⚠️  MOT_CAP(${drBoost.units}→${cappedUnits})` : '';
+      const pinnTag = pinnTotal != null
+        ? (hasPinnEdge ? ` | Pinn ${pinnTotal} → ${bestTotalBook?.toUpperCase()} ${bestTotalBookLine} (+${pinnTotalEdge}pt edge)` : ` | Pinn ${pinnTotal} (no edge)`)
+        : '';
       
       if (adjustedTotalUnits === null) {
         totalsFlaggedCount++;
         const mvStr = totalsEval.lineMovement != null ? `${totalsEval.lineMovement > 0 ? '+' : ''}${totalsEval.lineMovement}` : '?';
-        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal})${drTag} (${game.awayTeam} @ ${game.homeTeam})`);
+        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal})${drTag}${pinnTag} (${game.awayTeam} @ ${game.homeTeam})`);
+      } else if (!hasPinnEdge && pinnTotal != null) {
+        // Pinnacle doesn't confirm — skip the bet but store for monitoring
+        pinnTotalsSkipped++;
+        console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | NO Pinn edge${pinnTag} → SKIP (${game.awayTeam} @ ${game.homeTeam})`);
+        adjustedTotalUnits === null; // won't save as live bet
+        totalsEval.pinnSkipped = true;
       } else {
+        // Pinnacle confirms OR no Pinnacle data — size by MOT + Pinnacle edge boost
+        let finalUnits = adjustedTotalUnits;
+        if (hasPinnEdge && pinnTotalEdge >= 1.0) finalUnits = Math.min(finalUnits + 1, 5);
+        totalsEval.finalUnits = finalUnits;
+        
         const finalTier = drBoost.drTier || tierInfo.tier;
         const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : totalsEval.movementTier === 'NEUTRAL' ? '⚪' : '';
-        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${adjustedTotalUnits}u [${finalTier}]${drTag}${capTag} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
+        const pinnConfirm = hasPinnEdge ? ' ✅ PINN' : (pinnTotal == null ? '' : '');
+        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${finalUnits}u [${finalTier}]${drTag}${capTag}${pinnTag}${pinnConfirm} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       }
       
       totalsPicks.push({
@@ -1564,7 +1642,8 @@ async function fetchPrimePicks() {
     console.log(`   ❌ No totals line / no model data: ${noTotalsLine}`);
     console.log(`   ⬇️  Below MOT floor (${MOT_FLOOR}): ${totalsBelowFloor}`);
     console.log(`   🚫 FLAGGED (line moved against): ${totalsFlaggedCount}`);
-    console.log(`   ✅ QUALIFYING TOTALS PICKS: ${totalsPicks.length}\n`);
+    console.log(`   📋 No Pinnacle edge — SKIPPED: ${pinnTotalsSkipped}`);
+    console.log(`   ✅ QUALIFYING TOTALS PICKS: ${totalsPicks.filter(p => !p.totalsData.pinnSkipped && p.totalsData.movementTier !== 'FLAGGED').length}\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 4: SAVE ALL PICKS TO FIREBASE
@@ -1598,6 +1677,7 @@ async function fetchPrimePicks() {
     } else {
       console.log('\n   ── TOTALS PICKS ──────────────────────────────────────────────');
       for (const { game, totalsData, prediction } of totalsPicks) {
+        if (totalsData.pinnSkipped) continue;
         const result = await saveTotalsPick(db, game, totalsData, prediction);
         if (result.action === 'created') totalsCreated++;
         else if (result.action === 'created_flagged') totalsCreatedFlagged++;
@@ -1621,7 +1701,7 @@ async function fetchPrimePicks() {
     
     // Filter to only LIVE picks (not FLAGGED) for summary
     const livePicks = picks.filter(p => p.sideData.movementTier !== 'FLAGGED');
-    const liveTotals = totalsPicks.filter(p => p.totalsData.movementTier !== 'FLAGGED');
+    const liveTotals = totalsPicks.filter(p => p.totalsData.movementTier !== 'FLAGGED' && !p.totalsData.pinnSkipped);
     
     if (livePicks.length > 0) {
       const threeSignal = livePicks.filter(p => p.sideData.signalCount === 3);

@@ -50,8 +50,8 @@ const db = getFirestore(app);
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
-const MOT_FLOOR = 0.5;
-const MOT_FLOOR_CONFIRMED = 0.5;
+const MOT_FLOOR = 2.0;
+const MOT_FLOOR_CONFIRMED = 1.5;
 
 function getMOSTier(mos, floor = MOS_FLOOR) {
   if (mos >= 4)     return { tier: 'MAXIMUM', units: 5 };
@@ -276,6 +276,8 @@ async function fetchCurrentLines() {
     let underBook = null;
     let pinnacle = null;
     const retail = [];
+    let pinnacleTotals = null;
+    const retailTotals = [];
 
     for (const bk of (game.bookmakers || [])) {
       const spreadMarket = bk.markets?.find(m => m.key === 'spreads');
@@ -314,17 +316,22 @@ async function fetchCurrentLines() {
 
       const totalMarket = bk.markets?.find(m => m.key === 'totals');
       if (totalMarket) {
-        for (const o of totalMarket.outcomes) {
-          if (o.name === 'Over') {
-            if (lowestTotal === null || o.point < lowestTotal) {
-              lowestTotal = o.point;
-              overBook = bk.key;
-            }
-            if (highestTotal === null || o.point > highestTotal) {
-              highestTotal = o.point;
-              underBook = bk.key;
-            }
+        const overOut = totalMarket.outcomes.find(o => o.name === 'Over');
+        const underOut = totalMarket.outcomes.find(o => o.name === 'Under');
+        if (overOut) {
+          if (lowestTotal === null || overOut.point < lowestTotal) {
+            lowestTotal = overOut.point;
+            overBook = bk.key;
           }
+          if (highestTotal === null || overOut.point > highestTotal) {
+            highestTotal = overOut.point;
+            underBook = bk.key;
+          }
+        }
+        if (overOut && underOut) {
+          const totEntry = { book: bk.key, total: overOut.point };
+          if (bk.key === 'pinnacle') pinnacleTotals = totEntry;
+          else retailTotals.push(totEntry);
         }
       }
     }
@@ -342,6 +349,8 @@ async function fetchCurrentLines() {
       bestBooks: { away: awayBook, home: homeBook, over: overBook, under: underBook },
       pinnacle,
       retail,
+      pinnacleTotals,
+      retailTotals,
     };
   });
 }
@@ -644,7 +653,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
   const cappedUnits = applyMOTCap(drBoost.units, totalsResult.mot);
   const adjustedUnits = applyMovementGate(cappedUnits, totalsResult.movementTier, totalsResult.movementLabel);
   const isFlagged = adjustedUnits === null;
-  const units = isFlagged ? 0 : adjustedUnits;
+  const units = isFlagged ? 0 : (totalsResult.finalUnits ?? adjustedUnits);
   const tier = drBoost.drTier || totalsResult.tierInfo.tier;
   const gameLabel = `${game.awayTeam} @ ${game.homeTeam}`;
 
@@ -1060,13 +1069,50 @@ async function checkLineMovement() {
       });
     }
 
-    // ── Totals: handle bet actions ──
+    // ── Totals: Pinnacle check + bet actions ──
     if (totalsResult?.qualifies) {
-      const drB = applyDRUnderBoost(totalsResult.tierInfo.units, totalsResult);
-      const capped = applyMOTCap(drB.units, totalsResult.mot);
-      const adjustedUnits = applyMovementGate(capped, totalsResult.movementTier, totalsResult.movementLabel);
-      if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
-        await createOrUpdateTotalsBet(evalData, totalsResult, counters);
+      // Check Pinnacle totals edge
+      let hasPinnTotalEdge = false;
+      let pinnTotalEdge = 0;
+      let bestTotalBook = null;
+      let bestTotalBookLine = null;
+      let pinnTotal = null;
+      if (oddsGame.pinnacleTotals) {
+        pinnTotal = oddsGame.pinnacleTotals.total;
+        for (const r of oddsGame.retailTotals) {
+          let edge;
+          if (totalsResult.direction === 'OVER') {
+            edge = pinnTotal - r.total;
+          } else {
+            edge = r.total - pinnTotal;
+          }
+          if (edge >= 0.5 && edge > pinnTotalEdge) {
+            pinnTotalEdge = Math.round(edge * 10) / 10;
+            bestTotalBook = r.book;
+            bestTotalBookLine = r.total;
+            hasPinnTotalEdge = true;
+          }
+        }
+      }
+      totalsResult.pinnTotal = pinnTotal;
+      totalsResult.pinnTotalEdge = pinnTotalEdge;
+      totalsResult.bestTotalBook = bestTotalBook;
+      totalsResult.bestTotalBookLine = bestTotalBookLine;
+      totalsResult.hasPinnEdge = hasPinnTotalEdge;
+      
+      // Skip if Pinnacle data exists but no edge
+      if (pinnTotal != null && !hasPinnTotalEdge) {
+        // Don't create/update bet — no Pinnacle confirmation
+      } else {
+        const drB = applyDRUnderBoost(totalsResult.tierInfo.units, totalsResult);
+        const capped = applyMOTCap(drB.units, totalsResult.mot);
+        const adjustedUnits = applyMovementGate(capped, totalsResult.movementTier, totalsResult.movementLabel);
+        if (hasPinnTotalEdge && pinnTotalEdge >= 1.0 && adjustedUnits != null) {
+          totalsResult.finalUnits = Math.min(adjustedUnits + 1, 5);
+        }
+        if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
+          await createOrUpdateTotalsBet(evalData, totalsResult, counters);
+        }
       }
 
       const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
