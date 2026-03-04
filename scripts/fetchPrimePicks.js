@@ -1,18 +1,21 @@
 /**
- * PRIME PICKS V9 — MOS + BothCover + Pinnacle Spread Confirmation
+ * PRIME PICKS V10 — Three-Signal System
  *
  * SPREADS (ATS):
- *   1. MOS ≥ 2.0 — blended model margin over opener spread
- *   2. Both models must agree on cover direction (bothCover)
- *   3. Line movement gate kills bets where line moves ≥ 0.5 against
- *   4. Pinnacle spread lines fetched for sharp market comparison
- *   5. Spread EV calculated from cover probability at -110 (NOT moneyline)
+ *   Three independent signals must converge:
+ *     S1. MODELS: Both DR + HS predict team covers the opening spread (50/50 blend)
+ *     S2. PINNACLE: Retail book offers ≥0.5pt softer than Pinnacle sharp line
+ *     S3. MOVEMENT: Line has moved ≥0.5pt toward our pick since open
+ *   Decision:
+ *     3 signals → BET (size by Pinnacle edge: 0.5pt=1u, 1pt=2u, 1.5pt+=3u)
+ *     2 signals (no movement against) → BET 1u
+ *     Movement against → SKIP regardless
+ *     1 signal only → SKIP
+ *   Output includes WHICH BOOK offers the best number.
  *
  * TOTALS (O/U):
  *   20% DR / 80% HS blend for direction.
  *   DR UNDER contrarian boost, MOT outlier cap.
- *
- * All spread picks are at -110 odds.
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -88,9 +91,9 @@ function classifyTotalsMovement(lm) {
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-console.log('║         PRIME PICKS V9 — MOS + BothCover + Pinnacle Spread Lines             ║');
+console.log('║         PRIME PICKS V10 — Three-Signal System                                ║');
 console.log('║                                                                               ║');
-console.log('║  ATS:   MOS ≥ 2 + BothCover + Movement Gate • Pinnacle spread comparison     ║');
+console.log('║  ATS:   S1 Models agree + S2 Retail softer than Pinnacle + S3 Line movement  ║');
 console.log('║  O/U:   20/80 DR/HS blend • DR UNDER boost • MOT cap                         ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
@@ -332,7 +335,7 @@ function evaluateBothSides(game, spreadGames) {
     
     const drMargin = isAway ? drRawMargin : -drRawMargin;
     const hsMargin = isAway ? hsRawMargin : -hsRawMargin;
-    const blendedMargin = (drMargin * 0.90) + (hsMargin * 0.10);
+    const blendedMargin = (drMargin * 0.50) + (hsMargin * 0.50);
     
     const evalSpread = openerSpread ?? spread;
     const drCovers = drMargin > -evalSpread;
@@ -570,75 +573,66 @@ function calcSpreadEV(coverProb) {
   return (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
 }
 
-// ─── Pinnacle Spread Devigging ──────────────────────────────────────
-// Fetches Pinnacle SPREAD lines (not moneyline) because we bet spreads.
-// Devig to get true cover probabilities for sharp market comparison.
+// ─── Sharp + Retail Spread Data ─────────────────────────────────────
+// Fetches Pinnacle (sharp) + DraftKings/FanDuel/BetMGM (retail) spreads.
+// Edge = retail spread softer than Pinnacle = you're getting a better number.
 
-function oddsToImpliedProb(odds) {
-  if (odds > 0) return 100 / (odds + 100);
-  return Math.abs(odds) / (Math.abs(odds) + 100);
-}
-
-function devigSpreadOdds(awayOdds, homeOdds) {
-  const awayRaw = oddsToImpliedProb(awayOdds);
-  const homeRaw = oddsToImpliedProb(homeOdds);
-  const total = awayRaw + homeRaw;
-  return {
-    awayCoverProb: awayRaw / total,
-    homeCoverProb: homeRaw / total,
-    vig: Math.round((total - 1) * 10000) / 100,
-  };
-}
-
-async function fetchPinnacleOdds() {
+async function fetchSpreadData() {
   if (!ODDS_API_KEY) {
-    console.log('   ⚠️  No ODDS_API_KEY — skipping Pinnacle fetch');
+    console.log('   ⚠️  No ODDS_API_KEY — skipping sharp line fetch');
     return [];
   }
   try {
-    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=spreads&oddsFormat=american&bookmakers=pinnacle`;
+    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=spreads&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm,caesars`;
     const res = await fetch(url);
     if (!res.ok) {
-      console.log(`   ⚠️  Pinnacle fetch failed: ${res.status}`);
+      console.log(`   ⚠️  Spread data fetch failed: ${res.status}`);
       return [];
     }
     const remaining = res.headers.get('x-requests-remaining');
     console.log(`   📡 Odds API credits remaining: ${remaining}`);
     const data = await res.json();
     return data.map(game => {
-      const pinn = game.bookmakers?.find(b => b.key === 'pinnacle');
-      if (!pinn) return null;
-      const spreads = pinn.markets?.find(m => m.key === 'spreads');
-      if (!spreads || spreads.outcomes.length < 2) return null;
-      const awayOut = spreads.outcomes.find(o => o.name === game.away_team);
-      const homeOut = spreads.outcomes.find(o => o.name === game.home_team);
-      if (!awayOut || !homeOut) return null;
-      const devigged = devigSpreadOdds(awayOut.price, homeOut.price);
-      return {
+      const result = {
         awayTeam: game.away_team,
         homeTeam: game.home_team,
-        awaySpread: awayOut.point,
-        homeSpread: homeOut.point,
-        awayOdds: awayOut.price,
-        homeOdds: homeOut.price,
-        ...devigged,
+        pinnacle: null,
+        retail: [],
       };
+      for (const bm of (game.bookmakers || [])) {
+        const sp = bm.markets?.find(m => m.key === 'spreads');
+        if (!sp) continue;
+        const awayOut = sp.outcomes.find(o => o.name === game.away_team);
+        const homeOut = sp.outcomes.find(o => o.name === game.home_team);
+        if (!awayOut || !homeOut) continue;
+        const entry = {
+          book: bm.key,
+          awaySpread: awayOut.point,
+          homeSpread: homeOut.point,
+          awayOdds: awayOut.price,
+          homeOdds: homeOut.price,
+        };
+        if (bm.key === 'pinnacle') result.pinnacle = entry;
+        else result.retail.push(entry);
+      }
+      if (!result.pinnacle) return null;
+      return result;
     }).filter(Boolean);
   } catch (err) {
-    console.log(`   ⚠️  Pinnacle fetch error: ${err.message}`);
+    console.log(`   ⚠️  Spread data fetch error: ${err.message}`);
     return [];
   }
 }
 
-function attachPinnacleData(matchedGames, pinnacleData) {
+function attachSpreadData(matchedGames, spreadData) {
   const norm = n => n?.toLowerCase().replace(/[^a-z]/g, '') || '';
   let matched = 0;
   for (const game of matchedGames) {
-    const pinn = pinnacleData.find(p =>
+    const sd = spreadData.find(p =>
       (norm(game.awayTeam).includes(norm(p.awayTeam)) || norm(p.awayTeam).includes(norm(game.awayTeam))) &&
       (norm(game.homeTeam).includes(norm(p.homeTeam)) || norm(p.homeTeam).includes(norm(game.homeTeam)))
     );
-    if (pinn) { game.pinnacle = pinn; matched++; }
+    if (sd) { game.sharpData = sd; matched++; }
   }
   return matched;
 }
@@ -659,13 +653,10 @@ async function savePick(db, game, sideData, prediction) {
   const betRef = doc(db, 'basketball_bets', betId);
   
   const mos = sideData.marginOverSpread;
-  const effectiveFloor = sideData.movementTier === 'CONFIRM' ? MOS_FLOOR_CONFIRMED : MOS_FLOOR;
-  const tierInfo = getMOSTier(mos, effectiveFloor);
-  if (!tierInfo) return { action: 'skipped', betId };
-  const adjustedUnits = applyMovementGate(tierInfo.units, sideData.movementTier, sideData.movementLabel);
-  const isFlagged = adjustedUnits === null;
-  const units = isFlagged ? 0 : adjustedUnits;
-  const tier = tierInfo.tier;
+  const signalCount = sideData.signalCount || 0;
+  const isFlagged = sideData.movementTier === 'FLAGGED' || signalCount < 2;
+  const units = isFlagged ? 0 : (sideData.units || 1);
+  const tier = signalCount === 3 ? 'THREE_SIGNAL' : signalCount === 2 ? 'TWO_SIGNAL' : 'INSUFFICIENT';
   
   const existingBet = await getDoc(betRef);
   if (existingBet.exists()) {
@@ -783,6 +774,11 @@ async function savePick(db, game, sideData, prediction) {
       bothModelsCover: sideData.bothCover,
       unitTier: tier,
       isFavorite: sideData.isFavorite,
+      signalCount: sideData.signalCount || 0,
+      bestBook: sideData.bestBook || null,
+      bestBookSpread: sideData.bestBookSpread || null,
+      pinnacleSpread: sideData.pinnSpread || null,
+      pinnEdgePts: sideData.pinnEdgePts || 0,
     },
     
     prediction: {
@@ -810,19 +806,18 @@ async function savePick(db, game, sideData, prediction) {
       haslametricsHomeProb: prediction?.haslametricsHomeProb || null,
       marketAwayProb: prediction?.marketAwayProb || null,
       marketHomeProb: prediction?.marketHomeProb || null,
-      pinnacleSpreadEdge: prediction?.pinnacleSpreadEdge || null,
       spreadEV: prediction?.spreadEV || null,
       coverProb: prediction?.coverProb || null,
+      signalCount: prediction?.signalCount || null,
+      pinnEdgePts: prediction?.pinnEdgePts || null,
+      bestBook: prediction?.bestBook || null,
     },
     
-    pinnacle: game.pinnacle ? {
-      awaySpread: game.pinnacle.awaySpread,
-      homeSpread: game.pinnacle.homeSpread,
-      awayOdds: game.pinnacle.awayOdds,
-      homeOdds: game.pinnacle.homeOdds,
-      awayCoverProb: game.pinnacle.awayCoverProb,
-      homeCoverProb: game.pinnacle.homeCoverProb,
-      vig: game.pinnacle.vig,
+    pinnacle: game.sharpData?.pinnacle ? {
+      awaySpread: game.sharpData.pinnacle.awaySpread,
+      homeSpread: game.sharpData.pinnacle.homeSpread,
+      awayOdds: game.sharpData.pinnacle.awayOdds,
+      homeOdds: game.sharpData.pinnacle.homeOdds,
     } : null,
     
     result: {
@@ -838,12 +833,12 @@ async function savePick(db, game, sideData, prediction) {
     },
     
     status: 'PENDING',
-    betStatus: isFlagged ? 'FLAGGED' : (sideData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
-    isLocked: !isFlagged,
-    lockedAt: !isFlagged ? Date.now() : null,
+    betStatus: 'BET_NOW',
+    isLocked: true,
+    lockedAt: Date.now(),
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
-    source: 'PRIME_MOS_V9',
+    source: 'THREE_SIGNAL_V10',
     
     isPrimePick: true,
     isATSPick: true,
@@ -1138,7 +1133,7 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
 
   const drRawMargin = dr.awayScore - dr.homeScore;
   const hsRawMargin = hs.awayScore - hs.homeScore;
-  const blendedMargin = (drRawMargin * 0.90) + (hsRawMargin * 0.10);
+  const blendedMargin = (drRawMargin * 0.50) + (hsRawMargin * 0.50);
   const drTotal = dr.awayScore + dr.homeScore;
   const hsTotal = hs.awayScore + hs.homeScore;
   const blendedTotal = (drTotal * 0.20) + (hsTotal * 0.80);
@@ -1205,14 +1200,11 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
     grade: prediction.grade ?? null,
   } : null;
 
-  const pinnacleData = game.pinnacle ? {
-    awaySpread: game.pinnacle.awaySpread,
-    homeSpread: game.pinnacle.homeSpread,
-    awayOdds: game.pinnacle.awayOdds,
-    homeOdds: game.pinnacle.homeOdds,
-    awayCoverProb: game.pinnacle.awayCoverProb,
-    homeCoverProb: game.pinnacle.homeCoverProb,
-    vig: game.pinnacle.vig,
+  const pinnacleData = game.sharpData?.pinnacle ? {
+    awaySpread: game.sharpData.pinnacle.awaySpread,
+    homeSpread: game.sharpData.pinnacle.homeSpread,
+    awayOdds: game.sharpData.pinnacle.awayOdds,
+    homeOdds: game.sharpData.pinnacle.homeOdds,
   } : null;
 
   const evalRef = doc(db, 'basketball_bets', evalId);
@@ -1321,10 +1313,10 @@ async function fetchPrimePicks() {
     await fs.writeFile(join(__dirname, '../public/dratings.md'), drateResult.markdown, 'utf8');
     console.log('   ✅ D-Ratings saved\n');
     
-    // 1e. Fetch Pinnacle sharp lines (devigged true probabilities)
-    console.log('📊 Fetching Pinnacle sharp lines for devigging...');
-    const pinnacleData = await fetchPinnacleOdds();
-    console.log(`   ✅ Pinnacle: ${pinnacleData.length} games with sharp lines\n`);
+    // 1e. Fetch sharp (Pinnacle) + retail spread lines
+    console.log('📊 Fetching Pinnacle + retail spread lines...');
+    const spreadMarketData = await fetchSpreadData();
+    console.log(`   ✅ Sharp + retail data: ${spreadMarketData.length} games\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 2: PARSE AND MATCH DATA
@@ -1354,9 +1346,9 @@ async function fetchPrimePicks() {
     console.log(`   🎯 D-Ratings predictions: ${dratePreds.length}`);
     console.log(`   ✅ Matched games: ${matchedGames.length}`);
     
-    // Attach Pinnacle devigged probabilities to matched games
-    const pinnMatched = attachPinnacleData(matchedGames, pinnacleData);
-    console.log(`   🎯 Pinnacle sharp lines matched: ${pinnMatched}/${matchedGames.length}\n`);
+    // Attach sharp + retail spread data to matched games
+    const sharpMatched = attachSpreadData(matchedGames, spreadMarketData);
+    console.log(`   🎯 Sharp spread data matched: ${sharpMatched}/${matchedGames.length}\n`);
     
     const edgeCalculator = new BasketballEdgeCalculator();
     
@@ -1380,8 +1372,9 @@ async function fetchPrimePicks() {
     // STEP 3: EVALUATE ALL GAMES (MOS-Primary — both sides)
     // ═══════════════════════════════════════════════════════════════════════
     console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│ STEP 3: MOS + BothCover + Movement Gate (both sides of every game)           │');
-    console.log('│         MOS ≥ 2 + BothCover + Line not against — Spread EV at -110           │');
+    console.log('│ STEP 3: THREE-SIGNAL SYSTEM (both sides of every game)                       │');
+    console.log('│         S1: Models agree on cover  S2: Retail softer than Pinnacle            │');
+    console.log('│         S3: Line moved toward pick  →  2+ signals = BET                       │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
     const picks = [];
@@ -1389,11 +1382,11 @@ async function fetchPrimePicks() {
     let noSpreadData = 0;
     let belowFloor = 0;
     let flaggedCount = 0;
+    let oneSignalOnly = 0;
     
     for (const game of matchedGames) {
       if (!game.dratings || !game.haslametrics) {
         noModelData++;
-        console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — Missing model data`);
         continue;
       }
       
@@ -1401,83 +1394,112 @@ async function fetchPrimePicks() {
       
       if (!evaluation) {
         noSpreadData++;
-        console.log(`   ❌ ${game.awayTeam} @ ${game.homeTeam} — No spread match or models disagree on cover`);
         continue;
       }
       
       const best = evaluation.bestSide;
       const mos = best.marginOverSpread;
-      const tierInfo = getMOSTier(mos);
       
-      if (!tierInfo) {
+      if (mos < 1.0) {
         belowFloor++;
-        const other = best === evaluation.away ? evaluation.home : evaluation.away;
-        console.log(`   ⬇️  ${game.awayTeam} @ ${game.homeTeam} — Best: ${best.teamName} MOS +${mos} < ${MOS_FLOOR}` +
-          (other ? ` | Other: ${other.teamName} MOS +${other.marginOverSpread}` : ''));
         continue;
       }
       
-      // Calculate ensemble prediction for storage (NOT used for filtering)
-      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      // ── SIGNAL 1: MODELS (both DR + HS predict cover) ✅ ──────────
+      // Already guaranteed by evaluateBothSides (bothCover required)
+      const signal1 = true;
       
-      // ── SPREAD EV (correct metric for spread bets at -110) ─────────
+      // ── SIGNAL 2: PINNACLE (retail softer than sharp line) ────────
+      let signal2 = false;
+      let bestBook = null;
+      let bestBookSpread = null;
+      let pinnSpread = null;
+      let pinnEdgePts = 0;
+      if (game.sharpData?.pinnacle) {
+        pinnSpread = best.side === 'away'
+          ? game.sharpData.pinnacle.awaySpread
+          : game.sharpData.pinnacle.homeSpread;
+        for (const retail of game.sharpData.retail) {
+          const retailSp = best.side === 'away' ? retail.awaySpread : retail.homeSpread;
+          const edge = retailSp - pinnSpread;
+          if (edge >= 0.5 && edge > pinnEdgePts) {
+            pinnEdgePts = Math.round(edge * 10) / 10;
+            bestBook = retail.book;
+            bestBookSpread = retailSp;
+            signal2 = true;
+          }
+        }
+      }
+      
+      // ── SIGNAL 3: LINE MOVEMENT (moved toward our pick) ───────────
+      const signal3For = best.movementTier === 'CONFIRM';
+      const signal3Against = best.movementTier === 'FLAGGED';
+      
+      // ── DECISION ──────────────────────────────────────────────────
+      if (signal3Against) {
+        flaggedCount++;
+        const mvStr = best.lineMovement != null ? `${best.lineMovement > 0 ? '+' : ''}${best.lineMovement}` : '?';
+        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} | Movement ${mvStr} AGAINST → SKIP`);
+        continue;
+      }
+      
+      const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
+      
+      if (signalCount < 2) {
+        oneSignalOnly++;
+        const pinnInfo = pinnSpread != null ? `Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : 'no Pinn data';
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | Movement flat → 1 signal only, SKIP`);
+        continue;
+      }
+      
+      // SIZE: 3 signals by Pinnacle edge, 2 signals = 1u
+      let units;
+      if (signalCount === 3) {
+        if (pinnEdgePts >= 1.5) units = 3;
+        else if (pinnEdgePts >= 1.0) units = 2;
+        else units = 1;
+      } else {
+        units = 1;
+      }
+      
+      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       const coverProb = estimateCoverProb(mos);
       const spreadEV = calcSpreadEV(coverProb);
       const spreadEVPct = Math.round(spreadEV * 1000) / 10;
       
-      // ── PINNACLE SPREAD COMPARISON ─────────────────────────────────
-      let pinnTag = '';
-      let pinnacleSpreadEdge = null;
-      if (game.pinnacle) {
-        const pinnSpread = best.side === 'away' ? game.pinnacle.awaySpread : game.pinnacle.homeSpread;
-        const pinnCoverProb = best.side === 'away' ? game.pinnacle.awayCoverProb : game.pinnacle.homeCoverProb;
-        const retailSpread = best.openerSpread ?? best.spread;
-        if (pinnSpread != null && pinnCoverProb != null) {
-          pinnacleSpreadEdge = Math.round((coverProb - pinnCoverProb) * 1000) / 10;
-          const lineEdge = Math.round((retailSpread - pinnSpread) * 10) / 10;
-          pinnTag = ` | Pinn ${pinnSpread} (edge ${lineEdge > 0 ? '+' : ''}${lineEdge}pts, ${pinnacleSpreadEdge > 0 ? '+' : ''}${pinnacleSpreadEdge}%prob)`;
-        }
-      }
+      const favDog = best.isFavorite ? 'FAV' : 'DOG';
+      const grade = signalCount === 3 ? '🔥' : '⚡';
+      const bookTag = bestBook ? ` @ ${bestBook.toUpperCase()} ${bestBookSpread > 0 ? '+' : ''}${bestBookSpread}` : '';
+      const pinnTag = pinnSpread != null ? ` | Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : '';
+      const mvTag = signal3For ? ' | Movement ✅' : '';
       
-      // Store pinnacle data on prediction for Firebase
+      console.log(`   ${grade} ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} | ${signalCount} signals | ${units}u ${favDog}${pinnTag}${bookTag}${mvTag} | SpreadEV ${spreadEVPct}%`);
+      
+      // Store signal data on prediction for Firebase
       if (prediction && !prediction.error) {
-        prediction.pinnacleSpreadEdge = pinnacleSpreadEdge;
         prediction.spreadEV = spreadEVPct;
         prediction.coverProb = Math.round(coverProb * 1000) / 10;
-      }
-      
-      // ── LINE MOVEMENT GATE ─────────────────────────────────────────
-      const adjustedUnits = applyMovementGate(tierInfo.units, best.movementTier);
-      
-      const evDisplay = `SpreadEV ${spreadEVPct}%`;
-      const favDog = best.isFavorite ? 'FAV' : 'DOG';
-      
-      if (adjustedUnits === null) {
-        flaggedCount++;
-        const mvStr = best.lineMovement != null ? `${best.lineMovement > 0 ? '+' : ''}${best.lineMovement}` : '?';
-        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} ${evDisplay}${pinnTag} FLAGGED (line moved ${mvStr} against, opener: ${best.openerSpread})`);
-      } else {
-        tierInfo.units = adjustedUnits;
-        const mvTag = best.movementTier === 'CONFIRM' ? '🟢 STEAM' : best.movementTier === 'NEUTRAL' ? '⚪' : '';
-        console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} ${evDisplay}${pinnTag} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${mvTag}`);
+        prediction.signalCount = signalCount;
+        prediction.pinnEdgePts = pinnEdgePts;
+        prediction.bestBook = bestBook;
       }
       
       picks.push({
         game,
-        sideData: best,
+        sideData: { ...best, units, signalCount, bestBook, bestBookSpread, pinnSpread, pinnEdgePts },
         prediction: (prediction && !prediction.error) ? prediction : null,
         otherSide: best === evaluation.away ? evaluation.home : evaluation.away,
       });
     }
     
-    picks.sort((a, b) => b.sideData.marginOverSpread - a.sideData.marginOverSpread);
+    picks.sort((a, b) => b.sideData.signalCount - a.sideData.signalCount || b.sideData.marginOverSpread - a.sideData.marginOverSpread);
     
     console.log(`\n   📊 Games analyzed: ${matchedGames.length}`);
-    console.log(`   ❌ No model data: ${noModelData}`);
-    console.log(`   ❌ No spread data / no cover: ${noSpreadData}`);
-    console.log(`   ⬇️  Below MOS floor (${MOS_FLOOR}): ${belowFloor}`);
-    console.log(`   🚫 FLAGGED (line moved against): ${flaggedCount}`);
-    console.log(`   ✅ QUALIFYING ATS PICKS: ${picks.length}\n`);
+    console.log(`   ❌ No model data / no cover: ${noModelData + noSpreadData}`);
+    console.log(`   ⬇️  Below MOS floor: ${belowFloor}`);
+    console.log(`   🚫 Movement against — SKIPPED: ${flaggedCount}`);
+    console.log(`   📋 One signal only — SKIPPED: ${oneSignalOnly}`);
+    console.log(`   ✅ QUALIFYING PICKS (2+ signals): ${picks.length}\n`);
     
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 3B: EVALUATE TOTALS (O/U — 20/80 DR/HS blend for direction)
@@ -1591,7 +1613,7 @@ async function fetchPrimePicks() {
     // ═══════════════════════════════════════════════════════════════════════
     console.log('\n');
     console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-    console.log('║         PRIME PICKS V9 — MOS + BothCover + Pinnacle Spreads                 ║');
+    console.log('║         PRIME PICKS V10 — Three-Signal System                                ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
     console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);

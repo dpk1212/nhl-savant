@@ -1,18 +1,13 @@
 /**
- * CHECK LINE MOVEMENT V2 — Evaluation-Based Line Monitor
+ * CHECK LINE MOVEMENT V10 — Three-Signal Line Monitor
  *
  * The morning fetch saves model evaluations for EVERY game to Firebase.
- * This script uses the Odds API to get current lines and re-evaluates
- * each game against the stored model data. When the market aligns with
- * the model (MOS/MOT crosses threshold + movement gate passes), it
- * creates/upgrades the official bet. When lines move against, it kills.
+ * This script re-evaluates using the Three-Signal System:
+ *   S1: Both models agree on cover (from stored evaluations)
+ *   S2: Retail book softer than Pinnacle by ≥0.5pt (live fetch)
+ *   S3: Line moved ≥0.5pt toward pick since open
  *
- * Flow:
- *   1. Load ALL today's game evaluations from Firebase (static model data)
- *   2. Load existing bets from Firebase (to update/kill)
- *   3. Fetch current lines from The Odds API (~1 credit)
- *   4. For each game: evaluate both ATS sides + totals at current lines
- *   5. Create new bets, upgrade existing, or kill when edge disappears
+ * Decision: 3 signals = bet (size by Pinnacle edge), 2 = 1u, against = skip
  *
  * Usage: npm run check-lines
  */
@@ -261,7 +256,7 @@ async function retryFetch(url, retries = 3, delay = 2000) {
 }
 
 async function fetchCurrentLines() {
-  const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads,totals&oddsFormat=american`;
+  const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=spreads,totals&oddsFormat=american&bookmakers=pinnacle,draftkings,fanduel,betmgm,caesars`;
   const res = await retryFetch(url);
   if (!res.ok) throw new Error(`Odds API error: ${res.status} ${res.statusText}`);
 
@@ -279,10 +274,30 @@ async function fetchCurrentLines() {
     let homeBook = null;
     let overBook = null;
     let underBook = null;
+    let pinnacle = null;
+    const retail = [];
 
     for (const bk of (game.bookmakers || [])) {
       const spreadMarket = bk.markets?.find(m => m.key === 'spreads');
       if (spreadMarket) {
+        const awayOut = spreadMarket.outcomes.find(o => teamsMatchFuzzy(o.name, game.away_team));
+        const homeOut = spreadMarket.outcomes.find(o => teamsMatchFuzzy(o.name, game.home_team));
+
+        if (bk.key === 'pinnacle' && awayOut && homeOut) {
+          pinnacle = {
+            awaySpread: awayOut.point,
+            homeSpread: homeOut.point,
+            awayOdds: awayOut.price,
+            homeOdds: homeOut.price,
+          };
+        } else if (awayOut && homeOut) {
+          retail.push({
+            book: bk.key,
+            awaySpread: awayOut.point,
+            homeSpread: homeOut.point,
+          });
+        }
+
         for (const o of spreadMarket.outcomes) {
           const isAway = teamsMatchFuzzy(o.name, game.away_team);
           const isHome = teamsMatchFuzzy(o.name, game.home_team);
@@ -325,6 +340,8 @@ async function fetchCurrentLines() {
       highestTotal,
       total: lowestTotal,
       bestBooks: { away: awayBook, home: homeBook, over: overBook, under: underBook },
+      pinnacle,
+      retail,
     };
   });
 }
@@ -439,10 +456,10 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
   const teamNorm = pickTeam.replace(/\s+/g, '_').toUpperCase();
   const betId = `${date}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`;
 
-  const adjustedUnits = applyMovementGate(sideResult.tierInfo.units, sideResult.movementTier, sideResult.movementLabel);
-  const isFlagged = adjustedUnits === null;
-  const units = isFlagged ? 0 : adjustedUnits;
-  const tier = sideResult.tierInfo.tier;
+  const signalCount = sideResult.signalCount || 0;
+  const isFlagged = sideResult.movementTier === 'FLAGGED' || signalCount < 2;
+  const units = isFlagged ? 0 : (sideResult.units || 1);
+  const tier = signalCount === 3 ? 'THREE_SIGNAL' : signalCount === 2 ? 'TWO_SIGNAL' : 'INSUFFICIENT';
 
   const betRef = doc(db, 'basketball_bets', betId);
   const existing = await getDoc(betRef);
@@ -463,6 +480,11 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       'spreadAnalysis.hsCovers': sideResult.hsCovers,
       'spreadAnalysis.bothModelsCover': sideResult.bothCover,
       'spreadAnalysis.unitTier': tier,
+      'spreadAnalysis.signalCount': signalCount,
+      'spreadAnalysis.bestBook': sideResult.bestBook || null,
+      'spreadAnalysis.bestBookSpread': sideResult.bestBookSpread || null,
+      'spreadAnalysis.pinnacleSpread': sideResult.pinnSpread || null,
+      'spreadAnalysis.pinnEdgePts': sideResult.pinnEdgePts || 0,
       'betRecommendation.lineMovement': sideResult.lineMovement,
       'betRecommendation.movementTier': newTier,
       'betRecommendation.marginOverSpread': sideResult.mos,
@@ -553,6 +575,11 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       drCovers: sideResult.drCovers, hsCovers: sideResult.hsCovers,
       blendCovers: sideResult.blendCovers, bothModelsCover: sideResult.bothCover,
       unitTier: tier, isFavorite: sideResult.isFavorite,
+      signalCount: sideResult.signalCount || 0,
+      bestBook: sideResult.bestBook || null,
+      bestBookSpread: sideResult.bestBookSpread || null,
+      pinnacleSpread: sideResult.pinnSpread || null,
+      pinnEdgePts: sideResult.pinnEdgePts || 0,
     },
     prediction: {
       bestTeam: pickTeam, bestBet: sideResult.side,
@@ -582,7 +609,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     firstRecommendedAt: Date.now(), lastUpdatedAt: Date.now(),
     lastLineCheckAt: Date.now(),
     pinnacle: evalData.pinnacle || null,
-    source: 'LINE_MONITOR_V9',
+    source: 'LINE_MONITOR_V10',
     isPrimePick: true, isATSPick: true,
     savantPick: sideResult.mos >= 4,
     betRecommendation: {
@@ -600,8 +627,9 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
   };
 
   await setDoc(betRef, betData);
-  const mvTag = sideResult.movementLabel ? `${sideResult.movementLabel} ${sideResult.movementSignal}` : '';
-  console.log(`   🆕 NEW BET: ${pickTeam} ${sideResult.spread} → ${units}u [${tier}] MOS +${sideResult.mos} ${mvTag}`);
+  const grade = signalCount === 3 ? '🔥' : '⚡';
+  const bookTag = sideResult.bestBook ? ` @ ${sideResult.bestBook.toUpperCase()}` : '';
+  console.log(`   🆕 NEW BET: ${grade} ${pickTeam} ${sideResult.spread} → ${units}u [${tier}] MOS +${sideResult.mos} | ${signalCount} signals${bookTag}`);
   counters.created++;
 }
 
@@ -810,7 +838,7 @@ async function killExistingBet(betDoc, reason, counters) {
 async function checkLineMovement() {
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║        LINE MONITOR V2 — Evaluation-Based Line Tracking                       ║');
+  console.log('║        LINE MONITOR V10 — Three-Signal Line Tracking                             ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
   console.log('\n');
 
@@ -876,7 +904,7 @@ async function checkLineMovement() {
     const model = evalData.modelData;
     const openers = evalData.openers;
 
-    // ── ATS: evaluate both sides, pick best ──
+    // ── ATS: evaluate both sides with Three-Signal System ──
     const atsResults = evaluateATSFromEval(evalData, oddsGame.awaySpread, oddsGame.homeSpread);
     const best = atsResults.sort((a, b) => b.mos - a.mos)[0];
 
@@ -885,12 +913,35 @@ async function checkLineMovement() {
       const openerMOS = openerSpread != null ? Math.round((best.blendedMargin + openerSpread) * 10) / 10 : null;
       const lineShift = (openerSpread != null && best.spread != null) ? Math.round((best.spread - openerSpread) * 10) / 10 : null;
 
+      // Three-Signal evaluation
+      const signal1 = best.bothCover && best.mos >= 1.0;
+      let signal2 = false;
+      let bestBook = null;
+      let bestBookSpread = null;
+      let pinnSpread = null;
+      let pinnEdgePts = 0;
+      if (oddsGame.pinnacle) {
+        pinnSpread = best.side === 'away' ? oddsGame.pinnacle.awaySpread : oddsGame.pinnacle.homeSpread;
+        for (const r of oddsGame.retail) {
+          const retailSp = best.side === 'away' ? r.awaySpread : r.homeSpread;
+          const edge = retailSp - pinnSpread;
+          if (edge >= 0.5 && edge > pinnEdgePts) {
+            pinnEdgePts = Math.round(edge * 10) / 10;
+            bestBook = r.book;
+            bestBookSpread = retailSp;
+            signal2 = true;
+          }
+        }
+      }
+      const signal3For = best.movementTier === 'CONFIRM';
+      const signal3Against = best.movementTier === 'FLAGGED';
+      const signalCount = (signal1 ? 1 : 0) + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
+
       let status = '—';
-      const isMarketConfirmed = best.tierInfo?.tier === 'MARKET_CONFIRMED';
-      if (best.qualifies && best.movementTier === 'FLAGGED') status = '🚫 FLAGGED';
-      else if (best.qualifies && isMarketConfirmed) status = '🟢 MKTCONF';
-      else if (best.qualifies && best.movementTier === 'CONFIRM') status = '🟢 BET_NOW';
-      else if (best.qualifies) status = '🟡 HOLD';
+      if (signal1 && signal3Against) status = '🚫 FLAGGED';
+      else if (signalCount === 3) status = '🔥 3-SIGNAL';
+      else if (signalCount === 2 && !signal3Against) status = '⚡ 2-SIGNAL';
+      else if (signal1 && !signal3Against) status = '🟡 1-SIGNAL';
       else if (best.mos >= 1.0) status = '👀 NEAR';
       else if (best.blendCovers) status = '· edge';
       else status = '· no';
@@ -906,24 +957,65 @@ async function checkLineMovement() {
         bothCover: best.bothCover,
         movementTier: best.movementTier,
         status,
-        qualifies: best.qualifies,
+        qualifies: signal1 && signalCount >= 2 && !signal3Against,
         gameLabel,
         sideResult: best,
         evalData,
+        signalCount,
+        signal2,
+        bestBook,
+        bestBookSpread,
+        pinnSpread,
+        pinnEdgePts,
       });
     }
 
-    // ── ATS: handle bet actions ──
-    const qualifyingATS = atsResults.filter(r => r.qualifies);
-    if (qualifyingATS.length > 0) {
-      const bestQ = qualifyingATS.sort((a, b) => b.mos - a.mos)[0];
-      const adjustedUnits = applyMovementGate(bestQ.tierInfo.units, bestQ.movementTier, bestQ.movementLabel);
-      if (adjustedUnits !== null || bestQ.movementTier !== 'FLAGGED') {
-        await createOrUpdateATSBet(evalData, bestQ, counters);
+    // ── ATS: handle bet actions (Three-Signal) ──
+    if (best && best.bothCover && best.mos >= 1.0) {
+      const signal3Against = best.movementTier === 'FLAGGED';
+      let signal2 = false;
+      let bestBook = null;
+      let bestBookSpread = null;
+      let pinnSpread = null;
+      let pinnEdgePts = 0;
+      if (oddsGame.pinnacle) {
+        pinnSpread = best.side === 'away' ? oddsGame.pinnacle.awaySpread : oddsGame.pinnacle.homeSpread;
+        for (const r of oddsGame.retail) {
+          const retailSp = best.side === 'away' ? r.awaySpread : r.homeSpread;
+          const edge = retailSp - pinnSpread;
+          if (edge >= 0.5 && edge > pinnEdgePts) {
+            pinnEdgePts = Math.round(edge * 10) / 10;
+            bestBook = r.book;
+            bestBookSpread = retailSp;
+            signal2 = true;
+          }
+        }
+      }
+      const signal3For = best.movementTier === 'CONFIRM';
+      const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
+
+      if (!signal3Against && signalCount >= 2) {
+        let units;
+        if (signalCount === 3) {
+          if (pinnEdgePts >= 1.5) units = 3;
+          else if (pinnEdgePts >= 1.0) units = 2;
+          else units = 1;
+        } else {
+          units = 1;
+        }
+
+        best.signalCount = signalCount;
+        best.bestBook = bestBook;
+        best.bestBookSpread = bestBookSpread;
+        best.pinnSpread = pinnSpread;
+        best.pinnEdgePts = pinnEdgePts;
+        best.units = units;
+
+        await createOrUpdateATSBet(evalData, best, counters);
       }
 
-      const side = bestQ.side === 'away' ? 'AWAY' : 'HOME';
-      const teamNorm = bestQ.teamName.replace(/\s+/g, '_').toUpperCase();
+      const side = best.side === 'away' ? 'AWAY' : 'HOME';
+      const teamNorm = best.teamName.replace(/\s+/g, '_').toUpperCase();
       const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
       const homeNorm = evalData.game.homeTeam.replace(/\s+/g, '_').toUpperCase();
       processedBetIds.add(`${today}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`);
