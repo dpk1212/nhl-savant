@@ -98,11 +98,26 @@ Replace `YYYYMMDD` with today's date (e.g., `20251201` for Dec 1, 2025)
 }
 ```
 
-**Key insight:** NCAA API abbreviates heavily!
+**Key insight:** NCAA API names can be abbreviated OR expanded from what you expect!
+
+**Common abbreviations:**
 - "West Georgia" → **"West Ga."**
 - "Middle Tennessee" → **"Middle Tenn."**
 - "Incarnate Word" → **"UIW"**
 - "McNeese State" → **"McNeese"**
+- "Ball State" → **"Ball St."**
+- "Eastern Michigan" → **"Eastern Mich."**
+- "Georgia State" → **"Georgia St."**
+- "St. John's" → **"St. John's (NY)"**
+
+**Common expansions (name is LONGER than expected):**
+- "Army" → **"Army West Point"**
+- "Miami OH" → **"Miami (OH)"**
+- "UNC Wilmington" → **"UNCW"**
+
+**CRITICAL:** The fuzzy matcher requires 80% length similarity. If the NCAA API
+name is much longer or shorter than what's in the CSV, matching WILL fail silently
+(no live scores). Always verify by fetching the API directly.
 
 **Action:** Copy the exact `"short"` name into CSV column 6 (ncaa_name)
 
@@ -122,9 +137,9 @@ grep -i "TEAM_NAME" public/haslametrics.md | head -3
 
 ## STEP 3: Fix the CSV 🔧
 
-### CSV Structure (8 columns):
+### CSV Structure (10 columns):
 ```csv
-normalized_name,oddstrader_name,haslametrics_name,dratings_name,conference,ncaa_name,notes,espn_name
+normalized_name,oddstrader_name,haslametrics_name,dratings_name,conference,ncaa_name,notes,espn_name,barttorvik_name,odds_api_name
 ```
 
 ### Example Fix:
@@ -151,13 +166,15 @@ Temple,Temple,Temple,Temple Owls,TBD,Temple,✓,Temple
 - Spaces matter!
 - Periods matter!
 
-### Rule 2: Three Name Columns to Update
+### Rule 2: Five Name Columns to Update
 
 | Column | Source | Example | Common Mistakes |
 |--------|--------|---------|-----------------|
 | **3** | Haslametrics | `Temple` | Usually simple, but check for abbreviations |
 | **4** | D-Ratings | `Temple Owls` | ⚠️ Includes mascots (sometimes!) |
-| **6** | NCAA API | `Temple` | ⚠️ Heavily abbreviated! |
+| **6** | NCAA API | `Army West Point` | ⚠️ Abbreviated OR expanded! See below |
+| **8** | ESPN API | `Temple` | Usually matches display name |
+| **9** | Barttorvik | `Temple` | Usually matches normalized name |
 
 ### Rule 3: Check for Duplicates FIRST
 
@@ -190,18 +207,26 @@ D-Ratings is INCONSISTENT with mascots:
 
 **How to know:** Run `checkDRatingsParsing.js` and copy EXACTLY what you see!
 
-### Rule 5: NCAA API Abbreviations
+### Rule 5: NCAA API Names (Not Always Abbreviations!)
 
-NCAA API loves abbreviations:
+NCAA API `names.short` can be abbreviated, expanded, or have qualifiers:
 
-| Full Name | NCAA API Name |
-|-----------|---------------|
-| West Georgia | `West Ga.` |
-| Middle Tennessee | `Middle Tenn.` |
-| Incarnate Word | `UIW` |
-| McNeese State | `McNeese` |
-| Saint Francis | `Saint Francis` |
-| North Alabama | `North Ala.` |
+| Our Name | NCAA API `names.short` | Issue |
+|-----------|---------------|-------|
+| West Georgia | `West Ga.` | Abbreviated |
+| Middle Tennessee | `Middle Tenn.` | Abbreviated |
+| Incarnate Word | `UIW` | Acronym |
+| McNeese State | `McNeese` | Dropped "State" |
+| **Army** | **`Army West Point`** | **Expanded** (WILL break matching!) |
+| St. John's | `St. John's (NY)` | Added qualifier |
+| Miami OH | `Miami (OH)` | Different format |
+| Ball State | `Ball St.` | Abbreviated |
+| Eastern Michigan | `Eastern Mich.` | Abbreviated |
+| North Carolina A&T | `N.C. A&T` | Abbreviated |
+
+**The fuzzy matcher has an 80% length ratio requirement.** If "Army" (4 chars) is in
+the CSV but the API returns "Army West Point" (15 chars), the ratio is 27% — match
+fails silently and live scores won't appear.
 
 **How to know:** Check the NCAA API endpoint directly!
 
