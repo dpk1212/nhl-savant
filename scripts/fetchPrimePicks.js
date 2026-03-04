@@ -1,25 +1,20 @@
 /**
- * PRIME PICKS V7 — MOS-Primary + Totals System
+ * PRIME PICKS V8 — MOS×EV Intersection + Pinnacle Devigging
  *
  * SPREADS (ATS):
- *   MOS (Margin Over Spread) is the SOLE gate for ATS pick selection.
- *   Both sides of every game are evaluated independently.
- *   Both models must agree on the cover direction.
+ *   Dual-signal qualification:
+ *     1. MOS ≥ 2.0 — model margin over opener spread
+ *     2. EV ≥ 2%   — ensemble model vs market-implied probability
+ *     3. Both models must agree on cover direction (bothCover)
+ *     4. EV and MOS must pick the SAME team (intersection)
+ *   Pinnacle moneyline is devigged for sharp market true probabilities.
+ *   Line movement gate kills bets where line moves ≥ 0.5 against.
  *
  * TOTALS (O/U):
- *   MOT (Margin Over Total) uses the same logic for Over/Under picks.
- *   Both models must agree on direction (both OVER or both UNDER).
- *   Blended predicted total (90% DR / 10% HS) vs market total line.
+ *   20% DR / 80% HS blend for direction.
+ *   DR UNDER contrarian boost, MOT outlier cap.
  *
  * All picks are at -110 odds.
- *
- * UNIT SIZING (1-5 scale, based on MOS/MOT):
- *   4.0+     → 5u  MAXIMUM
- *   3.0-4    → 4u  ELITE
- *   2.5-3    → 3u  STRONG
- *   2.25-2.5 → 2u  SOLID
- *   2.0-2.25 → 1u  BASE
- *   < 2.0    → SKIP
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -60,6 +55,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const ODDS_API_KEY = process.env.ODDS_API_KEY;
+const MIN_EV_THRESHOLD = 2.0;
+
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
 const MOT_FLOOR = 0.5;
@@ -93,11 +91,10 @@ function classifyTotalsMovement(lm) {
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-console.log('║              PRIME PICKS V7 — MOS-Primary + Totals                             ║');
+console.log('║         PRIME PICKS V8 — MOS×EV Intersection + Pinnacle Devigging            ║');
 console.log('║                                                                               ║');
-console.log('║  ATS:   MOS >= 2.0 • Both models cover • -110                                  ║');
-console.log('║  O/U:   MOT >= 2.0 • Both models agree direction • -110                        ║');
-console.log('║  UNITS: 5u(4+) | 4u(3-4) | 3u(2.5-3) | 2u(2.25-2.5) | 1u(2-2.25)             ║');
+console.log('║  ATS:   MOS ≥ 2 + EV ≥ 2% + BothCover + Same Team • Pinnacle sharp lines    ║');
+console.log('║  O/U:   20/80 DR/HS blend • DR UNDER boost • MOT cap                         ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
 
@@ -564,6 +561,77 @@ function calcSpreadEV(coverProb) {
   return (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
 }
 
+// ─── Pinnacle Devigging ──────────────────────────────────────────────
+// Multiplicative method: remove vig by dividing each implied prob by their sum.
+// Pinnacle's ~2-3% vig means sum of implied probs ≈ 1.02-1.03.
+
+function oddsToImpliedProb(odds) {
+  if (odds > 0) return 100 / (odds + 100);
+  return Math.abs(odds) / (Math.abs(odds) + 100);
+}
+
+function devigMoneyline(awayOdds, homeOdds) {
+  const awayRaw = oddsToImpliedProb(awayOdds);
+  const homeRaw = oddsToImpliedProb(homeOdds);
+  const total = awayRaw + homeRaw;
+  return {
+    awayTrueProb: awayRaw / total,
+    homeTrueProb: homeRaw / total,
+    vig: Math.round((total - 1) * 10000) / 100,
+  };
+}
+
+async function fetchPinnacleOdds() {
+  if (!ODDS_API_KEY) {
+    console.log('   ⚠️  No ODDS_API_KEY — skipping Pinnacle fetch');
+    return [];
+  }
+  try {
+    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=h2h&oddsFormat=american&bookmakers=pinnacle`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.log(`   ⚠️  Pinnacle fetch failed: ${res.status}`);
+      return [];
+    }
+    const remaining = res.headers.get('x-requests-remaining');
+    console.log(`   📡 Odds API credits remaining: ${remaining}`);
+    const data = await res.json();
+    return data.map(game => {
+      const pinn = game.bookmakers?.find(b => b.key === 'pinnacle');
+      if (!pinn) return null;
+      const h2h = pinn.markets?.find(m => m.key === 'h2h');
+      if (!h2h || h2h.outcomes.length < 2) return null;
+      const awayOut = h2h.outcomes.find(o => o.name === game.away_team);
+      const homeOut = h2h.outcomes.find(o => o.name === game.home_team);
+      if (!awayOut || !homeOut) return null;
+      const devigged = devigMoneyline(awayOut.price, homeOut.price);
+      return {
+        awayTeam: game.away_team,
+        homeTeam: game.home_team,
+        awayOdds: awayOut.price,
+        homeOdds: homeOut.price,
+        ...devigged,
+      };
+    }).filter(Boolean);
+  } catch (err) {
+    console.log(`   ⚠️  Pinnacle fetch error: ${err.message}`);
+    return [];
+  }
+}
+
+function attachPinnacleData(matchedGames, pinnacleData) {
+  const norm = n => n?.toLowerCase().replace(/[^a-z]/g, '') || '';
+  let matched = 0;
+  for (const game of matchedGames) {
+    const pinn = pinnacleData.find(p =>
+      (norm(game.awayTeam).includes(norm(p.awayTeam)) || norm(p.awayTeam).includes(norm(game.awayTeam))) &&
+      (norm(game.homeTeam).includes(norm(p.homeTeam)) || norm(p.homeTeam).includes(norm(game.homeTeam)))
+    );
+    if (pinn) { game.pinnacle = pinn; matched++; }
+  }
+  return matched;
+}
+
 /**
  * Save a pick to Firebase — unified function for the MOS-Primary system.
  * All picks are ATS at -110.
@@ -731,7 +799,17 @@ async function savePick(db, game, sideData, prediction) {
       haslametricsHomeProb: prediction?.haslametricsHomeProb || null,
       marketAwayProb: prediction?.marketAwayProb || null,
       marketHomeProb: prediction?.marketHomeProb || null,
+      pinnacleEdge: prediction?.pinnacleEdge || null,
+      pinnacleProb: prediction?.pinnacleProb || null,
     },
+    
+    pinnacle: game.pinnacle ? {
+      awayOdds: game.pinnacle.awayOdds,
+      homeOdds: game.pinnacle.homeOdds,
+      awayTrueProb: game.pinnacle.awayTrueProb,
+      homeTrueProb: game.pinnacle.homeTrueProb,
+      vig: game.pinnacle.vig,
+    } : null,
     
     result: {
       awayScore: null,
@@ -751,7 +829,7 @@ async function savePick(db, game, sideData, prediction) {
     lockedAt: !isFlagged ? Date.now() : null,
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
-    source: 'PRIME_MOS',
+    source: 'PRIME_EV_MOS',
     
     isPrimePick: true,
     isATSPick: true,
@@ -1107,19 +1185,29 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
     marketAwayProb: prediction.marketAwayProb ?? null,
     marketHomeProb: prediction.marketHomeProb ?? null,
     bestEV: prediction.bestEV ?? null,
+    bestBet: prediction.bestBet ?? null,
+    bestTeam: prediction.bestTeam ?? null,
     bestOdds: prediction.bestOdds ?? null,
     grade: prediction.grade ?? null,
+  } : null;
+
+  const pinnacleData = game.pinnacle ? {
+    awayOdds: game.pinnacle.awayOdds,
+    homeOdds: game.pinnacle.homeOdds,
+    awayTrueProb: game.pinnacle.awayTrueProb,
+    homeTrueProb: game.pinnacle.homeTrueProb,
+    vig: game.pinnacle.vig,
   } : null;
 
   const evalRef = doc(db, 'basketball_bets', evalId);
   const existingEval = await getDoc(evalRef);
 
   if (existingEval.exists()) {
-    // Preserve original modelData/openers — only store latest as a separate field
     await updateDoc(evalRef, {
       latestModelData: currentModelData,
       latestPrediction: currentPrediction,
       latestOpeners: currentOpeners,
+      pinnacle: pinnacleData,
       barttorvik: game.barttorvik || null,
       lastUpdatedAt: Date.now(),
       lastRefetchAt: Date.now(),
@@ -1138,6 +1226,7 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
       modelData: currentModelData,
       openers: currentOpeners,
       prediction: currentPrediction,
+      pinnacle: pinnacleData,
       barttorvik: game.barttorvik || null,
       createdAt: Date.now(),
       lastUpdatedAt: Date.now(),
@@ -1216,6 +1305,11 @@ async function fetchPrimePicks() {
     await fs.writeFile(join(__dirname, '../public/dratings.md'), drateResult.markdown, 'utf8');
     console.log('   ✅ D-Ratings saved\n');
     
+    // 1e. Fetch Pinnacle sharp lines (devigged true probabilities)
+    console.log('📊 Fetching Pinnacle sharp lines for devigging...');
+    const pinnacleData = await fetchPinnacleOdds();
+    console.log(`   ✅ Pinnacle: ${pinnacleData.length} games with sharp lines\n`);
+    
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 2: PARSE AND MATCH DATA
     // ═══════════════════════════════════════════════════════════════════════
@@ -1242,7 +1336,11 @@ async function fetchPrimePicks() {
     console.log(`   📊 Totals games: ${totalsGames.length}`);
     console.log(`   📈 Haslametrics teams: ${haslaData.length}`);
     console.log(`   🎯 D-Ratings predictions: ${dratePreds.length}`);
-    console.log(`   ✅ Matched games: ${matchedGames.length}\n`);
+    console.log(`   ✅ Matched games: ${matchedGames.length}`);
+    
+    // Attach Pinnacle devigged probabilities to matched games
+    const pinnMatched = attachPinnacleData(matchedGames, pinnacleData);
+    console.log(`   🎯 Pinnacle sharp lines matched: ${pinnMatched}/${matchedGames.length}\n`);
     
     const edgeCalculator = new BasketballEdgeCalculator();
     
@@ -1266,13 +1364,16 @@ async function fetchPrimePicks() {
     // STEP 3: EVALUATE ALL GAMES (MOS-Primary — both sides)
     // ═══════════════════════════════════════════════════════════════════════
     console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│ STEP 3: MOS-PRIMARY ANALYSIS (both sides of every game)                      │');
+    console.log('│ STEP 3: MOS×EV INTERSECTION ANALYSIS (both sides of every game)              │');
+    console.log('│         MOS ≥ 2 + BothCover + EV ≥ 2% + Same Team Agreement                 │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
     const picks = [];
     let noModelData = 0;
     let noSpreadData = 0;
     let belowFloor = 0;
+    let evBelowThreshold = 0;
+    let evMismatch = 0;
     let flaggedCount = 0;
     
     for (const game of matchedGames) {
@@ -1302,21 +1403,56 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // LINE MOVEMENT GATE
+      // ── EV GATE: Market must confirm edge ──────────────────────────
+      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
+      let bestEV = (prediction && !prediction.error) ? prediction.bestEV : null;
+      const evTeamSide = (prediction && !prediction.error) ? prediction.bestBet : null;
+      
+      // Pinnacle sharp edge enhancement
+      let pinnacleEdge = null;
+      let pinnacleProb = null;
+      if (game.pinnacle && prediction && !prediction.error) {
+        const modelProb = best.side === 'away' ? prediction.ensembleAwayProb : prediction.ensembleHomeProb;
+        pinnacleProb = best.side === 'away' ? game.pinnacle.awayTrueProb : game.pinnacle.homeTrueProb;
+        pinnacleEdge = Math.round((modelProb - pinnacleProb) * 1000) / 10;
+      }
+      
+      if (bestEV == null || bestEV < MIN_EV_THRESHOLD) {
+        evBelowThreshold++;
+        const pinnTag = pinnacleEdge != null ? ` | Sharp edge: ${pinnacleEdge > 0 ? '+' : ''}${pinnacleEdge}%` : '';
+        console.log(`   📉 ${best.teamName} ${best.spread} — MOS +${mos} ✓ but EV ${bestEV?.toFixed(1) ?? 'N/A'}% < ${MIN_EV_THRESHOLD}%${pinnTag} (FILTERED)`);
+        continue;
+      }
+      
+      // EV-MOS INTERSECTION: both signals must pick the SAME team
+      if (evTeamSide !== best.side) {
+        evMismatch++;
+        const evTeam = evTeamSide === 'away' ? game.awayTeam : game.homeTeam;
+        console.log(`   ⚡ ${game.awayTeam} @ ${game.homeTeam} — MOS picks ${best.teamName} (${best.side}) but EV picks ${evTeam} (${evTeamSide}) → MISMATCH`);
+        continue;
+      }
+      
+      // ── LINE MOVEMENT GATE ─────────────────────────────────────────
       const adjustedUnits = applyMovementGate(tierInfo.units, best.movementTier);
       
-      const prediction = edgeCalculator.calculateEnsemblePrediction(game);
-      const evDisplay = (prediction && !prediction.error) ? `EV ${prediction.bestEV?.toFixed(1)}%` : '';
+      const evDisplay = `EV ${bestEV.toFixed(1)}%`;
+      const pinnTag = pinnacleEdge != null ? ` Pinn ${pinnacleEdge > 0 ? '+' : ''}${pinnacleEdge}%` : '';
       const favDog = best.isFavorite ? 'FAV' : 'DOG';
+      
+      // Attach pinnacle edge to prediction for storage
+      if (prediction && !prediction.error) {
+        prediction.pinnacleEdge = pinnacleEdge;
+        prediction.pinnacleProb = pinnacleProb;
+      }
       
       if (adjustedUnits === null) {
         flaggedCount++;
         const mvStr = best.lineMovement != null ? `${best.lineMovement > 0 ? '+' : ''}${best.lineMovement}` : '?';
-        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} FLAGGED (line moved ${mvStr} against pick, opener: ${best.openerSpread})`);
+        console.log(`   🚫 ${best.teamName} ${best.spread} — MOS +${mos} ${evDisplay}${pinnTag} FLAGGED (line moved ${mvStr} against, opener: ${best.openerSpread})`);
       } else {
         tierInfo.units = adjustedUnits;
         const mvTag = best.movementTier === 'CONFIRM' ? '🟢 STEAM' : best.movementTier === 'NEUTRAL' ? '⚪' : '';
-        console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${mvTag} ${evDisplay}`);
+        console.log(`   ✅ ${best.teamName} (${best.side.toUpperCase()}) ${best.spread} — MOS +${mos} ${evDisplay}${pinnTag} → ${tierInfo.units}u [${tierInfo.tier}] ${favDog} ${mvTag}`);
       }
       
       picks.push({
@@ -1331,8 +1467,10 @@ async function fetchPrimePicks() {
     
     console.log(`\n   📊 Games analyzed: ${matchedGames.length}`);
     console.log(`   ❌ No model data: ${noModelData}`);
-    console.log(`   ❌ No spread data: ${noSpreadData}`);
+    console.log(`   ❌ No spread data / no cover: ${noSpreadData}`);
     console.log(`   ⬇️  Below MOS floor (${MOS_FLOOR}): ${belowFloor}`);
+    console.log(`   📉 Below EV floor (${MIN_EV_THRESHOLD}%): ${evBelowThreshold}`);
+    console.log(`   ⚡ EV-MOS team mismatch: ${evMismatch}`);
     console.log(`   🚫 FLAGGED (line moved against): ${flaggedCount}`);
     console.log(`   ✅ QUALIFYING ATS PICKS: ${picks.length}\n`);
     
@@ -1448,7 +1586,7 @@ async function fetchPrimePicks() {
     // ═══════════════════════════════════════════════════════════════════════
     console.log('\n');
     console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-    console.log('║                    PRIME PICKS V7 SUMMARY                                    ║');
+    console.log('║         PRIME PICKS V8 — MOS×EV + Pinnacle Devigging                        ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
     console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);

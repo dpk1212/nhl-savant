@@ -53,6 +53,7 @@ const db = getFirestore(app);
 // because we have two signals: model + sharp money agreement.
 // Standard thresholds apply when no confirmation (NEUTRAL).
 
+const MIN_EV_THRESHOLD = 2.0;
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
 const MOT_FLOOR = 0.5;
@@ -523,9 +524,26 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     return;
   }
 
+  const pred = evalData.prediction;
+
+  // EV GATE: morning prediction must show EV >= 2%
+  const morningEV = pred?.bestEV ?? null;
+  if (morningEV == null || morningEV < MIN_EV_THRESHOLD) {
+    console.log(`   📉 ${pickTeam} — EV ${morningEV?.toFixed(1) ?? 'N/A'}% < ${MIN_EV_THRESHOLD}% (skipped, no edge)`);
+    counters.skipped++;
+    return;
+  }
+
+  // EV-MOS INTERSECTION: morning EV must pick same team
+  const evSide = pred?.bestBet;
+  if (evSide && evSide !== sideResult.side) {
+    console.log(`   ⚡ ${pickTeam} — MOS picks ${sideResult.side} but EV picks ${evSide} (mismatch, skipped)`);
+    counters.skipped++;
+    return;
+  }
+
   const coverProb = estimateCoverProb(sideResult.mos);
   const spreadEV = calcSpreadEV(coverProb);
-  const pred = evalData.prediction;
 
   const betData = {
     id: betId, date, timestamp: Date.now(), sport: 'BASKETBALL',
@@ -569,7 +587,8 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     lockedAt: Date.now(),
     firstRecommendedAt: Date.now(), lastUpdatedAt: Date.now(),
     lastLineCheckAt: Date.now(),
-    source: 'LINE_MONITOR',
+    pinnacle: evalData.pinnacle || null,
+    source: 'LINE_MONITOR_EV',
     isPrimePick: true, isATSPick: true,
     savantPick: sideResult.mos >= 4,
     betRecommendation: {
