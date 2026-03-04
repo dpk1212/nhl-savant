@@ -1,20 +1,18 @@
 /**
- * PRIME PICKS V8 — MOS×EV Intersection + Pinnacle Devigging
+ * PRIME PICKS V9 — MOS + BothCover + Pinnacle Spread Confirmation
  *
  * SPREADS (ATS):
- *   Dual-signal qualification:
- *     1. MOS ≥ 2.0 — model margin over opener spread
- *     2. EV ≥ 2%   — ensemble model vs market-implied probability
- *     3. Both models must agree on cover direction (bothCover)
- *     4. EV and MOS must pick the SAME team (intersection)
- *   Pinnacle moneyline is devigged for sharp market true probabilities.
- *   Line movement gate kills bets where line moves ≥ 0.5 against.
+ *   1. MOS ≥ 2.0 — blended model margin over opener spread
+ *   2. Both models must agree on cover direction (bothCover)
+ *   3. Line movement gate kills bets where line moves ≥ 0.5 against
+ *   4. Pinnacle spread lines fetched for sharp market comparison
+ *   5. Spread EV calculated from cover probability at -110 (NOT moneyline)
  *
  * TOTALS (O/U):
  *   20% DR / 80% HS blend for direction.
  *   DR UNDER contrarian boost, MOT outlier cap.
  *
- * All picks are at -110 odds.
+ * All spread picks are at -110 odds.
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -56,7 +54,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const ODDS_API_KEY = process.env.ODDS_API_KEY;
-const MIN_EV_THRESHOLD = 2.0;
 
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
@@ -91,9 +88,9 @@ function classifyTotalsMovement(lm) {
 
 console.log('\n');
 console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-console.log('║         PRIME PICKS V8 — MOS×EV Intersection + Pinnacle Devigging            ║');
+console.log('║         PRIME PICKS V9 — MOS + BothCover + Pinnacle Spread Lines             ║');
 console.log('║                                                                               ║');
-console.log('║  ATS:   MOS ≥ 2 + EV ≥ 2% + BothCover + Same Team • Pinnacle sharp lines    ║');
+console.log('║  ATS:   MOS ≥ 2 + BothCover + Movement Gate • Pinnacle spread comparison     ║');
 console.log('║  O/U:   20/80 DR/HS blend • DR UNDER boost • MOT cap                         ║');
 console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
 console.log('\n');
@@ -548,10 +545,22 @@ function applyMovementGate(baseUnits, movementTier, movementLabel) {
 }
 
 /**
- * Estimate cover probability from margin over spread
+ * Estimate cover probability from margin over spread.
+ * Uses normal CDF with CBB ATS std dev ~11 points.
  */
 function estimateCoverProb(mos) {
-  return Math.max(0.01, Math.min(0.95, 0.50 + (mos * 0.03)));
+  const z = mos / 11;
+  return Math.max(0.01, Math.min(0.95, normalCDF(z)));
+}
+
+function normalCDF(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.SQRT2;
+  const t = 1.0 / (1.0 + p * x);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return 0.5 * (1.0 + sign * y);
 }
 
 /**
@@ -561,22 +570,22 @@ function calcSpreadEV(coverProb) {
   return (coverProb * (100 / 110)) - ((1 - coverProb) * 1);
 }
 
-// ─── Pinnacle Devigging ──────────────────────────────────────────────
-// Multiplicative method: remove vig by dividing each implied prob by their sum.
-// Pinnacle's ~2-3% vig means sum of implied probs ≈ 1.02-1.03.
+// ─── Pinnacle Spread Devigging ──────────────────────────────────────
+// Fetches Pinnacle SPREAD lines (not moneyline) because we bet spreads.
+// Devig to get true cover probabilities for sharp market comparison.
 
 function oddsToImpliedProb(odds) {
   if (odds > 0) return 100 / (odds + 100);
   return Math.abs(odds) / (Math.abs(odds) + 100);
 }
 
-function devigMoneyline(awayOdds, homeOdds) {
+function devigSpreadOdds(awayOdds, homeOdds) {
   const awayRaw = oddsToImpliedProb(awayOdds);
   const homeRaw = oddsToImpliedProb(homeOdds);
   const total = awayRaw + homeRaw;
   return {
-    awayTrueProb: awayRaw / total,
-    homeTrueProb: homeRaw / total,
+    awayCoverProb: awayRaw / total,
+    homeCoverProb: homeRaw / total,
     vig: Math.round((total - 1) * 10000) / 100,
   };
 }
@@ -587,7 +596,7 @@ async function fetchPinnacleOdds() {
     return [];
   }
   try {
-    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=h2h&oddsFormat=american&bookmakers=pinnacle`;
+    const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us,eu&markets=spreads&oddsFormat=american&bookmakers=pinnacle`;
     const res = await fetch(url);
     if (!res.ok) {
       console.log(`   ⚠️  Pinnacle fetch failed: ${res.status}`);
@@ -599,15 +608,17 @@ async function fetchPinnacleOdds() {
     return data.map(game => {
       const pinn = game.bookmakers?.find(b => b.key === 'pinnacle');
       if (!pinn) return null;
-      const h2h = pinn.markets?.find(m => m.key === 'h2h');
-      if (!h2h || h2h.outcomes.length < 2) return null;
-      const awayOut = h2h.outcomes.find(o => o.name === game.away_team);
-      const homeOut = h2h.outcomes.find(o => o.name === game.home_team);
+      const spreads = pinn.markets?.find(m => m.key === 'spreads');
+      if (!spreads || spreads.outcomes.length < 2) return null;
+      const awayOut = spreads.outcomes.find(o => o.name === game.away_team);
+      const homeOut = spreads.outcomes.find(o => o.name === game.home_team);
       if (!awayOut || !homeOut) return null;
-      const devigged = devigMoneyline(awayOut.price, homeOut.price);
+      const devigged = devigSpreadOdds(awayOut.price, homeOut.price);
       return {
         awayTeam: game.away_team,
         homeTeam: game.home_team,
+        awaySpread: awayOut.point,
+        homeSpread: homeOut.point,
         awayOdds: awayOut.price,
         homeOdds: homeOut.price,
         ...devigged,
@@ -799,15 +810,18 @@ async function savePick(db, game, sideData, prediction) {
       haslametricsHomeProb: prediction?.haslametricsHomeProb || null,
       marketAwayProb: prediction?.marketAwayProb || null,
       marketHomeProb: prediction?.marketHomeProb || null,
-      pinnacleEdge: prediction?.pinnacleEdge || null,
-      pinnacleProb: prediction?.pinnacleProb || null,
+      pinnacleSpreadEdge: prediction?.pinnacleSpreadEdge || null,
+      spreadEV: prediction?.spreadEV || null,
+      coverProb: prediction?.coverProb || null,
     },
     
     pinnacle: game.pinnacle ? {
+      awaySpread: game.pinnacle.awaySpread,
+      homeSpread: game.pinnacle.homeSpread,
       awayOdds: game.pinnacle.awayOdds,
       homeOdds: game.pinnacle.homeOdds,
-      awayTrueProb: game.pinnacle.awayTrueProb,
-      homeTrueProb: game.pinnacle.homeTrueProb,
+      awayCoverProb: game.pinnacle.awayCoverProb,
+      homeCoverProb: game.pinnacle.homeCoverProb,
       vig: game.pinnacle.vig,
     } : null,
     
@@ -829,7 +843,7 @@ async function savePick(db, game, sideData, prediction) {
     lockedAt: !isFlagged ? Date.now() : null,
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
-    source: 'PRIME_EV_MOS',
+    source: 'PRIME_MOS_V9',
     
     isPrimePick: true,
     isATSPick: true,
@@ -1192,10 +1206,12 @@ async function saveGameEvaluation(db, game, spreadGames, totalsGames, edgeCalcul
   } : null;
 
   const pinnacleData = game.pinnacle ? {
+    awaySpread: game.pinnacle.awaySpread,
+    homeSpread: game.pinnacle.homeSpread,
     awayOdds: game.pinnacle.awayOdds,
     homeOdds: game.pinnacle.homeOdds,
-    awayTrueProb: game.pinnacle.awayTrueProb,
-    homeTrueProb: game.pinnacle.homeTrueProb,
+    awayCoverProb: game.pinnacle.awayCoverProb,
+    homeCoverProb: game.pinnacle.homeCoverProb,
     vig: game.pinnacle.vig,
   } : null;
 
@@ -1364,16 +1380,14 @@ async function fetchPrimePicks() {
     // STEP 3: EVALUATE ALL GAMES (MOS-Primary — both sides)
     // ═══════════════════════════════════════════════════════════════════════
     console.log('┌───────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│ STEP 3: MOS×EV INTERSECTION ANALYSIS (both sides of every game)              │');
-    console.log('│         MOS ≥ 2 + BothCover + EV ≥ 2% + Same Team Agreement                 │');
+    console.log('│ STEP 3: MOS + BothCover + Movement Gate (both sides of every game)           │');
+    console.log('│         MOS ≥ 2 + BothCover + Line not against — Spread EV at -110           │');
     console.log('└───────────────────────────────────────────────────────────────────────────────┘\n');
     
     const picks = [];
     let noModelData = 0;
     let noSpreadData = 0;
     let belowFloor = 0;
-    let evBelowThreshold = 0;
-    let evMismatch = 0;
     let flaggedCount = 0;
     
     for (const game of matchedGames) {
@@ -1403,47 +1417,40 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // ── EV GATE: Market must confirm edge ──────────────────────────
+      // Calculate ensemble prediction for storage (NOT used for filtering)
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
-      let bestEV = (prediction && !prediction.error) ? prediction.bestEV : null;
-      const evTeamSide = (prediction && !prediction.error) ? prediction.bestBet : null;
       
-      // Pinnacle sharp edge enhancement
-      let pinnacleEdge = null;
-      let pinnacleProb = null;
-      if (game.pinnacle && prediction && !prediction.error) {
-        const modelProb = best.side === 'away' ? prediction.ensembleAwayProb : prediction.ensembleHomeProb;
-        pinnacleProb = best.side === 'away' ? game.pinnacle.awayTrueProb : game.pinnacle.homeTrueProb;
-        pinnacleEdge = Math.round((modelProb - pinnacleProb) * 1000) / 10;
+      // ── SPREAD EV (correct metric for spread bets at -110) ─────────
+      const coverProb = estimateCoverProb(mos);
+      const spreadEV = calcSpreadEV(coverProb);
+      const spreadEVPct = Math.round(spreadEV * 1000) / 10;
+      
+      // ── PINNACLE SPREAD COMPARISON ─────────────────────────────────
+      let pinnTag = '';
+      let pinnacleSpreadEdge = null;
+      if (game.pinnacle) {
+        const pinnSpread = best.side === 'away' ? game.pinnacle.awaySpread : game.pinnacle.homeSpread;
+        const pinnCoverProb = best.side === 'away' ? game.pinnacle.awayCoverProb : game.pinnacle.homeCoverProb;
+        const retailSpread = best.openerSpread ?? best.spread;
+        if (pinnSpread != null && pinnCoverProb != null) {
+          pinnacleSpreadEdge = Math.round((coverProb - pinnCoverProb) * 1000) / 10;
+          const lineEdge = Math.round((retailSpread - pinnSpread) * 10) / 10;
+          pinnTag = ` | Pinn ${pinnSpread} (edge ${lineEdge > 0 ? '+' : ''}${lineEdge}pts, ${pinnacleSpreadEdge > 0 ? '+' : ''}${pinnacleSpreadEdge}%prob)`;
+        }
       }
       
-      if (bestEV == null || bestEV < MIN_EV_THRESHOLD) {
-        evBelowThreshold++;
-        const pinnTag = pinnacleEdge != null ? ` | Sharp edge: ${pinnacleEdge > 0 ? '+' : ''}${pinnacleEdge}%` : '';
-        console.log(`   📉 ${best.teamName} ${best.spread} — MOS +${mos} ✓ but EV ${bestEV?.toFixed(1) ?? 'N/A'}% < ${MIN_EV_THRESHOLD}%${pinnTag} (FILTERED)`);
-        continue;
-      }
-      
-      // EV-MOS INTERSECTION: both signals must pick the SAME team
-      if (evTeamSide !== best.side) {
-        evMismatch++;
-        const evTeam = evTeamSide === 'away' ? game.awayTeam : game.homeTeam;
-        console.log(`   ⚡ ${game.awayTeam} @ ${game.homeTeam} — MOS picks ${best.teamName} (${best.side}) but EV picks ${evTeam} (${evTeamSide}) → MISMATCH`);
-        continue;
+      // Store pinnacle data on prediction for Firebase
+      if (prediction && !prediction.error) {
+        prediction.pinnacleSpreadEdge = pinnacleSpreadEdge;
+        prediction.spreadEV = spreadEVPct;
+        prediction.coverProb = Math.round(coverProb * 1000) / 10;
       }
       
       // ── LINE MOVEMENT GATE ─────────────────────────────────────────
       const adjustedUnits = applyMovementGate(tierInfo.units, best.movementTier);
       
-      const evDisplay = `EV ${bestEV.toFixed(1)}%`;
-      const pinnTag = pinnacleEdge != null ? ` Pinn ${pinnacleEdge > 0 ? '+' : ''}${pinnacleEdge}%` : '';
+      const evDisplay = `SpreadEV ${spreadEVPct}%`;
       const favDog = best.isFavorite ? 'FAV' : 'DOG';
-      
-      // Attach pinnacle edge to prediction for storage
-      if (prediction && !prediction.error) {
-        prediction.pinnacleEdge = pinnacleEdge;
-        prediction.pinnacleProb = pinnacleProb;
-      }
       
       if (adjustedUnits === null) {
         flaggedCount++;
@@ -1469,8 +1476,6 @@ async function fetchPrimePicks() {
     console.log(`   ❌ No model data: ${noModelData}`);
     console.log(`   ❌ No spread data / no cover: ${noSpreadData}`);
     console.log(`   ⬇️  Below MOS floor (${MOS_FLOOR}): ${belowFloor}`);
-    console.log(`   📉 Below EV floor (${MIN_EV_THRESHOLD}%): ${evBelowThreshold}`);
-    console.log(`   ⚡ EV-MOS team mismatch: ${evMismatch}`);
     console.log(`   🚫 FLAGGED (line moved against): ${flaggedCount}`);
     console.log(`   ✅ QUALIFYING ATS PICKS: ${picks.length}\n`);
     
@@ -1586,7 +1591,7 @@ async function fetchPrimePicks() {
     // ═══════════════════════════════════════════════════════════════════════
     console.log('\n');
     console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-    console.log('║         PRIME PICKS V8 — MOS×EV + Pinnacle Devigging                        ║');
+    console.log('║         PRIME PICKS V9 — MOS + BothCover + Pinnacle Spreads                 ║');
     console.log('╚═══════════════════════════════════════════════════════════════════════════════╝\n');
     
     console.log(`   ── ATS (Spread) ────────────────────────────────────────────`);

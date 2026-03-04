@@ -53,7 +53,6 @@ const db = getFirestore(app);
 // because we have two signals: model + sharp money agreement.
 // Standard thresholds apply when no confirmation (NEUTRAL).
 
-const MIN_EV_THRESHOLD = 2.0;
 const MOS_FLOOR = 2.0;
 const MOS_FLOOR_CONFIRMED = 1.5;
 const MOT_FLOOR = 0.5;
@@ -147,7 +146,18 @@ function applyMovementGate(baseUnits, movementTier, movementLabel) {
 }
 
 function estimateCoverProb(mos) {
-  return Math.max(0.01, Math.min(0.95, 0.50 + (mos * 0.03)));
+  const z = mos / 11;
+  return Math.max(0.01, Math.min(0.95, normalCDF(z)));
+}
+
+function normalCDF(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.SQRT2;
+  const t = 1.0 / (1.0 + p * x);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return 0.5 * (1.0 + sign * y);
 }
 
 function calcSpreadEV(coverProb) {
@@ -526,22 +536,6 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
 
   const pred = evalData.prediction;
 
-  // EV GATE: morning prediction must show EV >= 2%
-  const morningEV = pred?.bestEV ?? null;
-  if (morningEV == null || morningEV < MIN_EV_THRESHOLD) {
-    console.log(`   📉 ${pickTeam} — EV ${morningEV?.toFixed(1) ?? 'N/A'}% < ${MIN_EV_THRESHOLD}% (skipped, no edge)`);
-    counters.skipped++;
-    return;
-  }
-
-  // EV-MOS INTERSECTION: morning EV must pick same team
-  const evSide = pred?.bestBet;
-  if (evSide && evSide !== sideResult.side) {
-    console.log(`   ⚡ ${pickTeam} — MOS picks ${sideResult.side} but EV picks ${evSide} (mismatch, skipped)`);
-    counters.skipped++;
-    return;
-  }
-
   const coverProb = estimateCoverProb(sideResult.mos);
   const spreadEV = calcSpreadEV(coverProb);
 
@@ -588,7 +582,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     firstRecommendedAt: Date.now(), lastUpdatedAt: Date.now(),
     lastLineCheckAt: Date.now(),
     pinnacle: evalData.pinnacle || null,
-    source: 'LINE_MONITOR_EV',
+    source: 'LINE_MONITOR_V9',
     isPrimePick: true, isATSPick: true,
     savantPick: sideResult.mos >= 4,
     betRecommendation: {
