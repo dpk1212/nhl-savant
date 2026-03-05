@@ -1210,6 +1210,7 @@ const Basketball = () => {
                           isSavantPick={isGameSavantPick(game)}
                           betsMap={betsMap}
                           pbpData={pbpData}
+                          cbbdPlayers={cbbdPlayers}
                         />
                       ))}
                     </>
@@ -1238,6 +1239,7 @@ const Basketball = () => {
                           isSavantPick={isGameSavantPick(game)}
                           betsMap={betsMap}
                           pbpData={pbpData}
+                          cbbdPlayers={cbbdPlayers}
                         />
                       ))}
                     </>
@@ -1264,6 +1266,7 @@ const Basketball = () => {
                           isSavantPick={isGameSavantPick(game)}
                           betsMap={betsMap}
                           pbpData={pbpData}
+                          cbbdPlayers={cbbdPlayers}
                         />
                       ))}
                     </>
