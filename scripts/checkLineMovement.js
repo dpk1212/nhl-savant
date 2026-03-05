@@ -181,14 +181,18 @@ function buildTeamNameMap() {
     return null;
   }
 
-  // Map: normalized_name (lowercase) → odds_api_name
+  // Map: team_name (lowercase) → odds_api_name (both normalized and oddstrader names)
   const map = new Map();
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',');
     const normName = (cols[0] || '').trim();
+    const oddsTrader = (cols[1] || '').trim();
     const oddsApiName = (cols[oddsApiIdx] || '').trim();
-    if (normName && oddsApiName) {
-      map.set(normName.toLowerCase(), oddsApiName);
+    if (oddsApiName) {
+      if (normName) map.set(normName.toLowerCase(), oddsApiName);
+      if (oddsTrader && oddsTrader.toLowerCase() !== normName.toLowerCase()) {
+        map.set(oddsTrader.toLowerCase(), oddsApiName);
+      }
     }
   }
   console.log(`   📋 Loaded ${map.size} team name mappings from CSV`);
@@ -203,8 +207,18 @@ function getOddsApiName(firebaseTeamName) {
 function normalizeTeam(name) {
   return (name || '')
     .toLowerCase()
-    .replace(/state/g, 'st')
-    .replace(/saint/g, 'st')
+    .replace(/\bstate\b/g, 'st')
+    .replace(/\bsaint\b/g, 'st')
+    .replace(/\bsoutheast\b/g, 'se')
+    .replace(/\bsouthwest\b/g, 'sw')
+    .replace(/\bnortheast\b/g, 'ne')
+    .replace(/\bnorthwest\b/g, 'nw')
+    .replace(/\bcal state\b/g, 'csu')
+    .replace(/\binternational\b/g, 'intl')
+    .replace(/\buniversity\b/g, 'univ')
+    .replace(/\btennessee\b/g, 'tenn')
+    .replace(/\bmississippi\b/g, 'miss')
+    .replace(/hawai'i/g, 'hawaii')
     .replace(/[^a-z]/g, '');
 }
 

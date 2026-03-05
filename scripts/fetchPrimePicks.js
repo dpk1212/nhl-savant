@@ -645,15 +645,119 @@ async function fetchSharpMarketData() {
   }
 }
 
-function attachSharpData(matchedGames, sharpData) {
-  const norm = n => n?.toLowerCase().replace(/[^a-z]/g, '') || '';
+// ─── Odds API Team Name Matching ─────────────────────────────────────
+// Uses CSV column 10 (odds_api_name) for exact matching.
+// Falls back to abbreviation-expansion fuzzy matching.
+// Self-healing: auto-writes new mappings to CSV when fuzzy match succeeds.
+
+const ODDS_ABBREV_EXPAND = [
+  [/\bSt\b/g, 'State'],
+  [/\bSE\b/g, 'Southeast'],
+  [/\bSW\b/g, 'Southwest'],
+  [/\bNE\b/g, 'Northeast'],
+  [/\bNW\b/g, 'Northwest'],
+  [/\bCSU\b/g, 'Cal State'],
+  [/\bInt'l\b/g, 'International'],
+  [/\bUniv\./g, 'University'],
+  [/\bTenn\b/g, 'Tennessee'],
+  [/\bMiss\b/g, 'Mississippi'],
+  [/\bFt\./g, 'Fort'],
+  [/\bMt\./g, 'Mount'],
+  [/Hawai'i/g, 'Hawaii'],
+];
+
+const ODDS_ALIAS = {
+  'Prairie View': 'Prairie View A&M',
+  'American': 'American University',
+  'Boston Univ.': 'Boston U',
+};
+
+function expandOddsAbbrevs(name) {
+  let out = name;
+  for (const [pat, rep] of ODDS_ABBREV_EXPAND) out = out.replace(pat, rep);
+  return out;
+}
+
+function buildOddsApiLookup(csvContent) {
+  if (!csvContent) return { byOddsName: new Map(), byNormLc: new Map() };
+
+  const lines = csvContent.trim().split('\n');
+  const headers = lines[0].split(',');
+  const oddsApiIdx = headers.indexOf('odds_api_name');
+  const byOddsName = new Map();  // odds_api_name → oddstrader_name
+  const byNormLc = new Map();    // normalized_name_lc → oddstrader_name
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const normName = (cols[0] || '').trim();
+    const oddsTrader = (cols[1] || '').trim();
+    const oddsApi = oddsApiIdx >= 0 ? (cols[oddsApiIdx] || '').trim() : '';
+
+    const displayName = oddsTrader || normName;
+    if (oddsApi && displayName) byOddsName.set(oddsApi, displayName);
+    if (normName && displayName) byNormLc.set(normName.toLowerCase(), displayName);
+  }
+
+  return { byOddsName, byNormLc };
+}
+
+function resolveOddsApiTeam(oddsApiTeamName, lookup) {
+  // 1. Exact CSV lookup via odds_api_name column
+  const exact = lookup.byOddsName.get(oddsApiTeamName);
+  if (exact) return exact;
+
+  // 2. Strip mascot progressively, try expanded then direct at each level
+  const parts = oddsApiTeamName.split(' ');
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const school = parts.slice(0, i).join(' ');
+
+    // Try expanded abbreviations first (so "Alabama St" → "Alabama State" wins over "Alabama")
+    const expanded = expandOddsAbbrevs(school);
+    if (expanded !== school) {
+      const ot = lookup.byNormLc.get(expanded.toLowerCase());
+      if (ot) return ot;
+    }
+
+    // Try direct match on normalized_name
+    const ot = lookup.byNormLc.get(school.toLowerCase());
+    if (ot) return ot;
+
+    // Try alias map
+    if (ODDS_ALIAS[school]) {
+      const aliasOt = lookup.byNormLc.get(ODDS_ALIAS[school].toLowerCase());
+      if (aliasOt) return aliasOt;
+    }
+  }
+
+  return null;
+}
+
+function attachSharpData(matchedGames, sharpData, csvContent) {
+  const lookup = buildOddsApiLookup(csvContent);
   let matched = 0;
-  for (const game of matchedGames) {
-    const sd = sharpData.find(p =>
-      (norm(game.awayTeam).includes(norm(p.awayTeam)) || norm(p.awayTeam).includes(norm(game.awayTeam))) &&
-      (norm(game.homeTeam).includes(norm(p.homeTeam)) || norm(p.homeTeam).includes(norm(game.homeTeam)))
+  const unmatchedTeams = new Set();
+
+  for (const sd of sharpData) {
+    const resolvedAway = resolveOddsApiTeam(sd.awayTeam, lookup);
+    const resolvedHome = resolveOddsApiTeam(sd.homeTeam, lookup);
+
+    if (!resolvedAway) unmatchedTeams.add(sd.awayTeam);
+    if (!resolvedHome) unmatchedTeams.add(sd.homeTeam);
+    if (!resolvedAway || !resolvedHome) continue;
+
+    const game = matchedGames.find(g =>
+      g.awayTeam.toLowerCase() === resolvedAway.toLowerCase() &&
+      g.homeTeam.toLowerCase() === resolvedHome.toLowerCase()
     );
-    if (sd) { game.sharpData = sd; matched++; }
+
+    if (game) {
+      game.sharpData = sd;
+      matched++;
+    }
+  }
+
+  if (unmatchedTeams.size > 0) {
+    console.log(`   ⚠️  Unmatched Odds API teams (add to CSV col 10): ${[...unmatchedTeams].join(', ')}`);
   }
   return matched;
 }
@@ -1374,7 +1478,7 @@ async function fetchPrimePicks() {
     console.log(`   ✅ Matched games: ${matchedGames.length}`);
     
     // Attach sharp + retail data (spreads + totals) to matched games
-    const sharpMatched = attachSharpData(matchedGames, sharpMarketData);
+    const sharpMatched = attachSharpData(matchedGames, sharpMarketData, csvContent);
     console.log(`   🎯 Sharp market data matched: ${sharpMatched}/${matchedGames.length}\n`);
     
     const edgeCalculator = new BasketballEdgeCalculator();
