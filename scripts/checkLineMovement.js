@@ -1,5 +1,5 @@
 /**
- * CHECK LINE MOVEMENT V10 — Three-Signal Line Monitor
+ * CHECK LINE MOVEMENT V11 — Pinnacle-Sized Signal Monitor
  *
  * The morning fetch saves model evaluations for EVERY game to Firebase.
  * This script re-evaluates using the Three-Signal System:
@@ -516,16 +516,21 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       lineHistory: arrayUnion({ t: Date.now(), spread: sideResult.spread, total: null }),
     };
 
+    // Locked bets: don't change the spread (user already bet that number),
+    // but DO allow unit UPGRADES when signals improve. Never downgrade locked.
     if (!prev.isLocked) {
       updateData['spreadAnalysis.spread'] = sideResult.spread;
       updateData['betRecommendation.atsSpread'] = sideResult.spread;
       updateData['bet.spread'] = sideResult.spread;
     }
 
+    const prevUnits = prev.bet?.units || prev.prediction?.unitSize || 0;
+    const prevSignals = prev.spreadAnalysis?.signalCount || 0;
+
     if (isFlagged) {
       if (prev.isLocked) {
         await updateDoc(betRef, updateData);
-        console.log(`   🔒 LOCKED: ${pickTeam} ${sideResult.spread} — line moved against but bet is locked for user`);
+        console.log(`   🔒 LOCKED: ${pickTeam} ${sideResult.spread} — line moved against but bet is locked for user | ${prevUnits}u`);
         counters.stable++;
         return;
       }
@@ -536,6 +541,19 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       await updateDoc(betRef, updateData);
       console.log(`   💀 KILLED: ${pickTeam} ${sideResult.spread} — was ${prevTier}, now FLAGGED (line moved ${sideResult.lineMovement > 0 ? '+' : ''}${sideResult.lineMovement})`);
       counters.killed++;
+      return;
+    }
+
+    // Unit upgrade logic: locked bets can go UP, never DOWN
+    const shouldUpgrade = prev.isLocked && units > prevUnits;
+    if (shouldUpgrade) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.atsUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+      updateData.betStatus = 'BET_NOW';
+      await updateDoc(betRef, updateData);
+      console.log(`   ⬆️  UPGRADED: ${pickTeam} ${sideResult.spread} — ${prevUnits}u → ${units}u [${tier}] | signals ${prevSignals}→${signalCount} (locked)`);
+      counters.updated++;
       return;
     }
 
@@ -552,7 +570,6 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
         }
       }
       await updateDoc(betRef, updateData);
-      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
       const displayUnits = prev.isLocked ? prevUnits : units;
       const wasRevived = prevStatus === 'KILLED' || prevStatus === 'FLAGGED';
       const label = wasRevived ? '🔄 REVIVED' : (newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED');
@@ -561,13 +578,14 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
       return;
     }
 
+    // Stable — no tier change, no upgrade
     if (!prev.isLocked) {
       updateData['bet.units'] = units;
       updateData['betRecommendation.atsUnits'] = units;
       updateData['prediction.unitSize'] = units;
     }
     await updateDoc(betRef, updateData);
-    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    const stableUnits = prev.isLocked ? prevUnits : units;
     console.log(`   🔒 Stable: ${pickTeam} ${sideResult.spread} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''}`);
     counters.stable++;
     return;
@@ -663,12 +681,10 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
   const homeNorm = game.homeTeam.replace(/\s+/g, '_').toUpperCase();
   const betId = `${date}_${awayNorm}_${homeNorm}_TOTAL_${totalsResult.direction}`;
 
-  const drBoost = applyDRUnderBoost(totalsResult.tierInfo.units, totalsResult);
-  const cappedUnits = applyMOTCap(drBoost.units, totalsResult.mot);
-  const adjustedUnits = applyMovementGate(cappedUnits, totalsResult.movementTier, totalsResult.movementLabel);
-  const isFlagged = adjustedUnits === null;
-  const units = isFlagged ? 0 : (totalsResult.finalUnits ?? adjustedUnits);
-  const tier = drBoost.drTier || totalsResult.tierInfo.tier;
+  const isFlagged = totalsResult.finalUnits === null || totalsResult.movementTier === 'FLAGGED';
+  const units = isFlagged ? 0 : (totalsResult.finalUnits || 1);
+  const drBoostInfo = applyDRUnderBoost(1, totalsResult);
+  const tier = drBoostInfo.drTier || totalsResult.tierInfo?.tier || 'BASE';
   const gameLabel = `${game.awayTeam} @ ${game.homeTeam}`;
 
   const betRef = doc(db, 'basketball_bets', betId);
@@ -680,6 +696,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     const prevStatus = prev.betStatus || 'UNKNOWN';
     const newTier = totalsResult.movementTier;
     const tierChanged = prevTier !== newTier;
+    const prevUnits = prev.bet?.units || prev.prediction?.unitSize || 0;
 
     const updateData = {
       'totalsAnalysis.currentTotal': totalsResult.marketTotal,
@@ -690,6 +707,9 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       'totalsAnalysis.hsOver': totalsResult.hsOver,
       'totalsAnalysis.bothModelsAgree': totalsResult.bothAgreeOver || totalsResult.bothAgreeUnder,
       'totalsAnalysis.unitTier': tier,
+      'totalsAnalysis.pinnacleTotal': totalsResult.pinnTotal,
+      'totalsAnalysis.pinnTotalEdge': totalsResult.pinnTotalEdge || 0,
+      'totalsAnalysis.hasPinnEdge': totalsResult.hasPinnEdge || false,
       'betRecommendation.lineMovement': totalsResult.lineMovement,
       'betRecommendation.movementTier': newTier,
       'betRecommendation.marginOverTotal': totalsResult.mot,
@@ -707,7 +727,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
     if (isFlagged) {
       if (prev.isLocked) {
         await updateDoc(betRef, updateData);
-        console.log(`   🔒 LOCKED: ${totalsResult.direction} ${totalsResult.marketTotal} — line moved against but bet is locked for user (${gameLabel})`);
+        console.log(`   🔒 LOCKED: ${totalsResult.direction} ${totalsResult.marketTotal} — line moved against but bet is locked | ${prevUnits}u (${gameLabel})`);
         counters.stable++;
         return;
       }
@@ -718,6 +738,19 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       await updateDoc(betRef, updateData);
       console.log(`   💀 KILLED: ${totalsResult.direction} ${totalsResult.marketTotal} — was ${prevTier}, now FLAGGED (line moved ${totalsResult.lineMovement > 0 ? '+' : ''}${totalsResult.lineMovement}) (${gameLabel})`);
       counters.killed++;
+      return;
+    }
+
+    // Unit upgrade: locked bets can go UP, never DOWN
+    const shouldUpgrade = prev.isLocked && units > prevUnits;
+    if (shouldUpgrade) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.totalUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+      updateData.betStatus = 'BET_NOW';
+      await updateDoc(betRef, updateData);
+      console.log(`   ⬆️  UPGRADED: ${totalsResult.direction} ${totalsResult.marketTotal} — ${prevUnits}u → ${units}u [${tier}] (locked) (${gameLabel})`);
+      counters.updated++;
       return;
     }
 
@@ -734,7 +767,6 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
         }
       }
       await updateDoc(betRef, updateData);
-      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
       const displayUnits = prev.isLocked ? prevUnits : units;
       const wasRevived = prevStatus === 'KILLED' || prevStatus === 'FLAGGED';
       const label = wasRevived ? '🔄 REVIVED' : (newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED');
@@ -749,7 +781,7 @@ async function createOrUpdateTotalsBet(evalData, totalsResult, counters) {
       updateData['prediction.unitSize'] = units;
     }
     await updateDoc(betRef, updateData);
-    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    const stableUnits = prev.isLocked ? prevUnits : units;
     console.log(`   🔒 Stable: ${totalsResult.direction} ${totalsResult.marketTotal} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''} (${gameLabel})`);
     counters.stable++;
     return;
@@ -861,7 +893,7 @@ async function killExistingBet(betDoc, reason, counters) {
 async function checkLineMovement() {
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║        LINE MONITOR V10 — Three-Signal Line Tracking                             ║');
+  console.log('║        LINE MONITOR V11 — Pinnacle-Sized Signal Tracking                            ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
   console.log('\n');
 
@@ -1020,9 +1052,12 @@ async function checkLineMovement() {
       if (!signal3Against && signalCount >= 2) {
         let units;
         if (signalCount === 3) {
-          if (pinnEdgePts >= 1.5) units = 3;
-          else if (pinnEdgePts >= 1.0) units = 2;
-          else units = 1;
+          if (pinnEdgePts >= 2.0) units = 4;
+          else if (pinnEdgePts >= 1.5) units = 3;
+          else if (pinnEdgePts >= 1.0) units = 3;
+          else units = 2;
+        } else if (signal2) {
+          units = pinnEdgePts >= 1.5 ? 2 : 1;
         } else {
           units = 1;
         }
@@ -1116,14 +1151,21 @@ async function checkLineMovement() {
       
       // Skip if Pinnacle data exists but no edge
       if (pinnTotal != null && !hasPinnTotalEdge) {
-        // Don't create/update bet — no Pinnacle confirmation
+        // No Pinnacle confirmation — don't create/update bet
       } else {
-        const drB = applyDRUnderBoost(totalsResult.tierInfo.units, totalsResult);
+        // Pinnacle edge sizes the bet (same logic as fetchPrimePicks V11)
+        let baseUnits;
+        if (hasPinnTotalEdge) {
+          if (pinnTotalEdge >= 2.0) baseUnits = 3;
+          else if (pinnTotalEdge >= 1.0) baseUnits = 2;
+          else baseUnits = 1;
+        } else {
+          baseUnits = 1; // No Pinnacle data
+        }
+        const drB = applyDRUnderBoost(baseUnits, totalsResult);
         const capped = applyMOTCap(drB.units, totalsResult.mot);
         const adjustedUnits = applyMovementGate(capped, totalsResult.movementTier, totalsResult.movementLabel);
-        if (hasPinnTotalEdge && pinnTotalEdge >= 1.0 && adjustedUnits != null) {
-          totalsResult.finalUnits = Math.min(adjustedUnits + 1, 5);
-        }
+        totalsResult.finalUnits = adjustedUnits;
         if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
           await createOrUpdateTotalsBet(evalData, totalsResult, counters);
         }

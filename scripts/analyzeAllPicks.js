@@ -180,10 +180,10 @@ async function analyze() {
 
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║                        CBB EDGE HEALTH MONITOR — Daily Signal Tracker                              ║');
+  console.log('║                     CBB EDGE HEALTH MONITOR V11 — Pinnacle-Sized Signals                         ║');
   console.log('╠═══════════════════════════════════════════════════════════════════════════════════════════════════════╣');
-  console.log('║  SPREADS: 90/10 DR/HS │ Both must cover │ Kill if line ≥0.5 against │ MOS-tiered sizing           ║');
-  console.log('║  TOTALS:  20/80 DR/HS │ DR UNDER boost │ MOT cap outliers │ floor 0.5 │ MOT-tiered sizing        ║');
+  console.log('║  ATS:    S1 Models agree │ S2 Pinnacle edge sizes │ S3 Movement confirms │ Locked bets upgrade   ║');
+  console.log('║  TOTALS: Pinnacle edge sizes │ MOT cap outliers │ DR contrarian UNDER boost │ 20/80 blend dir    ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════════════════════════════╝');
   console.log(`\n  Today: ${today} | Yesterday: ${yesterday} | Week: ${monday}`);
   console.log(`  Rolling: 7d (${d7}) | 14d (${d14}) | 30d (${d30})\n`);
@@ -228,6 +228,10 @@ async function analyze() {
       const isFavorite = d.spreadAnalysis?.isFavorite ?? (spread !== null ? spread < 0 : null);
       const movementTier = d.spreadAnalysis?.movementTier ?? d.betRecommendation?.movementTier ?? 'UNKNOWN';
       const lineMovement = d.spreadAnalysis?.lineMovement ?? d.betRecommendation?.lineMovement ?? null;
+      const signalCount = d.spreadAnalysis?.signalCount ?? null;
+      const pinnEdgePts = d.spreadAnalysis?.pinnEdgePts ?? 0;
+      const bestBook = d.spreadAnalysis?.bestBook ?? null;
+      const source = d.source || d.prediction?.source || 'UNKNOWN';
 
       const units = d.bet?.units ?? d.prediction?.unitSize ?? 1;
       const profit = won ? units * (100 / 110) : -units;
@@ -238,6 +242,7 @@ async function analyze() {
         spread, openerSpread,
         drPredTotal, hsPredTotal, actualTotal,
         hasMOS: mos !== null,
+        signalCount, pinnEdgePts, bestBook, source,
         id: docSnap.id,
       });
     } else if (market === 'TOTAL' || market === 'TOTALS') {
@@ -294,6 +299,11 @@ async function analyze() {
       const drTotalError = drTotal != null && actualTotal != null ? drTotal - actualTotal : null;
       const hsTotalError = hsTotal != null && actualTotal != null ? hsTotal - actualTotal : null;
 
+      const pinnTotalEdge = d.totalsAnalysis?.pinnTotalEdge ?? 0;
+      const hasPinnEdge = d.totalsAnalysis?.hasPinnEdge ?? false;
+      const pinnTotal = d.totalsAnalysis?.pinnacleTotal ?? null;
+      const source = d.source || d.prediction?.source || 'UNKNOWN';
+
       totals.push({
         date, mot: mot || 0, won, units, profit,
         direction, modelsAgree, movementTier, lineMovement,
@@ -304,6 +314,7 @@ async function analyze() {
         drTotalError, hsTotalError,
         actualTotal,
         hasMOT: mot !== null,
+        pinnTotalEdge, hasPinnEdge, pinnTotal, source,
         id: docSnap.id,
       });
     }
@@ -800,6 +811,34 @@ async function analyze() {
     fmtRow('Both cover + line FOR', calcStats(sBets.filter(b => b.bothCover && b.lineMovement > 0)));
     fmtRow('Both cover + line FLAT', calcStats(sBets.filter(b => b.bothCover && b.lineMovement === 0)));
     fmtRow('Both cover + line AGAINST', calcStats(sBets.filter(b => b.bothCover && b.lineMovement != null && b.lineMovement < 0)));
+
+    const withSignals = sBets.filter(b => b.signalCount != null);
+    if (withSignals.length) {
+      printHeader('V11 SIGNAL COUNT MATRIX');
+      fmtRow('3 signals (full conviction)', calcStats(withSignals.filter(b => b.signalCount === 3)));
+      fmtRow('2 signals (partial)', calcStats(withSignals.filter(b => b.signalCount === 2)));
+      fmtRow('Pre-V11 (no signal data)', calcStats(sBets.filter(b => b.signalCount == null)));
+    }
+
+    const withPinn = sBets.filter(b => b.pinnEdgePts > 0);
+    if (withPinn.length) {
+      printHeader('PINNACLE EDGE (ATS) — SIZER ANALYSIS');
+      fmtRow('Pinn edge ≥2.0pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 2.0)));
+      fmtRow('Pinn edge 1.5-2.0pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 1.5 && b.pinnEdgePts < 2.0)));
+      fmtRow('Pinn edge 1.0-1.5pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 1.0 && b.pinnEdgePts < 1.5)));
+      fmtRow('Pinn edge 0.5-1.0pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 0.5 && b.pinnEdgePts < 1.0)));
+      fmtRow('No Pinnacle data', calcStats(sBets.filter(b => !b.pinnEdgePts)));
+    }
+
+    if (withSignals.length) {
+      printHeader('V11 SIGNAL × PINNACLE EDGE');
+      const s3 = withSignals.filter(b => b.signalCount === 3);
+      const s2 = withSignals.filter(b => b.signalCount === 2);
+      fmtRow('3sig + Pinn ≥1.5pt', calcStats(s3.filter(b => b.pinnEdgePts >= 1.5)));
+      fmtRow('3sig + Pinn 0.5-1.5pt', calcStats(s3.filter(b => b.pinnEdgePts >= 0.5 && b.pinnEdgePts < 1.5)));
+      fmtRow('2sig + Pinn edge', calcStats(s2.filter(b => b.pinnEdgePts >= 0.5)));
+      fmtRow('2sig + no Pinn', calcStats(s2.filter(b => !b.pinnEdgePts || b.pinnEdgePts < 0.5)));
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -882,6 +921,23 @@ async function analyze() {
     fmtRow('MOT 2.0 - 3.0', calcStats(tBets.filter(b => b.mot >= 2 && b.mot < 3)));
     fmtRow('MOT 3.0 - 4.0', calcStats(tBets.filter(b => b.mot >= 3 && b.mot < 4)));
     fmtRow('MOT 4.0+ (outlier)', calcStats(tBets.filter(b => b.mot >= 4)));
+
+    const withPinnT = tBets.filter(b => b.hasPinnEdge);
+    if (withPinnT.length || tBets.some(b => b.pinnTotal != null)) {
+      printHeader('PINNACLE TOTALS EDGE — SIZER ANALYSIS');
+      fmtRow('Pinn edge ≥2.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 2.0)));
+      fmtRow('Pinn edge 1.0-2.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 1.0 && b.pinnTotalEdge < 2.0)));
+      fmtRow('Pinn edge 0.5-1.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 0.5 && b.pinnTotalEdge < 1.0)));
+      fmtRow('No Pinn totals edge', calcStats(tBets.filter(b => !b.hasPinnEdge)));
+      fmtRow('No Pinn data at all', calcStats(tBets.filter(b => b.pinnTotal == null)));
+    }
+
+    if (withPinnT.length) {
+      printHeader('PINNACLE × DR CONTRARIAN (TOTALS)');
+      fmtRow('Pinn edge + DR_SWEET_SPOT', calcStats(tBets.filter(b => b.hasPinnEdge && b.drSignal === 'DR_SWEET_SPOT')));
+      fmtRow('Pinn edge + DR_UNDER', calcStats(tBets.filter(b => b.hasPinnEdge && b.drSignal === 'DR_UNDER')));
+      fmtRow('Pinn edge + no DR signal', calcStats(tBets.filter(b => b.hasPinnEdge && !b.drSignal)));
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════

@@ -1,22 +1,27 @@
 /**
- * PRIME PICKS V10 — Three-Signal System
+ * PRIME PICKS V11 — Pinnacle-Sized Signal System
  *
  * SPREADS (ATS):
- *   Three independent signals must converge:
- *     S1. MODELS: Both DR + HS predict team covers the opening spread (50/50 blend)
- *     S2. PINNACLE: Retail book offers ≥0.5pt softer than Pinnacle sharp line
- *     S3. MOVEMENT: Line has moved ≥0.5pt toward our pick since open
- *   Decision:
- *     3 signals → BET (size by Pinnacle edge: 0.5pt=1u, 1pt=2u, 1.5pt+=3u)
- *     2 signals (no movement against) → BET 1u
- *     Movement against → SKIP regardless
- *     1 signal only → SKIP
- *   Output includes WHICH BOOK offers the best number.
+ *   S1. MODELS: Both DR + HS predict team covers the opening spread (MOS ≥ 1.0)
+ *   S2. PINNACLE: Retail book offers ≥0.5pt softer than Pinnacle sharp line
+ *   S3. MOVEMENT: Line has moved ≥0.5pt toward our pick since open
+ *
+ *   MOS is the GATE (determines IF we bet).
+ *   Pinnacle edge is the SIZER (determines HOW MUCH).
+ *   Movement is the FILTER (against = kill) and confirms direction.
+ *
+ *   3 signals → BET: size by Pinnacle edge (≥2pt=4u, ≥1.5pt=3u, ≥1pt=3u, ≥0.5pt=2u)
+ *   2 signals (S1+S2, no movement against) → BET: Pinn edge (≥1.5pt=2u, else 1u)
+ *   2 signals (S1+S3, no Pinnacle) → BET 1u (direction confirmed, edge unmeasured)
+ *   Movement against → KILL regardless
+ *   1 signal only → SKIP
  *
  * TOTALS (O/U):
  *   20% DR / 80% HS blend for direction.  MOT floor = 2.0.
- *   Pinnacle totals gate: skip if Pinn data exists but no ≥0.5pt retail edge.
- *   Pinnacle edge ≥1.0pt = +1u boost.  DR UNDER contrarian boost, MOT outlier cap.
+ *   Pinnacle totals edge is the SIZER: ≥2pt=3u, ≥1pt=2u, ≥0.5pt=1u, no data=1u.
+ *   MOT CAP: 4-6 MOT = -1u, 6+ MOT = cap 1u (outlier skepticism).
+ *   DR Contrarian UNDER boost: sweet spot (-5 to -8) = +2u, moderate (-3 to -5) = +1u.
+ *   Pinnacle data exists but no ≥0.5pt edge → SKIP.
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -480,16 +485,18 @@ function getMOSTier(mos, floor = MOS_FLOOR) {
 }
 
 /**
- * MOT tier → base unit sizing for totals.
- * Lower floor (0.5) lets tight calls through — data shows MOT < 1 is 70%+ accurate.
+ * MOT tier — gate only (determines IF we bet on totals).
+ * Units are now driven by Pinnacle totals edge, not MOT magnitude.
+ * Higher MOT = more divergence from market = LESS trustworthy (inverse relationship).
  */
 function getMOTTier(mot, floor = MOT_FLOOR) {
-  if (mot >= 5)          return { tier: 'MAXIMUM', units: 5 };
-  if (mot >= 4)          return { tier: 'ELITE',   units: 4 };
-  if (mot >= 3)          return { tier: 'STRONG',  units: 3 };
-  if (mot >= 2.5)        return { tier: 'SOLID',   units: 2 };
-  if (mot >= 2.0)        return { tier: 'BASE',    units: 1 };
-  if (mot >= floor)      return { tier: 'MARKET_CONFIRMED', units: 1 };
+  if (mot >= floor) {
+    if (mot >= 5)     return { tier: 'EXTREME', units: 1 };
+    if (mot >= 4)     return { tier: 'HIGH',    units: 1 };
+    if (mot >= 3)     return { tier: 'STRONG',  units: 1 };
+    if (mot >= 2.0)   return { tier: 'BASE',    units: 1 };
+    return { tier: 'MARKET_CONFIRMED', units: 1 };
+  }
   return null;
 }
 
@@ -807,11 +814,20 @@ async function savePick(db, game, sideData, prediction) {
       updateData['betRecommendation.atsSpread'] = sideData.spread;
       updateData['bet.spread'] = sideData.spread;
     }
+
+    // Always update signal metadata
+    updateData['spreadAnalysis.signalCount'] = signalCount;
+    updateData['spreadAnalysis.pinnEdgePts'] = sideData.pinnEdgePts || 0;
+    updateData['spreadAnalysis.bestBook'] = sideData.bestBook || null;
+    updateData['spreadAnalysis.bestBookSpread'] = sideData.bestBookSpread || null;
+    updateData['spreadAnalysis.pinnacleSpread'] = sideData.pinnSpread || null;
+
+    const prevUnits = prev.bet?.units || prev.prediction?.unitSize || 0;
     
     if (isFlagged) {
       if (prev.isLocked) {
         await updateDoc(betRef, updateData);
-        console.log(`   🔒 LOCKED: ${pickTeam} ${lockedSpread || sideData.spread} — line moved against but bet is locked for user`);
+        console.log(`   🔒 LOCKED: ${pickTeam} ${lockedSpread || sideData.spread} — line moved against but bet is locked | ${prevUnits}u`);
         return { action: 'stable', betId };
       }
       updateData['betStatus'] = 'KILLED';
@@ -821,6 +837,19 @@ async function savePick(db, game, sideData, prediction) {
       await updateDoc(betRef, updateData);
       console.log(`   💀 KILLED: ${pickTeam} ${sideData.spread} — was ${prevTier}, now FLAGGED (line moved ${sideData.lineMovement > 0 ? '+' : ''}${sideData.lineMovement})`);
       return { action: 'killed', betId };
+    }
+
+    // Locked bets can upgrade units, never downgrade
+    const shouldUpgrade = prev.isLocked && units > prevUnits;
+    if (shouldUpgrade) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.atsUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+      updateData['spreadAnalysis.unitTier'] = tier;
+      updateData['betStatus'] = 'BET_NOW';
+      await updateDoc(betRef, updateData);
+      console.log(`   ⬆️  UPGRADED: ${pickTeam} ${lockedSpread} — ${prevUnits}u → ${units}u [${tier}] | signals ${signalCount} (locked)`);
+      return { action: 'updated', betId };
     }
     
     if (tierChanged || newTier === 'CONFIRM') {
@@ -837,7 +866,6 @@ async function savePick(db, game, sideData, prediction) {
         }
       }
       await updateDoc(betRef, updateData);
-      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
       const displayUnits = prev.isLocked ? prevUnits : units;
       const displaySpread = prev.isLocked ? lockedSpread : sideData.spread;
       const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
@@ -851,7 +879,7 @@ async function savePick(db, game, sideData, prediction) {
       updateData['prediction.unitSize'] = units;
     }
     await updateDoc(betRef, updateData);
-    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    const stableUnits = prev.isLocked ? prevUnits : units;
     const stableSpread = prev.isLocked ? lockedSpread : sideData.spread;
     console.log(`   🔒 Stable: ${pickTeam} ${stableSpread} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''}`);
     return { action: 'stable', betId };
@@ -1031,13 +1059,10 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   const tierInfo = getMOTTier(mot, effectiveFloor);
   if (!tierInfo) return { action: 'skipped', betId };
 
-  const drBoost = applyDRUnderBoost(tierInfo.units, totalsData);
-  const cappedUnits = applyMOTCap(drBoost.units, mot);
-  const adjustedUnits = applyMovementGate(cappedUnits, totalsData.movementTier, totalsData.movementLabel);
-  const isFlagged = adjustedUnits === null;
-  // Use finalUnits from evaluation (includes Pinnacle boost) if available
-  const units = isFlagged ? 0 : (totalsData.finalUnits ?? adjustedUnits);
-  const tier = drBoost.drTier || tierInfo.tier;
+  const isFlagged = totalsData.finalUnits === null || totalsData.movementTier === 'FLAGGED' || totalsData.pinnSkipped;
+  const units = isFlagged ? 0 : (totalsData.finalUnits || 1);
+  const drBoostInfo = applyDRUnderBoost(1, totalsData);
+  const tier = drBoostInfo.drTier || tierInfo.tier;
   
   const existingBet = await getDoc(betRef);
   if (existingBet.exists()) {
@@ -1063,11 +1088,19 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       updateData['betRecommendation.totalLine'] = totalsData.marketTotal;
       updateData['bet.total'] = totalsData.marketTotal;
     }
+
+    // Store Pinnacle totals metadata
+    updateData['totalsAnalysis.pinnacleTotal'] = totalsData.pinnTotal || null;
+    updateData['totalsAnalysis.pinnTotalEdge'] = totalsData.pinnTotalEdge || 0;
+    updateData['totalsAnalysis.hasPinnEdge'] = totalsData.hasPinnEdge || false;
+    updateData['totalsAnalysis.bestTotalBook'] = totalsData.bestTotalBook || null;
+
+    const prevUnits = prev.bet?.units || prev.prediction?.unitSize || 0;
     
     if (isFlagged) {
       if (prev.isLocked) {
         await updateDoc(betRef, updateData);
-        console.log(`   🔒 LOCKED: ${totalsData.direction} ${lockedTotal || totalsData.marketTotal} — line moved against but bet is locked for user (${game.awayTeam} @ ${game.homeTeam})`);
+        console.log(`   🔒 LOCKED: ${totalsData.direction} ${lockedTotal || totalsData.marketTotal} — flagged but bet is locked | ${prevUnits}u (${game.awayTeam} @ ${game.homeTeam})`);
         return { action: 'stable', betId };
       }
       updateData['betStatus'] = 'KILLED';
@@ -1075,8 +1108,21 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       updateData['betRecommendation.totalUnits'] = 0;
       updateData['prediction.unitSize'] = 0;
       await updateDoc(betRef, updateData);
-      console.log(`   💀 KILLED: ${totalsData.direction} ${totalsData.marketTotal} — was ${prevTier}, now FLAGGED (line moved ${totalsData.lineMovement > 0 ? '+' : ''}${totalsData.lineMovement}) (${game.awayTeam} @ ${game.homeTeam})`);
+      console.log(`   💀 KILLED: ${totalsData.direction} ${totalsData.marketTotal} — was ${prevTier}, now FLAGGED (${game.awayTeam} @ ${game.homeTeam})`);
       return { action: 'killed', betId };
+    }
+
+    // Locked bets can upgrade units, never downgrade
+    const shouldUpgrade = prev.isLocked && units > prevUnits;
+    if (shouldUpgrade) {
+      updateData['bet.units'] = units;
+      updateData['betRecommendation.totalUnits'] = units;
+      updateData['prediction.unitSize'] = units;
+      updateData['totalsAnalysis.unitTier'] = tier;
+      updateData['betStatus'] = 'BET_NOW';
+      await updateDoc(betRef, updateData);
+      console.log(`   ⬆️  UPGRADED: ${totalsData.direction} ${lockedTotal} — ${prevUnits}u → ${units}u [${tier}] (locked) (${game.awayTeam} @ ${game.homeTeam})`);
+      return { action: 'updated', betId };
     }
     
     if (tierChanged || newTier === 'CONFIRM') {
@@ -1093,7 +1139,6 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
         }
       }
       await updateDoc(betRef, updateData);
-      const prevUnits = prev.bet?.units || prev.prediction?.unitSize || '?';
       const displayUnits = prev.isLocked ? prevUnits : units;
       const displayTotal = prev.isLocked ? lockedTotal : totalsData.marketTotal;
       const arrow = newTier === 'CONFIRM' && prevTier !== 'CONFIRM' ? '⬆️  UPGRADED' : '🔄 UPDATED';
@@ -1107,7 +1152,7 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
       updateData['prediction.unitSize'] = units;
     }
     await updateDoc(betRef, updateData);
-    const stableUnits = prev.isLocked ? (prev.bet?.units || prev.prediction?.unitSize || '?') : units;
+    const stableUnits = prev.isLocked ? prevUnits : units;
     const stableTotal = prev.isLocked ? lockedTotal : totalsData.marketTotal;
     console.log(`   🔒 Stable: ${totalsData.direction} ${stableTotal} — still ${newTier} | ${stableUnits}u${prev.isLocked ? ' (locked)' : ''} (${game.awayTeam} @ ${game.homeTeam})`);
     return { action: 'stable', betId };
@@ -1583,13 +1628,18 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // SIZE: 3 signals → MOS-based conviction, 2 signals → 1u
+      // SIZE: Pinnacle edge drives units. MOS was the gate, Pinnacle is the sizer.
       let units;
       if (signalCount === 3) {
-        if (mos >= 3) units = 4;
-        else if (mos >= 2) units = 3;
+        if (pinnEdgePts >= 2.0) units = 4;
+        else if (pinnEdgePts >= 1.5) units = 3;
+        else if (pinnEdgePts >= 1.0) units = 3;
         else units = 2;
+      } else if (signal2) {
+        // S1 + S2 (models + Pinnacle, no movement yet)
+        units = pinnEdgePts >= 1.5 ? 2 : 1;
       } else {
+        // S1 + S3 (models + movement, no Pinnacle data) — direction confirmed, edge unmeasured
         units = 1;
       }
       
@@ -1698,39 +1748,51 @@ async function fetchPrimePicks() {
       totalsEval.bestTotalBookLine = bestTotalBookLine;
       totalsEval.hasPinnEdge = hasPinnEdge;
       
-      // ── MOVEMENT GATE ─────────────────────────────────────────────
-      const drBoost = applyDRUnderBoost(tierInfo.units, totalsEval);
+      // ── TOTALS SIZING: Pinnacle edge → base, MOT cap, DR boost ──
+      // Step 1: Base units from Pinnacle totals edge
+      let baseUnits;
+      if (hasPinnEdge) {
+        if (pinnTotalEdge >= 2.0) baseUnits = 3;
+        else if (pinnTotalEdge >= 1.0) baseUnits = 2;
+        else baseUnits = 1;
+      } else if (pinnTotal == null) {
+        baseUnits = 1; // No Pinnacle data — can't measure edge, minimum size
+      } else {
+        // Pinnacle data exists but no edge → SKIP
+        pinnTotalsSkipped++;
+        console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | NO Pinn edge | Pinn ${pinnTotal} → SKIP (${game.awayTeam} @ ${game.homeTeam})`);
+        totalsEval.pinnSkipped = true;
+        totalsPicks.push({ game, totalsData: totalsEval, prediction: null });
+        continue;
+      }
+
+      // Step 2: DR contrarian UNDER boost (additive)
+      const drBoost = applyDRUnderBoost(baseUnits, totalsEval);
+
+      // Step 3: MOT outlier cap (penalize divergence from market)
       const cappedUnits = applyMOTCap(drBoost.units, mot);
+
+      // Step 4: Movement gate (FLAGGED → kill)
       const adjustedTotalUnits = applyMovementGate(cappedUnits, totalsEval.movementTier);
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       
       const drTag = drBoost.drTier ? ` 🔥 ${drBoost.drTier} (+${drBoost.boost}u)` : '';
       const capTag = cappedUnits < drBoost.units ? ` ⚠️  MOT_CAP(${drBoost.units}→${cappedUnits})` : '';
-      const pinnTag = pinnTotal != null
-        ? (hasPinnEdge ? ` | Pinn ${pinnTotal} → ${bestTotalBook?.toUpperCase()} ${bestTotalBookLine} (+${pinnTotalEdge}pt edge)` : ` | Pinn ${pinnTotal} (no edge)`)
-        : '';
+      const pinnTag = hasPinnEdge
+        ? ` | Pinn ${pinnTotal} → ${bestTotalBook?.toUpperCase()} ${bestTotalBookLine} (+${pinnTotalEdge}pt edge)`
+        : (pinnTotal != null ? ` | Pinn ${pinnTotal}` : '');
       
       if (adjustedTotalUnits === null) {
         totalsFlaggedCount++;
         const mvStr = totalsEval.lineMovement != null ? `${totalsEval.lineMovement > 0 ? '+' : ''}${totalsEval.lineMovement}` : '?';
-        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr}, opener: ${totalsEval.openerTotal})${drTag}${pinnTag} (${game.awayTeam} @ ${game.homeTeam})`);
-      } else if (!hasPinnEdge && pinnTotal != null) {
-        // Pinnacle doesn't confirm — skip the bet but store for monitoring
-        pinnTotalsSkipped++;
-        console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | NO Pinn edge${pinnTag} → SKIP (${game.awayTeam} @ ${game.homeTeam})`);
-        adjustedTotalUnits === null; // won't save as live bet
-        totalsEval.pinnSkipped = true;
+        console.log(`   🚫 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} FLAGGED (line moved ${mvStr})${drTag}${pinnTag} (${game.awayTeam} @ ${game.homeTeam})`);
       } else {
-        // Pinnacle confirms OR no Pinnacle data — size by MOT + Pinnacle edge boost
-        let finalUnits = adjustedTotalUnits;
-        if (hasPinnEdge && pinnTotalEdge >= 1.0) finalUnits = Math.min(finalUnits + 1, 5);
-        totalsEval.finalUnits = finalUnits;
-        
+        totalsEval.finalUnits = adjustedTotalUnits;
         const finalTier = drBoost.drTier || tierInfo.tier;
-        const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : totalsEval.movementTier === 'NEUTRAL' ? '⚪' : '';
-        const pinnConfirm = hasPinnEdge ? ' ✅ PINN' : (pinnTotal == null ? '' : '');
-        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${finalUnits}u [${finalTier}]${drTag}${capTag}${pinnTag}${pinnConfirm} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
+        const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : '';
+        const pinnConfirm = hasPinnEdge ? ' ✅ PINN' : '';
+        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${adjustedTotalUnits}u [${finalTier}]${drTag}${capTag}${pinnTag}${pinnConfirm} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       }
       
       totalsPicks.push({
