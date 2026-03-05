@@ -1,5 +1,5 @@
 /**
- * CHECK LINE MOVEMENT V11 — Pinnacle-Sized Signal Monitor
+ * CHECK LINE MOVEMENT V11 — Pinnacle Base + Movement Boost Monitor
  *
  * The morning fetch saves model evaluations for EVERY game to Firebase.
  * This script re-evaluates using the Three-Signal System:
@@ -893,7 +893,7 @@ async function killExistingBet(betDoc, reason, counters) {
 async function checkLineMovement() {
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════════════════════════════╗');
-  console.log('║        LINE MONITOR V11 — Pinnacle-Sized Signal Tracking                            ║');
+  console.log('║        LINE MONITOR V11 — Pinnacle Base + Movement Boost                               ║');
   console.log('╚═══════════════════════════════════════════════════════════════════════════════╝');
   console.log('\n');
 
@@ -1050,14 +1050,15 @@ async function checkLineMovement() {
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
 
       if (!signal3Against && signalCount >= 2) {
+        const mvMag = Math.abs(best.lineMovement || 0);
         let units;
         if (signalCount === 3) {
-          if (pinnEdgePts >= 2.0) units = 4;
-          else if (pinnEdgePts >= 1.5) units = 3;
+          if (pinnEdgePts >= 1.5) units = 3;
           else if (pinnEdgePts >= 1.0) units = 3;
           else units = 2;
+          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else if (signal2) {
-          units = pinnEdgePts >= 1.5 ? 2 : 1;
+          units = pinnEdgePts >= 1.0 ? 2 : 1;
         } else {
           units = 1;
         }
@@ -1153,20 +1154,24 @@ async function checkLineMovement() {
       if (pinnTotal != null && !hasPinnTotalEdge) {
         // No Pinnacle confirmation — don't create/update bet
       } else {
-        // Pinnacle edge sizes the bet (same logic as fetchPrimePicks V11)
+        // Pinnacle base + movement boost (mirrors fetchPrimePicks V11)
         let baseUnits;
         if (hasPinnTotalEdge) {
-          if (pinnTotalEdge >= 2.0) baseUnits = 3;
+          if (pinnTotalEdge >= 1.5) baseUnits = 3;
           else if (pinnTotalEdge >= 1.0) baseUnits = 2;
           else baseUnits = 1;
         } else {
-          baseUnits = 1; // No Pinnacle data
+          baseUnits = 1;
+        }
+        const totalsMvMag = Math.abs(totalsResult.lineMovement || 0);
+        if (totalsResult.movementTier === 'CONFIRM' && totalsMvMag >= 1.0) {
+          baseUnits = Math.min(baseUnits + 1, 4);
         }
         const drB = applyDRUnderBoost(baseUnits, totalsResult);
         const capped = applyMOTCap(drB.units, totalsResult.mot);
-        const adjustedUnits = applyMovementGate(capped, totalsResult.movementTier, totalsResult.movementLabel);
+        const adjustedUnits = (totalsResult.movementTier === 'FLAGGED') ? null : capped;
         totalsResult.finalUnits = adjustedUnits;
-        if (adjustedUnits !== null || totalsResult.movementTier !== 'FLAGGED') {
+        if (adjustedUnits !== null) {
           await createOrUpdateTotalsBet(evalData, totalsResult, counters);
         }
       }

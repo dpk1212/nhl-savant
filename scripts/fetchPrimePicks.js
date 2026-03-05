@@ -1,27 +1,27 @@
 /**
- * PRIME PICKS V11 — Pinnacle-Sized Signal System
+ * PRIME PICKS V11 — Pinnacle Base + Movement Boost
+ *
+ * Each unit of conviction comes from an INDEPENDENT source:
+ *   GATE  → MOS (do models agree?)
+ *   BASE  → Pinnacle edge (how mispriced is retail vs sharp?)
+ *   BOOST → Line movement magnitude (is real money confirming us?)
+ *   BONUS → DR contrarian UNDER (is DR going against its own bias?) [totals only]
  *
  * SPREADS (ATS):
- *   S1. MODELS: Both DR + HS predict team covers the opening spread (MOS ≥ 1.0)
- *   S2. PINNACLE: Retail book offers ≥0.5pt softer than Pinnacle sharp line
- *   S3. MOVEMENT: Line has moved ≥0.5pt toward our pick since open
+ *   S1. MODELS: Both DR + HS predict cover vs opener (MOS ≥ 1.0)
+ *   S2. PINNACLE: Retail ≥0.5pt softer than Pinnacle
+ *   S3. MOVEMENT: Line moved ≥0.5pt toward our pick
  *
- *   MOS is the GATE (determines IF we bet).
- *   Pinnacle edge is the SIZER (determines HOW MUCH).
- *   Movement is the FILTER (against = kill) and confirms direction.
- *
- *   3 signals → BET: size by Pinnacle edge (≥2pt=4u, ≥1.5pt=3u, ≥1pt=3u, ≥0.5pt=2u)
- *   2 signals (S1+S2, no movement against) → BET: Pinn edge (≥1.5pt=2u, else 1u)
- *   2 signals (S1+S3, no Pinnacle) → BET 1u (direction confirmed, edge unmeasured)
- *   Movement against → KILL regardless
- *   1 signal only → SKIP
+ *   3 signals: Pinn ≥1.5pt=3u, ≥1.0pt=3u, ≥0.5pt=2u  +  movement ≥1pt=+1u (cap 4u)
+ *   2 signals (S1+S2): Pinn ≥1.0pt=2u, else 1u
+ *   2 signals (S1+S3): 1u
+ *   Movement against → KILL | 1 signal → SKIP
  *
  * TOTALS (O/U):
- *   20% DR / 80% HS blend for direction.  MOT floor = 2.0.
- *   Pinnacle totals edge is the SIZER: ≥2pt=3u, ≥1pt=2u, ≥0.5pt=1u, no data=1u.
- *   MOT CAP: 4-6 MOT = -1u, 6+ MOT = cap 1u (outlier skepticism).
- *   DR Contrarian UNDER boost: sweet spot (-5 to -8) = +2u, moderate (-3 to -5) = +1u.
- *   Pinnacle data exists but no ≥0.5pt edge → SKIP.
+ *   20/80 DR/HS blend.  MOT floor = 2.0.
+ *   Pinn edge: ≥1.5pt=3u, ≥1.0pt=2u, ≥0.5pt=1u  +  movement ≥1pt=+1u (cap 4u)
+ *   DR contrarian UNDER: sweet (-5:-8)=+2u, moderate (-3:-5)=+1u
+ *   MOT CAP: 4-6=-1u, 6+=cap 1u.  No Pinn edge → SKIP.
  *
  * Usage: npm run fetch-prime-picks
  */
@@ -1628,18 +1628,19 @@ async function fetchPrimePicks() {
         continue;
       }
       
-      // SIZE: Pinnacle edge drives units. MOS was the gate, Pinnacle is the sizer.
+      // SIZE: Pinnacle edge = base, line movement magnitude = boost
+      const mvMag = Math.abs(best.lineMovement || 0);
       let units;
       if (signalCount === 3) {
-        if (pinnEdgePts >= 2.0) units = 4;
-        else if (pinnEdgePts >= 1.5) units = 3;
+        // Base from Pinnacle edge
+        if (pinnEdgePts >= 1.5) units = 3;
         else if (pinnEdgePts >= 1.0) units = 3;
         else units = 2;
+        // Movement boost: ≥1.0pt move = +1u (cap 4u)
+        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
       } else if (signal2) {
-        // S1 + S2 (models + Pinnacle, no movement yet)
-        units = pinnEdgePts >= 1.5 ? 2 : 1;
+        units = pinnEdgePts >= 1.0 ? 2 : 1;
       } else {
-        // S1 + S3 (models + movement, no Pinnacle data) — direction confirmed, edge unmeasured
         units = 1;
       }
       
@@ -1748,17 +1749,16 @@ async function fetchPrimePicks() {
       totalsEval.bestTotalBookLine = bestTotalBookLine;
       totalsEval.hasPinnEdge = hasPinnEdge;
       
-      // ── TOTALS SIZING: Pinnacle edge → base, MOT cap, DR boost ──
+      // ── TOTALS SIZING: Pinnacle base + movement boost + DR boost ──
       // Step 1: Base units from Pinnacle totals edge
       let baseUnits;
       if (hasPinnEdge) {
-        if (pinnTotalEdge >= 2.0) baseUnits = 3;
+        if (pinnTotalEdge >= 1.5) baseUnits = 3;
         else if (pinnTotalEdge >= 1.0) baseUnits = 2;
         else baseUnits = 1;
       } else if (pinnTotal == null) {
-        baseUnits = 1; // No Pinnacle data — can't measure edge, minimum size
+        baseUnits = 1;
       } else {
-        // Pinnacle data exists but no edge → SKIP
         pinnTotalsSkipped++;
         console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | NO Pinn edge | Pinn ${pinnTotal} → SKIP (${game.awayTeam} @ ${game.homeTeam})`);
         totalsEval.pinnSkipped = true;
@@ -1766,14 +1766,20 @@ async function fetchPrimePicks() {
         continue;
       }
 
-      // Step 2: DR contrarian UNDER boost (additive)
+      // Step 2: Movement boost — line moved ≥1.0pt for us = +1u (cap 4u)
+      const totalsMvMag = Math.abs(totalsEval.lineMovement || 0);
+      if (totalsEval.movementTier === 'CONFIRM' && totalsMvMag >= 1.0) {
+        baseUnits = Math.min(baseUnits + 1, 4);
+      }
+
+      // Step 3: DR contrarian UNDER boost (additive)
       const drBoost = applyDRUnderBoost(baseUnits, totalsEval);
 
-      // Step 3: MOT outlier cap (penalize divergence from market)
+      // Step 4: MOT outlier cap (penalize divergence from market)
       const cappedUnits = applyMOTCap(drBoost.units, mot);
 
-      // Step 4: Movement gate (FLAGGED → kill)
-      const adjustedTotalUnits = applyMovementGate(cappedUnits, totalsEval.movementTier);
+      // Step 5: Movement gate (FLAGGED → kill)
+      const adjustedTotalUnits = (totalsEval.movementTier === 'FLAGGED') ? null : cappedUnits;
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       
