@@ -14,6 +14,7 @@ import { gradeBasketballBet } from '../utils/basketballBetGrader';
 import { BasketballLiveScore, GameStatusFilter } from '../components/BasketballLiveScore';
 import { BasketballPerformanceDashboard } from '../components/BasketballPerformanceDashboard';
 import { AdvancedMatchupCard } from '../components/AdvancedMatchupCard';
+import { PlayerStatsPanel } from '../components/PlayerStatsPanel';
 import { getUnitSize, getUnitDisplay, getUnitColor } from '../utils/staggeredUnits';
 import { getConfidenceRating, getBetTier } from '../utils/abcUnits';
 import { getDynamicTierInfo, loadConfidenceWeights } from '../utils/dynamicConfidenceUnits';
@@ -56,6 +57,7 @@ const Basketball = () => {
   const [showPrimeOnly, setShowPrimeOnly] = useState(false); // Filter to show only Prime picks (EV + spread confirmed)
   const [teamMappings, setTeamMappings] = useState(null);
   const [pbpData, setPbpData] = useState({});
+  const [cbbdPlayers, setCbbdPlayers] = useState({});
   
   // Bet outcomes state
   const [betsMap, setBetsMap] = useState(new Map());
@@ -268,12 +270,15 @@ const Basketball = () => {
       const barttorvikResponse = await fetch(`/Bart.md${cacheBuster}`);
       // Load Barttorvik PBP shooting splits
       const bartPbpResponse = await fetch(`/bart_pbp.md${cacheBuster}`);
+      // Load CBBD player stats
+      const cbbdResponse = await fetch(`/cbbd_players.json${cacheBuster}`).catch(() => null);
       
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();
       const drateMarkdown = await drateResponse.text();
       const barttorvikMarkdown = await barttorvikResponse.text();
       const bartPbpMarkdown = bartPbpResponse.ok ? await bartPbpResponse.text() : '';
+      const cbbdPlayersData = (cbbdResponse && cbbdResponse.ok) ? await cbbdResponse.json() : {};
       const csvContent = await csvResponse.text();
       
       // Parse data (odds parser filters for TODAY only)
@@ -288,6 +293,7 @@ const Basketball = () => {
       const mappings = loadTeamMappings(csvContent);
       setTeamMappings(mappings);
       setPbpData(bartPbpData);
+      setCbbdPlayers(cbbdPlayersData);
       
       // Match games using CSV mappings (OddsTrader as base)
       const matchedGames = matchGamesWithCSV(oddsGames, haslaData, dratePreds, barttorvikData, csvContent);
@@ -1173,6 +1179,7 @@ const Basketball = () => {
                         displayTime={sortOrder === 'time' ? getGameTime(game) : null}
                         betsMap={betsMap}
                         pbpData={pbpData}
+                        cbbdPlayers={cbbdPlayers}
                       />
                     ))}
                   </>
@@ -2242,8 +2249,9 @@ const LineMovementSparkline = ({ lineHistory, opener, current, movementTier, mov
   );
 };
 
-const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap, pbpData = {} }) => {
+const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap, pbpData = {}, cbbdPlayers = {} }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [detailsTab, setDetailsTab] = useState('advanced');
   const pred = game.prediction;
   const odds = game.odds;
   const liveScore = game.liveScore;
@@ -3577,23 +3585,68 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
           }
         `}</style>
         
-        {showDetails && (
-          <div style={{ 
-            paddingTop: '1rem',
-            display: 'grid',
-            gap: '1rem'
-          }}>
-            {/* Advanced Statistical Analysis - Inside Model Breakdown */}
-            {game.barttorvik && (
-              <AdvancedMatchupCard
-                barttorvik={game.barttorvik}
-                awayTeam={game.awayTeam}
-                homeTeam={game.homeTeam}
-                pbpData={pbpData}
-              />
-            )}
-          </div>
-        )}
+        {showDetails && (() => {
+          const normKey = (name) => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const awayKey = normKey(game.awayTeam);
+          const homeKey = normKey(game.homeTeam);
+          const awayPlayerStats = cbbdPlayers[awayKey] || null;
+          const homePlayerStats = cbbdPlayers[homeKey] || null;
+          const hasPlayerData = !!(awayPlayerStats || homePlayerStats);
+          const hasBarttorvik = !!game.barttorvik;
+          const tabs = [];
+          if (hasBarttorvik) tabs.push('advanced');
+          if (hasPlayerData) tabs.push('players');
+
+          return (
+            <div style={{ paddingTop: '1rem', display: 'grid', gap: '1rem' }}>
+              {tabs.length > 1 && (
+                <div style={{
+                  display: 'flex', justifyContent: 'center', gap: '4px',
+                  background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '3px',
+                }}>
+                  {tabs.map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setDetailsTab(tab)}
+                      style={{
+                        flex: 1, padding: isMobile ? '6px 8px' : '7px 14px',
+                        borderRadius: '8px', border: 'none', cursor: 'pointer',
+                        fontSize: isMobile ? '10px' : '11px', fontWeight: '700',
+                        letterSpacing: '0.06em', textTransform: 'uppercase',
+                        transition: 'all 0.2s ease',
+                        background: detailsTab === tab
+                          ? 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))'
+                          : 'transparent',
+                        color: detailsTab === tab ? '#A5B4FC' : 'rgba(255,255,255,0.4)',
+                        boxShadow: detailsTab === tab ? '0 2px 8px rgba(99,102,241,0.15)' : 'none',
+                      }}
+                    >
+                      {tab === 'advanced' ? '📊 Advanced Stats' : '👤 Key Players'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {(detailsTab === 'advanced' || !hasPlayerData) && hasBarttorvik && (
+                <AdvancedMatchupCard
+                  barttorvik={game.barttorvik}
+                  awayTeam={game.awayTeam}
+                  homeTeam={game.homeTeam}
+                  pbpData={pbpData}
+                />
+              )}
+
+              {detailsTab === 'players' && hasPlayerData && (
+                <PlayerStatsPanel
+                  awayStats={awayPlayerStats}
+                  homeStats={homePlayerStats}
+                  awayTeam={game.awayTeam}
+                  homeTeam={game.homeTeam}
+                />
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

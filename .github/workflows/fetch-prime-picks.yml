@@ -32,6 +32,7 @@ jobs:
           echo "FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}" >> .env
           echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
           echo "ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}" >> .env
+          echo "CBBD_KEY=${{ secrets.CBBD_KEY }}" >> .env
       
       - name: Auto-populate Odds API name mappings
         run: node scripts/buildOddsApiMap.js
@@ -39,11 +40,14 @@ jobs:
       - name: Fetch Prime Picks
         run: npm run fetch-prime-picks
       
+      - name: Fetch CBBD Player Stats
+        run: node scripts/fetchCBBDPlayerStats.js
+      
       - name: Commit data files if changed
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/basketball_odds.md public/basketball_spreads.md public/basketball_totals.md public/haslametrics.md public/dratings.md public/basketball_teams.csv
+          git add public/basketball_odds.md public/basketball_spreads.md public/basketball_totals.md public/haslametrics.md public/dratings.md public/basketball_teams.csv public/cbbd_players.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Prime Picks data [$(date +'%Y-%m-%d %H:%M')]" && git push)
       
       # Build and deploy
