@@ -1,18 +1,25 @@
 /**
- * CBB Edge Health Monitor
+ * CBB Edge Health Monitor V11
  *
- * Daily health check: Is our edge still alive, shifting, or dying?
- * Tracks rolling windows (7d, 14d, 30d, all-time) for every
- * statistical assumption the system is built on.
+ * Daily health check: Is our edge alive, shifting, or dying?
  *
- * EDGE ASSUMPTIONS MONITORED:
- *   1. DR has systematic OVER bias (~+1.67 pts on totals)
- *   2. HS has 57.5% directional accuracy on totals
- *   3. 20/80 DR/HS blend outperforms 90/10 for totals
- *   4. DR UNDER sweet spot (-5 to -8 vs opener) is 85%+ accurate
- *   5. Lower MOT = higher accuracy (inverse relationship)
- *   6. BothCover filter adds edge for spreads
- *   7. Line movement kill filter saves money on spreads
+ * Organized around TWO questions:
+ *   A) STAR PERFORMANCE — Are we sizing correctly? (4★ > 3★ > 2★ > 1★ ?)
+ *   B) SIGNAL VALIDATION — Is each independent signal adding value?
+ *
+ * SIGNALS MONITORED:
+ *   ATS:
+ *     S1. Model agreement (gate) — both DR+HS predict cover
+ *     S2. Pinnacle edge (base sizer) — retail softer than sharp
+ *     S3. Line movement magnitude (boost) — real money confirming
+ *   TOTALS:
+ *     Pinnacle totals edge (base sizer)
+ *     Line movement magnitude (boost)
+ *     DR contrarian UNDER (bonus boost) — DR going against its own bias
+ *     MOT inverse cap (outlier skepticism)
+ *
+ * Each section answers: "Is this signal ACTUALLY predictive?"
+ * If a signal isn't predictive, we should remove it from sizing.
  */
 
 import 'dotenv/config';
@@ -781,64 +788,70 @@ async function analyze() {
       `${overall.units.toFixed(0)}u risked | ${overall.profit >= 0 ? '+' : ''}${overall.profit.toFixed(1)}u | ` +
       `${overall.roi >= 0 ? '+' : ''}${overall.roi.toFixed(1)}% ROI`);
 
-    printHeader('MOS TIER BREAKDOWN');
-    const MOS_TIERS = [
-      { name: 'MAXIMUM (5u) MOS 4+', fn: b => b.mos >= 4 },
-      { name: 'ELITE (4u)   MOS 3-4', fn: b => b.mos >= 3 && b.mos < 4 },
-      { name: 'STRONG (3u)  MOS 2.5-3', fn: b => b.mos >= 2.5 && b.mos < 3 },
-      { name: 'SOLID (2u)   MOS 2.25-2.5', fn: b => b.mos >= 2.25 && b.mos < 2.5 },
-      { name: 'BASE (1u)    MOS 2-2.25', fn: b => b.mos >= 2 && b.mos < 2.25 },
-    ];
-    for (const t of MOS_TIERS) fmtRow(t.name, calcStats(sBets.filter(t.fn)));
-    const belowFloor = sBets.filter(b => b.mos > 0 && b.mos < 2);
-    if (belowFloor.length) fmtRow('(below floor) MOS <2', calcStats(belowFloor));
+    // ── SECTION 1: STAR PERFORMANCE (are we optimally sized?) ────────
+    printHeader('⭐ STAR (UNIT) PERFORMANCE — Is sizing optimized?');
+    fmtRow('4★ picks (max conviction)', calcStats(sBets.filter(b => b.units >= 4)));
+    fmtRow('3★ picks', calcStats(sBets.filter(b => b.units === 3)));
+    fmtRow('2★ picks', calcStats(sBets.filter(b => b.units === 2)));
+    fmtRow('1★ picks (min conviction)', calcStats(sBets.filter(b => b.units === 1)));
+    console.log('\n  ⚡ Optimal if: 4★ > 3★ > 2★ > 1★ win% and ROI');
 
-    printHeader('MODEL AGREEMENT (bothCover)');
+    // ── SECTION 2: INDIVIDUAL SIGNALS (which signal carries weight?) ──
+    printHeader('📡 SIGNAL 1: MODEL AGREEMENT (Gate)');
     fmtRow('Both models cover', calcStats(sBets.filter(b => b.bothCover)));
     fmtRow('Single model only', calcStats(sBets.filter(b => !b.bothCover)));
 
-    printHeader('LINE MOVEMENT');
-    fmtRow('Line moved FOR us', calcStats(sBets.filter(b => b.lineMovement != null && b.lineMovement > 0)));
-    fmtRow('Line FLAT', calcStats(sBets.filter(b => b.lineMovement === 0)));
-    fmtRow('Line moved AGAINST', calcStats(sBets.filter(b => b.lineMovement != null && b.lineMovement < 0)));
-    fmtRow('Movement unknown', calcStats(sBets.filter(b => b.lineMovement == null)));
+    printHeader('📡 SIGNAL 2: PINNACLE EDGE (Base Sizer)');
+    fmtRow('Pinn edge ≥1.5pt', calcStats(sBets.filter(b => b.pinnEdgePts >= 1.5)));
+    fmtRow('Pinn edge 1.0-1.5pt', calcStats(sBets.filter(b => b.pinnEdgePts >= 1.0 && b.pinnEdgePts < 1.5)));
+    fmtRow('Pinn edge 0.5-1.0pt', calcStats(sBets.filter(b => b.pinnEdgePts >= 0.5 && b.pinnEdgePts < 1.0)));
+    fmtRow('No Pinnacle data', calcStats(sBets.filter(b => !b.pinnEdgePts)));
+    console.log('\n  ⚡ Optimal if: bigger Pinn edge → higher win%');
 
-    printHeader('FAVORITE vs UNDERDOG');
-    fmtRow('FAVORITES', calcStats(sBets.filter(b => b.isFavorite === true)));
-    fmtRow('UNDERDOGS', calcStats(sBets.filter(b => b.isFavorite === false)));
+    printHeader('📡 SIGNAL 3: LINE MOVEMENT (Boost)');
+    fmtRow('Moved FOR ≥1.5pt (steam)', calcStats(sBets.filter(b => b.lineMovement != null && b.lineMovement >= 1.5)));
+    fmtRow('Moved FOR 1.0-1.5pt', calcStats(sBets.filter(b => b.lineMovement != null && b.lineMovement >= 1.0 && b.lineMovement < 1.5)));
+    fmtRow('Moved FOR 0.5-1.0pt', calcStats(sBets.filter(b => b.lineMovement != null && b.lineMovement >= 0.5 && b.lineMovement < 1.0)));
+    fmtRow('FLAT (no movement)', calcStats(sBets.filter(b => b.lineMovement === 0 || b.lineMovement == null)));
+    fmtRow('Moved AGAINST (survived)', calcStats(sBets.filter(b => b.lineMovement != null && b.lineMovement < 0)));
+    console.log('\n  ⚡ Optimal if: bigger move FOR → higher win% (validates boost)');
 
-    printHeader('COMPOSITE: Both Cover + Line Movement');
-    fmtRow('Both cover + line FOR', calcStats(sBets.filter(b => b.bothCover && b.lineMovement > 0)));
-    fmtRow('Both cover + line FLAT', calcStats(sBets.filter(b => b.bothCover && b.lineMovement === 0)));
-    fmtRow('Both cover + line AGAINST', calcStats(sBets.filter(b => b.bothCover && b.lineMovement != null && b.lineMovement < 0)));
-
+    // ── SECTION 3: SIGNAL COUNT (how many signals = how good?) ────────
     const withSignals = sBets.filter(b => b.signalCount != null);
-    if (withSignals.length) {
-      printHeader('V11 SIGNAL COUNT MATRIX');
-      fmtRow('3 signals (full conviction)', calcStats(withSignals.filter(b => b.signalCount === 3)));
-      fmtRow('2 signals (partial)', calcStats(withSignals.filter(b => b.signalCount === 2)));
-      fmtRow('Pre-V11 (no signal data)', calcStats(sBets.filter(b => b.signalCount == null)));
-    }
+    printHeader('🔢 SIGNAL COUNT — 3 vs 2 vs pre-V11');
+    fmtRow('3 signals (S1+S2+S3)', calcStats(withSignals.filter(b => b.signalCount === 3)));
+    fmtRow('2 signals (partial)', calcStats(withSignals.filter(b => b.signalCount === 2)));
+    fmtRow('Pre-V11 (no signal data)', calcStats(sBets.filter(b => b.signalCount == null)));
+    console.log('\n  ⚡ Optimal if: 3sig >> 2sig win% and ROI');
 
-    const withPinn = sBets.filter(b => b.pinnEdgePts > 0);
-    if (withPinn.length) {
-      printHeader('PINNACLE EDGE (ATS) — SIZER ANALYSIS');
-      fmtRow('Pinn edge ≥2.0pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 2.0)));
-      fmtRow('Pinn edge 1.5-2.0pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 1.5 && b.pinnEdgePts < 2.0)));
-      fmtRow('Pinn edge 1.0-1.5pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 1.0 && b.pinnEdgePts < 1.5)));
-      fmtRow('Pinn edge 0.5-1.0pt', calcStats(withPinn.filter(b => b.pinnEdgePts >= 0.5 && b.pinnEdgePts < 1.0)));
-      fmtRow('No Pinnacle data', calcStats(sBets.filter(b => !b.pinnEdgePts)));
-    }
-
+    // ── SECTION 4: SIGNAL COMBINATIONS (which pair matters most?) ─────
     if (withSignals.length) {
-      printHeader('V11 SIGNAL × PINNACLE EDGE');
+      printHeader('🧬 SIGNAL COMBINATIONS — Which pair drives edge?');
       const s3 = withSignals.filter(b => b.signalCount === 3);
       const s2 = withSignals.filter(b => b.signalCount === 2);
-      fmtRow('3sig + Pinn ≥1.5pt', calcStats(s3.filter(b => b.pinnEdgePts >= 1.5)));
-      fmtRow('3sig + Pinn 0.5-1.5pt', calcStats(s3.filter(b => b.pinnEdgePts >= 0.5 && b.pinnEdgePts < 1.5)));
-      fmtRow('2sig + Pinn edge', calcStats(s2.filter(b => b.pinnEdgePts >= 0.5)));
-      fmtRow('2sig + no Pinn', calcStats(s2.filter(b => !b.pinnEdgePts || b.pinnEdgePts < 0.5)));
+      fmtRow('3sig: Pinn ≥1.5pt + mv ≥1pt', calcStats(s3.filter(b => b.pinnEdgePts >= 1.5 && Math.abs(b.lineMovement || 0) >= 1.0)));
+      fmtRow('3sig: Pinn ≥1pt + mv ≥1pt', calcStats(s3.filter(b => b.pinnEdgePts >= 1.0 && Math.abs(b.lineMovement || 0) >= 1.0)));
+      fmtRow('3sig: Pinn ≥1pt + mv <1pt', calcStats(s3.filter(b => b.pinnEdgePts >= 1.0 && Math.abs(b.lineMovement || 0) < 1.0)));
+      fmtRow('3sig: Pinn <1pt + mv ≥1pt', calcStats(s3.filter(b => b.pinnEdgePts < 1.0 && Math.abs(b.lineMovement || 0) >= 1.0)));
+      fmtRow('3sig: Pinn <1pt + mv <1pt', calcStats(s3.filter(b => b.pinnEdgePts < 1.0 && Math.abs(b.lineMovement || 0) < 1.0)));
+      fmtRow('2sig: S1+S2 (has Pinn)', calcStats(s2.filter(b => b.pinnEdgePts >= 0.5)));
+      fmtRow('2sig: S1+S3 (no Pinn)', calcStats(s2.filter(b => !b.pinnEdgePts || b.pinnEdgePts < 0.5)));
     }
+
+    // ── SECTION 5: MOS (is the gate calibrated right?) ────────────────
+    printHeader('🚪 MOS GATE — Is the floor correct?');
+    fmtRow('MOS ≥4 (extreme)', calcStats(sBets.filter(b => b.mos >= 4)));
+    fmtRow('MOS 3-4', calcStats(sBets.filter(b => b.mos >= 3 && b.mos < 4)));
+    fmtRow('MOS 2-3', calcStats(sBets.filter(b => b.mos >= 2 && b.mos < 3)));
+    fmtRow('MOS 1-2', calcStats(sBets.filter(b => b.mos >= 1 && b.mos < 2)));
+    const belowFloor = sBets.filter(b => b.mos > 0 && b.mos < 1);
+    if (belowFloor.length) fmtRow('MOS <1 (below floor)', calcStats(belowFloor));
+    console.log('\n  ⚡ Floor is correct if: MOS <1 has worst win%. MOS shouldn\'t scale linearly.');
+
+    // ── SECTION 6: CONTEXT ────────────────────────────────────────────
+    printHeader('📋 CONTEXT: Favorite vs Underdog');
+    fmtRow('FAVORITES', calcStats(sBets.filter(b => b.isFavorite === true)));
+    fmtRow('UNDERDOGS', calcStats(sBets.filter(b => b.isFavorite === false)));
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -858,39 +871,82 @@ async function analyze() {
       `${overall.units.toFixed(0)}u risked | ${overall.profit >= 0 ? '+' : ''}${overall.profit.toFixed(1)}u | ` +
       `${overall.roi >= 0 ? '+' : ''}${overall.roi.toFixed(1)}% ROI`);
 
-    printHeader('DIRECTION');
+    // ── SECTION 1: STAR PERFORMANCE (are we optimally sized?) ────────
+    printHeader('⭐ STAR (UNIT) PERFORMANCE — Is sizing optimized?');
+    fmtRow('5★ picks (max + DR boost)', calcStats(tBets.filter(b => b.units >= 5)));
+    fmtRow('4★ picks', calcStats(tBets.filter(b => b.units === 4)));
+    fmtRow('3★ picks', calcStats(tBets.filter(b => b.units === 3)));
+    fmtRow('2★ picks', calcStats(tBets.filter(b => b.units === 2)));
+    fmtRow('1★ picks (min conviction)', calcStats(tBets.filter(b => b.units === 1)));
+    console.log('\n  ⚡ Optimal if: higher stars → higher win% and ROI');
+
+    // ── SECTION 2: DIRECTION ──────────────────────────────────────────
+    printHeader('📋 DIRECTION');
     fmtRow('OVER bets', calcStats(tBets.filter(b => b.direction === 'OVER')));
     fmtRow('UNDER bets', calcStats(tBets.filter(b => b.direction === 'UNDER')));
 
-    printHeader('MOT TIER BREAKDOWN');
-    const MOT_TIERS = [
-      { name: 'MAXIMUM (5u) MOT 5+', fn: b => b.mot >= 5 },
-      { name: 'ELITE (4u)   MOT 4-5', fn: b => b.mot >= 4 && b.mot < 5 },
-      { name: 'STRONG (3u)  MOT 3-4', fn: b => b.mot >= 3 && b.mot < 4 },
-      { name: 'SOLID (2u)   MOT 2.5-3', fn: b => b.mot >= 2.5 && b.mot < 3 },
-      { name: 'BASE (1u)    MOT 2-2.5', fn: b => b.mot >= 2 && b.mot < 2.5 },
-      { name: 'MKT_CONF     MOT 0.5-2', fn: b => b.mot >= 0.5 && b.mot < 2 },
-    ];
-    for (const t of MOT_TIERS) fmtRow(t.name, calcStats(tBets.filter(t.fn)));
-    const belowFloor = tBets.filter(b => b.mot > 0 && b.mot < 0.5);
-    if (belowFloor.length) fmtRow('(below floor) MOT <0.5', calcStats(belowFloor));
+    // ── SECTION 3: INDIVIDUAL SIGNALS ─────────────────────────────────
+    printHeader('📡 SIGNAL: PINNACLE TOTALS EDGE (Base Sizer)');
+    fmtRow('Pinn edge ≥1.5pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 1.5)));
+    fmtRow('Pinn edge 1.0-1.5pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 1.0 && b.pinnTotalEdge < 1.5)));
+    fmtRow('Pinn edge 0.5-1.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 0.5 && b.pinnTotalEdge < 1.0)));
+    fmtRow('No Pinn edge', calcStats(tBets.filter(b => !b.hasPinnEdge && b.pinnTotal != null)));
+    fmtRow('No Pinn data at all', calcStats(tBets.filter(b => b.pinnTotal == null)));
+    console.log('\n  ⚡ Optimal if: bigger Pinn edge → higher win%');
 
-    printHeader('MODEL AGREEMENT (DR vs HS direction)');
+    printHeader('📡 SIGNAL: LINE MOVEMENT (Boost)');
+    fmtRow('Moved FOR ≥1.5pt (steam)', calcStats(tBets.filter(b => b.lineMovement != null && b.lineMovement >= 1.5)));
+    fmtRow('Moved FOR 1.0-1.5pt', calcStats(tBets.filter(b => b.lineMovement != null && b.lineMovement >= 1.0 && b.lineMovement < 1.5)));
+    fmtRow('Moved FOR 0.5-1.0pt', calcStats(tBets.filter(b => b.lineMovement != null && b.lineMovement >= 0.5 && b.lineMovement < 1.0)));
+    fmtRow('FLAT (no movement)', calcStats(tBets.filter(b => b.lineMovement === 0 || b.lineMovement == null)));
+    fmtRow('Moved AGAINST (survived)', calcStats(tBets.filter(b => b.lineMovement != null && b.lineMovement < 0)));
+    console.log('\n  ⚡ Optimal if: bigger move FOR → higher win% (validates +1u boost)');
+
+    printHeader('📡 SIGNAL: DR CONTRARIAN UNDER (Bonus Boost)');
+    fmtRow('DR_SWEET_SPOT (-5 to -8)', calcStats(tBets.filter(b => b.drSignal === 'DR_SWEET_SPOT')));
+    fmtRow('DR_UNDER (-3 to -5)', calcStats(tBets.filter(b => b.drSignal === 'DR_UNDER')));
+    fmtRow('DR slight under (0 to -3)', calcStats(tBets.filter(b => b.drSignal === 'DR_SLIGHT_UNDER')));
+    fmtRow('DR says OVER (with bias)', calcStats(tBets.filter(b => b.drMarginVsOpener != null && b.drMarginVsOpener >= 0)));
+    fmtRow('No DR signal data', calcStats(tBets.filter(b => b.drMarginVsOpener == null)));
+    console.log('\n  ⚡ Sweet spot should have highest win% (validates +2u boost)');
+
+    printHeader('📡 SIGNAL: MODEL AGREEMENT');
     fmtRow('Both agree on direction', calcStats(tBets.filter(b => b.modelsAgree === true)));
     fmtRow('Models DISAGREE', calcStats(tBets.filter(b => b.modelsAgree === false)));
-    fmtRow('Agreement unknown', calcStats(tBets.filter(b => b.modelsAgree == null)));
 
-    printHeader('LINE MOVEMENT');
-    fmtRow('Line moved FOR us', calcStats(tBets.filter(b => b.lineMovement != null && b.lineMovement > 0)));
-    fmtRow('Line FLAT', calcStats(tBets.filter(b => b.lineMovement === 0)));
-    fmtRow('Line moved AGAINST', calcStats(tBets.filter(b => b.lineMovement != null && b.lineMovement < 0)));
-    fmtRow('Movement unknown', calcStats(tBets.filter(b => b.lineMovement == null)));
+    // ── SECTION 4: SIGNAL COMBINATIONS ────────────────────────────────
+    printHeader('🧬 SIGNAL COMBOS — What stacks best?');
+    fmtRow('Pinn edge + mv ≥1pt + DR sig', calcStats(tBets.filter(b => b.hasPinnEdge && b.lineMovement >= 1.0 && b.drSignal)));
+    fmtRow('Pinn edge + mv ≥1pt', calcStats(tBets.filter(b => b.hasPinnEdge && b.lineMovement >= 1.0)));
+    fmtRow('Pinn edge + DR contrarian', calcStats(tBets.filter(b => b.hasPinnEdge && b.drSignal)));
+    fmtRow('Pinn edge only (no boost)', calcStats(tBets.filter(b => b.hasPinnEdge && !(b.lineMovement >= 1.0) && !b.drSignal)));
+    fmtRow('No Pinn + mv ≥1pt', calcStats(tBets.filter(b => !b.hasPinnEdge && b.lineMovement >= 1.0)));
+    fmtRow('No Pinn + no boosts', calcStats(tBets.filter(b => !b.hasPinnEdge && !(b.lineMovement >= 1.0) && !b.drSignal)));
 
+    // ── SECTION 5: MOT GATE + OUTLIER CAP ─────────────────────────────
+    printHeader('🚪 MOT GATE + OUTLIER CAP — Is the inverse working?');
+    fmtRow('MOT 2.0 - 3.0 (core)', calcStats(tBets.filter(b => b.mot >= 2 && b.mot < 3)));
+    fmtRow('MOT 3.0 - 4.0 (cap zone)', calcStats(tBets.filter(b => b.mot >= 3 && b.mot < 4)));
+    fmtRow('MOT 4.0 - 6.0 (heavy cap)', calcStats(tBets.filter(b => b.mot >= 4 && b.mot < 6)));
+    fmtRow('MOT 6.0+ (max cap → 1u)', calcStats(tBets.filter(b => b.mot >= 6)));
+    const belowFloor = tBets.filter(b => b.mot > 0 && b.mot < 2);
+    if (belowFloor.length) fmtRow('MOT < 2.0 (below floor)', calcStats(belowFloor));
+    console.log('\n  ⚡ Inverse = correct if: MOT 2-3 best win%, MOT 6+ worst');
+
+    // ── SECTION 6: DIRECTION × DR CONTRARIAN ──────────────────────────
+    printHeader('📋 DIRECTION × DR CONTRARIAN');
+    fmtRow('UNDER + DR sweet spot', calcStats(tBets.filter(b => b.direction === 'UNDER' && b.drSignal === 'DR_SWEET_SPOT')));
+    fmtRow('UNDER + DR under', calcStats(tBets.filter(b => b.direction === 'UNDER' && b.drSignal === 'DR_UNDER')));
+    fmtRow('UNDER + no DR signal', calcStats(tBets.filter(b => b.direction === 'UNDER' && !b.drSignal)));
+    fmtRow('OVER + models agree', calcStats(tBets.filter(b => b.direction === 'OVER' && b.modelsAgree === true)));
+    fmtRow('OVER + models disagree', calcStats(tBets.filter(b => b.direction === 'OVER' && b.modelsAgree === false)));
+
+    // ── SECTION 7: 20/80 BLEND RETRO ─────────────────────────────────
     const withRetro = tBets.filter(b => b.retroBlendDir != null);
     if (withRetro.length) {
-      printHeader('20/80 BLEND RETRO ANALYSIS');
-      const wouldFlip = withRetro.filter(b => b.retroBlendDir !== b.direction);
+      printHeader('📋 20/80 BLEND RETRO ANALYSIS');
       const sameDir = withRetro.filter(b => b.retroBlendDir === b.direction);
+      const wouldFlip = withRetro.filter(b => b.retroBlendDir !== b.direction);
       fmtRow('20/80 agrees with bet', calcStats(sameDir));
       fmtRow('20/80 would have FLIPPED', calcStats(wouldFlip));
       if (wouldFlip.length) {
@@ -898,45 +954,6 @@ async function analyze() {
         const flipLosses = wouldFlip.filter(b => b.won).length;
         console.log(`\n  → ${wouldFlip.length} bets would flip: ${flipWins} would become WINS, ${flipLosses} would become LOSSES`);
       }
-    }
-
-    printHeader('COMPOSITE: Direction + Agreement');
-    fmtRow('OVER + models agree', calcStats(tBets.filter(b => b.direction === 'OVER' && b.modelsAgree === true)));
-    fmtRow('OVER + models disagree', calcStats(tBets.filter(b => b.direction === 'OVER' && b.modelsAgree === false)));
-    fmtRow('UNDER + models agree', calcStats(tBets.filter(b => b.direction === 'UNDER' && b.modelsAgree === true)));
-    fmtRow('UNDER + models disagree', calcStats(tBets.filter(b => b.direction === 'UNDER' && b.modelsAgree === false)));
-
-    const withDRSignal = tBets.filter(b => b.drSignal != null);
-    if (withDRSignal.length || tBets.some(b => b.drMarginVsOpener != null)) {
-      printHeader('DR CONTRARIAN UNDER SIGNAL (vs opener)');
-      fmtRow('DR_SWEET_SPOT (-5 to -8)', calcStats(tBets.filter(b => b.drSignal === 'DR_SWEET_SPOT')));
-      fmtRow('DR_UNDER (-3 to -5)', calcStats(tBets.filter(b => b.drSignal === 'DR_UNDER')));
-      fmtRow('DR slight under (0 to -3)', calcStats(tBets.filter(b => b.drSignal === 'DR_SLIGHT_UNDER')));
-      fmtRow('DR says OVER (with bias)', calcStats(tBets.filter(b => b.drMarginVsOpener != null && b.drMarginVsOpener >= 0)));
-    }
-
-    printHeader('MOT OUTLIER ANALYSIS');
-    fmtRow('MOT < 1.0 (tight calls)', calcStats(tBets.filter(b => b.mot > 0 && b.mot < 1)));
-    fmtRow('MOT 1.0 - 2.0', calcStats(tBets.filter(b => b.mot >= 1 && b.mot < 2)));
-    fmtRow('MOT 2.0 - 3.0', calcStats(tBets.filter(b => b.mot >= 2 && b.mot < 3)));
-    fmtRow('MOT 3.0 - 4.0', calcStats(tBets.filter(b => b.mot >= 3 && b.mot < 4)));
-    fmtRow('MOT 4.0+ (outlier)', calcStats(tBets.filter(b => b.mot >= 4)));
-
-    const withPinnT = tBets.filter(b => b.hasPinnEdge);
-    if (withPinnT.length || tBets.some(b => b.pinnTotal != null)) {
-      printHeader('PINNACLE TOTALS EDGE — SIZER ANALYSIS');
-      fmtRow('Pinn edge ≥2.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 2.0)));
-      fmtRow('Pinn edge 1.0-2.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 1.0 && b.pinnTotalEdge < 2.0)));
-      fmtRow('Pinn edge 0.5-1.0pt', calcStats(tBets.filter(b => b.pinnTotalEdge >= 0.5 && b.pinnTotalEdge < 1.0)));
-      fmtRow('No Pinn totals edge', calcStats(tBets.filter(b => !b.hasPinnEdge)));
-      fmtRow('No Pinn data at all', calcStats(tBets.filter(b => b.pinnTotal == null)));
-    }
-
-    if (withPinnT.length) {
-      printHeader('PINNACLE × DR CONTRARIAN (TOTALS)');
-      fmtRow('Pinn edge + DR_SWEET_SPOT', calcStats(tBets.filter(b => b.hasPinnEdge && b.drSignal === 'DR_SWEET_SPOT')));
-      fmtRow('Pinn edge + DR_UNDER', calcStats(tBets.filter(b => b.hasPinnEdge && b.drSignal === 'DR_UNDER')));
-      fmtRow('Pinn edge + no DR signal', calcStats(tBets.filter(b => b.hasPinnEdge && !b.drSignal)));
     }
   }
 
