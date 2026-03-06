@@ -102,6 +102,12 @@ function EfficiencyComparison({ away, home, awayName, homeName, isMobile }) {
             }}>
               <div style={{ textAlign: 'center', flex: 1 }}>
                 <div style={{
+                  fontSize: '9px', fontWeight: '800', color: '#60A5FA',
+                  marginBottom: '4px', letterSpacing: '0.02em',
+                }}>
+                  {getTeamAbbrev(awayName, isMobile ? 8 : 12)}
+                </div>
+                <div style={{
                   fontSize: isMobile ? '16px' : '18px', fontWeight: '900',
                   color: awayTier.color,
                   fontFamily: 'ui-monospace, monospace',
@@ -121,11 +127,17 @@ function EfficiencyComparison({ away, home, awayName, homeName, isMobile }) {
                 </div>
               </div>
               <div style={{
-                width: '1px', height: '28px',
+                width: '1px', height: '36px',
                 background: 'rgba(255,255,255,0.06)',
                 margin: '0 8px',
               }} />
               <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{
+                  fontSize: '9px', fontWeight: '800', color: '#F87171',
+                  marginBottom: '4px', letterSpacing: '0.02em',
+                }}>
+                  {getTeamAbbrev(homeName, isMobile ? 8 : 12)}
+                </div>
                 <div style={{
                   fontSize: isMobile ? '16px' : '18px', fontWeight: '900',
                   color: homeTier.color,
@@ -218,7 +230,7 @@ function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
         marginBottom: '8px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
-          {isAlpha && (
+          {isAlpha ? (
             <div style={{
               width: '18px', height: '18px', borderRadius: '5px',
               background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.08))',
@@ -228,7 +240,22 @@ function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
             }}>
               <span style={{ fontSize: '9px', lineHeight: 1, color: '#FBBF24' }}>★</span>
             </div>
-          )}
+          ) : player.jersey ? (
+            <div style={{
+              minWidth: '20px', height: '18px', borderRadius: '4px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              padding: '0 3px',
+            }}>
+              <span style={{
+                fontSize: '9px', fontWeight: '800', lineHeight: 1,
+                color: 'rgba(255,255,255,0.35)',
+                fontFamily: 'ui-monospace, monospace',
+              }}>#{player.jersey}</span>
+            </div>
+          ) : null}
           <span style={{
             fontSize: isMobile ? '12px' : '13px',
             fontWeight: isAlpha ? '800' : '600',
@@ -237,6 +264,14 @@ function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
           }}>
             {player.name}
           </span>
+          {isAlpha && player.jersey && (
+            <span style={{
+              fontSize: '9px', fontWeight: '800',
+              color: 'rgba(251,191,36,0.5)',
+              fontFamily: 'ui-monospace, monospace',
+              flexShrink: 0,
+            }}>#{player.jersey}</span>
+          )}
           <span style={{
             fontSize: '9px', fontWeight: '700',
             color: sideColor, opacity: 0.6,

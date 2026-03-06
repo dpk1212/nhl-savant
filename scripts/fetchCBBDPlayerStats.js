@@ -204,7 +204,7 @@ async function main() {
     console.error(`   ❌ Ratings fetch failed: ${e.message}`);
   }
 
-  // 4. Fetch player stats for each team
+  // 4. Fetch player stats and rosters for each team
   const result = {};
   let matched = 0;
   let failed = 0;
@@ -229,12 +229,45 @@ async function main() {
         continue;
       }
 
+      // Fetch roster for jersey numbers
+      let rosterMap = {};
+      try {
+        const rosterData = await cbbd_fetch_safe(
+          `/teams/roster?team=${encodeURIComponent(cbbdName)}&season=${SEASON}`
+        );
+        apiCalls++;
+        if (rosterData && Array.isArray(rosterData) && rosterData.length > 0) {
+          const roster = rosterData[0];
+          if (roster.players) {
+            for (const rp of roster.players) {
+              const key = (rp.name || '').toLowerCase().trim();
+              rosterMap[key] = {
+                jersey: rp.jersey || null,
+                height: rp.height || null,
+                weight: rp.weight || null,
+              };
+            }
+          }
+        }
+      } catch (e) {
+        console.log(`   ⚠️  ${otTeam} roster fetch failed: ${e.message}`);
+      }
+
       // Sort by minutes (descending), take top N
       const sorted = players
         .filter(p => p.minutes > 0)
         .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
 
-      const topPlayers = sorted.slice(0, TOP_PLAYERS).map(p => formatPlayer(p));
+      const topPlayers = sorted.slice(0, TOP_PLAYERS).map(p => {
+        const formatted = formatPlayer(p);
+        const rosterKey = (p.name || '').toLowerCase().trim();
+        const rosterInfo = rosterMap[rosterKey];
+        if (rosterInfo) {
+          formatted.jersey = rosterInfo.jersey;
+          formatted.height = rosterInfo.height;
+        }
+        return formatted;
+      });
       const teamGames = sorted[0]?.games || 0;
 
       // Match adjusted ratings
