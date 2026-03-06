@@ -207,23 +207,97 @@ function ShootingStat({ label, value, avg, isMobile }) {
   );
 }
 
-function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
-  const isAlpha = index === 0;
-  const usagePct = Math.min(100, ((player.usage || 0) / maxUsage) * 100);
-  const usageColor = (player.usage || 0) >= 28 ? '#FBBF24' : (player.usage || 0) >= 22 ? '#3B82F6' : '#64748B';
+function GameLogRow({ game, isMobile }) {
+  const fgPct = game.fga > 0 ? ((game.fgm / game.fga) * 100).toFixed(0) : '—';
+  const dateStr = game.date ? game.date.slice(5).replace('-', '/') : '?';
 
   return (
     <div style={{
-      background: isAlpha
-        ? 'linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(251,191,36,0.02) 100%)'
-        : 'rgba(255,255,255,0.015)',
-      border: isAlpha
-        ? '1px solid rgba(251,191,36,0.2)'
-        : '1px solid rgba(255,255,255,0.05)',
-      borderRadius: '10px',
-      padding: isMobile ? '10px 12px' : '12px 14px',
-      transition: 'all 0.2s ease',
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '38px 1fr 30px 24px 24px 42px' : '42px 1fr 32px 26px 26px 48px',
+      gap: '3px', alignItems: 'center',
+      padding: '4px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.03)',
+      fontSize: isMobile ? '9px' : '10px',
+      fontFamily: 'ui-monospace, monospace',
     }}>
+      <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>{dateStr}</span>
+      <span style={{
+        color: 'rgba(255,255,255,0.5)', fontWeight: '600',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>vs {game.opp}</span>
+      <span style={{ textAlign: 'center', fontWeight: '800', color: game.pts >= 20 ? '#FBBF24' : game.pts >= 15 ? '#E2E8F0' : '#94A3B8' }}>
+        {game.pts}
+      </span>
+      <span style={{ textAlign: 'center', color: '#94A3B8' }}>{game.reb}</span>
+      <span style={{ textAlign: 'center', color: '#94A3B8' }}>{game.ast}</span>
+      <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
+        {game.fgm}-{game.fga}
+      </span>
+    </div>
+  );
+}
+
+function ShotProfileBar({ label, data, isMobile }) {
+  if (!data || data.att === 0) return null;
+  const pctVal = data.pct || 0;
+  const color = pctVal >= 55 ? '#10B981' : pctVal >= 40 ? '#22D3EE' : pctVal >= 30 ? '#F59E0B' : '#EF4444';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
+      <span style={{
+        fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.35)',
+        minWidth: isMobile ? '42px' : '50px',
+      }}>{label}</span>
+      <div style={{
+        flex: 1, height: '6px', borderRadius: '3px',
+        background: 'rgba(255,255,255,0.06)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          width: `${Math.min(100, pctVal)}%`, height: '100%',
+          background: color, borderRadius: '3px',
+        }} />
+      </div>
+      <span style={{
+        fontSize: isMobile ? '10px' : '11px', fontWeight: '800',
+        color, fontFamily: 'ui-monospace, monospace',
+        minWidth: '36px', textAlign: 'right',
+      }}>{pctVal}%</span>
+      <span style={{
+        fontSize: '8px', color: 'rgba(255,255,255,0.2)',
+        fontFamily: 'ui-monospace, monospace',
+        minWidth: '28px', textAlign: 'right',
+      }}>{data.made}/{data.att}</span>
+    </div>
+  );
+}
+
+function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
+  const [expanded, setExpanded] = useState(false);
+  const isAlpha = index === 0;
+  const usagePct = Math.min(100, ((player.usage || 0) / maxUsage) * 100);
+  const usageColor = (player.usage || 0) >= 28 ? '#FBBF24' : (player.usage || 0) >= 22 ? '#3B82F6' : '#64748B';
+  const hasDetail = !!(player.recentGames?.length || player.shotProfile);
+
+  return (
+    <div
+      onClick={() => hasDetail && setExpanded(!expanded)}
+      style={{
+        background: isAlpha
+          ? 'linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(251,191,36,0.02) 100%)'
+          : 'rgba(255,255,255,0.015)',
+        border: isAlpha
+          ? '1px solid rgba(251,191,36,0.2)'
+          : expanded
+          ? `1px solid ${sideColor}30`
+          : '1px solid rgba(255,255,255,0.05)',
+        borderRadius: '10px',
+        padding: isMobile ? '10px 12px' : '12px 14px',
+        transition: 'all 0.2s ease',
+        cursor: hasDetail ? 'pointer' : 'default',
+      }}
+    >
       {/* Player identity row */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -368,6 +442,130 @@ function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
           minWidth: '28px', textAlign: 'right',
         }}>{(player.usage || 0).toFixed(0)}%</span>
       </div>
+
+      {/* Tap hint */}
+      {hasDetail && !expanded && (
+        <div style={{
+          textAlign: 'center', marginTop: '6px',
+          fontSize: '8px', color: 'rgba(255,255,255,0.15)',
+          letterSpacing: '0.04em',
+        }}>
+          TAP FOR DETAILS ▾
+        </div>
+      )}
+
+      {/* Expanded detail panel */}
+      {expanded && hasDetail && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            marginTop: '10px', paddingTop: '10px',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          {/* Recent game log */}
+          {player.recentGames && player.recentGames.length > 0 && (
+            <div style={{ marginBottom: player.shotProfile ? '12px' : 0 }}>
+              <div style={{
+                fontSize: '9px', fontWeight: '700', letterSpacing: '0.08em',
+                color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+                marginBottom: '6px',
+              }}>Last {player.recentGames.length} Games</div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '38px 1fr 30px 24px 24px 42px' : '42px 1fr 32px 26px 26px 48px',
+                gap: '3px', padding: '0 0 3px',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                marginBottom: '2px',
+              }}>
+                {['DATE', 'OPP', 'PTS', 'REB', 'AST', 'FG'].map((h) => (
+                  <span key={h} style={{
+                    fontSize: '7px', fontWeight: '700', color: 'rgba(255,255,255,0.2)',
+                    letterSpacing: '0.06em', textAlign: h === 'DATE' || h === 'OPP' ? 'left' : 'center',
+                  }}>{h}</span>
+                ))}
+              </div>
+              {player.recentGames.map((g, i) => (
+                <GameLogRow key={i} game={g} isMobile={isMobile} />
+              ))}
+              {/* Averages row */}
+              {player.recentGames.length > 1 && (() => {
+                const n = player.recentGames.length;
+                const avg = (arr, key) => (arr.reduce((s, g) => s + (g[key] || 0), 0) / n).toFixed(1);
+                return (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '38px 1fr 30px 24px 24px 42px' : '42px 1fr 32px 26px 26px 48px',
+                    gap: '3px', alignItems: 'center',
+                    padding: '4px 0 0',
+                    fontSize: isMobile ? '9px' : '10px',
+                    fontFamily: 'ui-monospace, monospace',
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                  }}>
+                    <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: '700', fontSize: '8px' }}>AVG</span>
+                    <span />
+                    <span style={{ textAlign: 'center', fontWeight: '800', color: '#E2E8F0' }}>{avg(player.recentGames, 'pts')}</span>
+                    <span style={{ textAlign: 'center', color: '#94A3B8' }}>{avg(player.recentGames, 'reb')}</span>
+                    <span style={{ textAlign: 'center', color: '#94A3B8' }}>{avg(player.recentGames, 'ast')}</span>
+                    <span />
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Shot profile */}
+          {player.shotProfile && (
+            <div>
+              <div style={{
+                fontSize: '9px', fontWeight: '700', letterSpacing: '0.08em',
+                color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+                marginBottom: '6px',
+              }}>Shot Profile</div>
+              <ShotProfileBar label="At Rim" data={player.shotProfile.layups} isMobile={isMobile} />
+              <ShotProfileBar label="Mid-Range" data={player.shotProfile.midRange} isMobile={isMobile} />
+              <ShotProfileBar label="3-Point" data={player.shotProfile.threes} isMobile={isMobile} />
+              <ShotProfileBar label="Dunks" data={player.shotProfile.dunks} isMobile={isMobile} />
+              {player.shotProfile.breakdown && (
+                <div style={{
+                  display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap',
+                }}>
+                  {Object.entries(player.shotProfile.breakdown)
+                    .filter(([, v]) => v > 0)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([key, val]) => {
+                      const labels = {
+                        layups: 'Rim', threePointJumpers: '3PT', twoPointJumpers: 'Mid',
+                        dunks: 'Dunks', tipIns: 'Tips',
+                      };
+                      return (
+                        <span key={key} style={{
+                          fontSize: '8px', fontWeight: '700',
+                          color: 'rgba(255,255,255,0.35)',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          borderRadius: '4px', padding: '2px 6px',
+                          fontFamily: 'ui-monospace, monospace',
+                        }}>
+                          {labels[key] || key} {val.toFixed(0)}%
+                        </span>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Collapse hint */}
+          <div style={{
+            textAlign: 'center', marginTop: '8px',
+            fontSize: '8px', color: 'rgba(255,255,255,0.15)',
+            letterSpacing: '0.04em',
+          }}>
+            TAP TO COLLAPSE ▴
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -344,13 +344,78 @@ async function main() {
         .filter(p => p.minutes > 0)
         .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
 
+      // Fetch game logs for recent games (1 call per team)
+      let gameLogsMap = {};
+      try {
+        const gameLogs = await cbbdFetchSafe(
+          `/games/players?season=${SEASON}&team=${encodeURIComponent(cbbdName)}`
+        );
+        if (gameLogs && gameLogs.length > 0) {
+          const recentGames = gameLogs.slice(-5).reverse();
+          for (const game of recentGames) {
+            if (!game.players) continue;
+            for (const gp of game.players) {
+              const key = (gp.name || '').toLowerCase().trim();
+              if (!gameLogsMap[key]) gameLogsMap[key] = [];
+              gameLogsMap[key].push({
+                date: (game.startDate || '').slice(0, 10),
+                opp: game.opponent || '?',
+                pts: gp.points || 0,
+                reb: gp.rebounds?.total || 0,
+                ast: gp.assists || 0,
+                min: gp.minutes || 0,
+                fgm: gp.fieldGoals?.made || 0,
+                fga: gp.fieldGoals?.attempted || 0,
+                tpm: gp.threePointFieldGoals?.made || 0,
+                tpa: gp.threePointFieldGoals?.attempted || 0,
+                ftm: gp.freeThrows?.made || 0,
+                fta: gp.freeThrows?.attempted || 0,
+                gs: gp.gameScore || 0,
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.log(`   ⚠️  ${otTeam} game logs failed: ${e.message}`);
+      }
+
+      // Fetch shooting profile (1 call per team)
+      let shootingMap = {};
+      try {
+        const shooting = await cbbdFetchSafe(
+          `/stats/player/shooting/season?season=${SEASON}&team=${encodeURIComponent(cbbdName)}`
+        );
+        if (shooting && shooting.length > 0) {
+          for (const sp of shooting) {
+            const key = (sp.athleteName || '').toLowerCase().trim();
+            shootingMap[key] = {
+              dunks: sp.dunks ? { made: sp.dunks.made, att: sp.dunks.attempted, pct: sp.dunks.pct } : null,
+              layups: sp.layups ? { made: sp.layups.made, att: sp.layups.attempted, pct: sp.layups.pct } : null,
+              midRange: sp.twoPointJumpers ? { made: sp.twoPointJumpers.made, att: sp.twoPointJumpers.attempted, pct: sp.twoPointJumpers.pct } : null,
+              threes: sp.threePointJumpers ? { made: sp.threePointJumpers.made, att: sp.threePointJumpers.attempted, pct: sp.threePointJumpers.pct } : null,
+              breakdown: sp.attemptsBreakdown || null,
+            };
+          }
+        }
+      } catch (e) {
+        console.log(`   ⚠️  ${otTeam} shooting data failed: ${e.message}`);
+      }
+
       const topPlayers = sorted.slice(0, TOP_PLAYERS).map(p => {
         const formatted = formatPlayer(p);
-        const rosterKey = (p.name || '').toLowerCase().trim();
-        const rosterInfo = rosterMap[rosterKey];
+        const nameKey = (p.name || '').toLowerCase().trim();
+        const rosterInfo = rosterMap[nameKey];
         if (rosterInfo) {
           formatted.jersey = rosterInfo.jersey;
           formatted.height = rosterInfo.height;
+        }
+        const logs = gameLogsMap[nameKey];
+        if (logs && logs.length > 0) {
+          formatted.recentGames = logs;
+        }
+        const shotData = shootingMap[nameKey];
+        if (shotData) {
+          formatted.shotProfile = shotData;
         }
         return formatted;
       });
