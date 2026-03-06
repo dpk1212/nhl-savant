@@ -22,7 +22,6 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
   const teamMappings = loadTeamMappings(csvContent);
   
   const haslaGames = haslametricsData.games || [];
-  const haslaTeams = haslametricsData.teams || {};
   
   // Track unmapped teams for diagnostics
   const unmappedOddsTeams = new Set();
@@ -158,23 +157,6 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
     else if (dratePred) drateOnly++;
     else noMatches++;
     
-    // Get team ratings from Haslametrics (use Haslametrics name, not normalized!)
-    const awayTeamData = haslaTeams[awayMapping.haslametrics];
-    const homeTeamData = haslaTeams[homeMapping.haslametrics];
-    
-    // Calculate predicted scores from team efficiency when game-specific predictions unavailable
-    // Uses tempo-free efficiency model: score = (offEff * avgPossessions / 100) + homeAdvantage
-    const avgPossessions = 70;
-    const homeAdvantage = 3;
-    
-    // Calculate efficiency-based scores as fallback
-    let effAwayScore = null;
-    let effHomeScore = null;
-    if (awayTeamData?.offensiveEff && homeTeamData?.offensiveEff) {
-      effAwayScore = Math.round((awayTeamData.offensiveEff * avgPossessions / 100) * 10) / 10;
-      effHomeScore = Math.round(((homeTeamData.offensiveEff * avgPossessions / 100) + homeAdvantage) * 10) / 10;
-    }
-    
     // Build matched game object
     const matchedGame = {
       // Teams (using OddsTrader names as canonical)
@@ -182,30 +164,16 @@ export function matchGamesWithCSV(oddsGames, haslametricsData, dratePredictions,
       homeTeam: homeTeam,
       matchup: `${awayTeam} @ ${homeTeam}`,
       
-      // Haslametrics data (40% weight in ensemble)
-      // FALLBACK: If game not in "Expected Outcomes", calculate from team efficiency ratings
+      // Haslametrics: ONLY real predicted scores from "Expected Outcomes"
+      // No fallback — efficiency ratings are NOT predicted scores
       haslametrics: haslaGame ? {
         gameTime: haslaGame.gameTime,
-        awayRating: haslaGame.awayRating,  // This IS the predicted score
-        homeRating: haslaGame.homeRating,  // This IS the predicted score
+        awayRating: haslaGame.awayRating,
+        homeRating: haslaGame.homeRating,
         awayRank: haslaGame.awayRank,
         homeRank: haslaGame.homeRank,
-        awayOffEff: awayTeamData?.offensiveEff || null,
-        homeOffEff: homeTeamData?.offensiveEff || null,
-        awayScore: haslaGame.awayRating,  // Alias rating as score
-        homeScore: haslaGame.homeRating   // Alias rating as score
-      } : (awayTeamData && homeTeamData) ? {
-        // FALLBACK: No game prediction, but have team efficiency ratings
-        gameTime: null,
-        awayRating: null,
-        homeRating: null,
-        awayRank: null,
-        homeRank: null,
-        awayOffEff: awayTeamData.offensiveEff || null,
-        homeOffEff: homeTeamData.offensiveEff || null,
-        awayScore: effAwayScore,  // Calculated from efficiency
-        homeScore: effHomeScore,  // Calculated from efficiency
-        isEfficiencyBased: true   // Flag for transparency
+        awayScore: haslaGame.awayRating,
+        homeScore: haslaGame.homeRating
       } : null,
       
       // D-Ratings data (60% weight - PRIMARY)
