@@ -1053,12 +1053,18 @@ async function checkLineMovement() {
         const mvMag = Math.abs(best.lineMovement || 0);
         let units;
         if (signalCount === 3) {
-          if (pinnEdgePts >= 1.5) units = 3;
+          if (pinnEdgePts >= 2.5) units = 4;
+          else if (pinnEdgePts >= 2.0) units = 4;
+          else if (pinnEdgePts >= 1.5) units = 3;
           else if (pinnEdgePts >= 1.0) units = 3;
           else units = 2;
           if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else if (signal2) {
-          units = pinnEdgePts >= 1.0 ? 2 : 1;
+          if (pinnEdgePts >= 2.5) units = 4;
+          else if (pinnEdgePts >= 2.0) units = 3;
+          else if (pinnEdgePts >= 1.0) units = 2;
+          else units = 1;
+          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else {
           units = 1;
         }
@@ -1183,7 +1189,9 @@ async function checkLineMovement() {
         // Pinnacle base + movement boost (mirrors fetchPrimePicks V11)
         let baseUnits;
         if (hasPinnTotalEdge) {
-          if (pinnTotalEdge >= 1.5) baseUnits = 3;
+          if (pinnTotalEdge >= 2.5) baseUnits = 4;
+          else if (pinnTotalEdge >= 2.0) baseUnits = 3;
+          else if (pinnTotalEdge >= 1.5) baseUnits = 3;
           else if (pinnTotalEdge >= 1.0) baseUnits = 2;
           else baseUnits = 1;
         } else {
@@ -1304,18 +1312,25 @@ async function checkLineMovement() {
         const mvMag = Math.abs(mv || 0);
         let units;
         if (row.signalCount === 3) {
-          if (row.pinnEdgePts >= 1.5) units = 3;
+          if (row.pinnEdgePts >= 2.5) units = 4;
+          else if (row.pinnEdgePts >= 2.0) units = 4;
+          else if (row.pinnEdgePts >= 1.5) units = 3;
           else if (row.pinnEdgePts >= 1.0) units = 3;
           else units = 2;
           if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else if (row.signal2) {
-          units = row.pinnEdgePts >= 1.0 ? 2 : 1;
+          if (row.pinnEdgePts >= 2.5) units = 4;
+          else if (row.pinnEdgePts >= 2.0) units = 3;
+          else if (row.pinnEdgePts >= 1.0) units = 2;
+          else units = 1;
+          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else {
           units = 1;
         }
+        const pinnTier = row.pinnEdgePts >= 2.5 ? '🔥 MASSIVE' : row.pinnEdgePts >= 2.0 ? '🔥 HUGE' : row.pinnEdgePts >= 1.0 ? 'SOLID' : 'MOD';
         const stars = '★'.repeat(units) + '☆'.repeat(4 - units);
         console.log(`  │`);
-        console.log(`  │   ➜ ${stars} ${units}u  │  Pinn base: ${row.signal2 ? row.pinnEdgePts + 'pt' : '—'}  │  Mv boost: ${row.signalCount === 3 && mvMag >= 1.0 ? '+1u' : 'none'}`);
+        console.log(`  │   ➜ ${stars} ${units}u  │  Pinn edge: ${row.signal2 ? pinnTier + ' +' + row.pinnEdgePts + 'pt' : '—'}  │  Mv boost: ${mvMag >= 1.0 ? '+1u' : 'none'}`);
       }
       console.log(`  └────────────────────────────────────────────────`);
     }
@@ -1403,7 +1418,9 @@ async function checkLineMovement() {
         // Reconstruct unit sizing
         let baseUnits;
         if (row.hasPinnEdge) {
-          if (row.pinnEdge >= 1.5) baseUnits = 3;
+          if (row.pinnEdge >= 2.5) baseUnits = 4;
+          else if (row.pinnEdge >= 2.0) baseUnits = 3;
+          else if (row.pinnEdge >= 1.5) baseUnits = 3;
           else if (row.pinnEdge >= 1.0) baseUnits = 2;
           else baseUnits = 1;
         } else baseUnits = 1;
@@ -1414,9 +1431,10 @@ async function checkLineMovement() {
         const drB = applyDRUnderBoost(u, tr);
         const capped = applyMOTCap(drB.units, tr.mot);
         const final = tr.movementTier === 'FLAGGED' ? 0 : capped;
+        const pinnTier = row.pinnEdge >= 2.5 ? '🔥 MASSIVE' : row.pinnEdge >= 2.0 ? '🔥 HUGE' : row.pinnEdge >= 1.0 ? 'SOLID' : 'MOD';
         const stars = final > 0 ? '★'.repeat(final) + '☆'.repeat(Math.max(0, 4 - final)) : '💀 KILLED';
         console.log(`  │`);
-        console.log(`  │   ➜ ${stars} ${final > 0 ? final + 'u' : ''}  │  Pinn base: ${row.hasPinnEdge ? row.pinnEdge + 'pt→' + baseUnits + 'u' : '1u (no data)'}  │  Mv boost: ${mvBoost ? '+1u' : 'none'}  │  DR boost: ${drB.boost > 0 ? '+' + drB.boost + 'u (' + drB.drTier + ')' : 'none'}${capped < drB.units ? '  │  MOT cap: ' + drB.units + 'u→' + capped + 'u' : ''}`);
+        console.log(`  │   ➜ ${stars} ${final > 0 ? final + 'u' : ''}  │  Pinn edge: ${row.hasPinnEdge ? pinnTier + ' +' + row.pinnEdge + 'pt→' + baseUnits + 'u' : '1u (no data)'}  │  Mv boost: ${mvBoost ? '+1u' : 'none'}  │  DR boost: ${drB.boost > 0 ? '+' + drB.boost + 'u (' + drB.drTier + ')' : 'none'}${capped < drB.units ? '  │  MOT cap: ' + drB.units + 'u→' + capped + 'u' : ''}`);
       }
       console.log(`  └────────────────────────────────────────────────`);
     }

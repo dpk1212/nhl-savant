@@ -1,5 +1,5 @@
 /**
- * PRIME PICKS V11 — Pinnacle Base + Movement Boost
+ * PRIME PICKS V12 — Pinnacle Base + Movement Boost + Sharp Edge Scaling
  *
  * Each unit of conviction comes from an INDEPENDENT source:
  *   GATE  → MOS (do models agree?)
@@ -1629,17 +1629,22 @@ async function fetchPrimePicks() {
       }
       
       // SIZE: Pinnacle edge = base, line movement magnitude = boost
+      // Massive Pinnacle divergence (≥2pt) is the sharpest signal — size aggressively
       const mvMag = Math.abs(best.lineMovement || 0);
       let units;
       if (signalCount === 3) {
-        // Base from Pinnacle edge
-        if (pinnEdgePts >= 1.5) units = 3;
+        if (pinnEdgePts >= 2.5) units = 4;
+        else if (pinnEdgePts >= 2.0) units = 4;
+        else if (pinnEdgePts >= 1.5) units = 3;
         else if (pinnEdgePts >= 1.0) units = 3;
         else units = 2;
-        // Movement boost: ≥1.0pt move = +1u (cap 4u)
         if (mvMag >= 1.0) units = Math.min(units + 1, 4);
       } else if (signal2) {
-        units = pinnEdgePts >= 1.0 ? 2 : 1;
+        if (pinnEdgePts >= 2.5) units = 4;
+        else if (pinnEdgePts >= 2.0) units = 3;
+        else if (pinnEdgePts >= 1.0) units = 2;
+        else units = 1;
+        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
       } else {
         units = 1;
       }
@@ -1753,7 +1758,9 @@ async function fetchPrimePicks() {
       // Step 1: Base units from Pinnacle totals edge
       let baseUnits;
       if (hasPinnEdge) {
-        if (pinnTotalEdge >= 1.5) baseUnits = 3;
+        if (pinnTotalEdge >= 2.5) baseUnits = 4;
+        else if (pinnTotalEdge >= 2.0) baseUnits = 3;
+        else if (pinnTotalEdge >= 1.5) baseUnits = 3;
         else if (pinnTotalEdge >= 1.0) baseUnits = 2;
         else baseUnits = 1;
       } else if (pinnTotal == null) {
