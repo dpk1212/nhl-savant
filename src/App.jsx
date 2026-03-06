@@ -26,6 +26,7 @@ import Account from './pages/Account';
 import TopScorersTonight from './pages/TopScorersTonight';
 import Basketball from './pages/Basketball';
 import BasketballMappingAudit from './pages/BasketballMappingAudit';
+import MLBComingSoon from './pages/MLBComingSoon';
 import FAQ from './pages/FAQ';
 import TodaysPicksPreview from './pages/TodaysPicksPreview';
 import PDORegressionGuide from './pages/guides/PDORegressionGuide';
@@ -343,6 +344,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
               {/* Basketball - Hidden from navigation */}
               <Route path="/basketball" element={<Basketball />} />
               <Route path="/basketball/mapping-audit" element={<BasketballMappingAudit />} />
+              <Route path="/mlb" element={<MLBComingSoon />} />
               
               <Route path="/dashboard" element={<Dashboard dataProcessor={dataProcessor} loading={loading} error={error} />} />
               <Route path="/matchup-insights" element={<MatchupInsights 

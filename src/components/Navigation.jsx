@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, User, LogOut, CreditCard, Crown, Flame, HelpCircle, Database } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, User, LogOut, CreditCard, Crown, Flame, HelpCircle, Database, ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import AuthModal from './AuthModal';
@@ -11,6 +11,13 @@ const Navigation = () => {
   const [hoveredLink, setHoveredLink] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [sportsMenuOpen, setSportsMenuOpen] = useState(false);
+
+  const sports = [
+    { id: 'nhl', label: 'NHL', emoji: '🏒', path: '/', color: '#D4AF37' },
+    { id: 'cbb', label: 'College BB', emoji: '🏀', path: '/basketball', color: '#FF6B35' },
+    { id: 'mlb', label: 'Baseball', emoji: '⚾', path: '/mlb', color: '#22C55E', badge: 'COMING SOON' },
+  ];
   
   const { user, signOut, loading: authLoading } = useAuth();
   const { tier, isPremium, isTrial, daysRemaining, loading: subscriptionLoading } = useSubscription(user);
@@ -69,59 +76,154 @@ const Navigation = () => {
           🏒 <span style={{ display: window.innerWidth < 400 ? 'none' : 'inline' }}>NHL Savant</span>
         </Link>
 
-        {/* 🏀 College Basketball Button - Mobile & Desktop */}
-        <Link
-          to="/basketball"
-          className="basketball-nav-btn"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 0.875rem',
-            background: location.pathname === '/basketball'
-              ? 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)'
-              : 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.1) 100%)',
-            border: location.pathname === '/basketball'
-              ? '1px solid rgba(255, 107, 53, 0.4)'
-              : '1px solid rgba(255, 107, 53, 0.25)',
-            borderRadius: '10px',
-            color: location.pathname === '/basketball' ? '#FFFFFF' : '#FF6B35',
-            textDecoration: 'none',
-            fontSize: '0.813rem',
-            fontWeight: '700',
-            letterSpacing: '-0.01em',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            flexShrink: 0,
-            boxShadow: location.pathname === '/basketball'
-              ? '0 4px 12px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-              : '0 2px 8px rgba(255, 107, 53, 0.1)',
-            marginLeft: 'auto',
-            marginRight: '0.5rem'
-          }}
-          onMouseEnter={(e) => {
-            if (location.pathname !== '/basketball') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 107, 53, 0.25) 0%, rgba(247, 147, 30, 0.15) 100%)';
-              e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.4)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (location.pathname !== '/basketball') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.1) 100%)';
-              e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.25)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }
-          }}
-        >
-          <span style={{ fontSize: '1rem', lineHeight: 1 }}>🏀</span>
-          <span style={{ 
-            display: window.innerWidth < 640 ? 'none' : 'inline',
-            whiteSpace: 'nowrap'
-          }}>
-            College BB
-          </span>
-        </Link>
+        {/* Sport Switcher Dropdown */}
+        <div className="sport-switcher" style={{ position: 'relative', marginLeft: 'auto', marginRight: '0.5rem', flexShrink: 0 }}>
+          <button
+            onClick={() => {
+              setSportsMenuOpen(!sportsMenuOpen);
+              setUserMenuOpen(false);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.5rem 0.75rem',
+              background: sportsMenuOpen
+                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%)',
+              border: sportsMenuOpen
+                ? '1px solid rgba(255, 255, 255, 0.2)'
+                : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '10px',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '0.813rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              letterSpacing: '-0.01em'
+            }}
+            onMouseEnter={(e) => {
+              if (!sportsMenuOpen) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!sportsMenuOpen) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }
+            }}
+          >
+            <span style={{ fontSize: '0.875rem', lineHeight: 1 }}>🏟️</span>
+            <span className="sport-switcher-label" style={{ whiteSpace: 'nowrap' }}>Sports</span>
+            <ChevronDown
+              size={14}
+              strokeWidth={2.5}
+              style={{
+                transition: 'transform 0.2s ease',
+                transform: sportsMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                opacity: 0.7
+              }}
+            />
+          </button>
+
+          {sportsMenuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 0.5rem)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                padding: '0.5rem',
+                minWidth: '200px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                animation: 'slideDown 0.2s ease-out',
+                zIndex: 1001
+              }}
+              onMouseLeave={() => setSportsMenuOpen(false)}
+            >
+              {sports.map((sport) => {
+                const isActive = sport.path === '/'
+                  ? location.pathname === '/' || (!location.pathname.startsWith('/basketball') && !location.pathname.startsWith('/mlb') && !['/basketball', '/mlb'].includes(location.pathname))
+                  : location.pathname.startsWith(sport.path);
+
+                return (
+                  <Link
+                    key={sport.id}
+                    to={sport.path}
+                    onClick={() => setSportsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.625rem',
+                      padding: '0.625rem 0.75rem',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      color: isActive ? sport.color : 'rgba(255, 255, 255, 0.8)',
+                      background: isActive
+                        ? `linear-gradient(135deg, ${sport.color}18 0%, ${sport.color}08 100%)`
+                        : 'transparent',
+                      border: isActive
+                        ? `1px solid ${sport.color}40`
+                        : '1px solid transparent',
+                      marginBottom: '0.25rem',
+                      transition: 'all 0.2s ease',
+                      fontSize: '0.875rem',
+                      fontWeight: '600'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>{sport.emoji}</span>
+                    <span>{sport.label}</span>
+                    {isActive && (
+                      <div style={{
+                        marginLeft: 'auto',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: sport.color,
+                        boxShadow: `0 0 8px ${sport.color}`
+                      }} />
+                    )}
+                    {sport.badge && (
+                      <span style={{
+                        marginLeft: isActive ? '0' : 'auto',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '999px',
+                        fontSize: '0.6rem',
+                        fontWeight: '800',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                        color: sport.color,
+                        background: `${sport.color}15`,
+                        border: `1px solid ${sport.color}30`,
+                        whiteSpace: 'nowrap',
+                        animation: 'pulse 2s ease-in-out infinite'
+                      }}>
+                        {sport.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Premium Desktop Navigation */}
         <div className="desktop-nav" style={{
@@ -189,51 +291,6 @@ const Navigation = () => {
             );
           })}
           
-          {/* Basketball Navigation - Subtle Premium Link */}
-          <Link
-            to="/basketball"
-            style={{
-              padding: '0.625rem 1.125rem',
-              borderRadius: '10px',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              textDecoration: 'none',
-              color: location.pathname === '/basketball' ? '#FF8C42' : 'rgba(255, 140, 66, 0.8)',
-              background: location.pathname === '/basketball'
-                ? 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(255, 140, 66, 0.08) 100%)'
-                : 'transparent',
-              border: location.pathname === '/basketball'
-                ? '1px solid rgba(255, 140, 66, 0.3)'
-                : '1px solid rgba(255, 140, 66, 0.2)',
-              boxShadow: location.pathname === '/basketball'
-                ? '0 4px 12px rgba(255, 140, 66, 0.2)'
-                : 'none',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              marginLeft: '0.5rem'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 140, 66, 0.3)';
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 140, 66, 0.12) 0%, rgba(255, 140, 66, 0.05) 100%)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              if (location.pathname === '/basketball') {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 140, 66, 0.2)';
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(255, 140, 66, 0.08) 100%)';
-              } else {
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.background = 'transparent';
-              }
-            }}
-          >
-            🏀 CBB Picks
-          </Link>
-          
           {/* Upgrade Button (Free Users Only) */}
           {user && !isPremium && !authLoading && !subscriptionLoading && (
             <Link
@@ -274,7 +331,7 @@ const Navigation = () => {
             user ? (
               <div style={{ position: 'relative' }}>
                 <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  onClick={() => { setUserMenuOpen(!userMenuOpen); setSportsMenuOpen(false); }}
                   style={{
                     padding: '0.5rem',
                     borderRadius: '50%',
@@ -666,6 +723,7 @@ const Navigation = () => {
             onClick={() => {
               setMobileMenuOpen(!mobileMenuOpen);
               setUserMenuOpen(false);
+              setSportsMenuOpen(false);
             }}
           style={{
             display: 'flex',
@@ -758,46 +816,87 @@ const Navigation = () => {
             );
           })}
           
-          {/* CBB Picks Button */}
-          <Link
-            to="/basketball"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.625rem',
-              padding: '0.625rem 0.75rem',
-              borderRadius: '8px',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              textDecoration: 'none',
-              color: location.pathname === '/basketball' ? '#FF8C42' : 'rgba(255, 140, 66, 0.9)',
-              background: location.pathname === '/basketball' 
-                ? 'linear-gradient(135deg, rgba(255, 140, 66, 0.15) 0%, rgba(255, 140, 66, 0.08) 100%)'
-                : 'transparent',
-              border: location.pathname === '/basketball' 
-                ? '1px solid rgba(255, 140, 66, 0.3)'
-                : '1px solid rgba(255, 140, 66, 0.2)',
-              boxShadow: location.pathname === '/basketball' 
-                ? '0 2px 8px rgba(255, 140, 66, 0.2)'
-                : 'none',
-              marginBottom: '0.25rem',
-              transition: 'all 0.2s ease',
-              animation: `slideIn 0.3s ease-out ${navLinks.length * 0.03}s both`
-            }}
-          >
-            🏀 CBB Picks
-            {location.pathname === '/basketball' && (
-              <div style={{
-                marginLeft: 'auto',
-                width: '5px',
-                height: '5px',
-                borderRadius: '50%',
-                background: '#FF8C42',
-                boxShadow: '0 0 6px rgba(255, 140, 66, 0.6)'
-              }} />
-            )}
-          </Link>
+          {/* Sports Section */}
+          <div style={{
+            marginTop: '0.5rem',
+            marginBottom: '0.25rem',
+            paddingTop: '0.5rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+          }}>
+            <div style={{
+              padding: '0.375rem 0.75rem',
+              fontSize: '0.688rem',
+              fontWeight: '700',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'rgba(255, 255, 255, 0.35)'
+            }}>
+              Sports
+            </div>
+            {sports.map((sport, index) => {
+              const isActive = sport.path === '/'
+                ? location.pathname === '/' || (!location.pathname.startsWith('/basketball') && !location.pathname.startsWith('/mlb'))
+                : location.pathname.startsWith(sport.path);
+
+              return (
+                <Link
+                  key={sport.id}
+                  to={sport.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.625rem',
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    textDecoration: 'none',
+                    color: isActive ? sport.color : 'rgba(255, 255, 255, 0.8)',
+                    background: isActive
+                      ? `linear-gradient(135deg, ${sport.color}18 0%, ${sport.color}08 100%)`
+                      : 'transparent',
+                    border: isActive
+                      ? `1px solid ${sport.color}40`
+                      : '1px solid transparent',
+                    marginBottom: '0.25rem',
+                    transition: 'all 0.2s ease',
+                    animation: `slideIn 0.3s ease-out ${(navLinks.length + index) * 0.03}s both`
+                  }}
+                >
+                  <span style={{ fontSize: '1rem', lineHeight: 1 }}>{sport.emoji}</span>
+                  {sport.label}
+                  {isActive && (
+                    <div style={{
+                      marginLeft: 'auto',
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: sport.color,
+                      boxShadow: `0 0 6px ${sport.color}`
+                    }} />
+                  )}
+                  {sport.badge && (
+                    <span style={{
+                      marginLeft: isActive ? '0' : 'auto',
+                      padding: '0.125rem 0.4rem',
+                      borderRadius: '999px',
+                      fontSize: '0.6rem',
+                      fontWeight: '800',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      color: sport.color,
+                      background: `${sport.color}15`,
+                      border: `1px solid ${sport.color}30`,
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {sport.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
           
           {/* User Actions (if logged in) */}
           {user && (
@@ -890,17 +989,10 @@ const Navigation = () => {
           .mobile-auth { display: flex !important; }
         }
         @media (max-width: 640px) {
-          .basketball-nav-btn {
-            padding: 0.45rem 0.625rem !important;
-            font-size: 0.75rem !important;
-          }
+          .sport-switcher-label { display: none !important; }
         }
         @media (max-width: 400px) {
           .sign-in-text { display: none !important; }
-          .basketball-nav-btn {
-            padding: 0.4rem 0.5rem !important;
-            min-width: 36px;
-          }
         }
         
         /* Premium Animations */
