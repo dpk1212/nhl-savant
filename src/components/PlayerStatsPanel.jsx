@@ -2,6 +2,67 @@ import React, { useState, useEffect } from 'react';
 
 const D1_AVG = { efg: 50.0, three: 34.0, ft: 72.0, ts: 55.0, usage: 20.0 };
 
+function getPlayerMatchups(player, oppDefense) {
+  if (!player || !oppDefense) return [];
+  const matchups = [];
+  const bd = player.shotProfile?.breakdown || {};
+  const sp = player.shotProfile || {};
+
+  // 3PT sniper vs weak perimeter defense
+  if (player.threePct >= 35 && bd.threePointJumpers >= 35 && oppDefense.threeP_def_rank > 180) {
+    const severity = oppDefense.threeP_def_rank > 280 ? 'hot' : 'warm';
+    matchups.push({
+      type: '3PT MISMATCH',
+      detail: `Shoots ${player.threePct}% from 3 • Opp 3P def #${oppDefense.threeP_def_rank}`,
+      color: '#FBBF24',
+      severity,
+    });
+  }
+
+  // Rim attacker vs weak interior defense
+  if (sp.layups?.pct >= 50 && bd.layups >= 25 && oppDefense.twoP_def_rank > 180) {
+    const severity = oppDefense.twoP_def_rank > 280 ? 'hot' : 'warm';
+    matchups.push({
+      type: 'RIM ADVANTAGE',
+      detail: `${sp.layups.pct}% at rim • Opp 2P def #${oppDefense.twoP_def_rank}`,
+      color: '#10B981',
+      severity,
+    });
+  }
+
+  // Rebounder vs poor defensive rebounding
+  if (player.rpg >= 5 && oppDefense.oreb_def_rank > 200) {
+    matchups.push({
+      type: 'BOARDS EDGE',
+      detail: `${player.rpg} RPG • Opp reb def #${oppDefense.oreb_def_rank}`,
+      color: '#22D3EE',
+      severity: 'warm',
+    });
+  }
+
+  // High-usage scorer vs overall bad defense
+  if (player.usage >= 24 && player.ppg >= 12 && oppDefense.adjDef_rank > 200) {
+    matchups.push({
+      type: 'EXPLOITABLE D',
+      detail: `${player.usage}% USG • Opp def #${oppDefense.adjDef_rank}`,
+      color: '#A78BFA',
+      severity: oppDefense.adjDef_rank > 300 ? 'hot' : 'warm',
+    });
+  }
+
+  // FT merchant vs foul-prone defense
+  if (player.ftPct >= 75 && oppDefense.ftRate_def_rank > 220) {
+    matchups.push({
+      type: 'FT UPSIDE',
+      detail: `${player.ftPct}% FT • Opp FT rate def #${oppDefense.ftRate_def_rank}`,
+      color: '#F97316',
+      severity: 'warm',
+    });
+  }
+
+  return matchups;
+}
+
 const getTier = (rank) => {
   if (rank == null) return { label: '—', color: '#94A3B8', bg: 'rgba(148,163,184,0.08)' };
   if (rank <= 25) return { label: 'ELITE', color: '#10B981', bg: 'rgba(16,185,129,0.12)' };
@@ -273,7 +334,38 @@ function ShotProfileBar({ label, data, isMobile }) {
   );
 }
 
-function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
+function MatchupBadge({ matchup, isMobile }) {
+  const isHot = matchup.severity === 'hot';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '6px',
+      padding: isMobile ? '5px 8px' : '6px 10px',
+      borderRadius: '8px',
+      background: `${matchup.color}0A`,
+      border: `1px solid ${matchup.color}25`,
+      animation: isHot ? 'matchupPulse 2s ease-in-out infinite' : 'none',
+    }}>
+      <div style={{
+        width: '6px', height: '6px', borderRadius: '50%',
+        background: matchup.color,
+        boxShadow: isHot ? `0 0 6px ${matchup.color}` : 'none',
+        flexShrink: 0,
+      }} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontSize: '9px', fontWeight: '800', color: matchup.color,
+          letterSpacing: '0.06em',
+        }}>{matchup.type}</div>
+        <div style={{
+          fontSize: '8px', fontWeight: '500', color: 'rgba(255,255,255,0.35)',
+          marginTop: '1px',
+        }}>{matchup.detail}</div>
+      </div>
+    </div>
+  );
+}
+
+function PlayerCard({ player, index, isMobile, maxUsage, sideColor, matchups }) {
   const [expanded, setExpanded] = useState(false);
   const isAlpha = index === 0;
   const usagePct = Math.min(100, ((player.usage || 0) / maxUsage) * 100);
@@ -443,6 +535,18 @@ function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
         }}>{(player.usage || 0).toFixed(0)}%</span>
       </div>
 
+      {/* Matchup badges */}
+      {matchups && matchups.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: '4px',
+          marginTop: '8px',
+        }}>
+          {matchups.map((m, i) => (
+            <MatchupBadge key={i} matchup={m} isMobile={isMobile} />
+          ))}
+        </div>
+      )}
+
       {/* Tap hint */}
       {hasDetail && !expanded && (
         <div style={{
@@ -570,12 +674,15 @@ function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
   );
 }
 
-function TeamColumn({ players, teamName, side, isMobile }) {
+function TeamColumn({ players, teamName, side, isMobile, oppDefense }) {
   if (!players || players.length === 0) return null;
   const top = players.slice(0, 4);
   const maxUsage = Math.max(...top.map(p => p.usage || 0), 25);
   const abbrev = getTeamAbbrev(teamName, isMobile ? 12 : 16);
   const sideColor = side === 'away' ? '#60A5FA' : '#F87171';
+  const matchupCount = oppDefense
+    ? top.reduce((sum, p) => sum + getPlayerMatchups(p, oppDefense).length, 0)
+    : 0;
 
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -597,6 +704,15 @@ function TeamColumn({ players, teamName, side, isMobile }) {
           fontSize: '9px', fontWeight: '700',
           color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em',
         }}>{side === 'away' ? 'AWAY' : 'HOME'}</span>
+        {matchupCount > 0 && (
+          <span style={{
+            fontSize: '8px', fontWeight: '800',
+            color: '#FBBF24', letterSpacing: '0.06em',
+            padding: '2px 6px', borderRadius: '4px',
+            background: 'rgba(251,191,36,0.1)',
+            border: '1px solid rgba(251,191,36,0.2)',
+          }}>{matchupCount} MATCHUP{matchupCount > 1 ? 'S' : ''}</span>
+        )}
       </div>
 
       {/* Player cards */}
@@ -606,6 +722,7 @@ function TeamColumn({ players, teamName, side, isMobile }) {
             key={`${p.name}-${i}`}
             player={p} index={i} isMobile={isMobile}
             maxUsage={maxUsage} sideColor={sideColor}
+            matchups={oppDefense ? getPlayerMatchups(p, oppDefense) : []}
           />
         ))}
       </div>
@@ -613,7 +730,7 @@ function TeamColumn({ players, teamName, side, isMobile }) {
   );
 }
 
-export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
+export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam, barttorvik }) {
   const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
@@ -679,6 +796,39 @@ export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
         isMobile={isMobile}
       />
 
+      {/* Matchup intel banner */}
+      {barttorvik && (() => {
+        const awayPlayers = awayStats?.players?.slice(0, 4) || [];
+        const homePlayers = homeStats?.players?.slice(0, 4) || [];
+        const awayMatchups = awayPlayers.flatMap(p => getPlayerMatchups(p, barttorvik.home));
+        const homeMatchups = homePlayers.flatMap(p => getPlayerMatchups(p, barttorvik.away));
+        const hotCount = [...awayMatchups, ...homeMatchups].filter(m => m.severity === 'hot').length;
+        const total = awayMatchups.length + homeMatchups.length;
+        if (total === 0) return null;
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '8px', marginBottom: '12px', padding: '8px 12px',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.06), rgba(139,92,246,0.06))',
+            border: '1px solid rgba(251,191,36,0.1)',
+          }}>
+            <span style={{ fontSize: '12px' }}>🎯</span>
+            <span style={{
+              fontSize: '10px', fontWeight: '800',
+              color: '#FBBF24', letterSpacing: '0.06em',
+            }}>MATCHUP INTEL</span>
+            <span style={{
+              fontSize: '9px', fontWeight: '600',
+              color: 'rgba(255,255,255,0.35)',
+            }}>
+              {total} matchup{total > 1 ? 's' : ''} detected
+              {hotCount > 0 && ` • ${hotCount} high-value`}
+            </span>
+          </div>
+        );
+      })()}
+
       {/* Player columns */}
       <div style={{
         display: 'flex',
@@ -688,6 +838,7 @@ export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
         <TeamColumn
           players={awayStats?.players}
           teamName={awayTeam} side="away" isMobile={isMobile}
+          oppDefense={barttorvik?.home}
         />
         {!isMobile && (
           <div style={{
@@ -698,6 +849,7 @@ export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
         <TeamColumn
           players={homeStats?.players}
           teamName={homeTeam} side="home" isMobile={isMobile}
+          oppDefense={barttorvik?.away}
         />
       </div>
 

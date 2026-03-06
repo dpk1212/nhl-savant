@@ -3645,6 +3645,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   homeStats={homePlayerStats}
                   awayTeam={game.awayTeam}
                   homeTeam={game.homeTeam}
+                  barttorvik={game.barttorvik}
                 />
               )}
             </div>
