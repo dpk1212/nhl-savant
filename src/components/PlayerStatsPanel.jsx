@@ -21,6 +21,16 @@ const statColor = (val, avg) => {
   return '#EF4444';
 };
 
+const statLabel = (val, avg) => {
+  if (val == null || val === 0) return '';
+  const d = val - avg;
+  if (d > 6) return 'Elite';
+  if (d > 2) return 'Above Avg';
+  if (d > -2) return '';
+  if (d > -6) return 'Below Avg';
+  return 'Poor';
+};
+
 const getTeamAbbrev = (name, maxLen = 14) => {
   if (!name) return '?';
   if (name.length <= maxLen) return name;
@@ -45,231 +55,96 @@ const getTeamAbbrev = (name, maxLen = 14) => {
   return name.slice(0, maxLen - 1) + '.';
 };
 
-function EfficiencyDuel({ away, home, awayName, homeName, isMobile }) {
-  const aOff = away?.adjOff || 0;
-  const aDef = away?.adjDef || 0;
-  const hOff = home?.adjOff || 0;
-  const hDef = home?.adjDef || 0;
-  const aOffT = getTier(away?.adjOffRank);
-  const aDefT = getTier(away?.adjDefRank);
-  const hOffT = getTier(home?.adjOffRank);
-  const hDefT = getTier(home?.adjDefRank);
-
-  const CompRow = ({ label, aVal, aRank, aTier, hVal, hRank, hTier, higher }) => {
-    const aWins = higher ? aVal > hVal : aVal < hVal;
-    const hWins = !aWins;
-    return (
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center', gap: '6px', padding: '4px 0',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-          {aWins && <span style={{ fontSize: '8px', color: '#10B981' }}>◀</span>}
-          <span style={{
-            fontSize: isMobile ? '11px' : '12px', fontWeight: '800',
-            color: aTier.color, fontFamily: 'ui-monospace, monospace',
-          }}>{aVal}</span>
-          <span style={{
-            fontSize: '8px', color: aTier.color, opacity: 0.6,
-            fontFamily: 'ui-monospace, monospace',
-          }}>#{aRank || '—'}</span>
-        </div>
-        <span style={{
-          fontSize: isMobile ? '8px' : '9px', fontWeight: '700',
-          color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em',
-          minWidth: '32px', textAlign: 'center',
-        }}>{label}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{
-            fontSize: '8px', color: hTier.color, opacity: 0.6,
-            fontFamily: 'ui-monospace, monospace',
-          }}>#{hRank || '—'}</span>
-          <span style={{
-            fontSize: isMobile ? '11px' : '12px', fontWeight: '800',
-            color: hTier.color, fontFamily: 'ui-monospace, monospace',
-          }}>{hVal}</span>
-          {hWins && <span style={{ fontSize: '8px', color: '#10B981' }}>▶</span>}
-        </div>
-      </div>
-    );
-  };
+function EfficiencyComparison({ away, home, awayName, homeName, isMobile }) {
+  const metrics = [
+    {
+      label: 'OFF',
+      away: { val: away?.adjOff || 0, rank: away?.adjOffRank },
+      home: { val: home?.adjOff || 0, rank: home?.adjOffRank },
+      higher: true,
+    },
+    {
+      label: 'DEF',
+      away: { val: away?.adjDef || 0, rank: away?.adjDefRank },
+      home: { val: home?.adjDef || 0, rank: home?.adjDefRank },
+      higher: false,
+    },
+  ];
 
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
-      border: '1px solid rgba(255,255,255,0.05)',
-      padding: isMobile ? '8px 10px' : '10px 16px',
-      marginBottom: '12px',
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: isMobile ? '8px' : '12px',
+      marginBottom: isMobile ? '16px' : '20px',
     }}>
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center', marginBottom: '6px',
-      }}>
-        <div style={{ textAlign: 'right', fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: '#60A5FA' }}>
-          {getTeamAbbrev(awayName, isMobile ? 10 : 14)}
-        </div>
-        <span style={{
-          fontSize: '8px', color: 'rgba(255,255,255,0.25)', padding: '0 8px',
-          letterSpacing: '0.1em', fontWeight: '700',
-        }}>EFFICIENCY</span>
-        <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: '#F87171' }}>
-          {getTeamAbbrev(homeName, isMobile ? 10 : 14)}
-        </div>
-      </div>
-      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '4px' }} />
-      <CompRow label="OFF" aVal={aOff} aRank={away?.adjOffRank} aTier={aOffT} hVal={hOff} hRank={home?.adjOffRank} hTier={hOffT} higher />
-      <CompRow label="DEF" aVal={aDef} aRank={away?.adjDefRank} aTier={aDefT} hVal={hDef} hRank={home?.adjDefRank} hTier={hDefT} higher={false} />
-    </div>
-  );
-}
-
-function PlayerTable({ players, teamName, side, isMobile }) {
-  if (!players || players.length === 0) return null;
-  const top = players.slice(0, 4);
-  const maxUsage = Math.max(...top.map(p => p.usage || 0), 20);
-  const abbrev = getTeamAbbrev(teamName, isMobile ? 10 : 14);
-  const sideColor = side === 'away' ? '#60A5FA' : '#F87171';
-
-  return (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      {/* Team label */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '6px',
-        marginBottom: '8px', paddingLeft: '2px',
-      }}>
-        <div style={{
-          width: '3px', height: '14px', borderRadius: '2px',
-          background: sideColor,
-        }} />
-        <span style={{
-          fontSize: isMobile ? '11px' : '12px', fontWeight: '900',
-          color: sideColor, letterSpacing: '0.03em',
-        }}>{abbrev}</span>
-        <span style={{
-          fontSize: '8px', color: 'rgba(255,255,255,0.25)',
-          fontWeight: '600', letterSpacing: '0.06em',
-        }}>{side === 'away' ? 'AWAY' : 'HOME'}</span>
-      </div>
-
-      {/* Column headers */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 36px 28px 28px 50px' : '1fr 40px 32px 32px 60px',
-        gap: '2px', padding: '0 4px 4px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        marginBottom: '2px',
-      }}>
-        <span style={hdrStyle(isMobile)}>PLAYER</span>
-        <span style={{ ...hdrStyle(isMobile), textAlign: 'center' }}>PPG</span>
-        <span style={{ ...hdrStyle(isMobile), textAlign: 'center' }}>RPG</span>
-        <span style={{ ...hdrStyle(isMobile), textAlign: 'center' }}>APG</span>
-        <span style={{ ...hdrStyle(isMobile), textAlign: 'center' }}>eFG%</span>
-      </div>
-
-      {/* Player rows */}
-      {top.map((p, i) => {
-        const isAlpha = i === 0;
-        const usagePct = Math.min(100, ((p.usage || 0) / maxUsage) * 100);
-        const usageColor = (p.usage || 0) >= 28 ? '#FBBF24' : (p.usage || 0) >= 22 ? '#3B82F6' : '#475569';
-        const efgColor = statColor(p.efgPct, D1_AVG.efg);
-        const threeColor = statColor(p.threePct, D1_AVG.three);
+      {metrics.map((m) => {
+        const awayTier = getTier(m.away.rank);
+        const homeTier = getTier(m.home.rank);
+        const awayBetter = m.higher ? m.away.val > m.home.val : m.away.val < m.home.val;
 
         return (
-          <div key={`${p.name}-${i}`} style={{
-            display: 'flex', flexDirection: 'column', gap: '2px',
-            padding: isMobile ? '6px 4px' : '7px 4px',
-            background: isAlpha ? 'rgba(251,191,36,0.04)' : 'transparent',
-            borderLeft: isAlpha ? '2px solid rgba(251,191,36,0.4)' : '2px solid transparent',
-            borderRadius: '4px',
-            transition: 'background 0.2s',
+          <div key={m.label} style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '10px',
+            padding: isMobile ? '10px' : '12px 16px',
           }}>
-            {/* Main stat row */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr 36px 28px 28px 50px' : '1fr 40px 32px 32px 60px',
-              gap: '2px', alignItems: 'center',
+              fontSize: '9px', fontWeight: '700', letterSpacing: '0.1em',
+              color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+              marginBottom: '8px', textAlign: 'center',
             }}>
-              {/* Name + position */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-                {isAlpha && (
-                  <span style={{ fontSize: '9px', lineHeight: 1 }}>★</span>
-                )}
-                <span style={{
-                  fontSize: isMobile ? '10px' : '11px',
-                  fontWeight: isAlpha ? '800' : '600',
-                  color: isAlpha ? '#F1F5F9' : '#CBD5E1',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
-                  {p.name}
-                </span>
-                <span style={{
-                  fontSize: '8px', fontWeight: '600',
-                  color: 'rgba(255,255,255,0.3)',
-                  flexShrink: 0,
-                }}>{p.position}</span>
-              </div>
-              {/* PPG */}
-              <div style={{
-                textAlign: 'center',
-                fontSize: isAlpha ? (isMobile ? '13px' : '14px') : (isMobile ? '11px' : '12px'),
-                fontWeight: '800',
-                color: isAlpha ? '#FBBF24' : '#E2E8F0',
-                fontFamily: 'ui-monospace, monospace',
-              }}>{p.ppg}</div>
-              {/* RPG */}
-              <div style={{
-                textAlign: 'center',
-                fontSize: isMobile ? '10px' : '11px', fontWeight: '600',
-                color: '#94A3B8', fontFamily: 'ui-monospace, monospace',
-              }}>{p.rpg}</div>
-              {/* APG */}
-              <div style={{
-                textAlign: 'center',
-                fontSize: isMobile ? '10px' : '11px', fontWeight: '600',
-                color: '#94A3B8', fontFamily: 'ui-monospace, monospace',
-              }}>{p.apg}</div>
-              {/* eFG% */}
-              <div style={{
-                textAlign: 'center',
-                fontSize: isMobile ? '10px' : '11px', fontWeight: '700',
-                color: efgColor, fontFamily: 'ui-monospace, monospace',
-              }}>{p.efgPct > 0 ? `${p.efgPct}` : '—'}</div>
+              {m.label === 'OFF' ? 'Adj. Offense' : 'Adj. Defense'}
             </div>
-
-            {/* Usage + shooting micro-row */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              paddingLeft: isAlpha ? '14px' : '0px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              {/* Usage bar */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '3px', flex: 1,
-              }}>
+              <div style={{ textAlign: 'center', flex: 1 }}>
                 <div style={{
-                  flex: 1, height: '3px', maxWidth: '60px',
-                  background: 'rgba(255,255,255,0.06)', borderRadius: '2px',
-                  overflow: 'hidden',
+                  fontSize: isMobile ? '16px' : '18px', fontWeight: '900',
+                  color: awayTier.color,
+                  fontFamily: 'ui-monospace, monospace',
+                  lineHeight: 1.2,
                 }}>
-                  <div style={{
-                    width: `${usagePct}%`, height: '100%',
-                    background: usageColor, borderRadius: '2px',
-                  }} />
+                  {m.away.val}
                 </div>
-                <span style={{
-                  fontSize: '8px', fontWeight: '700', color: usageColor,
-                  fontFamily: 'ui-monospace, monospace', minWidth: '20px',
-                }}>{(p.usage || 0).toFixed(0)}%</span>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                  marginTop: '3px',
+                }}>
+                  <span style={{
+                    fontSize: '8px', fontWeight: '700', color: awayTier.color, opacity: 0.7,
+                    fontFamily: 'ui-monospace, monospace',
+                  }}>#{m.away.rank || '—'}</span>
+                  {awayBetter && <span style={{ fontSize: '7px', color: '#10B981' }}>●</span>}
+                </div>
               </div>
-              {/* Shooting badges */}
-              <div style={{ display: 'flex', gap: '3px' }}>
-                <ShootBadge label="3P" value={p.threePct} color={threeColor} isMobile={isMobile} />
-                <ShootBadge label="FT" value={p.ftPct} color={statColor(p.ftPct, D1_AVG.ft)} isMobile={isMobile} />
+              <div style={{
+                width: '1px', height: '28px',
+                background: 'rgba(255,255,255,0.06)',
+                margin: '0 8px',
+              }} />
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{
+                  fontSize: isMobile ? '16px' : '18px', fontWeight: '900',
+                  color: homeTier.color,
+                  fontFamily: 'ui-monospace, monospace',
+                  lineHeight: 1.2,
+                }}>
+                  {m.home.val}
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                  marginTop: '3px',
+                }}>
+                  {!awayBetter && <span style={{ fontSize: '7px', color: '#10B981' }}>●</span>}
+                  <span style={{
+                    fontSize: '8px', fontWeight: '700', color: homeTier.color, opacity: 0.7,
+                    fontFamily: 'ui-monospace, monospace',
+                  }}>#{m.home.rank || '—'}</span>
+                </div>
               </div>
-              {/* MPG */}
-              <span style={{
-                fontSize: '8px', color: 'rgba(255,255,255,0.2)',
-                fontFamily: 'ui-monospace, monospace', minWidth: '24px', textAlign: 'right',
-              }}>{p.mpg}m</span>
             </div>
           </div>
         );
@@ -278,26 +153,232 @@ function PlayerTable({ players, teamName, side, isMobile }) {
   );
 }
 
-function ShootBadge({ label, value, color, isMobile }) {
+function ShootingStat({ label, value, avg, isMobile }) {
   if (!value || value === 0) return null;
+  const color = statColor(value, avg);
+  const pct = Math.min(100, (value / (avg * 1.5)) * 100);
+
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '2px',
-      padding: '1px 4px', borderRadius: '3px',
-      background: `${color}12`, border: `1px solid ${color}20`,
-      fontSize: isMobile ? '7px' : '8px', fontWeight: '700',
-      fontFamily: 'ui-monospace, monospace', color,
-    }}>
-      <span style={{ opacity: 0.7 }}>{label}</span>{value}
-    </span>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        marginBottom: '3px',
+      }}>
+        <span style={{
+          fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.35)',
+          letterSpacing: '0.04em',
+        }}>{label}</span>
+        <span style={{
+          fontSize: isMobile ? '11px' : '12px', fontWeight: '800',
+          color, fontFamily: 'ui-monospace, monospace',
+        }}>{value}%</span>
+      </div>
+      <div style={{
+        height: '4px', borderRadius: '2px',
+        background: 'rgba(255,255,255,0.06)',
+        overflow: 'hidden', position: 'relative',
+      }}>
+        <div style={{
+          position: 'absolute',
+          left: `${Math.min(100, (avg / (avg * 1.5)) * 100)}%`,
+          top: 0, bottom: 0, width: '1px',
+          background: 'rgba(255,255,255,0.15)',
+          zIndex: 1,
+        }} />
+        <div style={{
+          width: `${pct}%`, height: '100%',
+          background: color, borderRadius: '2px',
+          transition: 'width 0.5s ease',
+        }} />
+      </div>
+    </div>
   );
 }
 
-const hdrStyle = (isMobile) => ({
-  fontSize: isMobile ? '7px' : '8px',
-  fontWeight: '700', color: 'rgba(255,255,255,0.25)',
-  letterSpacing: '0.08em', textTransform: 'uppercase',
-});
+function PlayerCard({ player, index, isMobile, maxUsage, sideColor }) {
+  const isAlpha = index === 0;
+  const usagePct = Math.min(100, ((player.usage || 0) / maxUsage) * 100);
+  const usageColor = (player.usage || 0) >= 28 ? '#FBBF24' : (player.usage || 0) >= 22 ? '#3B82F6' : '#64748B';
+
+  return (
+    <div style={{
+      background: isAlpha
+        ? 'linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(251,191,36,0.02) 100%)'
+        : 'rgba(255,255,255,0.015)',
+      border: isAlpha
+        ? '1px solid rgba(251,191,36,0.2)'
+        : '1px solid rgba(255,255,255,0.05)',
+      borderRadius: '10px',
+      padding: isMobile ? '10px 12px' : '12px 14px',
+      transition: 'all 0.2s ease',
+    }}>
+      {/* Player identity row */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: '8px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+          {isAlpha && (
+            <div style={{
+              width: '18px', height: '18px', borderRadius: '5px',
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.08))',
+              border: '1px solid rgba(251,191,36,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: '9px', lineHeight: 1, color: '#FBBF24' }}>★</span>
+            </div>
+          )}
+          <span style={{
+            fontSize: isMobile ? '12px' : '13px',
+            fontWeight: isAlpha ? '800' : '600',
+            color: isAlpha ? '#F8FAFC' : '#CBD5E1',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {player.name}
+          </span>
+          <span style={{
+            fontSize: '9px', fontWeight: '700',
+            color: sideColor, opacity: 0.6,
+            background: `${sideColor}12`,
+            padding: '1px 5px', borderRadius: '4px',
+            flexShrink: 0,
+          }}>{player.position}</span>
+        </div>
+
+        {/* Hero PPG */}
+        <div style={{
+          textAlign: 'right', flexShrink: 0, marginLeft: '8px',
+        }}>
+          <div style={{
+            fontSize: isAlpha ? (isMobile ? '20px' : '22px') : (isMobile ? '16px' : '18px'),
+            fontWeight: '900',
+            color: isAlpha ? '#FBBF24' : '#F1F5F9',
+            fontFamily: 'ui-monospace, monospace',
+            lineHeight: 1,
+          }}>{player.ppg}</div>
+          <div style={{
+            fontSize: '8px', fontWeight: '600', color: 'rgba(255,255,255,0.3)',
+            letterSpacing: '0.06em', marginTop: '1px',
+          }}>PPG</div>
+        </div>
+      </div>
+
+      {/* Secondary stats row */}
+      <div style={{
+        display: 'flex', gap: isMobile ? '6px' : '8px',
+        marginBottom: '10px',
+      }}>
+        {[
+          { label: 'RPG', value: player.rpg },
+          { label: 'APG', value: player.apg },
+          { label: 'MPG', value: player.mpg },
+        ].map((s) => (
+          <div key={s.label} style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.03)',
+            borderRadius: '6px',
+            padding: '5px 0',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: isMobile ? '12px' : '13px', fontWeight: '800',
+              color: '#E2E8F0',
+              fontFamily: 'ui-monospace, monospace',
+              lineHeight: 1.2,
+            }}>{s.value}</div>
+            <div style={{
+              fontSize: '8px', fontWeight: '600',
+              color: 'rgba(255,255,255,0.25)',
+              letterSpacing: '0.06em', marginTop: '1px',
+            }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Shooting profile */}
+      <div style={{
+        display: 'flex', gap: isMobile ? '8px' : '10px',
+        marginBottom: '8px',
+      }}>
+        <ShootingStat label="eFG" value={player.efgPct} avg={D1_AVG.efg} isMobile={isMobile} />
+        <ShootingStat label="3P" value={player.threePct} avg={D1_AVG.three} isMobile={isMobile} />
+        <ShootingStat label="FT" value={player.ftPct} avg={D1_AVG.ft} isMobile={isMobile} />
+      </div>
+
+      {/* Usage */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+      }}>
+        <span style={{
+          fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.3)',
+          letterSpacing: '0.04em', flexShrink: 0,
+        }}>USG</span>
+        <div style={{
+          flex: 1, height: '5px', borderRadius: '3px',
+          background: 'rgba(255,255,255,0.06)',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            width: `${usagePct}%`, height: '100%',
+            background: `linear-gradient(90deg, ${usageColor}80, ${usageColor})`,
+            borderRadius: '3px',
+            transition: 'width 0.5s ease',
+          }} />
+        </div>
+        <span style={{
+          fontSize: '10px', fontWeight: '800',
+          color: usageColor,
+          fontFamily: 'ui-monospace, monospace',
+          minWidth: '28px', textAlign: 'right',
+        }}>{(player.usage || 0).toFixed(0)}%</span>
+      </div>
+    </div>
+  );
+}
+
+function TeamColumn({ players, teamName, side, isMobile }) {
+  if (!players || players.length === 0) return null;
+  const top = players.slice(0, 4);
+  const maxUsage = Math.max(...top.map(p => p.usage || 0), 25);
+  const abbrev = getTeamAbbrev(teamName, isMobile ? 12 : 16);
+  const sideColor = side === 'away' ? '#60A5FA' : '#F87171';
+
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      {/* Team header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        marginBottom: '10px', paddingLeft: '2px',
+      }}>
+        <div style={{
+          width: '4px', height: '16px', borderRadius: '2px',
+          background: sideColor,
+          boxShadow: `0 0 8px ${sideColor}40`,
+        }} />
+        <span style={{
+          fontSize: isMobile ? '13px' : '14px', fontWeight: '900',
+          color: sideColor, letterSpacing: '-0.01em',
+        }}>{abbrev}</span>
+        <span style={{
+          fontSize: '9px', fontWeight: '700',
+          color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em',
+        }}>{side === 'away' ? 'AWAY' : 'HOME'}</span>
+      </div>
+
+      {/* Player cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {top.map((p, i) => (
+          <PlayerCard
+            key={`${p.name}-${i}`}
+            player={p} index={i} isMobile={isMobile}
+            maxUsage={maxUsage} sideColor={sideColor}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
   const [isMobile, setIsMobile] = useState(true);
@@ -315,7 +396,7 @@ export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
     <div style={{
       background: 'linear-gradient(180deg, #020617 0%, #0B1120 50%, #0F172A 100%)',
       borderRadius: isMobile ? '14px' : '18px',
-      padding: isMobile ? '14px 8px' : '20px 16px',
+      padding: isMobile ? '16px 10px' : '24px 20px',
       color: '#E2E8F0',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif',
       overflow: 'hidden',
@@ -323,58 +404,115 @@ export function PlayerStatsPanel({ awayStats, homeStats, awayTeam, homeTeam }) {
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '8px', marginBottom: '12px',
+        gap: '10px', marginBottom: isMobile ? '14px' : '18px',
       }}>
-        <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.2))' }} />
+        <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.15))' }} />
         <span style={{
-          fontSize: isMobile ? '10px' : '11px', fontWeight: '900',
+          fontSize: isMobile ? '11px' : '12px', fontWeight: '900',
           color: '#FBBF24', letterSpacing: '0.14em',
-          textShadow: '0 0 16px rgba(251,191,36,0.15)',
         }}>KEY PLAYERS</span>
-        <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, rgba(251,191,36,0.2), transparent)' }} />
+        <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, rgba(251,191,36,0.15), transparent)' }} />
       </div>
 
-      {/* Efficiency head-to-head */}
-      <EfficiencyDuel
+      {/* Team efficiency comparison */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center', gap: '6px',
+        marginBottom: '6px', padding: '0 4px',
+      }}>
+        <div style={{
+          textAlign: 'right',
+          fontSize: isMobile ? '12px' : '13px', fontWeight: '800',
+          color: '#60A5FA',
+        }}>
+          {getTeamAbbrev(awayTeam, isMobile ? 10 : 14)}
+        </div>
+        <span style={{
+          fontSize: '9px', color: 'rgba(255,255,255,0.2)',
+          fontWeight: '700', letterSpacing: '0.08em',
+          padding: '0 6px',
+        }}>VS</span>
+        <div style={{
+          fontSize: isMobile ? '12px' : '13px', fontWeight: '800',
+          color: '#F87171',
+        }}>
+          {getTeamAbbrev(homeTeam, isMobile ? 10 : 14)}
+        </div>
+      </div>
+
+      <EfficiencyComparison
         away={awayStats} home={homeStats}
         awayName={awayTeam} homeName={homeTeam}
         isMobile={isMobile}
       />
 
-      {/* Player tables */}
+      {/* Player columns */}
       <div style={{
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? '14px' : '12px',
+        gap: isMobile ? '18px' : '16px',
       }}>
-        <PlayerTable
+        <TeamColumn
           players={awayStats?.players}
           teamName={awayTeam} side="away" isMobile={isMobile}
         />
         {!isMobile && (
           <div style={{
             width: '1px',
-            background: 'linear-gradient(180deg, transparent, rgba(99,102,241,0.2), transparent)',
+            background: 'linear-gradient(180deg, transparent, rgba(99,102,241,0.15), transparent)',
           }} />
         )}
-        <PlayerTable
+        <TeamColumn
           players={homeStats?.players}
           teamName={homeTeam} side="home" isMobile={isMobile}
         />
       </div>
 
-      {/* Footer */}
+      {/* Legend */}
       <div style={{
-        textAlign: 'center', marginTop: '10px', paddingTop: '6px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: isMobile ? '8px' : '14px', flexWrap: 'wrap',
+        marginTop: isMobile ? '14px' : '18px', paddingTop: '10px',
         borderTop: '1px solid rgba(255,255,255,0.04)',
       }}>
+        <LegendItem color="#FBBF24" label="★ #1 Option" />
+        <LegendDot color="#10B981" label="Above D1 Avg" />
+        <LegendDot color="#94A3B8" label="Average" />
+        <LegendDot color="#EF4444" label="Below D1 Avg" />
         <span style={{
-          fontSize: '8px', color: 'rgba(255,255,255,0.2)',
-          letterSpacing: '0.06em',
+          fontSize: '8px', color: 'rgba(255,255,255,0.15)',
+          letterSpacing: '0.04em',
         }}>
-          ★ = #1 OPTION · SHOOTING COLOR-CODED VS D1 AVG · SOURCE: CBBD
+          SOURCE: CBBD
         </span>
       </div>
+    </div>
+  );
+}
+
+function LegendItem({ color, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <span style={{ fontSize: '9px', color }}>{label.startsWith('★') ? '★' : '●'}</span>
+      <span style={{
+        fontSize: '8px', fontWeight: '600',
+        color: 'rgba(255,255,255,0.25)', letterSpacing: '0.02em',
+      }}>{label.startsWith('★') ? label.slice(2) : label}</span>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div style={{
+        width: '5px', height: '5px', borderRadius: '50%',
+        background: color,
+      }} />
+      <span style={{
+        fontSize: '8px', fontWeight: '600',
+        color: 'rgba(255,255,255,0.25)', letterSpacing: '0.02em',
+      }}>{label}</span>
     </div>
   );
 }
