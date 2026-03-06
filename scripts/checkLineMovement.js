@@ -1102,6 +1102,27 @@ async function checkLineMovement() {
       else if (totalsResult.mot >= 1.0) status = '👀 NEAR';
       else status = '·';
 
+      // Compute Pinnacle totals edge for display (even for non-qualifying rows)
+      let rowPinnTotal = null;
+      let rowPinnEdge = 0;
+      let rowPinnBook = null;
+      let rowPinnBookLine = null;
+      let rowHasPinnEdge = false;
+      if (oddsGame.pinnacleTotals) {
+        rowPinnTotal = oddsGame.pinnacleTotals.total;
+        for (const r of oddsGame.retailTotals) {
+          let e;
+          if (totalsResult.direction === 'OVER') e = rowPinnTotal - r.total;
+          else e = r.total - rowPinnTotal;
+          if (e >= 0.5 && e > rowPinnEdge) {
+            rowPinnEdge = Math.round(e * 10) / 10;
+            rowPinnBook = r.book;
+            rowPinnBookLine = r.total;
+            rowHasPinnEdge = true;
+          }
+        }
+      }
+
       allTotalsRows.push({
         direction: totalsResult.direction,
         modelTotal: Math.round(blendedTotal * 10) / 10,
@@ -1116,6 +1137,11 @@ async function checkLineMovement() {
         gameLabel,
         totalsResult,
         evalData,
+        pinnTotal: rowPinnTotal,
+        pinnEdge: rowPinnEdge,
+        pinnBook: rowPinnBook,
+        pinnBookLine: rowPinnBookLine,
+        hasPinnEdge: rowHasPinnEdge,
       });
     }
 
@@ -1253,6 +1279,48 @@ async function checkLineMovement() {
   console.log(`║  Thresholds: MOS ≥ ${MOS_FLOOR} standard │ MOS ≥ ${MOS_FLOOR_CONFIRMED} with market confirm (line moved ≥1.0 FOR)`.padEnd(117) + '║');
   console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
+  // ── ATS SIGNAL REPORT ──
+  const atsSignalRows = allAtsRows.filter(r => r.qualifies || (r.currentMOS >= 1.0 && r.bothCover));
+  if (atsSignalRows.length > 0) {
+    console.log('\n');
+    console.log('┌─────────────────────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│  ATS SIGNAL REPORT — Full breakdown of qualifying + near bets                              │');
+    console.log('└─────────────────────────────────────────────────────────────────────────────────────────────┘');
+    for (const row of atsSignalRows) {
+      const sr = row.sideResult;
+      const isFav = sr.spread < 0;
+      const side = isFav ? 'FAV' : 'DOG';
+      const mv = sr.lineMovement;
+      const mvStr = mv != null ? (mv > 0 ? `+${mv}` : `${mv}`) + 'pt' : 'n/a';
+      const mvDir = sr.movementTier === 'CONFIRM' ? '✅ FOR' : sr.movementTier === 'FLAGGED' ? '🚫 AGAINST' : '— FLAT';
+
+      console.log(`\n  ┌── ${row.team} ${fmt(sr.spread)} (${side}) ──  ${row.status}`);
+      console.log(`  │   MOS: +${sr.mos}  │  Cover%: ${sr.coverProb ? (sr.coverProb * 100).toFixed(1) + '%' : '—'}  │  Signals: ${row.signalCount}/3`);
+      console.log(`  │`);
+      console.log(`  │   S1 MODELS:    ${row.bothCover ? '✅ Both agree' : '❌ Disagree'}  (blend margin: ${fmt(sr.blendedMargin)})`);
+      console.log(`  │   S2 PINNACLE:  ${row.signal2 ? `✅ Edge +${row.pinnEdgePts}pt (Pinn ${fmt(row.pinnSpread)} → ${row.bestBook} ${fmt(row.bestBookSpread)})` : (row.pinnSpread != null ? `❌ No edge (Pinn ${fmt(row.pinnSpread)}, retail same or sharper)` : '⚪ No Pinnacle data')}`);
+      console.log(`  │   S3 MOVEMENT:  ${mvDir}  (${mvStr} since open)`);
+      if (row.qualifies) {
+        const mvMag = Math.abs(mv || 0);
+        let units;
+        if (row.signalCount === 3) {
+          if (row.pinnEdgePts >= 1.5) units = 3;
+          else if (row.pinnEdgePts >= 1.0) units = 3;
+          else units = 2;
+          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+        } else if (row.signal2) {
+          units = row.pinnEdgePts >= 1.0 ? 2 : 1;
+        } else {
+          units = 1;
+        }
+        const stars = '★'.repeat(units) + '☆'.repeat(4 - units);
+        console.log(`  │`);
+        console.log(`  │   ➜ ${stars} ${units}u  │  Pinn base: ${row.signal2 ? row.pinnEdgePts + 'pt' : '—'}  │  Mv boost: ${row.signalCount === 3 && mvMag >= 1.0 ? '+1u' : 'none'}`);
+      }
+      console.log(`  └────────────────────────────────────────────────`);
+    }
+  }
+
   // ── TOTALS DASHBOARD ──
   allTotalsRows.sort((a, b) => b.currentMOT - a.currentMOT);
 
@@ -1291,6 +1359,68 @@ async function checkLineMovement() {
   console.log(`║  QUALIFIES: ${totQualified.length}${totMktLabel}  │  NEAR: ${totNear.length}  │  FLAGGED: ${totFlagged.length}  │  ▲${totForUs} for / =${totFlat} flat / ▼${totAgainst} vs  │  ${allTotalsRows.length} games`.padEnd(117) + '║');
   console.log(`║  Thresholds: MOT ≥ ${MOT_FLOOR} standard │ MOT ≥ ${MOT_FLOOR_CONFIRMED} with market confirm (line moved ≥1.0 FOR)`.padEnd(117) + '║');
   console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
+
+  // ── TOTALS SIGNAL REPORT ──
+  const totSignalRows = allTotalsRows.filter(r => r.qualifies || r.currentMOT >= 2.0);
+  if (totSignalRows.length > 0) {
+    console.log('\n');
+    console.log('┌─────────────────────────────────────────────────────────────────────────────────────────────┐');
+    console.log('│  TOTALS SIGNAL REPORT — Full breakdown of qualifying + near bets                           │');
+    console.log('└─────────────────────────────────────────────────────────────────────────────────────────────┘');
+    for (const row of totSignalRows) {
+      const tr = row.totalsResult;
+      const mv = tr.lineMovement;
+      const mvStr = mv != null ? (mv > 0 ? `+${mv}` : `${mv}`) + 'pt' : 'n/a';
+      const mvDir = tr.movementTier === 'CONFIRM' ? '✅ FOR' : tr.movementTier === 'FLAGGED' ? '🚫 AGAINST' : '— FLAT';
+
+      const drTotal = tr.drTotal;
+      const hsTotal = tr.hsTotal;
+      const drDir = tr.drOver != null ? (tr.drOver ? 'OVER' : 'UNDER') : '—';
+      const hsDir = tr.hsOver != null ? (tr.hsOver ? 'OVER' : 'UNDER') : '—';
+      const bothAgree = tr.drOver != null && tr.hsOver != null && tr.drOver === tr.hsOver;
+
+      // DR contrarian check
+      const drMargin = drTotal != null && row.opener != null ? Math.round((drTotal - row.opener) * 10) / 10 : null;
+      let drContrarian = '—';
+      if (tr.direction === 'UNDER' && drMargin != null) {
+        if (drMargin <= -5) drContrarian = '🔥 SWEET SPOT (+2u boost)';
+        else if (drMargin <= -3) drContrarian = '✅ DR UNDER (+1u boost)';
+        else if (drMargin < 0) drContrarian = '· slight under';
+        else drContrarian = '❌ DR says OVER';
+      } else if (tr.direction === 'OVER') {
+        drContrarian = '· N/A (OVER bet)';
+      }
+
+      console.log(`\n  ┌── ${row.direction} ${row.current} — ${row.gameLabel} ──  ${row.status}`);
+      console.log(`  │   MOT: +${tr.mot}  │  Model Total: ${row.modelTotal}  │  Market: ${row.current}`);
+      console.log(`  │`);
+      console.log(`  │   MODELS:      DR ${drTotal || '—'} (${drDir}) │ HS ${hsTotal || '—'} (${hsDir}) │ ${bothAgree ? '✅ Agree' : '△ Split'}`);
+      console.log(`  │   PINNACLE:    ${row.hasPinnEdge ? `✅ Edge +${row.pinnEdge}pt (Pinn ${row.pinnTotal} → ${row.pinnBook} ${row.pinnBookLine})` : (row.pinnTotal != null ? `❌ No edge (Pinn ${row.pinnTotal}, retail same/sharper)` : '⚪ No Pinnacle data')}`);
+      console.log(`  │   MOVEMENT:    ${mvDir}  (${mvStr} since open)`);
+      console.log(`  │   DR CONTRA:   ${drContrarian}  (DR margin: ${drMargin != null ? fmt(drMargin) : '—'})`);
+
+      if (row.qualifies) {
+        // Reconstruct unit sizing
+        let baseUnits;
+        if (row.hasPinnEdge) {
+          if (row.pinnEdge >= 1.5) baseUnits = 3;
+          else if (row.pinnEdge >= 1.0) baseUnits = 2;
+          else baseUnits = 1;
+        } else baseUnits = 1;
+        const mvMag = Math.abs(mv || 0);
+        let u = baseUnits;
+        let mvBoost = false;
+        if (tr.movementTier === 'CONFIRM' && mvMag >= 1.0) { u = Math.min(u + 1, 4); mvBoost = true; }
+        const drB = applyDRUnderBoost(u, tr);
+        const capped = applyMOTCap(drB.units, tr.mot);
+        const final = tr.movementTier === 'FLAGGED' ? 0 : capped;
+        const stars = final > 0 ? '★'.repeat(final) + '☆'.repeat(Math.max(0, 4 - final)) : '💀 KILLED';
+        console.log(`  │`);
+        console.log(`  │   ➜ ${stars} ${final > 0 ? final + 'u' : ''}  │  Pinn base: ${row.hasPinnEdge ? row.pinnEdge + 'pt→' + baseUnits + 'u' : '1u (no data)'}  │  Mv boost: ${mvBoost ? '+1u' : 'none'}  │  DR boost: ${drB.boost > 0 ? '+' + drB.boost + 'u (' + drB.drTier + ')' : 'none'}${capped < drB.units ? '  │  MOT cap: ' + drB.units + 'u→' + capped + 'u' : ''}`);
+      }
+      console.log(`  └────────────────────────────────────────────────`);
+    }
+  }
 
   // ── BET ACTIONS SUMMARY ──
   console.log('\n');
