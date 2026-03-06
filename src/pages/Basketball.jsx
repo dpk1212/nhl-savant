@@ -2282,6 +2282,45 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   
   // Hide KILLED picks — line moved against, do not display
   if (betData?.betStatus === 'KILLED' || betData?.betStatus === 'FLAGGED') return null;
+
+  // Compute top matchup insight for closed card
+  const topMatchupInsight = (() => {
+    if (!game.barttorvik || !cbbdPlayers) return null;
+    const nk = (name) => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const pickedSide = pred?.bestBet;
+    if (!pickedSide) return null;
+    const teamKey = pickedSide === 'away' ? nk(game.awayTeam) : nk(game.homeTeam);
+    const teamData = cbbdPlayers[teamKey];
+    if (!teamData?.players?.length) return null;
+    const oppDef = pickedSide === 'away' ? game.barttorvik.home : game.barttorvik.away;
+    if (!oppDef) return null;
+
+    let best = null;
+    for (const p of teamData.players.slice(0, 4)) {
+      const bd = p.shotProfile?.breakdown || {};
+      const sp = p.shotProfile || {};
+      if (p.threePct >= 35 && bd.threePointJumpers >= 35 && oppDef.threeP_def_rank > 180) {
+        const s = oppDef.threeP_def_rank > 280 ? 2 : 1;
+        if (!best || s > best.score || (s === best.score && p.ppg > best.ppg))
+          best = { name: p.name, ppg: p.ppg, tag: '3PT MISMATCH', color: '#FBBF24', score: s };
+      }
+      if (sp.layups?.pct >= 50 && bd.layups >= 25 && oppDef.twoP_def_rank > 180) {
+        const s = oppDef.twoP_def_rank > 280 ? 2 : 1;
+        if (!best || s > best.score || (s === best.score && p.ppg > best.ppg))
+          best = { name: p.name, ppg: p.ppg, tag: 'RIM ADVANTAGE', color: '#10B981', score: s };
+      }
+      if (p.usage >= 24 && p.ppg >= 12 && oppDef.adjDef_rank > 200) {
+        const s = oppDef.adjDef_rank > 300 ? 2 : 1;
+        if (!best || s > best.score || (s === best.score && p.ppg > best.ppg))
+          best = { name: p.name, ppg: p.ppg, tag: 'EXPLOITABLE D', color: '#A78BFA', score: s };
+      }
+      if (p.rpg >= 5 && oppDef.oreb_def_rank > 200) {
+        if (!best || p.ppg > best.ppg)
+          best = { name: p.name, ppg: p.ppg, rpg: p.rpg, tag: 'BOARDS EDGE', color: '#22D3EE', score: 1 };
+      }
+    }
+    return best;
+  })();
   
   const displayUnits = isTotalsRecommended ? (betRec.totalUnits || pred?.unitSize || 0)
     : isATSRecommended ? betRec.atsUnits 
@@ -2896,6 +2935,33 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   }}>
                     {label}
                   </div>
+                  {topMatchupInsight && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      marginTop: '6px', paddingTop: '6px',
+                      borderTop: '1px solid rgba(255,255,255,0.06)',
+                    }}>
+                      <div style={{
+                        width: '4px', height: '4px', borderRadius: '50%',
+                        background: topMatchupInsight.color,
+                        boxShadow: `0 0 4px ${topMatchupInsight.color}60`,
+                        flexShrink: 0,
+                      }} />
+                      <span style={{
+                        fontSize: '0.5625rem', fontWeight: '700',
+                        color: 'rgba(255,255,255,0.45)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {topMatchupInsight.name.split(',')[0].split(' ').slice(-1)[0]}
+                        <span style={{ color: topMatchupInsight.color, fontWeight: '800', marginLeft: '3px' }}>
+                          {topMatchupInsight.tag}
+                        </span>
+                        <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: '3px' }}>
+                          {topMatchupInsight.ppg} PPG
+                        </span>
+                      </span>
+                    </div>
+                  )}
                 </>
               );
             })()}
