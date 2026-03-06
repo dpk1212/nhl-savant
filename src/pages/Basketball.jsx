@@ -2283,43 +2283,42 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   // Hide KILLED picks — line moved against, do not display
   if (betData?.betStatus === 'KILLED' || betData?.betStatus === 'FLAGGED') return null;
 
-  // Compute top matchup insight for closed card
-  const topMatchupInsight = (() => {
-    if (!game.barttorvik || !cbbdPlayers) return null;
+  // Compute matchup insights for closed card (up to 3)
+  const matchupInsights = (() => {
+    if (!game.barttorvik || !cbbdPlayers) return [];
     const nk = (name) => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const pickedSide = pred?.bestBet;
-    if (!pickedSide) return null;
+    if (!pickedSide) return [];
     const teamKey = pickedSide === 'away' ? nk(game.awayTeam) : nk(game.homeTeam);
     const teamData = cbbdPlayers[teamKey];
-    if (!teamData?.players?.length) return null;
+    if (!teamData?.players?.length) return [];
     const oppDef = pickedSide === 'away' ? game.barttorvik.home : game.barttorvik.away;
-    if (!oppDef) return null;
+    if (!oppDef) return [];
 
-    let best = null;
-    for (const p of teamData.players.slice(0, 4)) {
+    const found = [];
+    const seen = new Set();
+    for (const p of teamData.players.slice(0, 5)) {
       const bd = p.shotProfile?.breakdown || {};
       const sp = p.shotProfile || {};
-      if (p.threePct >= 35 && bd.threePointJumpers >= 35 && oppDef.threeP_def_rank > 180) {
-        const s = oppDef.threeP_def_rank > 280 ? 2 : 1;
-        if (!best || s > best.score || (s === best.score && p.ppg > best.ppg))
-          best = { name: p.name, ppg: p.ppg, tag: '3PT MISMATCH', color: '#FBBF24', score: s };
+      const pKey = p.name;
+      if (p.threePct >= 35 && bd.threePointJumpers >= 35 && oppDef.threeP_def_rank > 180 && !seen.has(pKey)) {
+        found.push({ name: p.name, ppg: p.ppg, tag: '3PT', color: '#FBBF24', severity: oppDef.threeP_def_rank > 280 ? 2 : 1 });
+        seen.add(pKey);
       }
-      if (sp.layups?.pct >= 50 && bd.layups >= 25 && oppDef.twoP_def_rank > 180) {
-        const s = oppDef.twoP_def_rank > 280 ? 2 : 1;
-        if (!best || s > best.score || (s === best.score && p.ppg > best.ppg))
-          best = { name: p.name, ppg: p.ppg, tag: 'RIM ADVANTAGE', color: '#10B981', score: s };
+      if (sp.layups?.pct >= 50 && bd.layups >= 25 && oppDef.twoP_def_rank > 180 && !seen.has(pKey)) {
+        found.push({ name: p.name, ppg: p.ppg, tag: 'RIM', color: '#10B981', severity: oppDef.twoP_def_rank > 280 ? 2 : 1 });
+        seen.add(pKey);
       }
-      if (p.usage >= 24 && p.ppg >= 12 && oppDef.adjDef_rank > 200) {
-        const s = oppDef.adjDef_rank > 300 ? 2 : 1;
-        if (!best || s > best.score || (s === best.score && p.ppg > best.ppg))
-          best = { name: p.name, ppg: p.ppg, tag: 'EXPLOITABLE D', color: '#A78BFA', score: s };
+      if (p.usage >= 24 && p.ppg >= 12 && oppDef.adjDef_rank > 200 && !seen.has(pKey)) {
+        found.push({ name: p.name, ppg: p.ppg, tag: 'VS WEAK D', color: '#A78BFA', severity: oppDef.adjDef_rank > 300 ? 2 : 1 });
+        seen.add(pKey);
       }
-      if (p.rpg >= 5 && oppDef.oreb_def_rank > 200) {
-        if (!best || p.ppg > best.ppg)
-          best = { name: p.name, ppg: p.ppg, rpg: p.rpg, tag: 'BOARDS EDGE', color: '#22D3EE', score: 1 };
+      if (p.rpg >= 5 && oppDef.oreb_def_rank > 200 && !seen.has(pKey)) {
+        found.push({ name: p.name, ppg: p.ppg, tag: 'BOARDS', color: '#22D3EE', severity: 1 });
+        seen.add(pKey);
       }
     }
-    return best;
+    return found.sort((a, b) => b.severity - a.severity || b.ppg - a.ppg).slice(0, 3);
   })();
   
   const displayUnits = isTotalsRecommended ? (betRec.totalUnits || pred?.unitSize || 0)
@@ -2935,31 +2934,37 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
                   }}>
                     {label}
                   </div>
-                  {topMatchupInsight && (
+                  {matchupInsights.length > 0 && (
                     <div style={{
-                      display: 'flex', alignItems: 'center', gap: '4px',
                       marginTop: '6px', paddingTop: '6px',
                       borderTop: '1px solid rgba(255,255,255,0.06)',
+                      display: 'flex', flexDirection: 'column', gap: '3px',
                     }}>
-                      <div style={{
-                        width: '4px', height: '4px', borderRadius: '50%',
-                        background: topMatchupInsight.color,
-                        boxShadow: `0 0 4px ${topMatchupInsight.color}60`,
-                        flexShrink: 0,
-                      }} />
-                      <span style={{
-                        fontSize: '0.5625rem', fontWeight: '700',
-                        color: 'rgba(255,255,255,0.45)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>
-                        {topMatchupInsight.name.split(',')[0].split(' ').slice(-1)[0]}
-                        <span style={{ color: topMatchupInsight.color, fontWeight: '800', marginLeft: '3px' }}>
-                          {topMatchupInsight.tag}
-                        </span>
-                        <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: '3px' }}>
-                          {topMatchupInsight.ppg} PPG
-                        </span>
-                      </span>
+                      {matchupInsights.map((m, i) => (
+                        <div key={i} style={{
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                        }}>
+                          <div style={{
+                            width: '4px', height: '4px', borderRadius: '50%',
+                            background: m.color,
+                            boxShadow: `0 0 4px ${m.color}60`,
+                            flexShrink: 0,
+                          }} />
+                          <span style={{
+                            fontSize: '0.5625rem', fontWeight: '600',
+                            color: 'rgba(255,255,255,0.5)',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {m.name}
+                            <span style={{ color: m.color, fontWeight: '800', marginLeft: '4px' }}>
+                              {m.tag}
+                            </span>
+                            <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: '4px' }}>
+                              {m.ppg} PPG
+                            </span>
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </>
