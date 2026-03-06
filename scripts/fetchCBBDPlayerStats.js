@@ -5,7 +5,13 @@
  * CollegeBasketballData.com API for all teams playing today.
  * Writes public/cbbd_players.json for the frontend to consume.
  *
- * Usage: node scripts/fetchCBBDPlayerStats.js
+ * Optimizations:
+ * - Roster data (jersey numbers, height) is cached to cbbd_roster_cache.json
+ *   and only re-fetched if the cache is older than 7 days.
+ * - Adjusted ratings are fetched in a single bulk call (all teams).
+ * - Player stats are fetched per-team (only for today's games).
+ *
+ * Usage: node scripts/fetchCBBDPlayerStats.js [--force-roster]
  */
 
 import fs from 'fs/promises';
@@ -21,17 +27,33 @@ const CBBD_KEY = process.env.CBBD_KEY;
 const API_BASE = 'https://api.collegebasketballdata.com';
 const SEASON = 2026;
 const TOP_PLAYERS = 5;
+const ROSTER_CACHE_FILE = join(__dirname, '../public/cbbd_roster_cache.json');
+const OUTPUT_FILE = join(__dirname, '../public/cbbd_players.json');
+const ROSTER_MAX_AGE_DAYS = 7;
+const FORCE_ROSTER = process.argv.includes('--force-roster');
+
+let apiCalls = 0;
 
 async function cbbdFetch(endpoint) {
   const url = `${API_BASE}${endpoint}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${CBBD_KEY}` },
   });
+  apiCalls++;
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`CBBD ${endpoint} → ${res.status}: ${text.slice(0, 200)}`);
   }
   return res.json();
+}
+
+async function cbbdFetchSafe(endpoint) {
+  try {
+    return await cbbdFetch(endpoint);
+  } catch (e) {
+    console.error(`   CBBD error: ${e.message}`);
+    return null;
+  }
 }
 
 function extractTeamsFromOdds(markdown) {
@@ -140,14 +162,97 @@ function formatPlayer(p) {
   };
 }
 
+// ─── Roster Cache ────────────────────────────────────────────────────────────
+
+async function loadRosterCache() {
+  try {
+    const raw = await fs.readFile(ROSTER_CACHE_FILE, 'utf8');
+    const cache = JSON.parse(raw);
+    const age = Date.now() - (cache._timestamp || 0);
+    const ageDays = age / (1000 * 60 * 60 * 24);
+
+    if (FORCE_ROSTER) {
+      console.log('🔄 --force-roster flag set, will refresh roster cache');
+      return null;
+    }
+
+    if (ageDays > ROSTER_MAX_AGE_DAYS) {
+      console.log(`🔄 Roster cache is ${ageDays.toFixed(1)} days old (max ${ROSTER_MAX_AGE_DAYS}), will refresh`);
+      return null;
+    }
+
+    const teamCount = Object.keys(cache).filter(k => k !== '_timestamp').length;
+    console.log(`✅ Roster cache loaded (${teamCount} teams, ${ageDays.toFixed(1)} days old)`);
+    return cache;
+  } catch {
+    console.log('📋 No roster cache found, will fetch fresh');
+    return null;
+  }
+}
+
+async function buildRosterCache(teams, csvMappings) {
+  console.log(`\n🏀 Building roster cache for ${teams.length} teams...`);
+  const cache = { _timestamp: Date.now() };
+  let fetched = 0;
+
+  for (const otTeam of teams) {
+    const alias = CBBD_ALIASES[otTeam];
+    const mapping = csvMappings[otTeam.toLowerCase()];
+    const cbbdName = alias || mapping?.cbbdName || mapping?.normName || otTeam;
+    const normKey = (mapping?.normName || otTeam).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    try {
+      const rosterData = await cbbdFetchSafe(
+        `/teams/roster?team=${encodeURIComponent(cbbdName)}&season=${SEASON}`
+      );
+
+      if (rosterData && Array.isArray(rosterData) && rosterData.length > 0) {
+        const roster = rosterData[0];
+        if (roster.players) {
+          const playerMap = {};
+          for (const rp of roster.players) {
+            const key = (rp.name || '').toLowerCase().trim();
+            playerMap[key] = {
+              jersey: rp.jersey || null,
+              height: rp.height || null,
+              weight: rp.weight || null,
+            };
+          }
+          cache[normKey] = playerMap;
+          // Also store under CBBD team name for flexible lookup
+          cache[cbbdName.toLowerCase().replace(/[^a-z0-9]/g, '')] = playerMap;
+          fetched++;
+        }
+      }
+    } catch (e) {
+      console.log(`   ⚠️  Roster for ${otTeam} failed: ${e.message}`);
+    }
+
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  await fs.writeFile(ROSTER_CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
+  console.log(`   ✅ Roster cache saved: ${fetched} teams (${apiCalls} API calls so far)\n`);
+  return cache;
+}
+
+function lookupRoster(rosterCache, normKey, cbbdName) {
+  if (!rosterCache) return {};
+  return rosterCache[normKey]
+    || rosterCache[cbbdName.toLowerCase().replace(/[^a-z0-9]/g, '')]
+    || {};
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
 async function main() {
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║       CBBD PLAYER STATS FETCHER                         ║');
+  console.log('║       CBBD PLAYER STATS FETCHER  (optimized)             ║');
   console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
   if (!CBBD_KEY) {
     console.error('❌ CBBD_KEY not found in environment. Skipping player stats.');
-    await fs.writeFile(join(__dirname, '../public/cbbd_players.json'), '{}', 'utf8');
+    await fs.writeFile(OUTPUT_FILE, '{}', 'utf8');
     return;
   }
 
@@ -157,20 +262,20 @@ async function main() {
     oddsMarkdown = await fs.readFile(join(__dirname, '../public/basketball_odds.md'), 'utf8');
   } catch {
     console.error('❌ Could not read basketball_odds.md. Run fetch-prime-picks first.');
-    await fs.writeFile(join(__dirname, '../public/cbbd_players.json'), '{}', 'utf8');
+    await fs.writeFile(OUTPUT_FILE, '{}', 'utf8');
     return;
   }
 
   const oddsTeams = extractTeamsFromOdds(oddsMarkdown);
-  console.log(`📋 Found ${oddsTeams.length} teams in today's odds:\n   ${oddsTeams.join(', ')}\n`);
+  console.log(`📋 Found ${oddsTeams.length} teams in today's odds\n`);
 
   if (!oddsTeams.length) {
     console.log('⚠️  No teams found. Writing empty JSON.');
-    await fs.writeFile(join(__dirname, '../public/cbbd_players.json'), '{}', 'utf8');
+    await fs.writeFile(OUTPUT_FILE, '{}', 'utf8');
     return;
   }
 
-  // 2. Load CSV mappings for team name resolution
+  // 2. Load CSV mappings
   let csvMappings = {};
   try {
     const csv = await fs.readFile(join(__dirname, '../public/basketball_teams.csv'), 'utf8');
@@ -179,11 +284,17 @@ async function main() {
     console.log('⚠️  Could not load basketball_teams.csv — using raw team names');
   }
 
-  // 3. Fetch adjusted efficiency ratings (1 API call for ALL teams)
+  // 3. Load or build roster cache (saves ~73 API calls on subsequent runs)
+  let rosterCache = await loadRosterCache();
+  if (!rosterCache) {
+    rosterCache = await buildRosterCache(oddsTeams, csvMappings);
+  }
+
+  // 4. Fetch adjusted efficiency ratings (1 API call for ALL teams)
   let adjRatings = {};
   try {
     console.log('📊 Fetching adjusted efficiency ratings...');
-    const ratings = await cbbd_fetch_safe(`/ratings/adjusted?season=${SEASON}`);
+    const ratings = await cbbdFetchSafe(`/ratings/adjusted?season=${SEASON}`);
     if (ratings) {
       for (const r of ratings) {
         const key = r.team?.toLowerCase();
@@ -204,24 +315,22 @@ async function main() {
     console.error(`   ❌ Ratings fetch failed: ${e.message}`);
   }
 
-  // 4. Fetch player stats and rosters for each team
+  // 5. Fetch player stats per team (1 call each — this is the only per-team call now)
+  console.log(`\n📊 Fetching player stats for ${oddsTeams.length} teams...`);
   const result = {};
   let matched = 0;
   let failed = 0;
-  let apiCalls = 1; // 1 for ratings
 
   for (const otTeam of oddsTeams) {
-    // Resolve CBBD name: alias → cbbd_name from CSV → normalized_name → raw
     const alias = CBBD_ALIASES[otTeam];
     const mapping = csvMappings[otTeam.toLowerCase()];
     const cbbdName = alias || mapping?.cbbdName || mapping?.normName || otTeam;
     const normKey = (mapping?.normName || otTeam).toLowerCase().replace(/[^a-z0-9]/g, '');
 
     try {
-      const players = await cbbd_fetch_safe(
+      const players = await cbbdFetchSafe(
         `/stats/player/season?season=${SEASON}&team=${encodeURIComponent(cbbdName)}`
       );
-      apiCalls++;
 
       if (!players || !players.length) {
         console.log(`   ⚠️  ${otTeam} → "${cbbdName}" — no player data`);
@@ -229,31 +338,8 @@ async function main() {
         continue;
       }
 
-      // Fetch roster for jersey numbers
-      let rosterMap = {};
-      try {
-        const rosterData = await cbbd_fetch_safe(
-          `/teams/roster?team=${encodeURIComponent(cbbdName)}&season=${SEASON}`
-        );
-        apiCalls++;
-        if (rosterData && Array.isArray(rosterData) && rosterData.length > 0) {
-          const roster = rosterData[0];
-          if (roster.players) {
-            for (const rp of roster.players) {
-              const key = (rp.name || '').toLowerCase().trim();
-              rosterMap[key] = {
-                jersey: rp.jersey || null,
-                height: rp.height || null,
-                weight: rp.weight || null,
-              };
-            }
-          }
-        }
-      } catch (e) {
-        console.log(`   ⚠️  ${otTeam} roster fetch failed: ${e.message}`);
-      }
+      const rosterMap = lookupRoster(rosterCache, normKey, cbbdName);
 
-      // Sort by minutes (descending), take top N
       const sorted = players
         .filter(p => p.minutes > 0)
         .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
@@ -270,7 +356,6 @@ async function main() {
       });
       const teamGames = sorted[0]?.games || 0;
 
-      // Match adjusted ratings
       const ratingKey = cbbdName.toLowerCase();
       const ratings = adjRatings[ratingKey] || null;
 
@@ -289,28 +374,18 @@ async function main() {
       failed++;
     }
 
-    // Small delay to be respectful to the API
     await new Promise(r => setTimeout(r, 200));
   }
 
-  // 5. Write output
-  const outPath = join(__dirname, '../public/cbbd_players.json');
-  await fs.writeFile(outPath, JSON.stringify(result, null, 2), 'utf8');
+  // 6. Write output
+  await fs.writeFile(OUTPUT_FILE, JSON.stringify(result, null, 2), 'utf8');
 
   console.log(`\n📊 SUMMARY:`);
   console.log(`   Teams matched: ${matched}/${oddsTeams.length}`);
   console.log(`   Failed: ${failed}`);
   console.log(`   API calls used: ${apiCalls}`);
-  console.log(`   Output: public/cbbd_players.json (${Object.keys(result).length} teams)\n`);
-}
-
-async function cbbd_fetch_safe(endpoint) {
-  try {
-    return await cbbdFetch(endpoint);
-  } catch (e) {
-    console.error(`   CBBD error: ${e.message}`);
-    return null;
-  }
+  console.log(`   Output: public/cbbd_players.json (${Object.keys(result).length} teams)`);
+  console.log(`   Roster cache: ${rosterCache ? 'REUSED (0 calls)' : 'REBUILT'}\n`);
 }
 
 main().catch(e => {
