@@ -936,6 +936,9 @@ async function checkLineMovement() {
   const allAtsRows = [];
   const allTotalsRows = [];
 
+  const now = Date.now();
+  const PREGAME_BUFFER_MS = 15 * 60 * 1000; // 15 min before tipoff = cutoff
+
   for (const evalDoc of evalsSnapshot.docs) {
     const evalData = evalDoc.data();
     const oddsGame = findOddsApiGame(evalData, oddsGames);
@@ -945,6 +948,24 @@ async function checkLineMovement() {
       counters.noMatch++;
       console.log(`   ❓ No match: ${gameLabel}`);
       continue;
+    }
+
+    // Skip live or about-to-start games — pre-game models are invalid once tipoff hits
+    if (oddsGame.commence_time) {
+      const tipoff = new Date(oddsGame.commence_time).getTime();
+      if (now >= tipoff - PREGAME_BUFFER_MS) {
+        const minsAgo = Math.round((now - tipoff) / 60000);
+        const status = minsAgo >= 0 ? `LIVE (started ${minsAgo}m ago)` : `starts in ${-minsAgo}m`;
+        console.log(`   ⏭️  Skipping ${gameLabel} — ${status}`);
+        counters.skipped++;
+        // Mark any existing bets for this game so the kill loop doesn't touch them
+        const awayNorm = evalData.game.awayTeam.replace(/\s+/g, '_').toUpperCase();
+        const homeNorm = evalData.game.homeTeam.replace(/\s+/g, '_').toUpperCase();
+        for (const bd of activeBetDocs) {
+          if (bd.id.startsWith(`${today}_${awayNorm}_${homeNorm}`)) processedBetIds.add(bd.id);
+        }
+        continue;
+      }
     }
 
     // Update evaluation with latest lines
