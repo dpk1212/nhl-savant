@@ -1325,10 +1325,15 @@ async function checkLineMovement() {
 
   // ── ATS SIGNAL REPORT ──
   const atsSignalRows = allAtsRows.filter(r => r.qualifies || (r.currentMOS >= 1.0 && r.bothCover));
+  atsSignalRows.sort((a, b) => {
+    if (a.qualifies !== b.qualifies) return a.qualifies ? -1 : 1;
+    if (a.signalCount !== b.signalCount) return b.signalCount - a.signalCount;
+    return b.pinnEdgePts - a.pinnEdgePts || b.currentMOS - a.currentMOS;
+  });
   if (atsSignalRows.length > 0) {
     console.log('\n');
     console.log('┌─────────────────────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│  ATS SIGNAL REPORT — Full breakdown of qualifying + near bets                              │');
+    console.log('│  ATS SIGNAL REPORT — Full breakdown of qualifying + near bets  (sorted: signals → units)   │');
     console.log('└─────────────────────────────────────────────────────────────────────────────────────────────┘');
     for (const row of atsSignalRows) {
       const sr = row.sideResult;
@@ -1413,10 +1418,17 @@ async function checkLineMovement() {
 
   // ── TOTALS SIGNAL REPORT ──
   const totSignalRows = allTotalsRows.filter(r => r.qualifies || r.currentMOT >= 2.0);
+  totSignalRows.sort((a, b) => {
+    if (a.qualifies !== b.qualifies) return a.qualifies ? -1 : 1;
+    const aEdge = a.hasPinnEdge ? a.pinnEdge : 0;
+    const bEdge = b.hasPinnEdge ? b.pinnEdge : 0;
+    if (aEdge !== bEdge) return bEdge - aEdge;
+    return b.currentMOT - a.currentMOT;
+  });
   if (totSignalRows.length > 0) {
     console.log('\n');
     console.log('┌─────────────────────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│  TOTALS SIGNAL REPORT — Full breakdown of qualifying + near bets                           │');
+    console.log('│  TOTALS SIGNAL REPORT — Full breakdown of qualifying + near bets  (sorted: edge → MOT)     │');
     console.log('└─────────────────────────────────────────────────────────────────────────────────────────────┘');
     for (const row of totSignalRows) {
       const tr = row.totalsResult;
