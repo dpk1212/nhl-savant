@@ -1324,16 +1324,37 @@ async function checkLineMovement() {
   console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
   // ── ATS SIGNAL REPORT ──
+  function computeATSUnits(row) {
+    if (!row.qualifies) return 0;
+    const sr = row.sideResult;
+    const mvMag = Math.abs(sr.lineMovement || 0);
+    let units;
+    if (row.signalCount === 3) {
+      if (row.pinnEdgePts >= 2.5) units = 4;
+      else if (row.pinnEdgePts >= 2.0) units = 4;
+      else if (row.pinnEdgePts >= 1.5) units = 3;
+      else if (row.pinnEdgePts >= 1.0) units = 3;
+      else units = 2;
+      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+    } else if (row.signal2) {
+      if (row.pinnEdgePts >= 2.5) units = 4;
+      else if (row.pinnEdgePts >= 2.0) units = 3;
+      else if (row.pinnEdgePts >= 1.0) units = 2;
+      else units = 1;
+      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+    } else {
+      units = 1;
+    }
+    return sr.movementTier === 'FLAGGED' ? 0 : units;
+  }
+
   const atsSignalRows = allAtsRows.filter(r => r.qualifies || (r.currentMOS >= 1.0 && r.bothCover));
-  atsSignalRows.sort((a, b) => {
-    if (a.qualifies !== b.qualifies) return a.qualifies ? -1 : 1;
-    if (a.signalCount !== b.signalCount) return b.signalCount - a.signalCount;
-    return b.pinnEdgePts - a.pinnEdgePts || b.currentMOS - a.currentMOS;
-  });
+  for (const r of atsSignalRows) r._finalUnits = computeATSUnits(r);
+  atsSignalRows.sort((a, b) => b._finalUnits - a._finalUnits || b.signalCount - a.signalCount || b.currentMOS - a.currentMOS);
   if (atsSignalRows.length > 0) {
     console.log('\n');
     console.log('┌─────────────────────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│  ATS SIGNAL REPORT — Full breakdown of qualifying + near bets  (sorted: signals → units)   │');
+    console.log('│  ATS SIGNAL REPORT — Full breakdown of qualifying + near bets  (sorted: highest units first) │');
     console.log('└─────────────────────────────────────────────────────────────────────────────────────────────┘');
     for (const row of atsSignalRows) {
       const sr = row.sideResult;
@@ -1417,18 +1438,33 @@ async function checkLineMovement() {
   console.log('╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝');
 
   // ── TOTALS SIGNAL REPORT ──
+  function computeTotalsUnits(row) {
+    if (!row.qualifies) return 0;
+    const tr = row.totalsResult;
+    const mv = tr.lineMovement;
+    let baseUnits;
+    if (row.hasPinnEdge) {
+      if (row.pinnEdge >= 2.5) baseUnits = 4;
+      else if (row.pinnEdge >= 2.0) baseUnits = 3;
+      else if (row.pinnEdge >= 1.5) baseUnits = 3;
+      else if (row.pinnEdge >= 1.0) baseUnits = 2;
+      else baseUnits = 1;
+    } else baseUnits = 1;
+    const mvMag = Math.abs(mv || 0);
+    let u = baseUnits;
+    if (tr.movementTier === 'CONFIRM' && mvMag >= 1.0) u = Math.min(u + 1, 4);
+    const drB = applyDRUnderBoost(u, tr);
+    const capped = applyMOTCap(drB.units, tr.mot);
+    return tr.movementTier === 'FLAGGED' ? 0 : capped;
+  }
+
   const totSignalRows = allTotalsRows.filter(r => r.qualifies || r.currentMOT >= 2.0);
-  totSignalRows.sort((a, b) => {
-    if (a.qualifies !== b.qualifies) return a.qualifies ? -1 : 1;
-    const aEdge = a.hasPinnEdge ? a.pinnEdge : 0;
-    const bEdge = b.hasPinnEdge ? b.pinnEdge : 0;
-    if (aEdge !== bEdge) return bEdge - aEdge;
-    return b.currentMOT - a.currentMOT;
-  });
+  for (const r of totSignalRows) r._finalUnits = computeTotalsUnits(r);
+  totSignalRows.sort((a, b) => b._finalUnits - a._finalUnits || b.currentMOT - a.currentMOT);
   if (totSignalRows.length > 0) {
     console.log('\n');
     console.log('┌─────────────────────────────────────────────────────────────────────────────────────────────┐');
-    console.log('│  TOTALS SIGNAL REPORT — Full breakdown of qualifying + near bets  (sorted: edge → MOT)     │');
+    console.log('│  TOTALS SIGNAL REPORT — Full breakdown of qualifying + near bets  (sorted: highest units first) │');
     console.log('└─────────────────────────────────────────────────────────────────────────────────────────────┘');
     for (const row of totSignalRows) {
       const tr = row.totalsResult;
