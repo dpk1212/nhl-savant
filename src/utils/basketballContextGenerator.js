@@ -17,12 +17,14 @@ export function getBasketballContext(game, prediction, odds, bet = null) {
     ensembleAwayProb,
     ensembleHomeProb,
     bestEV, 
-    bestTeam, 
+    bestTeam: rawBestTeam, 
     confidence,
     ensembleAwayScore,
     ensembleHomeScore,
     bestBet // 'away' or 'home'
   } = prediction;
+  
+  const bestTeam = rawBestTeam || (bestBet === 'away' ? game.awayTeam : game.homeTeam) || 'Pick';
   
   // ============================================================
   // SPREAD-ONLY BETS - Check for pre-computed context from fetch script
