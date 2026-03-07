@@ -233,10 +233,10 @@ function findOddsApiGame(evalData, oddsGames) {
   const home = evalData.game?.homeTeam;
   if (!away || !home) return null;
 
-  // Primary: exact match via CSV mapping
   const awayApi = getOddsApiName(away);
   const homeApi = getOddsApiName(home);
 
+  // 1. Both teams mapped — exact match
   if (awayApi && homeApi) {
     const match = oddsGames.find(g =>
       g.away_team === awayApi && g.home_team === homeApi
@@ -246,7 +246,22 @@ function findOddsApiGame(evalData, oddsGames) {
     if (match) return match;
   }
 
-  // Fallback: fuzzy matching for teams not yet in CSV
+  // 2. Partial mapping — one team mapped, fuzzy the other
+  if (awayApi || homeApi) {
+    const matchExact = (apiName, oddsName) => apiName === oddsName;
+    const match = oddsGames.find(g => {
+      const awayOk = awayApi ? matchExact(awayApi, g.away_team) : teamsMatchFuzzy(away, g.away_team);
+      const homeOk = homeApi ? matchExact(homeApi, g.home_team) : teamsMatchFuzzy(home, g.home_team);
+      return awayOk && homeOk;
+    }) || oddsGames.find(g => {
+      const awayOk = awayApi ? matchExact(awayApi, g.home_team) : teamsMatchFuzzy(away, g.home_team);
+      const homeOk = homeApi ? matchExact(homeApi, g.away_team) : teamsMatchFuzzy(home, g.away_team);
+      return awayOk && homeOk;
+    });
+    if (match) return match;
+  }
+
+  // 3. Full fuzzy fallback
   return oddsGames.find(g =>
     teamsMatchFuzzy(away, g.away_team) && teamsMatchFuzzy(home, g.home_team)
   ) || oddsGames.find(g =>
