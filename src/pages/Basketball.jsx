@@ -87,11 +87,18 @@ const Basketball = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Fetch bet outcomes from Firebase
+  // Fetch bet outcomes from Firebase — only today's bets
   useEffect(() => {
     async function fetchBets() {
       try {
-        const betsSnapshot = await getDocs(collection(db, 'basketball_bets'));
+        const today = new Date();
+        const etOffset = -5;
+        const etDate = new Date(today.getTime() + (today.getTimezoneOffset() + etOffset * 60) * 60000);
+        const todayStr = etDate.toISOString().split('T')[0];
+        
+        const betsSnapshot = await getDocs(
+          query(collection(db, 'basketball_bets'), where('date', '==', todayStr))
+        );
         const betsData = new Map();
         
         betsSnapshot.forEach((doc) => {
