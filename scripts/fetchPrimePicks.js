@@ -1713,7 +1713,8 @@ async function fetchPrimePicks() {
       }
       
       const mot = totalsEval.marginOverTotal;
-      const tierInfo = getMOTTier(mot);
+      const effectiveFloor = totalsEval.movementTier === 'CONFIRM' ? MOT_FLOOR_CONFIRMED : MOT_FLOOR;
+      const tierInfo = getMOTTier(mot, effectiveFloor);
       
       if (!tierInfo) {
         totalsBelowFloor++;
