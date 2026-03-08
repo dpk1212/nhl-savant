@@ -91,10 +91,9 @@ const Basketball = () => {
   useEffect(() => {
     async function fetchBets() {
       try {
-        const today = new Date();
-        const etOffset = -5;
-        const etDate = new Date(today.getTime() + (today.getTimezoneOffset() + etOffset * 60) * 60000);
-        const todayStr = etDate.toISOString().split('T')[0];
+        const now = new Date();
+        const etDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const todayStr = `${etDate.getFullYear()}-${String(etDate.getMonth() + 1).padStart(2, '0')}-${String(etDate.getDate()).padStart(2, '0')}`;
         
         const betsSnapshot = await getDocs(
           query(collection(db, 'basketball_bets'), where('date', '==', todayStr))
