@@ -56,7 +56,7 @@ export function BasketballPerformanceDashboard() {
 
     const gradedBets = allBets.filter(b => {
       if (!b.result || !b.result.outcome) return false;
-      // Match the same model filter as the main stats
+      if ((b.bet?.units || 0) === 0 || b.betStatus === 'KILLED' || b.betStatus === 'FLAGGED') return false;
       if (showPrimeOnly) {
         return b.prediction?.spreadBoost > 0 || b.isPrimePick || b.isATSPick;
       } else {
@@ -132,15 +132,12 @@ export function BasketballPerformanceDashboard() {
     
     let gradedBets = allBets.filter(b => {
       if (!b.result || !b.result.outcome) return false;
+      if ((b.bet?.units || 0) === 0 || b.betStatus === 'KILLED' || b.betStatus === 'FLAGGED') return false;
       
-      // PRIME V2: Default to Prime picks only (EV + spread confirmed) + ATS standalone
-      // Legacy mode shows all Savant picks
       if (showPrimeOnly) {
-        // Prime = EV bet with spread boost OR ATS standalone pick
         const isPrime = b.prediction?.spreadBoost > 0 || b.isPrimePick || b.isATSPick;
         if (!isPrime) return false;
       } else {
-        // Legacy = all Savant picks
         if (!b.savantPick) return false;
       }
       
@@ -1063,10 +1060,9 @@ function TimePeriodCard({ title, record, profit, winRate, totalBets, color, isMo
 function BetHistoryList({ bets, isMobile }) {
   const [visibleCount, setVisibleCount] = useState(20);
   
-  // Sort by date (newest first) and filter for graded bets only
   const sortedBets = useMemo(() => {
     return bets
-      .filter(b => b.result?.outcome)
+      .filter(b => b.result?.outcome && (b.bet?.units || 0) > 0 && b.betStatus !== 'KILLED' && b.betStatus !== 'FLAGGED')
       .sort((a, b) => {
         const timeA = a.timestamp?.toDate?.() || new Date(a.timestamp || 0);
         const timeB = b.timestamp?.toDate?.() || new Date(b.timestamp || 0);

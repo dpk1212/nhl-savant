@@ -158,6 +158,7 @@ export function BetHistoryPanel({ bets, isMobile }) {
     return bets
       .filter(b => {
         if (!b.result?.outcome) return false;
+        if ((b.bet?.units || 0) === 0 || b.betStatus === 'KILLED' || b.betStatus === 'FLAGGED') return false;
         
         const betTime = b.timestamp?.toDate?.() || new Date(b.timestamp || 0);
         
