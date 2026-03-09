@@ -885,6 +885,11 @@ async function savePick(db, game, sideData, prediction) {
     return { action: 'stable', betId };
   }
   
+  if (isFlagged) {
+    console.log(`   🚩 SKIP (FLAGGED): ${pickTeam} ${sideData.spread} — MOS +${mos} | no existing bet, not creating 0u doc`);
+    return { action: 'skipped', betId };
+  }
+
   const coverProb = estimateCoverProb(mos);
   const spreadEV = calcSpreadEV(coverProb);
   
@@ -1025,12 +1030,6 @@ async function savePick(db, game, sideData, prediction) {
   
   await setDoc(betRef, betData);
   
-  if (isFlagged) {
-    const mvStr = sideData.lineMovement != null ? `${sideData.lineMovement > 0 ? '+' : ''}${sideData.lineMovement}` : '?';
-    console.log(`   🚩 STORED (FLAGGED): ${pickTeam} ${sideData.spread} — MOS +${mos} [${tier}] | line moved ${mvStr} (opener: ${sideData.openerSpread}) — watching for stabilization`);
-    return { action: 'created_flagged', betId };
-  }
-  
   const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
   const favDog = sideData.isFavorite ? 'FAV' : 'DOG';
   const mvIcon = sideData.movementTier === 'CONFIRM' ? '🟢' : '⚪';
@@ -1158,6 +1157,11 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     return { action: 'stable', betId };
   }
   
+  if (isFlagged) {
+    console.log(`   🚩 SKIP (FLAGGED): ${totalsData.direction} ${totalsData.marketTotal} — MOT +${mot} | no existing bet, not creating 0u doc (${game.awayTeam} @ ${game.homeTeam})`);
+    return { action: 'skipped', betId };
+  }
+
   const coverProb = estimateCoverProb(mot);
   const totalsEV = calcSpreadEV(coverProb);
   
@@ -1235,9 +1239,9 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
     },
     
     status: 'PENDING',
-    betStatus: isFlagged ? 'FLAGGED' : (totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD'),
-    isLocked: !isFlagged,
-    lockedAt: !isFlagged ? Date.now() : null,
+    betStatus: totalsData.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
+    isLocked: true,
+    lockedAt: Date.now(),
     firstRecommendedAt: Date.now(),
     lastUpdatedAt: Date.now(),
     source: 'PRIME_MOT',
@@ -1273,12 +1277,6 @@ async function saveTotalsPick(db, game, totalsData, prediction) {
   };
   
   await setDoc(betRef, betData);
-  
-  if (isFlagged) {
-    const mvStr = totalsData.lineMovement != null ? `${totalsData.lineMovement > 0 ? '+' : ''}${totalsData.lineMovement}` : '?';
-    console.log(`   🚩 STORED (FLAGGED): ${totalsData.direction} ${totalsData.marketTotal} — MOT +${mot} [${tier}] | line moved ${mvStr} (opener: ${totalsData.openerTotal}) — watching (${game.awayTeam} @ ${game.homeTeam})`);
-    return { action: 'created_flagged', betId };
-  }
   
   const tierIcon = tier === 'MAXIMUM' ? '💎' : tier === 'ELITE' ? '🔥' : tier === 'STRONG' ? '💪' : tier === 'SOLID' ? '📊' : '📌';
   const mvIcon = totalsData.movementTier === 'CONFIRM' ? '🟢' : '⚪';
