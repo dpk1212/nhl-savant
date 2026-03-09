@@ -455,6 +455,11 @@ function evaluateTotalsFromEval(evalData, currentTotal) {
   const modelsAgree = bothAgreeOver || bothAgreeUnder;
 
   const direction = blendedTotal > currentTotal ? 'OVER' : 'UNDER';
+  
+  // V12: HS must independently confirm OVER — DR's OVER bias at 48.9% accuracy
+  // is worse than a coin flip, so if only DR is pushing the blend over, skip it
+  if (direction === 'OVER' && !hsOver) return null;
+  
   const margin = blendedTotal - currentTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
 
@@ -495,7 +500,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
   const betId = `${date}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`;
 
   const signalCount = sideResult.signalCount || 0;
-  const isFlagged = sideResult.movementTier === 'FLAGGED' || signalCount < 2;
+  const isFlagged = sideResult.movementTier !== 'CONFIRM';
   const units = isFlagged ? 0 : (sideResult.units || 1);
   const tier = signalCount === 3 ? 'THREE_SIGNAL' : signalCount === 2 ? 'TWO_SIGNAL' : 'INSUFFICIENT';
 
@@ -1048,7 +1053,7 @@ async function checkLineMovement() {
         bothCover: best.bothCover,
         movementTier: best.movementTier,
         status,
-        qualifies: signal1 && signalCount >= 2 && !signal3Against,
+        qualifies: signal1 && signal3For,
         gameLabel,
         sideResult: best,
         evalData,
@@ -1085,21 +1090,16 @@ async function checkLineMovement() {
       const signal3For = best.movementTier === 'CONFIRM';
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
 
-      if (!signal3Against && signalCount >= 2) {
+      // V12: Movement CONFIRM (S3) is mandatory — S1+S2 without movement is cut
+      if (signal3For) {
         const mvMag = Math.abs(best.lineMovement || 0);
         let units;
-        if (signalCount === 3) {
+        if (signal2) {
           if (pinnEdgePts >= 2.5) units = 4;
           else if (pinnEdgePts >= 2.0) units = 4;
           else if (pinnEdgePts >= 1.5) units = 3;
           else if (pinnEdgePts >= 1.0) units = 3;
           else units = 2;
-          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-        } else if (signal2) {
-          if (pinnEdgePts >= 2.5) units = 4;
-          else if (pinnEdgePts >= 2.0) units = 3;
-          else if (pinnEdgePts >= 1.0) units = 2;
-          else units = 1;
           if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else {
           units = 1;
@@ -1218,28 +1218,14 @@ async function checkLineMovement() {
       totalsResult.bestTotalBookLine = bestTotalBookLine;
       totalsResult.hasPinnEdge = hasPinnTotalEdge;
       
-      // Skip if Pinnacle data exists but no edge
+      // V12: Pinnacle edge still gates (skip if Pinn exists but no edge) but no longer sizes
       if (pinnTotal != null && !hasPinnTotalEdge) {
         // No Pinnacle confirmation — don't create/update bet
       } else {
-        // Pinnacle base + movement boost (mirrors fetchPrimePicks V11)
-        let baseUnits;
-        if (hasPinnTotalEdge) {
-          if (pinnTotalEdge >= 2.5) baseUnits = 4;
-          else if (pinnTotalEdge >= 2.0) baseUnits = 3;
-          else if (pinnTotalEdge >= 1.5) baseUnits = 3;
-          else if (pinnTotalEdge >= 1.0) baseUnits = 2;
-          else baseUnits = 1;
-        } else {
-          baseUnits = 1;
-        }
-        const totalsMvMag = Math.abs(totalsResult.lineMovement || 0);
-        if (totalsResult.movementTier === 'CONFIRM' && totalsMvMag >= 1.0) {
-          baseUnits = Math.min(baseUnits + 1, 4);
-        }
+        // V12: Flat 1u base + DR boost only
+        const baseUnits = 1;
         const drB = applyDRUnderBoost(baseUnits, totalsResult);
-        const capped = applyMOTCap(drB.units, totalsResult.mot);
-        const adjustedUnits = (totalsResult.movementTier === 'FLAGGED') ? null : capped;
+        const adjustedUnits = (totalsResult.movementTier === 'FLAGGED') ? null : drB.units;
         totalsResult.finalUnits = adjustedUnits;
         if (adjustedUnits !== null) {
           await createOrUpdateTotalsBet(evalData, totalsResult, counters);
@@ -1329,23 +1315,17 @@ async function checkLineMovement() {
     const sr = row.sideResult;
     const mvMag = Math.abs(sr.lineMovement || 0);
     let units;
-    if (row.signalCount === 3) {
+    if (row.signal2) {
       if (row.pinnEdgePts >= 2.5) units = 4;
       else if (row.pinnEdgePts >= 2.0) units = 4;
       else if (row.pinnEdgePts >= 1.5) units = 3;
       else if (row.pinnEdgePts >= 1.0) units = 3;
       else units = 2;
       if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-    } else if (row.signal2) {
-      if (row.pinnEdgePts >= 2.5) units = 4;
-      else if (row.pinnEdgePts >= 2.0) units = 3;
-      else if (row.pinnEdgePts >= 1.0) units = 2;
-      else units = 1;
-      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
     } else {
       units = 1;
     }
-    return sr.movementTier === 'FLAGGED' ? 0 : units;
+    return sr.movementTier !== 'CONFIRM' ? 0 : units;
   }
 
   const atsSignalRows = allAtsRows.filter(r => r.qualifies || (r.currentMOS >= 1.0 && r.bothCover));
@@ -1373,18 +1353,12 @@ async function checkLineMovement() {
       if (row.qualifies) {
         const mvMag = Math.abs(mv || 0);
         let units;
-        if (row.signalCount === 3) {
+        if (row.signal2) {
           if (row.pinnEdgePts >= 2.5) units = 4;
           else if (row.pinnEdgePts >= 2.0) units = 4;
           else if (row.pinnEdgePts >= 1.5) units = 3;
           else if (row.pinnEdgePts >= 1.0) units = 3;
           else units = 2;
-          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-        } else if (row.signal2) {
-          if (row.pinnEdgePts >= 2.5) units = 4;
-          else if (row.pinnEdgePts >= 2.0) units = 3;
-          else if (row.pinnEdgePts >= 1.0) units = 2;
-          else units = 1;
           if (mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else {
           units = 1;
@@ -1441,21 +1415,9 @@ async function checkLineMovement() {
   function computeTotalsUnits(row) {
     if (!row.qualifies) return 0;
     const tr = row.totalsResult;
-    const mv = tr.lineMovement;
-    let baseUnits;
-    if (row.hasPinnEdge) {
-      if (row.pinnEdge >= 2.5) baseUnits = 4;
-      else if (row.pinnEdge >= 2.0) baseUnits = 3;
-      else if (row.pinnEdge >= 1.5) baseUnits = 3;
-      else if (row.pinnEdge >= 1.0) baseUnits = 2;
-      else baseUnits = 1;
-    } else baseUnits = 1;
-    const mvMag = Math.abs(mv || 0);
-    let u = baseUnits;
-    if (tr.movementTier === 'CONFIRM' && mvMag >= 1.0) u = Math.min(u + 1, 4);
-    const drB = applyDRUnderBoost(u, tr);
-    const capped = applyMOTCap(drB.units, tr.mot);
-    return tr.movementTier === 'FLAGGED' ? 0 : capped;
+    const baseUnits = 1;
+    const drB = applyDRUnderBoost(baseUnits, tr);
+    return tr.movementTier === 'FLAGGED' ? 0 : drB.units;
   }
 
   const totSignalRows = allTotalsRows.filter(r => r.qualifies || r.currentMOT >= 2.0);
@@ -1499,26 +1461,12 @@ async function checkLineMovement() {
       console.log(`  │   DR CONTRA:   ${drContrarian}  (DR margin: ${drMargin != null ? fmt(drMargin) : '—'})`);
 
       if (row.qualifies) {
-        // Reconstruct unit sizing
-        let baseUnits;
-        if (row.hasPinnEdge) {
-          if (row.pinnEdge >= 2.5) baseUnits = 4;
-          else if (row.pinnEdge >= 2.0) baseUnits = 3;
-          else if (row.pinnEdge >= 1.5) baseUnits = 3;
-          else if (row.pinnEdge >= 1.0) baseUnits = 2;
-          else baseUnits = 1;
-        } else baseUnits = 1;
-        const mvMag = Math.abs(mv || 0);
-        let u = baseUnits;
-        let mvBoost = false;
-        if (tr.movementTier === 'CONFIRM' && mvMag >= 1.0) { u = Math.min(u + 1, 4); mvBoost = true; }
-        const drB = applyDRUnderBoost(u, tr);
-        const capped = applyMOTCap(drB.units, tr.mot);
-        const final = tr.movementTier === 'FLAGGED' ? 0 : capped;
-        const pinnTier = row.pinnEdge >= 2.5 ? '🔥 MASSIVE' : row.pinnEdge >= 2.0 ? '🔥 HUGE' : row.pinnEdge >= 1.0 ? 'SOLID' : 'MOD';
+        const baseUnits = 1;
+        const drB = applyDRUnderBoost(baseUnits, tr);
+        const final = tr.movementTier === 'FLAGGED' ? 0 : drB.units;
         const stars = final > 0 ? '★'.repeat(final) + '☆'.repeat(Math.max(0, 4 - final)) : '💀 KILLED';
         console.log(`  │`);
-        console.log(`  │   ➜ ${stars} ${final > 0 ? final + 'u' : ''}  │  Pinn edge: ${row.hasPinnEdge ? pinnTier + ' +' + row.pinnEdge + 'pt→' + baseUnits + 'u' : '1u (no data)'}  │  Mv boost: ${mvBoost ? '+1u' : 'none'}  │  DR boost: ${drB.boost > 0 ? '+' + drB.boost + 'u (' + drB.drTier + ')' : 'none'}${capped < drB.units ? '  │  MOT cap: ' + drB.units + 'u→' + capped + 'u' : ''}`);
+        console.log(`  │   ➜ ${stars} ${final > 0 ? final + 'u' : ''}  │  Base: 1u  │  Pinn gate: ${row.hasPinnEdge ? '✅ +' + row.pinnEdge + 'pt' : (row.pinnTotal != null ? '❌ no edge' : '⚪ no data')}  │  DR boost: ${drB.boost > 0 ? '+' + drB.boost + 'u (' + drB.drTier + ')' : 'none'}`);
       }
       console.log(`  └────────────────────────────────────────────────`);
     }

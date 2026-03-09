@@ -436,6 +436,11 @@ function evaluateTotals(game, totalsGames) {
   const bothAgreeUnder = !drOver && !hsOver;
   
   const direction = blendedTotal > marketTotal ? 'OVER' : 'UNDER';
+  
+  // V12: HS must independently confirm OVER — DR's OVER bias at 48.9% accuracy
+  // is worse than a coin flip, so if only DR is pushing the blend over, skip it
+  if (direction === 'OVER' && !hsOver) return null;
+  
   const margin = blendedTotal - marketTotal;
   const mot = Math.round(Math.abs(margin) * 10) / 10;
   
@@ -786,7 +791,7 @@ async function savePick(db, game, sideData, prediction) {
   
   const mos = sideData.marginOverSpread;
   const signalCount = sideData.signalCount || 0;
-  const isFlagged = sideData.movementTier === 'FLAGGED' || signalCount < 2;
+  const isFlagged = sideData.movementTier !== 'CONFIRM';
   const units = isFlagged ? 0 : (sideData.units || 1);
   const tier = signalCount === 3 ? 'THREE_SIGNAL' : signalCount === 2 ? 'TWO_SIGNAL' : 'INSUFFICIENT';
   
@@ -1619,29 +1624,23 @@ async function fetchPrimePicks() {
       
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
       
-      if (signalCount < 2) {
+      // V12: Movement CONFIRM (S3) is mandatory — S1+S2 without movement is cut
+      if (!signal3For) {
         oneSignalOnly++;
         const pinnInfo = pinnSpread != null ? `Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : 'no Pinn data';
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | Movement flat → 1 signal only, SKIP`);
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | No movement CONFIRM → SKIP`);
         continue;
       }
       
-      // SIZE: Pinnacle edge = base, line movement magnitude = boost
-      // Massive Pinnacle divergence (≥2pt) is the sharpest signal — size aggressively
+      // SIZE: S1+S2+S3 = Pinnacle-sized, S1+S3 = 1u flat
       const mvMag = Math.abs(best.lineMovement || 0);
       let units;
-      if (signalCount === 3) {
+      if (signal2) {
         if (pinnEdgePts >= 2.5) units = 4;
         else if (pinnEdgePts >= 2.0) units = 4;
         else if (pinnEdgePts >= 1.5) units = 3;
         else if (pinnEdgePts >= 1.0) units = 3;
         else units = 2;
-        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-      } else if (signal2) {
-        if (pinnEdgePts >= 2.5) units = 4;
-        else if (pinnEdgePts >= 2.0) units = 3;
-        else if (pinnEdgePts >= 1.0) units = 2;
-        else units = 1;
         if (mvMag >= 1.0) units = Math.min(units + 1, 4);
       } else {
         units = 1;
@@ -1753,18 +1752,9 @@ async function fetchPrimePicks() {
       totalsEval.bestTotalBookLine = bestTotalBookLine;
       totalsEval.hasPinnEdge = hasPinnEdge;
       
-      // ── TOTALS SIZING: Pinnacle base + movement boost + DR boost ──
-      // Step 1: Base units from Pinnacle totals edge
-      let baseUnits;
-      if (hasPinnEdge) {
-        if (pinnTotalEdge >= 2.5) baseUnits = 4;
-        else if (pinnTotalEdge >= 2.0) baseUnits = 3;
-        else if (pinnTotalEdge >= 1.5) baseUnits = 3;
-        else if (pinnTotalEdge >= 1.0) baseUnits = 2;
-        else baseUnits = 1;
-      } else if (pinnTotal == null) {
-        baseUnits = 1;
-      } else {
+      // ── V12 TOTALS SIZING: Flat 1u base + DR boost only ──
+      // Pinnacle edge still gates (skip if Pinn exists but no edge) but no longer sizes
+      if (pinnTotal != null && !hasPinnEdge) {
         pinnTotalsSkipped++;
         console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | NO Pinn edge | Pinn ${pinnTotal} → SKIP (${game.awayTeam} @ ${game.homeTeam})`);
         totalsEval.pinnSkipped = true;
@@ -1772,25 +1762,17 @@ async function fetchPrimePicks() {
         continue;
       }
 
-      // Step 2: Movement boost — line moved ≥1.0pt for us = +1u (cap 4u)
-      const totalsMvMag = Math.abs(totalsEval.lineMovement || 0);
-      if (totalsEval.movementTier === 'CONFIRM' && totalsMvMag >= 1.0) {
-        baseUnits = Math.min(baseUnits + 1, 4);
-      }
+      const baseUnits = 1;
 
-      // Step 3: DR contrarian UNDER boost (additive)
+      // DR contrarian UNDER boost is the only unit scaler
       const drBoost = applyDRUnderBoost(baseUnits, totalsEval);
 
-      // Step 4: MOT outlier cap (penalize divergence from market)
-      const cappedUnits = applyMOTCap(drBoost.units, mot);
-
-      // Step 5: Movement gate (FLAGGED → kill)
-      const adjustedTotalUnits = (totalsEval.movementTier === 'FLAGGED') ? null : cappedUnits;
+      // Movement gate (FLAGGED → kill)
+      const adjustedTotalUnits = (totalsEval.movementTier === 'FLAGGED') ? null : drBoost.units;
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       
       const drTag = drBoost.drTier ? ` 🔥 ${drBoost.drTier} (+${drBoost.boost}u)` : '';
-      const capTag = cappedUnits < drBoost.units ? ` ⚠️  MOT_CAP(${drBoost.units}→${cappedUnits})` : '';
       const pinnTag = hasPinnEdge
         ? ` | Pinn ${pinnTotal} → ${bestTotalBook?.toUpperCase()} ${bestTotalBookLine} (+${pinnTotalEdge}pt edge)`
         : (pinnTotal != null ? ` | Pinn ${pinnTotal}` : '');
@@ -1804,7 +1786,7 @@ async function fetchPrimePicks() {
         const finalTier = drBoost.drTier || tierInfo.tier;
         const mvTag = totalsEval.movementTier === 'CONFIRM' ? '🟢 STEAM' : '';
         const pinnConfirm = hasPinnEdge ? ' ✅ PINN' : '';
-        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${adjustedTotalUnits}u [${finalTier}]${drTag}${capTag}${pinnTag}${pinnConfirm} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
+        console.log(`   ✅ ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} → ${adjustedTotalUnits}u [${finalTier}]${drTag}${pinnTag}${pinnConfirm} ${mvTag} (${game.awayTeam} @ ${game.homeTeam})`);
       }
       
       totalsPicks.push({
@@ -1912,31 +1894,20 @@ async function fetchPrimePicks() {
     console.log(`   Evaluated: ${totalsPicks.length} | New: ${totalsCreated} | Watching: ${totalsCreatedFlagged} | Updated: ${totalsUpdated} | Stable: ${totalsStable} | Killed: ${totalsKilled}`);
     
     if (liveTotals.length > 0) {
-      const tierNames = ['MAXIMUM', 'ELITE', 'STRONG', 'SOLID', 'BASE'];
-      const tierIcons = { MAXIMUM: '💎', ELITE: '🔥', STRONG: '💪', SOLID: '📊', BASE: '📌' };
-      
-      for (const tName of tierNames) {
-        const tierArr = liveTotals.filter(p => {
-          const t = getMOTTier(p.totalsData.marginOverTotal);
-          const adj = applyMovementGate(t?.units, p.totalsData.movementTier);
-          return t?.tier === tName && adj != null;
-        });
-        if (tierArr.length === 0) continue;
-        const tInfo = getMOTTier(tierArr[0].totalsData.marginOverTotal);
-        const adjUnits = applyMovementGate(tInfo.units, tierArr[0].totalsData.movementTier);
-        const starStr = '★'.repeat(adjUnits) + '☆'.repeat(5 - adjUnits);
-        console.log(`   ${tierIcons[tName]} ${starStr} ${tName} (${adjUnits}u): ${tierArr.length} pick${tierArr.length > 1 ? 's' : ''}`);
-        tierArr.forEach(p => {
-          const mvLabel = p.totalsData.movementTier === 'CONFIRM' ? ' 🟢 STEAM' : '';
-          console.log(`      → ${p.totalsData.direction} ${p.totalsData.marketTotal} [${p.game.awayTeam} @ ${p.game.homeTeam}] MOT +${p.totalsData.marginOverTotal}${mvLabel}`);
-        });
-      }
+      liveTotals.forEach(p => {
+        const drB = applyDRUnderBoost(1, p.totalsData);
+        const u = drB.units;
+        const drTag = drB.drTier ? ` 🔥 ${drB.drTier} (+${drB.boost}u)` : '';
+        const mvLabel = p.totalsData.movementTier === 'CONFIRM' ? ' 🟢 STEAM' : '';
+        const starStr = '★'.repeat(u) + '☆'.repeat(5 - u);
+        console.log(`   ${starStr} ${p.totalsData.direction} ${p.totalsData.marketTotal} → ${u}u [${p.game.awayTeam} @ ${p.game.homeTeam}] MOT +${p.totalsData.marginOverTotal}${drTag}${mvLabel}`);
+      });
       
       const overPicks = liveTotals.filter(p => p.totalsData.direction === 'OVER');
       const underPicks = liveTotals.filter(p => p.totalsData.direction === 'UNDER');
       const totalsUnits = liveTotals.reduce((s, p) => {
-        const t = getMOTTier(p.totalsData.marginOverTotal);
-        return s + (applyMovementGate(t.units, p.totalsData.movementTier) || 0);
+        const drB = applyDRUnderBoost(1, p.totalsData);
+        return s + drB.units;
       }, 0);
       console.log(`   Live: ${liveTotals.length} | Overs: ${overPicks.length} | Unders: ${underPicks.length} | Total: ${totalsUnits}u`);
     } else {
@@ -1945,8 +1916,8 @@ async function fetchPrimePicks() {
     
     const liveAtsUnits = livePicks.reduce((s, p) => s + (p.sideData.units || 1), 0);
     const liveTotalsUnits = liveTotals.reduce((s, p) => {
-      const t = getMOTTier(p.totalsData.marginOverTotal);
-      return s + (t ? (applyMovementGate(t.units, p.totalsData.movementTier) || 0) : 0);
+      const drB = applyDRUnderBoost(1, p.totalsData);
+      return s + drB.units;
     }, 0);
     console.log(`\n   ── COMBINED ─────────────────────────────────────────────────`);
     console.log(`   Live picks: ${livePicks.length + liveTotals.length} (${livePicks.length} ATS + ${liveTotals.length} O/U)`);
