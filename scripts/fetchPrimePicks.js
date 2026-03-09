@@ -1753,15 +1753,7 @@ async function fetchPrimePicks() {
       totalsEval.hasPinnEdge = hasPinnEdge;
       
       // ── V12 TOTALS SIZING: Flat 1u base + DR boost only ──
-      // Pinnacle edge still gates (skip if Pinn exists but no edge) but no longer sizes
-      if (pinnTotal != null && !hasPinnEdge) {
-        pinnTotalsSkipped++;
-        console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | NO Pinn edge | Pinn ${pinnTotal} → SKIP (${game.awayTeam} @ ${game.homeTeam})`);
-        totalsEval.pinnSkipped = true;
-        totalsPicks.push({ game, totalsData: totalsEval, prediction: null });
-        continue;
-      }
-
+      // Pinnacle edge is tracked but no longer gates or sizes
       const baseUnits = 1;
 
       // DR contrarian UNDER boost is the only unit scaler

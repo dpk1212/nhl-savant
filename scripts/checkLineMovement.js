@@ -1218,11 +1218,8 @@ async function checkLineMovement() {
       totalsResult.bestTotalBookLine = bestTotalBookLine;
       totalsResult.hasPinnEdge = hasPinnTotalEdge;
       
-      // V12: Pinnacle edge still gates (skip if Pinn exists but no edge) but no longer sizes
-      if (pinnTotal != null && !hasPinnTotalEdge) {
-        // No Pinnacle confirmation — don't create/update bet
-      } else {
-        // V12: Flat 1u base + DR boost only
+      // V12: Pinnacle edge is tracked but no longer gates or sizes — flat 1u + DR boost only
+      {
         const baseUnits = 1;
         const drB = applyDRUnderBoost(baseUnits, totalsResult);
         const adjustedUnits = (totalsResult.movementTier === 'FLAGGED') ? null : drB.units;
