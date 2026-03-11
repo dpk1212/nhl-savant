@@ -1624,27 +1624,24 @@ async function fetchPrimePicks() {
       
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
       
-      // V12: Movement CONFIRM (S3) is mandatory — S1+S2 without movement is cut
-      if (!signal3For) {
+      // V12+: All 3 signals required (S1+S2+S3) — 1★ bets cut
+      if (!signal3For || !signal2) {
         oneSignalOnly++;
         const pinnInfo = pinnSpread != null ? `Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : 'no Pinn data';
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | No movement CONFIRM → SKIP`);
+        const reason = !signal3For ? 'No movement CONFIRM' : 'No Pinnacle edge';
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | ${reason} → SKIP`);
         continue;
       }
       
-      // SIZE: S1+S2+S3 = Pinnacle-sized, S1+S3 = 1u flat
+      // SIZE: 3-signal Pinnacle-sized (2-4u base + movement boost)
       const mvMag = Math.abs(best.lineMovement || 0);
       let units;
-      if (signal2) {
-        if (pinnEdgePts >= 2.5) units = 4;
-        else if (pinnEdgePts >= 2.0) units = 4;
-        else if (pinnEdgePts >= 1.5) units = 3;
-        else if (pinnEdgePts >= 1.0) units = 3;
-        else units = 2;
-        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-      } else {
-        units = 1;
-      }
+      if (pinnEdgePts >= 2.5) units = 4;
+      else if (pinnEdgePts >= 2.0) units = 4;
+      else if (pinnEdgePts >= 1.5) units = 3;
+      else if (pinnEdgePts >= 1.0) units = 3;
+      else units = 2;
+      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       const coverProb = estimateCoverProb(mos);
@@ -1752,12 +1749,17 @@ async function fetchPrimePicks() {
       totalsEval.bestTotalBookLine = bestTotalBookLine;
       totalsEval.hasPinnEdge = hasPinnEdge;
       
-      // ── V12 TOTALS SIZING: Flat 1u base + DR boost only ──
-      // Pinnacle edge is tracked but no longer gates or sizes
+      // ── V12+ TOTALS SIZING: DR boost required (no 1★ bets) ──
       const baseUnits = 1;
-
-      // DR contrarian UNDER boost is the only unit scaler
       const drBoost = applyDRUnderBoost(baseUnits, totalsEval);
+
+      // Skip if no DR boost (would be 1★) — 1★ totals are -11.4u in Pinnacle era
+      if (drBoost.units <= 1) {
+        console.log(`   📋 ${totalsEval.direction} ${totalsEval.marketTotal} — MOT +${mot} | No DR boost → 1★ SKIP (${game.awayTeam} @ ${game.homeTeam})`);
+        totalsEval.noDRBoost = true;
+        totalsPicks.push({ game, totalsData: totalsEval, prediction: null });
+        continue;
+      }
 
       // Movement gate (FLAGGED → kill)
       const adjustedTotalUnits = (totalsEval.movementTier === 'FLAGGED') ? null : drBoost.units;
@@ -1853,7 +1855,7 @@ async function fetchPrimePicks() {
     
     // Filter to only LIVE picks (not FLAGGED) for summary
     const livePicks = picks.filter(p => p.sideData.movementTier !== 'FLAGGED');
-    const liveTotals = totalsPicks.filter(p => p.totalsData.movementTier !== 'FLAGGED' && !p.totalsData.pinnSkipped);
+    const liveTotals = totalsPicks.filter(p => p.totalsData.movementTier !== 'FLAGGED' && !p.totalsData.pinnSkipped && !p.totalsData.noDRBoost);
     
     if (livePicks.length > 0) {
       const threeSignal = livePicks.filter(p => p.sideData.signalCount === 3);
