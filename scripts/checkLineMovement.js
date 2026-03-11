@@ -1053,7 +1053,7 @@ async function checkLineMovement() {
         bothCover: best.bothCover,
         movementTier: best.movementTier,
         status,
-        qualifies: signal1 && signal3For && signal2,
+        qualifies: signal1 && signal3For && (signal2 || best.mos >= 2.0),
         gameLabel,
         sideResult: best,
         evalData,
@@ -1090,16 +1090,20 @@ async function checkLineMovement() {
       const signal3For = best.movementTier === 'CONFIRM';
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
 
-      // V12+: All 3 signals required (S1+S2+S3) — 1★ bets cut
-      if (signal3For && signal2) {
+      // V12+: Movement CONFIRM required. S1+S3 (no Pinn) allowed only if MOS >= 2.0
+      if (signal3For && (signal2 || best.mos >= 2.0)) {
         const mvMag = Math.abs(best.lineMovement || 0);
         let units;
-        if (pinnEdgePts >= 2.5) units = 4;
-        else if (pinnEdgePts >= 2.0) units = 4;
-        else if (pinnEdgePts >= 1.5) units = 3;
-        else if (pinnEdgePts >= 1.0) units = 3;
-        else units = 2;
-        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+        if (signal2) {
+          if (pinnEdgePts >= 2.5) units = 4;
+          else if (pinnEdgePts >= 2.0) units = 4;
+          else if (pinnEdgePts >= 1.5) units = 3;
+          else if (pinnEdgePts >= 1.0) units = 3;
+          else units = 2;
+          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+        } else {
+          units = 1;
+        }
 
         best.signalCount = signalCount;
         best.bestBook = bestBook;
@@ -1310,16 +1314,20 @@ async function checkLineMovement() {
   function computeATSUnits(row) {
     if (!row.qualifies) return 0;
     const sr = row.sideResult;
+    if (sr.movementTier !== 'CONFIRM') return 0;
     const mvMag = Math.abs(sr.lineMovement || 0);
     let units;
-    if (!row.signal2) return 0;
-    if (row.pinnEdgePts >= 2.5) units = 4;
-    else if (row.pinnEdgePts >= 2.0) units = 4;
-    else if (row.pinnEdgePts >= 1.5) units = 3;
-    else if (row.pinnEdgePts >= 1.0) units = 3;
-    else units = 2;
-    if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-    return sr.movementTier !== 'CONFIRM' ? 0 : units;
+    if (row.signal2) {
+      if (row.pinnEdgePts >= 2.5) units = 4;
+      else if (row.pinnEdgePts >= 2.0) units = 4;
+      else if (row.pinnEdgePts >= 1.5) units = 3;
+      else if (row.pinnEdgePts >= 1.0) units = 3;
+      else units = 2;
+      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+    } else {
+      units = 1;
+    }
+    return units;
   }
 
   const atsSignalRows = allAtsRows.filter(r => r.qualifies || (r.currentMOS >= 1.0 && r.bothCover));
@@ -1347,16 +1355,20 @@ async function checkLineMovement() {
       if (row.qualifies) {
         const mvMag = Math.abs(mv || 0);
         let units;
-        if (row.pinnEdgePts >= 2.5) units = 4;
-        else if (row.pinnEdgePts >= 2.0) units = 4;
-        else if (row.pinnEdgePts >= 1.5) units = 3;
-        else if (row.pinnEdgePts >= 1.0) units = 3;
-        else units = 2;
-        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+        if (row.signal2) {
+          if (row.pinnEdgePts >= 2.5) units = 4;
+          else if (row.pinnEdgePts >= 2.0) units = 4;
+          else if (row.pinnEdgePts >= 1.5) units = 3;
+          else if (row.pinnEdgePts >= 1.0) units = 3;
+          else units = 2;
+          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+        } else {
+          units = 1;
+        }
         const pinnTier = row.pinnEdgePts >= 2.5 ? '🔥 MASSIVE' : row.pinnEdgePts >= 2.0 ? '🔥 HUGE' : row.pinnEdgePts >= 1.0 ? 'SOLID' : 'MOD';
         const stars = '★'.repeat(units) + '☆'.repeat(4 - units);
         console.log(`  │`);
-        console.log(`  │   ➜ ${stars} ${units}u  │  Pinn edge: ${row.signal2 ? pinnTier + ' +' + row.pinnEdgePts + 'pt' : '—'}  │  Mv boost: ${mvMag >= 1.0 ? '+1u' : 'none'}`);
+        console.log(`  │   ➜ ${stars} ${units}u  │  Pinn edge: ${row.signal2 ? pinnTier + ' +' + row.pinnEdgePts + 'pt' : '—'}  │  Mv boost: ${row.signal2 && mvMag >= 1.0 ? '+1u' : 'none'}`);
       }
       console.log(`  └────────────────────────────────────────────────`);
     }
