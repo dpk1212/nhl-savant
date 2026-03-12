@@ -13,7 +13,8 @@
  *   S3. MOVEMENT: Line moved ≥0.5pt toward our pick
  *
  *   3 signals: Pinn ≥1.5pt=3u, ≥1.0pt=3u, ≥0.5pt=2u  +  movement ≥1pt=+1u (cap 4u)
- *   Movement against → KILL | 1–2 signals (no S2) → SKIP (no 1★ ATS)
+ *   S1+S3 (no Pinn) @ MOS≥2.0 → 1u
+ *   Movement against → KILL | 1 signal or S1+S3 MOS<2 → SKIP
  *
  * TOTALS (O/U):
  *   20/80 DR/HS blend.  MOT floor = 2.0.
@@ -1622,24 +1623,32 @@ async function fetchPrimePicks() {
       
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
       
-      // V12+: All 3 signals required (S1+S2+S3) — no 1★ ATS
-      if (!signal3For || !signal2) {
+      // V12+: Movement CONFIRM required. S1+S3 (no Pinn) allowed only if MOS >= 2.0
+      if (!signal3For) {
         oneSignalOnly++;
         const pinnInfo = pinnSpread != null ? `Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : 'no Pinn data';
-        const reason = !signal3For ? 'No movement CONFIRM' : 'No Pinnacle edge';
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | ${reason} → SKIP`);
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | No movement CONFIRM → SKIP`);
+        continue;
+      }
+      if (!signal2 && mos < 2.0) {
+        oneSignalOnly++;
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | No Pinn edge + MOS < 2.0 → SKIP`);
         continue;
       }
       
-      // SIZE: 3-signal Pinnacle-sized (2-4u base + movement boost)
+      // SIZE: S1+S2+S3 = Pinnacle-sized (2-4u), S1+S3 w/ MOS >= 2.0 = 1u
       const mvMag = Math.abs(best.lineMovement || 0);
       let units;
-      if (pinnEdgePts >= 2.5) units = 4;
-      else if (pinnEdgePts >= 2.0) units = 4;
-      else if (pinnEdgePts >= 1.5) units = 3;
-      else if (pinnEdgePts >= 1.0) units = 3;
-      else units = 2;
-      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+      if (signal2) {
+        if (pinnEdgePts >= 2.5) units = 4;
+        else if (pinnEdgePts >= 2.0) units = 4;
+        else if (pinnEdgePts >= 1.5) units = 3;
+        else if (pinnEdgePts >= 1.0) units = 3;
+        else units = 2;
+        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+      } else {
+        units = 1;
+      }
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       const coverProb = estimateCoverProb(mos);
