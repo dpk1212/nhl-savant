@@ -13,9 +13,7 @@
  *   S3. MOVEMENT: Line moved ≥0.5pt toward our pick
  *
  *   3 signals: Pinn ≥1.5pt=3u, ≥1.0pt=3u, ≥0.5pt=2u  +  movement ≥1pt=+1u (cap 4u)
- *   2 signals (S1+S2): Pinn ≥1.0pt=2u, else 1u
- *   2 signals (S1+S3): 1u
- *   Movement against → KILL | 1 signal → SKIP
+ *   Movement against → KILL | 1–2 signals (no S2) → SKIP (no 1★ ATS)
  *
  * TOTALS (O/U):
  *   20/80 DR/HS blend.  MOT floor = 2.0.
@@ -1624,32 +1622,24 @@ async function fetchPrimePicks() {
       
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
       
-      // V12+: Movement CONFIRM required. S1+S3 (no Pinn) allowed only if MOS >= 2.0
-      if (!signal3For) {
+      // V12+: All 3 signals required (S1+S2+S3) — no 1★ ATS
+      if (!signal3For || !signal2) {
         oneSignalOnly++;
         const pinnInfo = pinnSpread != null ? `Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : 'no Pinn data';
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | No movement CONFIRM → SKIP`);
-        continue;
-      }
-      if (!signal2 && mos < 2.0) {
-        oneSignalOnly++;
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | No Pinn edge + MOS < 2.0 → SKIP`);
+        const reason = !signal3For ? 'No movement CONFIRM' : 'No Pinnacle edge';
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | ${reason} → SKIP`);
         continue;
       }
       
-      // SIZE: S1+S2+S3 = Pinnacle-sized (2-4u), S1+S3 w/ MOS >= 2.0 = 1u
+      // SIZE: 3-signal Pinnacle-sized (2-4u base + movement boost)
       const mvMag = Math.abs(best.lineMovement || 0);
       let units;
-      if (signal2) {
-        if (pinnEdgePts >= 2.5) units = 4;
-        else if (pinnEdgePts >= 2.0) units = 4;
-        else if (pinnEdgePts >= 1.5) units = 3;
-        else if (pinnEdgePts >= 1.0) units = 3;
-        else units = 2;
-        if (mvMag >= 1.0) units = Math.min(units + 1, 4);
-      } else {
-        units = 1;
-      }
+      if (pinnEdgePts >= 2.5) units = 4;
+      else if (pinnEdgePts >= 2.0) units = 4;
+      else if (pinnEdgePts >= 1.5) units = 3;
+      else if (pinnEdgePts >= 1.0) units = 3;
+      else units = 2;
+      if (mvMag >= 1.0) units = Math.min(units + 1, 4);
       
       const prediction = edgeCalculator.calculateEnsemblePrediction(game);
       const coverProb = estimateCoverProb(mos);
@@ -1839,7 +1829,7 @@ async function fetchPrimePicks() {
     } else {
       console.log('\n   ── TOTALS PICKS ──────────────────────────────────────────────');
       for (const { game, totalsData, prediction } of totalsPicks) {
-        if (totalsData.pinnSkipped) continue;
+        if (totalsData.pinnSkipped || totalsData.noDRBoost) continue;
         const result = await saveTotalsPick(db, game, totalsData, prediction);
         if (result.action === 'created') totalsCreated++;
         else if (result.action === 'created_flagged') totalsCreatedFlagged++;
