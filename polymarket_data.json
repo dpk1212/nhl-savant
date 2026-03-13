@@ -3,8 +3,10 @@
     "delawarestate_northcarolinacentral": {
       "volume24h": 10,
       "liveVolume": 10,
-      "buyPct": 91.9,
-      "sellPct": 8.1,
+      "moneyBuyPct": 91.9,
+      "moneySellPct": 8.1,
+      "ticketBuyPct": 50,
+      "ticketSellPct": 50,
       "tradeCount": 2,
       "priceMove1h": 0,
       "priceHistory": {
@@ -15,9 +17,9 @@
           39.5,
           40,
           40,
+          39.5,
           40,
-          40,
-          40,
+          40.5,
           40,
           40,
           40,
@@ -37,55 +39,13 @@
       "eventId": "172533",
       "title": "Delaware State Hornets vs. North Carolina Central Eagles (W)"
     },
-    "georgewashington_saintlouis": {
-      "volume24h": 22240.380766,
-      "liveVolume": 22270.380765,
-      "buyPct": 98.1,
-      "sellPct": 1.9,
-      "tradeCount": 80,
-      "priceMove1h": 0,
-      "priceHistory": {
-        "points": [
-          49.5,
-          50,
-          50,
-          50.5,
-          50.5,
-          50.5,
-          50.5,
-          50.5,
-          50.5,
-          50,
-          51.5,
-          49.5,
-          49,
-          49.5
-        ],
-        "open": 49.5,
-        "current": 49.5,
-        "high": 51.5,
-        "low": 48.5,
-        "change": 0
-      },
-      "whales": {
-        "count": 4,
-        "totalCash": 4462,
-        "largest": 2500,
-        "buyCount": 4,
-        "sellCount": 0
-      },
-      "awayProb": 50.5,
-      "homeProb": 49.5,
-      "awayTeam": "George Washington Revolutionaries",
-      "homeTeam": "Saint Louis Billikens",
-      "eventId": "264093",
-      "title": "George Washington Revolutionaries vs. Saint Louis Billikens"
-    },
     "kentucky_florida": {
-      "volume24h": 20622.700566000003,
-      "liveVolume": 20622.700565,
-      "buyPct": 99,
-      "sellPct": 1,
+      "volume24h": 27890.641739000002,
+      "liveVolume": 27892.994678,
+      "moneyBuyPct": 99.2,
+      "moneySellPct": 0.8,
+      "ticketBuyPct": 98.8,
+      "ticketSellPct": 1.3,
       "tradeCount": 80,
       "priceMove1h": 1,
       "priceHistory": {
@@ -100,7 +60,7 @@
           50.5,
           50.5,
           50.5,
-          49,
+          50.5,
           51.5,
           52
         ],
@@ -115,7 +75,44 @@
         "totalCash": 7016,
         "largest": 3859,
         "buyCount": 5,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 3859,
+            "side": "BUY",
+            "outcome": "Florida Gators",
+            "price": 52,
+            "ts": "13:41"
+          },
+          {
+            "amount": 1000,
+            "side": "BUY",
+            "outcome": "Florida Gators",
+            "price": 52,
+            "ts": "13:01"
+          },
+          {
+            "amount": 899,
+            "side": "BUY",
+            "outcome": "Florida Gators",
+            "price": 85,
+            "ts": "07:30"
+          },
+          {
+            "amount": 746,
+            "side": "BUY",
+            "outcome": "Florida Gators",
+            "price": 52,
+            "ts": "13:34"
+          },
+          {
+            "amount": 512,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 51,
+            "ts": "14:10"
+          }
+        ]
       },
       "awayProb": 48,
       "homeProb": 52,
@@ -124,18 +121,102 @@
       "eventId": "264098",
       "title": "Kentucky Wildcats vs. Florida Gators"
     },
-    "wisconsin_illinois": {
-      "volume24h": 17939.065710000006,
-      "liveVolume": 17939.06571,
-      "buyPct": 99.8,
-      "sellPct": 0.2,
+    "georgewashington_saintlouis": {
+      "volume24h": 22374.07743,
+      "liveVolume": 24169.496904999996,
+      "moneyBuyPct": 96.9,
+      "moneySellPct": 3.1,
+      "ticketBuyPct": 88.8,
+      "ticketSellPct": 11.3,
       "tradeCount": 80,
-      "priceMove1h": 6.2,
+      "priceMove1h": -2,
+      "priceHistory": {
+        "points": [
+          49.5,
+          50,
+          50,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          49.5,
+          50.5,
+          49.5,
+          49.5,
+          48.5
+        ],
+        "open": 49.5,
+        "current": 48.5,
+        "high": 51.5,
+        "low": 48.5,
+        "change": -1
+      },
+      "whales": {
+        "count": 5,
+        "totalCash": 5102,
+        "largest": 2500,
+        "buyCount": 5,
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 2500,
+            "side": "BUY",
+            "outcome": "Saint Louis Billikens",
+            "price": 75,
+            "ts": "12:22"
+          },
+          {
+            "amount": 814,
+            "side": "BUY",
+            "outcome": "Saint Louis Billikens",
+            "price": 74,
+            "ts": "13:02"
+          },
+          {
+            "amount": 640,
+            "side": "BUY",
+            "outcome": "Under",
+            "price": 51,
+            "ts": "14:34"
+          },
+          {
+            "amount": 598,
+            "side": "BUY",
+            "outcome": "George Washington Revolutionaries",
+            "price": 27,
+            "ts": "13:39"
+          },
+          {
+            "amount": 550,
+            "side": "BUY",
+            "outcome": "Saint Louis Billikens",
+            "price": 71,
+            "ts": "09:14"
+          }
+        ]
+      },
+      "awayProb": 51.5,
+      "homeProb": 48.5,
+      "awayTeam": "George Washington Revolutionaries",
+      "homeTeam": "Saint Louis Billikens",
+      "eventId": "264093",
+      "title": "George Washington Revolutionaries vs. Saint Louis Billikens"
+    },
+    "wisconsin_illinois": {
+      "volume24h": 18263.953436000007,
+      "liveVolume": 18395.357311,
+      "moneyBuyPct": 99.8,
+      "moneySellPct": 0.2,
+      "ticketBuyPct": 97.5,
+      "ticketSellPct": 2.5,
+      "tradeCount": 80,
+      "priceMove1h": 7.2,
       "priceHistory": {
         "points": [
           48.5,
           48.5,
-          48,
           47.5,
           47.5,
           47.5,
@@ -143,37 +224,71 @@
           47.5,
           47.5,
           47.5,
-          48,
+          46,
           48.5,
-          51.5
+          50,
+          51.5,
+          52
         ],
         "open": 48.5,
-        "current": 51.5,
-        "high": 51.5,
+        "current": 52,
+        "high": 52,
         "low": 46,
-        "change": 3
+        "change": 3.5
       },
       "whales": {
         "count": 4,
         "totalCash": 4062,
         "largest": 1845,
         "buyCount": 4,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 1845,
+            "side": "BUY",
+            "outcome": "Illinois Fighting Illini",
+            "price": 48,
+            "ts": "05:37"
+          },
+          {
+            "amount": 1004,
+            "side": "BUY",
+            "outcome": "Illinois Fighting Illini",
+            "price": 75,
+            "ts": "12:36"
+          },
+          {
+            "amount": 708,
+            "side": "BUY",
+            "outcome": "Wisconsin Badgers",
+            "price": 54,
+            "ts": "07:28"
+          },
+          {
+            "amount": 505,
+            "side": "BUY",
+            "outcome": "Illinois Fighting Illini",
+            "price": 74,
+            "ts": "12:17"
+          }
+        ]
       },
-      "awayProb": 48.5,
-      "homeProb": 51.5,
+      "awayProb": 48,
+      "homeProb": 52,
       "awayTeam": "Wisconsin Badgers",
       "homeTeam": "Illinois Fighting Illini",
       "eventId": "264107",
       "title": "Wisconsin Badgers vs. Illinois Fighting Illini"
     },
     "ohiostate_michigan": {
-      "volume24h": 15910.796821000004,
-      "liveVolume": 15910.796818999997,
-      "buyPct": 98.2,
-      "sellPct": 1.8,
+      "volume24h": 16528.340331000003,
+      "liveVolume": 16646.591237,
+      "moneyBuyPct": 98.1,
+      "moneySellPct": 1.9,
+      "ticketBuyPct": 96.3,
+      "ticketSellPct": 3.8,
       "tradeCount": 80,
-      "priceMove1h": -4.2,
+      "priceMove1h": -5.2,
       "priceHistory": {
         "points": [
           48,
@@ -186,37 +301,55 @@
           45.5,
           45.5,
           46,
-          44.5,
+          45.5,
           48,
-          46
+          45.5
         ],
         "open": 48,
-        "current": 46,
+        "current": 45.5,
         "high": 49,
         "low": 44,
-        "change": -2
+        "change": -2.5
       },
       "whales": {
         "count": 2,
         "totalCash": 3367,
         "largest": 2650,
         "buyCount": 2,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 2650,
+            "side": "BUY",
+            "outcome": "Michigan Wolverines",
+            "price": 52,
+            "ts": "14:17"
+          },
+          {
+            "amount": 717,
+            "side": "BUY",
+            "outcome": "Michigan Wolverines",
+            "price": 89,
+            "ts": "14:06"
+          }
+        ]
       },
-      "awayProb": 54,
-      "homeProb": 46,
+      "awayProb": 54.5,
+      "homeProb": 45.5,
       "awayTeam": "Ohio State Buckeyes",
       "homeTeam": "Michigan Wolverines",
       "eventId": "264097",
       "title": "Ohio State Buckeyes vs. Michigan Wolverines"
     },
     "setonhall_stjohns": {
-      "volume24h": 11766.975913999997,
-      "liveVolume": 11766.975913999999,
-      "buyPct": 92.3,
-      "sellPct": 7.7,
+      "volume24h": 11766.975913999999,
+      "liveVolume": 11792.805913999999,
+      "moneyBuyPct": 92.3,
+      "moneySellPct": 7.7,
+      "ticketBuyPct": 92.5,
+      "ticketSellPct": 7.5,
       "tradeCount": 80,
-      "priceMove1h": -1.9,
+      "priceMove1h": -2.8,
       "priceHistory": {
         "points": [
           49,
@@ -227,10 +360,9 @@
           50,
           50,
           50,
+          51,
           50.5,
-          50.5,
-          50,
-          53.5,
+          52,
           54,
           52.5
         ],
@@ -245,7 +377,30 @@
         "totalCash": 2255,
         "largest": 865,
         "buyCount": 3,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 865,
+            "side": "BUY",
+            "outcome": "St. Johns Red Storm",
+            "price": 75,
+            "ts": "12:47"
+          },
+          {
+            "amount": 800,
+            "side": "BUY",
+            "outcome": "St. Johns Red Storm",
+            "price": 77,
+            "ts": "12:51"
+          },
+          {
+            "amount": 590,
+            "side": "BUY",
+            "outcome": "Over",
+            "price": 50,
+            "ts": "14:22"
+          }
+        ]
       },
       "awayProb": 47.5,
       "homeProb": 52.5,
@@ -255,12 +410,14 @@
       "title": "Seton Hall Pirates vs. St. John's Red Storm"
     },
     "miamifl_virginia": {
-      "volume24h": 8659.876608,
-      "liveVolume": 8659.876607,
-      "buyPct": 100,
-      "sellPct": 0,
+      "volume24h": 8762.356608000002,
+      "liveVolume": 9040.356608,
+      "moneyBuyPct": 100,
+      "moneySellPct": 0,
+      "ticketBuyPct": 98.8,
+      "ticketSellPct": 1.3,
       "tradeCount": 80,
-      "priceMove1h": -1.1,
+      "priceMove1h": -2.2,
       "priceHistory": {
         "points": [
           49,
@@ -269,7 +426,7 @@
           48.5,
           48,
           48,
-          47.5,
+          48,
           48.5,
           48,
           47,
@@ -288,7 +445,16 @@
         "totalCash": 1921,
         "largest": 1921,
         "buyCount": 1,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 1921,
+            "side": "BUY",
+            "outcome": "Virginia Cavaliers",
+            "price": 49,
+            "ts": "06:58"
+          }
+        ]
       },
       "awayProb": 55.5,
       "homeProb": 44.5,
@@ -299,9 +465,11 @@
     },
     "prairieviewam_alabamaam": {
       "volume24h": 8296.586033,
-      "liveVolume": 8296.586030999999,
-      "buyPct": 99.7,
-      "sellPct": 0.3,
+      "liveVolume": 8335.997793999999,
+      "moneyBuyPct": 99.7,
+      "moneySellPct": 0.3,
+      "ticketBuyPct": 97.5,
+      "ticketSellPct": 2.5,
       "tradeCount": 80,
       "priceMove1h": -3.1,
       "priceHistory": {
@@ -311,11 +479,11 @@
           49,
           49,
           49,
-          48.5,
+          49,
           48,
           48,
           48,
-          48,
+          45,
           46.5,
           49,
           47.5
@@ -335,10 +503,12 @@
       "title": "Prairie View A&M Panthers vs. Alabama A&M Bulldogs"
     },
     "iowastate_arizona": {
-      "volume24h": 5741.720124000001,
-      "liveVolume": 5754.540635,
-      "buyPct": 92,
-      "sellPct": 8,
+      "volume24h": 6075.6653940000015,
+      "liveVolume": 6120.571423,
+      "moneyBuyPct": 92.6,
+      "moneySellPct": 7.4,
+      "ticketBuyPct": 96.3,
+      "ticketSellPct": 3.8,
       "tradeCount": 80,
       "priceMove1h": 1,
       "priceHistory": {
@@ -351,7 +521,6 @@
           49.5,
           49.5,
           49.5,
-          49,
           49,
           49,
           49,
@@ -369,7 +538,16 @@
         "totalCash": 510,
         "largest": 510,
         "buyCount": 1,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 510,
+            "side": "BUY",
+            "outcome": "Arizona Wildcats",
+            "price": 63,
+            "ts": "12:56"
+          }
+        ]
       },
       "awayProb": 50.5,
       "homeProb": 49.5,
@@ -379,11 +557,13 @@
       "title": "Iowa State Cyclones vs. Arizona Wildcats"
     },
     "tennessee_vanderbilt": {
-      "volume24h": 5683.728719999999,
-      "liveVolume": 5683.728719000001,
-      "buyPct": 100,
-      "sellPct": 0,
-      "tradeCount": 68,
+      "volume24h": 5990.278719999999,
+      "liveVolume": 7140.082639999999,
+      "moneyBuyPct": 100,
+      "moneySellPct": 0,
+      "ticketBuyPct": 100,
+      "ticketSellPct": 0,
+      "tradeCount": 80,
       "priceMove1h": -4,
       "priceHistory": {
         "points": [
@@ -394,7 +574,7 @@
           49,
           49.5,
           49.5,
-          49.5,
+          50,
           49,
           49,
           49.5,
@@ -412,7 +592,23 @@
         "totalCash": 1635,
         "largest": 950,
         "buyCount": 2,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 950,
+            "side": "BUY",
+            "outcome": "Tennessee Volunteers",
+            "price": 50,
+            "ts": "14:21"
+          },
+          {
+            "amount": 685,
+            "side": "BUY",
+            "outcome": "Vanderbilt Commodores",
+            "price": 53,
+            "ts": "13:58"
+          }
+        ]
       },
       "awayProb": 52.5,
       "homeProb": 47.5,
@@ -423,9 +619,11 @@
     },
     "massachusetts_toledo": {
       "volume24h": 5378.84632,
-      "liveVolume": 5378.846319,
-      "buyPct": 99.9,
-      "sellPct": 0.1,
+      "liveVolume": 13866.773204,
+      "moneyBuyPct": 100,
+      "moneySellPct": 0,
+      "ticketBuyPct": 100,
+      "ticketSellPct": 0,
       "tradeCount": 80,
       "priceMove1h": -1,
       "priceHistory": {
@@ -433,16 +631,15 @@
           49,
           49,
           49,
+          49.5,
+          49.5,
+          49.5,
+          50.5,
           49,
-          49.5,
-          49.5,
-          50.5,
-          50.5,
           50.5,
           50.5,
           49.5,
           49,
-          49.5,
           48.5
         ],
         "open": 49,
@@ -461,10 +658,12 @@
     },
     "stbonaventure_dayton": {
       "volume24h": 3707.3721320000004,
-      "liveVolume": 3707.372131,
-      "buyPct": 100,
-      "sellPct": 0,
-      "tradeCount": 77,
+      "liveVolume": 3914.2686820000004,
+      "moneyBuyPct": 100,
+      "moneySellPct": 0,
+      "ticketBuyPct": 100,
+      "ticketSellPct": 0,
+      "tradeCount": 78,
       "priceMove1h": -5.8,
       "priceHistory": {
         "points": [
@@ -475,7 +674,7 @@
           50,
           50,
           50,
-          50,
+          50.5,
           51,
           51,
           50,
@@ -499,10 +698,12 @@
   },
   "NHL": {
     "edm_stl": {
-      "volume24h": 837256.6991389983,
-      "liveVolume": 837466.0979729999,
-      "buyPct": 99.8,
-      "sellPct": 0.2,
+      "volume24h": 837493.4933219983,
+      "liveVolume": 840428.237036,
+      "moneyBuyPct": 99.8,
+      "moneySellPct": 0.2,
+      "ticketBuyPct": 97.5,
+      "ticketSellPct": 2.5,
       "tradeCount": 80,
       "priceMove1h": 1.8,
       "priceHistory": {
@@ -529,10 +730,47 @@
       },
       "whales": {
         "count": 30,
-        "totalCash": 48269,
+        "totalCash": 48525,
         "largest": 7140,
         "buyCount": 30,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 7140,
+            "side": "BUY",
+            "outcome": "Oilers",
+            "price": 58,
+            "ts": "13:45"
+          },
+          {
+            "amount": 5800,
+            "side": "BUY",
+            "outcome": "Oilers",
+            "price": 57,
+            "ts": "13:43"
+          },
+          {
+            "amount": 5800,
+            "side": "BUY",
+            "outcome": "Oilers",
+            "price": 58,
+            "ts": "11:57"
+          },
+          {
+            "amount": 4640,
+            "side": "BUY",
+            "outcome": "Blues",
+            "price": 43,
+            "ts": "12:22"
+          },
+          {
+            "amount": 2327,
+            "side": "BUY",
+            "outcome": "Oilers",
+            "price": 58,
+            "ts": "06:26"
+          }
+        ]
       },
       "awayProb": 57.5,
       "homeProb": 42.5,
@@ -542,10 +780,12 @@
       "title": "Oilers vs. Blues"
     },
     "lak_nyi": {
-      "volume24h": 224750.281133,
-      "liveVolume": 228355.37064999997,
-      "buyPct": 100,
-      "sellPct": 0,
+      "volume24h": 228355.37065100003,
+      "liveVolume": 228394.87738999998,
+      "moneyBuyPct": 100,
+      "moneySellPct": 0,
+      "ticketBuyPct": 98.8,
+      "ticketSellPct": 1.3,
       "tradeCount": 80,
       "priceMove1h": 2.3,
       "priceHistory": {
@@ -562,7 +802,6 @@
           44,
           43.5,
           43.5,
-          43.5,
           44.5
         ],
         "open": 43.5,
@@ -576,7 +815,44 @@
         "totalCash": 79497,
         "largest": 28074,
         "buyCount": 30,
-        "sellCount": 0
+        "sellCount": 0,
+        "topTrades": [
+          {
+            "amount": 28074,
+            "side": "BUY",
+            "outcome": "Kings",
+            "price": 44,
+            "ts": "05:35"
+          },
+          {
+            "amount": 10650,
+            "side": "BUY",
+            "outcome": "Islanders",
+            "price": 56,
+            "ts": "12:17"
+          },
+          {
+            "amount": 5600,
+            "side": "BUY",
+            "outcome": "Islanders",
+            "price": 56,
+            "ts": "06:21"
+          },
+          {
+            "amount": 4492,
+            "side": "BUY",
+            "outcome": "Kings",
+            "price": 44,
+            "ts": "13:42"
+          },
+          {
+            "amount": 3227,
+            "side": "BUY",
+            "outcome": "Kings",
+            "price": 45,
+            "ts": "11:56"
+          }
+        ]
       },
       "awayProb": 44.5,
       "homeProb": 55.5,
@@ -586,5 +862,5 @@
       "title": "Kings vs. Islanders"
     }
   },
-  "updatedAt": "2026-03-13T14:32:51.285Z"
+  "updatedAt": "2026-03-13T14:39:05.513Z"
 }
