@@ -321,6 +321,13 @@ async function run() {
       const t = title.toLowerCase();
       if (/ncaa|college|basketball/.test(t) && !/nba|champion|winner|tournament winner/.test(t)) sport = 'CBB';
       else if (/nhl|hockey/.test(t) && !/champion|winner|stanley/.test(t)) sport = 'NHL';
+      else {
+        // Infer from team matching: try CBB first, then NHL (for "Team A vs Team B" with no sport keywords)
+        const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
+        const nhlKey = matchToGameKey(teams, cbbMap, 'NHL');
+        if (cbbKey && validCBB.has(cbbKey)) sport = 'CBB';
+        else if (nhlKey && validNHL.has(nhlKey)) sport = 'NHL';
+      }
     }
     if (!sport || (sport !== 'CBB' && sport !== 'NHL')) continue;
 
@@ -372,7 +379,7 @@ async function run() {
   const nhlCount = Object.keys(out.NHL).length;
   console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}`);
   if (cbbCount === 0 && nhlCount === 0) {
-    console.log('(No Polymarket markets matched today\'s schedule — data will appear when Polymarket lists our games)');
+    console.log('(No Polymarket markets matched today\'s schedule)');
   }
 }
 
