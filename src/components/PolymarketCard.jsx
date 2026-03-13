@@ -35,7 +35,7 @@ export default function PolymarketCard({
     priceMove1h,
     awayMoneyPct: polyAwayMoney, homeMoneyPct: polyHomeMoney,
     awayTicketPct: polyAwayTicket, homeTicketPct: polyHomeTicket,
-    tradeCount: polyTradeCount,
+    tradeCount: polyTradeCount, sampleCash: polySampleCash,
     awayProb: polyAwayPct, homeProb: polyHomePct,
     priceHistory, whales,
   } = data || {};
@@ -410,7 +410,7 @@ export default function PolymarketCard({
                   homePct={polyHomeMoney}
                   away={away}
                   home={home}
-                  total={polyLive ?? polyVol}
+                  total={polySampleCash || 0}
                   unit="dollars"
                 />
               </div>

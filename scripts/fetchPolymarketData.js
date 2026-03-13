@@ -52,10 +52,19 @@ async function getLiveVolume(eventId) {
   return Array.isArray(data) ? data[0] : data;
 }
 
-async function getTrades(eventId, limit = 100) {
-  const params = new URLSearchParams({ eventId: String(eventId), limit: String(limit) });
-  const trades = await get(`/trades?${params}`, DATA);
-  return Array.isArray(trades) ? trades : [];
+async function getAllTrades(eventId) {
+  const PAGE = 500;
+  let all = [];
+  let offset = 0;
+  while (true) {
+    const params = new URLSearchParams({ eventId: String(eventId), limit: String(PAGE), offset: String(offset) });
+    const batch = await get(`/trades?${params}`, DATA);
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    all = all.concat(batch);
+    if (batch.length < PAGE) break;
+    offset += batch.length;
+  }
+  return all;
 }
 
 async function getWhaleTrades(eventId, minCash = 500, limit = 50) {
@@ -95,7 +104,7 @@ function aggregateTrades(trades, awayRaw, homeRaw) {
   }
   const totalTickets = awayTickets + homeTickets;
   return {
-    totalCash,
+    totalCash: Math.round(totalCash),
     awayMoneyPct: totalCash > 0 ? Number((awayCash / totalCash * 100).toFixed(1)) : 0,
     homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
     awayTicketPct: totalTickets > 0 ? Number((awayTickets / totalTickets * 100).toFixed(1)) : 0,
@@ -376,7 +385,7 @@ async function run() {
 
     try {
       const live = await getLiveVolume(id);
-      const trades = await getTrades(id, 200);
+      const trades = await getAllTrades(id);
       const agg = aggregateTrades(trades, teams[0], teams[1]);
 
       let priceMove1h = null;
@@ -499,6 +508,7 @@ async function run() {
         awayTicketPct: agg.awayTicketPct,
         homeTicketPct: agg.homeTicketPct,
         tradeCount: agg.ticketCount,
+        sampleCash: agg.totalCash,
         priceMove1h,
         priceHistory,
         whales: whaleData,
