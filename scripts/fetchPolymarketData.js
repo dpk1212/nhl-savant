@@ -3,6 +3,7 @@
  *
  * Fetches events, volume, trades, price movement from Polymarket.
  * Matches to games using basketball_teams.csv (CBB) and NHL team map.
+ * ONLY outputs data for games in today's OddsTrader schedule.
  * Outputs JSON to public/polymarket_data.json for UI consumption.
  *
  * Usage: node scripts/fetchPolymarketData.js
@@ -11,6 +12,8 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
+import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -137,39 +140,43 @@ function parseCSVLine(line) {
   return values;
 }
 
-// ─── NHL: Polymarket names -> OddsTrader city names ────────────────────────
-const NHL_ODDS_CITIES = [
-  'Boston', 'Toronto', 'Montreal', 'Ottawa', 'Buffalo', 'Detroit', 'Tampa Bay',
-  'Florida', 'Carolina', 'Washington', 'Pittsburgh', 'Philadelphia', 'New Jersey',
-  'Columbus', 'Nashville', 'Winnipeg', 'Chicago', 'Minnesota', 'Dallas', 'St. Louis',
-  'Colorado', 'Arizona', 'Utah', 'Vegas', 'Los Angeles', 'Anaheim', 'San Jose',
-  'Calgary', 'Edmonton', 'Vancouver', 'Seattle', 'N.Y. Rangers', 'N.Y. Islanders',
-];
-const NHL_MAP = {
-  bruins: 'Boston', mapleleafs: 'Toronto', leafs: 'Toronto',
-  rangers: 'N.Y. Rangers', islanders: 'N.Y. Islanders',
-  canadiens: 'Montreal', habs: 'Montreal',
-  senators: 'Ottawa', sabres: 'Buffalo', redwings: 'Detroit',
-  lightning: 'Tampa Bay', bolts: 'Tampa Bay', tampabay: 'Tampa Bay',
-  panthers: 'Florida', hurricanes: 'Carolina',
-  capitals: 'Washington', caps: 'Washington',
-  penguins: 'Pittsburgh', pens: 'Pittsburgh',
-  flyers: 'Philadelphia', devils: 'New Jersey', newjersey: 'New Jersey',
-  bluejackets: 'Columbus', jackets: 'Columbus',
-  predators: 'Nashville', preds: 'Nashville',
-  jets: 'Winnipeg', blackhawks: 'Chicago', hawks: 'Chicago',
-  wild: 'Minnesota', stars: 'Dallas', blues: 'St. Louis', stlouis: 'St. Louis',
-  avalanche: 'Colorado', avs: 'Colorado',
-  coyotes: 'Arizona', utah: 'Utah',
-  knights: 'Vegas', goldenknights: 'Vegas',
-  kings: 'Los Angeles', losangeles: 'Los Angeles', la: 'Los Angeles',
-  ducks: 'Anaheim', sharks: 'San Jose', sanjose: 'San Jose',
-  flames: 'Calgary', oilers: 'Edmonton',
-  canucks: 'Vancouver', kraken: 'Seattle',
+// ─── NHL: Polymarket names -> OddsTrader TEAM CODES (LAK, NYI, etc.) ────────
+const NHL_NAME_TO_CODE = {
+  'Boston': 'BOS', 'Toronto': 'TOR', 'Montreal': 'MTL', 'Ottawa': 'OTT',
+  'Buffalo': 'BUF', 'Detroit': 'DET', 'Tampa Bay': 'TBL', 'Florida': 'FLA',
+  'Carolina': 'CAR', 'Washington': 'WSH', 'Pittsburgh': 'PIT',
+  'Philadelphia': 'PHI', 'New Jersey': 'NJD', 'Columbus': 'CBJ',
+  'Nashville': 'NSH', 'Winnipeg': 'WPG', 'Chicago': 'CHI', 'Minnesota': 'MIN',
+  'Dallas': 'DAL', 'St. Louis': 'STL', 'Colorado': 'COL', 'Arizona': 'ARI',
+  'Utah': 'UTA', 'Vegas': 'VGK', 'Los Angeles': 'LAK', 'Anaheim': 'ANA',
+  'San Jose': 'SJS', 'Calgary': 'CGY', 'Edmonton': 'EDM', 'Vancouver': 'VAN',
+  'Seattle': 'SEA', 'N.Y. Rangers': 'NYR', 'N.Y. Islanders': 'NYI',
 };
-NHL_ODDS_CITIES.forEach(c => {
-  const n = normalize(c);
-  if (!NHL_MAP[n]) NHL_MAP[n] = c;
+const NHL_MAP = {
+  bruins: 'BOS', mapleleafs: 'TOR', leafs: 'TOR',
+  rangers: 'NYR', islanders: 'NYI',
+  canadiens: 'MTL', habs: 'MTL',
+  senators: 'OTT', sabres: 'BUF', redwings: 'DET',
+  lightning: 'TBL', bolts: 'TBL', tampabay: 'TBL',
+  panthers: 'FLA', hurricanes: 'CAR',
+  capitals: 'WSH', caps: 'WSH',
+  penguins: 'PIT', pens: 'PIT',
+  flyers: 'PHI', devils: 'NJD', newjersey: 'NJD',
+  bluejackets: 'CBJ', jackets: 'CBJ',
+  predators: 'NSH', preds: 'NSH',
+  jets: 'WPG', blackhawks: 'CHI', hawks: 'CHI',
+  wild: 'MIN', stars: 'DAL', blues: 'STL', stlouis: 'STL',
+  avalanche: 'COL', avs: 'COL',
+  coyotes: 'ARI', utah: 'UTA',
+  knights: 'VGK', goldenknights: 'VGK',
+  kings: 'LAK', losangeles: 'LAK', la: 'LAK',
+  ducks: 'ANA', sharks: 'SJS', sanjose: 'SJS',
+  flames: 'CGY', oilers: 'EDM',
+  canucks: 'VAN', kraken: 'SEA',
+};
+Object.entries(NHL_NAME_TO_CODE).forEach(([name, code]) => {
+  const n = normalize(name);
+  if (!NHL_MAP[n]) NHL_MAP[n] = code;
 });
 
 function resolveNHLTeam(raw) {
@@ -230,18 +237,50 @@ function matchToGameKey(teams, cbbMap, sport) {
     return `${normalize(aCanon)}_${normalize(bCanon)}`;
   }
   if (sport === 'NHL') {
-    const aRes = resolveNHLTeam(normalize(a)) || resolveNHLTeam(normalize(a.replace(/\s/g, '')));
-    const bRes = resolveNHLTeam(normalize(b)) || resolveNHLTeam(normalize(b.replace(/\s/g, '')));
-    if (!aRes || !bRes) return null;
-    return `${normalize(aRes)}_${normalize(bRes)}`;
+    const aCode = resolveNHLTeam(normalize(a)) || resolveNHLTeam(normalize(a.replace(/\s/g, '')));
+    const bCode = resolveNHLTeam(normalize(b)) || resolveNHLTeam(normalize(b.replace(/\s/g, '')));
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
   }
   return null;
+}
+
+// ─── Load today's schedule (OddsTrader) ─────────────────────────────────────
+function loadTodaysSchedule() {
+  const validCBB = new Set();
+  const validNHL = new Set();
+  try {
+    const cbbPath = join(ROOT, 'public', 'basketball_odds.md');
+    const cbbMd = readFileSync(cbbPath, 'utf8');
+    const cbbGames = parseBasketballOdds(cbbMd);
+    for (const g of cbbGames) {
+      validCBB.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+    }
+    console.log(`📋 Today's CBB: ${cbbGames.length} games`);
+  } catch (e) {
+    console.warn('Could not load CBB schedule:', e.message);
+  }
+  try {
+    const nhlPath = join(ROOT, 'public', 'odds_money.md');
+    const nhlMd = readFileSync(nhlPath, 'utf8');
+    const nhlGames = parseOddsTrader(nhlMd);
+    for (const g of nhlGames) {
+      if (g.awayTeam && g.homeTeam) {
+        validNHL.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+      }
+    }
+    console.log(`📋 Today's NHL: ${nhlGames.length} games`);
+  } catch (e) {
+    console.warn('Could not load NHL schedule:', e.message);
+  }
+  return { validCBB, validNHL };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
   const out = { CBB: {}, NHL: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
+  const { validCBB, validNHL } = loadTodaysSchedule();
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -287,9 +326,12 @@ async function run() {
 
     const key = matchToGameKey(teams, cbbMap, sport);
     if (!key || seen.has(key)) continue;
-    seen.add(key);
 
     const sportKey = sport === 'CBB' ? 'CBB' : 'NHL';
+    const validSet = sportKey === 'CBB' ? validCBB : validNHL;
+    if (!validSet.has(key)) continue;
+    seen.add(key);
+
     const bucket = out[sportKey];
 
     try {
@@ -326,7 +368,12 @@ async function run() {
 
   const outPath = join(ROOT, 'public', 'polymarket_data.json');
   writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
-  console.log(`Wrote ${outPath} — CBB: ${Object.keys(out.CBB).length}, NHL: ${Object.keys(out.NHL).length}`);
+  const cbbCount = Object.keys(out.CBB).length;
+  const nhlCount = Object.keys(out.NHL).length;
+  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}`);
+  if (cbbCount === 0 && nhlCount === 0) {
+    console.log('(No Polymarket markets matched today\'s schedule — data will appear when Polymarket lists our games)');
+  }
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
