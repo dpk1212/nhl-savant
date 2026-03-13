@@ -175,6 +175,7 @@ const NHL_NAME_TO_CODE = {
 const NHL_MAP = {
   bruins: 'BOS', mapleleafs: 'TOR', leafs: 'TOR',
   rangers: 'NYR', islanders: 'NYI',
+  newyorkr: 'NYR', newyorki: 'NYI',
   canadiens: 'MTL', habs: 'MTL',
   senators: 'OTT', sabres: 'BUF', redwings: 'DET',
   lightning: 'TBL', bolts: 'TBL', tampabay: 'TBL',
