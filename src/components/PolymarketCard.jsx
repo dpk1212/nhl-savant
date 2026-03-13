@@ -32,17 +32,13 @@ export default function PolymarketCard({
   // ─── Polymarket data ────────────────────────────────────────────────
   const {
     volume24h: polyVol = 0, liveVolume: polyLive,
-    moneyBuyPct, moneySellPct, ticketBuyPct, ticketSellPct,
-    buyPct, sellPct,
-    priceMove1h, tradeCount: polyTradeCount,
+    priceMove1h,
+    awayMoneyPct: polyAwayMoney, homeMoneyPct: polyHomeMoney,
+    awayTicketPct: polyAwayTicket, homeTicketPct: polyHomeTicket,
+    tradeCount: polyTradeCount,
     awayProb: polyAwayPct, homeProb: polyHomePct,
     priceHistory, whales,
   } = data || {};
-
-  const mBuyPct = moneyBuyPct ?? buyPct ?? 0;
-  const mSellPct = moneySellPct ?? sellPct ?? 0;
-  const tBuyPct = ticketBuyPct ?? mBuyPct;
-  const tSellPct = ticketSellPct ?? mSellPct;
 
   // ─── Kalshi data ────────────────────────────────────────────────────
   const kAwayPct = kalshiData?.awayProb ?? null;
@@ -50,7 +46,6 @@ export default function PolymarketCard({
   const kVol = kalshiData?.volume24h ?? 0;
   const kSpreads = kalshiData?.spreads ?? null;
   const kTotals = kalshiData?.totals ?? null;
-  const kTradeFlow = kalshiData?.tradeFlow ?? null;
   const hasKalshiProb = kAwayPct != null && kHomePct != null;
 
   // ─── Consensus probabilities ───────────────────────────────────────
@@ -139,12 +134,6 @@ export default function PolymarketCard({
     return { et: etStr, ago: `${Math.floor(diffHr / 24)}d ago` };
   };
 
-  // Smart money divergence (tickets vs money)
-  const hasSmartMoneySignal = hasPoly && mBuyPct > 0 && tBuyPct > 0 && Math.abs(mBuyPct - tBuyPct) > 8;
-  const moneyMoreBullish = mBuyPct > tBuyPct;
-
-  // Unified flow: merge Polymarket + Kalshi when both available
-  const hasAnyFlow = (hasPoly && (mBuyPct > 0 || tBuyPct > 0)) || (kTradeFlow && kTradeFlow.tradeCount > 0);
 
   // Price movement
   const priceChange = priceHistory?.change ?? null;
@@ -396,34 +385,37 @@ export default function PolymarketCard({
             );
           })()}
 
-          {/* ── 2. Smart Money Flow ─────────────────────────────────────── */}
-          {hasAnyFlow && (
+          {/* ── 2. Money & Ticket Flow (per team) ──────────────────────── */}
+          {polyAwayTicket > 0 && polyHomeTicket > 0 && (
             <div style={{
               padding: '0.625rem 0',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
-              <SectionLabel>Smart Money Flow</SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.375rem' }}>
-                {hasPoly && tBuyPct > 0 && (
-                  <FlowBar label="Ticket %" buyPct={tBuyPct} sellPct={tSellPct} />
-                )}
-                {hasPoly && mBuyPct > 0 && (
-                  <FlowBar label="Money %" buyPct={mBuyPct} sellPct={mSellPct} />
-                )}
-                {kTradeFlow && kTradeFlow.tradeCount > 0 && (
-                  <FlowBar
-                    label={hasPoly ? 'Trades' : 'Trade Flow'}
-                    buyPct={kTradeFlow.buyPct}
-                    sellPct={kTradeFlow.sellPct}
-                    tradeCount={kTradeFlow.tradeCount}
-                  />
-                )}
+              <SectionLabel>Where The Money Is Going</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.375rem' }}>
+                {/* Ticket split */}
+                <TeamFlowBar
+                  label="Tickets"
+                  awayPct={polyAwayTicket}
+                  homePct={polyHomeTicket}
+                  away={away}
+                  home={home}
+                  count={polyTradeCount}
+                />
+                {/* Money split */}
+                <TeamFlowBar
+                  label="Money"
+                  awayPct={polyAwayMoney}
+                  homePct={polyHomeMoney}
+                  away={away}
+                  home={home}
+                />
               </div>
-              {hasSmartMoneySignal && (
+              {polyAwayMoney > 0 && polyAwayTicket > 0 && Math.abs(polyAwayMoney - polyAwayTicket) > 8 && (
                 <InsightPill color={AMBER} icon="💰" style={{ marginTop: '0.5rem' }}>
-                  {moneyMoreBullish
-                    ? 'Big money more bullish than ticket count — sharps loading'
-                    : 'More tickets than money — public one way, sharps may disagree'}
+                  {polyAwayMoney > polyAwayTicket
+                    ? `Big money favors ${away} more than ticket count — sharps loading ${away}`
+                    : `Big money favors ${home} more than ticket count — sharps loading ${home}`}
                 </InsightPill>
               )}
             </div>
@@ -735,60 +727,80 @@ function resolveOutcomeTeam(outcome, away, home) {
   return outcome;
 }
 
-function FlowBar({ label, buyPct, sellPct, tradeCount }) {
+
+function TeamFlowBar({ label, awayPct, homePct, away, home, count }) {
+  const favAway = awayPct >= homePct;
   return (
     <div>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
         marginBottom: '0.2rem',
       }}>
         <span style={{
-          fontSize: '0.5rem', fontWeight: '600',
-          color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
-          letterSpacing: '0.04em',
+          fontSize: '0.5rem', fontWeight: '700',
+          color: favAway ? '#F1F5F9' : 'rgba(255,255,255,0.4)',
+          fontFeatureSettings: "'tnum'",
+        }}>
+          {away} {awayPct}%
+        </span>
+        <span style={{
+          fontSize: '0.438rem', fontWeight: '600', color: 'rgba(255,255,255,0.2)',
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+          display: 'flex', alignItems: 'center', gap: '0.3rem',
         }}>
           {label}
+          {count > 0 && (
+            <span style={{ fontWeight: '500', color: 'rgba(255,255,255,0.15)' }}>
+              ({count})
+            </span>
+          )}
         </span>
-        {tradeCount > 0 && (
-          <span style={{
-            fontSize: '0.438rem', color: 'rgba(255,255,255,0.2)',
-            fontFeatureSettings: "'tnum'",
-          }}>
-            {tradeCount} trades
-          </span>
-        )}
+        <span style={{
+          fontSize: '0.5rem', fontWeight: '700',
+          color: !favAway ? '#F1F5F9' : 'rgba(255,255,255,0.4)',
+          fontFeatureSettings: "'tnum'",
+        }}>
+          {homePct}% {home}
+        </span>
       </div>
       <div style={{
         display: 'flex', height: '16px', borderRadius: '4px',
-        overflow: 'hidden', background: 'rgba(255,255,255,0.04)', position: 'relative',
+        overflow: 'hidden', background: 'rgba(255,255,255,0.04)',
+        gap: '1px',
       }}>
         <div style={{
-          width: `${buyPct}%`,
-          background: `linear-gradient(90deg, ${ACCENT} 0%, ${ACCENT}CC 100%)`,
+          width: `${awayPct}%`,
+          background: favAway
+            ? `linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)`
+            : 'rgba(59,130,246,0.25)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'width 0.5s ease', minWidth: buyPct > 5 ? '40px' : '0',
+          transition: 'width 0.5s ease',
+          minWidth: awayPct > 10 ? '40px' : '0',
         }}>
-          {buyPct > 15 && (
+          {awayPct > 20 && (
             <span style={{
               fontSize: '0.5rem', fontWeight: '700', color: 'white',
               whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)',
             }}>
-              {buyPct}% Buy
+              {awayPct}%
             </span>
           )}
         </div>
         <div style={{
-          width: `${sellPct}%`,
-          background: `linear-gradient(90deg, ${RED}80 0%, ${RED} 100%)`,
+          width: `${homePct}%`,
+          background: !favAway
+            ? `linear-gradient(90deg, ${ACCENT} 0%, #34D399 100%)`
+            : `${ACCENT}40`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'width 0.5s ease', minWidth: sellPct > 5 ? '40px' : '0',
+          transition: 'width 0.5s ease',
+          minWidth: homePct > 10 ? '40px' : '0',
         }}>
-          {sellPct > 15 && (
+          {homePct > 20 && (
             <span style={{
               fontSize: '0.5rem', fontWeight: '700', color: 'white',
               whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)',
             }}>
-              {sellPct}% Sell
+              {homePct}%
             </span>
           )}
         </div>

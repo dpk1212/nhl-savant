@@ -75,22 +75,31 @@ async function getPriceHistory(tokenId, interval = '1h') {
   return data?.history || [];
 }
 
-function aggregateTrades(trades) {
-  let totalCash = 0, buyCash = 0, sellCash = 0;
-  let buyTickets = 0, sellTickets = 0;
+function aggregateTrades(trades, awayRaw, homeRaw) {
+  let totalCash = 0;
+  let awayCash = 0, homeCash = 0;
+  let awayTickets = 0, homeTickets = 0;
+  const nAway = normalize(awayRaw);
+  const nHome = normalize(homeRaw);
+
   for (const t of trades) {
     const cash = (t.size || 0) * (t.price || 0);
     totalCash += cash;
-    if (t.side === 'BUY') { buyCash += cash; buyTickets++; }
-    else { sellCash += cash; sellTickets++; }
+    const outcome = normalize(t.outcome || '');
+    const isAway = outcome.includes(nAway) || nAway.includes(outcome) || outcome === 'yes';
+    const isHome = outcome.includes(nHome) || nHome.includes(outcome) || outcome === 'no';
+
+    if (isAway) { awayCash += cash; awayTickets++; }
+    else if (isHome) { homeCash += cash; homeTickets++; }
+    else { awayCash += cash; awayTickets++; }
   }
-  const totalTickets = buyTickets + sellTickets;
+  const totalTickets = awayTickets + homeTickets;
   return {
-    totalCash, buyCash, sellCash,
-    buyPct: totalCash > 0 ? Number((buyCash / totalCash * 100).toFixed(1)) : 0,
-    sellPct: totalCash > 0 ? Number((sellCash / totalCash * 100).toFixed(1)) : 0,
-    buyTicketPct: totalTickets > 0 ? Number((buyTickets / totalTickets * 100).toFixed(1)) : 0,
-    sellTicketPct: totalTickets > 0 ? Number((sellTickets / totalTickets * 100).toFixed(1)) : 0,
+    totalCash,
+    awayMoneyPct: totalCash > 0 ? Number((awayCash / totalCash * 100).toFixed(1)) : 0,
+    homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
+    awayTicketPct: totalTickets > 0 ? Number((awayTickets / totalTickets * 100).toFixed(1)) : 0,
+    homeTicketPct: totalTickets > 0 ? Number((homeTickets / totalTickets * 100).toFixed(1)) : 0,
     ticketCount: trades.length,
   };
 }
@@ -367,8 +376,8 @@ async function run() {
 
     try {
       const live = await getLiveVolume(id);
-      const trades = await getTrades(id, 80);
-      const agg = aggregateTrades(trades);
+      const trades = await getTrades(id, 200);
+      const agg = aggregateTrades(trades, teams[0], teams[1]);
 
       let priceMove1h = null;
       let priceHistory = null;
@@ -469,10 +478,10 @@ async function run() {
       bucket[key] = {
         volume24h: Number(vol24),
         liveVolume: live?.total != null ? Number(live.total) : null,
-        moneyBuyPct: agg.buyPct,
-        moneySellPct: agg.sellPct,
-        ticketBuyPct: agg.buyTicketPct,
-        ticketSellPct: agg.sellTicketPct,
+        awayMoneyPct: agg.awayMoneyPct,
+        homeMoneyPct: agg.homeMoneyPct,
+        awayTicketPct: agg.awayTicketPct,
+        homeTicketPct: agg.homeTicketPct,
         tradeCount: agg.ticketCount,
         priceMove1h,
         priceHistory,
