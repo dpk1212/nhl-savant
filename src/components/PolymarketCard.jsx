@@ -122,6 +122,23 @@ export default function PolymarketCard({
   const hasPriceHist = priceHistory?.points?.length >= 3;
   const whaleTopTrades = whales?.topTrades || [];
 
+  const formatWhaleTime = (ts) => {
+    if (!ts) return null;
+    const epoch = typeof ts === 'number' ? ts : Date.parse(ts);
+    if (isNaN(epoch)) return null;
+    const now = Date.now();
+    const diffMs = now - epoch;
+    const diffMin = Math.round(diffMs / 60000);
+    const etStr = new Date(epoch).toLocaleTimeString('en-US', {
+      timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true,
+    });
+    if (diffMin < 1) return { et: etStr, ago: 'just now' };
+    if (diffMin < 60) return { et: etStr, ago: `${diffMin}m ago` };
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return { et: etStr, ago: `${diffHr}h ago` };
+    return { et: etStr, ago: `${Math.floor(diffHr / 24)}d ago` };
+  };
+
   // Smart money divergence (tickets vs money)
   const hasSmartMoneySignal = hasPoly && mBuyPct > 0 && tBuyPct > 0 && Math.abs(mBuyPct - tBuyPct) > 8;
   const moneyMoreBullish = mBuyPct > tBuyPct;
@@ -413,7 +430,22 @@ export default function PolymarketCard({
           )}
 
           {/* ── 3. Whale Activity ──────────────────────────────────────── */}
-          {hasWhales && (
+          {hasWhales && (() => {
+            const allWhales = whales.topTrades || [];
+            let awayTotal = 0, homeTotal = 0, otherTotal = 0;
+            for (const wt of allWhales) {
+              const team = resolveOutcomeTeam(wt.outcome, away, home);
+              if (team === away) awayTotal += wt.amount;
+              else if (team === home) homeTotal += wt.amount;
+              else otherTotal += wt.amount;
+            }
+            const teamTotal = awayTotal + homeTotal + otherTotal;
+            const awayPctWhale = teamTotal > 0 ? Math.round(awayTotal / teamTotal * 100) : 0;
+            const homePctWhale = teamTotal > 0 ? Math.round(homeTotal / teamTotal * 100) : 0;
+            const otherPctWhale = teamTotal > 0 ? Math.round(otherTotal / teamTotal * 100) : 0;
+            const whaleFavAway = awayTotal >= homeTotal;
+
+            return (
             <div style={{
               padding: '0.625rem 0',
               borderBottom: (kSpreads?.length > 0 || kTotals?.length > 0) ? '1px solid rgba(255,255,255,0.05)' : 'none',
@@ -436,6 +468,72 @@ export default function PolymarketCard({
                   {formatVol(whales.totalCash)} total
                 </span>
               </div>
+
+              {/* Whale money split by team */}
+              {teamTotal > 0 && (awayTotal > 0 || homeTotal > 0) && (
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                    marginBottom: '0.2rem',
+                  }}>
+                    <span style={{
+                      fontSize: '0.5rem', fontWeight: '700',
+                      color: whaleFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.45)',
+                      fontFeatureSettings: "'tnum'",
+                    }}>
+                      {away} {awayPctWhale}%
+                      <span style={{ fontWeight: '500', color: 'rgba(255,255,255,0.25)', marginLeft: '0.25rem' }}>
+                        {formatVol(awayTotal)}
+                      </span>
+                    </span>
+                    <span style={{
+                      fontSize: '0.438rem', fontWeight: '600', color: 'rgba(255,255,255,0.2)',
+                      textTransform: 'uppercase', letterSpacing: '0.06em',
+                    }}>
+                      Whale $
+                    </span>
+                    <span style={{
+                      fontSize: '0.5rem', fontWeight: '700',
+                      color: !whaleFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.45)',
+                      fontFeatureSettings: "'tnum'",
+                    }}>
+                      <span style={{ fontWeight: '500', color: 'rgba(255,255,255,0.25)', marginRight: '0.25rem' }}>
+                        {formatVol(homeTotal)}
+                      </span>
+                      {homePctWhale}% {home}
+                    </span>
+                  </div>
+                  <div style={{
+                    display: 'flex', height: '6px', borderRadius: '3px',
+                    overflow: 'hidden', background: 'rgba(255,255,255,0.06)',
+                  }}>
+                    {awayPctWhale > 0 && (
+                      <div style={{
+                        width: `${awayPctWhale}%`,
+                        background: whaleFavAway
+                          ? `linear-gradient(90deg, ${AMBER} 0%, ${AMBER}CC 100%)`
+                          : `${AMBER}60`,
+                        transition: 'width 0.5s ease',
+                      }} />
+                    )}
+                    {otherPctWhale > 0 && (
+                      <div style={{
+                        width: `${otherPctWhale}%`,
+                        background: 'rgba(255,255,255,0.15)',
+                      }} />
+                    )}
+                    {homePctWhale > 0 && (
+                      <div style={{
+                        width: `${homePctWhale}%`,
+                        background: !whaleFavAway
+                          ? `linear-gradient(90deg, ${AMBER}CC 0%, ${AMBER} 100%)`
+                          : `${AMBER}60`,
+                        transition: 'width 0.5s ease',
+                      }} />
+                    )}
+                  </div>
+                </div>
+              )}
               {whaleTopTrades.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {whaleTopTrades.map((t, i) => {
@@ -476,14 +574,21 @@ export default function PolymarketCard({
                           }}>
                             {formatVol(t.amount)}
                           </span>
-                          {t.ts && (
-                            <span style={{
-                              fontSize: '0.438rem', color: 'rgba(255,255,255,0.2)',
-                              fontFeatureSettings: "'tnum'",
-                            }}>
-                              {t.ts}
-                            </span>
-                          )}
+                          {(() => {
+                            const wt = formatWhaleTime(t.ts);
+                            if (!wt) return null;
+                            return (
+                              <span style={{
+                                fontSize: '0.438rem', color: 'rgba(255,255,255,0.3)',
+                                fontFeatureSettings: "'tnum'",
+                                display: 'flex', alignItems: 'center', gap: '0.2rem',
+                              }}>
+                                <span>{wt.et} ET</span>
+                                <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
+                                <span style={{ color: ACCENT, fontWeight: '600' }}>{wt.ago}</span>
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
@@ -491,7 +596,8 @@ export default function PolymarketCard({
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* ── 4. Spread Markets ──────────────────────────────────────── */}
           {kSpreads && kSpreads.length > 0 && (

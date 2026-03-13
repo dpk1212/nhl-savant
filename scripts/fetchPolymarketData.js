@@ -417,7 +417,7 @@ async function run() {
             side: t.side || 'BUY',
             outcome: t.outcome || null,
             price: t.price ? Number((t.price * 100).toFixed(0)) : null,
-            ts: t.timestamp ? new Date(Number(t.timestamp) * 1000).toISOString().slice(11, 16) : null,
+            ts: t.timestamp ? Number(t.timestamp) * 1000 : null,
           });
         }
         tradeDetails.sort((a, b) => b.amount - a.amount);
