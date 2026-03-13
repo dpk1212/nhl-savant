@@ -256,6 +256,12 @@ export default function PolymarketCard({
                 {away} <span style={{ fontWeight: '800', color: consFavAway ? ACCENT : 'inherit' }}>{consAwayPct}%</span>
               </span>
               <span style={{
+                fontSize: '0.438rem', fontWeight: '600', color: 'rgba(255,255,255,0.25)',
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Moneyline
+              </span>
+              <span style={{
                 fontSize: isMobile ? '0.625rem' : '0.688rem',
                 fontWeight: '700',
                 color: !consFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
