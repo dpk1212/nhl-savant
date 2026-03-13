@@ -1,4 +1,4 @@
-name: Fetch Polymarket Data
+name: Fetch Market Data (Polymarket + Kalshi)
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  fetch-polymarket:
+  fetch-market-data:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,9 +25,12 @@ jobs:
       - name: Fetch Polymarket data
         run: node scripts/fetchPolymarketData.js
 
-      - name: Commit polymarket_data.json if changed
+      - name: Fetch Kalshi data
+        run: node scripts/fetchKalshiData.js
+
+      - name: Commit market data if changed
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/polymarket_data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Polymarket data [$(date +'%Y-%m-%d %H:%M')]" && git push)
+          git add public/polymarket_data.json public/kalshi_data.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Market data [$(date +'%Y-%m-%d %H:%M')]" && git push)

@@ -60,6 +60,7 @@ const Basketball = () => {
   const [pbpData, setPbpData] = useState({});
   const [cbbdPlayers, setCbbdPlayers] = useState({});
   const [polymarketData, setPolymarketData] = useState({ CBB: {}, NHL: {} });
+  const [kalshiData, setKalshiData] = useState({ CBB: {}, NHL: {} });
   
   // Bet outcomes state
   const [betsMap, setBetsMap] = useState(new Map());
@@ -280,8 +281,9 @@ const Basketball = () => {
       const bartPbpResponse = await fetch(`/bart_pbp.md${cacheBuster}`);
       // Load CBBD player stats
       const cbbdResponse = await fetch(`/cbbd_players.json${cacheBuster}`).catch(() => null);
-      // Load Polymarket volume/flow data (CBB & NHL)
+      // Load Polymarket & Kalshi market intelligence data
       const polymarketResponse = await fetch(`/polymarket_data.json${cacheBuster}`).catch(() => null);
+      const kalshiResponse = await fetch(`/kalshi_data.json${cacheBuster}`).catch(() => null);
       
       const oddsMarkdown = await oddsResponse.text();
       const haslaMarkdown = await haslaResponse.text();
@@ -291,6 +293,8 @@ const Basketball = () => {
       const cbbdPlayersData = (cbbdResponse && cbbdResponse.ok) ? await cbbdResponse.json() : {};
       const polymarketJson = (polymarketResponse && polymarketResponse.ok) ? await polymarketResponse.json() : { CBB: {}, NHL: {} };
       setPolymarketData(polymarketJson);
+      const kalshiJson = (kalshiResponse && kalshiResponse.ok) ? await kalshiResponse.json() : { CBB: {}, NHL: {} };
+      setKalshiData(kalshiJson);
       const csvContent = await csvResponse.text();
       
       // Parse data (odds parser filters for TODAY only)
@@ -1193,6 +1197,7 @@ const Basketball = () => {
                         pbpData={pbpData}
                         cbbdPlayers={cbbdPlayers}
                         polymarketData={polymarketData}
+                        kalshiData={kalshiData}
                       />
                     ))}
                   </>
@@ -1225,6 +1230,7 @@ const Basketball = () => {
                           pbpData={pbpData}
                           cbbdPlayers={cbbdPlayers}
                           polymarketData={polymarketData}
+                          kalshiData={kalshiData}
                         />
                       ))}
                     </>
@@ -1255,6 +1261,7 @@ const Basketball = () => {
                           pbpData={pbpData}
                           cbbdPlayers={cbbdPlayers}
                           polymarketData={polymarketData}
+                          kalshiData={kalshiData}
                         />
                       ))}
                     </>
@@ -1283,6 +1290,7 @@ const Basketball = () => {
                           pbpData={pbpData}
                           cbbdPlayers={cbbdPlayers}
                           polymarketData={polymarketData}
+                          kalshiData={kalshiData}
                         />
                       ))}
                     </>
@@ -2268,7 +2276,7 @@ const LineMovementSparkline = ({ lineHistory, opener, current, movementTier, mov
   );
 };
 
-const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap, pbpData = {}, cbbdPlayers = {}, polymarketData = {} }) => {
+const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick = false, betsMap, pbpData = {}, cbbdPlayers = {}, polymarketData = {}, kalshiData = {} }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [detailsTab, setDetailsTab] = useState('advanced');
   const pred = game.prediction;
@@ -2281,6 +2289,7 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
   const betKey = `${normalizeTeam(game.awayTeam)}_${normalizeTeam(game.homeTeam)}`;
   const betData = betsMap?.get(betKey);
   const polymarket = polymarketData?.CBB?.[betKey] || null;
+  const kalshi = kalshiData?.CBB?.[betKey] || null;
   const spreadData = betData?.spreadAnalysis;
   const spreadBet = betData?.spreadBet;
   
@@ -2778,11 +2787,12 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         </div>
       )}
 
-      {/* Polymarket Market Intelligence */}
-      {polymarket && (
+      {/* Market Intelligence — Polymarket + Kalshi */}
+      {(polymarket || kalshi) && (
         <div style={{ padding: isMobile ? '0 0.875rem 0.5rem' : '0 1rem 0.75rem' }}>
           <PolymarketCard
             data={polymarket}
+            kalshiData={kalshi}
             isMobile={isMobile}
             awayTeam={game.awayTeam}
             homeTeam={game.homeTeam}

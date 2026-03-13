@@ -1,0 +1,484 @@
+/**
+ * Kalshi Data Fetcher — CBB & NHL
+ *
+ * Fetches game-winner markets, spreads, and totals from Kalshi.
+ * Matches to games using basketball_teams.csv (CBB) and NHL team map.
+ * ONLY outputs data for games in today's OddsTrader schedule.
+ * Outputs JSON to public/kalshi_data.json for UI consumption.
+ *
+ * Usage: node scripts/fetchKalshiData.js
+ */
+
+import { readFileSync, writeFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
+import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(__dirname, '..');
+const BASE = 'https://api.elections.kalshi.com/trade-api/v2';
+
+const httpFetch = typeof globalThis.fetch === 'function'
+  ? globalThis.fetch
+  : (await import('node-fetch')).default;
+
+async function get(path) {
+  const url = BASE + path;
+  const res = await httpFetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  return res.json();
+}
+
+// ─── Fetch all open events for a series (with pagination) ─────────────────
+async function fetchEvents(seriesTicker, maxPages = 5) {
+  const all = [];
+  let cursor = '';
+  for (let page = 0; page < maxPages; page++) {
+    const params = new URLSearchParams({
+      with_nested_markets: 'true',
+      status: 'open',
+      limit: '200',
+      series_ticker: seriesTicker,
+    });
+    if (cursor) params.set('cursor', cursor);
+    try {
+      const data = await get(`/events?${params}`);
+      const events = data.events || [];
+      all.push(...events);
+      cursor = data.cursor || '';
+      if (!cursor || events.length === 0) break;
+    } catch { break; }
+  }
+  return all;
+}
+
+// ─── Fetch recent trades for a market ticker ──────────────────────────────
+async function fetchTrades(marketTicker, limit = 50) {
+  try {
+    const data = await get(`/markets/trades?ticker=${marketTicker}&limit=${limit}`);
+    return data.trades || [];
+  } catch { return []; }
+}
+
+// ─── Normalization ────────────────────────────────────────────────────────
+function normalize(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// ─── CBB Team Map (same logic as Polymarket fetcher) ─────────────────────
+function loadCBBTeamMap() {
+  const csvPath = join(ROOT, 'public', 'basketball_teams.csv');
+  let csv;
+  try { csv = readFileSync(csvPath, 'utf8'); } catch { return new Map(); }
+  const lines = csv.split('\n').filter(Boolean);
+  const headers = lines[0].toLowerCase().split(',');
+  const map = new Map();
+  for (let i = 1; i < lines.length; i++) {
+    const vals = parseCSVLine(lines[i]);
+    const row = {};
+    headers.forEach((h, j) => { row[h.trim()] = vals[j]?.trim() || ''; });
+    const oddstrader = row.oddstrader_name || row.normalized_name || '';
+    if (!oddstrader) continue;
+    const names = [
+      oddstrader, row.normalized_name, row.haslametrics_name,
+      row.dratings_name, row.ncaa_name, row.espn_name,
+      row.barttorvik_name, row.odds_api_name, row.cbbd_name,
+    ].filter(Boolean);
+    for (const n of names) {
+      const nrm = normalize(n);
+      if (nrm.length >= 2) map.set(nrm, oddstrader);
+    }
+  }
+  return map;
+}
+
+function parseCSVLine(line) {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else current += char;
+  }
+  values.push(current.trim());
+  return values;
+}
+
+// ─── NHL Team Map ────────────────────────────────────────────────────────
+const NHL_NAME_TO_CODE = {
+  'Boston': 'BOS', 'Toronto': 'TOR', 'Montreal': 'MTL', 'Ottawa': 'OTT',
+  'Buffalo': 'BUF', 'Detroit': 'DET', 'Tampa Bay': 'TBL', 'Florida': 'FLA',
+  'Carolina': 'CAR', 'Washington': 'WSH', 'Pittsburgh': 'PIT',
+  'Philadelphia': 'PHI', 'New Jersey': 'NJD', 'Columbus': 'CBJ',
+  'Nashville': 'NSH', 'Winnipeg': 'WPG', 'Chicago': 'CHI', 'Minnesota': 'MIN',
+  'Dallas': 'DAL', 'St. Louis': 'STL', 'Colorado': 'COL', 'Arizona': 'ARI',
+  'Utah': 'UTA', 'Vegas': 'VGK', 'Los Angeles': 'LAK', 'Anaheim': 'ANA',
+  'San Jose': 'SJS', 'Calgary': 'CGY', 'Edmonton': 'EDM', 'Vancouver': 'VAN',
+  'Seattle': 'SEA', 'N.Y. Rangers': 'NYR', 'N.Y. Islanders': 'NYI',
+  'New York': 'NYR',
+};
+
+const NHL_MAP = {
+  bruins: 'BOS', mapleleafs: 'TOR', leafs: 'TOR',
+  rangers: 'NYR', islanders: 'NYI',
+  canadiens: 'MTL', habs: 'MTL',
+  senators: 'OTT', sabres: 'BUF', redwings: 'DET',
+  lightning: 'TBL', bolts: 'TBL', tampabay: 'TBL',
+  panthers: 'FLA', hurricanes: 'CAR',
+  capitals: 'WSH', caps: 'WSH',
+  penguins: 'PIT', pens: 'PIT',
+  flyers: 'PHI', devils: 'NJD', newjersey: 'NJD',
+  bluejackets: 'CBJ', jackets: 'CBJ',
+  predators: 'NSH', preds: 'NSH',
+  jets: 'WPG', blackhawks: 'CHI', hawks: 'CHI',
+  wild: 'MIN', stars: 'DAL', blues: 'STL', stlouis: 'STL',
+  avalanche: 'COL', avs: 'COL',
+  coyotes: 'ARI', utah: 'UTA',
+  knights: 'VGK', goldenknights: 'VGK',
+  kings: 'LAK', losangeles: 'LAK', la: 'LAK',
+  ducks: 'ANA', sharks: 'SJS', sanjose: 'SJS',
+  flames: 'CGY', oilers: 'EDM',
+  canucks: 'VAN', kraken: 'SEA',
+};
+Object.entries(NHL_NAME_TO_CODE).forEach(([name, code]) => {
+  const n = normalize(name);
+  if (!NHL_MAP[n]) NHL_MAP[n] = code;
+});
+
+function resolveNHLTeam(raw) {
+  const n = normalize(raw);
+  if (NHL_MAP[n]) return NHL_MAP[n];
+  for (const w of raw.split(/\s+/)) {
+    const wn = normalize(w);
+    if (NHL_MAP[wn]) return NHL_MAP[wn];
+  }
+  return null;
+}
+
+// ─── Extract teams from Kalshi event title ("TeamA at TeamB") ────────────
+function extractTeamsFromTitle(title) {
+  const t = (title || '').trim()
+    .replace(/:\s*(Spread|Total Points|First Half Spread)$/i, '');
+  const patterns = [
+    /^(.+?)\s+at\s+(.+?)$/i,
+    /^(.+?)\s+vs\.?\s+(.+?)$/i,
+    /^(.+?)\s+@\s+(.+?)$/i,
+  ];
+  for (const p of patterns) {
+    const m = t.match(p);
+    if (m) {
+      const a = m[1].trim();
+      const b = m[2].trim();
+      if (a.length >= 2 && b.length >= 2) return [a, b];
+    }
+  }
+  return null;
+}
+
+function findCBBTeam(cbbMap, str) {
+  const n = normalize(str);
+  let best = null;
+  let bestLen = 0;
+  for (const [key, canon] of cbbMap) {
+    if (n.startsWith(key) && key.length > bestLen) {
+      best = canon;
+      bestLen = key.length;
+    }
+    if (n === key) return canon;
+  }
+  return best || cbbMap.get(n);
+}
+
+function matchToGameKey(teams, cbbMap, sport) {
+  if (!teams || teams.length !== 2) return null;
+  const [a, b] = teams;
+  if (sport === 'CBB') {
+    const aCanon = findCBBTeam(cbbMap, a);
+    const bCanon = findCBBTeam(cbbMap, b);
+    if (!aCanon || !bCanon) return null;
+    return `${normalize(aCanon)}_${normalize(bCanon)}`;
+  }
+  if (sport === 'NHL') {
+    const aCode = resolveNHLTeam(a);
+    const bCode = resolveNHLTeam(b);
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
+  }
+  return null;
+}
+
+// ─── Load today's schedule ───────────────────────────────────────────────
+function loadTodaysSchedule() {
+  const validCBB = new Set();
+  const validNHL = new Set();
+  try {
+    const cbbPath = join(ROOT, 'public', 'basketball_odds.md');
+    const cbbMd = readFileSync(cbbPath, 'utf8');
+    const cbbGames = parseBasketballOdds(cbbMd);
+    for (const g of cbbGames) {
+      validCBB.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+    }
+    console.log(`📋 Today's CBB: ${cbbGames.length} games`);
+  } catch (e) {
+    console.warn('Could not load CBB schedule:', e.message);
+  }
+  try {
+    const nhlPath = join(ROOT, 'public', 'odds_money.md');
+    const nhlMd = readFileSync(nhlPath, 'utf8');
+    const nhlGames = parseOddsTrader(nhlMd);
+    for (const g of nhlGames) {
+      if (g.awayTeam && g.homeTeam) {
+        validNHL.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+      }
+    }
+    console.log(`📋 Today's NHL: ${nhlGames.length} games`);
+  } catch (e) {
+    console.warn('Could not load NHL schedule:', e.message);
+  }
+  return { validCBB, validNHL };
+}
+
+// ─── Extract win probabilities from Kalshi markets ──────────────────────
+function extractGameProbs(markets, awayRaw, homeRaw) {
+  if (!markets || markets.length < 2) return null;
+
+  let awayMarket = null;
+  let homeMarket = null;
+  const nAway = normalize(awayRaw);
+  const nHome = normalize(homeRaw);
+
+  for (const m of markets) {
+    const sub = normalize(m.yes_sub_title || '');
+    const ticker = normalize(m.ticker || '');
+    if (sub.includes(nAway) || ticker.includes(nAway.slice(0, 3))) {
+      awayMarket = m;
+    } else if (sub.includes(nHome) || ticker.includes(nHome.slice(0, 3))) {
+      homeMarket = m;
+    }
+  }
+
+  if (!awayMarket || !homeMarket) {
+    awayMarket = markets[0];
+    homeMarket = markets[1];
+  }
+
+  const parsePrice = (p) => {
+    const v = parseFloat(p || '0');
+    return isNaN(v) ? 0 : v;
+  };
+
+  const awayBid = parsePrice(awayMarket.yes_bid_dollars);
+  const awayAsk = parsePrice(awayMarket.yes_ask_dollars);
+  const awayLast = parsePrice(awayMarket.last_price_dollars);
+  const awayPrev = parsePrice(awayMarket.previous_price_dollars);
+  const awayVol = parseFloat(awayMarket.volume_24h_fp || '0');
+
+  const homeBid = parsePrice(homeMarket.yes_bid_dollars);
+  const homeAsk = parsePrice(homeMarket.yes_ask_dollars);
+  const homeLast = parsePrice(homeMarket.last_price_dollars);
+  const homePrev = parsePrice(homeMarket.previous_price_dollars);
+  const homeVol = parseFloat(homeMarket.volume_24h_fp || '0');
+
+  const awayMid = awayBid > 0 && awayAsk > 0
+    ? (awayBid + awayAsk) / 2
+    : awayLast || awayBid || awayAsk;
+  const homeMid = homeBid > 0 && homeAsk > 0
+    ? (homeBid + homeAsk) / 2
+    : homeLast || homeBid || homeAsk;
+
+  const awayProb = Number((awayMid * 100).toFixed(1));
+  const homeProb = Number((homeMid * 100).toFixed(1));
+
+  const awayPriceMove = awayPrev > 0
+    ? Number(((awayLast - awayPrev) * 100).toFixed(1))
+    : null;
+
+  return {
+    awayProb, homeProb,
+    awayBid: Number((awayBid * 100).toFixed(1)),
+    awayAsk: Number((awayAsk * 100).toFixed(1)),
+    homeBid: Number((homeBid * 100).toFixed(1)),
+    homeAsk: Number((homeAsk * 100).toFixed(1)),
+    awayLast: Number((awayLast * 100).toFixed(1)),
+    homeLast: Number((homeLast * 100).toFixed(1)),
+    volume24h: Math.round(awayVol + homeVol),
+    priceMove24h: awayPriceMove,
+    awayTeamLabel: awayMarket.yes_sub_title || awayRaw,
+    homeTeamLabel: homeMarket.yes_sub_title || homeRaw,
+    awayTicker: awayMarket.ticker,
+    homeTicker: homeMarket.ticker,
+  };
+}
+
+// ─── Extract spread data from Kalshi spread markets ──────────────────────
+function extractSpreadData(markets) {
+  if (!markets || markets.length === 0) return null;
+  const spreads = [];
+  for (const m of markets) {
+    const sub = m.yes_sub_title || '';
+    const bid = parseFloat(m.yes_bid_dollars || '0');
+    const ask = parseFloat(m.yes_ask_dollars || '0');
+    const last = parseFloat(m.last_price_dollars || '0');
+    const vol = parseFloat(m.volume_24h_fp || '0');
+    const mid = bid > 0 && ask > 0 ? (bid + ask) / 2 : last || bid || ask;
+    spreads.push({
+      label: sub,
+      prob: Number((mid * 100).toFixed(1)),
+      volume: Math.round(vol),
+    });
+  }
+  spreads.sort((a, b) => b.prob - a.prob);
+  return spreads.slice(0, 4);
+}
+
+// ─── Extract total data from Kalshi total markets ────────────────────────
+function extractTotalData(markets) {
+  if (!markets || markets.length === 0) return null;
+  const totals = [];
+  for (const m of markets) {
+    const sub = m.yes_sub_title || '';
+    const bid = parseFloat(m.yes_bid_dollars || '0');
+    const ask = parseFloat(m.yes_ask_dollars || '0');
+    const last = parseFloat(m.last_price_dollars || '0');
+    const vol = parseFloat(m.volume_24h_fp || '0');
+    const mid = bid > 0 && ask > 0 ? (bid + ask) / 2 : last || bid || ask;
+    totals.push({
+      label: sub,
+      prob: Number((mid * 100).toFixed(1)),
+      volume: Math.round(vol),
+    });
+  }
+  totals.sort((a, b) => b.prob - a.prob);
+  return totals.slice(0, 4);
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────
+async function run() {
+  const out = { CBB: {}, NHL: {}, updatedAt: new Date().toISOString() };
+  const cbbMap = loadCBBTeamMap();
+  const { validCBB, validNHL } = loadTodaysSchedule();
+
+  // Series to fetch for game-level data
+  const seriesConfig = [
+    { ticker: 'KXNCAAMBGAME', sport: 'CBB', type: 'game' },
+    { ticker: 'KXNCAAMBSPREAD', sport: 'CBB', type: 'spread' },
+    { ticker: 'KXNHLGAME', sport: 'NHL', type: 'game' },
+    { ticker: 'KXNHLSPREAD', sport: 'NHL', type: 'spread' },
+    { ticker: 'KXNHLTOTAL', sport: 'NHL', type: 'total' },
+  ];
+
+  const eventsByKey = { CBB: {}, NHL: {} };
+
+  for (const { ticker, sport, type } of seriesConfig) {
+    console.log(`📡 Fetching ${ticker}...`);
+    const events = await fetchEvents(ticker);
+    console.log(`   ${events.length} events found`);
+
+    for (const ev of events) {
+      const title = ev.title || '';
+      const teams = extractTeamsFromTitle(title);
+      if (!teams) continue;
+
+      const key = matchToGameKey(teams, cbbMap, sport);
+      if (!key) continue;
+
+      const validSet = sport === 'CBB' ? validCBB : validNHL;
+      if (!validSet.has(key)) continue;
+
+      if (!eventsByKey[sport][key]) {
+        eventsByKey[sport][key] = {
+          awayRaw: teams[0],
+          homeRaw: teams[1],
+          gameEvent: null,
+          spreadEvent: null,
+          totalEvent: null,
+        };
+      }
+
+      const entry = eventsByKey[sport][key];
+      if (type === 'game') entry.gameEvent = ev;
+      else if (type === 'spread') entry.spreadEvent = ev;
+      else if (type === 'total') entry.totalEvent = ev;
+    }
+  }
+
+  // Build output for each matched game
+  for (const sport of ['CBB', 'NHL']) {
+    for (const [key, entry] of Object.entries(eventsByKey[sport])) {
+      const { awayRaw, homeRaw, gameEvent, spreadEvent, totalEvent } = entry;
+
+      const gameProbs = gameEvent
+        ? extractGameProbs(gameEvent.markets, awayRaw, homeRaw)
+        : null;
+
+      const spreadData = spreadEvent
+        ? extractSpreadData(spreadEvent.markets)
+        : null;
+
+      const totalData = totalEvent
+        ? extractTotalData(totalEvent.markets)
+        : null;
+
+      // Fetch recent trades for the game winner market (for trade flow)
+      let tradeFlow = null;
+      if (gameProbs?.awayTicker) {
+        const trades = await fetchTrades(gameProbs.awayTicker, 30);
+        if (trades.length > 0) {
+          let buyCount = 0, sellCount = 0;
+          for (const t of trades) {
+            if (t.taker_side === 'yes') buyCount++;
+            else sellCount++;
+          }
+          const total = buyCount + sellCount;
+          tradeFlow = {
+            buyPct: total > 0 ? Number((buyCount / total * 100).toFixed(1)) : 0,
+            sellPct: total > 0 ? Number((sellCount / total * 100).toFixed(1)) : 0,
+            tradeCount: total,
+          };
+        }
+      }
+
+      const totalVolume = (gameProbs?.volume24h || 0)
+        + (spreadData ? spreadData.reduce((s, d) => s + d.volume, 0) : 0)
+        + (totalData ? totalData.reduce((s, d) => s + d.volume, 0) : 0);
+
+      out[sport][key] = {
+        awayProb: gameProbs?.awayProb ?? null,
+        homeProb: gameProbs?.homeProb ?? null,
+        awayBid: gameProbs?.awayBid ?? null,
+        awayAsk: gameProbs?.awayAsk ?? null,
+        homeBid: gameProbs?.homeBid ?? null,
+        homeAsk: gameProbs?.homeAsk ?? null,
+        awayLast: gameProbs?.awayLast ?? null,
+        homeLast: gameProbs?.homeLast ?? null,
+        priceMove24h: gameProbs?.priceMove24h ?? null,
+        volume24h: totalVolume,
+        tradeFlow,
+        spreads: spreadData,
+        totals: totalData,
+        awayTeam: awayRaw,
+        homeTeam: homeRaw,
+        eventTicker: gameEvent?.event_ticker || spreadEvent?.event_ticker || null,
+        title: (gameEvent?.title || spreadEvent?.title || '').substring(0, 80),
+      };
+    }
+  }
+
+  const outPath = join(ROOT, 'public', 'kalshi_data.json');
+  writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
+  const cbbCount = Object.keys(out.CBB).length;
+  const nhlCount = Object.keys(out.NHL).length;
+  console.log(`\n✅ Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}`);
+  if (cbbCount === 0 && nhlCount === 0) {
+    console.log('(No Kalshi markets matched today\'s schedule)');
+  }
+}
+
+run().catch(e => { console.error(e); process.exit(1); });

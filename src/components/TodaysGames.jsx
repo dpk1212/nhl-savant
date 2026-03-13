@@ -2583,8 +2583,9 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   const [showDailySpinModal, setShowDailySpinModal] = useState(false);
   const [dailySpinsRemaining, setDailySpinsRemaining] = useState(0);
 
-  // Polymarket: Volume & flow data for CBB/NHL games
+  // Polymarket & Kalshi: Volume & flow data for CBB/NHL games
   const [polymarketData, setPolymarketData] = useState({ CBB: {}, NHL: {} });
+  const [kalshiData, setKalshiData] = useState({ CBB: {}, NHL: {} });
   
   // ⏰ TIME-BASED PRELIMINARY BANNER (shows 5:00 AM - 11:00 AM ET)
   const [showPreliminaryBanner, setShowPreliminaryBanner] = useState(() => {
@@ -2688,11 +2689,15 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   // Bet tracking is now handled directly in the edge calculation effect below
   // This ensures every displayed pick is saved - no decoupled lifecycle issues
   
-  // Fetch Polymarket volume/flow data for NHL games
+  // Fetch Polymarket & Kalshi data for NHL games
   useEffect(() => {
     fetch('/polymarket_data.json')
       .then((r) => r.ok ? r.json() : { CBB: {}, NHL: {} })
       .then((data) => setPolymarketData(data || { CBB: {}, NHL: {} }))
+      .catch(() => {});
+    fetch('/kalshi_data.json')
+      .then((r) => r.ok ? r.json() : { CBB: {}, NHL: {} })
+      .then((data) => setKalshiData(data || { CBB: {}, NHL: {} }))
       .catch(() => {});
   }, []);
 
@@ -3881,12 +3886,13 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                         }}
                       >
               
-              {/* Polymarket Market Intelligence (when available) */}
+              {/* Market Intelligence — Polymarket + Kalshi (when available) */}
               {(() => {
                 const nk = (n) => (n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
                 const pmKey = `${nk(game.awayTeam)}_${nk(game.homeTeam)}`;
                 const pmData = polymarketData?.NHL?.[pmKey];
-                if (!pmData) return null;
+                const kData = kalshiData?.NHL?.[pmKey];
+                if (!pmData && !kData) return null;
                 const awayProb = game.edges?.moneyline?.away?.modelProb || 0;
                 const homeProb = game.edges?.moneyline?.home?.modelProb || 0;
                 const mAwayPct = awayProb > 1 ? awayProb : awayProb * 100;
@@ -3896,6 +3902,7 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                   <div style={{ padding: isMobile ? '0 1rem 0.75rem' : '0 1.25rem 1rem' }}>
                     <PolymarketCard
                       data={pmData}
+                      kalshiData={kData}
                       isMobile={isMobile}
                       awayTeam={game.awayTeam}
                       homeTeam={game.homeTeam}
