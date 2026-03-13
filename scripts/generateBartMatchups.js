@@ -1,5 +1,5 @@
 /**
- * Generate Barttorvik Matchup Intelligence for Today's Picks
+ * Generate Matchup Intelligence for Today's Picks — CBB + NHL
  * 
  * Deep analytical context for social media writers:
  * - D1 average comparisons with percentile context
@@ -7,6 +7,10 @@
  * - Matchup-specific narratives (offense vs opposing defense)
  * - Style clash analysis and vulnerability mapping
  * - Go-to zone breakdowns with exploitability ratings
+ * - PREDICTION MARKET intelligence (Polymarket + Kalshi)
+ *   - Whale trades, smart money flow, consensus probabilities
+ *   - Kalshi spreads & totals
+ * - NHL game analysis with model edges and market data
  * 
  * Usage: node scripts/generateBartMatchups.js
  */
@@ -18,6 +22,7 @@ import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 import { parseBarttorvik, parseBarttorvikPBP } from '../src/utils/barttorvik Parser.js';
+import { parseBothFiles } from '../src/utils/oddsTraderParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -136,16 +141,161 @@ function shotZoneNarrative(offFg, defFg, zone, offTeam, defTeam, offRankStr, def
   return n;
 }
 
+// ─── Market Intelligence Helpers ──────────────────────────────────────────
+
+async function loadMarketData() {
+  const poly = await readJsonSafe(join(__dirname, '../public/polymarket_data.json'));
+  const kalshi = await readJsonSafe(join(__dirname, '../public/kalshi_data.json'));
+  return { poly, kalshi };
+}
+
+async function readJsonSafe(path) {
+  try {
+    const raw = await fs.readFile(path, 'utf8');
+    return JSON.parse(raw);
+  } catch { return { CBB: {}, NHL: {} }; }
+}
+
+function formatMarketSection(polyData, kalshiData, away, home, L) {
+  if (!polyData && !kalshiData) return;
+
+  L.push(`  ┌─ PREDICTION MARKET INTELLIGENCE ─────────────────────────┐`);
+  L.push('');
+
+  // Consensus probabilities
+  const pAway = polyData?.awayProb;
+  const pHome = polyData?.homeProb;
+  const kAway = kalshiData?.awayProb;
+  const kHome = kalshiData?.homeProb;
+
+  if (pAway != null && kAway != null) {
+    const consAway = ((pAway + kAway) / 2).toFixed(1);
+    const consHome = ((pHome + kHome) / 2).toFixed(1);
+    L.push(`  CONSENSUS WIN PROBABILITY (avg of Polymarket + Kalshi):`);
+    L.push(`    ${away}: ${consAway}%  |  ${home}: ${consHome}%`);
+    const diff = Math.abs(pAway - kAway);
+    if (diff >= 5) {
+      L.push(`    ⚡ ${diff.toFixed(1)}% DIVERGENCE between markets — potential opportunity`);
+    }
+    L.push(`    Polymarket: ${away} ${pAway}% / ${home} ${pHome}%`);
+    L.push(`    Kalshi:     ${away} ${kAway}% / ${home} ${kHome}%`);
+  } else if (pAway != null) {
+    L.push(`  POLYMARKET WIN PROBABILITY:`);
+    L.push(`    ${away}: ${pAway}%  |  ${home}: ${pHome}%`);
+  } else if (kAway != null) {
+    L.push(`  KALSHI WIN PROBABILITY:`);
+    L.push(`    ${away}: ${kAway}%  |  ${home}: ${kHome}%`);
+  }
+  L.push('');
+
+  // Volume
+  const polyVol = polyData?.liveVolume ?? polyData?.volume24h ?? 0;
+  const kalshiVol = kalshiData?.volume24h ?? 0;
+  const totalVol = polyVol + kalshiVol;
+  if (totalVol > 0) {
+    const parts = [];
+    if (polyVol > 0) parts.push(`Polymarket $${(polyVol / 1000).toFixed(1)}K`);
+    if (kalshiVol > 0) parts.push(`Kalshi ${kalshiVol.toLocaleString()} contracts`);
+    L.push(`  VOLUME: ${parts.join(' | ')} — total market activity: $${(totalVol / 1000).toFixed(1)}K`);
+  }
+
+  // Smart money flow (Polymarket)
+  const mBuy = polyData?.moneyBuyPct ?? polyData?.buyPct;
+  const tBuy = polyData?.ticketBuyPct;
+  if (mBuy != null) {
+    L.push(`  SMART MONEY FLOW (Polymarket):`);
+    if (tBuy != null) {
+      L.push(`    Tickets: ${tBuy}% Buy / ${(100 - tBuy).toFixed(1)}% Sell`);
+    }
+    L.push(`    Money:   ${mBuy}% Buy / ${(100 - mBuy).toFixed(1)}% Sell`);
+    if (tBuy != null && mBuy > tBuy + 10) {
+      L.push(`    💰 Money is MORE bullish than ticket count — big bettors loading up`);
+    } else if (tBuy != null && tBuy > mBuy + 10) {
+      L.push(`    🎫 More tickets than money — public betting one side, sharps may disagree`);
+    }
+  }
+
+  // Kalshi trade flow
+  const kFlow = kalshiData?.tradeFlow;
+  if (kFlow && kFlow.tradeCount > 0) {
+    L.push(`  KALSHI TRADE FLOW: ${kFlow.buyPct}% Buy / ${kFlow.sellPct}% Sell (${kFlow.tradeCount} trades)`);
+  }
+  L.push('');
+
+  // Whale trades (Polymarket)
+  const whales = polyData?.whales;
+  if (whales && whales.count > 0) {
+    L.push(`  🐋 WHALE TRADES (${whales.count} trades over $500 — $${(whales.totalCash / 1000).toFixed(1)}K total):`);
+    const topTrades = whales.topTrades || [];
+    for (const t of topTrades.slice(0, 5)) {
+      const team = t.outcome || (t.side === 'BUY' ? away : home);
+      L.push(`    ${t.side} ${team} — $${t.amount.toLocaleString()} @${t.price}¢${t.ts ? ` (${t.ts} UTC)` : ''}`);
+    }
+    L.push('');
+  }
+
+  // Price movement (Polymarket)
+  const priceHist = polyData?.priceHistory;
+  if (priceHist) {
+    const change = priceHist.change;
+    const direction = change > 0 ? '↑' : change < 0 ? '↓' : '→';
+    const movingTeam = change > 0 ? away : home;
+    L.push(`  24h PRICE MOVEMENT: ${away} ${priceHist.open}% → ${priceHist.current}% (${change > 0 ? '+' : ''}${change}%)`);
+    if (change !== 0) {
+      L.push(`    ${direction} ${movingTeam} gaining confidence — bettors are ${change > 0 ? 'buying' : 'selling'} ${away}`);
+    }
+    L.push(`    Range: Low ${priceHist.low}% / High ${priceHist.high}%`);
+  }
+  const move1h = polyData?.priceMove1h;
+  if (move1h != null && move1h !== 0) {
+    const toward = move1h > 0 ? away : home;
+    L.push(`    Last 1h: ${move1h > 0 ? '+' : ''}${move1h}% toward ${toward}`);
+  }
+  L.push('');
+
+  // Kalshi spreads
+  const spreads = kalshiData?.spreads;
+  if (spreads && spreads.length > 0) {
+    L.push(`  KALSHI SPREAD MARKETS:`);
+    for (const s of spreads) {
+      L.push(`    ${s.label} — ${s.prob}% implied${s.volume > 0 ? ` (${s.volume} contracts)` : ''}`);
+    }
+    L.push('');
+  }
+
+  // Kalshi totals
+  const totals = kalshiData?.totals;
+  if (totals && totals.length > 0) {
+    L.push(`  KALSHI GOAL/POINT TOTALS:`);
+    for (const t of totals) {
+      L.push(`    ${t.label} — ${t.prob}% implied${t.volume > 0 ? ` (${t.volume} contracts)` : ''}`);
+    }
+    L.push('');
+  }
+}
+
+// ─── NHL Section Helpers ──────────────────────────────────────────────────
+
+const nk = (n) => (n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function americanToImplied(odds) {
+  if (!odds) return null;
+  if (odds < 0) return Number(((-odds) / (-odds + 100) * 100).toFixed(1));
+  return Number((100 / (odds + 100) * 100).toFixed(1));
+}
+
 async function generateMatchups() {
-  console.log('🏀 BARTTORVIK MATCHUP INTELLIGENCE GENERATOR v2\n');
+  console.log('🏀🏒 MATCHUP INTELLIGENCE GENERATOR v3 (CBB + NHL + Markets)\n');
 
   const bartMd = await fs.readFile(join(__dirname, '../public/Bart.md'), 'utf8');
   const pbpMd = await fs.readFile(join(__dirname, '../public/bart_pbp.md'), 'utf8');
   const bartData = parseBarttorvik(bartMd);
   const pbpData = parseBarttorvikPBP(pbpMd);
   const mappings = await loadTeamMappings();
+  const { poly: marketPoly, kalshi: marketKalshi } = await loadMarketData();
 
-  console.log(`📊 Loaded ${Object.keys(bartData).length} teams (T-Rank), ${Object.keys(pbpData).length} teams (PBP)\n`);
+  console.log(`📊 Loaded ${Object.keys(bartData).length} teams (T-Rank), ${Object.keys(pbpData).length} teams (PBP)`);
+  console.log(`📈 Market data: Poly CBB=${Object.keys(marketPoly?.CBB || {}).length} NHL=${Object.keys(marketPoly?.NHL || {}).length} | Kalshi CBB=${Object.keys(marketKalshi?.CBB || {}).length} NHL=${Object.keys(marketKalshi?.NHL || {}).length}\n`);
 
   // Compute per-stat PBP ranks
   const pbpTeams = Object.values(pbpData);
@@ -536,6 +686,14 @@ async function generateMatchups() {
     }
     L.push('');
 
+    // ═══════════════════════════════════════════════
+    // SECTION 6: PREDICTION MARKET INTELLIGENCE
+    // ═══════════════════════════════════════════════
+    const marketKey = `${nk(away)}_${nk(home)}`;
+    const polyGame = marketPoly?.CBB?.[marketKey] || null;
+    const kalshiGame = marketKalshi?.CBB?.[marketKey] || null;
+    formatMarketSection(polyGame, kalshiGame, away, home, L);
+
     // Betting context
     L.push(`  BETTING CONTEXT:`);
     L.push(`    ${edgeStr} — model projects ${pick} to ${isTotals ? 'hit the ' + betType + ' by this margin' : 'cover by this margin beyond the spread'}`);
@@ -546,12 +704,171 @@ async function generateMatchups() {
 
   L.push('─'.repeat(80));
   L.push('');
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PART 2: NHL MATCHUP INTELLIGENCE
+  // ══════════════════════════════════════════════════════════════════════
+
+  // Load NHL schedule and bets
+  let nhlGames = [];
+  try {
+    const moneyMd = await fs.readFile(join(__dirname, '../public/odds_money.md'), 'utf8');
+    let totalMd = '';
+    try { totalMd = await fs.readFile(join(__dirname, '../public/odds_total.md'), 'utf8'); } catch {}
+    nhlGames = parseBothFiles(moneyMd, totalMd);
+    console.log(`🏒 Loaded ${nhlGames.length} NHL games from today's schedule`);
+  } catch (e) {
+    console.warn('Could not load NHL schedule:', e.message);
+  }
+
+  // Fetch NHL bets from Firebase
+  const nhlBetsSnap = await getDocs(query(collection(db, 'bets'), where('date', '==', today)));
+  const allNhlBets = [];
+  nhlBetsSnap.forEach(d => allNhlBets.push({ id: d.id, ...d.data() }));
+  const nhlBets = allNhlBets.filter(b =>
+    b.status !== 'KILLED' && b.status !== 'FLAGGED' &&
+    b.bet?.market && b.game?.awayTeam && b.game?.homeTeam
+  );
+
+  // Group NHL bets by game
+  const nhlBetsByGame = new Map();
+  for (const bet of nhlBets) {
+    const key = `${bet.game.awayTeam}_${bet.game.homeTeam}`;
+    if (!nhlBetsByGame.has(key)) nhlBetsByGame.set(key, []);
+    nhlBetsByGame.get(key).push(bet);
+  }
+
+  console.log(`🏒 Found ${nhlBets.length} NHL bets across ${nhlBetsByGame.size} games\n`);
+
+  if (nhlGames.length > 0 || nhlBetsByGame.size > 0) {
+    L.push('');
+    L.push('═'.repeat(80));
+    L.push(`NHL MATCHUP INTELLIGENCE — ${dateFmt}`);
+    L.push('═'.repeat(80));
+    L.push(`${nhlGames.length} games on today's slate | ${nhlBetsByGame.size} games with posted picks`);
+    L.push('');
+
+    // Process each NHL game that has a bet
+    const processedNhlGames = [];
+    for (const game of nhlGames) {
+      const key = `${game.awayTeam}_${game.homeTeam}`;
+      const gameBets = nhlBetsByGame.get(key) || [];
+      if (gameBets.length === 0) continue;
+      processedNhlGames.push({ game, bets: gameBets, key });
+    }
+
+    // Also include bets for games not in schedule (edge case)
+    for (const [key, bets] of nhlBetsByGame) {
+      if (!processedNhlGames.find(g => g.key === key)) {
+        const [away, home] = key.split('_');
+        processedNhlGames.push({
+          game: { awayTeam: away, homeTeam: home, moneyline: {} },
+          bets,
+          key,
+        });
+      }
+    }
+
+    // Sort by highest-unit bet
+    processedNhlGames.sort((a, b) => {
+      const aMax = Math.max(...a.bets.map(bb => bb.prediction?.unitSize || bb.bet?.units || 0));
+      const bMax = Math.max(...b.bets.map(bb => bb.prediction?.unitSize || bb.bet?.units || 0));
+      return bMax - aMax;
+    });
+
+    for (const { game, bets, key } of processedNhlGames) {
+      const away = game.awayTeam;
+      const home = game.homeTeam;
+
+      L.push('─'.repeat(80));
+      L.push(`🏒 ${away} (AWAY) @ ${home} (HOME)${game.gameTime ? ` — ${game.gameTime}` : ''}`);
+      L.push('');
+
+      // Odds
+      if (game.moneyline?.away || game.moneyline?.home) {
+        const awayOdds = game.moneyline.away;
+        const homeOdds = game.moneyline.home;
+        const awayImpl = americanToImplied(awayOdds);
+        const homeImpl = americanToImplied(homeOdds);
+        L.push(`  ODDS:`);
+        L.push(`    ${away}: ${awayOdds > 0 ? '+' : ''}${awayOdds} (${awayImpl}% implied)`);
+        L.push(`    ${home}: ${homeOdds > 0 ? '+' : ''}${homeOdds} (${homeImpl}% implied)`);
+      }
+      if (game.total?.line) {
+        L.push(`    Total: O/U ${game.total.line}${game.total.over ? ` (Over ${game.total.over > 0 ? '+' : ''}${game.total.over} / Under ${game.total.under > 0 ? '+' : ''}${game.total.under})` : ''}`);
+      }
+      if (game.puckLine?.away?.spread) {
+        L.push(`    Puck Line: ${away} ${game.puckLine.away.spread} (${game.puckLine.away.odds}) | ${home} ${game.puckLine.home.spread} (${game.puckLine.home.odds})`);
+      }
+      L.push('');
+
+      // Posted picks
+      L.push(`  POSTED PICKS:`);
+      for (const bet of bets) {
+        const market = bet.bet?.market || 'MONEYLINE';
+        const pick = bet.bet?.pick || bet.bet?.team || '?';
+        const odds = bet.bet?.odds;
+        const units = bet.prediction?.unitSize || bet.bet?.units || 1;
+        const stars = Math.min(Math.round(units), 5);
+        const modelProb = bet.prediction?.modelProb || bet.prediction?.awayWinProb;
+        const ev = bet.prediction?.evPercent;
+        const grade = bet.prediction?.qualityGrade || '';
+        const confidence = bet.prediction?.confidence || '';
+
+        L.push(`    ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} ${pick} (${market}) ${odds ? `@ ${odds > 0 ? '+' : ''}${odds}` : ''} — ${units}u`);
+        if (modelProb) L.push(`      Model: ${(modelProb * 100).toFixed(1)}% win probability`);
+        if (ev) L.push(`      EV: +${typeof ev === 'number' ? ev.toFixed(1) : ev}%${grade ? ` | Grade: ${grade}` : ''}${confidence ? ` | ${confidence}` : ''}`);
+      }
+      L.push('');
+
+      // Market intelligence
+      const mKey = `${nk(away)}_${nk(home)}`;
+      const polyGame = marketPoly?.NHL?.[mKey] || null;
+      const kalshiGame = marketKalshi?.NHL?.[mKey] || null;
+      formatMarketSection(polyGame, kalshiGame, away, home, L);
+
+      // Model vs Market comparison
+      const bestBet = bets.sort((a, b) => (b.prediction?.evPercent || 0) - (a.prediction?.evPercent || 0))[0];
+      const modelWin = bestBet?.prediction?.modelProb;
+      const consAway = polyGame?.awayProb != null && kalshiGame?.awayProb != null
+        ? (polyGame.awayProb + kalshiGame.awayProb) / 2
+        : polyGame?.awayProb ?? kalshiGame?.awayProb;
+
+      if (modelWin && consAway != null) {
+        const pickIsAway = bestBet?.bet?.side === 'AWAY' || bestBet?.bet?.team === away;
+        const marketPickProb = pickIsAway ? consAway : (100 - consAway);
+        const modelPickProb = pickIsAway ? modelWin * 100 : (1 - modelWin) * 100;
+        const agrees = marketPickProb > 50;
+        const delta = Math.abs(marketPickProb - modelPickProb).toFixed(1);
+        const pickTeam = pickIsAway ? away : home;
+
+        L.push(`  MODEL vs MARKET:`);
+        if (agrees) {
+          L.push(`    ✓ AGREES: Both model and markets favor ${pickTeam}. Market at ${marketPickProb.toFixed(1)}%, model at ${modelPickProb.toFixed(1)}% (${delta}% gap)`);
+        } else {
+          L.push(`    ⚡ DIVERGES: Model picks ${pickTeam} but markets favor ${pickIsAway ? home : away}. Contrarian play — ${delta}% gap`);
+        }
+        L.push('');
+      }
+    }
+
+    if (processedNhlGames.length === 0) {
+      L.push('  No NHL picks posted for today.');
+      L.push('');
+    }
+  }
+
+  L.push('─'.repeat(80));
+  L.push('');
   L.push('WRITING GUIDANCE:');
   L.push('- Lead with the most dramatic matchup mismatch (shot zone exploits, elite vs weak)');
   L.push('- Use specific numbers: "shoots 60.4% at the rim (#124 in D1)" > "good at scoring inside"');
   L.push('- Frame as offense vs defense: "GW\'s elite 3PT shooting meets VCU\'s top-30 rim protection"');
   L.push('- Include D1 context: "5 points above D1 average" tells the reader HOW good, not just good');
   L.push('- Mention home/away — it matters for narrative and the 3-4 point swing');
+  L.push('- For NHL: Lead with model edge, market consensus, and any whale activity');
+  L.push('- When markets DIVERGE from model, highlight the contrarian angle');
+  L.push('- Use whale trade data to show "smart money" direction');
   L.push('');
 
   const output = L.join('\n');

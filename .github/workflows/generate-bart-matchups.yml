@@ -1,4 +1,4 @@
-name: Generate Bart Matchup Intelligence
+name: Generate Matchup Intelligence (CBB + NHL)
 
 on:
   workflow_dispatch:  # Manual trigger only
@@ -27,5 +27,11 @@ jobs:
           echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
           echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
       
-      - name: Generate Barttorvik matchup report
+      - name: Fetch fresh Polymarket data
+        run: node scripts/fetchPolymarketData.js
+      
+      - name: Fetch fresh Kalshi data
+        run: node scripts/fetchKalshiData.js
+      
+      - name: Generate matchup intelligence report (CBB + NHL)
         run: node scripts/generateBartMatchups.js
