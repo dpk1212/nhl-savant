@@ -457,6 +457,7 @@ async function run() {
       // Map probabilities to away/home using team extraction order
       const [awayRaw, homeRaw] = teams;
       let awayProb = null, homeProb = null;
+      let token0IsAway = true;
       if (marketProbs && marketProbs.length >= 2) {
         if (outcomeNames && outcomeNames.length >= 2) {
           const n0 = normalize(outcomeNames[0]);
@@ -464,14 +465,29 @@ async function run() {
           if (n0.includes(nAway) || nAway.includes(n0) || outcomeNames[0].toLowerCase() === 'yes') {
             awayProb = marketProbs[0];
             homeProb = marketProbs[1];
+            token0IsAway = true;
           } else {
             awayProb = marketProbs[1];
             homeProb = marketProbs[0];
+            token0IsAway = false;
           }
         } else {
           awayProb = marketProbs[0];
           homeProb = marketProbs[1];
         }
+      }
+
+      // Flip price history to always represent the AWAY team
+      if (!token0IsAway && priceHistory) {
+        priceHistory = {
+          points: priceHistory.points.map(p => Number((100 - p).toFixed(1))),
+          open: Number((100 - priceHistory.open).toFixed(1)),
+          current: Number((100 - priceHistory.current).toFixed(1)),
+          high: Number((100 - priceHistory.low).toFixed(1)),
+          low: Number((100 - priceHistory.high).toFixed(1)),
+          change: -priceHistory.change,
+        };
+        if (priceMove1h != null) priceMove1h = -priceMove1h;
       }
 
       const vol24 = ev.volume_24hr ?? ev.volume ?? 0;
