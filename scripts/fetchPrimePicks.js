@@ -1634,11 +1634,7 @@ async function fetchPrimePicks() {
         console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | Only S1, no Pinn edge or movement → SKIP`);
         continue;
       }
-      if (!signal2 && signal3For && mos < 2.0) {
-        oneSignalOnly++;
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | No Pinn edge + MOS < 2.0 → SKIP`);
-        continue;
-      }
+      // S1+S3 (no Pinnacle) is a valid 2-signal play — no extra MOS gate needed
       
       // SIZE: S1+S2+S3 = Pinnacle-sized (2-4u), S1+S2 or S1+S3 = 1u
       const mvMag = Math.abs(best.lineMovement || 0);
