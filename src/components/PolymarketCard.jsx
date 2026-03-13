@@ -400,7 +400,8 @@ export default function PolymarketCard({
                   homePct={polyHomeTicket}
                   away={away}
                   home={home}
-                  count={polyTradeCount}
+                  total={polyTradeCount}
+                  unit="trades"
                 />
                 {/* Money split */}
                 <TeamFlowBar
@@ -409,6 +410,8 @@ export default function PolymarketCard({
                   homePct={polyHomeMoney}
                   away={away}
                   home={home}
+                  total={polyLive ?? polyVol}
+                  unit="dollars"
                 />
               </div>
               {polyAwayMoney > 0 && polyAwayTicket > 0 && Math.abs(polyAwayMoney - polyAwayTicket) > 8 && (
@@ -720,8 +723,20 @@ function resolveOutcomeTeam(outcome, away, home) {
 }
 
 
-function TeamFlowBar({ label, awayPct, homePct, away, home, count }) {
+function fmtVol(v) {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(1)}K`;
+  return `$${Math.round(v)}`;
+}
+
+function TeamFlowBar({ label, awayPct, homePct, away, home, total, unit }) {
   const favAway = awayPct >= homePct;
+  const awayAmt = total > 0 ? Math.round(total * awayPct / 100) : 0;
+  const homeAmt = total > 0 ? Math.round(total * homePct / 100) : 0;
+  const isDollars = unit === 'dollars';
+  const fmtAmt = (n) => isDollars ? fmtVol(n) : n.toLocaleString();
+  const hasTotal = total > 0;
+
   return (
     <div>
       <div style={{
@@ -734,6 +749,11 @@ function TeamFlowBar({ label, awayPct, homePct, away, home, count }) {
           fontFeatureSettings: "'tnum'",
         }}>
           {away} {awayPct}%
+          {hasTotal && (
+            <span style={{ fontWeight: '500', color: 'rgba(255,255,255,0.25)', marginLeft: '0.25rem', fontSize: '0.438rem' }}>
+              {fmtAmt(awayAmt)}
+            </span>
+          )}
         </span>
         <span style={{
           fontSize: '0.438rem', fontWeight: '600', color: 'rgba(255,255,255,0.2)',
@@ -741,9 +761,9 @@ function TeamFlowBar({ label, awayPct, homePct, away, home, count }) {
           display: 'flex', alignItems: 'center', gap: '0.3rem',
         }}>
           {label}
-          {count > 0 && (
+          {hasTotal && (
             <span style={{ fontWeight: '500', color: 'rgba(255,255,255,0.15)' }}>
-              ({count})
+              ({isDollars ? fmtVol(total) : total.toLocaleString()})
             </span>
           )}
         </span>
@@ -752,6 +772,11 @@ function TeamFlowBar({ label, awayPct, homePct, away, home, count }) {
           color: !favAway ? '#F1F5F9' : 'rgba(255,255,255,0.4)',
           fontFeatureSettings: "'tnum'",
         }}>
+          {hasTotal && (
+            <span style={{ fontWeight: '500', color: 'rgba(255,255,255,0.25)', marginRight: '0.25rem', fontSize: '0.438rem' }}>
+              {fmtAmt(homeAmt)}
+            </span>
+          )}
           {homePct}% {home}
         </span>
       </div>
