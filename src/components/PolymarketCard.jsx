@@ -424,17 +424,15 @@ export default function PolymarketCard({
           {/* ── 3. Whale Activity ──────────────────────────────────────── */}
           {hasWhales && (() => {
             const allWhales = whales.topTrades || [];
-            let awayTotal = 0, homeTotal = 0, otherTotal = 0;
+            let awayTotal = 0, homeTotal = 0;
             for (const wt of allWhales) {
               const team = resolveOutcomeTeam(wt.outcome, away, home);
               if (team === away) awayTotal += wt.amount;
               else if (team === home) homeTotal += wt.amount;
-              else otherTotal += wt.amount;
             }
-            const teamTotal = awayTotal + homeTotal + otherTotal;
+            const teamTotal = awayTotal + homeTotal;
             const awayPctWhale = teamTotal > 0 ? Math.round(awayTotal / teamTotal * 100) : 0;
             const homePctWhale = teamTotal > 0 ? Math.round(homeTotal / teamTotal * 100) : 0;
-            const otherPctWhale = teamTotal > 0 ? Math.round(otherTotal / teamTotal * 100) : 0;
             const whaleFavAway = awayTotal >= homeTotal;
 
             return (
@@ -506,12 +504,6 @@ export default function PolymarketCard({
                           ? `linear-gradient(90deg, ${AMBER} 0%, ${AMBER}CC 100%)`
                           : `${AMBER}60`,
                         transition: 'width 0.5s ease',
-                      }} />
-                    )}
-                    {otherPctWhale > 0 && (
-                      <div style={{
-                        width: `${otherPctWhale}%`,
-                        background: 'rgba(255,255,255,0.15)',
                       }} />
                     )}
                     {homePctWhale > 0 && (
