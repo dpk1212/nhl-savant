@@ -3881,15 +3881,28 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                         }}
                       >
               
-              {/* Polymarket Volume & Flow (when available) */}
+              {/* Polymarket Market Intelligence (when available) */}
               {(() => {
                 const nk = (n) => (n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
                 const pmKey = `${nk(game.awayTeam)}_${nk(game.homeTeam)}`;
                 const pmData = polymarketData?.NHL?.[pmKey];
                 if (!pmData) return null;
+                const awayProb = game.edges?.moneyline?.away?.modelProb || 0;
+                const homeProb = game.edges?.moneyline?.home?.modelProb || 0;
+                const mAwayPct = awayProb > 1 ? awayProb : awayProb * 100;
+                const mHomePct = homeProb > 1 ? homeProb : homeProb * 100;
+                const pickSide = bestEdge?.pick?.includes('AWAY') ? 'away' : bestEdge?.pick?.includes('HOME') ? 'home' : (mAwayPct > mHomePct ? 'away' : 'home');
                 return (
                   <div style={{ padding: isMobile ? '0 1rem 0.75rem' : '0 1.25rem 1rem' }}>
-                    <PolymarketCard data={pmData} isMobile={isMobile} />
+                    <PolymarketCard
+                      data={pmData}
+                      isMobile={isMobile}
+                      awayTeam={game.awayTeam}
+                      homeTeam={game.homeTeam}
+                      modelAwayProb={Math.round(mAwayPct)}
+                      modelHomeProb={Math.round(mHomePct)}
+                      modelPick={pickSide}
+                    />
                   </div>
                 );
               })()}

@@ -2778,10 +2778,18 @@ const BasketballGameCard = ({ game, rank, isMobile, hasLiveScore, isSavantPick =
         </div>
       )}
 
-      {/* Polymarket Volume & Flow */}
+      {/* Polymarket Market Intelligence */}
       {polymarket && (
         <div style={{ padding: isMobile ? '0 0.875rem 0.5rem' : '0 1rem 0.75rem' }}>
-          <PolymarketCard data={polymarket} isMobile={isMobile} />
+          <PolymarketCard
+            data={polymarket}
+            isMobile={isMobile}
+            awayTeam={game.awayTeam}
+            homeTeam={game.homeTeam}
+            modelAwayProb={pred?.ensembleAwayProb ? Math.round(pred.ensembleAwayProb * 100) : null}
+            modelHomeProb={pred?.ensembleHomeProb ? Math.round(pred.ensembleHomeProb * 100) : null}
+            modelPick={pred?.bestBet || (pred?.bestTeam === game.awayTeam ? 'away' : 'home')}
+          />
         </div>
       )}
 

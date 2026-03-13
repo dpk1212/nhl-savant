@@ -357,6 +357,41 @@ async function run() {
         priceMove1h = priceMovePct(hist);
       }
 
+      // Extract market-implied probabilities from outcomePrices
+      let marketProbs = null;
+      let outcomeNames = null;
+      if (firstMarket) {
+        let prices = firstMarket.outcomePrices;
+        if (typeof prices === 'string') try { prices = JSON.parse(prices); } catch { prices = null; }
+        let outcomes = firstMarket.outcomes;
+        if (typeof outcomes === 'string') try { outcomes = JSON.parse(outcomes); } catch { outcomes = null; }
+        if (Array.isArray(prices) && prices.length >= 2) {
+          marketProbs = prices.map(Number);
+          outcomeNames = Array.isArray(outcomes) ? outcomes : null;
+        }
+      }
+
+      // Map probabilities to away/home using team extraction order
+      const [awayRaw, homeRaw] = teams;
+      let awayProb = null, homeProb = null;
+      if (marketProbs && marketProbs.length >= 2) {
+        if (outcomeNames && outcomeNames.length >= 2) {
+          const n0 = normalize(outcomeNames[0]);
+          const nAway = normalize(awayRaw);
+          if (n0.includes(nAway) || nAway.includes(n0) || outcomeNames[0].toLowerCase() === 'yes') {
+            awayProb = marketProbs[0];
+            homeProb = marketProbs[1];
+          } else {
+            awayProb = marketProbs[1];
+            homeProb = marketProbs[0];
+          }
+        } else {
+          // Default: first outcome = first team in title (away)
+          awayProb = marketProbs[0];
+          homeProb = marketProbs[1];
+        }
+      }
+
       const vol24 = ev.volume_24hr ?? ev.volume ?? 0;
       bucket[key] = {
         volume24h: Number(vol24),
@@ -365,6 +400,10 @@ async function run() {
         sellPct: agg.sellPct,
         tradeCount: agg.ticketCount,
         priceMove1h,
+        awayProb: awayProb != null ? Number((awayProb * 100).toFixed(1)) : null,
+        homeProb: homeProb != null ? Number((homeProb * 100).toFixed(1)) : null,
+        awayTeam: awayRaw,
+        homeTeam: homeRaw,
         eventId: id,
         title: title.substring(0, 80),
       };
