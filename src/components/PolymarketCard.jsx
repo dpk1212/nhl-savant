@@ -278,37 +278,58 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
               padding: '0.625rem 0',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
-              {hasPriceHist && (
-                <div>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    marginBottom: '0.3rem',
-                  }}>
-                    <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      24h Price ({away})
-                    </span>
-                    <span style={{
-                      fontSize: '0.563rem', fontWeight: '700',
-                      color: priceHistory.change >= 0 ? ACCENT : '#F87171',
-                      fontFeatureSettings: "'tnum'",
+              {hasPriceHist && (() => {
+                const change = priceHistory.change;
+                const rising = change > 0;
+                const movingTeam = rising ? away : home;
+                const moveColor = change === 0 ? '#94A3B8' : rising ? ACCENT : '#F87171';
+                const interpretation = change === 0
+                  ? 'Holding steady — no significant movement'
+                  : `${movingTeam} gaining confidence — bettors are ${rising ? 'buying' : 'selling'} ${away}`;
+                return (
+                  <div>
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      marginBottom: '0.25rem',
                     }}>
-                      {priceHistory.change >= 0 ? '+' : ''}{priceHistory.change}%
-                    </span>
+                      <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {away} Win Prob — 24h
+                      </span>
+                      <span style={{ fontSize: '0.563rem', fontWeight: '700', color: moveColor, fontFeatureSettings: "'tnum'" }}>
+                        {priceHistory.open}% → {priceHistory.current}%
+                      </span>
+                    </div>
+                    <Sparkline points={priceHistory.points} color={moveColor} height={32} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                      <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>Low: {priceHistory.low}%</span>
+                      <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>High: {priceHistory.high}%</span>
+                    </div>
+                    {/* Plain-English interpretation */}
+                    <div style={{
+                      marginTop: '0.375rem', padding: '0.3rem 0.5rem',
+                      background: `${moveColor}08`, borderRadius: '6px',
+                      border: `1px solid ${moveColor}15`,
+                    }}>
+                      <span style={{ fontSize: '0.563rem', fontWeight: '600', color: moveColor }}>
+                        {change > 0 ? '↑' : change < 0 ? '↓' : '→'}{' '}
+                      </span>
+                      <span style={{ fontSize: '0.563rem', fontWeight: '500', color: 'rgba(255,255,255,0.5)' }}>
+                        {interpretation}
+                      </span>
+                    </div>
                   </div>
-                  <Sparkline points={priceHistory.points} color={priceHistory.change >= 0 ? ACCENT : '#F87171'} height={32} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
-                    <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>L: {priceHistory.low}%</span>
-                    <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>H: {priceHistory.high}%</span>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
               {priceMoveContext && (
                 <div style={{
                   marginTop: hasPriceHist ? '0.5rem' : 0,
+                  padding: '0.3rem 0.5rem',
+                  background: `${priceMoveContext.color}08`, borderRadius: '6px',
+                  border: `1px solid ${priceMoveContext.color}15`,
                   display: 'flex', alignItems: 'center', gap: '0.375rem',
                 }}>
-                  <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>1h:</span>
-                  <span style={{ fontSize: '0.625rem', fontWeight: '700', color: priceMoveContext.color, fontFeatureSettings: "'tnum'" }}>
+                  <span style={{ fontSize: '0.5rem', fontWeight: '700', color: priceMoveContext.color, textTransform: 'uppercase' }}>Last 1h:</span>
+                  <span style={{ fontSize: '0.563rem', fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>
                     {priceMoveContext.text}
                   </span>
                 </div>
