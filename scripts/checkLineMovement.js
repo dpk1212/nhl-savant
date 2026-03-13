@@ -500,7 +500,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
   const betId = `${date}_${awayNorm}_${homeNorm}_SPREAD_${teamNorm}_(${side})`;
 
   const signalCount = sideResult.signalCount || 0;
-  const isFlagged = sideResult.movementTier !== 'CONFIRM';
+  const isFlagged = sideResult.movementTier === 'FLAGGED';
   const units = isFlagged ? 0 : (sideResult.units || 1);
   const tier = signalCount === 3 ? 'THREE_SIGNAL' : signalCount === 2 ? 'TWO_SIGNAL' : 'INSUFFICIENT';
 
@@ -664,7 +664,7 @@ async function createOrUpdateATSBet(evalData, sideResult, counters) {
     },
     result: { awayScore: null, homeScore: null, totalScore: null, winner: null, outcome: null, profit: null, fetched: false, fetchedAt: null, source: null },
     status: 'PENDING',
-    betStatus: sideResult.movementTier === 'CONFIRM' ? 'BET_NOW' : 'HOLD',
+    betStatus: (sideResult.signalCount >= 2 && sideResult.movementTier !== 'FLAGGED') ? 'BET_NOW' : 'HOLD',
     isLocked: true,
     lockedAt: Date.now(),
     firstRecommendedAt: Date.now(), lastUpdatedAt: Date.now(),
@@ -1053,7 +1053,7 @@ async function checkLineMovement() {
         bothCover: best.bothCover,
         movementTier: best.movementTier,
         status,
-        qualifies: signal1 && signal3For && (signal2 || best.mos >= 2.0),
+        qualifies: signal1 && !signal3Against && (signal2 || signal3For),
         gameLabel,
         sideResult: best,
         evalData,
@@ -1088,13 +1088,15 @@ async function checkLineMovement() {
         }
       }
       const signal3For = best.movementTier === 'CONFIRM';
+      const signal3Against = best.movementTier === 'FLAGGED';
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
 
-      // V12+: Movement CONFIRM required. S1+S3 (no Pinn) allowed only if MOS >= 2.0
-      if (signal3For && (signal2 || best.mos >= 2.0)) {
+      // Gate: need at least 2 qualifying signals, movement AGAINST blocks
+      // S1+S2 (Pinnacle edge) → 1u, S1+S3 (movement) → 1u, S1+S2+S3 → 2-4u
+      if (!signal3Against && (signal2 || signal3For)) {
         const mvMag = Math.abs(best.lineMovement || 0);
         let units;
-        if (signal2) {
+        if (signal2 && signal3For) {
           if (pinnEdgePts >= 2.5) units = 4;
           else if (pinnEdgePts >= 2.0) units = 4;
           else if (pinnEdgePts >= 1.5) units = 3;
