@@ -1,11 +1,12 @@
 /**
- * PolymarketCard — Market Intelligence
+ * PolymarketCard — Market Intelligence (Collapsible)
  *
- * Actionable Polymarket data: market probability bar, model vs market comparison,
- * 24h price sparkline, whale activity, smart money flow, and volume context.
+ * Collapsed: probability bar + agreement signal as header.
+ * Expanded: sparkline, whale trade table, flow bars (tickets + money), stats.
  */
 
-import { BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { BarChart3, TrendingUp, TrendingDown, Minus, ChevronDown, AlertTriangle } from 'lucide-react';
 import { TYPOGRAPHY, MOBILE_SPACING } from '../utils/designSystem';
 
 const ACCENT = '#10B981';
@@ -13,13 +14,21 @@ const ACCENT_DARK = '#059669';
 const ACCENT_GLOW = 'rgba(16, 185, 129, 0.25)';
 
 export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, modelAwayProb, modelHomeProb, modelPick }) {
+  const [expanded, setExpanded] = useState(false);
   if (!data) return null;
 
   const {
-    volume24h, liveVolume, buyPct, sellPct, priceMove1h, tradeCount,
+    volume24h, liveVolume, moneyBuyPct, moneySellPct, ticketBuyPct, ticketSellPct,
+    buyPct, sellPct, // backward compat
+    priceMove1h, tradeCount,
     awayProb: mktAwayPct, homeProb: mktHomePct,
     priceHistory, whales,
   } = data;
+
+  const mBuyPct = moneyBuyPct ?? buyPct ?? 0;
+  const mSellPct = moneySellPct ?? sellPct ?? 0;
+  const tBuyPct = ticketBuyPct ?? mBuyPct;
+  const tSellPct = ticketSellPct ?? mSellPct;
 
   const vol = liveVolume ?? volume24h ?? 0;
   if (vol <= 0 && mktAwayPct == null) return null;
@@ -29,7 +38,6 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
 
   const away = awayTeam || data.awayTeam || '?';
   const home = homeTeam || data.homeTeam || '?';
-
   const mktFavAway = hasMarketProb ? mktAwayPct >= mktHomePct : null;
 
   // Model vs Market comparison
@@ -45,8 +53,7 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
     if (mktAgrees) {
       const mktMoreConfident = mktPickProb > modelPickProb;
       agreementSignal = {
-        agrees: true,
-        label: 'AGREES',
+        agrees: true, label: 'AGREES',
         detail: mktMoreConfident
           ? `Market +${delta}% more bullish on ${pickTeam}`
           : `Market aligned, model +${delta}% more confident`,
@@ -54,25 +61,26 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
       };
     } else {
       agreementSignal = {
-        agrees: false,
-        label: 'DIVERGES',
+        agrees: false, label: 'DIVERGES',
         detail: `Market favors ${mktFavAway ? away : home} — contrarian edge`,
         color: '#F59E0B',
       };
     }
   }
 
-  // Smart money signal
-  const flowSignal = (() => {
-    if (buyPct == null) return null;
-    if (buyPct >= 85) return { label: 'Heavy Buying', color: ACCENT, icon: TrendingUp };
-    if (buyPct >= 65) return { label: 'Buying Pressure', color: '#0EA5E9', icon: TrendingUp };
-    if (buyPct <= 15) return { label: 'Heavy Selling', color: '#F87171', icon: TrendingDown };
-    if (buyPct <= 35) return { label: 'Sell Pressure', color: '#F59E0B', icon: TrendingDown };
-    return { label: 'Balanced', color: '#94A3B8', icon: Minus };
+  // Price move context — toward which team
+  const priceMoveContext = (() => {
+    if (priceMove1h == null || !hasMarketProb) return null;
+    const move = Number(priceMove1h);
+    if (move === 0) return { text: 'Stable', color: '#94A3B8' };
+    // Price refers to first team (away). Positive = away gaining, negative = home gaining
+    const towardTeam = move > 0 ? away : home;
+    return {
+      text: `${move > 0 ? '+' : ''}${priceMove1h}% toward ${towardTeam}`,
+      color: move > 0 ? ACCENT : '#F87171',
+    };
   })();
 
-  // Volume tier
   const volTier = (() => {
     if (vol >= 500_000) return { label: 'HIGH', color: ACCENT };
     if (vol >= 100_000) return { label: 'MOD', color: '#0EA5E9' };
@@ -88,24 +96,23 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
 
   const hasWhales = whales && whales.count > 0;
   const hasPriceHist = priceHistory && priceHistory.points && priceHistory.points.length >= 3;
+  const whaleTopTrades = whales?.topTrades || [];
 
   return (
     <div
-      className="polymarket-card"
       style={{
         position: 'relative',
         background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
         backdropFilter: 'blur(20px) saturate(180%)',
         border: `1px solid ${ACCENT}30`,
         borderRadius: MOBILE_SPACING.borderRadius,
-        padding: isMobile ? '0.875rem' : '1.125rem',
         boxShadow: `0 4px 20px rgba(0,0,0,0.2), 0 0 24px ${ACCENT_GLOW}`,
         overflow: 'hidden',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: 'polyFadeIn 0.4s ease-out both',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-3px)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
         e.currentTarget.style.boxShadow = `0 8px 32px rgba(0,0,0,0.3), 0 0 32px ${ACCENT_GLOW}`;
       }}
       onMouseLeave={(e) => {
@@ -113,7 +120,7 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
         e.currentTarget.style.boxShadow = `0 4px 20px rgba(0,0,0,0.2), 0 0 24px ${ACCENT_GLOW}`;
       }}
     >
-      {/* Background glow orb */}
+      {/* Glow orb */}
       <div style={{
         position: 'absolute', top: '-30%', right: '-10%',
         width: '120px', height: '120px',
@@ -121,261 +128,276 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
         borderRadius: '50%', opacity: 0.08, filter: 'blur(30px)', pointerEvents: 'none',
       }} />
 
-      {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: '0.75rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{
-            width: '28px', height: '28px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`,
-            borderRadius: '8px', boxShadow: `0 0 12px ${ACCENT_GLOW}`,
-          }}>
-            <BarChart3 size={14} color="white" strokeWidth={2.5} />
-          </div>
-          <span style={{
-            ...TYPOGRAPHY.label,
-            fontSize: isMobile ? TYPOGRAPHY.caption.size : TYPOGRAPHY.label.size,
-            color: 'rgba(255,255,255,0.5)',
-          }}>
-            Market Intel
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          {volTier && (
-            <span style={{
-              fontSize: '0.5rem', fontWeight: '700', letterSpacing: '0.05em',
-              color: volTier.color, textTransform: 'uppercase',
-              padding: '0.125rem 0.375rem',
-              background: `${volTier.color}15`, borderRadius: '4px',
-              border: `1px solid ${volTier.color}30`,
+      {/* Clickable Header */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          cursor: 'pointer',
+          padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1.125rem',
+        }}
+      >
+        {/* Top row: icon, title, badges */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: hasMarketProb ? '0.5rem' : 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{
+              width: '24px', height: '24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`,
+              borderRadius: '6px', boxShadow: `0 0 10px ${ACCENT_GLOW}`,
             }}>
-              {volTier.label}
-            </span>
-          )}
-          {liveVolume != null && (
+              <BarChart3 size={12} color="white" strokeWidth={2.5} />
+            </div>
             <span style={{
-              fontSize: '0.5rem', fontWeight: '600', color: ACCENT,
-              textTransform: 'uppercase', letterSpacing: '0.04em',
-              display: 'flex', alignItems: 'center', gap: '0.2rem',
+              ...TYPOGRAPHY.label,
+              fontSize: isMobile ? '0.625rem' : TYPOGRAPHY.label.size,
+              color: 'rgba(255,255,255,0.5)',
+            }}>
+              Market Intel
+            </span>
+            {vol > 0 && (
+              <span style={{ fontSize: '0.563rem', color: '#94A3B8', fontWeight: '600', fontFeatureSettings: "'tnum'" }}>
+                {formatVol(vol)}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            {volTier && (
+              <span style={{
+                fontSize: '0.5rem', fontWeight: '700', letterSpacing: '0.05em',
+                color: volTier.color, textTransform: 'uppercase',
+                padding: '0.1rem 0.3rem',
+                background: `${volTier.color}15`, borderRadius: '4px',
+                border: `1px solid ${volTier.color}30`,
+              }}>
+                {volTier.label}
+              </span>
+            )}
+            {liveVolume != null && (
+              <span style={{
+                fontSize: '0.5rem', fontWeight: '600', color: ACCENT,
+                display: 'flex', alignItems: 'center', gap: '0.2rem',
+              }}>
+                <span style={{
+                  width: '5px', height: '5px', borderRadius: '50%',
+                  background: ACCENT, animation: 'polyPulse 2s ease-in-out infinite',
+                }} />
+                Live
+              </span>
+            )}
+            <ChevronDown
+              size={14}
+              color="rgba(255,255,255,0.4)"
+              style={{
+                transition: 'transform 0.2s ease',
+                transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Probability bar (always visible) */}
+        {hasMarketProb && (
+          <div>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+              marginBottom: '0.3rem',
             }}>
               <span style={{
-                width: '5px', height: '5px', borderRadius: '50%',
-                background: ACCENT, display: 'inline-block',
-                animation: 'polyPulse 2s ease-in-out infinite',
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontWeight: '700', color: mktFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {away} <span style={{ fontWeight: '800', color: mktFavAway ? ACCENT : 'inherit' }}>{mktAwayPct}%</span>
+              </span>
+              <span style={{
+                fontSize: isMobile ? '0.625rem' : '0.688rem',
+                fontWeight: '700', color: !mktFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                <span style={{ fontWeight: '800', color: !mktFavAway ? ACCENT : 'inherit' }}>{mktHomePct}%</span> {home}
+              </span>
+            </div>
+            <div style={{
+              display: 'flex', height: '5px', borderRadius: '3px',
+              overflow: 'hidden', background: 'rgba(255,255,255,0.06)',
+            }}>
+              <div style={{
+                width: `${mktAwayPct}%`,
+                background: mktFavAway
+                  ? `linear-gradient(90deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`
+                  : 'rgba(255,255,255,0.18)',
+                transition: 'width 0.5s ease',
               }} />
-              Live
+              <div style={{
+                width: `${mktHomePct}%`,
+                background: !mktFavAway
+                  ? `linear-gradient(90deg, ${ACCENT_DARK} 0%, ${ACCENT} 100%)`
+                  : 'rgba(255,255,255,0.18)',
+                transition: 'width 0.5s ease',
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Agreement signal (always visible) */}
+        {agreementSignal && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            marginTop: '0.4rem',
+          }}>
+            <span style={{
+              fontSize: '0.563rem', fontWeight: '800',
+              color: agreementSignal.color, textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              {agreementSignal.agrees ? '✓' : '⚡'} {agreementSignal.label}
             </span>
-          )}
-        </div>
+            <span style={{
+              fontSize: '0.5rem', fontWeight: '500',
+              color: 'rgba(255,255,255,0.45)',
+            }}>
+              {agreementSignal.detail}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Market Probability Bar */}
-      {hasMarketProb && (
-        <div style={{ marginBottom: '0.625rem' }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-            marginBottom: '0.375rem',
-          }}>
-            <span style={{
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              fontWeight: '700', color: mktFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.6)',
-              fontFeatureSettings: "'tnum'",
-            }}>
-              {away} <span style={{ fontWeight: '800', color: mktFavAway ? ACCENT : 'inherit' }}>{mktAwayPct}%</span>
-            </span>
-            <span style={{
-              fontSize: isMobile ? '0.688rem' : '0.75rem',
-              fontWeight: '700', color: !mktFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.6)',
-              fontFeatureSettings: "'tnum'",
-            }}>
-              <span style={{ fontWeight: '800', color: !mktFavAway ? ACCENT : 'inherit' }}>{mktHomePct}%</span> {home}
-            </span>
-          </div>
-          <div style={{
-            display: 'flex', height: '6px', borderRadius: '3px',
-            overflow: 'hidden', background: 'rgba(255,255,255,0.06)',
-          }}>
-            <div style={{
-              width: `${mktAwayPct}%`,
-              background: mktFavAway
-                ? `linear-gradient(90deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`
-                : 'rgba(255,255,255,0.2)',
-              borderRadius: '3px 0 0 3px',
-              transition: 'width 0.5s ease',
-            }} />
-            <div style={{
-              width: `${mktHomePct}%`,
-              background: !mktFavAway
-                ? `linear-gradient(90deg, ${ACCENT_DARK} 0%, ${ACCENT} 100%)`
-                : 'rgba(255,255,255,0.2)',
-              borderRadius: '0 3px 3px 0',
-              transition: 'width 0.5s ease',
-            }} />
-          </div>
-        </div>
-      )}
-
-      {/* Model vs Market Agreement */}
-      {agreementSignal && (
+      {/* Expanded Content */}
+      {expanded && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          padding: '0.4rem 0.625rem',
-          background: `${agreementSignal.color}10`,
-          border: `1px solid ${agreementSignal.color}25`,
-          borderRadius: '8px',
-          marginBottom: '0.625rem',
+          padding: isMobile ? '0 0.875rem 0.875rem' : '0 1.125rem 1rem',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          animation: 'polySlideDown 0.25s ease-out',
         }}>
-          <span style={{
-            fontSize: '0.625rem', fontWeight: '800',
-            color: agreementSignal.color, textTransform: 'uppercase',
-            letterSpacing: '0.05em', whiteSpace: 'nowrap',
-          }}>
-            {agreementSignal.agrees ? '✓' : '⚡'} {agreementSignal.label}
-          </span>
-          <span style={{
-            fontSize: isMobile ? '0.563rem' : '0.625rem',
-            fontWeight: '500', color: 'rgba(255,255,255,0.55)',
-            lineHeight: '1.3',
-          }}>
-            {agreementSignal.detail}
-          </span>
-        </div>
-      )}
-
-      {/* Price History Sparkline + Whale Activity Row */}
-      {(hasPriceHist || hasWhales) && (
-        <div style={{
-          display: 'flex', gap: '0.625rem', marginBottom: '0.625rem',
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
-        }}>
-          {/* 24h Price Sparkline */}
-          {hasPriceHist && (
+          {/* Row: Sparkline + Price Move */}
+          {(hasPriceHist || priceMoveContext) && (
             <div style={{
-              flex: '1 1 55%', minWidth: '140px',
-              padding: '0.5rem',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: '8px',
+              padding: '0.625rem 0',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                marginBottom: '0.375rem',
-              }}>
-                <span style={{
-                  fontSize: '0.5rem', fontWeight: '600',
-                  color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+              {hasPriceHist && (
+                <div>
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    marginBottom: '0.3rem',
+                  }}>
+                    <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      24h Price ({away})
+                    </span>
+                    <span style={{
+                      fontSize: '0.563rem', fontWeight: '700',
+                      color: priceHistory.change >= 0 ? ACCENT : '#F87171',
+                      fontFeatureSettings: "'tnum'",
+                    }}>
+                      {priceHistory.change >= 0 ? '+' : ''}{priceHistory.change}%
+                    </span>
+                  </div>
+                  <Sparkline points={priceHistory.points} color={priceHistory.change >= 0 ? ACCENT : '#F87171'} height={32} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                    <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>L: {priceHistory.low}%</span>
+                    <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>H: {priceHistory.high}%</span>
+                  </div>
+                </div>
+              )}
+              {priceMoveContext && (
+                <div style={{
+                  marginTop: hasPriceHist ? '0.5rem' : 0,
+                  display: 'flex', alignItems: 'center', gap: '0.375rem',
                 }}>
-                  24h Price
-                </span>
-                <span style={{
-                  fontSize: '0.563rem', fontWeight: '700',
-                  color: priceHistory.change >= 0 ? ACCENT : '#F87171',
-                  fontFeatureSettings: "'tnum'",
-                }}>
-                  {priceHistory.change >= 0 ? '+' : ''}{priceHistory.change}%
-                </span>
-              </div>
-              <Sparkline
-                points={priceHistory.points}
-                color={priceHistory.change >= 0 ? ACCENT : '#F87171'}
-                height={28}
-              />
-              <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                marginTop: '0.25rem',
-              }}>
-                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum'" }}>
-                  L: {priceHistory.low}%
-                </span>
-                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum'" }}>
-                  H: {priceHistory.high}%
-                </span>
-              </div>
+                  <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>1h:</span>
+                  <span style={{ fontSize: '0.625rem', fontWeight: '700', color: priceMoveContext.color, fontFeatureSettings: "'tnum'" }}>
+                    {priceMoveContext.text}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Whale Activity */}
+          {/* Flow Bars: Tickets + Money */}
+          <div style={{
+            padding: '0.625rem 0',
+            borderBottom: '1px solid rgba(255,255,255,0.05)',
+          }}>
+            <FlowBar label="% of Tickets" buyPct={tBuyPct} sellPct={tSellPct} awayTeam={away} homeTeam={home} isMobile={isMobile} />
+            <FlowBar label="% of Money" buyPct={mBuyPct} sellPct={mSellPct} awayTeam={away} homeTeam={home} isMobile={isMobile} style={{ marginTop: '0.5rem' }} />
+          </div>
+
+          {/* Whale Trades Table */}
           {hasWhales && (
-            <div style={{
-              flex: '1 1 40%', minWidth: '120px',
-              padding: '0.5rem',
-              background: 'rgba(245, 158, 11, 0.05)',
-              border: '1px solid rgba(245, 158, 11, 0.12)',
-              borderRadius: '8px',
-            }}>
+            <div style={{ padding: '0.625rem 0' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
-                marginBottom: '0.375rem',
+                marginBottom: '0.4rem',
               }}>
                 <AlertTriangle size={10} color="#F59E0B" strokeWidth={2.5} />
                 <span style={{
                   fontSize: '0.5rem', fontWeight: '700',
-                  color: '#F59E0B', textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.04em',
                 }}>
-                  Whale Activity
+                  Whale Trades ({whales.count} over $500)
+                </span>
+                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginLeft: 'auto', fontFeatureSettings: "'tnum'" }}>
+                  {formatVol(whales.totalCash)} total
                 </span>
               </div>
-              <div style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: '800', color: '#F1F5F9', marginBottom: '0.25rem', fontFeatureSettings: "'tnum'" }}>
-                {whales.count} large trade{whales.count !== 1 ? 's' : ''}
-              </div>
-              <div style={{ fontSize: '0.563rem', color: 'rgba(255,255,255,0.5)', lineHeight: '1.4', fontFeatureSettings: "'tnum'" }}>
-                {formatVol(whales.totalCash)} total
-                {whales.largest >= 1000 && <> · max {formatVol(whales.largest)}</>}
-              </div>
-              <div style={{
-                display: 'flex', gap: '0.375rem', marginTop: '0.3rem',
-              }}>
-                {whales.buyCount > 0 && (
-                  <span style={{ fontSize: '0.5rem', fontWeight: '700', color: ACCENT }}>
-                    {whales.buyCount} buy{whales.buyCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {whales.sellCount > 0 && (
-                  <span style={{ fontSize: '0.5rem', fontWeight: '700', color: '#F87171' }}>
-                    {whales.sellCount} sell{whales.sellCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
+              {whaleTopTrades.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  {whaleTopTrades.map((t, i) => {
+                    const outcomeTeam = resolveOutcomeTeam(t.outcome, away, home);
+                    return (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '0.3rem 0.5rem',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.04)',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                          <span style={{
+                            fontSize: '0.5rem', fontWeight: '700',
+                            color: t.side === 'BUY' ? ACCENT : '#F87171',
+                            textTransform: 'uppercase', width: '28px',
+                          }}>
+                            {t.side}
+                          </span>
+                          <span style={{
+                            fontSize: '0.625rem', fontWeight: '700',
+                            color: '#F1F5F9',
+                          }}>
+                            {outcomeTeam}
+                          </span>
+                          {t.price && (
+                            <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum'" }}>
+                              @{t.price}¢
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                          <span style={{
+                            fontSize: '0.688rem', fontWeight: '800',
+                            color: t.amount >= 5000 ? '#F59E0B' : t.amount >= 1000 ? '#0EA5E9' : '#94A3B8',
+                            fontFeatureSettings: "'tnum'",
+                          }}>
+                            {formatVol(t.amount)}
+                          </span>
+                          {t.ts && (
+                            <span style={{ fontSize: '0.438rem', color: 'rgba(255,255,255,0.2)', fontFeatureSettings: "'tnum'" }}>
+                              {t.ts}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
-
-      {/* Bottom stats row */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        flexWrap: 'wrap', gap: '0.375rem',
-      }}>
-        {vol > 0 && (
-          <MiniStat label="Volume" value={formatVol(vol)} isMobile={isMobile} />
-        )}
-        {flowSignal && (
-          <MiniStat label="Flow" isMobile={isMobile} renderValue={() => {
-            const Icon = flowSignal.icon;
-            return (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: flowSignal.color, fontWeight: '700', fontSize: isMobile ? '0.688rem' : '0.75rem' }}>
-                <Icon size={11} strokeWidth={2.5} /> {flowSignal.label}
-              </span>
-            );
-          }} />
-        )}
-        {priceMove1h != null && (
-          <MiniStat
-            label="1h Move"
-            value={`${Number(priceMove1h) >= 0 ? '+' : ''}${priceMove1h}%`}
-            valueColor={Number(priceMove1h) > 0 ? ACCENT : Number(priceMove1h) < 0 ? '#F87171' : '#94A3B8'}
-            isMobile={isMobile}
-          />
-        )}
-        {tradeCount > 0 && (
-          <MiniStat label="Trades" value={tradeCount.toLocaleString()} isMobile={isMobile} />
-        )}
-      </div>
 
       <style>{`
         @keyframes polyFadeIn {
@@ -386,13 +408,73 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
         }
+        @keyframes polySlideDown {
+          from { opacity: 0; max-height: 0; }
+          to { opacity: 1; max-height: 600px; }
+        }
       `}</style>
     </div>
   );
 }
 
-/** SVG Sparkline — compact inline price chart */
-function Sparkline({ points, color, height = 28 }) {
+function resolveOutcomeTeam(outcome, away, home) {
+  if (!outcome) return away;
+  const o = outcome.toLowerCase();
+  if (o === 'yes') return away;
+  if (o === 'no') return home;
+  const nAway = away.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const nHome = home.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const nO = o.replace(/[^a-z0-9]/g, '');
+  if (nO.includes(nAway) || nAway.includes(nO)) return away;
+  if (nO.includes(nHome) || nHome.includes(nO)) return home;
+  return outcome;
+}
+
+function FlowBar({ label, buyPct, sellPct, awayTeam, homeTeam, isMobile, style }) {
+  return (
+    <div style={style}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: '0.25rem',
+      }}>
+        <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {label}
+        </span>
+      </div>
+      <div style={{
+        display: 'flex', height: '14px', borderRadius: '4px',
+        overflow: 'hidden', background: 'rgba(255,255,255,0.04)', position: 'relative',
+      }}>
+        <div style={{
+          width: `${buyPct}%`,
+          background: `linear-gradient(90deg, ${ACCENT} 0%, ${ACCENT}CC 100%)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'width 0.5s ease', minWidth: buyPct > 5 ? '40px' : '0',
+        }}>
+          {buyPct > 15 && (
+            <span style={{ fontSize: '0.5rem', fontWeight: '700', color: 'white', whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+              {buyPct}% Buy
+            </span>
+          )}
+        </div>
+        <div style={{
+          width: `${sellPct}%`,
+          background: `linear-gradient(90deg, #F8717180 0%, #F87171 100%)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'width 0.5s ease', minWidth: sellPct > 5 ? '40px' : '0',
+        }}>
+          {sellPct > 15 && (
+            <span style={{ fontSize: '0.5rem', fontWeight: '700', color: 'white', whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+              {sellPct}% Sell
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sparkline({ points, color, height = 32 }) {
   if (!points || points.length < 2) return null;
   const width = 200;
   const pad = 2;
@@ -406,60 +488,20 @@ function Sparkline({ points, color, height = 28 }) {
     return `${x},${y}`;
   });
 
-  const gradId = `spark-grad-${Math.random().toString(36).slice(2, 8)}`;
-  const fillCoords = [
-    `${pad},${height}`,
-    ...coords,
-    `${width - pad},${height}`,
-  ].join(' ');
+  const gradId = `sg-${Math.random().toString(36).slice(2, 8)}`;
+  const fillCoords = [`${pad},${height}`, ...coords, `${width - pad},${height}`].join(' ');
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: `${height}px`, display: 'block' }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points={fillCoords} fill={`url(#${gradId})`} />
-      <polyline
-        points={coords.join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Current price dot */}
-      {(() => {
-        const lastCoord = coords[coords.length - 1].split(',');
-        return (
-          <circle cx={lastCoord[0]} cy={lastCoord[1]} r="2.5" fill={color} />
-        );
-      })()}
+      <polyline points={coords.join(' ')} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={coords[coords.length - 1].split(',')[0]} cy={coords[coords.length - 1].split(',')[1]} r="2.5" fill={color} />
     </svg>
-  );
-}
-
-function MiniStat({ label, value, valueColor, isMobile, renderValue }) {
-  return (
-    <div style={{ textAlign: 'center', minWidth: isMobile ? '48px' : '56px' }}>
-      <div style={{
-        fontSize: '0.5rem', fontWeight: '600',
-        color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase',
-        letterSpacing: '0.04em', marginBottom: '0.125rem',
-      }}>
-        {label}
-      </div>
-      {renderValue ? renderValue() : (
-        <div style={{
-          fontSize: isMobile ? '0.688rem' : '0.75rem',
-          fontWeight: '700', color: valueColor || '#94A3B8',
-          fontFeatureSettings: "'tnum'",
-        }}>
-          {value}
-        </div>
-      )}
-    </div>
   );
 }

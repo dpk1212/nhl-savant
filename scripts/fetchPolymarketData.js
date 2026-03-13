@@ -77,18 +77,20 @@ async function getPriceHistory(tokenId, interval = '1h') {
 
 function aggregateTrades(trades) {
   let totalCash = 0, buyCash = 0, sellCash = 0;
+  let buyTickets = 0, sellTickets = 0;
   for (const t of trades) {
     const cash = (t.size || 0) * (t.price || 0);
     totalCash += cash;
-    if (t.side === 'BUY') buyCash += cash;
-    else sellCash += cash;
+    if (t.side === 'BUY') { buyCash += cash; buyTickets++; }
+    else { sellCash += cash; sellTickets++; }
   }
+  const totalTickets = buyTickets + sellTickets;
   return {
-    totalCash,
-    buyCash,
-    sellCash,
+    totalCash, buyCash, sellCash,
     buyPct: totalCash > 0 ? Number((buyCash / totalCash * 100).toFixed(1)) : 0,
     sellPct: totalCash > 0 ? Number((sellCash / totalCash * 100).toFixed(1)) : 0,
+    buyTicketPct: totalTickets > 0 ? Number((buyTickets / totalTickets * 100).toFixed(1)) : 0,
+    sellTicketPct: totalTickets > 0 ? Number((sellTickets / totalTickets * 100).toFixed(1)) : 0,
     ticketCount: trades.length,
   };
 }
@@ -399,23 +401,32 @@ async function run() {
         }
       }
 
-      // Whale trades ($500+)
+      // Whale trades ($500+) with individual trade details
       const whales = await getWhaleTrades(id, 500, 30);
       let whaleData = null;
       if (whales.length > 0) {
-        let totalCash = 0, buyCount = 0, sellCount = 0, largest = 0;
+        let totalCash = 0, buyCount = 0, sellCount = 0;
+        const tradeDetails = [];
         for (const t of whales) {
           const cash = (t.size || 0) * (t.price || 0);
           totalCash += cash;
-          if (cash > largest) largest = cash;
           if (t.side === 'BUY') buyCount++; else sellCount++;
+          tradeDetails.push({
+            amount: Math.round(cash),
+            side: t.side || 'BUY',
+            outcome: t.outcome || null,
+            price: t.price ? Number((t.price * 100).toFixed(0)) : null,
+            ts: t.timestamp ? new Date(Number(t.timestamp) * 1000).toISOString().slice(11, 16) : null,
+          });
         }
+        tradeDetails.sort((a, b) => b.amount - a.amount);
         whaleData = {
           count: whales.length,
           totalCash: Math.round(totalCash),
-          largest: Math.round(largest),
+          largest: tradeDetails[0]?.amount || 0,
           buyCount,
           sellCount,
+          topTrades: tradeDetails.slice(0, 5),
         };
       }
 
@@ -457,8 +468,10 @@ async function run() {
       bucket[key] = {
         volume24h: Number(vol24),
         liveVolume: live?.total != null ? Number(live.total) : null,
-        buyPct: agg.buyPct,
-        sellPct: agg.sellPct,
+        moneyBuyPct: agg.buyPct,
+        moneySellPct: agg.sellPct,
+        ticketBuyPct: agg.buyTicketPct,
+        ticketSellPct: agg.sellTicketPct,
         tradeCount: agg.ticketCount,
         priceMove1h,
         priceHistory,
