@@ -790,7 +790,7 @@ async function savePick(db, game, sideData, prediction) {
   
   const mos = sideData.marginOverSpread;
   const signalCount = sideData.signalCount || 0;
-  const isFlagged = sideData.movementTier !== 'CONFIRM';
+  const isFlagged = sideData.movementTier === 'FLAGGED';
   const units = isFlagged ? 0 : (sideData.units || 1);
   const tier = signalCount === 3 ? 'THREE_SIGNAL' : signalCount === 2 ? 'TWO_SIGNAL' : 'INSUFFICIENT';
   
@@ -1623,23 +1623,27 @@ async function fetchPrimePicks() {
       
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
       
-      // V12+: Movement CONFIRM required. S1+S3 (no Pinn) allowed only if MOS >= 2.0
-      if (!signal3For) {
+      // Gate: need at least 2 qualifying signals to play
+      // S1 always passes (models agree is prerequisite to reach here)
+      // S1+S2 (Pinnacle edge, no movement confirm) → 1u
+      // S1+S3 (movement confirm, no Pinnacle) → 1u if MOS >= 2.0
+      // S1+S2+S3 (all three) → 2-4u based on Pinnacle edge size
+      if (!signal2 && !signal3For) {
         oneSignalOnly++;
         const pinnInfo = pinnSpread != null ? `Pinn ${pinnSpread > 0 ? '+' : ''}${pinnSpread}` : 'no Pinn data';
-        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | No movement CONFIRM → SKIP`);
+        console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | ${pinnInfo} | Only S1, no Pinn edge or movement → SKIP`);
         continue;
       }
-      if (!signal2 && mos < 2.0) {
+      if (!signal2 && signal3For && mos < 2.0) {
         oneSignalOnly++;
         console.log(`   📋 ${best.teamName} ${best.spread} — MOS +${mos} | No Pinn edge + MOS < 2.0 → SKIP`);
         continue;
       }
       
-      // SIZE: S1+S2+S3 = Pinnacle-sized (2-4u), S1+S3 w/ MOS >= 2.0 = 1u
+      // SIZE: S1+S2+S3 = Pinnacle-sized (2-4u), S1+S2 or S1+S3 = 1u
       const mvMag = Math.abs(best.lineMovement || 0);
       let units;
-      if (signal2) {
+      if (signal2 && signal3For) {
         if (pinnEdgePts >= 2.5) units = 4;
         else if (pinnEdgePts >= 2.0) units = 4;
         else if (pinnEdgePts >= 1.5) units = 3;
