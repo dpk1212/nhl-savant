@@ -46,7 +46,28 @@ export default function PolymarketCard({
   const kVol = kalshiData?.volume24h ?? 0;
   const kSpreads = kalshiData?.spreads ?? null;
   const kTotals = kalshiData?.totals ?? null;
+  const kFlow = kalshiData?.tradeFlow ?? null;
   const hasKalshiProb = kAwayPct != null && kHomePct != null;
+
+  // ─── Combined flow from both sources ──────────────────────────────
+  const polyTrades = polyTradeCount || 0;
+  const polyCash = polySampleCash || 0;
+  const kTrades = kFlow?.tradeCount || 0;
+  const kCash = kFlow?.sampleCash || 0;
+  const combinedTrades = polyTrades + kTrades;
+  const combinedCash = polyCash + kCash;
+  const combinedAwayTicketPct = combinedTrades > 0
+    ? Number((((polyAwayTicket || 0) / 100 * polyTrades + (kFlow?.awayTicketPct || 0) / 100 * kTrades) / combinedTrades * 100).toFixed(1))
+    : polyAwayTicket || 0;
+  const combinedHomeTicketPct = combinedTrades > 0
+    ? Number((100 - combinedAwayTicketPct).toFixed(1))
+    : polyHomeTicket || 0;
+  const combinedAwayMoneyPct = combinedCash > 0
+    ? Number((((polyAwayMoney || 0) / 100 * polyCash + (kFlow?.awayMoneyPct || 0) / 100 * kCash) / combinedCash * 100).toFixed(1))
+    : polyAwayMoney || 0;
+  const combinedHomeMoneyPct = combinedCash > 0
+    ? Number((100 - combinedAwayMoneyPct).toFixed(1))
+    : polyHomeMoney || 0;
 
   // ─── Consensus probabilities ───────────────────────────────────────
   const hasPolyProb = polyAwayPct != null && polyHomePct != null;
@@ -385,38 +406,36 @@ export default function PolymarketCard({
             );
           })()}
 
-          {/* ── 2. Money & Ticket Flow (per team) ──────────────────────── */}
-          {polyAwayTicket > 0 && polyHomeTicket > 0 && (
+          {/* ── 2. Money & Ticket Flow (per team, combined sources) ────── */}
+          {combinedTrades > 0 && combinedAwayTicketPct > 0 && combinedHomeTicketPct > 0 && (
             <div style={{
               padding: '0.625rem 0',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
               <SectionLabel>Where The Money Is Going</SectionLabel>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.375rem' }}>
-                {/* Ticket split */}
                 <TeamFlowBar
                   label="Tickets"
-                  awayPct={polyAwayTicket}
-                  homePct={polyHomeTicket}
+                  awayPct={combinedAwayTicketPct}
+                  homePct={combinedHomeTicketPct}
                   away={away}
                   home={home}
-                  total={polyTradeCount}
+                  total={combinedTrades}
                   unit="trades"
                 />
-                {/* Money split */}
                 <TeamFlowBar
                   label="Money"
-                  awayPct={polyAwayMoney}
-                  homePct={polyHomeMoney}
+                  awayPct={combinedAwayMoneyPct}
+                  homePct={combinedHomeMoneyPct}
                   away={away}
                   home={home}
-                  total={polySampleCash || 0}
+                  total={combinedCash}
                   unit="dollars"
                 />
               </div>
-              {polyAwayMoney > 0 && polyAwayTicket > 0 && Math.abs(polyAwayMoney - polyAwayTicket) > 8 && (
+              {combinedAwayMoneyPct > 0 && combinedAwayTicketPct > 0 && Math.abs(combinedAwayMoneyPct - combinedAwayTicketPct) > 8 && (
                 <InsightPill color={AMBER} icon="💰" style={{ marginTop: '0.5rem' }}>
-                  {polyAwayMoney > polyAwayTicket
+                  {combinedAwayMoneyPct > combinedAwayTicketPct
                     ? `Big money favors ${away} more than ticket count — sharps loading ${away}`
                     : `Big money favors ${home} more than ticket count — sharps loading ${home}`}
                 </InsightPill>

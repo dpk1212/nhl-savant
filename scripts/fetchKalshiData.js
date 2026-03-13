@@ -54,11 +54,22 @@ async function fetchEvents(seriesTicker, maxPages = 5) {
 }
 
 // ─── Fetch recent trades for a market ticker ──────────────────────────────
-async function fetchTrades(marketTicker, limit = 50) {
-  try {
-    const data = await get(`/markets/trades?ticker=${marketTicker}&limit=${limit}`);
-    return data.trades || [];
-  } catch { return []; }
+async function fetchAllTrades(marketTicker) {
+  const all = [];
+  let cursor = '';
+  while (true) {
+    try {
+      let url = `/markets/trades?ticker=${marketTicker}&limit=200`;
+      if (cursor) url += `&cursor=${cursor}`;
+      const data = await get(url);
+      const batch = data.trades || [];
+      if (batch.length === 0) break;
+      all.push(...batch);
+      cursor = data.cursor || '';
+      if (!cursor || batch.length < 200) break;
+    } catch { break; }
+  }
+  return all;
 }
 
 // ─── Normalization ────────────────────────────────────────────────────────
@@ -427,21 +438,49 @@ async function run() {
         ? extractTotalData(totalEvent.markets)
         : null;
 
-      // Fetch recent trades for the game winner market (for trade flow)
+      // Fetch ALL trades for both away and home tickers → per-team flow
       let tradeFlow = null;
-      if (gameProbs?.awayTicker) {
-        const trades = await fetchTrades(gameProbs.awayTicker, 30);
-        if (trades.length > 0) {
-          let buyCount = 0, sellCount = 0;
+      if (gameProbs?.awayTicker || gameProbs?.homeTicker) {
+        let awayTickets = 0, homeTickets = 0;
+        let awayCash = 0, homeCash = 0;
+
+        if (gameProbs.awayTicker) {
+          const trades = await fetchAllTrades(gameProbs.awayTicker);
           for (const t of trades) {
-            if (t.taker_side === 'yes') buyCount++;
-            else sellCount++;
+            const count = parseFloat(t.count_fp || '0');
+            const price = parseFloat(t.yes_price_dollars || '0');
+            const noPrice = parseFloat(t.no_price_dollars || '0');
+            if (t.taker_side === 'yes') {
+              awayTickets++; awayCash += count * price;
+            } else {
+              homeTickets++; homeCash += count * noPrice;
+            }
           }
-          const total = buyCount + sellCount;
+        }
+        if (gameProbs.homeTicker) {
+          const trades = await fetchAllTrades(gameProbs.homeTicker);
+          for (const t of trades) {
+            const count = parseFloat(t.count_fp || '0');
+            const price = parseFloat(t.yes_price_dollars || '0');
+            const noPrice = parseFloat(t.no_price_dollars || '0');
+            if (t.taker_side === 'yes') {
+              homeTickets++; homeCash += count * price;
+            } else {
+              awayTickets++; awayCash += count * noPrice;
+            }
+          }
+        }
+
+        const totalTickets = awayTickets + homeTickets;
+        const totalCash = awayCash + homeCash;
+        if (totalTickets > 0) {
           tradeFlow = {
-            buyPct: total > 0 ? Number((buyCount / total * 100).toFixed(1)) : 0,
-            sellPct: total > 0 ? Number((sellCount / total * 100).toFixed(1)) : 0,
-            tradeCount: total,
+            awayTicketPct: Number((awayTickets / totalTickets * 100).toFixed(1)),
+            homeTicketPct: Number((homeTickets / totalTickets * 100).toFixed(1)),
+            awayMoneyPct: totalCash > 0 ? Number((awayCash / totalCash * 100).toFixed(1)) : 0,
+            homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
+            tradeCount: totalTickets,
+            sampleCash: Math.round(totalCash),
           };
         }
       }
