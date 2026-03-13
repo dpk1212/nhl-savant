@@ -48,7 +48,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add public/basketball_odds.md public/basketball_spreads.md public/basketball_totals.md public/haslametrics.md public/dratings.md public/basketball_teams.csv public/cbbd_players.json public/cbbd_roster_cache.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Prime Picks data [$(date +'%Y-%m-%d %H:%M')]" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Prime Picks data [$(date +'%Y-%m-%d %H:%M')]" && git pull --rebase origin main && git push)
       
       # Build and deploy
       - name: Build site

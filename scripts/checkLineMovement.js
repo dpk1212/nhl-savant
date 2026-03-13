@@ -1088,7 +1088,6 @@ async function checkLineMovement() {
         }
       }
       const signal3For = best.movementTier === 'CONFIRM';
-      const signal3Against = best.movementTier === 'FLAGGED';
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
 
       // Gate: need at least 2 qualifying signals, movement AGAINST blocks
