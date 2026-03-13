@@ -134,9 +134,16 @@ export default function PolymarketCard({
     return `$${Math.round(v)}`;
   };
 
-  const hasWhales = whales && whales.count > 0;
+  const kWhales = kalshiData?.whales ?? null;
+  const allWhaleTrades = [
+    ...(whales?.topTrades || []),
+    ...(kWhales?.topTrades || []),
+  ].sort((a, b) => b.amount - a.amount);
+  const combinedWhaleCount = (whales?.count || 0) + (kWhales?.count || 0);
+  const combinedWhaleCash = (whales?.totalCash || 0) + (kWhales?.totalCash || 0);
+  const hasWhales = combinedWhaleCount > 0;
   const hasPriceHist = priceHistory?.points?.length >= 3;
-  const whaleTopTrades = whales?.topTrades || [];
+  const whaleTopTrades = allWhaleTrades.slice(0, 8);
 
   const formatWhaleTime = (ts) => {
     if (!ts) return null;
@@ -445,7 +452,7 @@ export default function PolymarketCard({
 
           {/* ── 3. Whale Activity ──────────────────────────────────────── */}
           {hasWhales && (() => {
-            const allWhales = whales.topTrades || [];
+            const allWhales = allWhaleTrades;
             let awayTotal = 0, homeTotal = 0;
             for (const wt of allWhales) {
               const team = resolveOutcomeTeam(wt.outcome, away, home);
@@ -471,13 +478,13 @@ export default function PolymarketCard({
                   fontSize: '0.5rem', fontWeight: '700',
                   color: AMBER, textTransform: 'uppercase', letterSpacing: '0.04em',
                 }}>
-                  Whale Trades ({whales.count} over $500)
+                  Whale Trades ({combinedWhaleCount})
                 </span>
                 <span style={{
                   fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)',
                   marginLeft: 'auto', fontFeatureSettings: "'tnum'",
                 }}>
-                  {formatVol(whales.totalCash)} total
+                  {formatVol(combinedWhaleCash)} total
                 </span>
               </div>
 
