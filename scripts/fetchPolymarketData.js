@@ -30,14 +30,21 @@ async function get(path, base = GAMMA) {
   return res.json();
 }
 
-/** List active events by tag. Client-side sort by volume. */
-async function listEvents(tagSlug, limit = 80) {
-  const params = new URLSearchParams({ active: 'true', closed: 'false', limit: '100' });
-  if (tagSlug) params.set('tag_slug', tagSlug);
-  const events = await get(`/events?${params}`);
-  const arr = Array.isArray(events) ? events : [];
-  arr.sort((a, b) => (b.volume_24hr ?? b.volume ?? 0) - (a.volume_24hr ?? a.volume ?? 0));
-  return arr.slice(0, limit);
+/** List active events by tag with pagination. Client-side sort by volume. */
+async function listEvents(tagSlug, maxResults = 200) {
+  const all = [];
+  for (let offset = 0; offset < maxResults; offset += 100) {
+    const params = new URLSearchParams({ active: 'true', closed: 'false', limit: '100', offset: String(offset) });
+    if (tagSlug) params.set('tag_slug', tagSlug);
+    try {
+      const events = await get(`/events?${params}`);
+      const arr = Array.isArray(events) ? events : [];
+      all.push(...arr);
+      if (arr.length < 100) break;
+    } catch { break; }
+  }
+  all.sort((a, b) => (b.volume_24hr ?? b.volume ?? 0) - (a.volume_24hr ?? a.volume ?? 0));
+  return all;
 }
 
 async function getLiveVolume(eventId) {
@@ -296,7 +303,9 @@ async function run() {
   const tags = [
     { slug: 'sports', sport: null },
     { slug: 'ncaa', sport: 'CBB' },
-    { slug: 'nba', sport: 'NBA' },
+    { slug: 'college-basketball', sport: 'CBB' },
+    { slug: 'basketball', sport: null },
+    { slug: 'cbb', sport: 'CBB' },
     { slug: 'nhl', sport: 'NHL' },
   ];
 
@@ -305,7 +314,8 @@ async function run() {
 
   for (const { slug, sport } of tags) {
     try {
-      const list = await listEvents(slug, 40);
+      const list = await listEvents(slug, 300);
+      console.log(`  📡 ${slug}: ${list.length} events`);
       for (const ev of list) {
         events.push({ ...ev, _tag: slug, _sport: sport || slug });
       }
@@ -327,7 +337,7 @@ async function run() {
     const teams = extractTeamsFromTitle(title);
     if (!teams) continue;
 
-    let sport = ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'nba' ? 'NBA' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'nba' ? 'NBA' : null;
     if (!sport) {
       const t = title.toLowerCase();
       if (/ncaa|college|basketball/.test(t) && !/nba|champion|winner|tournament winner/.test(t)) sport = 'CBB';
