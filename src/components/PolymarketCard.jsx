@@ -1,20 +1,24 @@
 /**
- * MarketIntelCard — Combined Polymarket + Kalshi Intelligence
+ * MarketIntelCard — Unified Prediction Market Intelligence
  *
- * Collapsed: consensus probability bar + agreement signal.
- * Expanded: per-source comparison, sparkline, flow bars, whale trades,
- *           Kalshi spreads & totals.
+ * Merges Polymarket + Kalshi into a single premium view.
+ * No source attribution — just clean, actionable market data.
+ *
+ * Collapsed: consensus probability bar + model agreement signal.
+ * Expanded: price trend, smart money flow, whale activity,
+ *           spread markets, game totals.
  */
 
 import { useState } from 'react';
-import { BarChart3, ChevronDown, AlertTriangle } from 'lucide-react';
+import { BarChart3, ChevronDown, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { TYPOGRAPHY, MOBILE_SPACING } from '../utils/designSystem';
 
 const ACCENT = '#10B981';
 const ACCENT_DARK = '#059669';
 const ACCENT_GLOW = 'rgba(16, 185, 129, 0.25)';
-const KALSHI_BLUE = '#3B82F6';
-const POLY_GREEN = '#10B981';
+const AMBER = '#F59E0B';
+const SKY = '#0EA5E9';
+const RED = '#F87171';
 
 export default function PolymarketCard({
   data, kalshiData, isMobile, awayTeam, homeTeam,
@@ -47,10 +51,9 @@ export default function PolymarketCard({
   const kSpreads = kalshiData?.spreads ?? null;
   const kTotals = kalshiData?.totals ?? null;
   const kTradeFlow = kalshiData?.tradeFlow ?? null;
-  const kPriceMove = kalshiData?.priceMove24h ?? null;
   const hasKalshiProb = kAwayPct != null && kHomePct != null;
 
-  // ─── Consensus (combined) probabilities ──────────────────────────────
+  // ─── Consensus probabilities ───────────────────────────────────────
   const hasPolyProb = polyAwayPct != null && polyHomePct != null;
   const hasAnyProb = hasPolyProb || hasKalshiProb;
 
@@ -72,11 +75,9 @@ export default function PolymarketCard({
   const away = awayTeam || data?.awayTeam || kalshiData?.awayTeam || '?';
   const home = homeTeam || data?.homeTeam || kalshiData?.homeTeam || '?';
   const consFavAway = hasAnyProb ? consAwayPct >= consHomePct : null;
-
   const hasModelProb = modelAwayProb != null && modelHomeProb != null && modelAwayProb > 0;
-  const sourceCount = (hasPoly ? 1 : 0) + (hasKalshi ? 1 : 0);
 
-  // ─── Agreement signal (model vs consensus) ──────────────────────────
+  // ─── Agreement signal ──────────────────────────────────────────────
   let agreementSignal = null;
   if (hasAnyProb && hasModelProb && modelPick) {
     const pickIsAway = modelPick === 'away' || modelPick === away;
@@ -87,10 +88,9 @@ export default function PolymarketCard({
     const pickTeam = pickIsAway ? away : home;
 
     if (mktAgrees) {
-      const mktMore = consPick > modelPickProb;
       agreementSignal = {
         agrees: true, label: 'AGREES',
-        detail: mktMore
+        detail: consPick > modelPickProb
           ? `Markets +${delta}% more bullish on ${pickTeam}`
           : `Markets aligned, model +${delta}% more confident`,
         color: ACCENT,
@@ -99,27 +99,16 @@ export default function PolymarketCard({
       agreementSignal = {
         agrees: false, label: 'DIVERGES',
         detail: `Markets favor ${consFavAway ? away : home} — contrarian edge`,
-        color: '#F59E0B',
+        color: AMBER,
       };
     }
   }
 
-  // ─── Price move context ──────────────────────────────────────────────
-  const priceMoveContext = (() => {
-    if (priceMove1h == null || !hasPolyProb) return null;
-    const move = Number(priceMove1h);
-    if (move === 0) return { text: 'Stable', color: '#94A3B8' };
-    const towardTeam = move > 0 ? away : home;
-    return {
-      text: `${move > 0 ? '+' : ''}${priceMove1h}% toward ${towardTeam}`,
-      color: move > 0 ? ACCENT : '#F87171',
-    };
-  })();
-
+  // ─── Derived data ──────────────────────────────────────────────────
   const volTier = (() => {
-    if (totalVol >= 500_000) return { label: 'HIGH', color: ACCENT };
-    if (totalVol >= 100_000) return { label: 'MOD', color: '#0EA5E9' };
-    if (totalVol >= 10_000) return { label: 'LOW', color: '#F59E0B' };
+    if (totalVol >= 500_000) return { label: 'HIGH VOL', color: ACCENT };
+    if (totalVol >= 100_000) return { label: 'MOD VOL', color: SKY };
+    if (totalVol >= 10_000) return { label: 'LOW VOL', color: AMBER };
     return { label: 'THIN', color: '#64748B' };
   })();
 
@@ -132,6 +121,21 @@ export default function PolymarketCard({
   const hasWhales = whales && whales.count > 0;
   const hasPriceHist = priceHistory?.points?.length >= 3;
   const whaleTopTrades = whales?.topTrades || [];
+
+  // Smart money divergence (tickets vs money)
+  const hasSmartMoneySignal = hasPoly && mBuyPct > 0 && tBuyPct > 0 && Math.abs(mBuyPct - tBuyPct) > 8;
+  const moneyMoreBullish = mBuyPct > tBuyPct;
+
+  // Unified flow: merge Polymarket + Kalshi when both available
+  const hasAnyFlow = (hasPoly && (mBuyPct > 0 || tBuyPct > 0)) || (kTradeFlow && kTradeFlow.tradeCount > 0);
+
+  // Price movement
+  const priceChange = priceHistory?.change ?? null;
+  const priceMoveDir = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'flat';
+  const priceMoveTo = priceChange > 0 ? away : priceChange < 0 ? home : null;
+  const moveColor = priceChange === 0 || priceChange == null ? '#94A3B8' : priceChange > 0 ? ACCENT : RED;
+
+  const priceMove1hVal = priceMove1h != null ? Number(priceMove1h) : null;
 
   return (
     <div
@@ -163,7 +167,7 @@ export default function PolymarketCard({
         borderRadius: '50%', opacity: 0.08, filter: 'blur(30px)', pointerEvents: 'none',
       }} />
 
-      {/* Clickable Header */}
+      {/* ─── Collapsed Header ─────────────────────────────────────────── */}
       <div
         onClick={() => setExpanded(!expanded)}
         style={{
@@ -171,7 +175,7 @@ export default function PolymarketCard({
           padding: isMobile ? '0.75rem 0.875rem' : '0.875rem 1.125rem',
         }}
       >
-        {/* Top row */}
+        {/* Top row: icon + label + volume + tier */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: hasAnyProb ? '0.5rem' : 0,
@@ -192,27 +196,11 @@ export default function PolymarketCard({
             }}>
               Market Intel
             </span>
-            {/* Source badges */}
-            <div style={{ display: 'flex', gap: '0.25rem' }}>
-              {hasPoly && (
-                <span style={{
-                  fontSize: '0.438rem', fontWeight: '700', color: POLY_GREEN,
-                  padding: '0.05rem 0.25rem', background: `${POLY_GREEN}15`,
-                  borderRadius: '3px', border: `1px solid ${POLY_GREEN}30`,
-                  letterSpacing: '0.03em',
-                }}>POLY</span>
-              )}
-              {hasKalshi && (
-                <span style={{
-                  fontSize: '0.438rem', fontWeight: '700', color: KALSHI_BLUE,
-                  padding: '0.05rem 0.25rem', background: `${KALSHI_BLUE}15`,
-                  borderRadius: '3px', border: `1px solid ${KALSHI_BLUE}30`,
-                  letterSpacing: '0.03em',
-                }}>KALSHI</span>
-              )}
-            </div>
             {totalVol > 0 && (
-              <span style={{ fontSize: '0.563rem', color: '#94A3B8', fontWeight: '600', fontFeatureSettings: "'tnum'" }}>
+              <span style={{
+                fontSize: '0.563rem', color: '#94A3B8', fontWeight: '600',
+                fontFeatureSettings: "'tnum'",
+              }}>
                 {formatVol(totalVol)}
               </span>
             )}
@@ -252,7 +240,7 @@ export default function PolymarketCard({
           </div>
         </div>
 
-        {/* Consensus Probability bar (always visible) */}
+        {/* Consensus probability bar */}
         {hasAnyProb && (
           <div>
             <div style={{
@@ -261,19 +249,16 @@ export default function PolymarketCard({
             }}>
               <span style={{
                 fontSize: isMobile ? '0.625rem' : '0.688rem',
-                fontWeight: '700', color: consFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
+                fontWeight: '700',
+                color: consFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
                 fontFeatureSettings: "'tnum'",
               }}>
                 {away} <span style={{ fontWeight: '800', color: consFavAway ? ACCENT : 'inherit' }}>{consAwayPct}%</span>
               </span>
-              {sourceCount === 2 && (
-                <span style={{ fontSize: '0.438rem', color: 'rgba(255,255,255,0.3)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Consensus
-                </span>
-              )}
               <span style={{
                 fontSize: isMobile ? '0.625rem' : '0.688rem',
-                fontWeight: '700', color: !consFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
+                fontWeight: '700',
+                color: !consFavAway ? '#F1F5F9' : 'rgba(255,255,255,0.5)',
                 fontFeatureSettings: "'tnum'",
               }}>
                 <span style={{ fontWeight: '800', color: !consFavAway ? ACCENT : 'inherit' }}>{consHomePct}%</span> {home}
@@ -301,7 +286,7 @@ export default function PolymarketCard({
           </div>
         )}
 
-        {/* Agreement signal (always visible) */}
+        {/* Agreement signal */}
         {agreementSignal && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -332,260 +317,116 @@ export default function PolymarketCard({
           animation: 'polySlideDown 0.25s ease-out',
         }}>
 
-          {/* Per-source probability comparison */}
-          {hasPolyProb && hasKalshiProb && (
-            <div style={{
-              padding: '0.625rem 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
-              <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Source Comparison
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.375rem' }}>
-                <SourceRow
-                  label="Polymarket"
-                  color={POLY_GREEN}
-                  awayPct={polyAwayPct}
-                  homePct={polyHomePct}
-                  away={away}
-                  home={home}
-                  volume={polyLive ?? polyVol}
-                  formatVol={formatVol}
-                  isMobile={isMobile}
-                />
-                <SourceRow
-                  label="Kalshi"
-                  color={KALSHI_BLUE}
-                  awayPct={kAwayPct}
-                  homePct={kHomePct}
-                  away={away}
-                  home={home}
-                  volume={kVol}
-                  formatVol={formatVol}
-                  isMobile={isMobile}
-                />
-                {/* Divergence indicator */}
-                {(() => {
-                  const diff = Math.abs(polyAwayPct - kAwayPct);
-                  if (diff < 2) return null;
-                  const diffColor = diff >= 5 ? '#F59E0B' : '#94A3B8';
-                  return (
-                    <div style={{
-                      marginTop: '0.125rem', padding: '0.2rem 0.4rem',
-                      background: `${diffColor}08`, borderRadius: '4px',
-                      border: `1px solid ${diffColor}15`,
-                    }}>
-                      <span style={{ fontSize: '0.5rem', fontWeight: '600', color: diffColor }}>
-                        {diff >= 5 ? '⚡' : '~'} {diff.toFixed(1)}% divergence between markets
-                        {diff >= 5 ? ' — potential opportunity' : ''}
-                      </span>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-
-          {/* Sparkline + Price Move (Polymarket) */}
-          {(hasPriceHist || priceMoveContext) && (
-            <div style={{
-              padding: '0.625rem 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
-              {hasPriceHist && (() => {
-                const change = priceHistory.change;
-                const rising = change > 0;
-                const movingTeam = rising ? away : home;
-                const moveColor = change === 0 ? '#94A3B8' : rising ? ACCENT : '#F87171';
-                const interpretation = change === 0
-                  ? 'Holding steady — no significant movement'
-                  : `${movingTeam} gaining confidence — bettors are ${rising ? 'buying' : 'selling'} ${away}`;
-                return (
-                  <div>
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      marginBottom: '0.25rem',
-                    }}>
-                      <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        {away} Win Prob — 24h
-                        <span style={{ color: POLY_GREEN, marginLeft: '0.25rem', fontSize: '0.438rem' }}>POLY</span>
-                      </span>
-                      <span style={{ fontSize: '0.563rem', fontWeight: '700', color: moveColor, fontFeatureSettings: "'tnum'" }}>
-                        {priceHistory.open}% → {priceHistory.current}%
-                      </span>
-                    </div>
-                    <Sparkline points={priceHistory.points} color={moveColor} height={32} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
-                      <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>Low: {priceHistory.low}%</span>
-                      <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>High: {priceHistory.high}%</span>
-                    </div>
-                    <div style={{
-                      marginTop: '0.375rem', padding: '0.3rem 0.5rem',
-                      background: `${moveColor}08`, borderRadius: '6px',
-                      border: `1px solid ${moveColor}15`,
-                    }}>
-                      <span style={{ fontSize: '0.563rem', fontWeight: '600', color: moveColor }}>
-                        {change > 0 ? '↑' : change < 0 ? '↓' : '→'}{' '}
-                      </span>
-                      <span style={{ fontSize: '0.563rem', fontWeight: '500', color: 'rgba(255,255,255,0.5)' }}>
-                        {interpretation}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-              {priceMoveContext && (
+          {/* ── 1. 24h Price Trend ──────────────────────────────────────── */}
+          {hasPriceHist && (() => {
+            const change = priceHistory.change;
+            const rising = change > 0;
+            const movingTeam = rising ? away : home;
+            const cColor = change === 0 ? '#94A3B8' : rising ? ACCENT : RED;
+            const interpretation = change === 0
+              ? 'Holding steady — no significant movement'
+              : `${movingTeam} gaining confidence — market is ${rising ? 'buying' : 'selling'} ${away}`;
+            return (
+              <div style={{
+                padding: '0.625rem 0',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+              }}>
                 <div style={{
-                  marginTop: hasPriceHist ? '0.5rem' : 0,
-                  padding: '0.3rem 0.5rem',
-                  background: `${priceMoveContext.color}08`, borderRadius: '6px',
-                  border: `1px solid ${priceMoveContext.color}15`,
-                  display: 'flex', alignItems: 'center', gap: '0.375rem',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginBottom: '0.25rem',
                 }}>
-                  <span style={{ fontSize: '0.5rem', fontWeight: '700', color: priceMoveContext.color, textTransform: 'uppercase' }}>Last 1h:</span>
-                  <span style={{ fontSize: '0.563rem', fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>
-                    {priceMoveContext.text}
+                  <SectionLabel>24h Price Trend</SectionLabel>
+                  <span style={{
+                    fontSize: '0.563rem', fontWeight: '700', color: cColor,
+                    fontFeatureSettings: "'tnum'",
+                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                  }}>
+                    {change > 0 ? <TrendingUp size={10} /> : change < 0 ? <TrendingDown size={10} /> : null}
+                    {priceHistory.open}% → {priceHistory.current}%
                   </span>
                 </div>
+                <Sparkline points={priceHistory.points} color={cColor} height={36} />
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginTop: '0.25rem',
+                }}>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>
+                    Low: {priceHistory.low}%
+                  </span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>
+                    High: {priceHistory.high}%
+                  </span>
+                </div>
+                <InsightPill color={cColor} icon={change > 0 ? '↑' : change < 0 ? '↓' : '→'}>
+                  {interpretation}
+                </InsightPill>
+                {priceMove1hVal != null && priceMove1hVal !== 0 && (
+                  <InsightPill
+                    color={priceMove1hVal > 0 ? ACCENT : RED}
+                    style={{ marginTop: '0.375rem' }}
+                    bold
+                  >
+                    Last 1h: {priceMove1hVal > 0 ? '+' : ''}{priceMove1hVal}% toward {priceMove1hVal > 0 ? away : home}
+                  </InsightPill>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ── 2. Smart Money Flow ─────────────────────────────────────── */}
+          {hasAnyFlow && (
+            <div style={{
+              padding: '0.625rem 0',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <SectionLabel>Smart Money Flow</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.375rem' }}>
+                {hasPoly && tBuyPct > 0 && (
+                  <FlowBar label="Ticket %" buyPct={tBuyPct} sellPct={tSellPct} />
+                )}
+                {hasPoly && mBuyPct > 0 && (
+                  <FlowBar label="Money %" buyPct={mBuyPct} sellPct={mSellPct} />
+                )}
+                {kTradeFlow && kTradeFlow.tradeCount > 0 && (
+                  <FlowBar
+                    label={hasPoly ? 'Trades' : 'Trade Flow'}
+                    buyPct={kTradeFlow.buyPct}
+                    sellPct={kTradeFlow.sellPct}
+                    tradeCount={kTradeFlow.tradeCount}
+                  />
+                )}
+              </div>
+              {hasSmartMoneySignal && (
+                <InsightPill color={AMBER} icon="💰" style={{ marginTop: '0.5rem' }}>
+                  {moneyMoreBullish
+                    ? 'Big money more bullish than ticket count — sharps loading'
+                    : 'More tickets than money — public one way, sharps may disagree'}
+                </InsightPill>
               )}
             </div>
           )}
 
-          {/* Kalshi Spreads */}
-          {kSpreads && kSpreads.length > 0 && (
-            <div style={{
-              padding: '0.625rem 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
-              <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Spread Markets
-                <span style={{ color: KALSHI_BLUE, marginLeft: '0.25rem', fontSize: '0.438rem' }}>KALSHI</span>
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.375rem' }}>
-                {kSpreads.map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0.25rem 0.5rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    borderRadius: '5px',
-                    border: '1px solid rgba(255,255,255,0.04)',
-                  }}>
-                    <span style={{ fontSize: '0.563rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)', flex: 1 }}>
-                      {s.label}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{
-                        fontSize: '0.625rem', fontWeight: '700',
-                        color: s.prob >= 50 ? KALSHI_BLUE : 'rgba(255,255,255,0.5)',
-                        fontFeatureSettings: "'tnum'",
-                      }}>
-                        {s.prob}%
-                      </span>
-                      {s.volume > 0 && (
-                        <span style={{ fontSize: '0.438rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>
-                          {s.volume} contracts
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Kalshi Totals (NHL only) */}
-          {kTotals && kTotals.length > 0 && (
-            <div style={{
-              padding: '0.625rem 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
-              <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Goal Totals
-                <span style={{ color: KALSHI_BLUE, marginLeft: '0.25rem', fontSize: '0.438rem' }}>KALSHI</span>
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.375rem' }}>
-                {kTotals.map((t, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0.25rem 0.5rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    borderRadius: '5px',
-                    border: '1px solid rgba(255,255,255,0.04)',
-                  }}>
-                    <span style={{ fontSize: '0.563rem', fontWeight: '500', color: 'rgba(255,255,255,0.6)', flex: 1 }}>
-                      {t.label}
-                    </span>
-                    <span style={{
-                      fontSize: '0.625rem', fontWeight: '700',
-                      color: t.prob >= 50 ? KALSHI_BLUE : 'rgba(255,255,255,0.5)',
-                      fontFeatureSettings: "'tnum'",
-                    }}>
-                      {t.prob}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Flow Bars (Polymarket) */}
-          {hasPoly && (mBuyPct > 0 || tBuyPct > 0) && (
-            <div style={{
-              padding: '0.625rem 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
-              <FlowBar label="% of Tickets" buyPct={tBuyPct} sellPct={tSellPct} awayTeam={away} homeTeam={home} isMobile={isMobile} source="POLY" />
-              <FlowBar label="% of Money" buyPct={mBuyPct} sellPct={mSellPct} awayTeam={away} homeTeam={home} isMobile={isMobile} style={{ marginTop: '0.5rem' }} source="POLY" />
-              {/* Kalshi trade flow if available */}
-              {kTradeFlow && kTradeFlow.tradeCount > 0 && (
-                <FlowBar
-                  label="Trade Flow"
-                  buyPct={kTradeFlow.buyPct}
-                  sellPct={kTradeFlow.sellPct}
-                  awayTeam={away}
-                  homeTeam={home}
-                  isMobile={isMobile}
-                  style={{ marginTop: '0.5rem' }}
-                  source="KALSHI"
-                />
-              )}
-            </div>
-          )}
-
-          {/* Kalshi-only trade flow (when no Polymarket flow data) */}
-          {!hasPoly && kTradeFlow && kTradeFlow.tradeCount > 0 && (
-            <div style={{
-              padding: '0.625rem 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}>
-              <FlowBar
-                label="Trade Flow"
-                buyPct={kTradeFlow.buyPct}
-                sellPct={kTradeFlow.sellPct}
-                awayTeam={away}
-                homeTeam={home}
-                isMobile={isMobile}
-                source="KALSHI"
-              />
-            </div>
-          )}
-
-          {/* Whale Trades (Polymarket) */}
+          {/* ── 3. Whale Activity ──────────────────────────────────────── */}
           {hasWhales && (
-            <div style={{ padding: '0.625rem 0' }}>
+            <div style={{
+              padding: '0.625rem 0',
+              borderBottom: (kSpreads?.length > 0 || kTotals?.length > 0) ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
                 marginBottom: '0.4rem',
               }}>
-                <AlertTriangle size={10} color="#F59E0B" strokeWidth={2.5} />
+                <AlertTriangle size={10} color={AMBER} strokeWidth={2.5} />
                 <span style={{
                   fontSize: '0.5rem', fontWeight: '700',
-                  color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.04em',
+                  color: AMBER, textTransform: 'uppercase', letterSpacing: '0.04em',
                 }}>
                   Whale Trades ({whales.count} over $500)
                 </span>
-                <span style={{ fontSize: '0.438rem', color: POLY_GREEN, fontWeight: '700' }}>POLY</span>
-                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginLeft: 'auto', fontFeatureSettings: "'tnum'" }}>
+                <span style={{
+                  fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)',
+                  marginLeft: 'auto', fontFeatureSettings: "'tnum'",
+                }}>
                   {formatVol(whales.totalCash)} total
                 </span>
               </div>
@@ -604,7 +445,7 @@ export default function PolymarketCard({
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                           <span style={{
                             fontSize: '0.5rem', fontWeight: '700',
-                            color: t.side === 'BUY' ? ACCENT : '#F87171',
+                            color: t.side === 'BUY' ? ACCENT : RED,
                             textTransform: 'uppercase', width: '28px',
                           }}>
                             {t.side}
@@ -613,7 +454,10 @@ export default function PolymarketCard({
                             {outcomeTeam}
                           </span>
                           {t.price && (
-                            <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum'" }}>
+                            <span style={{
+                              fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)',
+                              fontFeatureSettings: "'tnum'",
+                            }}>
                               @{t.price}¢
                             </span>
                           )}
@@ -621,13 +465,16 @@ export default function PolymarketCard({
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                           <span style={{
                             fontSize: '0.688rem', fontWeight: '800',
-                            color: t.amount >= 5000 ? '#F59E0B' : t.amount >= 1000 ? '#0EA5E9' : '#94A3B8',
+                            color: t.amount >= 5000 ? AMBER : t.amount >= 1000 ? SKY : '#94A3B8',
                             fontFeatureSettings: "'tnum'",
                           }}>
                             {formatVol(t.amount)}
                           </span>
                           {t.ts && (
-                            <span style={{ fontSize: '0.438rem', color: 'rgba(255,255,255,0.2)', fontFeatureSettings: "'tnum'" }}>
+                            <span style={{
+                              fontSize: '0.438rem', color: 'rgba(255,255,255,0.2)',
+                              fontFeatureSettings: "'tnum'",
+                            }}>
                               {t.ts}
                             </span>
                           )}
@@ -637,6 +484,33 @@ export default function PolymarketCard({
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── 4. Spread Markets ──────────────────────────────────────── */}
+          {kSpreads && kSpreads.length > 0 && (
+            <div style={{
+              padding: '0.625rem 0',
+              borderBottom: kTotals?.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            }}>
+              <SectionLabel>Spread Markets</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.375rem' }}>
+                {kSpreads.map((s, i) => (
+                  <MarketRow key={i} label={s.label} prob={s.prob} volume={s.volume} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── 5. Game Totals ─────────────────────────────────────────── */}
+          {kTotals && kTotals.length > 0 && (
+            <div style={{ padding: '0.625rem 0' }}>
+              <SectionLabel>Game Totals</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.375rem' }}>
+                {kTotals.map((t, i) => (
+                  <MarketRow key={i} label={t.label} prob={t.prob} volume={t.volume} />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -653,7 +527,7 @@ export default function PolymarketCard({
         }
         @keyframes polySlideDown {
           from { opacity: 0; max-height: 0; }
-          to { opacity: 1; max-height: 800px; }
+          to { opacity: 1; max-height: 900px; }
         }
       `}</style>
     </div>
@@ -662,52 +536,76 @@ export default function PolymarketCard({
 
 // ─── Sub-components ───────────────────────────────────────────────────────
 
-function SourceRow({ label, color, awayPct, homePct, away, home, volume, formatVol, isMobile }) {
-  const favAway = awayPct >= homePct;
+function SectionLabel({ children }) {
+  return (
+    <span style={{
+      fontSize: '0.5rem', fontWeight: '700', color: 'rgba(255,255,255,0.35)',
+      textTransform: 'uppercase', letterSpacing: '0.06em',
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function InsightPill({ children, color, icon, bold, style }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: '0.5rem',
-      padding: '0.3rem 0.5rem',
-      background: `${color}06`, borderRadius: '5px',
+      marginTop: '0.375rem', padding: '0.3rem 0.5rem',
+      background: `${color}08`, borderRadius: '6px',
       border: `1px solid ${color}15`,
+      display: 'flex', alignItems: 'center', gap: '0.3rem',
+      ...style,
+    }}>
+      {icon && (
+        <span style={{ fontSize: '0.563rem', fontWeight: '700', color }}>
+          {icon}
+        </span>
+      )}
+      <span style={{
+        fontSize: '0.563rem',
+        fontWeight: bold ? '700' : '500',
+        color: bold ? color : 'rgba(255,255,255,0.5)',
+      }}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function MarketRow({ label, prob, volume }) {
+  const hot = prob >= 60;
+  const cold = prob <= 30;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0.3rem 0.5rem',
+      background: hot ? `${ACCENT}08` : 'rgba(255,255,255,0.03)',
+      borderRadius: '5px',
+      border: `1px solid ${hot ? `${ACCENT}20` : 'rgba(255,255,255,0.04)'}`,
     }}>
       <span style={{
-        fontSize: '0.5rem', fontWeight: '700', color, width: isMobile ? '38px' : '52px',
-        textTransform: 'uppercase', letterSpacing: '0.03em', flexShrink: 0,
+        fontSize: '0.563rem', fontWeight: '500',
+        color: 'rgba(255,255,255,0.6)', flex: 1,
       }}>
         {label}
       </span>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{
-          fontSize: '0.563rem', fontWeight: '700',
-          color: favAway ? '#F1F5F9' : 'rgba(255,255,255,0.45)',
+          fontSize: '0.625rem', fontWeight: '700',
+          color: hot ? ACCENT : cold ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.6)',
           fontFeatureSettings: "'tnum'",
         }}>
-          {away} {awayPct}%
+          {prob}%
         </span>
-        <div style={{
-          flex: 1, maxWidth: '60px', height: '3px', borderRadius: '2px',
-          overflow: 'hidden', background: 'rgba(255,255,255,0.06)',
-          margin: '0 0.375rem',
-        }}>
-          <div style={{
-            width: `${awayPct}%`, height: '100%',
-            background: color, borderRadius: '2px',
-          }} />
-        </div>
-        <span style={{
-          fontSize: '0.563rem', fontWeight: '700',
-          color: !favAway ? '#F1F5F9' : 'rgba(255,255,255,0.45)',
-          fontFeatureSettings: "'tnum'",
-        }}>
-          {homePct}% {home}
-        </span>
+        {volume > 0 && (
+          <span style={{
+            fontSize: '0.438rem', color: 'rgba(255,255,255,0.25)',
+            fontFeatureSettings: "'tnum'",
+          }}>
+            {volume.toLocaleString()} contracts
+          </span>
+        )}
       </div>
-      {volume > 0 && (
-        <span style={{ fontSize: '0.438rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'", flexShrink: 0 }}>
-          {formatVol(volume)}
-        </span>
-      )}
     </div>
   );
 }
@@ -725,21 +623,31 @@ function resolveOutcomeTeam(outcome, away, home) {
   return outcome;
 }
 
-function FlowBar({ label, buyPct, sellPct, awayTeam, homeTeam, isMobile, style, source }) {
-  const srcColor = source === 'KALSHI' ? KALSHI_BLUE : POLY_GREEN;
+function FlowBar({ label, buyPct, sellPct, tradeCount }) {
   return (
-    <div style={style}>
+    <div>
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '0.25rem',
+        marginBottom: '0.2rem',
       }}>
-        <span style={{ fontSize: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <span style={{
+          fontSize: '0.5rem', fontWeight: '600',
+          color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+        }}>
           {label}
-          {source && <span style={{ color: srcColor, marginLeft: '0.25rem', fontSize: '0.438rem' }}>{source}</span>}
         </span>
+        {tradeCount > 0 && (
+          <span style={{
+            fontSize: '0.438rem', color: 'rgba(255,255,255,0.2)',
+            fontFeatureSettings: "'tnum'",
+          }}>
+            {tradeCount} trades
+          </span>
+        )}
       </div>
       <div style={{
-        display: 'flex', height: '14px', borderRadius: '4px',
+        display: 'flex', height: '16px', borderRadius: '4px',
         overflow: 'hidden', background: 'rgba(255,255,255,0.04)', position: 'relative',
       }}>
         <div style={{
@@ -749,19 +657,25 @@ function FlowBar({ label, buyPct, sellPct, awayTeam, homeTeam, isMobile, style, 
           transition: 'width 0.5s ease', minWidth: buyPct > 5 ? '40px' : '0',
         }}>
           {buyPct > 15 && (
-            <span style={{ fontSize: '0.5rem', fontWeight: '700', color: 'white', whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+            <span style={{
+              fontSize: '0.5rem', fontWeight: '700', color: 'white',
+              whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+            }}>
               {buyPct}% Buy
             </span>
           )}
         </div>
         <div style={{
           width: `${sellPct}%`,
-          background: `linear-gradient(90deg, #F8717180 0%, #F87171 100%)`,
+          background: `linear-gradient(90deg, ${RED}80 0%, ${RED} 100%)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'width 0.5s ease', minWidth: sellPct > 5 ? '40px' : '0',
         }}>
           {sellPct > 15 && (
-            <span style={{ fontSize: '0.5rem', fontWeight: '700', color: 'white', whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+            <span style={{
+              fontSize: '0.5rem', fontWeight: '700', color: 'white',
+              whiteSpace: 'nowrap', textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+            }}>
               {sellPct}% Sell
             </span>
           )}
@@ -771,7 +685,7 @@ function FlowBar({ label, buyPct, sellPct, awayTeam, homeTeam, isMobile, style, 
   );
 }
 
-function Sparkline({ points, color, height = 32 }) {
+function Sparkline({ points, color, height = 36 }) {
   if (!points || points.length < 2) return null;
   const width = 200;
   const pad = 2;
@@ -792,7 +706,7 @@ function Sparkline({ points, color, height = 32 }) {
     <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: `${height}px`, display: 'block' }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
