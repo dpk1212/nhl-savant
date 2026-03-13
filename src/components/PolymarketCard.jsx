@@ -1,11 +1,11 @@
 /**
  * PolymarketCard — Market Intelligence
  *
- * Shows actionable Polymarket data: market-implied probability with visual bar,
- * model vs market comparison (agrees/diverges), smart money signal, volume context.
+ * Actionable Polymarket data: market probability bar, model vs market comparison,
+ * 24h price sparkline, whale activity, smart money flow, and volume context.
  */
 
-import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
 import { TYPOGRAPHY, MOBILE_SPACING } from '../utils/designSystem';
 
 const ACCENT = '#10B981';
@@ -18,6 +18,7 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
   const {
     volume24h, liveVolume, buyPct, sellPct, priceMove1h, tradeCount,
     awayProb: mktAwayPct, homeProb: mktHomePct,
+    priceHistory, whales,
   } = data;
 
   const vol = liveVolume ?? volume24h ?? 0;
@@ -29,7 +30,6 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
   const away = awayTeam || data.awayTeam || '?';
   const home = homeTeam || data.homeTeam || '?';
 
-  // Determine market's favorite
   const mktFavAway = hasMarketProb ? mktAwayPct >= mktHomePct : null;
 
   // Model vs Market comparison
@@ -48,8 +48,8 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
         agrees: true,
         label: 'AGREES',
         detail: mktMoreConfident
-          ? `Market ${delta > 0 ? `+${delta}%` : ''} more bullish on ${pickTeam}`
-          : `Market aligned, model ${delta > 0 ? `+${delta}%` : ''} more confident`,
+          ? `Market +${delta}% more bullish on ${pickTeam}`
+          : `Market aligned, model +${delta}% more confident`,
         color: ACCENT,
       };
     } else {
@@ -62,20 +62,20 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
     }
   }
 
-  // Smart money signal from buy/sell ratio
+  // Smart money signal
   const flowSignal = (() => {
     if (buyPct == null) return null;
     if (buyPct >= 85) return { label: 'Heavy Buying', color: ACCENT, icon: TrendingUp };
     if (buyPct >= 65) return { label: 'Buying Pressure', color: '#0EA5E9', icon: TrendingUp };
     if (buyPct <= 15) return { label: 'Heavy Selling', color: '#F87171', icon: TrendingDown };
-    if (buyPct <= 35) return { label: 'Selling Pressure', color: '#F59E0B', icon: TrendingDown };
+    if (buyPct <= 35) return { label: 'Sell Pressure', color: '#F59E0B', icon: TrendingDown };
     return { label: 'Balanced', color: '#94A3B8', icon: Minus };
   })();
 
   // Volume tier
   const volTier = (() => {
     if (vol >= 500_000) return { label: 'HIGH', color: ACCENT };
-    if (vol >= 100_000) return { label: 'MODERATE', color: '#0EA5E9' };
+    if (vol >= 100_000) return { label: 'MOD', color: '#0EA5E9' };
     if (vol >= 10_000) return { label: 'LOW', color: '#F59E0B' };
     return { label: 'THIN', color: '#64748B' };
   })();
@@ -85,6 +85,9 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
     if (v >= 1e3) return `$${(v / 1e3).toFixed(1)}K`;
     return `$${Math.round(v)}`;
   };
+
+  const hasWhales = whales && whales.count > 0;
+  const hasPriceHist = priceHistory && priceHistory.points && priceHistory.points.length >= 3;
 
   return (
     <div
@@ -121,7 +124,7 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: hasMarketProb ? '0.75rem' : '0.625rem',
+        marginBottom: '0.75rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <div style={{
@@ -140,7 +143,7 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
             Market Intel
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           {volTier && (
             <span style={{
               fontSize: '0.5rem', fontWeight: '700', letterSpacing: '0.05em',
@@ -169,9 +172,9 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
         </div>
       </div>
 
-      {/* Market Probability Bar (the headline feature) */}
+      {/* Market Probability Bar */}
       {hasMarketProb && (
-        <div style={{ marginBottom: '0.75rem' }}>
+        <div style={{ marginBottom: '0.625rem' }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
             marginBottom: '0.375rem',
@@ -191,7 +194,6 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
               <span style={{ fontWeight: '800', color: !mktFavAway ? ACCENT : 'inherit' }}>{mktHomePct}%</span> {home}
             </span>
           </div>
-          {/* Probability split bar */}
           <div style={{
             display: 'flex', height: '6px', borderRadius: '3px',
             overflow: 'hidden', background: 'rgba(255,255,255,0.06)',
@@ -216,15 +218,15 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
         </div>
       )}
 
-      {/* Model vs Market Agreement Signal */}
+      {/* Model vs Market Agreement */}
       {agreementSignal && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '0.5rem',
-          padding: '0.5rem 0.625rem',
+          padding: '0.4rem 0.625rem',
           background: `${agreementSignal.color}10`,
           border: `1px solid ${agreementSignal.color}25`,
           borderRadius: '8px',
-          marginBottom: '0.75rem',
+          marginBottom: '0.625rem',
         }}>
           <span style={{
             fontSize: '0.625rem', fontWeight: '800',
@@ -240,6 +242,107 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
           }}>
             {agreementSignal.detail}
           </span>
+        </div>
+      )}
+
+      {/* Price History Sparkline + Whale Activity Row */}
+      {(hasPriceHist || hasWhales) && (
+        <div style={{
+          display: 'flex', gap: '0.625rem', marginBottom: '0.625rem',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+        }}>
+          {/* 24h Price Sparkline */}
+          {hasPriceHist && (
+            <div style={{
+              flex: '1 1 55%', minWidth: '140px',
+              padding: '0.5rem',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '8px',
+            }}>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                marginBottom: '0.375rem',
+              }}>
+                <span style={{
+                  fontSize: '0.5rem', fontWeight: '600',
+                  color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}>
+                  24h Price
+                </span>
+                <span style={{
+                  fontSize: '0.563rem', fontWeight: '700',
+                  color: priceHistory.change >= 0 ? ACCENT : '#F87171',
+                  fontFeatureSettings: "'tnum'",
+                }}>
+                  {priceHistory.change >= 0 ? '+' : ''}{priceHistory.change}%
+                </span>
+              </div>
+              <Sparkline
+                points={priceHistory.points}
+                color={priceHistory.change >= 0 ? ACCENT : '#F87171'}
+                height={28}
+              />
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                marginTop: '0.25rem',
+              }}>
+                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum'" }}>
+                  L: {priceHistory.low}%
+                </span>
+                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', fontFeatureSettings: "'tnum'" }}>
+                  H: {priceHistory.high}%
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Whale Activity */}
+          {hasWhales && (
+            <div style={{
+              flex: '1 1 40%', minWidth: '120px',
+              padding: '0.5rem',
+              background: 'rgba(245, 158, 11, 0.05)',
+              border: '1px solid rgba(245, 158, 11, 0.12)',
+              borderRadius: '8px',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                marginBottom: '0.375rem',
+              }}>
+                <AlertTriangle size={10} color="#F59E0B" strokeWidth={2.5} />
+                <span style={{
+                  fontSize: '0.5rem', fontWeight: '700',
+                  color: '#F59E0B', textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}>
+                  Whale Activity
+                </span>
+              </div>
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: '800', color: '#F1F5F9', marginBottom: '0.25rem', fontFeatureSettings: "'tnum'" }}>
+                {whales.count} large trade{whales.count !== 1 ? 's' : ''}
+              </div>
+              <div style={{ fontSize: '0.563rem', color: 'rgba(255,255,255,0.5)', lineHeight: '1.4', fontFeatureSettings: "'tnum'" }}>
+                {formatVol(whales.totalCash)} total
+                {whales.largest >= 1000 && <> · max {formatVol(whales.largest)}</>}
+              </div>
+              <div style={{
+                display: 'flex', gap: '0.375rem', marginTop: '0.3rem',
+              }}>
+                {whales.buyCount > 0 && (
+                  <span style={{ fontSize: '0.5rem', fontWeight: '700', color: ACCENT }}>
+                    {whales.buyCount} buy{whales.buyCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {whales.sellCount > 0 && (
+                  <span style={{ fontSize: '0.5rem', fontWeight: '700', color: '#F87171' }}>
+                    {whales.sellCount} sell{whales.sellCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -285,6 +388,56 @@ export default function PolymarketCard({ data, isMobile, awayTeam, homeTeam, mod
         }
       `}</style>
     </div>
+  );
+}
+
+/** SVG Sparkline — compact inline price chart */
+function Sparkline({ points, color, height = 28 }) {
+  if (!points || points.length < 2) return null;
+  const width = 200;
+  const pad = 2;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+
+  const coords = points.map((p, i) => {
+    const x = pad + (i / (points.length - 1)) * (width - pad * 2);
+    const y = pad + (1 - (p - min) / range) * (height - pad * 2);
+    return `${x},${y}`;
+  });
+
+  const gradId = `spark-grad-${Math.random().toString(36).slice(2, 8)}`;
+  const fillCoords = [
+    `${pad},${height}`,
+    ...coords,
+    `${width - pad},${height}`,
+  ].join(' ');
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: `${height}px`, display: 'block' }}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillCoords} fill={`url(#${gradId})`} />
+      <polyline
+        points={coords.join(' ')}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Current price dot */}
+      {(() => {
+        const lastCoord = coords[coords.length - 1].split(',');
+        return (
+          <circle cx={lastCoord[0]} cy={lastCoord[1]} r="2.5" fill={color} />
+        );
+      })()}
+    </svg>
   );
 }
 

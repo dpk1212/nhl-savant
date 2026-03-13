@@ -51,6 +51,17 @@ async function getTrades(eventId, limit = 100) {
   return Array.isArray(trades) ? trades : [];
 }
 
+async function getWhaleTrades(eventId, minCash = 500, limit = 50) {
+  const params = new URLSearchParams({
+    eventId: String(eventId), limit: String(limit),
+    filterType: 'CASH', filterAmount: String(minCash),
+  });
+  try {
+    const trades = await get(`/trades?${params}`, DATA);
+    return Array.isArray(trades) ? trades : [];
+  } catch { return []; }
+}
+
 async function getPriceHistory(tokenId, interval = '1h') {
   const params = new URLSearchParams({ market: tokenId, interval });
   const data = await get(`/prices-history?${params}`, CLOB);
@@ -347,14 +358,55 @@ async function run() {
       const agg = aggregateTrades(trades);
 
       let priceMove1h = null;
+      let priceHistory = null;
       const markets = ev.markets || [];
       const firstMarket = markets[0];
       let tokenIds = firstMarket?.clobTokenIds;
       if (typeof tokenIds === 'string') tokenIds = JSON.parse(tokenIds || '[]').filter(Boolean);
       else if (firstMarket?.tokens) tokenIds = firstMarket.tokens.map(t => t.token_id);
       if (Array.isArray(tokenIds) && tokenIds.length > 0) {
-        const hist = await getPriceHistory(tokenIds[0], '1h');
-        priceMove1h = priceMovePct(hist);
+        const hist1h = await getPriceHistory(tokenIds[0], '1h');
+        priceMove1h = priceMovePct(hist1h);
+
+        // 24h price history for sparkline (sample ~12 points)
+        const hist24h = await getPriceHistory(tokenIds[0], '1d');
+        if (hist24h && hist24h.length >= 2) {
+          const step = Math.max(1, Math.floor(hist24h.length / 12));
+          const sampled = [];
+          for (let i = 0; i < hist24h.length; i += step) {
+            sampled.push(Number((hist24h[i].p * 100).toFixed(1)));
+          }
+          const last = Number((hist24h[hist24h.length - 1].p * 100).toFixed(1));
+          if (sampled[sampled.length - 1] !== last) sampled.push(last);
+          priceHistory = {
+            points: sampled,
+            open: Number((hist24h[0].p * 100).toFixed(1)),
+            current: last,
+            high: Number((Math.max(...hist24h.map(h => h.p)) * 100).toFixed(1)),
+            low: Number((Math.min(...hist24h.map(h => h.p)) * 100).toFixed(1)),
+            change: Number(((last - sampled[0])).toFixed(1)),
+          };
+        }
+      }
+
+      // Whale trades ($500+)
+      const whales = await getWhaleTrades(id, 500, 30);
+      let whaleData = null;
+      if (whales.length > 0) {
+        let totalCash = 0, buyCount = 0, sellCount = 0, largest = 0;
+        for (const t of whales) {
+          const cash = (t.size || 0) * (t.price || 0);
+          totalCash += cash;
+          if (cash > largest) largest = cash;
+          if (t.side === 'BUY') buyCount++; else sellCount++;
+        }
+        whaleData = {
+          count: whales.length,
+          totalCash: Math.round(totalCash),
+          largest: Math.round(largest),
+          buyCount,
+          sellCount,
+        };
       }
 
       // Extract market-implied probabilities from outcomePrices
@@ -386,7 +438,6 @@ async function run() {
             homeProb = marketProbs[0];
           }
         } else {
-          // Default: first outcome = first team in title (away)
           awayProb = marketProbs[0];
           homeProb = marketProbs[1];
         }
@@ -400,6 +451,8 @@ async function run() {
         sellPct: agg.sellPct,
         tradeCount: agg.ticketCount,
         priceMove1h,
+        priceHistory,
+        whales: whaleData,
         awayProb: awayProb != null ? Number((awayProb * 100).toFixed(1)) : null,
         homeProb: homeProb != null ? Number((homeProb * 100).toFixed(1)) : null,
         awayTeam: awayRaw,
