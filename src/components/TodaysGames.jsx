@@ -700,7 +700,7 @@ const CompactHeader = ({ awayTeam, homeTeam, gameTime, rating, awayWinProb, home
       </div>
         
         {/* Win Probabilities as BADGES - promoted */}
-      {awayWinProb && homeWinProb && (
+      {awayWinProb > 0 && homeWinProb > 0 && (
         <div style={{ 
           display: 'flex',
             gap: '0.5rem',
