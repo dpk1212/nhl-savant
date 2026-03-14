@@ -49,6 +49,9 @@ export default function PolymarketCard({
   const kFlow = kalshiData?.tradeFlow ?? null;
   const hasKalshiProb = kAwayPct != null && kHomePct != null;
 
+  // Use Kalshi price history as fallback when Polymarket has none
+  const effectivePriceHistory = priceHistory ?? kalshiData?.priceHistory ?? null;
+
   // ─── Combined flow from both sources ──────────────────────────────
   const polyTrades = polyTradeCount || 0;
   const polyCash = polySampleCash || 0;
@@ -142,7 +145,7 @@ export default function PolymarketCard({
   const combinedWhaleCount = (whales?.count || 0) + (kWhales?.count || 0);
   const combinedWhaleCash = (whales?.totalCash || 0) + (kWhales?.totalCash || 0);
   const hasWhales = combinedWhaleCount > 0;
-  const hasPriceHist = priceHistory?.points?.length >= 3;
+  const hasPriceHist = effectivePriceHistory?.points?.length >= 3;
   const whaleTopTrades = allWhaleTrades.slice(0, 8);
 
   const formatWhaleTime = (ts) => {
@@ -164,7 +167,7 @@ export default function PolymarketCard({
 
 
   // Price movement
-  const priceChange = priceHistory?.change ?? null;
+  const priceChange = effectivePriceHistory?.change ?? null;
   const priceMoveDir = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'flat';
   const priceMoveTo = priceChange > 0 ? away : priceChange < 0 ? home : null;
   const moveColor = priceChange === 0 || priceChange == null ? '#94A3B8' : priceChange > 0 ? ACCENT : RED;
@@ -359,7 +362,8 @@ export default function PolymarketCard({
 
           {/* ── 1. 24h Price Trend ──────────────────────────────────────── */}
           {hasPriceHist && (() => {
-            const change = priceHistory.change;
+            const ph = effectivePriceHistory;
+            const change = ph.change;
             const rising = change > 0;
             const movingTeam = rising ? away : home;
             const cColor = change === 0 ? '#94A3B8' : rising ? ACCENT : RED;
@@ -382,19 +386,19 @@ export default function PolymarketCard({
                     display: 'flex', alignItems: 'center', gap: '0.25rem',
                   }}>
                     {change > 0 ? <TrendingUp size={10} /> : change < 0 ? <TrendingDown size={10} /> : null}
-                    {priceHistory.open}% → {priceHistory.current}%
+                    {ph.open}% → {ph.current}%
                   </span>
                 </div>
-                <Sparkline points={priceHistory.points} color={cColor} height={36} />
+                <Sparkline points={ph.points} color={cColor} height={36} />
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   marginTop: '0.25rem',
                 }}>
                   <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>
-                    Low: {priceHistory.low}%
+                    Low: {ph.low}%
                   </span>
                   <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFeatureSettings: "'tnum'" }}>
-                    High: {priceHistory.high}%
+                    High: {ph.high}%
                   </span>
                 </div>
                 <InsightPill color={cColor} icon={change > 0 ? '↑' : change < 0 ? '↓' : '→'}>

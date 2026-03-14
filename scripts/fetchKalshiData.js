@@ -72,6 +72,42 @@ async function fetchAllTrades(marketTicker) {
   return all;
 }
 
+// ─── Fetch candlestick price history for trend line ──────────────────────
+async function fetchCandlesticks(seriesTicker, marketTicker) {
+  const now = Math.floor(Date.now() / 1000);
+  const oneDayAgo = now - 86400;
+  try {
+    const url = `/series/${seriesTicker}/markets/${marketTicker}/candlesticks?start_ts=${oneDayAgo}&end_ts=${now}&period_interval=60`;
+    const data = await get(url);
+    return data.candlesticks || [];
+  } catch { return []; }
+}
+
+function buildPriceHistory(candles) {
+  if (!candles || candles.length < 2) return null;
+  const prices = candles.map(c => {
+    const close = parseFloat(c.price?.close_dollars || '0');
+    return Number((close * 100).toFixed(1));
+  });
+  const step = Math.max(1, Math.floor(prices.length / 12));
+  const sampled = [];
+  for (let i = 0; i < prices.length; i += step) {
+    sampled.push(prices[i]);
+  }
+  const last = prices[prices.length - 1];
+  if (sampled[sampled.length - 1] !== last) sampled.push(last);
+  const allPrices = prices.filter(p => p > 0);
+  if (allPrices.length < 2) return null;
+  return {
+    points: sampled,
+    open: prices[0],
+    current: last,
+    high: Number(Math.max(...allPrices).toFixed(1)),
+    low: Number(Math.min(...allPrices).toFixed(1)),
+    change: Number((last - prices[0]).toFixed(1)),
+  };
+}
+
 // ─── Normalization ────────────────────────────────────────────────────────
 function normalize(s) {
   return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -505,6 +541,13 @@ async function run() {
         }
       }
 
+      // Fetch candlestick price history for away team trend line
+      let priceHistory = null;
+      if (gameProbs?.awayTicker && gameEvent?.series_ticker) {
+        const candles = await fetchCandlesticks(gameEvent.series_ticker, gameProbs.awayTicker);
+        priceHistory = buildPriceHistory(candles);
+      }
+
       const totalVolume = (gameProbs?.volume24h || 0)
         + (spreadData ? spreadData.reduce((s, d) => s + d.volume, 0) : 0)
         + (totalData ? totalData.reduce((s, d) => s + d.volume, 0) : 0);
@@ -519,6 +562,7 @@ async function run() {
         awayLast: gameProbs?.awayLast ?? null,
         homeLast: gameProbs?.homeLast ?? null,
         priceMove24h: gameProbs?.priceMove24h ?? null,
+        priceHistory,
         volume24h: totalVolume,
         tradeFlow,
         whales: kalshiWhales,
