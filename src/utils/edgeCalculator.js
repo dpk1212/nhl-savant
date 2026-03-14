@@ -327,7 +327,23 @@ export class EdgeCalculator {
   // Calculate moneyline edge
   // DRATINGS CALIBRATION: Use DRatings to calibrate predictions, then find market edges
   calculateMoneylineEdge(game, awayScore, homeScore) {
-    if (!game.moneyline.away || !game.moneyline.home) {
+    const hasOdds = game.moneyline.away && game.moneyline.home;
+
+    if (!hasOdds) {
+      // No odds yet -- still surface blended model probabilities so the UI
+      // can show win percentages even before sportsbooks post lines.
+      const mp = this.findMoneyPuckPrediction(game.awayTeam, game.homeTeam);
+      const dr = this.findDRatingsPrediction(game.awayTeam, game.homeTeam);
+      if (mp || dr) {
+        const awayProb = mp && dr ? mp.awayProb * 0.7 + dr.awayProb * 0.3
+                       : (mp?.awayProb || dr?.awayProb);
+        const homeProb = mp && dr ? mp.homeProb * 0.7 + dr.homeProb * 0.3
+                       : (mp?.homeProb || dr?.homeProb);
+        return {
+          away: { modelProb: awayProb, ensembleProb: awayProb, confidence: 'PRE-ODDS', qualityGrade: 'N/A' },
+          home: { modelProb: homeProb, ensembleProb: homeProb, confidence: 'PRE-ODDS', qualityGrade: 'N/A' },
+        };
+      }
       return { away: null, home: null };
     }
     
