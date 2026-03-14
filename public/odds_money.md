@@ -76,6 +76,24 @@ TodayYesterday
 | ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SAT 03/1410:00 PM<br>![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>29-35<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
 | ![](https://logos.oddstrader.com/logos-original/1772417e-ab44-4577-9fba-8607bceb834b-original.PNG?d=100x100)<br>Vancouver<br>20-45<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
 
+| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/153:00 PM<br>![](https://logos.oddstrader.com/logos-original/c1442ea3-f57e-4147-87c3-d0b03c05f2dc-original.PNG?d=100x100)<br>St. Louis<br>27-39<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+| ![](https://logos.oddstrader.com/logos-original/0802704d-17c8-448b-8814-6d45002867a7-original.png?d=100x100)<br>Winnipeg<br>26-38<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+
+| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/155:00 PM<br>![](https://logos.oddstrader.com/logos-original/55aefa80-000e-4366-838e-823121bb29d3-original.PNG?d=100x100)<br>San Jose<br>31-32<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+| ![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>32-32<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+
+| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/157:00 PM<br>![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>36-29<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+| ![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>36-28<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+
+| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/157:30 PM<br>![](https://logos.oddstrader.com/logos-original/2cbcbc4e-a9fb-4c96-98a9-dff8d147a66c-original.PNG?d=100x100)<br>Toronto<br>28-38<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+| ![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>38-28<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+
+| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/158:00 PM<br>![](https://logos.oddstrader.com/logos-original/9efd6fc1-bc83-444a-95e0-3482b7f33dab-original.PNG?d=100x100)<br>Florida<br>33-32<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+| ![](https://logos.oddstrader.com/logos-original/93549a45-665b-4fd3-b583-19cdf9d7816b-original.PNG?d=100x100)<br>Seattle<br>29-35<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+
+| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/158:00 PM<br>![](https://logos.oddstrader.com/logos-original/5e8d35d8-0bed-4ae7-a56f-519fdfc050f0-original.PNG?d=100x100)<br>Nashville<br>29-36<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>32-35<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
 When you’re checking **NHL betting odds**, the spread (or puck line) is often the first thing bettors look at. In hockey, the puck line usually sits at 1.5 goals, but the **odds** attached to each side can shift depending on the matchup.
