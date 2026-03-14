@@ -85,6 +85,8 @@ export class BetTracker {
         pick: bestEdge.pick,
         line: bestEdge.line || null,
         odds: bestEdge.odds,
+        bestBook: bestEdge.bestBook || null,
+        consensusOdds: bestEdge.consensusOdds || null,
         team: bestEdge.team || null,
         side: this.extractSide(bestEdge)
       },

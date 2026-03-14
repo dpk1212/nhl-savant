@@ -342,12 +342,13 @@ export function parseBothFiles(moneyText, totalText, oddsApiData) {
       );
 
       if (existing) {
-        // Overlay API odds onto existing game (prefer API when it has data)
         if (apiGame.moneyline.away != null && apiGame.moneyline.home != null) {
           existing.moneyline = apiGame.moneyline;
+          if (apiGame.consensus) existing.consensus = apiGame.consensus;
+          if (apiGame.bestBooks) existing.bestBooks = apiGame.bestBooks;
           console.log(`   ✅ Updated ML: ${apiGame.awayTeam} ${apiGame.moneyline.away} / ${apiGame.homeTeam} ${apiGame.moneyline.home}`);
         }
-        if (apiGame.total.line != null) {
+        if (apiGame.total?.line != null) {
           existing.total = {
             line: apiGame.total.line,
             overLine: apiGame.total.line,
@@ -357,19 +358,20 @@ export function parseBothFiles(moneyText, totalText, oddsApiData) {
           };
         }
       } else {
-        // Game exists in API but not in OddsTrader scrape -- add it
         mergedGames.push({
           awayTeam: apiGame.awayTeam,
           homeTeam: apiGame.homeTeam,
           gameTime: apiGame.gameTime,
           moneyline: apiGame.moneyline,
+          consensus: apiGame.consensus || apiGame.moneyline,
+          bestBooks: apiGame.bestBooks || {},
           puckLine: { away: { spread: null, odds: null }, home: { spread: null, odds: null } },
           total: {
-            line: apiGame.total.line,
-            overLine: apiGame.total.line,
-            underLine: apiGame.total.line,
-            over: apiGame.total.over,
-            under: apiGame.total.under,
+            line: apiGame.total?.line || null,
+            overLine: apiGame.total?.line || null,
+            underLine: apiGame.total?.line || null,
+            over: apiGame.total?.over || null,
+            under: apiGame.total?.under || null,
           },
         });
         console.log(`   ➕ Added: ${apiGame.awayTeam} @ ${apiGame.homeTeam} (API-only)`);

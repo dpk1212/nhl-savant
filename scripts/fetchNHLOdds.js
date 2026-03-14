@@ -45,18 +45,6 @@ function teamCode(name) {
   return ODDS_API_TO_CODE[name] || name;
 }
 
-function bestOdds(outcomes, teamName) {
-  const matching = outcomes.filter(o => o.name === teamName);
-  if (matching.length === 0) return null;
-  return matching.reduce((best, o) => (o.price > best.price ? o : best), matching[0]).price;
-}
-
-function bestTotal(outcomes, side) {
-  const matching = outcomes.filter(o => o.name === side);
-  if (matching.length === 0) return null;
-  return matching.reduce((best, o) => (o.price > best.price ? o : best), matching[0]);
-}
-
 async function main() {
   console.log('🏒 Fetching NHL odds from The Odds API...\n');
 
@@ -93,51 +81,84 @@ async function main() {
     const displayHours = hours % 12 || 12;
     const gameTime = `${displayHours}:${String(minutes).padStart(2, '0')} ${ampm}`;
 
-    let awayML = null, homeML = null;
-    let totalLine = null, overOdds = null, underOdds = null;
+    // Track best odds (highest value = best payout for bettor) and Pinnacle (sharpest line)
+    let bestAwayML = null, bestHomeML = null;
+    let bestAwayBook = null, bestHomeBook = null;
+    let pinnAwayML = null, pinnHomeML = null;
+    let totalLine = null, bestOverOdds = null, bestUnderOdds = null;
+    const allAwayOdds = [];
+    const allHomeOdds = [];
 
     for (const bk of event.bookmakers) {
       for (const market of bk.markets) {
         if (market.key === 'h2h') {
           const aw = market.outcomes.find(o => o.name === event.away_team);
           const hm = market.outcomes.find(o => o.name === event.home_team);
-          if (aw && (awayML === null || Math.abs(aw.price) < Math.abs(awayML))) awayML = aw.price;
-          if (hm && (homeML === null || Math.abs(hm.price) < Math.abs(homeML))) homeML = hm.price;
+          if (aw) {
+            allAwayOdds.push({ book: bk.title, price: aw.price });
+            // Best = highest numeric value (best payout for bettor)
+            if (bestAwayML === null || aw.price > bestAwayML) {
+              bestAwayML = aw.price;
+              bestAwayBook = bk.title;
+            }
+            if (bk.key === 'pinnacle') pinnAwayML = aw.price;
+          }
+          if (hm) {
+            allHomeOdds.push({ book: bk.title, price: hm.price });
+            if (bestHomeML === null || hm.price > bestHomeML) {
+              bestHomeML = hm.price;
+              bestHomeBook = bk.title;
+            }
+            if (bk.key === 'pinnacle') pinnHomeML = hm.price;
+          }
         }
         if (market.key === 'totals') {
           const over = market.outcomes.find(o => o.name === 'Over');
           const under = market.outcomes.find(o => o.name === 'Under');
-          if (over && totalLine === null) {
-            totalLine = over.point;
-            overOdds = over.price;
+          if (over) {
+            if (totalLine === null) totalLine = over.point;
+            if (bestOverOdds === null || over.price > bestOverOdds) bestOverOdds = over.price;
           }
-          if (under && underOdds === null) {
-            underOdds = under.price;
+          if (under) {
+            if (bestUnderOdds === null || under.price > bestUnderOdds) bestUnderOdds = under.price;
           }
         }
       }
     }
+
+    // Consensus = Pinnacle if available, else median of all books
+    const consensusAway = pinnAwayML ?? (allAwayOdds.length > 0
+      ? allAwayOdds.sort((a, b) => a.price - b.price)[Math.floor(allAwayOdds.length / 2)].price
+      : bestAwayML);
+    const consensusHome = pinnHomeML ?? (allHomeOdds.length > 0
+      ? allHomeOdds.sort((a, b) => a.price - b.price)[Math.floor(allHomeOdds.length / 2)].price
+      : bestHomeML);
 
     const game = {
       awayTeam: away,
       homeTeam: home,
       gameTime,
       commenceTime: event.commence_time,
-      moneyline: { away: awayML, home: homeML },
+      moneyline: { away: bestAwayML, home: bestHomeML },
+      consensus: { away: consensusAway, home: consensusHome },
+      bestBooks: { away: bestAwayBook, home: bestHomeBook },
       total: {
         line: totalLine,
-        over: overOdds,
-        under: underOdds,
+        over: bestOverOdds,
+        under: bestUnderOdds,
       },
     };
 
     games.push(game);
 
-    const mlStr = awayML !== null
-      ? `${away} ${awayML > 0 ? '+' : ''}${awayML} / ${home} ${homeML > 0 ? '+' : ''}${homeML}`
-      : 'NO ODDS';
-    const totStr = totalLine !== null ? `O/U ${totalLine}` : '';
-    console.log(`   ${away} @ ${home}  ${gameTime}  ${mlStr}  ${totStr}`);
+    const fmtOdds = (v) => v > 0 ? `+${v}` : `${v}`;
+    if (bestAwayML !== null) {
+      const awayDiff = bestAwayML !== consensusAway ? ` (cons ${fmtOdds(consensusAway)})` : '';
+      const homeDiff = bestHomeML !== consensusHome ? ` (cons ${fmtOdds(consensusHome)})` : '';
+      console.log(`   ${away} @ ${home}  ${gameTime}  ${away} ${fmtOdds(bestAwayML)}${awayDiff} [${bestAwayBook}] / ${home} ${fmtOdds(bestHomeML)}${homeDiff} [${bestHomeBook}]  O/U ${totalLine || '-'}`);
+    } else {
+      console.log(`   ${away} @ ${home}  ${gameTime}  NO ODDS`);
+    }
   }
 
   const output = {

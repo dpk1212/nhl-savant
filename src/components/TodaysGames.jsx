@@ -1357,7 +1357,9 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
               }}>
                 {bestEdge.odds > 0 ? '+' : ''}{bestEdge.odds}
               </div>
-              <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>line</div>
+              <div style={{ fontSize: TYPOGRAPHY.caption.size, color: 'var(--color-text-muted)' }}>
+                {bestEdge.bestBook ? `@ ${bestEdge.bestBook}` : 'line'}
+              </div>
             </div>
           </>
         )}

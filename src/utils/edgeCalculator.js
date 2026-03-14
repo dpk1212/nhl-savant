@@ -356,6 +356,11 @@ export class EdgeCalculator {
       game.awayTeam, 
       game.homeTeam
     );
+
+    // Use consensus (Pinnacle/median) odds for market calibration when available,
+    // but best available odds for EV calculation (line shopping)
+    const calibAwayOdds = game.consensus?.away || game.moneyline.away;
+    const calibHomeOdds = game.consensus?.home || game.moneyline.home;
     
     // AWAY TEAM: Use 70% MoneyPuck + 30% DRatings if both available
     let awayEnsemble;
@@ -363,23 +368,23 @@ export class EdgeCalculator {
       awayEnsemble = this.calibrateWithDRatings(
         moneyPuckPrediction.awayProb,
         dratingsPrediction.awayProb,
-        game.moneyline.away
+        calibAwayOdds
       );
       console.log(`🎯 ${game.awayTeam}: MP ${(moneyPuckPrediction.awayProb * 100).toFixed(1)}% + DR ${(dratingsPrediction.awayProb * 100).toFixed(1)}% → ${(awayEnsemble.calibratedProb * 100).toFixed(1)}%`);
     } else if (moneyPuckPrediction && this.config.useEnsemble) {
       const prob = moneyPuckPrediction.awayProb;
       console.log(`🎯 ${game.awayTeam}: MP-only ${(prob * 100).toFixed(1)}% (DRatings unavailable)`);
-      awayEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.away);
+      awayEnsemble = this.calibrateWithDRatings(prob, prob, calibAwayOdds);
     } else if (dratingsPrediction && this.config.useEnsemble) {
       const prob = dratingsPrediction.awayProb;
       console.log(`🎯 ${game.awayTeam}: DR-only ${(prob * 100).toFixed(1)}% (MoneyPuck unavailable)`);
-      awayEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.away);
+      awayEnsemble = this.calibrateWithDRatings(prob, prob, calibAwayOdds);
     } else if (this.config.useEnsemble) {
       console.warn(`⚠️ Missing ALL predictions for ${game.awayTeam} @ ${game.homeTeam}`);
       awayEnsemble = { 
         ensembleProb: 0.50, 
         modelProb: 0.50, 
-        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
+        marketProb: this.dataProcessor.oddsToProbability(calibAwayOdds),
         agreement: 1.0,
         confidence: 'NONE',
         qualityGrade: 'N/A'
@@ -388,8 +393,8 @@ export class EdgeCalculator {
       awayEnsemble = { 
         ensembleProb: awayWinProb, 
         modelProb: awayWinProb, 
-        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.away),
-        agreement: Math.abs(awayWinProb - this.dataProcessor.oddsToProbability(game.moneyline.away)),
+        marketProb: this.dataProcessor.oddsToProbability(calibAwayOdds),
+        agreement: Math.abs(awayWinProb - this.dataProcessor.oddsToProbability(calibAwayOdds)),
         confidence: 'UNKNOWN',
         qualityGrade: 'N/A'
       };
@@ -401,22 +406,22 @@ export class EdgeCalculator {
       homeEnsemble = this.calibrateWithDRatings(
         moneyPuckPrediction.homeProb,
         dratingsPrediction.homeProb,
-        game.moneyline.home
+        calibHomeOdds
       );
       console.log(`🏠 ${game.homeTeam}: MP ${(moneyPuckPrediction.homeProb * 100).toFixed(1)}% + DR ${(dratingsPrediction.homeProb * 100).toFixed(1)}% → ${(homeEnsemble.calibratedProb * 100).toFixed(1)}%`);
     } else if (moneyPuckPrediction && this.config.useEnsemble) {
       const prob = moneyPuckPrediction.homeProb;
       console.log(`🏠 ${game.homeTeam}: MP-only ${(prob * 100).toFixed(1)}% (DRatings unavailable)`);
-      homeEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.home);
+      homeEnsemble = this.calibrateWithDRatings(prob, prob, calibHomeOdds);
     } else if (dratingsPrediction && this.config.useEnsemble) {
       const prob = dratingsPrediction.homeProb;
       console.log(`🏠 ${game.homeTeam}: DR-only ${(prob * 100).toFixed(1)}% (MoneyPuck unavailable)`);
-      homeEnsemble = this.calibrateWithDRatings(prob, prob, game.moneyline.home);
+      homeEnsemble = this.calibrateWithDRatings(prob, prob, calibHomeOdds);
     } else if (this.config.useEnsemble) {
       homeEnsemble = { 
         ensembleProb: 0.50, 
         modelProb: 0.50, 
-        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
+        marketProb: this.dataProcessor.oddsToProbability(calibHomeOdds),
         agreement: 1.0,
         confidence: 'NONE',
         qualityGrade: 'N/A'
@@ -425,52 +430,56 @@ export class EdgeCalculator {
       homeEnsemble = { 
         ensembleProb: homeWinProb, 
         modelProb: homeWinProb, 
-        marketProb: this.dataProcessor.oddsToProbability(game.moneyline.home),
-        agreement: Math.abs(homeWinProb - this.dataProcessor.oddsToProbability(game.moneyline.home)),
+        marketProb: this.dataProcessor.oddsToProbability(calibHomeOdds),
+        agreement: Math.abs(homeWinProb - this.dataProcessor.oddsToProbability(calibHomeOdds)),
         confidence: 'UNKNOWN',
         qualityGrade: 'N/A'
       };
     }
     
-    // Calculate EV using ENSEMBLE probability (blended model + market)
-    // This reduces false positives by incorporating market wisdom
+    // EV calculated against BEST available odds (line shopping)
+    // Calibration used consensus/Pinnacle for true market probability above
     const awayEV = this.dataProcessor.calculateEV(awayEnsemble.ensembleProb, game.moneyline.away);
     const homeEV = this.dataProcessor.calculateEV(homeEnsemble.ensembleProb, game.moneyline.home);
     
-    // Calculate Kelly stakes using ensemble probabilities
+    // Kelly stakes against best available odds
     const awayKelly = this.calculateKellyStake(awayEnsemble.ensembleProb, game.moneyline.away);
     const homeKelly = this.calculateKellyStake(homeEnsemble.ensembleProb, game.moneyline.home);
     
     return {
       away: {
         ev: awayEV,
-        evPercent: awayEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
+        evPercent: awayEV,
         modelProb: awayEnsemble.calibratedProb || awayEnsemble.ensembleProb || awayWinProb,
         marketProb: awayEnsemble.marketProb,
-        ensembleProb: awayEnsemble.ensembleProb,      // NEW: Blended probability
-        agreement: awayEnsemble.agreement,             // NEW: Quality metric
-        confidence: awayEnsemble.confidence,           // NEW: Human-readable
-        qualityGrade: awayEnsemble.qualityGrade,       // NEW: A-D grading
+        ensembleProb: awayEnsemble.ensembleProb,
+        agreement: awayEnsemble.agreement,
+        confidence: awayEnsemble.confidence,
+        qualityGrade: awayEnsemble.qualityGrade,
         kelly: awayKelly,
-        recommendedUnit: awayKelly.fractionalKelly,    // NEW: Sizing recommendation
-        moneyPuckProb: awayEnsemble.moneyPuckProb || null,  // QUALITY GATE: Flag for bet saving
-        calibratedProb: awayEnsemble.calibratedProb || null, // QUALITY GATE: Alternative flag
-        odds: game.moneyline.away
+        recommendedUnit: awayKelly.fractionalKelly,
+        moneyPuckProb: awayEnsemble.moneyPuckProb || null,
+        calibratedProb: awayEnsemble.calibratedProb || null,
+        odds: game.moneyline.away,
+        bestBook: game.bestBooks?.away || null,
+        consensusOdds: calibAwayOdds
       },
       home: {
         ev: homeEV,
-        evPercent: homeEV,  // EV is already in dollars ($13.7 = 13.7% on $100 bet)
+        evPercent: homeEV,
         modelProb: homeEnsemble.calibratedProb || homeEnsemble.ensembleProb || homeWinProb,
         marketProb: homeEnsemble.marketProb,
-        ensembleProb: homeEnsemble.ensembleProb,      // NEW: Blended probability
-        agreement: homeEnsemble.agreement,             // NEW: Quality metric
-        confidence: homeEnsemble.confidence,           // NEW: Human-readable
-        qualityGrade: homeEnsemble.qualityGrade,       // NEW: A-D grading
+        ensembleProb: homeEnsemble.ensembleProb,
+        agreement: homeEnsemble.agreement,
+        confidence: homeEnsemble.confidence,
+        qualityGrade: homeEnsemble.qualityGrade,
         kelly: homeKelly,
-        recommendedUnit: homeKelly.fractionalKelly,    // NEW: Sizing recommendation
-        moneyPuckProb: homeEnsemble.moneyPuckProb || null,  // QUALITY GATE: Flag for bet saving
-        calibratedProb: homeEnsemble.calibratedProb || null, // QUALITY GATE: Alternative flag
-        odds: game.moneyline.home
+        recommendedUnit: homeKelly.fractionalKelly,
+        moneyPuckProb: homeEnsemble.moneyPuckProb || null,
+        calibratedProb: homeEnsemble.calibratedProb || null,
+        odds: game.moneyline.home,
+        bestBook: game.bestBooks?.home || null,
+        consensusOdds: calibHomeOdds
       }
     };
   }
@@ -571,6 +580,8 @@ export class EdgeCalculator {
           pick: `${gameEdges.awayTeam} (AWAY)`,
           team: gameEdges.awayTeam,
           odds: edge.odds,
+          bestBook: edge.bestBook,
+          consensusOdds: edge.consensusOdds,
           ev: edge.ev,
           evPercent: edge.evPercent,
           modelProb: edge.modelProb,
@@ -581,9 +592,9 @@ export class EdgeCalculator {
           qualityGrade: edge.qualityGrade,
           kelly: edge.kelly,
           recommendedUnit: edge.recommendedUnit,
-          moneyPuckProb: edge.moneyPuckProb,       // QUALITY GATE: Flag for bet saving
-          calibratedProb: edge.calibratedProb,     // QUALITY GATE: Alternative flag
-          isPreliminary: !edge.moneyPuckProb       // 🆕 FLAG for UI display
+          moneyPuckProb: edge.moneyPuckProb,
+          calibratedProb: edge.calibratedProb,
+          isPreliminary: !edge.moneyPuckProb
         });
       }
       
@@ -603,6 +614,8 @@ export class EdgeCalculator {
           pick: `${gameEdges.homeTeam} (HOME)`,
           team: gameEdges.homeTeam,
           odds: edge.odds,
+          bestBook: edge.bestBook,
+          consensusOdds: edge.consensusOdds,
           ev: edge.ev,
           evPercent: edge.evPercent,
           modelProb: edge.modelProb,
@@ -613,13 +626,13 @@ export class EdgeCalculator {
           qualityGrade: edge.qualityGrade,
           kelly: edge.kelly,
           recommendedUnit: edge.recommendedUnit,
-          moneyPuckProb: edge.moneyPuckProb,       // QUALITY GATE: Flag for bet saving
-          calibratedProb: edge.calibratedProb,     // QUALITY GATE: Alternative flag
-          isPreliminary: !edge.moneyPuckProb       // 🆕 FLAG for UI display
+          moneyPuckProb: edge.moneyPuckProb,
+          calibratedProb: edge.calibratedProb,
+          isPreliminary: !edge.moneyPuckProb
         });
       }
       
-      // Puck line edges (no ensemble for now - would need separate implementation)
+      // Puck line edges
       if (gameEdges.edges.puckLine.away && gameEdges.edges.puckLine.away.ev > minEV) {
         opportunities.push({
           game: gameEdges.game,
