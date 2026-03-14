@@ -152,9 +152,13 @@ function App() {
         console.log('💰 Loading odds data...');
         const oddsFiles = await loadOddsFiles();
         
-        // Parse and merge odds files to get games
-        if (oddsFiles && oddsFiles.moneyText && oddsFiles.totalText) {
-          const mergedGames = parseBothFiles(oddsFiles.moneyText, oddsFiles.totalText);
+        // Parse and merge odds files to get games (includes Odds API overlay)
+        if (oddsFiles) {
+          const mergedGames = parseBothFiles(
+            oddsFiles.moneyText || '',
+            oddsFiles.totalText || '',
+            oddsFiles.oddsApiData
+          );
           oddsFiles.todaysGames = extractGamesListFromOdds(mergedGames);
           console.log(`📋 Extracted ${oddsFiles.todaysGames.length} games for admin`);
         }

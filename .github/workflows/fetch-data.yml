@@ -27,6 +27,7 @@ jobs:
       - name: Create .env file
         run: |
           echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env
+          echo "ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}" >> .env
           echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
           echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
           echo "VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}" >> .env
@@ -34,14 +35,17 @@ jobs:
           echo "VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}" >> .env
           echo "VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}" >> .env
       
-      - name: Fetch data
+      - name: Fetch NHL odds from API
+        run: node scripts/fetchNHLOdds.js
+      
+      - name: Fetch data (predictions, goalies)
         run: npm run fetch-data
       
       - name: Commit and push if changed
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add public/odds_money.md public/starting_goalies.json public/moneypuck_predictions.json public/dratings_predictions.json public/player_props.json public/player_props_raw.md
+          git add public/nhl_odds.json public/odds_money.md public/starting_goalies.json public/moneypuck_predictions.json public/dratings_predictions.json public/player_props.json public/player_props_raw.md
           # CRITICAL: ONLY commit NHL files - NO wildcards, NO basketball data!
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: NHL odds and goalies [$(date +'%Y-%m-%d %H:%M')]" && git push)
       

@@ -987,11 +987,12 @@ export async function loadGoaliesCSV() {
   }
 }
 
-// Load both odds files (Money + Total)
+// Load both odds files (Money + Total) AND The Odds API JSON
 export async function loadOddsFiles() {
   try {
     console.log('🏒 Loading Money file...');
     console.log('🏒 Loading Total file...');
+    console.log('🏒 Loading Odds API JSON...');
     
     // Try GitHub raw files first (always fresh), fallback to local
     let moneyResponse, totalResponse;
@@ -1011,17 +1012,32 @@ export async function loadOddsFiles() {
     
     if (!moneyResponse.ok || !totalResponse.ok) {
       console.warn('One or both odds files not found');
-      return null;
     }
     
-    const moneyText = await moneyResponse.text();
-    const totalText = await totalResponse.text();
+    const moneyText = moneyResponse?.ok ? await moneyResponse.text() : '';
+    const totalText = totalResponse?.ok ? await totalResponse.text() : '';
+
+    // Load Odds API JSON (primary odds source)
+    let oddsApiData = null;
+    try {
+      let apiRes = await fetch(`${import.meta.env.BASE_URL}nhl_odds.json`);
+      if (!apiRes.ok) {
+        apiRes = await fetch('https://raw.githubusercontent.com/dpk1212/nhl-savant/main/public/nhl_odds.json');
+      }
+      if (apiRes.ok) {
+        oddsApiData = await apiRes.json();
+        console.log(`✅ Odds API JSON loaded: ${oddsApiData.gamesCount} games (${oddsApiData.source})`);
+      }
+    } catch (e) {
+      console.warn('Odds API JSON not available:', e.message);
+    }
     
-    console.log('✅ Both odds files loaded successfully');
+    console.log('✅ Odds files loaded successfully');
     
     return {
       moneyText,
-      totalText
+      totalText,
+      oddsApiData
     };
   } catch (error) {
     console.warn('Error loading odds files:', error);

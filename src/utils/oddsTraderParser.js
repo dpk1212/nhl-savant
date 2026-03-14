@@ -307,7 +307,7 @@ export function getTeamName(code) {
  * @param {string} totalText - Markdown from Total tab (has totals)
  * @returns {Array} Merged game objects with both moneylines and totals
  */
-export function parseBothFiles(moneyText, totalText) {
+export function parseBothFiles(moneyText, totalText, oddsApiData) {
   console.log('🔄 Merging moneylines + totals...');
   
   // Parse money file for moneylines
@@ -319,7 +319,7 @@ export function parseBothFiles(moneyText, totalText) {
   console.log(`✅ Parsed ${totalGames.length} games from Total file`);
   
   // Merge: moneylines from money file + totals from total file
-  const mergedGames = moneyGames.map((moneyGame, index) => {
+  let mergedGames = moneyGames.map((moneyGame, index) => {
     const totalGame = totalGames[index];
     
     if (totalGame && totalGame.total && totalGame.total.line) {
@@ -331,6 +331,51 @@ export function parseBothFiles(moneyText, totalText) {
     
     return moneyGame;
   });
+
+  // Overlay / inject odds from The Odds API (primary reliable source)
+  if (oddsApiData?.games?.length > 0) {
+    console.log(`📡 Merging ${oddsApiData.games.length} games from Odds API...`);
+
+    for (const apiGame of oddsApiData.games) {
+      const existing = mergedGames.find(
+        g => g.awayTeam === apiGame.awayTeam && g.homeTeam === apiGame.homeTeam
+      );
+
+      if (existing) {
+        // Overlay API odds onto existing game (prefer API when it has data)
+        if (apiGame.moneyline.away != null && apiGame.moneyline.home != null) {
+          existing.moneyline = apiGame.moneyline;
+          console.log(`   ✅ Updated ML: ${apiGame.awayTeam} ${apiGame.moneyline.away} / ${apiGame.homeTeam} ${apiGame.moneyline.home}`);
+        }
+        if (apiGame.total.line != null) {
+          existing.total = {
+            line: apiGame.total.line,
+            overLine: apiGame.total.line,
+            underLine: apiGame.total.line,
+            over: apiGame.total.over,
+            under: apiGame.total.under,
+          };
+        }
+      } else {
+        // Game exists in API but not in OddsTrader scrape -- add it
+        mergedGames.push({
+          awayTeam: apiGame.awayTeam,
+          homeTeam: apiGame.homeTeam,
+          gameTime: apiGame.gameTime,
+          moneyline: apiGame.moneyline,
+          puckLine: { away: { spread: null, odds: null }, home: { spread: null, odds: null } },
+          total: {
+            line: apiGame.total.line,
+            overLine: apiGame.total.line,
+            underLine: apiGame.total.line,
+            over: apiGame.total.over,
+            under: apiGame.total.under,
+          },
+        });
+        console.log(`   ➕ Added: ${apiGame.awayTeam} @ ${apiGame.homeTeam} (API-only)`);
+      }
+    }
+  }
   
   console.log(`📋 Final merged games: ${mergedGames.map(g => `${g.awayTeam} @ ${g.homeTeam}`).join(', ')}`);
   
