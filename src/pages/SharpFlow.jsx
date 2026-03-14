@@ -844,12 +844,12 @@ function MoneyFlowView({ games, isMobile }) {
         gap: '0.625rem', marginBottom: '1.5rem',
       }}>
         <FlowStatCard
-          icon={DollarSign} label="Total Sampled" value={fmtVol(totalMoney)} accent={B.gold}
-          hint="Real dollars tracked across all markets"
+          icon={DollarSign} label="Sampled Volume" value={fmtVol(totalMoney)} accent={B.gold}
+          hint="From individual trades we can analyze by side"
         />
         <FlowStatCard
           icon={BarChart3} label="Games" value={flowGames.length}
-          hint="Games with money flow data"
+          hint="Games with trade-level flow data"
         />
         <FlowStatCard
           icon={TrendingUp} label="Top Destination" value={topTeam ? `${topTeam[0]}` : '—'} accent={B.gold}
@@ -857,7 +857,7 @@ function MoneyFlowView({ games, isMobile }) {
         />
         <FlowStatCard
           icon={Eye} label="Reverse Signals" value={reverseCount} accent={reverseCount > 0 ? B.gold : null}
-          hint="Games where money disagrees with tickets"
+          hint="Money & tickets on opposite sides"
         />
       </div>
 
@@ -1238,10 +1238,14 @@ export default function SharpFlow() {
         gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
         gap: '0.625rem', marginBottom: '2rem',
       }}>
-        <StatCard icon={DollarSign} label="Market Volume" value={fmtVol(totalVol)} accent={B.gold} />
-        <StatCard icon={BarChart3} label="Trades" value={totalTrades} />
-        <StatCard icon={Activity} label="Whale Positions" value={totalWhales} accent={totalWhales > 20 ? B.gold : null} />
-        <StatCard icon={Eye} label="Sharp Signals" value={sharpSignals.length} accent={sharpSignals.length > 0 ? B.gold : null} />
+        <FlowStatCard icon={DollarSign} label="Market Volume" value={fmtVol(totalVol)} accent={B.gold}
+          hint="Exchange-reported 24h volume" />
+        <FlowStatCard icon={BarChart3} label="Trades" value={totalTrades}
+          hint="Individual trades sampled" />
+        <FlowStatCard icon={Activity} label="Whale Positions" value={totalWhales} accent={totalWhales > 20 ? B.gold : null}
+          hint="Large bets ($500+) detected" />
+        <FlowStatCard icon={Eye} label="Sharp Signals" value={sharpSignals.length} accent={sharpSignals.length > 0 ? B.gold : null}
+          hint="Games where money & tickets disagree" />
       </div>
 
       {/* ─── Sharp Signals (most valuable section) ─── */}
