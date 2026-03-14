@@ -23,7 +23,7 @@ import MatchupInsights from './pages/MatchupInsights';
 import MyPicks from './pages/MyPicks';
 import Pricing from './pages/Pricing';
 import Account from './pages/Account';
-import TopScorersTonight from './pages/TopScorersTonight';
+import SharpFlow from './pages/SharpFlow';
 import Basketball from './pages/Basketball';
 import BasketballMappingAudit from './pages/BasketballMappingAudit';
 import MLBComingSoon from './pages/MLBComingSoon';
@@ -336,10 +336,7 @@ function AppContent({ dataProcessor, oddsData, startingGoalies, goalieData, stat
                 edgeFactorCalc={edgeFactorCalc}
               />} />
               <Route path="/my-picks" element={<MyPicks />} />
-              <Route path="/top-scorers" element={<TopScorersTonight 
-                playerMatchups={playerMatchups}
-                dataProcessor={dataProcessor}
-              />} />
+              <Route path="/sharp-flow" element={<SharpFlow />} />
               
               {/* Basketball - Hidden from navigation */}
               <Route path="/basketball" element={<Basketball />} />
