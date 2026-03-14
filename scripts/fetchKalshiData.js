@@ -73,14 +73,25 @@ async function fetchAllTrades(marketTicker) {
 }
 
 // ─── Fetch candlestick price history for trend line ──────────────────────
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 async function fetchCandlesticks(seriesTicker, marketTicker) {
   const now = Math.floor(Date.now() / 1000);
   const oneDayAgo = now - 86400;
-  try {
-    const url = `/series/${seriesTicker}/markets/${marketTicker}/candlesticks?start_ts=${oneDayAgo}&end_ts=${now}&period_interval=60`;
-    const data = await get(url);
-    return data.candlesticks || [];
-  } catch { return []; }
+  const url = `/series/${seriesTicker}/markets/${marketTicker}/candlesticks?start_ts=${oneDayAgo}&end_ts=${now}&period_interval=60`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const data = await get(url);
+      return data.candlesticks || [];
+    } catch (e) {
+      if (String(e).includes('429') && attempt < 2) {
+        await sleep(1000 * (attempt + 1));
+        continue;
+      }
+      return [];
+    }
+  }
+  return [];
 }
 
 function buildPriceHistory(candles) {
@@ -98,6 +109,7 @@ function buildPriceHistory(candles) {
   if (sampled[sampled.length - 1] !== last) sampled.push(last);
   const allPrices = prices.filter(p => p > 0);
   if (allPrices.length < 2) return null;
+  if (prices[0] === 0 && last === 0) return null;
   return {
     points: sampled,
     open: prices[0],
@@ -541,10 +553,17 @@ async function run() {
         }
       }
 
-      // Fetch candlestick price history for away team trend line
+      // Fetch candlestick price history for trend line
       let priceHistory = null;
       if (gameProbs?.awayTicker && gameEvent?.series_ticker) {
+        await sleep(200);
         const candles = await fetchCandlesticks(gameEvent.series_ticker, gameProbs.awayTicker);
+        priceHistory = buildPriceHistory(candles);
+      }
+      if (!priceHistory && spreadEvent?.series_ticker && spreadEvent?.markets?.length > 0) {
+        await sleep(200);
+        const spreadTicker = spreadEvent.markets[0].ticker;
+        const candles = await fetchCandlesticks(spreadEvent.series_ticker, spreadTicker);
         priceHistory = buildPriceHistory(candles);
       }
 
