@@ -550,7 +550,7 @@ async function run() {
         }
       };
 
-      // Path A: Game-winner (moneyline) tickers exist
+      // Game-winner (moneyline) tickers
       if (gameProbs?.awayTicker || gameProbs?.homeTicker) {
         if (gameProbs.awayTicker) {
           const trades = await fetchAllTrades(gameProbs.awayTicker);
@@ -561,8 +561,8 @@ async function run() {
           processTrades(trades, 'home', 'away');
         }
       }
-      // Path B: No game-winner market — use spread markets for flow data
-      else if (spreadEvent?.markets?.length > 0) {
+      // Also fetch spread market trades (always, for additional flow data)
+      if (spreadEvent?.markets?.length > 0) {
         const nAway = normalize(awayRaw);
         const nHome = normalize(homeRaw);
         for (const m of spreadEvent.markets) {
