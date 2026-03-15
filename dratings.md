@@ -37,27 +37,27 @@ Close
 
 # NCAA Basketball Predictions
 
-Updated 59 sec ago
+Updated 6 sec ago
 
 All ConferencesA10AACACCAECASCBig 12Big EastBig SkyBig SouthBig TenBig WestCAACUSAHLIndependentIvyMAACMACMEACMVCMWCNECOVCPac-12PLSECSLSLCSouthernSun BeltSWACWACWCC
 
-- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#scroll-completed)
-- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#scroll-season)
-- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#scroll-completed)
+- [Season](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#scroll-season)
+- [Methodology](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#scroll-related)
 
 ## Upcoming Games for March 15, 2026
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Points | Total<br>Points | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [03/15/2026\<br>\<br>12:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/7ad1e81d-e8a7-59f8-b1f3-5b6744807b94) | [Penn Quakers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3304-penn-quakers)(16-11)<br>[Yale Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3269-yale-bulldogs)(23-5) | 20.9%<br>79.1% | +400<br>-500<br>+400<br>-500 | +9½-105<br>-9½-110<br>+9½-110<br>-9-110 | 71.4<br>80.1 | 151.5 | o142½-110<br>u142½-110<br>o142-110<br>u142½-110 |  |  |
-| [03/15/2026\<br>\<br>01:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/e0cdf2a2-87ae-5bca-9338-35617a5e9084) | [Dayton Flyers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3064-dayton-flyers)(22-10)<br>[VCU Rams](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3016-vcu-rams)(25-7) | 37.7%<br>62.3% | +135<br>-155<br>+145<br>-160 | +3-105<br>-2½-115<br>+3½-110<br>-3-110 | 73.0<br>77.0 | 150.0 | o140-110<br>u140-110<br>o140½-110<br>u140½-110 |  |  |
-| [03/15/2026\<br>\<br>01:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/e7cb500f-121c-5cda-bf1a-fdbe2f13709d) | [Vanderbilt Commodores](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3164-vanderbilt-commodores)(25-7)<br>[Arkansas Razorbacks](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3078-arkansas-razorbacks)(24-8) | 53.9%<br>46.1% | -140<br>+120<br>-140<br>+125 | -2-115<br>+3-117<br>-2½-110<br>+2½-110 | 88.0<br>86.2 | 174.2 | o166-110<br>u166½-110<br>o166½-110<br>u167½-110 |  |  |
-| [03/15/2026\<br>\<br>03:15 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/dad97437-cfcd-5fc6-83f2-71af8fe7a659) | [Wichita State Shockers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3014-wichita-state-shockers)(21-10)<br>[South Florida Bulls](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3083-south-florida-bulls)(23-8) | 34.2%<br>65.8% | +215<br>-250<br>+210<br>-240 | +6-110<br>-6-109<br>+6-110<br>-6-110 | 77.9<br>83.0 | 160.9 | o150½-110<br>u150½-110<br>o150-110<br>u151-110 |  |  |
-| [03/15/2026\<br>\<br>03:30 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/aeccc422-d8be-59ce-a7ea-780536f25ec9) | [Purdue Boilermakers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3124-purdue-boilermakers)(25-8)<br>[Michigan Wolverines](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3004-michigan-wolverines)(30-2) | 30.5%<br>69.5% | +230<br>-270<br>+235<br>-260 | +6½-110<br>-6½-107<br>+6½-110<br>-6-110 | 76.7<br>82.4 | 159.1 | o150½-110<br>u150½-110<br>o150½-110<br>u151-110 |  |  |
+| [03/15/2026\<br>\<br>12:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/7ad1e81d-e8a7-59f8-b1f3-5b6744807b94) | [Penn Quakers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3304-penn-quakers)(17-11)<br>[Yale Bulldogs](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3269-yale-bulldogs)(24-5) | 19.9%<br>80.1% | +420<br>-520<br>+425<br>-500 | +9½-110<br>-9-108<br>+9½-109<br>-9-110 | 67.9<br>77.0 | 144.9 | o142½-109<br>u143-110<br>o142½-110<br>u143-110 |  |  |
+| [03/15/2026\<br>\<br>01:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/e0cdf2a2-87ae-5bca-9338-35617a5e9084) | [Dayton Flyers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3064-dayton-flyers)(23-10)<br>[VCU Rams](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3016-vcu-rams)(26-7) | 38.4%<br>61.6% | +150<br>-165<br>+155<br>-170 | +3½-105<br>-3½-107<br>+3½-109<br>-3½-109 | 69.3<br>73.1 | 142.4 | o137-117<br>u138½-110<br>o138-110<br>u139-110 |  |  |
+| [03/15/2026\<br>\<br>01:00 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/e7cb500f-121c-5cda-bf1a-fdbe2f13709d) | [Vanderbilt Commodores](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3164-vanderbilt-commodores)(26-7)<br>[Arkansas Razorbacks](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3078-arkansas-razorbacks)(25-8) | 54.7%<br>45.3% | -132<br>+125<br>-130<br>+115 | -2-110<br>+2-106<br>-1½-110<br>+2-109 | 84.9<br>83.0 | 167.9 | o164½-110<br>u165-110<br>o164-110<br>u165½-110 | Overall Bet Value Active |  |
+| [03/15/2026\<br>\<br>03:15 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/dad97437-cfcd-5fc6-83f2-71af8fe7a659) | [Wichita State Shockers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3014-wichita-state-shockers)(22-10)<br>[South Florida Bulls](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3083-south-florida-bulls)(24-8) | 32.6%<br>67.4% | +215<br>-245<br>+210<br>-240 | +6-110<br>-5½-105<br>+5½-109<br>-5½-109 | 73.6<br>79.2 | 152.8 | o148½-115<br>u149-105<br>o149½-110<br>u150½-110 |  |  |
+| [03/15/2026\<br>\<br>03:30 PM](https://www.dratings.com/predictor/ncaa-basketball-predictions/aeccc422-d8be-59ce-a7ea-780536f25ec9) | [Purdue Boilermakers](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3124-purdue-boilermakers)(26-8)<br>[Michigan Wolverines](https://www.dratings.com/teams/ncaa-college-basketball-ratings/3004-michigan-wolverines)(31-2) | 29.9%<br>70.1% | +215<br>-250<br>+230<br>-260 | +6-110<br>-6-105<br>+6½-110<br>-6-109 | 73.3<br>79.1 | 152.4 | o149-112<br>u149-105<br>o149-110<br>u150-110 |  |  |
 
 Games for Mar 14, 2026
 
@@ -65,7 +65,7 @@ Games for Mar 16, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Points | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -92,13 +92,13 @@ Games for Mar 16, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773575233763#)
+[Previous column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#) [Next column](https://www.dratings.com/predictor/ncaa-basketball-predictions/?_=1773589762101#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
-| **Sportsbooks** | 21 | 13-8 (0.619) | 0 | -0.57714 |  |
-| **Sportsbooks** | 21 | 13-8 (0.619) | 0 | -0.57275 |  |
-| **DRatings** | 21 | 13-8 (0.619) | 0 | -0.57832 | -0.00119<br>-0.00557 |
+| **Sportsbooks** | 19 | 11-8 (0.579) | 0 | -0.58924 |  |
+| **Sportsbooks** | 19 | 11-8 (0.579) | 0 | -0.58623 |  |
+| **DRatings** | 19 | 11-8 (0.579) | 0 | -0.58805 | 0.00119<br>-0.00181 |
 
 ## Predictions Methodology
 
