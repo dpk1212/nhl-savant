@@ -484,9 +484,16 @@ async function run() {
 
   const eventsByKey = { CBB: {}, NHL: {} };
 
+  let prevSport = '';
   for (let si = 0; si < seriesConfig.length; si++) {
     const { ticker, sport, type } = seriesConfig[si];
-    if (si > 0) await sleep(300);
+    if (si > 0 && sport !== prevSport) {
+      console.log(`\n⏸️  Switching to ${sport} — pausing to avoid rate limits…`);
+      await sleep(3000);
+    } else if (si > 0) {
+      await sleep(300);
+    }
+    prevSport = sport;
     console.log(`📡 Fetching ${ticker}...`);
     const events = await fetchEvents(ticker);
     console.log(`   ${events.length} events found`);
