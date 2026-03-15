@@ -8,9 +8,87 @@ Live college basketball odds are always available at OddsTrader. You can keep up
 
 Total
 
+- Spread
+
+- Money
+
+- Total
+
+- Merged
+
 Game
 
+- Game
+
+- 1H
+
+- 2H
+
 DIV 1
+
+Top 25
+
+DIV 1
+
+ACC
+
+BIG10
+
+BIG12
+
+SEC
+
+A10
+
+AAC
+
+AE
+
+AS
+
+BIGEAST
+
+BIGSKY
+
+BIGSOUTH
+
+BIGWEST
+
+CUSA
+
+HORIZON
+
+IVY
+
+MAAC
+
+MAC
+
+MEAC
+
+MVC
+
+MWC
+
+NE
+
+OVC
+
+PATRIOT
+
+SOUTHERN
+
+SOUTHLAND
+
+SUMMIT
+
+SUNBELT
+
+SWAC
+
+WAC
+
+WCC
 
 TodayYesterday
 
@@ -18,26 +96,44 @@ TodayYesterday
 
 NCAAB Sun 03/15
 
-|     |     |     |     |     |     |     |     |     |     |     |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+[Opener](https://www.oddstrader.com/betting/)
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/1512:00 PM<br>![](https://logos.oddstrader.com/logos-original/cdd49d5d-6125-431b-a029-d7e648b499d6-original.PNG?d=100x100)<br>Pennsylvania<br>17-11<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
-| ![](https://logos.oddstrader.com/logos-original/4279d824-a95d-41be-b457-14a48d9a67ac-original.png?d=100x100)<br>Yale<br>24-5<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+[![BetOnline](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/betonline.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b0a36757ce64590c29af4)
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/151:00 PM<br>![](https://logos.oddstrader.com/logos-original/1dce4504-779e-43ec-960f-591f33699978-original.PNG?d=100x100)<br>Dayton<br>23-10<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
-| ![](https://logos.oddstrader.com/logos-original/76d8de64-0aae-47d8-81d0-4f715ccb9d16-original.PNG?d=100x100)<br>Virginia Commonwealth<br>26-7<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+[![BetAnything](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/betanything-black-logo.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b09c8757ce64590c284d3)
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/151:00 PM<br>![](https://logos.oddstrader.com/logos-original/93758896-7684-410b-b64f-18a67b12c08a-original.png?d=100x100)<br>#22Vanderbilt<br>26-7<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
-| ![](https://logos.oddstrader.com/logos-original/20cde7b0-764d-4cba-9fd0-dce5b7f3a874-original.PNG?d=100x100)<br>#17Arkansas<br>25-8<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+[![Bovada](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/Bovada.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b09e5ea955ff52a193cb0)
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/153:15 PM<br>![](https://logos.oddstrader.com/logos-original/47076849-4025-46a3-b2db-bf62bd8ca14c-original.PNG?d=100x100)<br>Wichita State<br>22-10<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
-| ![](https://logos.oddstrader.com/logos-original/929b9438-b8a1-41db-a439-e306a1cd7051-original.png?d=100x100)<br>South Florida<br>24-8<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+[![Heritage](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/Heritage.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b09aeb3f97b455b403a2f)
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>SUN 03/153:30 PM<br>![](https://logos.oddstrader.com/logos-original/449d376a-0913-468b-a6fc-fbc95d19f8da-original.png?d=100x100)<br>#18Purdue<br>26-8<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
-| ![](https://logos.oddstrader.com/logos-original/e8de38e1-9624-4cea-9af7-68f8ee0a7efe-original.png?d=100x100)<br>#3Michigan<br>31-2<br>-<br>- |  |  |  |  |  |  |  |  |  |  |
+[![Bookmaker](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/Bookmaker-1.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b09904c4415ff66f2e1ab)
 
-| ![](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>FINAL<br>![](https://logos.oddstrader.com/logos-original/6e97c562-e8de-4c94-baa4-12cb3126f227-original.png?d=100x100)<br>California Baptist<br>25-8<br>63<br>- |  |  |  |  |  |  |  |  |  |  |
-| ![](https://logos.oddstrader.com/logos-original/97a96da2-dc5e-45ab-83d0-ef441bb3a9ac-original.PNG?d=100x100)<br>Utah Valley<br>25-8<br>61<br>- |  |  |  |  |  |  |  |  |  |  |
+[![JustBet](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/Justbet-hp.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b09564c4415ff66f2d8e3)
+
+![logo-NCAAB ](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg)
+
+NCAAB Sun 03/15
+
+|     |     |     |     |     |     |     |     |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 00:10:08 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN2...<br>![](https://logos.oddstrader.com/logos-original/cdd49d5d-6125-431b-a029-d7e648b499d6-original.PNG?d=100x100)<br>Pennsylvania<br>17-11<br>54%<br>o141½ -118Bookmaker | o143 -105 | o142½ -110 | o142 -110 | o142½ -105 | o142½ -108 | o141½ -118 | o141½ -118 |
+| ![](https://logos.oddstrader.com/logos-original/4279d824-a95d-41be-b457-14a48d9a67ac-original.png?d=100x100)<br>Yale<br>24-5<br>46%<br>u142½ -108Heritage | u143 -115 | u142½ -110 | u142 -110 | u142½ -115 | u142½ -108 | u141½ -102 | u141½ -102 |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:10:08 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)CBS...<br>![](https://logos.oddstrader.com/logos-original/1dce4504-779e-43ec-960f-591f33699978-original.PNG?d=100x100)<br>Dayton<br>23-10<br>56%<br>o137 -110Bookmaker | o140 -105 | o137 -117 | o138 -110 | o138½ -110 | o139 -108 | o137 -110 | o138½ +109 |
+| ![](https://logos.oddstrader.com/logos-original/76d8de64-0aae-47d8-81d0-4f715ccb9d16-original.PNG?d=100x100)<br>Virginia Commonwealth<br>26-7<br>44%<br>u139 -108Heritage | u140 -115 | u137 -103 | u138 -110 | u138½ -110 | u139 -108 | u137 -110 | u138½ -132 |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>STARTS IN 01:10:08 ![tv](https://otcdn.virginia.us-east-1.oddstrader.com/ModernTv.svg)ESPN...<br>![](https://logos.oddstrader.com/logos-original/93758896-7684-410b-b64f-18a67b12c08a-original.png?d=100x100)<br>#22Vanderbilt<br>26-7<br>65%<br>o164½ -106Bookmaker | o167 -105 | o164½ -110 | o164½ -110 | o165 -110 | o164½ -108 | o164½ -106 | o164½ -106 |
+| ![](https://logos.oddstrader.com/logos-original/20cde7b0-764d-4cba-9fd0-dce5b7f3a874-original.PNG?d=100x100)<br>#17Arkansas<br>25-8<br>35%<br>u165 -110Bovada | u167 -115 | u164½ -110 | u164½ -110 | u165 -110 | u164½ -108 | u164½ -114 | u164½ -114 |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 03/153:15 PM<br>![](https://logos.oddstrader.com/logos-original/47076849-4025-46a3-b2db-bf62bd8ca14c-original.PNG?d=100x100)<br>Wichita State<br>22-10<br>91%<br>o148½ -110BetAnything | o151½ -110 | o148½ -115 | o148½ -110 | o149 -115 | o149½ -108 | o149 -109 | o149 -109 |
+| ![](https://logos.oddstrader.com/logos-original/929b9438-b8a1-41db-a439-e306a1cd7051-original.png?d=100x100)<br>South Florida<br>24-8<br>9%<br>u149½ -108Heritage | u151½ -110 | u148½ -105 | u148½ -110 | u149 -105 | u149½ -108 | u149 -111 | u149 -111 |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SUN 03/153:30 PM<br>![](https://logos.oddstrader.com/logos-original/449d376a-0913-468b-a6fc-fbc95d19f8da-original.png?d=100x100)<br>#18Purdue<br>26-8<br>45%<br>o149 -109Bookmaker | o151 -110 | o149 -112 | o149½ -110 | o149½ -110 | o149½ -108 | o149 -109 | o149 -109 |
+| ![](https://logos.oddstrader.com/logos-original/e8de38e1-9624-4cea-9af7-68f8ee0a7efe-original.png?d=100x100)<br>#3Michigan<br>31-2<br>55%<br>u149½ -108Heritage | u151 -110 | u149 -108 | u149½ -110 | u149½ -110 | u149½ -108 | u149 -111 | u149 -111 |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>FINAL<br>![](https://logos.oddstrader.com/logos-original/6e97c562-e8de-4c94-baa4-12cb3126f227-original.png?d=100x100)<br>California Baptist<br>25-8<br>63<br>o138½ -105Bovada | o142 -110 | o139 -110 | o139 -110 | o138½ -105 | o138½ -108 | o139 -110 | o139 -110 |
+| ![](https://logos.oddstrader.com/logos-original/97a96da2-dc5e-45ab-83d0-ef441bb3a9ac-original.PNG?d=100x100)<br>Utah Valley<br>25-8<br>61<br>u139 -110BetOnline | u142 -110 | u139 -110 | u139 -110 | u138½ -115 | u138½ -108 | u139 -110 | u139 -110 |
 
 OddsTrader has live betting odds for every college basketball game from the start of the season through March Madness. Betting lines update every 30 seconds for upcoming games and every 10 seconds for live games, ensuring that you’re always looking at the latest odds.
 
@@ -76,6 +172,12 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
 
+Which matchup projects the lowest total today?Generate
+
+![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
+
+BetStationThe future of Betting
+
 [NCAAB](https://www.oddstrader.com/ncaa-college-basketball/)
 
 Report
@@ -93,3 +195,11 @@ The content on this site is for entertainment purposes only. OddsTrader makes no
 OddsTrader no longer operates under any U.S. license, including Pennsylvania.
 
 Seek help with a gambling addiction at 1-800-Gambler.
+
+×Feedback
+
+![Paperclip Icon](<Base64-Image-Removed>)Upload files
+
+Send
+
+[Powered by Doorbell.io](https://doorbell.io/?utm_source=feedback_form&utm_medium=web_sdk&utm_campaign=application_10828)
