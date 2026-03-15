@@ -489,36 +489,37 @@ async function run() {
       // Fetch ALL trades for both away and home tickers → per-team flow + whales
       let tradeFlow = null;
       let kalshiWhales = null;
-      const WHALE_MIN = 100; // $100+ trades on Kalshi are significant
-      if (gameProbs?.awayTicker || gameProbs?.homeTicker) {
-        let awayTickets = 0, homeTickets = 0;
-        let awayCash = 0, homeCash = 0;
-        const bigTrades = [];
+      const WHALE_MIN = 100;
+      let awayTickets = 0, homeTickets = 0;
+      let awayCash = 0, homeCash = 0;
+      const bigTrades = [];
 
-        const processTrades = (trades, yeaTeam, nayTeam) => {
-          for (const t of trades) {
-            const count = parseFloat(t.count_fp || '0');
-            const yesPrice = parseFloat(t.yes_price_dollars || '0');
-            const noPrice = parseFloat(t.no_price_dollars || '0');
-            const isYes = t.taker_side === 'yes';
-            const cash = isYes ? count * yesPrice : count * noPrice;
-            const team = isYes ? yeaTeam : nayTeam;
+      const processTrades = (trades, yeaTeam, nayTeam) => {
+        for (const t of trades) {
+          const count = parseFloat(t.count_fp || '0');
+          const yesPrice = parseFloat(t.yes_price_dollars || '0');
+          const noPrice = parseFloat(t.no_price_dollars || '0');
+          const isYes = t.taker_side === 'yes';
+          const cash = isYes ? count * yesPrice : count * noPrice;
+          const team = isYes ? yeaTeam : nayTeam;
 
-            if (team === 'away') { awayTickets++; awayCash += cash; }
-            else { homeTickets++; homeCash += cash; }
+          if (team === 'away') { awayTickets++; awayCash += cash; }
+          else { homeTickets++; homeCash += cash; }
 
-            if (cash >= WHALE_MIN) {
-              bigTrades.push({
-                amount: Math.round(cash),
-                side: 'BUY',
-                outcome: team === 'away' ? awayRaw : homeRaw,
-                price: Math.round((isYes ? yesPrice : noPrice) * 100),
-                ts: t.created_time ? new Date(t.created_time).getTime() : null,
-              });
-            }
+          if (cash >= WHALE_MIN) {
+            bigTrades.push({
+              amount: Math.round(cash),
+              side: 'BUY',
+              outcome: team === 'away' ? awayRaw : homeRaw,
+              price: Math.round((isYes ? yesPrice : noPrice) * 100),
+              ts: t.created_time ? new Date(t.created_time).getTime() : null,
+            });
           }
-        };
+        }
+      };
 
+      // Path A: Game-winner (moneyline) tickers exist
+      if (gameProbs?.awayTicker || gameProbs?.homeTicker) {
         if (gameProbs.awayTicker) {
           const trades = await fetchAllTrades(gameProbs.awayTicker);
           processTrades(trades, 'away', 'home');
@@ -527,30 +528,49 @@ async function run() {
           const trades = await fetchAllTrades(gameProbs.homeTicker);
           processTrades(trades, 'home', 'away');
         }
-
-        const totalTickets = awayTickets + homeTickets;
-        const totalCash = awayCash + homeCash;
-        if (totalTickets > 0) {
-          tradeFlow = {
-            awayTicketPct: Number((awayTickets / totalTickets * 100).toFixed(1)),
-            homeTicketPct: Number((homeTickets / totalTickets * 100).toFixed(1)),
-            awayMoneyPct: totalCash > 0 ? Number((awayCash / totalCash * 100).toFixed(1)) : 0,
-            homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
-            tradeCount: totalTickets,
-            sampleCash: Math.round(totalCash),
-          };
+      }
+      // Path B: No game-winner market — use spread markets for flow data
+      else if (spreadEvent?.markets?.length > 0) {
+        const nAway = normalize(awayRaw);
+        const nHome = normalize(homeRaw);
+        for (const m of spreadEvent.markets) {
+          const sub = normalize(m.yes_sub_title || '');
+          const favorsAway = sub.includes(nAway) || (nAway.length > 3 && sub.includes(nAway.slice(0, 4)));
+          const favorsHome = sub.includes(nHome) || (nHome.length > 3 && sub.includes(nHome.slice(0, 4)));
+          const yeaTeam = favorsAway ? 'away' : favorsHome ? 'home' : null;
+          if (!yeaTeam || !m.ticker) continue;
+          const nayTeam = yeaTeam === 'away' ? 'home' : 'away';
+          await sleep(150);
+          const trades = await fetchAllTrades(m.ticker);
+          if (trades.length > 0) {
+            console.log(`   📊 Spread trades: ${m.yes_sub_title} → ${trades.length} trades`);
+          }
+          processTrades(trades, yeaTeam, nayTeam);
         }
+      }
 
-        if (bigTrades.length > 0) {
-          bigTrades.sort((a, b) => b.amount - a.amount);
-          const whaleCash = bigTrades.reduce((s, t) => s + t.amount, 0);
-          kalshiWhales = {
-            count: bigTrades.length,
-            totalCash: whaleCash,
-            largest: bigTrades[0].amount,
-            topTrades: bigTrades.slice(0, 10),
-          };
-        }
+      const totalTickets = awayTickets + homeTickets;
+      const totalCash = awayCash + homeCash;
+      if (totalTickets > 0) {
+        tradeFlow = {
+          awayTicketPct: Number((awayTickets / totalTickets * 100).toFixed(1)),
+          homeTicketPct: Number((homeTickets / totalTickets * 100).toFixed(1)),
+          awayMoneyPct: totalCash > 0 ? Number((awayCash / totalCash * 100).toFixed(1)) : 0,
+          homeMoneyPct: totalCash > 0 ? Number((homeCash / totalCash * 100).toFixed(1)) : 0,
+          tradeCount: totalTickets,
+          sampleCash: Math.round(totalCash),
+        };
+      }
+
+      if (bigTrades.length > 0) {
+        bigTrades.sort((a, b) => b.amount - a.amount);
+        const whaleCash = bigTrades.reduce((s, t) => s + t.amount, 0);
+        kalshiWhales = {
+          count: bigTrades.length,
+          totalCash: whaleCash,
+          largest: bigTrades[0].amount,
+          topTrades: bigTrades.slice(0, 10),
+        };
       }
 
       // Fetch candlestick price history for trend line
