@@ -9,15 +9,18 @@
  * Usage: node scripts/fetchPolymarketData.js
  */
 
+import * as dotenv from 'dotenv';
 import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { parseBasketballOdds } from '../src/utils/basketballOddsParser.js';
 import { parseOddsTrader } from '../src/utils/oddsTraderParser.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
+dotenv.config({ path: join(ROOT, '.env') });
+
 const GAMMA = 'https://gamma-api.polymarket.com';
+const ODDS_API_KEY = process.env.ODDS_API_KEY;
 const DATA = 'https://data-api.polymarket.com';
 const CLOB = 'https://clob.polymarket.com';
 
@@ -284,21 +287,37 @@ function matchToGameKey(teams, cbbMap, sport) {
   return null;
 }
 
-// ─── Load today's schedule (OddsTrader) ─────────────────────────────────────
-function loadTodaysSchedule() {
+// ─── Load today's schedule ──────────────────────────────────────────────────
+async function loadTodaysSchedule(cbbMap) {
   const validCBB = new Set();
   const validNHL = new Set();
-  try {
-    const cbbPath = join(ROOT, 'public', 'basketball_odds.md');
-    const cbbMd = readFileSync(cbbPath, 'utf8');
-    const cbbGames = parseBasketballOdds(cbbMd);
-    for (const g of cbbGames) {
-      validCBB.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+
+  // CBB: use Odds API (reliable, structured) instead of scraping OddsTrader markdown
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/basketball_ncaab/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = findCBBTeam(cbbMap, g.away_team);
+          const home = findCBBTeam(cbbMap, g.home_team);
+          if (away && home) {
+            validCBB.add(`${normalize(away)}_${normalize(home)}`);
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's CBB (Odds API): ${validCBB.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load CBB schedule from Odds API:', e.message);
     }
-    console.log(`📋 Today's CBB: ${cbbGames.length} games`);
-  } catch (e) {
-    console.warn('Could not load CBB schedule:', e.message);
+  } else {
+    console.warn('⚠️  No ODDS_API_KEY — CBB schedule will be empty');
   }
+
   try {
     const nhlPath = join(ROOT, 'public', 'odds_money.md');
     const nhlMd = readFileSync(nhlPath, 'utf8');
@@ -319,7 +338,7 @@ function loadTodaysSchedule() {
 async function run() {
   const out = { CBB: {}, NHL: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL } = loadTodaysSchedule();
+  const { validCBB, validNHL } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
