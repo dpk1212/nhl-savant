@@ -225,7 +225,8 @@ function resolveNHLTeam(raw) {
 // ─── Extract teams from Kalshi event title ("TeamA at TeamB") ────────────
 function extractTeamsFromTitle(title) {
   const t = (title || '').trim()
-    .replace(/:\s*(Spread|Total Points|First Half Spread)$/i, '');
+    .replace(/:\s*(Spread|Total Points|First Half Spread)$/i, '')
+    .replace(/^(SEC|ACC|Big\s*(?:Ten|10|12|East)|AAC|Atlantic\s*10|Ivy\s*League|American|Sun\s*Belt|Mountain\s*West|WCC|Patriot|Missouri\s*Valley|Big\s*Sky|Southern|SWAC|CAA|MEAC|NEC|Ohio\s*Valley|Horizon|Big\s*South|MAC|Summit|Big\s*West|WAC|Atlantic\s*Sun|Conference\s*USA)\s*(?:Championship|Tournament|Conf\.?\s*Tournament)\s*:\s*/i, '');
   const patterns = [
     /^(.+?)\s+at\s+(.+?)$/i,
     /^(.+?)\s+vs\.?\s+(.+?)$/i,
@@ -554,10 +555,12 @@ async function run() {
       if (gameProbs?.awayTicker || gameProbs?.homeTicker) {
         if (gameProbs.awayTicker) {
           const trades = await fetchAllTrades(gameProbs.awayTicker);
+          console.log(`   🎯 ML trades (${awayRaw}): ${trades.length} from ${gameProbs.awayTicker}`);
           processTrades(trades, 'away', 'home');
         }
         if (gameProbs.homeTicker) {
           const trades = await fetchAllTrades(gameProbs.homeTicker);
+          console.log(`   🎯 ML trades (${homeRaw}): ${trades.length} from ${gameProbs.homeTicker}`);
           processTrades(trades, 'home', 'away');
         }
       }
