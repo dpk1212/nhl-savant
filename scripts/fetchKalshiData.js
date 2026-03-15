@@ -23,11 +23,20 @@ const httpFetch = typeof globalThis.fetch === 'function'
   ? globalThis.fetch
   : (await import('node-fetch')).default;
 
-async function get(path) {
+async function get(path, retries = 3) {
   const url = BASE + path;
-  const res = await httpFetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`${res.status} ${url}`);
-  return res.json();
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const res = await httpFetch(url, { headers: { Accept: 'application/json' } });
+    if (res.status === 429) {
+      const wait = 2000 * (attempt + 1);
+      console.warn(`   ⏳ Rate-limited (429), waiting ${wait}ms…`);
+      await new Promise(r => setTimeout(r, wait));
+      continue;
+    }
+    if (!res.ok) throw new Error(`${res.status} ${url}`);
+    return res.json();
+  }
+  throw new Error(`429 after ${retries} retries: ${url}`);
 }
 
 // ─── Fetch all open events for a series (with pagination) ─────────────────
@@ -48,7 +57,10 @@ async function fetchEvents(seriesTicker, maxPages = 5) {
       all.push(...events);
       cursor = data.cursor || '';
       if (!cursor || events.length === 0) break;
-    } catch { break; }
+    } catch (err) {
+      console.warn(`   ⚠️ fetchEvents error for ${seriesTicker}: ${err.message}`);
+      break;
+    }
   }
   return all;
 }
@@ -67,7 +79,10 @@ async function fetchAllTrades(marketTicker) {
       all.push(...batch);
       cursor = data.cursor || '';
       if (!cursor || batch.length < 200) break;
-    } catch { break; }
+    } catch (err) {
+      console.warn(`   ⚠️ fetchAllTrades error for ${marketTicker}: ${err.message}`);
+      break;
+    }
   }
   return all;
 }
@@ -469,7 +484,9 @@ async function run() {
 
   const eventsByKey = { CBB: {}, NHL: {} };
 
-  for (const { ticker, sport, type } of seriesConfig) {
+  for (let si = 0; si < seriesConfig.length; si++) {
+    const { ticker, sport, type } = seriesConfig[si];
+    if (si > 0) await sleep(300);
     console.log(`📡 Fetching ${ticker}...`);
     const events = await fetchEvents(ticker);
     console.log(`   ${events.length} events found`);
@@ -554,11 +571,13 @@ async function run() {
       // Game-winner (moneyline) tickers
       if (gameProbs?.awayTicker || gameProbs?.homeTicker) {
         if (gameProbs.awayTicker) {
+          await sleep(150);
           const trades = await fetchAllTrades(gameProbs.awayTicker);
           console.log(`   🎯 ML trades (${awayRaw}): ${trades.length} from ${gameProbs.awayTicker}`);
           processTrades(trades, 'away', 'home');
         }
         if (gameProbs.homeTicker) {
+          await sleep(150);
           const trades = await fetchAllTrades(gameProbs.homeTicker);
           console.log(`   🎯 ML trades (${homeRaw}): ${trades.length} from ${gameProbs.homeTicker}`);
           processTrades(trades, 'home', 'away');
