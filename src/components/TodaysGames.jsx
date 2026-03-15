@@ -3760,20 +3760,42 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                   {gamesInSlot.map((game, gameIndex) => {
                     const index = allGamesToDisplay.indexOf(game);
           // Find the best edge for this game to show in narrative
-          // CRITICAL: If we already wrote a bet (Firebase), always show THAT side
+          // CRITICAL: If we already wrote a bet (Firebase), ALWAYS show that bet
           const fbBet = firebaseBets?.find(b =>
             b.game?.awayTeam === game.awayTeam &&
             b.game?.homeTeam === game.homeTeam &&
             b.bet?.market === 'MONEYLINE' &&
             b.status === 'PENDING'
           );
-          const fbTeam = fbBet?.bet?.team || fbBet?.bet?.pick?.split(' ')[0];
           const gameEdges = topEdges
             .filter(e => e.game === game.game && e.evPercent > 0)
             .sort((a, b) => b.evPercent - a.evPercent);
-          const bestEdge = fbTeam
-            ? (gameEdges.find(e => e.team === fbTeam) || gameEdges[0])
-            : gameEdges[0];
+          let bestEdge;
+          if (fbBet) {
+            const fbTeam = fbBet.bet?.team || fbBet.bet?.pick?.split(' ')[0];
+            const fbSide = fbBet.bet?.side || (fbBet.bet?.pick?.includes('AWAY') ? 'AWAY' : 'HOME');
+            const fbEdgeData = fbSide === 'AWAY' ? game.edges?.moneyline?.away : game.edges?.moneyline?.home;
+            bestEdge = {
+              pick: fbBet.bet?.pick,
+              team: fbTeam,
+              odds: fbEdgeData?.odds ?? fbBet.bet?.odds,
+              ev: fbEdgeData?.ev ?? fbBet.prediction?.ev ?? 0,
+              evPercent: fbEdgeData?.evPercent ?? fbBet.prediction?.evPercent ?? 0,
+              modelProb: fbEdgeData?.modelProb ?? fbBet.prediction?.modelProb ?? 0.5,
+              marketProb: fbEdgeData?.marketProb ?? fbBet.prediction?.marketProb ?? 0,
+              market: 'MONEYLINE',
+              qualityGrade: fbEdgeData?.qualityGrade ?? fbBet.prediction?.qualityGrade ?? 'B+',
+              agreement: fbEdgeData?.agreement ?? fbBet.prediction?.agreement ?? null,
+              confidence: fbEdgeData?.confidence ?? fbBet.prediction?.confidence ?? 'MEDIUM',
+              kelly: fbEdgeData?.kelly ?? null,
+              recommendedUnit: fbEdgeData?.recommendedUnit ?? fbBet.prediction?.recommendedUnit ?? null,
+              bestBook: fbEdgeData?.bestBook ?? null,
+              consensusOdds: fbEdgeData?.consensusOdds ?? null,
+              isLocked: true,
+            };
+          } else {
+            bestEdge = gameEdges[0];
+          }
 
           // Check if game is live or final
           const liveScore = liveScores?.find(score => 
