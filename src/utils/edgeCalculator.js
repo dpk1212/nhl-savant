@@ -563,72 +563,48 @@ export class EdgeCalculator {
     const gradeOrder = ['A+', 'A', 'B+', 'B', 'C', 'D', 'N/A'];  // Fixed: Added A+ and B+
     
     allEdges.forEach(gameEdges => {
-      // Moneyline edges
-      if (gameEdges.edges.moneyline.away && gameEdges.edges.moneyline.away.ev > minEV) {
-        const edge = gameEdges.edges.moneyline.away;
-        
-        // QUALITY FILTER: Minimum quality grade (PRIMARY FILTER)
-        if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
-          console.log(`⚠️ Filtered ${gameEdges.awayTeam} AWAY: Grade ${edge.qualityGrade} < ${minQuality}`);
-          return;
+      // Moneyline edges — only emit the BETTER side per game
+      const awayML = gameEdges.edges.moneyline.away;
+      const homeML = gameEdges.edges.moneyline.home;
+      const awayOK = awayML && awayML.ev > minEV && !(useFilters && awayML.qualityGrade && gradeOrder.indexOf(awayML.qualityGrade) > gradeOrder.indexOf(minQuality));
+      const homeOK = homeML && homeML.ev > minEV && !(useFilters && homeML.qualityGrade && gradeOrder.indexOf(homeML.qualityGrade) > gradeOrder.indexOf(minQuality));
+
+      let mlEdge = null, mlTeam = null, mlSide = null;
+      if (awayOK && homeOK) {
+        if (awayML.evPercent >= homeML.evPercent) {
+          mlEdge = awayML; mlTeam = gameEdges.awayTeam; mlSide = 'AWAY';
+        } else {
+          mlEdge = homeML; mlTeam = gameEdges.homeTeam; mlSide = 'HOME';
         }
-        
-        opportunities.push({
-          game: gameEdges.game,
-          gameTime: gameEdges.gameTime,
-          market: 'MONEYLINE',
-          pick: `${gameEdges.awayTeam} (AWAY)`,
-          team: gameEdges.awayTeam,
-          odds: edge.odds,
-          bestBook: edge.bestBook,
-          consensusOdds: edge.consensusOdds,
-          ev: edge.ev,
-          evPercent: edge.evPercent,
-          modelProb: edge.modelProb,
-          marketProb: edge.marketProb,
-          ensembleProb: edge.ensembleProb,
-          agreement: edge.agreement,
-          confidence: edge.confidence,
-          qualityGrade: edge.qualityGrade,
-          kelly: edge.kelly,
-          recommendedUnit: edge.recommendedUnit,
-          moneyPuckProb: edge.moneyPuckProb,
-          calibratedProb: edge.calibratedProb,
-          isPreliminary: !edge.moneyPuckProb
-        });
+      } else if (awayOK) {
+        mlEdge = awayML; mlTeam = gameEdges.awayTeam; mlSide = 'AWAY';
+      } else if (homeOK) {
+        mlEdge = homeML; mlTeam = gameEdges.homeTeam; mlSide = 'HOME';
       }
-      
-      if (gameEdges.edges.moneyline.home && gameEdges.edges.moneyline.home.ev > minEV) {
-        const edge = gameEdges.edges.moneyline.home;
-        
-        // QUALITY FILTER: Minimum quality grade (PRIMARY FILTER)
-        if (useFilters && edge.qualityGrade && gradeOrder.indexOf(edge.qualityGrade) > gradeOrder.indexOf(minQuality)) {
-          console.log(`⚠️ Filtered ${gameEdges.homeTeam} HOME: Grade ${edge.qualityGrade} < ${minQuality}`);
-          return;
-        }
-        
+
+      if (mlEdge) {
         opportunities.push({
           game: gameEdges.game,
           gameTime: gameEdges.gameTime,
           market: 'MONEYLINE',
-          pick: `${gameEdges.homeTeam} (HOME)`,
-          team: gameEdges.homeTeam,
-          odds: edge.odds,
-          bestBook: edge.bestBook,
-          consensusOdds: edge.consensusOdds,
-          ev: edge.ev,
-          evPercent: edge.evPercent,
-          modelProb: edge.modelProb,
-          marketProb: edge.marketProb,
-          ensembleProb: edge.ensembleProb,
-          agreement: edge.agreement,
-          confidence: edge.confidence,
-          qualityGrade: edge.qualityGrade,
-          kelly: edge.kelly,
-          recommendedUnit: edge.recommendedUnit,
-          moneyPuckProb: edge.moneyPuckProb,
-          calibratedProb: edge.calibratedProb,
-          isPreliminary: !edge.moneyPuckProb
+          pick: `${mlTeam} (${mlSide})`,
+          team: mlTeam,
+          odds: mlEdge.odds,
+          bestBook: mlEdge.bestBook,
+          consensusOdds: mlEdge.consensusOdds,
+          ev: mlEdge.ev,
+          evPercent: mlEdge.evPercent,
+          modelProb: mlEdge.modelProb,
+          marketProb: mlEdge.marketProb,
+          ensembleProb: mlEdge.ensembleProb,
+          agreement: mlEdge.agreement,
+          confidence: mlEdge.confidence,
+          qualityGrade: mlEdge.qualityGrade,
+          kelly: mlEdge.kelly,
+          recommendedUnit: mlEdge.recommendedUnit,
+          moneyPuckProb: mlEdge.moneyPuckProb,
+          calibratedProb: mlEdge.calibratedProb,
+          isPreliminary: !mlEdge.moneyPuckProb
         });
       }
       

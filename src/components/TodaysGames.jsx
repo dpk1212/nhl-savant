@@ -3760,9 +3760,20 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
                   {gamesInSlot.map((game, gameIndex) => {
                     const index = allGamesToDisplay.indexOf(game);
           // Find the best edge for this game to show in narrative
-          const bestEdge = topEdges
+          // CRITICAL: If we already wrote a bet (Firebase), always show THAT side
+          const fbBet = firebaseBets?.find(b =>
+            b.game?.awayTeam === game.awayTeam &&
+            b.game?.homeTeam === game.homeTeam &&
+            b.bet?.market === 'MONEYLINE' &&
+            b.status === 'PENDING'
+          );
+          const fbTeam = fbBet?.bet?.team || fbBet?.bet?.pick?.split(' ')[0];
+          const gameEdges = topEdges
             .filter(e => e.game === game.game && e.evPercent > 0)
-            .sort((a, b) => b.evPercent - a.evPercent)[0];
+            .sort((a, b) => b.evPercent - a.evPercent);
+          const bestEdge = fbTeam
+            ? (gameEdges.find(e => e.team === fbTeam) || gameEdges[0])
+            : gameEdges[0];
 
           // Check if game is live or final
           const liveScore = liveScores?.find(score => 
