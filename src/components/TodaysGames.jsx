@@ -3773,24 +3773,22 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
           let bestEdge;
           if (fbBet) {
             const fbTeam = fbBet.bet?.team || fbBet.bet?.pick?.split(' ')[0];
-            const fbSide = fbBet.bet?.side || (fbBet.bet?.pick?.includes('AWAY') ? 'AWAY' : 'HOME');
-            const fbEdgeData = fbSide === 'AWAY' ? game.edges?.moneyline?.away : game.edges?.moneyline?.home;
             bestEdge = {
               pick: fbBet.bet?.pick,
               team: fbTeam,
-              odds: fbEdgeData?.odds ?? fbBet.bet?.odds,
-              ev: fbEdgeData?.ev ?? fbBet.prediction?.ev ?? 0,
-              evPercent: fbEdgeData?.evPercent ?? fbBet.prediction?.evPercent ?? 0,
-              modelProb: fbEdgeData?.modelProb ?? fbBet.prediction?.modelProb ?? 0.5,
-              marketProb: fbEdgeData?.marketProb ?? fbBet.prediction?.marketProb ?? 0,
+              odds: fbBet.bet?.odds,
+              ev: fbBet.prediction?.ev ?? 0,
+              evPercent: fbBet.prediction?.evPercent ?? 0,
+              modelProb: fbBet.prediction?.modelProb ?? 0.5,
+              marketProb: fbBet.prediction?.marketProb ?? 0,
               market: 'MONEYLINE',
-              qualityGrade: fbEdgeData?.qualityGrade ?? fbBet.prediction?.qualityGrade ?? 'B+',
-              agreement: fbEdgeData?.agreement ?? fbBet.prediction?.agreement ?? null,
-              confidence: fbEdgeData?.confidence ?? fbBet.prediction?.confidence ?? 'MEDIUM',
-              kelly: fbEdgeData?.kelly ?? null,
-              recommendedUnit: fbEdgeData?.recommendedUnit ?? fbBet.prediction?.recommendedUnit ?? null,
-              bestBook: fbEdgeData?.bestBook ?? null,
-              consensusOdds: fbEdgeData?.consensusOdds ?? null,
+              qualityGrade: fbBet.prediction?.qualityGrade ?? fbBet.prediction?.rating ?? 'B+',
+              agreement: fbBet.prediction?.agreement ?? null,
+              confidence: fbBet.prediction?.confidence ?? 'MEDIUM',
+              kelly: null,
+              recommendedUnit: fbBet.prediction?.recommendedUnit ?? null,
+              bestBook: null,
+              consensusOdds: null,
               isLocked: true,
             };
           } else {
