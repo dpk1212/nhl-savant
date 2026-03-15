@@ -28,6 +28,9 @@ jobs:
       - name: Fetch Kalshi data
         run: node scripts/fetchKalshiData.js
 
+      - name: Audit market data
+        run: node scripts/auditMarketData.js
+
       - name: Commit market data if changed
         run: |
           git config user.name "GitHub Actions"
