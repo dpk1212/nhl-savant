@@ -1091,17 +1091,16 @@ async function checkLineMovement() {
       const signalCount = 1 + (signal2 ? 1 : 0) + (signal3For ? 1 : 0);
 
       // Gate: need at least 2 qualifying signals, movement AGAINST blocks
-      // S1+S2 (Pinnacle edge) → 1u, S1+S3 (movement) → 1u, S1+S2+S3 → 2-4u
       if (!signal3Against && (signal2 || signal3For)) {
         const mvMag = Math.abs(best.lineMovement || 0);
         let units;
-        if (signal2 && signal3For) {
+        if (signal2) {
           if (pinnEdgePts >= 2.5) units = 4;
           else if (pinnEdgePts >= 2.0) units = 4;
           else if (pinnEdgePts >= 1.5) units = 3;
           else if (pinnEdgePts >= 1.0) units = 3;
           else units = 2;
-          if (mvMag >= 1.0) units = Math.min(units + 1, 4);
+          if (signal3For && mvMag >= 1.0) units = Math.min(units + 1, 4);
         } else {
           units = 1;
         }
