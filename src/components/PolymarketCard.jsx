@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { BarChart3, ChevronDown, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { TYPOGRAPHY, MOBILE_SPACING } from '../utils/designSystem';
+import { resolveOutcomeSide } from '../utils/teamNameMapper';
 
 const ACCENT = '#10B981';
 const ACCENT_DARK = '#059669';
@@ -741,14 +742,9 @@ function MarketRow({ label, prob, volume }) {
 
 function resolveOutcomeTeam(outcome, away, home) {
   if (!outcome) return away;
-  const o = outcome.toLowerCase();
-  if (o === 'yes') return away;
-  if (o === 'no') return home;
-  const nAway = away.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const nHome = home.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const nO = o.replace(/[^a-z0-9]/g, '');
-  if (nO.includes(nAway) || nAway.includes(nO)) return away;
-  if (nO.includes(nHome) || nHome.includes(nO)) return home;
+  const side = resolveOutcomeSide(outcome, away, home);
+  if (side === 'away') return away;
+  if (side === 'home') return home;
   return outcome;
 }
 

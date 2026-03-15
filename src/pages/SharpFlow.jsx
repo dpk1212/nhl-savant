@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow } from 'lucide-react';
+import { resolveOutcomeSide } from '../utils/teamNameMapper';
 
 // ─── Brand Design System ──────────────────────────────────────────────────────
 const B = {
@@ -166,7 +167,8 @@ function buildGameData(polyData, kalshiData) {
       let whaleBuyAway = 0, whaleBuyHome = 0, whaleSellAway = 0, whaleSellHome = 0;
       let whaleCashAway = 0, whaleCashHome = 0;
       for (const w of allWhales) {
-        const isAway = w.outcome?.toLowerCase().includes(away.split(' ').pop().toLowerCase());
+        const side = resolveOutcomeSide(w.outcome, away, home);
+        const isAway = side === 'away';
         if (w.side === 'BUY') {
           if (isAway) { whaleBuyAway++; whaleCashAway += w.amount; }
           else { whaleBuyHome++; whaleCashHome += w.amount; }
