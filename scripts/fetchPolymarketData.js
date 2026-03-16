@@ -455,6 +455,8 @@ async function run() {
             outcome: t.outcome || null,
             price: t.price ? Number((t.price * 100).toFixed(0)) : null,
             ts: t.timestamp ? Number(t.timestamp) * 1000 : null,
+            wallet: t.proxyWallet || null,
+            traderName: t.name || t.pseudonym || null,
           });
         }
         tradeDetails.sort((a, b) => b.amount - a.amount);
@@ -464,7 +466,7 @@ async function run() {
           largest: tradeDetails[0]?.amount || 0,
           buyCount,
           sellCount,
-          topTrades: tradeDetails.slice(0, 5),
+          topTrades: tradeDetails.slice(0, 10),
         };
       }
 
