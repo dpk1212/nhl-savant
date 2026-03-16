@@ -845,31 +845,35 @@ function GameFlowCard({ game, isMobile, whaleProfiles }) {
 function TopTradeChip({ trade, rank }) {
   const ti = tierInfo(trade.amount);
   const time = fmtTime(trade.ts);
+  const isRanked = rank >= 0;
+  const isTop = rank === 0;
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '0.75rem',
       padding: '0.625rem 0.875rem', borderRadius: '10px',
-      background: rank === 0
+      background: isTop
         ? `linear-gradient(135deg, rgba(212,175,55,0.10) 0%, ${B.card} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${rank === 0 ? B.goldBorder : B.border}`,
+      border: `1px solid ${isTop ? B.goldBorder : B.border}`,
       position: 'relative', overflow: 'hidden',
     }}>
-      {rank === 0 && <div style={{
+      {isTop && <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px',
         background: `linear-gradient(90deg, transparent, ${B.gold}, transparent)`,
       }} />}
 
-      {/* Rank */}
+      {/* Rank or time indicator */}
       <div style={{
-        width: '22px', height: '22px', borderRadius: '6px',
-        background: rank === 0 ? B.goldDim : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${rank === 0 ? B.goldBorder : B.border}`,
+        minWidth: isRanked ? '22px' : 'auto', height: '22px', borderRadius: '6px',
+        padding: isRanked ? 0 : '0 0.4rem',
+        background: isTop ? B.goldDim : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${isTop ? B.goldBorder : B.border}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        ...T.micro, fontWeight: 800, color: rank === 0 ? B.gold : B.textMuted,
+        width: isRanked ? '22px' : 'auto',
+        ...T.micro, fontWeight: 800, color: isTop ? B.gold : B.textMuted,
         flexShrink: 0,
       }}>
-        {rank + 1}
+        {isRanked ? rank + 1 : time.ago}
       </div>
 
       {/* Amount */}
@@ -2565,6 +2569,7 @@ export default function SharpFlow() {
   const [gameSort, setGameSort] = useState('volume');
   const [signalSort, setSignalSort] = useState('divergence');
   const [signalType, setSignalType] = useState('all');
+  const [tradeView, setTradeView] = useState('largest');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -2716,7 +2721,15 @@ export default function SharpFlow() {
     for (const g of filteredGames) {
       for (const w of g.allWhales) all.push(w);
     }
-    return all.sort((a, b) => b.amount - a.amount).slice(0, 5);
+    return all.sort((a, b) => b.amount - a.amount).slice(0, 10);
+  }, [filteredGames]);
+
+  const recentTrades = useMemo(() => {
+    const all = [];
+    for (const g of filteredGames) {
+      for (const w of g.allWhales) all.push(w);
+    }
+    return all.filter(t => t.ts).sort((a, b) => b.ts - a.ts).slice(0, 10);
   }, [filteredGames]);
 
   const whaleSignals = useMemo(() => {
@@ -2945,6 +2958,38 @@ export default function SharpFlow() {
           hint="Games where money & tickets disagree" />
       </div>
 
+      {/* ─── Top Whale Positions (condensed leaderboard) ─── */}
+      {topTrades.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <SectionHead
+              title="Largest Positions"
+              subtitle={tradeView === 'largest' ? 'The 10 biggest individual whale trades today' : 'The most recent whale trades today'}
+              icon={TrendingUp}
+              style={{ marginBottom: 0 }}
+            />
+            <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+              {[
+                { key: 'largest', label: 'Largest' },
+                { key: 'recent', label: 'Most Recent' },
+              ].map(s => (
+                <button key={s.key} onClick={() => setTradeView(s.key)} style={{
+                  padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
+                  ...T.micro, fontWeight: 700,
+                  border: tradeView === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                  background: tradeView === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                  color: tradeView === s.key ? B.gold : B.textMuted,
+                  transition: 'all 0.2s ease',
+                }}>{s.label}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {(tradeView === 'largest' ? topTrades : recentTrades).map((t, i) => <TopTradeChip key={`${t.ts}-${i}`} trade={t} rank={tradeView === 'largest' ? i : -1} />)}
+          </div>
+        </div>
+      )}
+
       {/* ─── Sharp Signals (most valuable section) ─── */}
       {sharpSignals.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
@@ -3002,19 +3047,6 @@ export default function SharpFlow() {
         </div>
       )}
 
-      {/* ─── Top Whale Positions (condensed leaderboard) ─── */}
-      {topTrades.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <SectionHead
-            title="Largest Positions"
-            subtitle="The 5 biggest individual whale trades today"
-            icon={TrendingUp}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {topTrades.map((t, i) => <TopTradeChip key={`${t.ts}-${i}`} trade={t} rank={i} />)}
-          </div>
-        </div>
-      )}
 
       {/* ─── All Games (sortable, expandable) ─── */}
       <div style={{ marginBottom: '2rem' }}>
