@@ -2231,91 +2231,132 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
 
       <div style={{ padding: '0.75rem 0.875rem' }}>
         {/* ─── Position Battle — Both Sides ─── */}
-        {(awayWallets > 0 || homeWallets > 0) && (
-          <div style={{
-            borderRadius: '8px', overflow: 'hidden',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
-            background: 'rgba(255,255,255,0.02)',
-          }}>
-            <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>Sharp Money — Both Sides</span>
-            </div>
-            <div style={{ padding: '0.5rem 0.625rem' }}>
-              {/* Team headers */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+        {(awayWallets > 0 || homeWallets > 0) && (() => {
+          const awaySide = consensusSide === 'away';
+          const homeSide = consensusSide === 'home';
+          const moneyRatio = totalInvested > 0 ? Math.round((Math.max(awayInvested, homeInvested) / totalInvested) * 100) : 50;
+          const panelStyle = (isActive) => ({
+            flex: 1, padding: '0.625rem',
+            borderRadius: '8px',
+            background: isActive
+              ? `linear-gradient(135deg, ${accentColor}12 0%, ${accentColor}04 100%)`
+              : 'rgba(255,255,255,0.015)',
+            border: `1px solid ${isActive ? `${accentColor}40` : B.borderSubtle}`,
+            position: 'relative',
+            overflow: 'hidden',
+          });
+
+          const SidePanel = ({ team, wallets, invested, pnl, isActive, align }) => (
+            <div style={panelStyle(isActive)}>
+              {isActive && (
+                <div style={{
+                  position: 'absolute', top: 0, [align === 'left' ? 'left' : 'right']: 0,
+                  width: '3px', height: '100%',
+                  background: accentColor,
+                  borderRadius: align === 'left' ? '8px 0 0 8px' : '0 8px 8px 0',
+                }} />
+              )}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+                marginBottom: '0.5rem',
+              }}>
+                {isActive && align === 'left' && (
                   <span style={{
-                    ...T.micro, fontWeight: 800,
-                    color: consensusSide === 'away' ? accentColor : B.textSec,
-                  }}>
-                    {awayShort}
-                  </span>
-                  {consensusSide === 'away' && (
-                    <span style={{ ...T.micro, color: accentColor, fontSize: '0.5rem' }}>★</span>
-                  )}
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 900,
+                    padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    color: '#fff', background: accentColor,
+                  }}>SHARP SIDE</span>
+                )}
+                <span style={{
+                  ...T.sub, fontWeight: 900,
+                  color: isActive ? B.text : B.textMuted,
+                }}>
+                  {team}
+                </span>
+                {isActive && align === 'right' && (
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 900,
+                    padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    color: '#fff', background: accentColor,
+                  }}>SHARP SIDE</span>
+                )}
+              </div>
+
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: '0.375rem',
+                alignItems: align === 'right' ? 'flex-end' : 'flex-start',
+              }}>
+                <div>
+                  <div style={{ ...T.heading, fontWeight: 900, color: isActive ? accentColor : B.textSec, fontFeatureSettings: "'tnum'" }}>
+                    {fmtVol(invested)}
+                  </div>
+                  <div style={{ ...T.micro, color: B.textMuted }}>
+                    {wallets} sharp{wallets !== 1 ? 's' : ''}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  {consensusSide === 'home' && (
-                    <span style={{ ...T.micro, color: accentColor, fontSize: '0.5rem' }}>★</span>
-                  )}
-                  <span style={{
-                    ...T.micro, fontWeight: 800,
-                    color: consensusSide === 'home' ? accentColor : B.textSec,
-                  }}>
-                    {homeShort}
-                  </span>
+                <div style={{
+                  ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                  padding: '0.15rem 0.4rem', borderRadius: '4px',
+                  color: pnl >= 0 ? B.green : B.red,
+                  background: pnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                }}>
+                  {pnl >= 0 ? '+' : ''}{fmtVol(pnl)} lifetime
                 </div>
               </div>
-              {/* Proportion bar */}
+            </div>
+          );
+
+          return (
+            <div style={{ marginBottom: '0.625rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
+                <span style={{ ...T.micro, color: B.textMuted }}>Sharp Money — Both Sides</span>
+                <span style={{
+                  ...T.micro, fontWeight: 800, color: accentColor,
+                  padding: '0.1rem 0.3rem', borderRadius: '3px',
+                  background: `${accentColor}15`,
+                }}>
+                  {moneyRatio}% {consensusShort}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <SidePanel team={awayShort} wallets={awayWallets} invested={awayInvested} pnl={awayLifetimePnl} isActive={awaySide} align="left" />
+
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 0.125rem', flexShrink: 0,
+                }}>
+                  <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
+                </div>
+
+                <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} isActive={homeSide} align="right" />
+              </div>
+
+              {/* Money flow bar */}
               <div style={{
-                display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden',
-                background: B.borderSubtle, marginBottom: '0.375rem',
+                display: 'flex', height: '4px', borderRadius: '2px', overflow: 'hidden',
+                marginTop: '0.375rem',
+                background: B.borderSubtle,
               }}>
                 <div style={{
                   width: `${awayPct}%`,
-                  background: consensusSide === 'away'
-                    ? `linear-gradient(90deg, ${accentColor}, ${accentColor}cc)`
-                    : 'rgba(148,163,184,0.3)',
-                  borderRadius: '3px 0 0 3px',
-                  transition: 'width 0.3s ease',
+                  background: awaySide
+                    ? `linear-gradient(90deg, ${accentColor}88, ${accentColor})`
+                    : 'rgba(148,163,184,0.25)',
+                  transition: 'width 0.4s ease',
                 }} />
                 <div style={{
                   width: `${100 - awayPct}%`,
-                  background: consensusSide === 'home'
-                    ? `linear-gradient(90deg, ${accentColor}cc, ${accentColor})`
-                    : 'rgba(148,163,184,0.3)',
-                  borderRadius: '0 3px 3px 0',
-                  transition: 'width 0.3s ease',
+                  background: homeSide
+                    ? `linear-gradient(90deg, ${accentColor}, ${accentColor}88)`
+                    : 'rgba(148,163,184,0.25)',
+                  transition: 'width 0.4s ease',
                 }} />
               </div>
-              {/* Side-by-side stats */}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>
-                    {awayWallets} sharp{awayWallets !== 1 ? 's' : ''} · {fmtVol(awayInvested)}
-                  </span>
-                  <span style={{
-                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                    color: awayLifetimePnl >= 0 ? B.green : B.red,
-                  }}>
-                    {awayLifetimePnl >= 0 ? '+' : ''}{fmtVol(awayLifetimePnl)} P&L
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', textAlign: 'right' }}>
-                  <span style={{ ...T.micro, color: B.textMuted }}>
-                    {fmtVol(homeInvested)} · {homeWallets} sharp{homeWallets !== 1 ? 's' : ''}
-                  </span>
-                  <span style={{
-                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                    color: homeLifetimePnl >= 0 ? B.green : B.red,
-                  }}>
-                    {homeLifetimePnl >= 0 ? '+' : ''}{fmtVol(homeLifetimePnl)} P&L
-                  </span>
-                </div>
-              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ─── Price Movement — Sparklines with directional context ─── */}
         {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
