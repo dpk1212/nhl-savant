@@ -6,9 +6,11 @@
  * Expandable game cards show individual whale trades in context.
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle } from 'lucide-react';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
+import { collection, doc, setDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 // ─── Brand Design System ──────────────────────────────────────────────────────
 const B = {
@@ -84,6 +86,93 @@ function tierInfo(amt) {
   if (amt >= 5_000)  return { label: 'SHARK', color: B.gold,  bg: B.goldDim };
   if (amt >= 1_000)  return { label: 'SHARP', color: B.sky,   bg: B.blueDim };
   return null;
+}
+
+// ─── Sharp Flow Unit Sizing ───────────────────────────────────────────────────
+
+function calculateUnits(criteriaMet, evEdge, sharpCount, totalInvested) {
+  // Base: criteria strength determines tier
+  // 6/6 = 3u, 5/6 = 2u, 4/6 = 1u
+  let units = criteriaMet >= 6 ? 3 : criteriaMet >= 5 ? 2 : 1;
+
+  // Boost for strong EV edge
+  if (evEdge >= 5) units += 0.5;
+  else if (evEdge >= 3) units += 0.25;
+
+  // Boost for heavy sharp conviction
+  if (sharpCount >= 5) units += 0.5;
+  else if (sharpCount >= 4) units += 0.25;
+
+  // Boost for massive invested capital
+  if (totalInvested >= 20000) units += 0.5;
+  else if (totalInvested >= 10000) units += 0.25;
+
+  return Math.min(units, 5); // cap at 5u
+}
+
+function unitTier(units) {
+  if (units >= 3) return { label: 'MAX', color: '#10B981', icon: '🔥' };
+  if (units >= 2) return { label: 'STRONG', color: '#D4AF37', icon: '⚡' };
+  return { label: 'STANDARD', color: '#94A3B8', icon: '✓' };
+}
+
+function profitFromOdds(odds, units) {
+  if (odds > 0) return units * (odds / 100);
+  return units * (100 / Math.abs(odds));
+}
+
+// ─── Sharp Flow Locked Picks — Firebase ───────────────────────────────────────
+
+async function writeLockedPick(pick) {
+  try {
+    const docId = `${pick.date}_${pick.gameKey}`;
+    await setDoc(doc(db, 'sharpFlowPicks', docId), pick, { merge: true });
+  } catch (err) {
+    console.warn('Failed to write locked pick:', err.message);
+  }
+}
+
+async function loadLockedPicks(date) {
+  try {
+    const q = query(
+      collection(db, 'sharpFlowPicks'),
+      where('date', '==', date),
+      orderBy('lockedAt', 'desc'),
+    );
+    const snap = await getDocs(q);
+    const picks = {};
+    snap.forEach(d => { picks[d.id] = d.data(); });
+    return picks;
+  } catch (err) {
+    console.warn('Failed to load locked picks:', err.message);
+    return {};
+  }
+}
+
+async function loadAllTimePnL() {
+  try {
+    const q = query(
+      collection(db, 'sharpFlowPicks'),
+      where('status', '==', 'COMPLETED'),
+    );
+    const snap = await getDocs(q);
+    let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
+    snap.forEach(d => {
+      const p = d.data();
+      if (p.result?.outcome === 'WIN') { wins++; totalProfit += (p.result?.profit || 0); }
+      else if (p.result?.outcome === 'LOSS') { losses++; totalProfit += -(p.units || 1); }
+      else if (p.result?.outcome === 'PUSH') { pushes++; }
+      totalUnits += (p.units || 1);
+    });
+    return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
+  } catch (err) {
+    console.warn('Failed to load all-time P&L:', err.message);
+    return { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
+  }
+}
+
+function todayET() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
@@ -1730,6 +1819,53 @@ function SharpPositionsBlock({ positions, game, signal }) {
 
 // ─── Sharp Position Card (elevated, full-featured) ────────────────────────────
 
+// ─── Sparkline SVG ────────────────────────────────────────────────────────────
+
+function MiniSparkline({ points, width = 140, height = 32, color = B.gold, label, startLabel, endLabel }) {
+  if (!points || points.length < 2) return null;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const pad = 2;
+  const xStep = (width - pad * 2) / (points.length - 1);
+  const yH = height - pad * 2;
+  const pts = points.map((v, i) => ({
+    x: pad + i * xStep,
+    y: pad + yH - ((v - min) / range) * yH,
+  }));
+  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const lastPt = pts[pts.length - 1];
+  const trend = points[points.length - 1] > points[0] ? B.green : points[points.length - 1] < points[0] ? B.red : B.textMuted;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+      {label && (
+        <span style={{ ...T.micro, color: B.textMuted, marginBottom: '0.1rem' }}>{label}</span>
+      )}
+      <svg width={width} height={height} style={{ display: 'block' }}>
+        <defs>
+          <linearGradient id={`sg-${label?.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path
+          d={`${d} L${lastPt.x.toFixed(1)},${height} L${pts[0].x.toFixed(1)},${height} Z`}
+          fill={`url(#sg-${label?.replace(/\s/g, '')})`}
+        />
+        <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={lastPt.x} cy={lastPt.y} r={2.5} fill={trend} />
+      </svg>
+      {(startLabel || endLabel) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', width }}>
+          <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>{startLabel || ''}</span>
+          <span style={{ ...T.micro, color: trend, fontWeight: 700, fontSize: '0.5rem' }}>{endLabel || ''}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function rateValue(evEdge, sharpCount, pinnConfirms, totalInvested) {
   let pts = 0;
   if (evEdge > 3) pts += 4;
@@ -1748,7 +1884,7 @@ function rateValue(evEdge, sharpCount, pinnConfirms, totalInvested) {
   return { label: 'MONITOR', color: B.textSec, bg: 'rgba(255,255,255,0.04)', icon: '○' };
 }
 
-function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
+function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const [showWallets, setShowWallets] = useState(false);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
@@ -1757,6 +1893,8 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
   const consensusShort = consensusTeam.split(' ').pop();
   const oppTeam = consensusSide === 'away' ? gd.home : gd.away;
   const oppShort = oppTeam.split(' ').pop();
+  const awayShort = gd.away.split(' ').pop();
+  const homeShort = gd.home.split(' ').pop();
   const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
   const allBooks = pinnGame?.allBooks || {};
 
@@ -1772,14 +1910,72 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
   const pinnMoved = pinnGame?.movement?.direction;
   const pinnConfirms = pinnMoved === consensusSide;
 
-  const totalLifetimePnl = gd.positions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
   const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
-  const consensusPositions = gd.positions.filter(p => p.side === consensusSide);
+
+  // Per-side aggregation
+  const awayPositions = gd.positions.filter(p => p.side === 'away');
+  const homePositions = gd.positions.filter(p => p.side === 'home');
+  const awayWallets = new Set(awayPositions.map(p => p.wallet)).size;
+  const homeWallets = new Set(homePositions.map(p => p.wallet)).size;
+  const awayInvested = s.awayInvested || 0;
+  const homeInvested = s.homeInvested || 0;
+  const awayLifetimePnl = awayPositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
+  const homeLifetimePnl = homePositions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
+  const totalLifetimePnl = awayLifetimePnl + homeLifetimePnl;
+  const totalInvested = awayInvested + homeInvested;
+  const awayPct = totalInvested > 0 ? (awayInvested / totalInvested) * 100 : 50;
+
+  // Price movement data
+  const pinnHistory = pinnGame?.history || [];
+  const polyGame = polyData?.[gd.sport]?.[gd.key];
+  const polyPriceHistory = polyGame?.priceHistory;
+  const polyPoints = polyPriceHistory?.points || [];
+  const pinnAwayPoints = pinnHistory.map(h => h.away);
+  const pinnHomePoints = pinnHistory.map(h => h.home);
+  const pinnConsensusPoints = consensusSide === 'away' ? pinnAwayPoints : pinnHomePoints;
+
+  // Directional context: is price moving WITH the recommended play?
+  // For ML odds, LOWER number = MORE favored (e.g. +141→+137 = getting shorter = moving WITH)
+  // Compare implied probabilities so it works for both positive and negative odds
+  const pinnFirstProb = impliedProb(pinnConsensusPoints[0]);
+  const pinnLastProb = impliedProb(pinnConsensusPoints[pinnConsensusPoints.length - 1]);
+  const pinnMovingWith = pinnConsensusPoints.length >= 2 && pinnLastProb > pinnFirstProb;
+  const pinnMovingAgainst = pinnConsensusPoints.length >= 2 && pinnLastProb < pinnFirstProb;
+
+  const polyMovingWith = polyPoints.length >= 2 && (() => {
+    const pFirst = polyPoints[0];
+    const pLast = polyPoints[polyPoints.length - 1];
+    if (consensusSide === 'away') return pLast > pFirst;
+    return pLast < pFirst;
+  })();
+  const polyMovingAgainst = polyPoints.length >= 2 && (() => {
+    const pFirst = polyPoints[0];
+    const pLast = polyPoints[polyPoints.length - 1];
+    if (consensusSide === 'away') return pLast < pFirst;
+    return pLast > pFirst;
+  })();
+
+  // Lock-In Criteria System
+  const criteria = [
+    { id: 'sharps', label: '3+ Sharp Wallets', met: uniqueWallets >= 3 },
+    { id: 'ev', label: '+EV Edge', met: hasEV },
+    { id: 'pinnacle', label: 'Pinnacle Confirms', met: pinnConfirms },
+    { id: 'invested', label: '$5K+ Invested', met: s.totalInvested >= 5000 },
+    { id: 'pinnMove', label: 'Line Moving With Play', met: pinnMovingWith },
+    { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
+  ];
+  const criteriaMet = criteria.filter(c => c.met).length;
+  const isLocked = criteriaMet >= 4;
+
+  const betOdds = bestRetail || consensusOdds;
+  const units = isLocked ? calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested) : 0;
+  const ut = unitTier(units);
+  const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
   const vr = rateValue(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested);
   const isActionable = vr.label === 'STRONG VALUE' || vr.label === 'VALUE';
-  const accentColor = isActionable ? B.green : B.gold;
-  const accentBorder = isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
+  const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
+  const accentBorder = isLocked ? 'rgba(16,185,129,0.4)' : isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
 
   return (
     <div style={{
@@ -1804,14 +2000,28 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
             {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
           </span>
         </div>
-        <span style={{
-          ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
-          padding: '0.2rem 0.6rem', borderRadius: '5px',
-          color: vr.color, background: vr.bg,
-          border: `1px solid ${isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
-        }}>
-          {vr.icon} {vr.label}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          {isLocked && (
+            <span style={{
+              ...T.micro, fontWeight: 900, letterSpacing: '0.04em',
+              padding: '0.2rem 0.6rem', borderRadius: '5px',
+              color: '#fff', background: 'linear-gradient(135deg, #10B981, #059669)',
+              border: '1px solid rgba(16,185,129,0.4)',
+              display: 'flex', alignItems: 'center', gap: '0.25rem',
+              boxShadow: '0 0 8px rgba(16,185,129,0.3)',
+            }}>
+              <Lock size={10} /> LOCKED IN
+            </span>
+          )}
+          <span style={{
+            ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
+            padding: '0.2rem 0.6rem', borderRadius: '5px',
+            color: vr.color, background: vr.bg,
+            border: `1px solid ${isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+          }}>
+            {vr.icon} {vr.label}
+          </span>
+        </div>
       </div>
 
       {/* ─── Action Box — always present, tells user what to do ─── */}
@@ -1823,7 +2033,7 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
           : `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)`,
         border: `1px solid ${isActionable ? 'rgba(16,185,129,0.25)' : B.goldBorder}`,
       }}>
-        {/* Top: Recommendation + EV badge */}
+        {/* Top: Recommendation + EV badge + Units */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: '0.625rem',
@@ -1831,15 +2041,28 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
           <span style={{ ...T.label, fontWeight: 800, color: isActionable ? B.green : B.gold }}>
             {isActionable ? 'RECOMMENDED BET' : 'SHARP CONSENSUS'}
           </span>
-          {hasEV && (
-            <span style={{
-              ...T.body, fontWeight: 900, color: B.green,
-              padding: '0.2rem 0.6rem', borderRadius: '5px',
-              background: B.greenDim,
-            }}>
-              +{evEdge}% EV
-            </span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            {isLocked && (
+              <span style={{
+                ...T.body, fontWeight: 900, color: '#fff',
+                padding: '0.2rem 0.6rem', borderRadius: '5px',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                border: '1px solid rgba(16,185,129,0.4)',
+                fontFeatureSettings: "'tnum'",
+              }}>
+                {ut.icon} {units.toFixed(1)}u
+              </span>
+            )}
+            {hasEV && (
+              <span style={{
+                ...T.body, fontWeight: 900, color: B.green,
+                padding: '0.2rem 0.6rem', borderRadius: '5px',
+                background: B.greenDim,
+              }}>
+                +{evEdge}% EV
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Middle: The actual bet */}
@@ -1880,6 +2103,37 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
             </>
           )}
         </div>
+
+        {/* Unit sizing + risk/reward when locked */}
+        {isLocked && (
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginTop: '0.625rem', padding: '0.375rem 0.5rem',
+            borderRadius: '6px',
+            background: 'rgba(16,185,129,0.06)',
+            border: '1px solid rgba(16,185,129,0.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
+              <span style={{ ...T.micro, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                {units.toFixed(1)}u
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <span style={{ ...T.micro, color: B.textSec }}>To Win</span>
+              <span style={{ ...T.micro, fontWeight: 800, color: B.green, fontFeatureSettings: "'tnum'" }}>
+                +{potentialWin.toFixed(2)}u
+              </span>
+            </div>
+            <span style={{
+              ...T.micro, fontWeight: 800, color: ut.color,
+              padding: '0.1rem 0.35rem', borderRadius: '4px',
+              background: ut.color === B.green ? B.greenDim : ut.color === B.gold ? B.goldDim : 'rgba(255,255,255,0.04)',
+            }}>
+              {ut.icon} {ut.label}
+            </span>
+          </div>
+        )}
 
         {/* Bottom: confidence factors */}
         <div style={{
@@ -1926,7 +2180,220 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
         </div>
       </div>
 
+      {/* ─── Lock-In Criteria Checklist ─── */}
+      <div style={{
+        margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.625rem',
+        borderRadius: '8px',
+        background: isLocked
+          ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
+          : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${isLocked ? 'rgba(16,185,129,0.25)' : B.borderSubtle}`,
+      }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: '0.375rem',
+        }}>
+          <span style={{ ...T.micro, color: isLocked ? B.green : B.textMuted, fontWeight: 700 }}>
+            {isLocked ? 'PLAY LOCKED — ALL CRITERIA MET' : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
+          </span>
+          <span style={{
+            ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
+            color: criteriaMet >= 5 ? B.green : criteriaMet >= 4 ? B.green : criteriaMet >= 3 ? B.gold : B.textMuted,
+          }}>
+            {criteriaMet}/6
+          </span>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+          gap: '0.25rem',
+        }}>
+          {criteria.map(c => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', gap: '0.25rem',
+              padding: '0.15rem 0',
+            }}>
+              {c.met
+                ? <CheckCircle size={11} color={B.green} strokeWidth={2.5} />
+                : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
+              }
+              <span style={{
+                ...T.micro, fontSize: '0.5625rem',
+                color: c.met ? B.green : B.textMuted,
+                fontWeight: c.met ? 700 : 400,
+              }}>
+                {c.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={{ padding: '0.75rem 0.875rem' }}>
+        {/* ─── Position Battle — Both Sides ─── */}
+        {(awayWallets > 0 || homeWallets > 0) && (
+          <div style={{
+            borderRadius: '8px', overflow: 'hidden',
+            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
+            background: 'rgba(255,255,255,0.02)',
+          }}>
+            <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+              <span style={{ ...T.micro, color: B.textMuted }}>Sharp Money — Both Sides</span>
+            </div>
+            <div style={{ padding: '0.5rem 0.625rem' }}>
+              {/* Team headers */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <span style={{
+                    ...T.micro, fontWeight: 800,
+                    color: consensusSide === 'away' ? accentColor : B.textSec,
+                  }}>
+                    {awayShort}
+                  </span>
+                  {consensusSide === 'away' && (
+                    <span style={{ ...T.micro, color: accentColor, fontSize: '0.5rem' }}>★</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  {consensusSide === 'home' && (
+                    <span style={{ ...T.micro, color: accentColor, fontSize: '0.5rem' }}>★</span>
+                  )}
+                  <span style={{
+                    ...T.micro, fontWeight: 800,
+                    color: consensusSide === 'home' ? accentColor : B.textSec,
+                  }}>
+                    {homeShort}
+                  </span>
+                </div>
+              </div>
+              {/* Proportion bar */}
+              <div style={{
+                display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden',
+                background: B.borderSubtle, marginBottom: '0.375rem',
+              }}>
+                <div style={{
+                  width: `${awayPct}%`,
+                  background: consensusSide === 'away'
+                    ? `linear-gradient(90deg, ${accentColor}, ${accentColor}cc)`
+                    : 'rgba(148,163,184,0.3)',
+                  borderRadius: '3px 0 0 3px',
+                  transition: 'width 0.3s ease',
+                }} />
+                <div style={{
+                  width: `${100 - awayPct}%`,
+                  background: consensusSide === 'home'
+                    ? `linear-gradient(90deg, ${accentColor}cc, ${accentColor})`
+                    : 'rgba(148,163,184,0.3)',
+                  borderRadius: '0 3px 3px 0',
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+              {/* Side-by-side stats */}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>
+                    {awayWallets} sharp{awayWallets !== 1 ? 's' : ''} · {fmtVol(awayInvested)}
+                  </span>
+                  <span style={{
+                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                    color: awayLifetimePnl >= 0 ? B.green : B.red,
+                  }}>
+                    {awayLifetimePnl >= 0 ? '+' : ''}{fmtVol(awayLifetimePnl)} P&L
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', textAlign: 'right' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>
+                    {fmtVol(homeInvested)} · {homeWallets} sharp{homeWallets !== 1 ? 's' : ''}
+                  </span>
+                  <span style={{
+                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                    color: homeLifetimePnl >= 0 ? B.green : B.red,
+                  }}>
+                    {homeLifetimePnl >= 0 ? '+' : ''}{fmtVol(homeLifetimePnl)} P&L
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Price Movement — Sparklines with directional context ─── */}
+        {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
+          <div style={{
+            borderRadius: '8px', overflow: 'hidden',
+            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
+            background: 'rgba(255,255,255,0.02)',
+          }}>
+            <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+              <span style={{ ...T.micro, color: B.textMuted }}>Price Movement</span>
+            </div>
+            <div style={{
+              display: 'flex', gap: '0.75rem', padding: '0.5rem 0.625rem',
+              flexWrap: 'wrap', alignItems: 'flex-start',
+            }}>
+              {pinnConsensusPoints.length >= 2 && (
+                <div style={{ flex: '1 1 130px' }}>
+                  <MiniSparkline
+                    points={pinnConsensusPoints}
+                    color={pinnMovingWith ? B.green : pinnMovingAgainst ? B.red : B.gold}
+                    label={`Pinnacle — ${consensusShort} ML`}
+                    startLabel={fmtOdds(pinnConsensusPoints[0])}
+                    endLabel={fmtOdds(pinnConsensusPoints[pinnConsensusPoints.length - 1])}
+                    width={isMobile ? 120 : 140}
+                    height={32}
+                  />
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
+                    color: pinnMovingWith ? B.green : pinnMovingAgainst ? B.red : B.textMuted,
+                  }}>
+                    {pinnMovingWith ? '↑ Moving with play' : pinnMovingAgainst ? '↓ Moving against play' : '— No movement'}
+                  </span>
+                </div>
+              )}
+              {polyPoints.length >= 2 && (
+                <div style={{ flex: '1 1 130px' }}>
+                  <MiniSparkline
+                    points={polyPoints}
+                    color={polyMovingWith ? B.green : polyMovingAgainst ? B.red : B.sky}
+                    label={`Prediction Market — ${awayShort}`}
+                    startLabel={`${polyPriceHistory.open}¢`}
+                    endLabel={`${polyPriceHistory.current}¢`}
+                    width={isMobile ? 120 : 140}
+                    height={32}
+                  />
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
+                    color: polyMovingWith ? B.green : polyMovingAgainst ? B.red : B.textMuted,
+                  }}>
+                    {polyMovingWith ? '↑ Moving with play' : polyMovingAgainst ? '↓ Moving against play' : '— No movement'}
+                  </span>
+                </div>
+              )}
+              {pinnGame?.opener && pinnGame?.current && (
+                <div style={{
+                  flex: '1 1 100%', display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
+                  alignItems: 'center', paddingTop: '0.25rem',
+                  borderTop: `1px solid ${B.borderSubtle}`,
+                }}>
+                  <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
+                  <span style={{ ...T.micro, color: B.textSec }}>
+                    Open: {fmtOdds(pinnGame.opener.away)} / {fmtOdds(pinnGame.opener.home)}
+                  </span>
+                  <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
+                    Now: {fmtOdds(pinnGame.current.away)} / {fmtOdds(pinnGame.current.home)}
+                  </span>
+                  {pinnConfirms && (
+                    <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>✓ Confirms</span>
+                  )}
+                  {pinnMoved && !pinnConfirms && (
+                    <span style={{ ...T.micro, color: B.red, fontWeight: 700 }}>✗ Opposes</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ─── Book Prices ─── */}
         {pinnGame && Object.keys(allBooks).length > 1 && (
           <div style={{
@@ -1970,24 +2437,6 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
                   );
                 })}
             </div>
-          </div>
-        )}
-
-        {/* ─── Pinnacle Line Movement ─── */}
-        {pinnGame?.opener && pinnGame?.current && (
-          <div style={{
-            display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center',
-            padding: '0.375rem 0.625rem',
-            borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
-          }}>
-            <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
-            <span style={{ ...T.micro, color: B.textSec }}>
-              Open: {fmtOdds(pinnGame.opener.away)} / {fmtOdds(pinnGame.opener.home)}
-            </span>
-            <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
-              Now: {fmtOdds(pinnGame.current.away)} / {fmtOdds(pinnGame.current.home)}
-            </span>
           </div>
         )}
 
@@ -2075,7 +2524,112 @@ export default function SharpFlow() {
   const [gameSort, setGameSort] = useState('volume');
   const [signalSort, setSignalSort] = useState('divergence');
   const [signalType, setSignalType] = useState('all');
+  const [lockedPicks, setLockedPicks] = useState({});
+  const [allTimePnL, setAllTimePnL] = useState(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  // Load existing locked picks + all-time P&L on mount
+  useEffect(() => {
+    loadLockedPicks(todayET()).then(setLockedPicks);
+    loadAllTimePnL().then(setAllTimePnL);
+  }, []);
+
+  // Auto-lock qualifying picks to Firebase
+  const syncLockedPicks = useCallback(() => {
+    if (!sharpPositions || !pinnacleHistory) return;
+    const date = todayET();
+    for (const sport of ['NHL', 'CBB']) {
+      const sportGames = sharpPositions?.[sport] || {};
+      for (const [key, gd] of Object.entries(sportGames)) {
+        if (!gd.positions || gd.positions.length === 0) continue;
+        const s = gd.summary;
+        const side = s.consensus;
+        const team = side === 'away' ? gd.away : gd.home;
+        const pinnGame = pinnacleHistory?.[sport]?.[key];
+        const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
+        const odds = side === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+        const bestRetail = side === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
+        const bestBook = side === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
+        const pinnProb = impliedProb(odds);
+        const retailProb = impliedProb(bestRetail);
+        const evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
+        const hasEV = evEdge != null && evEdge > 0;
+        const pinnMoved = pinnGame?.movement?.direction;
+        const pinnConfirms = pinnMoved === side;
+
+        const pinnHistory = pinnGame?.history || [];
+        const pinnPoints = side === 'away' ? pinnHistory.map(h => h.away) : pinnHistory.map(h => h.home);
+        const pinnFirstP = impliedProb(pinnPoints[0]);
+        const pinnLastP = impliedProb(pinnPoints[pinnPoints.length - 1]);
+        const pinnMovingWith = pinnPoints.length >= 2 && pinnLastP > pinnFirstP;
+
+        const polyGame = polyData?.[sport]?.[key];
+        const polyPts = polyGame?.priceHistory?.points || [];
+        const polyMovingWith = polyPts.length >= 2 && (side === 'away'
+          ? polyPts[polyPts.length - 1] > polyPts[0]
+          : polyPts[polyPts.length - 1] < polyPts[0]);
+
+        const checks = [
+          uniqueWallets >= 3,
+          hasEV,
+          pinnConfirms,
+          s.totalInvested >= 5000,
+          pinnMovingWith,
+          polyMovingWith,
+        ];
+        const criteriaMet = checks.filter(Boolean).length;
+        const docId = `${date}_${key}`;
+
+        if (criteriaMet >= 4 && !lockedPicks[docId]) {
+          const betOdds = bestRetail || odds;
+          const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested);
+          const potentialProfit = profitFromOdds(betOdds, units);
+          const pick = {
+            date,
+            sport,
+            gameKey: key,
+            away: gd.away,
+            home: gd.home,
+            consensusSide: side,
+            consensusTeam: team,
+            market: 'MONEYLINE',
+            criteriaMet,
+            criteria: {
+              sharps3Plus: uniqueWallets >= 3,
+              plusEV: hasEV,
+              pinnacleConfirms: pinnConfirms,
+              invested5kPlus: s.totalInvested >= 5000,
+              lineMovingWith: pinnMovingWith,
+              predMarketAligns: polyMovingWith,
+            },
+            odds: betOdds,
+            book: bestBook || 'Pinnacle',
+            pinnacleOdds: odds || null,
+            evEdge: evEdge || 0,
+            sharpCount: uniqueWallets,
+            totalInvested: s.totalInvested,
+            units,
+            unitTier: unitTier(units).label,
+            potentialProfit: +potentialProfit.toFixed(2),
+            lockedAt: Date.now(),
+            status: 'PENDING',
+            result: {
+              outcome: null,
+              awayScore: null,
+              homeScore: null,
+              winner: null,
+              profit: null,
+              gradedAt: null,
+            },
+          };
+          writeLockedPick(pick);
+          setLockedPicks(prev => ({ ...prev, [docId]: pick }));
+        }
+      }
+    }
+  }, [sharpPositions, pinnacleHistory, polyData, lockedPicks]);
+
+  useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
 
   const allGames = useMemo(
     () => (polyData || kalshiData) ? buildGameData(polyData, kalshiData) : [],
@@ -2204,12 +2758,20 @@ export default function SharpFlow() {
             }}>
               <FlowStatCard icon={Eye} label="Wallets Tracked" value={trackedCount} accent={B.gold}
                 hint="ELITE + PROVEN profitable bettors" />
-              <FlowStatCard icon={Activity} label="Games w/ Positions" value={gamesWithPos} accent={gamesWithPos > 0 ? B.gold : null}
-                hint="Games where sharps have open bets" />
+              <FlowStatCard icon={Lock} label="Locked Plays"
+                value={(() => {
+                  const locked = Object.values(lockedPicks);
+                  const totalU = locked.reduce((s, p) => s + (p.units || 1), 0);
+                  return `${locked.length} (${totalU.toFixed(1)}u)`;
+                })()}
+                accent={Object.keys(lockedPicks).length > 0 ? B.green : null}
+                hint="Today's locked plays — 4+ criteria met" />
+              <FlowStatCard icon={TrendingUp} label="All-Time Record"
+                value={allTimePnL ? allTimePnL.record : '—'}
+                accent={allTimePnL && allTimePnL.totalProfit > 0 ? B.green : allTimePnL && allTimePnL.totalProfit < 0 ? B.red : null}
+                hint={allTimePnL ? `${allTimePnL.totalProfit >= 0 ? '+' : ''}${allTimePnL.totalProfit.toFixed(1)}u profit` : 'Tracking performance over time'} />
               <FlowStatCard icon={Zap} label="+EV Spots" value={evSignals.length} accent={evSignals.length > 0 ? B.green : null}
                 hint="Actionable mispriced lines" />
-              <FlowStatCard icon={BarChart3} label="Last Scan" value={scannedAt || '—'}
-                hint="Sharp position scan frequency" />
             </div>
 
             {/* ─── Sharp Positions Section ─── */}
@@ -2258,7 +2820,7 @@ export default function SharpFlow() {
                     gap: '0.75rem',
                   }}>
                     {allPosGames.map(gd => (
-                      <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} isMobile={isMobile} />
+                      <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} />
                     ))}
                   </div>
                 </div>

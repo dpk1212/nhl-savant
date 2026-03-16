@@ -1,12 +1,22 @@
 /**
  * NHL Savant - Bet Tracking Functions
  * Updates bet results with game outcomes
+ * Also grades Sharp Flow locked picks
  */
 
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+
+const ABBREV_MAP = {
+  bos: "BOS", tor: "TOR", mtl: "MTL", ott: "OTT", buf: "BUF", det: "DET",
+  tbl: "TBL", fla: "FLA", car: "CAR", wsh: "WSH", pit: "PIT", phi: "PHI",
+  njd: "NJD", cbj: "CBJ", nsh: "NSH", wpg: "WPG", chi: "CHI", min: "MIN",
+  dal: "DAL", stl: "STL", col: "COL", uta: "UTA", vgk: "VGK", lak: "LAK",
+  ana: "ANA", sjs: "SJS", cgy: "CGY", edm: "EDM", van: "VAN", sea: "SEA",
+  nyr: "NYR", nyi: "NYI",
+};
 
 /**
  * Scheduled function: Updates bet results with game outcomes
@@ -91,6 +101,61 @@ exports.updateBetResults = onSchedule({
     }
 
     logger.info(`Finished: Updated ${updatedCount} bets`);
+
+    // ─── Grade Sharp Flow Locked Picks ─────────────────────────────────
+    try {
+      const sfSnapshot = await admin.firestore()
+          .collection("sharpFlowPicks")
+          .where("status", "==", "PENDING")
+          .get();
+
+      if (!sfSnapshot.empty) {
+        logger.info(`Found ${sfSnapshot.size} pending Sharp Flow picks`);
+        let sfGraded = 0;
+
+        for (const sfDoc of sfSnapshot.docs) {
+          const pick = sfDoc.data();
+          if (pick.sport !== "NHL") continue;
+
+          const parts = (pick.gameKey || "").split("_");
+          if (parts.length !== 2) continue;
+          const awayAbbrev = ABBREV_MAP[parts[0]] || parts[0].toUpperCase();
+          const homeAbbrev = ABBREV_MAP[parts[1]] || parts[1].toUpperCase();
+
+          const matchingGame = finalGames.find((g) =>
+            g.awayTeam === awayAbbrev && g.homeTeam === homeAbbrev,
+          );
+
+          if (!matchingGame) continue;
+
+          const side = pick.consensusSide === "away" ? "AWAY" : "HOME";
+          const outcome = calculateOutcome(matchingGame, {
+            market: "MONEYLINE",
+            side: side,
+          });
+          const units = pick.units || 1;
+          const profit = calculateProfit(outcome, pick.odds, units);
+
+          await sfDoc.ref.update({
+            "result.outcome": outcome,
+            "result.awayScore": matchingGame.awayScore,
+            "result.homeScore": matchingGame.homeScore,
+            "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "away" : "home",
+            "result.profit": parseFloat(profit.toFixed(2)),
+            "result.gradedAt": admin.firestore.FieldValue.serverTimestamp(),
+            "status": "COMPLETED",
+          });
+
+          sfGraded++;
+          logger.info(`🔒 Sharp Flow: ${pick.consensusTeam} ML ${pick.odds} → ${outcome} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}u)`);
+        }
+
+        logger.info(`Sharp Flow: Graded ${sfGraded} picks`);
+      }
+    } catch (sfError) {
+      logger.error("Error grading Sharp Flow picks:", sfError);
+    }
+
     return null;
   } catch (error) {
     logger.error("Error updating bet results:", error);

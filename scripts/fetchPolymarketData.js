@@ -410,10 +410,22 @@ async function run() {
       let priceMove1h = null;
       let priceHistory = null;
       const markets = ev.markets || [];
-      const firstMarket = markets[0];
-      let tokenIds = firstMarket?.clobTokenIds;
+
+      // Find the MONEYLINE market — skip O/U and Spread markets
+      const mlMarket = markets.find(m => {
+        const git = (m.groupItemTitle || '').toLowerCase();
+        const q = (m.question || '').toLowerCase();
+        if (git.includes('o/u') || git.includes('spread') || git.includes('over') || git.includes('under')) return false;
+        if (q.includes('o/u') || q.includes('spread:')) return false;
+        let outcomes = m.outcomes;
+        if (typeof outcomes === 'string') try { outcomes = JSON.parse(outcomes); } catch { outcomes = []; }
+        if (Array.isArray(outcomes) && outcomes.some(o => /^(over|under)$/i.test(o))) return false;
+        return true;
+      }) || markets[0];
+
+      let tokenIds = mlMarket?.clobTokenIds;
       if (typeof tokenIds === 'string') tokenIds = JSON.parse(tokenIds || '[]').filter(Boolean);
-      else if (firstMarket?.tokens) tokenIds = firstMarket.tokens.map(t => t.token_id);
+      else if (mlMarket?.tokens) tokenIds = mlMarket.tokens.map(t => t.token_id);
       if (Array.isArray(tokenIds) && tokenIds.length > 0) {
         const hist1h = await getPriceHistory(tokenIds[0], '1h');
         priceMove1h = priceMovePct(hist1h);
@@ -473,10 +485,10 @@ async function run() {
       // Extract market-implied probabilities from outcomePrices
       let marketProbs = null;
       let outcomeNames = null;
-      if (firstMarket) {
-        let prices = firstMarket.outcomePrices;
+      if (mlMarket) {
+        let prices = mlMarket.outcomePrices;
         if (typeof prices === 'string') try { prices = JSON.parse(prices); } catch { prices = null; }
-        let outcomes = firstMarket.outcomes;
+        let outcomes = mlMarket.outcomes;
         if (typeof outcomes === 'string') try { outcomes = JSON.parse(outcomes); } catch { outcomes = null; }
         if (Array.isArray(prices) && prices.length >= 2) {
           marketProbs = prices.map(Number);
