@@ -60,13 +60,56 @@ const BOOK_DISPLAY = {
   pinnacle: 'Pinnacle',
 };
 
+const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function loadCBBTeamMap() {
+  const csvPath = join(ROOT, 'public', 'basketball_teams.csv');
+  let csv;
+  try { csv = readFileSync(csvPath, 'utf8'); } catch { return new Map(); }
+  const lines = csv.split('\n').filter(Boolean);
+  const headers = lines[0].toLowerCase().split(',');
+  const map = new Map();
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',');
+    const row = {};
+    headers.forEach((h, j) => { row[h.trim()] = vals[j]?.trim() || ''; });
+    const canon = row.oddstrader_name || row.normalized_name || '';
+    if (!canon) continue;
+    for (const col of ['oddstrader_name', 'normalized_name', 'haslametrics_name',
+      'dratings_name', 'ncaa_name', 'espn_name', 'barttorvik_name', 'odds_api_name', 'cbbd_name']) {
+      const n = normalize(row[col] || '');
+      if (n.length >= 2) map.set(n, canon);
+    }
+  }
+  return map;
+}
+
+function findCBBTeam(cbbMap, name) {
+  const n = normalize(name);
+  if (cbbMap.has(n)) return cbbMap.get(n);
+  let best = null, bestLen = 0;
+  for (const [key, canon] of cbbMap) {
+    if (n.startsWith(key) && key.length > bestLen) {
+      best = canon;
+      bestLen = key.length;
+    }
+  }
+  return best;
+}
+
+const cbbMap = loadCBBTeamMap();
+
 function makeGameKey(away, home, sportLabel) {
   if (sportLabel === 'NHL') {
     const a = NHL_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     const h = NHL_CODES[home] || home.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     return `${a}_${h}`;
   }
-  const normalize = s => s.toLowerCase().replace(/[^a-z]/g, '');
+  const aCanon = findCBBTeam(cbbMap, away);
+  const hCanon = findCBBTeam(cbbMap, home);
+  if (aCanon && hCanon) {
+    return `${normalize(aCanon)}_${normalize(hCanon)}`;
+  }
   return `${normalize(away)}_${normalize(home)}`;
 }
 
