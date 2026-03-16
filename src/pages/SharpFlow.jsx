@@ -287,7 +287,7 @@ function SectionHead({ title, subtitle, icon: Icon }) {
 
 // ─── Sharp Signal Card (games with ticket/money divergence) ───────────────────
 
-function SharpSignalCard({ game, isMobile }) {
+function SharpSignalCard({ game, isMobile, whaleProfiles }) {
   const [showTrades, setShowTrades] = useState(false);
   const ss = sportStyle(game.sport);
   const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
@@ -480,7 +480,7 @@ function SharpSignalCard({ game, isMobile }) {
               marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.3rem',
             }}>
               {game.allWhales.slice(0, 10).map((w, i) => (
-                <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} />
+                <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
               ))}
               {game.allWhales.length > 10 && (
                 <div style={{ ...T.micro, color: B.textMuted, textAlign: 'center', padding: '0.25rem' }}>
@@ -511,15 +511,26 @@ function MetricPill({ label, value, accent }) {
   );
 }
 
-function WhaleTradeRow({ trade }) {
+function WhaleTradeRow({ trade, whaleProfiles }) {
   const time = fmtTime(trade.ts);
   const ti = tierInfo(trade.amount);
+  const addr = trade.wallet ? trade.wallet.toLowerCase() : null;
+  const profile = addr && whaleProfiles ? whaleProfiles[addr] : null;
+  const addrShort = addr ? `...${addr.slice(-4)}` : null;
+  const tierColors = {
+    ELITE: { color: B.gold, bg: B.goldDim },
+    PROVEN: { color: B.green, bg: B.greenDim },
+    ACTIVE: { color: B.sky, bg: B.blueDim },
+  };
+  const tc = profile ? tierColors[profile.tier] : null;
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '0.5rem',
       padding: '0.4rem 0.6rem', borderRadius: '6px',
       background: 'rgba(255,255,255,0.02)',
       border: `1px solid ${B.borderSubtle}`,
+      flexWrap: 'wrap',
     }}>
       <Badge
         color={trade.side === 'BUY' ? B.green : B.red}
@@ -535,6 +546,24 @@ function WhaleTradeRow({ trade }) {
       <span style={{ ...T.caption, color: B.text, flex: 1 }}>
         {trade.outcome || '—'}
       </span>
+      {addrShort && (
+        <span style={{
+          ...T.micro, fontFamily: 'monospace', color: B.textMuted,
+          padding: '0.1rem 0.3rem', borderRadius: '3px',
+          background: 'rgba(255,255,255,0.04)',
+        }}>
+          {addrShort}
+        </span>
+      )}
+      {profile && (
+        <span style={{
+          ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+          color: (profile.totalPnl || 0) >= 0 ? B.green : B.red,
+        }}>
+          {(profile.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(profile.totalPnl || 0)}
+        </span>
+      )}
+      {tc && <Badge color={tc.color} bg={tc.bg}>{profile.tier}</Badge>}
       <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
         @{trade.price}¢
       </span>
@@ -545,7 +574,7 @@ function WhaleTradeRow({ trade }) {
 
 // ─── Game Flow Row (compact game summary in grid) ─────────────────────────────
 
-function GameFlowCard({ game, isMobile }) {
+function GameFlowCard({ game, isMobile, whaleProfiles }) {
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(game.sport);
   const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
@@ -700,7 +729,7 @@ function GameFlowCard({ game, isMobile }) {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                   {game.allWhales.slice(0, 8).map((w, i) => (
-                    <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} />
+                    <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
                   ))}
                   {game.allWhales.length > 8 && (
                     <div style={{ ...T.micro, color: B.textMuted, textAlign: 'center', padding: '0.25rem' }}>
@@ -1262,7 +1291,7 @@ function scoreWhaleSignal(game, whaleProfiles, pinnacleData) {
   };
 }
 
-function WhaleSignalCard({ game, signal, isMobile }) {
+function WhaleSignalCard({ game, signal, isMobile, whaleProfiles }) {
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(game.sport);
   const teamShort = signal.teamName.split(' ').pop();
@@ -1497,7 +1526,7 @@ function WhaleSignalCard({ game, signal, isMobile }) {
         {expanded && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.375rem' }}>
             {game.allWhales.slice(0, 8).map((w, i) => (
-              <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} />
+              <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
             ))}
           </div>
         )}
@@ -1643,7 +1672,7 @@ export default function SharpFlow() {
                 gap: '0.75rem', marginBottom: '1.5rem',
               }}>
                 {evSignals.map(({ game, signal }) => (
-                  <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} />
+                  <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} whaleProfiles={whaleProfiles} />
                 ))}
               </div>
             )}
@@ -1662,7 +1691,7 @@ export default function SharpFlow() {
                   gap: '0.75rem',
                 }}>
                   {otherSignals.map(({ game, signal }) => (
-                    <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} />
+                    <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} whaleProfiles={whaleProfiles} />
                   ))}
                 </div>
               </>
@@ -1756,7 +1785,7 @@ export default function SharpFlow() {
             gridTemplateColumns: isMobile ? '1fr' : sharpSignals.length === 1 ? '1fr' : 'repeat(2, 1fr)',
             gap: '0.75rem',
           }}>
-            {sharpSignals.map(g => <SharpSignalCard key={g.key} game={g} isMobile={isMobile} />)}
+            {sharpSignals.map(g => <SharpSignalCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} />)}
           </div>
         </div>
       )}
@@ -1802,7 +1831,7 @@ export default function SharpFlow() {
           ))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {sortedGames.map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} />)}
+          {sortedGames.map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} />)}
         </div>
       </div>
 

@@ -209,8 +209,16 @@ async function run() {
       const profile = await buildProfile(w.wallet);
       const tier = tierFromStats(profile.totalPnl, profile.marketsTraded);
 
+      const prev = existing[w.wallet];
+      const pnlHistory = prev?.pnlHistory || [];
+      const lastPnl = pnlHistory.length > 0 ? pnlHistory[pnlHistory.length - 1].pnl : null;
+      if (lastPnl !== profile.totalPnl) {
+        pnlHistory.push({ t: now, pnl: profile.totalPnl });
+        if (pnlHistory.length > 30) pnlHistory.splice(0, pnlHistory.length - 30);
+      }
+
       existing[w.wallet] = {
-        name: w.name || existing[w.wallet]?.name || 'Anonymous',
+        name: w.name || prev?.name || 'Anonymous',
         totalPnl: profile.totalPnl,
         sportPnl: profile.sportPnl,
         marketsTraded: profile.marketsTraded,
@@ -218,6 +226,7 @@ async function run() {
         lastSeen: w.lastSeen,
         tier,
         builtAt: now,
+        pnlHistory,
       };
 
       console.log(`$${profile.totalPnl.toLocaleString()} P&L, ${profile.marketsTraded} markets → ${tier}`);
