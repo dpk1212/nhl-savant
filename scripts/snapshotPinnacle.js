@@ -1,10 +1,11 @@
 /**
- * Pinnacle Line History — snapshots Pinnacle moneyline odds for
- * all active sports every 15 minutes. Piggybacked on the
+ * Sharp Odds Snapshot — captures Pinnacle (fair value) + retail book
+ * prices every 15 minutes for all active sports. Piggybacked on the
  * fetch-polymarket workflow.
  *
- * Reads/merges with existing pinnacle_history.json, tracks opener,
- * current, history array, and movement per game.
+ * For each game: tracks Pinnacle opener, current, movement, plus the
+ * best retail price per side and which book offers it. The UI uses
+ * this to calculate EV = best_retail_implied - pinnacle_implied.
  *
  * Usage: node scripts/snapshotPinnacle.js
  */
@@ -20,7 +21,7 @@ dotenv.config({ path: join(ROOT, '.env') });
 
 const API_KEY = process.env.ODDS_API_KEY;
 if (!API_KEY) {
-  console.log('⚠️ No ODDS_API_KEY — skipping Pinnacle snapshot');
+  console.log('⚠️ No ODDS_API_KEY — skipping odds snapshot');
   process.exit(0);
 }
 
@@ -29,6 +30,8 @@ const SPORTS = [
   { key: 'basketball_ncaab', label: 'CBB' },
 ];
 
+const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
+const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
 const MAX_HISTORY = 24;
 const STALE_HOURS = 36;
 const OUT_PATH = join(ROOT, 'public', 'pinnacle_history.json');
@@ -49,6 +52,14 @@ const NHL_CODES = {
   'Washington Capitals': 'wsh', 'Winnipeg Jets': 'wpg',
 };
 
+const BOOK_DISPLAY = {
+  draftkings: 'DraftKings',
+  fanduel: 'FanDuel',
+  betmgm: 'BetMGM',
+  caesars: 'Caesars',
+  pinnacle: 'Pinnacle',
+};
+
 function makeGameKey(away, home, sportLabel) {
   if (sportLabel === 'NHL') {
     const a = NHL_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
@@ -59,15 +70,14 @@ function makeGameKey(away, home, sportLabel) {
   return `${normalize(away)}_${normalize(home)}`;
 }
 
-function americanOdds(decimal) {
-  if (!decimal || decimal <= 1) return null;
-  return decimal >= 2
-    ? Math.round((decimal - 1) * 100)
-    : Math.round(-100 / (decimal - 1));
+function impliedProb(american) {
+  if (american == null) return null;
+  if (american > 0) return 100 / (american + 100);
+  return Math.abs(american) / (Math.abs(american) + 100);
 }
 
-async function fetchPinnacle(sportKey) {
-  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=pinnacle&markets=h2h&oddsFormat=decimal`;
+async function fetchOdds(sportKey) {
+  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=${BOOKMAKERS}&markets=h2h&oddsFormat=american`;
   const res = await fetch(url);
   if (!res.ok) {
     console.warn(`  ⚠️ Odds API ${sportKey}: ${res.status}`);
@@ -84,8 +94,48 @@ function loadHistory() {
   try { return JSON.parse(readFileSync(OUT_PATH, 'utf8')); } catch { return {}; }
 }
 
+function extractBookOdds(game) {
+  const awayName = game.away_team;
+  const homeName = game.home_team;
+
+  let pinnAway = null, pinnHome = null;
+  let bestAway = null, bestHome = null;
+  let bestAwayBook = null, bestHomeBook = null;
+  const allBooks = {};
+
+  for (const bk of (game.bookmakers || [])) {
+    const h2h = bk.markets?.find(m => m.key === 'h2h');
+    if (!h2h) continue;
+
+    const aw = h2h.outcomes.find(o => o.name === awayName);
+    const hm = h2h.outcomes.find(o => o.name === homeName);
+    if (!aw || !hm) continue;
+
+    const bookName = BOOK_DISPLAY[bk.key] || bk.title;
+    allBooks[bk.key] = { away: aw.price, home: hm.price, name: bookName };
+
+    if (bk.key === 'pinnacle') {
+      pinnAway = aw.price;
+      pinnHome = hm.price;
+    }
+
+    if (RETAIL_BOOKS.includes(bk.key)) {
+      if (bestAway === null || aw.price > bestAway) {
+        bestAway = aw.price;
+        bestAwayBook = bookName;
+      }
+      if (bestHome === null || hm.price > bestHome) {
+        bestHome = hm.price;
+        bestHomeBook = bookName;
+      }
+    }
+  }
+
+  return { pinnAway, pinnHome, bestAway, bestHome, bestAwayBook, bestHomeBook, allBooks };
+}
+
 async function run() {
-  console.log('📌 Pinnacle line snapshot\n');
+  console.log('📌 Sharp odds snapshot (Pinnacle + retail books)\n');
   const now = Math.floor(Date.now() / 1000);
   const history = loadHistory();
   const staleCutoff = now - STALE_HOURS * 3600;
@@ -93,55 +143,65 @@ async function run() {
   for (const { key: sportKey, label } of SPORTS) {
     if (!history[label]) history[label] = {};
 
-    const games = await fetchPinnacle(sportKey);
+    const games = await fetchOdds(sportKey);
     for (const game of games) {
-      const pinnacle = game.bookmakers?.find(b => b.key === 'pinnacle');
-      if (!pinnacle) continue;
-
-      const h2h = pinnacle.markets?.find(m => m.key === 'h2h');
-      if (!h2h || !h2h.outcomes || h2h.outcomes.length < 2) continue;
+      const { pinnAway, pinnHome, bestAway, bestHome, bestAwayBook, bestHomeBook, allBooks } = extractBookOdds(game);
+      if (pinnAway == null || pinnHome == null) continue;
 
       const awayName = game.away_team;
       const homeName = game.home_team;
       const gameKey = makeGameKey(awayName, homeName, label);
 
-      const awayOutcome = h2h.outcomes.find(o => o.name === awayName);
-      const homeOutcome = h2h.outcomes.find(o => o.name === homeName);
-      if (!awayOutcome || !homeOutcome) continue;
-
-      const awayOdds = americanOdds(awayOutcome.price);
-      const homeOdds = americanOdds(homeOutcome.price);
-      if (awayOdds == null || homeOdds == null) continue;
-
       const existing = history[label][gameKey] || {};
-      const snapshot = { t: now, away: awayOdds, home: homeOdds };
 
+      // Pinnacle history
+      const snapshot = { t: now, away: pinnAway, home: pinnHome };
       if (!existing.opener) {
         existing.opener = { ...snapshot };
       }
-
-      existing.current = { away: awayOdds, home: homeOdds };
+      existing.current = { away: pinnAway, home: pinnHome };
 
       const hist = existing.history || [];
       hist.push(snapshot);
       if (hist.length > MAX_HISTORY) hist.splice(0, hist.length - MAX_HISTORY);
       existing.history = hist;
 
+      // Pinnacle movement
       const opAway = existing.opener.away;
       const opHome = existing.opener.home;
       existing.movement = {
-        away: awayOdds - opAway,
-        home: homeOdds - opHome,
-        direction: Math.abs(awayOdds) < Math.abs(opAway) ? 'away' : Math.abs(homeOdds) < Math.abs(opHome) ? 'home' : null,
+        away: pinnAway - opAway,
+        home: pinnHome - opHome,
+        direction: Math.abs(pinnAway) < Math.abs(opAway) ? 'away'
+                 : Math.abs(pinnHome) < Math.abs(opHome) ? 'home'
+                 : null,
       };
 
+      // Best retail prices + EV
+      existing.bestAway = bestAway;
+      existing.bestHome = bestHome;
+      existing.bestAwayBook = bestAwayBook;
+      existing.bestHomeBook = bestHomeBook;
+
+      const pinnAwayProb = impliedProb(pinnAway);
+      const pinnHomeProb = impliedProb(pinnHome);
+      const bestAwayProb = impliedProb(bestAway);
+      const bestHomeProb = impliedProb(bestHome);
+
+      existing.ev = {
+        away: (pinnAwayProb && bestAwayProb) ? +((pinnAwayProb - bestAwayProb) * 100).toFixed(1) : null,
+        home: (pinnHomeProb && bestHomeProb) ? +((pinnHomeProb - bestHomeProb) * 100).toFixed(1) : null,
+      };
+
+      existing.allBooks = allBooks;
       existing.awayTeam = awayName;
       existing.homeTeam = homeName;
+      existing.commence = game.commence_time;
 
       history[label][gameKey] = existing;
     }
 
-    // Purge stale games
+    // Purge stale
     for (const [gk, gd] of Object.entries(history[label])) {
       const lastT = gd.history?.[gd.history.length - 1]?.t || 0;
       if (lastT < staleCutoff) delete history[label][gk];
@@ -151,8 +211,14 @@ async function run() {
   writeFileSync(OUT_PATH, JSON.stringify(history, null, 2), 'utf8');
 
   let totalGames = 0;
-  for (const sport of Object.values(history)) totalGames += Object.keys(sport).length;
-  console.log(`\n✅ Wrote ${OUT_PATH} — ${totalGames} games tracked`);
+  let evSpots = 0;
+  for (const sport of Object.values(history)) {
+    for (const gd of Object.values(sport)) {
+      totalGames++;
+      if ((gd.ev?.away > 0) || (gd.ev?.home > 0)) evSpots++;
+    }
+  }
+  console.log(`\n✅ ${totalGames} games tracked, ${evSpots} with +EV retail lines`);
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
