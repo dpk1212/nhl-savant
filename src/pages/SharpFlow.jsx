@@ -91,20 +91,26 @@ function tierInfo(amt) {
 function useMarketData() {
   const [polyData, setPolyData] = useState(null);
   const [kalshiData, setKalshiData] = useState(null);
+  const [whaleProfiles, setWhaleProfiles] = useState(null);
+  const [pinnacleHistory, setPinnacleHistory] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch(`${import.meta.env.BASE_URL}polymarket_data.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}kalshi_data.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([p, k]) => {
+      fetch(`${import.meta.env.BASE_URL}whale_profiles.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}pinnacle_history.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([p, k, wp, ph]) => {
       setPolyData(p);
       setKalshiData(k);
+      setWhaleProfiles(wp);
+      setPinnacleHistory(ph);
       setLoading(false);
     });
   }, []);
 
-  return { polyData, kalshiData, loading };
+  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, loading };
 }
 
 function buildGameData(polyData, kalshiData) {
@@ -1130,10 +1136,250 @@ function FlowRow({ game, maxCash, isMobile }) {
   );
 }
 
+// ─── Whale Signal Scoring ──────────────────────────────────────────────────────
+
+function scoreWhaleSignal(game, whaleProfiles, pinnacleData) {
+  if (!game.allWhales || game.allWhales.length === 0) return null;
+  if (!game.whaleDirection) return null;
+
+  const isAway = game.whaleDirection === 'away';
+  const whaleCash = isAway ? game.whaleCashAway : game.whaleCashHome;
+  if (whaleCash < 500) return null;
+
+  let score = 0;
+  const factors = [];
+
+  // Whale cash thresholds
+  if (whaleCash >= 25000) {
+    score += 30;
+    factors.push({ label: 'Whale cash $25k+', pts: 30 });
+  } else if (whaleCash >= 10000) {
+    score += 20;
+    factors.push({ label: 'Whale cash $10k+', pts: 20 });
+  } else if (whaleCash >= 1000) {
+    score += 10;
+    factors.push({ label: 'Whale cash $1k+', pts: 10 });
+  }
+
+  // Verified wallet check — look for ELITE or PROVEN wallets on the dominant side
+  let bestTier = 'UNKNOWN';
+  let bestWallet = null;
+  for (const w of game.allWhales) {
+    if (!w.wallet || !whaleProfiles) continue;
+    const side = resolveOutcomeSide(w.outcome, game.away, game.home);
+    if ((isAway && side !== 'away') || (!isAway && side !== 'home')) continue;
+    const profile = whaleProfiles[w.wallet?.toLowerCase()];
+    if (!profile) continue;
+    const tierRank = { ELITE: 4, PROVEN: 3, ACTIVE: 2, UNKNOWN: 1 };
+    if ((tierRank[profile.tier] || 0) > (tierRank[bestTier] || 0)) {
+      bestTier = profile.tier;
+      bestWallet = { ...profile, address: w.wallet };
+    }
+  }
+  if (bestTier === 'ELITE') {
+    score += 25;
+    factors.push({ label: 'ELITE wallet', pts: 25 });
+  } else if (bestTier === 'PROVEN') {
+    score += 15;
+    factors.push({ label: 'PROVEN wallet', pts: 15 });
+  }
+
+  // Pinnacle confirmation
+  if (pinnacleData) {
+    const sportPinn = pinnacleData[game.sport];
+    const pinnGame = sportPinn?.[game.key];
+    if (pinnGame?.movement) {
+      const pinnDir = pinnGame.movement.direction;
+      if ((isAway && pinnDir === 'away') || (!isAway && pinnDir === 'home')) {
+        score += 25;
+        factors.push({ label: 'Pinnacle confirms', pts: 25 });
+      }
+    }
+  }
+
+  // Ticket/money divergence
+  if (game.ticketDivergence >= 10) {
+    score += 10;
+    factors.push({ label: `${Math.round(game.ticketDivergence)}pt split`, pts: 10 });
+  }
+
+  // Kalshi volume confirmation
+  if (game.awayMoneyPct != null) {
+    const pct = isAway ? game.awayMoneyPct : game.homeMoneyPct;
+    if (pct >= 60) {
+      score += 10;
+      factors.push({ label: 'Cross-platform volume', pts: 10 });
+    }
+  }
+
+  return {
+    score: Math.min(score, 100),
+    side: isAway ? 'away' : 'home',
+    teamName: isAway ? game.away : game.home,
+    whaleCash,
+    bestTier,
+    bestWallet,
+    factors,
+    pinnacle: pinnacleData?.[game.sport]?.[game.key] || null,
+  };
+}
+
+function WhaleSignalCard({ game, signal, isMobile }) {
+  const [expanded, setExpanded] = useState(false);
+  const ss = sportStyle(game.sport);
+  const isAway = signal.side === 'away';
+  const teamShort = signal.teamName.split(' ').pop();
+  const barColor = signal.score >= 70 ? B.green : signal.score >= 50 ? B.gold : B.sky;
+
+  return (
+    <div style={{
+      background: B.card, borderRadius: '12px', overflow: 'hidden',
+      border: `1px solid ${signal.score >= 70 ? 'rgba(16,185,129,0.25)' : B.border}`,
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0.875rem 1rem',
+        borderBottom: `1px solid ${B.borderSubtle}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{
+            ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '4px',
+            background: ss.bg, color: ss.color, letterSpacing: '0.05em',
+          }}>{game.sport}</span>
+          <span style={{ ...T.caption, fontWeight: 700, color: B.text }}>
+            {game.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {game.home}
+          </span>
+        </div>
+        <div style={{
+          ...T.small, fontWeight: 800, color: barColor,
+          display: 'flex', alignItems: 'center', gap: '0.25rem',
+        }}>
+          <Zap size={14} /> {signal.score}
+        </div>
+      </div>
+
+      {/* Signal summary */}
+      <div style={{ padding: '0.875rem 1rem' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.625rem',
+          marginBottom: '0.75rem',
+        }}>
+          <div style={{
+            padding: '0.4rem 0.75rem', borderRadius: '8px',
+            background: `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`,
+            border: `1px solid ${B.goldBorder}`,
+          }}>
+            <span style={{ ...T.caption, fontWeight: 800, color: B.gold }}>
+              Whales loading {teamShort}
+            </span>
+          </div>
+          {signal.bestTier !== 'UNKNOWN' && (
+            <Badge
+              color={signal.bestTier === 'ELITE' ? B.gold : B.green}
+              bg={signal.bestTier === 'ELITE' ? B.goldDim : B.greenDim}
+            >{signal.bestTier}</Badge>
+          )}
+          <span style={{ ...T.micro, color: B.textMuted, marginLeft: 'auto' }}>
+            {fmtVol(signal.whaleCash)} whale $
+          </span>
+        </div>
+
+        {/* Score bar */}
+        <div style={{ marginBottom: '0.75rem' }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem',
+          }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Signal Strength</span>
+            <span style={{ ...T.micro, color: barColor, fontWeight: 700 }}>{signal.score}/100</span>
+          </div>
+          <div style={{
+            height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', borderRadius: '3px',
+              width: `${signal.score}%`,
+              background: `linear-gradient(90deg, ${barColor}, ${barColor}90)`,
+              transition: 'width 0.5s ease',
+            }} />
+          </div>
+        </div>
+
+        {/* Factor pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.5rem' }}>
+          {signal.factors.map((f, i) => (
+            <span key={i} style={{
+              ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '4px',
+              background: 'rgba(255,255,255,0.04)', border: `1px solid ${B.borderSubtle}`,
+              color: B.textSec,
+            }}>
+              {f.label} <span style={{ color: B.green, fontWeight: 700 }}>+{f.pts}</span>
+            </span>
+          ))}
+        </div>
+
+        {/* Pinnacle line */}
+        {signal.pinnacle && (
+          <div style={{
+            display: 'flex', gap: '1rem', padding: '0.5rem 0.625rem',
+            borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
+            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
+          }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Pinnacle</span>
+            {signal.pinnacle.opener && (
+              <span style={{ ...T.micro, color: B.textSec }}>
+                Open: {signal.pinnacle.opener.away > 0 ? '+' : ''}{signal.pinnacle.opener.away} / {signal.pinnacle.opener.home > 0 ? '+' : ''}{signal.pinnacle.opener.home}
+              </span>
+            )}
+            {signal.pinnacle.current && (
+              <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
+                Now: {signal.pinnacle.current.away > 0 ? '+' : ''}{signal.pinnacle.current.away} / {signal.pinnacle.current.home > 0 ? '+' : ''}{signal.pinnacle.current.home}
+              </span>
+            )}
+            {signal.pinnacle.movement?.direction && (
+              <span style={{
+                ...T.micro, fontWeight: 700, marginLeft: 'auto',
+                color: signal.pinnacle.movement.direction === signal.side ? B.green : B.red,
+              }}>
+                {signal.pinnacle.movement.direction === 'away' ? '↑ Away' : '↑ Home'}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Expand whale trades */}
+        <button onClick={() => setExpanded(!expanded)} style={{
+          display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer',
+          ...T.micro, color: B.textMuted, background: 'none', border: 'none', padding: '0.25rem 0',
+        }}>
+          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          {expanded ? 'Hide' : 'Show'} whale trades ({game.allWhales.length})
+        </button>
+        {expanded && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.375rem' }}>
+            {game.allWhales.slice(0, 8).map((w, i) => (
+              <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Privacy note */}
+      <div style={{
+        padding: '0.375rem 1rem', borderTop: `1px solid ${B.borderSubtle}`,
+        ...T.micro, color: 'rgba(255,255,255,0.15)', textAlign: 'center',
+      }}>
+        Wallet data is publicly available on the Polygon blockchain
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SharpFlow() {
-  const { polyData, kalshiData, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, loading } = useMarketData();
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('signals');
   const [gameSort, setGameSort] = useState('volume');
@@ -1188,6 +1434,13 @@ export default function SharpFlow() {
     return all.sort((a, b) => b.amount - a.amount).slice(0, 5);
   }, [filteredGames]);
 
+  const whaleSignals = useMemo(() => {
+    return filteredGames
+      .map(g => ({ game: g, signal: scoreWhaleSignal(g, whaleProfiles, pinnacleHistory) }))
+      .filter(({ signal }) => signal && signal.score >= 40)
+      .sort((a, b) => b.signal.score - a.signal.score);
+  }, [filteredGames, whaleProfiles, pinnacleHistory]);
+
   const totalVol = filteredGames.reduce((s, g) => s + g.volume, 0);
   const totalTrades = filteredGames.reduce((s, g) => s + g.totalTrades, 0);
   const totalWhales = filteredGames.reduce((s, g) => s + g.whaleCount, 0);
@@ -1229,6 +1482,57 @@ export default function SharpFlow() {
       {/* ─── Money Flow View ─── */}
       {viewMode === 'flow' && (
         <MoneyFlowView games={filteredGames} isMobile={isMobile} />
+      )}
+
+      {/* ─── Whale Signals View ─── */}
+      {viewMode === 'whaleSignals' && (
+        <div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: '1rem',
+          }}>
+            <SectionHead
+              title={`Whale Signals (${whaleSignals.length})`}
+              subtitle="Sharp wallets + Pinnacle movement — market-driven conviction scoring"
+              icon={Zap}
+            />
+          </div>
+
+          {whaleSignals.length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: '3rem', borderRadius: '12px',
+              background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+              border: `1px solid ${B.border}`,
+            }}>
+              <Zap size={28} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
+              <div style={{ ...T.sub, color: B.text, marginBottom: '0.25rem' }}>No whale signals yet</div>
+              <div style={{ ...T.label, color: B.textSec }}>
+                Signals require whale trades, wallet profiling data, and Pinnacle snapshots.
+                As more data flows in, signals will surface automatically.
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : whaleSignals.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+              gap: '0.75rem',
+            }}>
+              {whaleSignals.map(({ game, signal }) => (
+                <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} />
+              ))}
+            </div>
+          )}
+
+          {!whaleProfiles && (
+            <div style={{
+              ...T.micro, color: B.textMuted, textAlign: 'center',
+              marginTop: '1rem', padding: '0.5rem',
+              borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
+            }}>
+              Wallet profiles haven't been built yet. They'll populate automatically on the next scheduled run.
+            </div>
+          )}
+        </div>
       )}
 
       {/* ─── Signals View (default) ─── */}
@@ -1476,7 +1780,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             <button onClick={() => setViewMode('flow')} style={{
               padding: '0.5rem 0.875rem', cursor: 'pointer',
               ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
-              border: 'none',
+              border: 'none', borderRight: `1px solid ${B.border}`,
               background: viewMode === 'flow'
                 ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
                 : 'transparent',
@@ -1484,6 +1788,18 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
               transition: 'all 0.2s ease',
             }}>
               <Workflow size={12} /> Money Flow
+            </button>
+            <button onClick={() => setViewMode('whaleSignals')} style={{
+              padding: '0.5rem 0.875rem', cursor: 'pointer',
+              ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
+              border: 'none',
+              background: viewMode === 'whaleSignals'
+                ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                : 'transparent',
+              color: viewMode === 'whaleSignals' ? B.gold : B.textMuted,
+              transition: 'all 0.2s ease',
+            }}>
+              <Zap size={12} /> Whale Intel
             </button>
           </div>
           <SportTabs active={sportFilter} onChange={setSportFilter} />
