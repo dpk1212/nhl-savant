@@ -528,8 +528,6 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
     LOSING: { color: '#F97316', bg: 'rgba(249,115,22,0.12)' },
   };
   const tc = profile ? tierColors[profile.tier] : null;
-  const traderName = trade.traderName || profile?.name;
-
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -552,14 +550,14 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
       <span style={{ ...T.caption, color: B.text, flex: 1 }}>
         {trade.outcome || '—'}
       </span>
-      {(traderName || addrShort) && (
+      {addrShort && (
         <span style={{
           ...T.micro, color: B.textMuted,
           padding: '0.1rem 0.3rem', borderRadius: '3px',
           background: 'rgba(255,255,255,0.04)',
-          maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          fontFeatureSettings: "'tnum'",
         }}>
-          {traderName || addrShort}
+          {addrShort}
         </span>
       )}
       {profile && (
@@ -1697,7 +1695,7 @@ function SharpPositionsBlock({ positions, game, signal }) {
                 ...T.micro, color: B.text, fontWeight: 600,
                 maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
-                {p.name || `...${p.wallet.slice(-4)}`}
+                ...{p.wallet.slice(-4)}
               </span>
               <span style={{
                 ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
@@ -1732,18 +1730,38 @@ function SharpPositionsBlock({ positions, game, signal }) {
 
 // ─── Sharp Position Card (elevated, full-featured) ────────────────────────────
 
+function rateValue(evEdge, sharpCount, pinnConfirms, totalInvested) {
+  let pts = 0;
+  if (evEdge > 3) pts += 4;
+  else if (evEdge > 1) pts += 3;
+  else if (evEdge > 0) pts += 2;
+  if (sharpCount >= 3) pts += 3;
+  else if (sharpCount >= 2) pts += 2;
+  else pts += 1;
+  if (pinnConfirms) pts += 2;
+  if (totalInvested >= 10000) pts += 2;
+  else if (totalInvested >= 3000) pts += 1;
+
+  if (pts >= 8) return { label: 'STRONG VALUE', color: B.green, bg: B.greenDim, icon: '◆◆◆' };
+  if (pts >= 5) return { label: 'VALUE', color: B.green, bg: 'rgba(16,185,129,0.08)', icon: '◆◆' };
+  if (pts >= 3) return { label: 'LEAN', color: B.gold, bg: B.goldDim, icon: '◆' };
+  return { label: 'MONITOR', color: B.textSec, bg: 'rgba(255,255,255,0.04)', icon: '○' };
+}
+
 function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
-  const [expanded, setExpanded] = useState(false);
+  const [showWallets, setShowWallets] = useState(false);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
   const consensusTeam = consensusSide === 'away' ? gd.away : gd.home;
   const consensusShort = consensusTeam.split(' ').pop();
+  const oppTeam = consensusSide === 'away' ? gd.home : gd.away;
+  const oppShort = oppTeam.split(' ').pop();
   const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
   const allBooks = pinnGame?.allBooks || {};
 
-  // EV for consensus side
   const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+  const oppOdds = consensusSide === 'away' ? pinnGame?.current?.home : pinnGame?.current?.away;
   const bestRetail = consensusSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
   const bestBook = consensusSide === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
   const pinnProb = impliedProb(consensusOdds);
@@ -1751,16 +1769,17 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
   const evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
   const hasEV = evEdge != null && evEdge > 0;
 
-  // Pinnacle movement
   const pinnMoved = pinnGame?.movement?.direction;
   const pinnConfirms = pinnMoved === consensusSide;
 
-  // Aggregate wallet stats for this position card
   const totalLifetimePnl = gd.positions.reduce((sum, p) => sum + (p.totalPnl || 0), 0);
   const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
+  const consensusPositions = gd.positions.filter(p => p.side === consensusSide);
 
-  const accentColor = hasEV ? B.green : B.gold;
-  const accentBorder = hasEV ? 'rgba(16,185,129,0.3)' : B.goldBorder;
+  const vr = rateValue(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested);
+  const isActionable = vr.label === 'STRONG VALUE' || vr.label === 'VALUE';
+  const accentColor = isActionable ? B.green : B.gold;
+  const accentBorder = isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
 
   return (
     <div style={{
@@ -1768,15 +1787,16 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
       border: `1px solid ${accentBorder}`,
     }}>
+      {/* Top accent */}
       <div style={{
-        height: '2px',
+        height: '3px',
         background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
       }} />
 
-      {/* Header */}
+      {/* ─── Header row ─── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.875rem 1rem 0.5rem',
+        padding: '0.875rem 1rem 0.375rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Badge color={ss.color} bg={ss.bg}>{ss.icon} {gd.sport}</Badge>
@@ -1784,118 +1804,151 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
             {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          <Badge color={B.gold} bg={B.goldDim}>{uniqueWallets} ELITE</Badge>
-        </div>
+        <span style={{
+          ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
+          padding: '0.2rem 0.6rem', borderRadius: '5px',
+          color: vr.color, background: vr.bg,
+          border: `1px solid ${isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+        }}>
+          {vr.icon} {vr.label}
+        </span>
       </div>
 
-      {/* ─── Actionable EV Box (when +EV exists) ─── */}
-      {hasEV && bestBook && (
+      {/* ─── Action Box — always present, tells user what to do ─── */}
+      <div style={{
+        margin: '0.375rem 0.875rem 0', padding: '0.75rem',
+        borderRadius: '10px',
+        background: isActionable
+          ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'
+          : `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)`,
+        border: `1px solid ${isActionable ? 'rgba(16,185,129,0.25)' : B.goldBorder}`,
+      }}>
+        {/* Top: Recommendation + EV badge */}
         <div style={{
-          margin: '0.25rem 0.875rem 0', padding: '0.75rem',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.02) 100%)',
-          border: '1px solid rgba(16,185,129,0.25)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: '0.625rem',
         }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '0.5rem',
-          }}>
-            <span style={{ ...T.caption, fontWeight: 800, color: B.green }}>
-              +EV OPPORTUNITY
-            </span>
+          <span style={{ ...T.label, fontWeight: 800, color: isActionable ? B.green : B.gold }}>
+            {isActionable ? 'RECOMMENDED BET' : 'SHARP CONSENSUS'}
+          </span>
+          {hasEV && (
             <span style={{
               ...T.body, fontWeight: 900, color: B.green,
-              padding: '0.15rem 0.5rem', borderRadius: '4px',
+              padding: '0.2rem 0.6rem', borderRadius: '5px',
               background: B.greenDim,
             }}>
               +{evEdge}% EV
             </span>
-          </div>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-            gap: '0.5rem', alignItems: 'center',
-          }}>
-            <div>
-              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>BET</div>
-              <div style={{ ...T.body, fontWeight: 800, color: B.text }}>
-                {consensusShort} ML
-              </div>
-            </div>
-            <div style={{ width: '1px', height: '30px', background: B.borderSubtle }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>BEST PRICE</div>
-              <div style={{ ...T.body, fontWeight: 800, color: B.green }}>
-                {fmtOdds(bestRetail)}
-              </div>
-              <div style={{ ...T.micro, color: B.textSec }}>
-                {bestBook}
-              </div>
-            </div>
-          </div>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between',
-            marginTop: '0.5rem', paddingTop: '0.375rem',
-            borderTop: '1px solid rgba(16,185,129,0.15)',
-          }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>
-              Fair value: {fmtOdds(consensusOdds)} ({pinnProb ? (pinnProb * 100).toFixed(1) : '—'}%)
-            </span>
-            <span style={{ ...T.micro, color: B.textMuted }}>
-              {uniqueWallets} sharp wallet{uniqueWallets !== 1 ? 's' : ''} agree
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Consensus banner (no EV) ─── */}
-      {!hasEV && (
-        <div style={{
-          margin: '0.25rem 0.875rem 0', padding: '0.5rem 0.75rem', borderRadius: '8px',
-          background: B.goldDim,
-          border: `1px solid ${B.goldBorder}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div>
-            <div style={{ ...T.label, fontWeight: 800, color: B.gold }}>
-              {s.consensus ? `${gd.positions.length} sharp${gd.positions.length > 1 ? 's' : ''} → ${consensusShort}` : `${gd.positions.length} positioned`}
-            </div>
-            <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem' }}>
-              {fmtVol(s.totalInvested)} total invested
-            </div>
-          </div>
-          {consensusOdds != null && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ ...T.micro, color: B.textMuted }}>Pinnacle</div>
-              <div style={{ ...T.caption, fontWeight: 700, color: B.gold }}>
-                {fmtOdds(consensusOdds)}
-              </div>
-            </div>
           )}
         </div>
-      )}
+
+        {/* Middle: The actual bet */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: bestBook ? '1fr auto 1fr' : '1fr',
+          gap: '0.625rem', alignItems: 'center',
+        }}>
+          <div>
+            <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
+              {uniqueWallets} sharp{uniqueWallets !== 1 ? 's' : ''} backing
+            </div>
+            <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>
+              {consensusShort} ML
+            </div>
+            {pinnProb && (
+              <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
+                Fair value: {fmtOdds(consensusOdds)} ({(pinnProb * 100).toFixed(1)}%)
+              </div>
+            )}
+          </div>
+          {bestBook && (
+            <>
+              <div style={{ width: '1px', height: '40px', background: B.borderSubtle }} />
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
+                  {isActionable ? 'BET AT' : 'BEST PRICE'}
+                </div>
+                <div style={{
+                  ...T.heading, fontWeight: 900,
+                  color: hasEV ? B.green : B.text,
+                }}>
+                  {fmtOdds(bestRetail)}
+                </div>
+                <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
+                  {bestBook}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Bottom: confidence factors */}
+        <div style={{
+          display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
+          marginTop: '0.625rem', paddingTop: '0.5rem',
+          borderTop: `1px solid ${isActionable ? 'rgba(16,185,129,0.15)' : 'rgba(212,175,55,0.12)'}`,
+        }}>
+          <span style={{
+            ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+            background: B.goldDim, color: B.gold, fontWeight: 600,
+          }}>
+            {uniqueWallets} sharp wallet{uniqueWallets !== 1 ? 's' : ''}
+          </span>
+          <span style={{
+            ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+            background: 'rgba(255,255,255,0.04)', color: B.textSec,
+          }}>
+            {fmtVol(s.totalInvested)} invested
+          </span>
+          {pinnConfirms && (
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: B.greenDim, color: B.green, fontWeight: 600,
+            }}>
+              ✓ Pinnacle confirms
+            </span>
+          )}
+          {pinnMoved && !pinnConfirms && (
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: B.redDim, color: B.red, fontWeight: 600,
+            }}>
+              ✗ Pinnacle opposes
+            </span>
+          )}
+          {hasEV && (
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: B.greenDim, color: B.green, fontWeight: 700,
+            }}>
+              +{evEdge}% edge
+            </span>
+          )}
+        </div>
+      </div>
 
       <div style={{ padding: '0.75rem 0.875rem' }}>
-        {/* ─── Book Prices Comparison ─── */}
+        {/* ─── Book Prices ─── */}
         {pinnGame && Object.keys(allBooks).length > 1 && (
           <div style={{
-            borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
+            borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
             border: `1px solid ${B.borderSubtle}`, marginBottom: '0.625rem',
             overflow: 'hidden',
           }}>
             <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>Book Prices — {consensusTeam} ML</span>
+              <span style={{ ...T.micro, color: B.textMuted }}>
+                Book Prices — {consensusShort} ML
+              </span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
               {Object.entries(allBooks)
                 .sort(([, a], [, b]) => {
-                  const aOdds = consensusSide === 'away' ? a.away : a.home;
-                  const bOdds = consensusSide === 'away' ? b.away : b.home;
-                  return bOdds - aOdds;
+                  const aO = consensusSide === 'away' ? a.away : a.home;
+                  const bO = consensusSide === 'away' ? b.away : b.home;
+                  return bO - aO;
                 })
                 .map(([key, book]) => {
                   const odds = consensusSide === 'away' ? book.away : book.home;
-                  const isBest = odds === bestRetail;
+                  const isBest = odds === bestRetail && hasEV;
                   const isPinn = key === 'pinnacle';
                   return (
                     <div key={key} style={{
@@ -1920,7 +1973,7 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
           </div>
         )}
 
-        {/* ─── Pinnacle Movement ─── */}
+        {/* ─── Pinnacle Line Movement ─── */}
         {pinnGame?.opener && pinnGame?.current && (
           <div style={{
             display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center',
@@ -1935,88 +1988,79 @@ function SharpPositionCard({ gd, pinnacleHistory, isMobile }) {
             <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
               Now: {fmtOdds(pinnGame.current.away)} / {fmtOdds(pinnGame.current.home)}
             </span>
-            {pinnMoved && (
-              <span style={{
-                ...T.micro, fontWeight: 700, marginLeft: 'auto',
-                color: pinnConfirms ? B.green : B.red,
-              }}>
-                {pinnConfirms ? '✓ Confirms' : '✗ Opposes'}
-              </span>
-            )}
           </div>
         )}
 
-        {/* ─── Individual Positions ─── */}
-        <div style={{
-          borderRadius: '8px', overflow: 'hidden',
+        {/* ─── Wallet Positions (collapsible) ─── */}
+        <button onClick={() => setShowWallets(!showWallets)} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', cursor: 'pointer',
+          padding: '0.5rem 0.625rem', borderRadius: '8px',
+          background: 'rgba(212,175,55,0.04)',
           border: `1px solid ${B.borderSubtle}`,
         }}>
-          <div style={{
-            padding: '0.375rem 0.625rem',
-            borderBottom: `1px solid ${B.borderSubtle}`,
-            background: 'rgba(212,175,55,0.04)',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            {showWallets ? <ChevronUp size={12} color={B.gold} /> : <ChevronDown size={12} color={B.gold} />}
             <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-              WALLET POSITIONS
-            </span>
-            <span style={{ ...T.micro, color: B.textSec }}>
-              Combined lifetime P&L: <span style={{ fontWeight: 700, color: totalLifetimePnl >= 0 ? B.green : B.red }}>
-                {totalLifetimePnl >= 0 ? '+' : ''}{fmtVol(totalLifetimePnl)}
-              </span>
+              {uniqueWallets} VERIFIED SHARP{uniqueWallets !== 1 ? 'S' : ''}
             </span>
           </div>
-          {gd.positions.map((p, i) => {
-            const sideTeam = p.side === 'away' ? gd.away : gd.home;
-            const sideShort = sideTeam.split(' ').pop();
-            const positionPnlColor = p.pnl >= 0 ? B.green : B.red;
-            const lifetimePnlColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
-            const tc = p.tier === 'ELITE'
-              ? { color: B.gold, bg: B.goldDim }
-              : { color: B.green, bg: B.greenDim };
+          <span style={{ ...T.micro, color: B.textSec }}>
+            Combined P&L: <span style={{ fontWeight: 700, color: totalLifetimePnl >= 0 ? B.green : B.red }}>
+              {totalLifetimePnl >= 0 ? '+' : ''}{fmtVol(totalLifetimePnl)}
+            </span>
+          </span>
+        </button>
+        {showWallets && (
+          <div style={{
+            marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden',
+            border: `1px solid ${B.borderSubtle}`,
+          }}>
+            {gd.positions.map((p, i) => {
+              const sideTeam = p.side === 'away' ? gd.away : gd.home;
+              const sideShort = sideTeam.split(' ').pop();
+              const posColor = p.pnl >= 0 ? B.green : B.red;
+              const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
+              const tc = p.tier === 'ELITE'
+                ? { color: B.gold, bg: B.goldDim }
+                : { color: B.green, bg: B.greenDim };
 
-            return (
-              <div key={`${p.wallet}-${i}`} style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.5rem 0.625rem',
-                borderBottom: i < gd.positions.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
-                background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                flexWrap: 'wrap',
-              }}>
-                <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                <span style={{
-                  ...T.micro, color: B.text, fontWeight: 700,
-                  maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              return (
+                <div key={`${p.wallet}-${i}`} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.5rem 0.625rem',
+                  borderBottom: i < gd.positions.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
+                  background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
+                  flexWrap: 'wrap',
                 }}>
-                  {p.name || `...${p.wallet.slice(-4)}`}
-                </span>
-                <span style={{
-                  ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                  color: lifetimePnlColor,
-                  padding: '0.1rem 0.3rem', borderRadius: '3px',
-                  background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                }}>
-                  {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)}
-                </span>
-                <span style={{ ...T.micro, color: B.gold, fontWeight: 700, marginLeft: 'auto' }}>
-                  {sideShort}
-                </span>
-                <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                  {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
-                </span>
-                <span style={{
-                  ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                  color: positionPnlColor,
-                }}>
-                  {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
-                </span>
-                <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                  now {Math.round(p.curPrice * 100)}¢
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                  <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                  <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                    ...{p.wallet.slice(-4)}
+                  </span>
+                  <span style={{
+                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                    color: lifeColor,
+                    padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                  }}>
+                    {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
+                  </span>
+                  <span style={{ ...T.micro, color: B.gold, fontWeight: 700, marginLeft: 'auto' }}>
+                    {sideShort}
+                  </span>
+                  <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                    {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
+                  </span>
+                  <span style={{
+                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor,
+                  }}>
+                    {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
