@@ -23,11 +23,12 @@ const httpFetch = typeof globalThis.fetch === 'function'
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const MAX_WALLETS_PER_RUN = 25;
-const MAX_PROFILES = 150;
+const isSeedMode = process.argv.includes('--seed');
+const MAX_WALLETS_PER_RUN = isSeedMode ? 50 : 40;
+const MAX_PROFILES = 300;
 const STALE_DAYS = 30;
 const RETRY_LIMIT = 3;
-const DELAY_MS = 1200;
+const DELAY_MS = isSeedMode ? 800 : 1200;
 
 const SPORT_KEYWORDS = {
   NHL: ['nhl', 'hockey', 'stanley cup', 'bruins', 'rangers', 'maple leafs', 'canadiens',
@@ -165,15 +166,20 @@ async function buildProfile(wallet) {
 }
 
 async function fetchLeaderboard() {
-  const url = `${DATA_API}/v1/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&limit=50`;
-  console.log('🏆 Fetching sports leaderboard...');
-  const data = await fetchWithRetry(url);
-  if (!data || !Array.isArray(data)) {
-    console.log('  ⚠️ Could not fetch leaderboard');
-    return [];
+  console.log('🏆 Fetching sports leaderboard (top 200)...');
+  const all = [];
+  for (let offset = 0; offset < 200; offset += 50) {
+    const url = `${DATA_API}/v1/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&limit=50&offset=${offset}`;
+    const data = await fetchWithRetry(url);
+    if (!data || !Array.isArray(data) || data.length === 0) break;
+    all.push(...data);
+    await sleep(500);
   }
-  const profitable = data.filter(t => (t.pnl || 0) > 5000);
-  console.log(`  Found ${profitable.length} profitable sports traders on leaderboard\n`);
+  const profitable = all.filter(t => (t.pnl || 0) > 5000);
+  console.log(`  Found ${profitable.length} profitable sports traders on leaderboard`);
+  if (profitable.length > 0) {
+    console.log(`  Range: $${Math.round(profitable[0].pnl).toLocaleString()} → $${Math.round(profitable[profitable.length - 1].pnl).toLocaleString()}\n`);
+  }
   return profitable.map(t => ({
     wallet: (t.proxyWallet || '').toLowerCase(),
     name: t.userName || null,
@@ -202,27 +208,33 @@ async function run() {
     }
   }
 
-  // Merge leaderboard wallets (always process these first — they're the sharp ones)
+  // Check CLI flag for leaderboard-only mode (used by seed workflow)
+  const seedOnly = process.argv.includes('--seed');
+  const refreshHours = seedOnly ? 24 : 12;
+
+  // Leaderboard wallets — prioritize unprocessed, then stale
   const leaderboardToProcess = leaderboard
     .filter(w => {
       const ex = existing[w.wallet];
       if (!ex) return true;
-      return !ex.builtAt || (now - ex.builtAt) > 12 * 60 * 60 * 1000;
+      return !ex.builtAt || (now - ex.builtAt) > refreshHours * 60 * 60 * 1000;
     })
-    .slice(0, 15);
+    .slice(0, seedOnly ? MAX_WALLETS_PER_RUN : 15);
 
-  // Then whale trade wallets
-  const tradeToProcess = wallets
+  // Trade wallets (skip in seed-only mode)
+  const tradeToProcess = seedOnly ? [] : wallets
     .filter(w => {
       if (leaderboardToProcess.some(l => l.wallet === w.wallet)) return false;
       const ex = existing[w.wallet];
       if (!ex) return true;
-      return !ex.builtAt || (now - ex.builtAt) > 12 * 60 * 60 * 1000;
+      return !ex.builtAt || (now - ex.builtAt) > refreshHours * 60 * 60 * 1000;
     })
     .slice(0, MAX_WALLETS_PER_RUN - leaderboardToProcess.length);
 
   const toProcess = [...leaderboardToProcess, ...tradeToProcess];
-  console.log(`Processing ${toProcess.length} wallets (${leaderboardToProcess.length} from leaderboard, ${tradeToProcess.length} from trades)\n`);
+  const unseeded = leaderboard.filter(w => !existing[w.wallet]).length;
+  console.log(`Processing ${toProcess.length} wallets (${leaderboardToProcess.length} leaderboard, ${tradeToProcess.length} trades)`);
+  console.log(`Leaderboard coverage: ${leaderboard.length - unseeded}/${leaderboard.length} seeded\n`);
 
   for (const w of toProcess) {
     const displayName = w.name || w.wallet.slice(0, 10) + '...';
