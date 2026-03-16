@@ -23,8 +23,8 @@ const httpFetch = typeof globalThis.fetch === 'function'
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const MAX_WALLETS_PER_RUN = 20;
-const MAX_PROFILES = 100;
+const MAX_WALLETS_PER_RUN = 25;
+const MAX_PROFILES = 150;
 const STALE_DAYS = 30;
 const RETRY_LIMIT = 3;
 const DELAY_MS = 1200;
@@ -66,9 +66,11 @@ function classifySport(title) {
 }
 
 function tierFromStats(totalPnl, marketsTraded) {
-  if (totalPnl > 100000 && marketsTraded > 100) return 'ELITE';
-  if (totalPnl > 25000 && marketsTraded > 50) return 'PROVEN';
-  if (totalPnl > 5000 && marketsTraded > 20) return 'ACTIVE';
+  if (totalPnl > 100000 && marketsTraded > 50) return 'ELITE';
+  if (totalPnl > 25000 && marketsTraded > 20) return 'PROVEN';
+  if (totalPnl > 5000 && marketsTraded > 10) return 'ACTIVE';
+  if (totalPnl < -50000) return 'DEGEN';
+  if (totalPnl < -10000) return 'LOSING';
   return 'UNKNOWN';
 }
 
@@ -162,81 +164,107 @@ async function buildProfile(wallet) {
   };
 }
 
+async function fetchLeaderboard() {
+  const url = `${DATA_API}/v1/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&limit=50`;
+  console.log('🏆 Fetching sports leaderboard...');
+  const data = await fetchWithRetry(url);
+  if (!data || !Array.isArray(data)) {
+    console.log('  ⚠️ Could not fetch leaderboard');
+    return [];
+  }
+  const profitable = data.filter(t => (t.pnl || 0) > 5000);
+  console.log(`  Found ${profitable.length} profitable sports traders on leaderboard\n`);
+  return profitable.map(t => ({
+    wallet: (t.proxyWallet || '').toLowerCase(),
+    name: t.userName || null,
+    pnl: t.pnl || 0,
+    vol: t.vol || 0,
+    source: 'leaderboard',
+  }));
+}
+
 async function run() {
   console.log('🐋 Building whale profiles...\n');
 
   const polyData = loadJSON('polymarket_data.json');
-  if (!polyData) {
-    console.log('No polymarket_data.json found — nothing to process.');
-    return;
-  }
-
-  const wallets = extractWallets(polyData);
+  const wallets = polyData ? extractWallets(polyData) : [];
   console.log(`Found ${wallets.length} unique wallets in whale trades`);
 
-  if (wallets.length === 0) {
-    console.log('No wallet data yet (Phase 1 needs to run first).');
-    return;
-  }
+  const leaderboard = await fetchLeaderboard();
 
   const existing = loadJSON('whale_profiles.json') || {};
   const now = Date.now();
   const staleCutoff = now - STALE_DAYS * 24 * 60 * 60 * 1000;
 
-  // Purge stale entries
   for (const [addr, profile] of Object.entries(existing)) {
-    if ((profile.lastSeen || 0) < staleCutoff) {
+    if (profile.source !== 'leaderboard' && (profile.lastSeen || 0) < staleCutoff) {
       delete existing[addr];
     }
   }
 
-  const toProcess = wallets
+  // Merge leaderboard wallets (always process these first — they're the sharp ones)
+  const leaderboardToProcess = leaderboard
     .filter(w => {
       const ex = existing[w.wallet];
       if (!ex) return true;
-      // Re-process if last build was >12 hours ago
       return !ex.builtAt || (now - ex.builtAt) > 12 * 60 * 60 * 1000;
     })
-    .slice(0, MAX_WALLETS_PER_RUN);
+    .slice(0, 15);
 
-  console.log(`Processing ${toProcess.length} wallets (max ${MAX_WALLETS_PER_RUN} per run)\n`);
+  // Then whale trade wallets
+  const tradeToProcess = wallets
+    .filter(w => {
+      if (leaderboardToProcess.some(l => l.wallet === w.wallet)) return false;
+      const ex = existing[w.wallet];
+      if (!ex) return true;
+      return !ex.builtAt || (now - ex.builtAt) > 12 * 60 * 60 * 1000;
+    })
+    .slice(0, MAX_WALLETS_PER_RUN - leaderboardToProcess.length);
+
+  const toProcess = [...leaderboardToProcess, ...tradeToProcess];
+  console.log(`Processing ${toProcess.length} wallets (${leaderboardToProcess.length} from leaderboard, ${tradeToProcess.length} from trades)\n`);
 
   for (const w of toProcess) {
     const displayName = w.name || w.wallet.slice(0, 10) + '...';
-    process.stdout.write(`  📊 ${displayName}: `);
+    const isLB = w.source === 'leaderboard';
+    process.stdout.write(`  ${isLB ? '🏆' : '📊'} ${displayName}: `);
 
     try {
       const profile = await buildProfile(w.wallet);
-      const tier = tierFromStats(profile.totalPnl, profile.marketsTraded);
+      const pnl = isLB && w.pnl > profile.totalPnl ? w.pnl : profile.totalPnl;
+      const tier = tierFromStats(pnl, profile.marketsTraded);
 
       const prev = existing[w.wallet];
       const pnlHistory = prev?.pnlHistory || [];
       const lastPnl = pnlHistory.length > 0 ? pnlHistory[pnlHistory.length - 1].pnl : null;
-      if (lastPnl !== profile.totalPnl) {
-        pnlHistory.push({ t: now, pnl: profile.totalPnl });
+      if (lastPnl !== pnl) {
+        pnlHistory.push({ t: now, pnl });
         if (pnlHistory.length > 30) pnlHistory.splice(0, pnlHistory.length - 30);
       }
 
       existing[w.wallet] = {
         name: w.name || prev?.name || 'Anonymous',
-        totalPnl: profile.totalPnl,
+        totalPnl: pnl,
         sportPnl: profile.sportPnl,
         marketsTraded: profile.marketsTraded,
         sportMarkets: profile.sportMarkets,
-        lastSeen: w.lastSeen,
+        lastSeen: w.lastSeen || now,
         tier,
         builtAt: now,
         pnlHistory,
+        source: isLB ? 'leaderboard' : (prev?.source || 'trade'),
       };
 
-      console.log(`$${profile.totalPnl.toLocaleString()} P&L, ${profile.marketsTraded} markets → ${tier}`);
+      console.log(`$${pnl.toLocaleString()} P&L, ${profile.marketsTraded} markets → ${tier}`);
     } catch (e) {
       console.log(`error — ${e.message}`);
       if (!existing[w.wallet]) {
         existing[w.wallet] = {
           name: w.name || 'Anonymous',
-          totalPnl: 0, sportPnl: {}, marketsTraded: 0, sportMarkets: {},
-          lastSeen: w.lastSeen, tier: 'UNKNOWN', builtAt: now,
+          totalPnl: isLB ? (w.pnl || 0) : 0,
+          sportPnl: {}, marketsTraded: 0, sportMarkets: {},
+          lastSeen: w.lastSeen || now, tier: isLB ? 'PROVEN' : 'UNKNOWN',
+          builtAt: now, source: isLB ? 'leaderboard' : 'trade',
         };
       }
     }

@@ -521,8 +521,11 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
     ELITE: { color: B.gold, bg: B.goldDim },
     PROVEN: { color: B.green, bg: B.greenDim },
     ACTIVE: { color: B.sky, bg: B.blueDim },
+    DEGEN: { color: B.red, bg: B.redDim },
+    LOSING: { color: '#F97316', bg: 'rgba(249,115,22,0.12)' },
   };
   const tc = profile ? tierColors[profile.tier] : null;
+  const traderName = trade.traderName || profile?.name;
 
   return (
     <div style={{
@@ -546,13 +549,14 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
       <span style={{ ...T.caption, color: B.text, flex: 1 }}>
         {trade.outcome || '—'}
       </span>
-      {addrShort && (
+      {(traderName || addrShort) && (
         <span style={{
-          ...T.micro, fontFamily: 'monospace', color: B.textMuted,
+          ...T.micro, color: B.textMuted,
           padding: '0.1rem 0.3rem', borderRadius: '3px',
           background: 'rgba(255,255,255,0.04)',
+          maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
-          {addrShort}
+          {traderName || addrShort}
         </span>
       )}
       {profile && (
@@ -1182,50 +1186,97 @@ function fmtOdds(american) {
 
 function scoreWhaleSignal(game, whaleProfiles, pinnacleData) {
   if (!game.allWhales || game.allWhales.length === 0) return null;
-  if (!game.whaleDirection) return null;
-
-  const isAway = game.whaleDirection === 'away';
-  const whaleCash = isAway ? game.whaleCashAway : game.whaleCashHome;
-  if (whaleCash < 500) return null;
 
   const pinnGame = pinnacleData?.[game.sport]?.[game.key] || null;
 
-  let score = 0;
-  const factors = [];
+  // Analyze whale money by profitability — smart $ vs degen $
+  let smartAway = 0, smartHome = 0, degenAway = 0, degenHome = 0;
+  let unknownAway = 0, unknownHome = 0;
+  let bestSharpTier = 'UNKNOWN';
+  let bestSharpWallet = null;
 
-  // Whale cash thresholds
-  if (whaleCash >= 25000) {
-    score += 25;
-    factors.push({ label: 'Whale cash $25k+', pts: 25 });
-  } else if (whaleCash >= 10000) {
-    score += 15;
-    factors.push({ label: 'Whale cash $10k+', pts: 15 });
-  } else if (whaleCash >= 1000) {
-    score += 8;
-    factors.push({ label: 'Whale cash $1k+', pts: 8 });
-  }
-
-  // Verified wallet tier
-  let bestTier = 'UNKNOWN';
-  let bestWallet = null;
   for (const w of game.allWhales) {
-    if (!w.wallet || !whaleProfiles) continue;
     const side = resolveOutcomeSide(w.outcome, game.away, game.home);
-    if ((isAway && side !== 'away') || (!isAway && side !== 'home')) continue;
-    const profile = whaleProfiles[w.wallet?.toLowerCase()];
-    if (!profile) continue;
-    const tierRank = { ELITE: 4, PROVEN: 3, ACTIVE: 2, UNKNOWN: 1 };
-    if ((tierRank[profile.tier] || 0) > (tierRank[bestTier] || 0)) {
-      bestTier = profile.tier;
-      bestWallet = { ...profile, address: w.wallet };
+    const isAway = side === 'away';
+    const addr = w.wallet?.toLowerCase();
+    const profile = addr && whaleProfiles ? whaleProfiles[addr] : null;
+    const pnl = profile?.totalPnl || 0;
+    const cash = w.amount || 0;
+
+    if (profile && pnl > 5000) {
+      if (isAway) smartAway += cash; else smartHome += cash;
+      const tierRank = { ELITE: 4, PROVEN: 3, ACTIVE: 2 };
+      if ((tierRank[profile.tier] || 0) > ({ ELITE: 4, PROVEN: 3, ACTIVE: 2, UNKNOWN: 0 }[bestSharpTier] || 0)) {
+        bestSharpTier = profile.tier;
+        bestSharpWallet = { ...profile, address: w.wallet };
+      }
+    } else if (profile && pnl < -10000) {
+      if (isAway) degenAway += cash; else degenHome += cash;
+    } else {
+      if (isAway) unknownAway += cash; else unknownHome += cash;
     }
   }
-  if (bestTier === 'ELITE') {
+
+  // Determine signal direction: follow sharp, fade degen
+  const smartDir = smartAway > smartHome ? 'away' : smartHome > smartAway ? 'home' : null;
+  const degenDir = degenAway > degenHome ? 'away' : degenHome > degenAway ? 'home' : null;
+  const fadeDir = degenDir === 'away' ? 'home' : degenDir === 'home' ? 'away' : null;
+  const rawDir = game.whaleDirection;
+
+  // Priority: sharp money > fade degens > raw volume
+  let signalDir = smartDir || fadeDir || rawDir;
+  if (!signalDir) return null;
+
+  const isAway = signalDir === 'away';
+  const smartCash = isAway ? smartAway : smartHome;
+  const degenCashOnOpp = isAway ? degenHome : degenAway;
+  const totalSignalCash = isAway ? game.whaleCashAway : game.whaleCashHome;
+
+  let score = 0;
+  const factors = [];
+  let signalType = 'volume';
+
+  // Sharp wallet following
+  if (smartCash > 0) {
+    signalType = 'sharp';
+    if (smartCash >= 25000) {
+      score += 30;
+      factors.push({ label: `Sharp $${fmtVol(smartCash)} following`, pts: 30 });
+    } else if (smartCash >= 5000) {
+      score += 20;
+      factors.push({ label: `Sharp $${fmtVol(smartCash)} following`, pts: 20 });
+    } else {
+      score += 12;
+      factors.push({ label: `Sharp $${fmtVol(smartCash)} following`, pts: 12 });
+    }
+  }
+
+  // Degen fade signal
+  if (fadeDir === signalDir && degenCashOnOpp > 10000) {
+    signalType = signalType === 'sharp' ? 'sharp+fade' : 'fade';
+    score += 15;
+    factors.push({ label: `Fade degen $${fmtVol(degenCashOnOpp)}`, pts: 15 });
+  }
+
+  // Wallet tier bonus
+  if (bestSharpTier === 'ELITE') {
     score += 20;
     factors.push({ label: 'ELITE wallet', pts: 20 });
-  } else if (bestTier === 'PROVEN') {
+  } else if (bestSharpTier === 'PROVEN') {
     score += 12;
     factors.push({ label: 'PROVEN wallet', pts: 12 });
+  }
+
+  // If no sharp or fade signal, fall back to raw volume (weaker)
+  if (signalType === 'volume') {
+    const whaleCash = isAway ? game.whaleCashAway : game.whaleCashHome;
+    if (whaleCash >= 25000) {
+      score += 10;
+      factors.push({ label: `$${fmtVol(whaleCash)} volume`, pts: 10 });
+    } else if (whaleCash >= 1000) {
+      score += 5;
+      factors.push({ label: `$${fmtVol(whaleCash)} volume`, pts: 5 });
+    }
   }
 
   // Pinnacle movement confirmation
@@ -1237,7 +1288,7 @@ function scoreWhaleSignal(game, whaleProfiles, pinnacleData) {
     }
   }
 
-  // +EV on retail book (the money-making factor)
+  // +EV on retail book
   const pinnOdds = isAway ? pinnGame?.current?.away : pinnGame?.current?.home;
   const bestRetail = isAway ? pinnGame?.bestAway : pinnGame?.bestHome;
   const bestBook = isAway ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
@@ -1274,13 +1325,17 @@ function scoreWhaleSignal(game, whaleProfiles, pinnacleData) {
     }
   }
 
+  const whaleCash = isAway ? game.whaleCashAway : game.whaleCashHome;
+
   return {
     score: Math.min(score, 100),
     side: isAway ? 'away' : 'home',
     teamName: isAway ? game.away : game.home,
     whaleCash,
-    bestTier,
-    bestWallet,
+    smartCash,
+    signalType,
+    bestTier: bestSharpTier,
+    bestWallet: bestSharpWallet,
     factors,
     pinnacle: pinnGame,
     evEdge,
@@ -1399,7 +1454,10 @@ function WhaleSignalCard({ game, signal, isMobile, whaleProfiles }) {
               border: `1px solid ${B.goldBorder}`,
             }}>
               <span style={{ ...T.caption, fontWeight: 800, color: B.gold }}>
-                Whales loading {teamShort}
+                {signal.signalType === 'fade' ? `Fade degens → ${teamShort}`
+                  : signal.signalType === 'sharp+fade' ? `Sharp + Fade → ${teamShort}`
+                  : signal.signalType === 'sharp' ? `Sharp money → ${teamShort}`
+                  : `Volume → ${teamShort}`}
               </span>
             </div>
             {signal.bestTier !== 'UNKNOWN' && (
