@@ -1699,6 +1699,12 @@ function SharpPositionsBlock({ positions, game, signal }) {
               }}>
                 {p.name || `...${p.wallet.slice(-4)}`}
               </span>
+              <span style={{
+                ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                color: p.totalPnl >= 0 ? B.green : B.red,
+              }}>
+                {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)}
+              </span>
               <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
                 {sideShort}
               </span>
@@ -1869,6 +1875,146 @@ export default function SharpFlow() {
               <FlowStatCard icon={BarChart3} label="Last Scan" value={scannedAt || '—'}
                 hint="Sharp position scan frequency" />
             </div>
+
+            {/* ─── Sharp Positions Section ─── */}
+            {gamesWithPos > 0 && (() => {
+              const allPosGames = [];
+              for (const sport of ['NHL', 'CBB']) {
+                const sportGames = sharpPositions?.[sport] || {};
+                for (const [key, gd] of Object.entries(sportGames)) {
+                  if (!gd.positions || gd.positions.length === 0) continue;
+                  allPosGames.push({ key, sport, ...gd });
+                }
+              }
+              allPosGames.sort((a, b) => (b.summary?.totalInvested || 0) - (a.summary?.totalInvested || 0));
+
+              return (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <SectionHead
+                    title={`Sharp Positions (${allPosGames.length} games)`}
+                    subtitle="Open bets from ELITE & PROVEN wallets on today's games"
+                    icon={Eye}
+                  />
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : allPosGames.length <= 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                    gap: '0.75rem',
+                  }}>
+                    {allPosGames.map(gd => {
+                      const ss = sportStyle(gd.sport);
+                      const s = gd.summary;
+                      const consensusTeam = s.consensus === 'away' ? gd.away : gd.home;
+                      const consensusShort = consensusTeam.split(' ').pop();
+                      const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
+                      const consensusOdds = s.consensus === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+
+                      return (
+                        <div key={gd.key} style={{
+                          borderRadius: '10px', overflow: 'hidden',
+                          background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                          border: `1px solid ${B.goldBorder}`,
+                        }}>
+                          <div style={{
+                            height: '2px',
+                            background: `linear-gradient(90deg, transparent, ${B.gold}, transparent)`,
+                          }} />
+
+                          {/* Header */}
+                          <div style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '0.75rem 0.875rem 0.5rem',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <Badge color={ss.color} bg={ss.bg}>{ss.icon} {gd.sport}</Badge>
+                              <span style={{ ...T.caption, fontWeight: 700, color: B.text }}>
+                                {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Consensus banner */}
+                          <div style={{
+                            margin: '0 0.75rem 0.625rem', padding: '0.5rem 0.75rem', borderRadius: '8px',
+                            background: B.goldDim,
+                            border: `1px solid ${B.goldBorder}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          }}>
+                            <div>
+                              <div style={{ ...T.label, fontWeight: 800, color: B.gold }}>
+                                {s.consensus ? `${gd.positions.length} sharp${gd.positions.length > 1 ? 's' : ''} → ${consensusShort}` : `${gd.positions.length} positioned`}
+                              </div>
+                              <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem' }}>
+                                {fmtVol(s.totalInvested)} total invested
+                              </div>
+                            </div>
+                            {consensusOdds != null && (
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ ...T.micro, color: B.textMuted }}>Pinnacle</div>
+                                <div style={{ ...T.caption, fontWeight: 700, color: B.gold }}>
+                                  {fmtOdds(consensusOdds)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Individual positions */}
+                          <div style={{ padding: '0 0.75rem 0.75rem' }}>
+                            {gd.positions.map((p, i) => {
+                              const sideTeam = p.side === 'away' ? gd.away : gd.home;
+                              const sideShort = sideTeam.split(' ').pop();
+                              const positionPnlColor = p.pnl >= 0 ? B.green : B.red;
+                              const lifetimePnlColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
+                              const tc = p.tier === 'ELITE'
+                                ? { color: B.gold, bg: B.goldDim }
+                                : { color: B.green, bg: B.greenDim };
+
+                              return (
+                                <div key={`${p.wallet}-${i}`} style={{
+                                  display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                  padding: '0.4rem 0.5rem',
+                                  borderRadius: '6px',
+                                  background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
+                                  flexWrap: 'wrap',
+                                }}>
+                                  <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                                  <span style={{
+                                    ...T.micro, color: B.text, fontWeight: 700,
+                                    maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                  }}>
+                                    {p.name || `...${p.wallet.slice(-4)}`}
+                                  </span>
+                                  <span style={{
+                                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                                    color: lifetimePnlColor,
+                                  }}>
+                                    {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)}
+                                  </span>
+                                  <span style={{
+                                    ...T.micro, color: B.gold, fontWeight: 700,
+                                    marginLeft: 'auto',
+                                  }}>
+                                    {sideShort}
+                                  </span>
+                                  <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                                    {fmtVol(p.invested)}
+                                  </span>
+                                  <span style={{
+                                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                                    color: positionPnlColor,
+                                  }}>
+                                    {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* +EV Opportunities */}
             <SectionHead
