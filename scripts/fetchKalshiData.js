@@ -351,17 +351,27 @@ function extractGameProbs(markets, awayRaw, homeRaw) {
 
   for (const m of markets) {
     const sub = normalize(m.yes_sub_title || '');
-    const ticker = normalize(m.ticker || '');
-    if (sub.includes(nAway) || ticker.includes(nAway.slice(0, 3))) {
+    // Use ticker SUFFIX (after last hyphen) for deterministic matching
+    const rawTicker = m.ticker || '';
+    const tickerSuffix = normalize(rawTicker.split('-').pop() || '');
+
+    if (sub.includes(nAway) || (tickerSuffix && nAway.startsWith(tickerSuffix.slice(0, 3)))) {
       awayMarket = m;
-    } else if (sub.includes(nHome) || ticker.includes(nHome.slice(0, 3))) {
+    } else if (sub.includes(nHome) || (tickerSuffix && nHome.startsWith(tickerSuffix.slice(0, 3)))) {
       homeMarket = m;
     }
   }
 
   if (!awayMarket || !homeMarket) {
-    awayMarket = markets[0];
-    homeMarket = markets[1];
+    // Fallback: assign whichever is unmatched
+    if (awayMarket && !homeMarket) {
+      homeMarket = markets.find(m => m !== awayMarket) || markets[1];
+    } else if (homeMarket && !awayMarket) {
+      awayMarket = markets.find(m => m !== homeMarket) || markets[0];
+    } else {
+      awayMarket = markets[0];
+      homeMarket = markets[1];
+    }
   }
 
   const parsePrice = (p) => {
