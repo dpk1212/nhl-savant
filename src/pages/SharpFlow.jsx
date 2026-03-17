@@ -156,18 +156,27 @@ async function loadAllTimePnL() {
       where('status', '==', 'COMPLETED'),
     );
     const snap = await getDocs(q);
-    let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
-    snap.forEach(d => {
-      const p = d.data();
-      if (p.result?.outcome === 'WIN') { wins++; totalProfit += (p.result?.profit || 0); }
-      else if (p.result?.outcome === 'LOSS') { losses++; totalProfit += -(p.units || 1); }
-      else if (p.result?.outcome === 'PUSH') { pushes++; }
-      totalUnits += (p.units || 1);
-    });
-    return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
+    const tally = (filter) => {
+      let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
+      snap.forEach(d => {
+        const p = d.data();
+        if (!filter(p)) return;
+        if (p.result?.outcome === 'WIN') { wins++; totalProfit += (p.result?.profit || 0); }
+        else if (p.result?.outcome === 'LOSS') { losses++; totalProfit += -(p.units || 1); }
+        else if (p.result?.outcome === 'PUSH') { pushes++; }
+        totalUnits += (p.units || 1);
+      });
+      return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
+    };
+    return {
+      pregame: tally(p => p.lockType !== 'LIVE'),
+      live: tally(p => p.lockType === 'LIVE'),
+      all: tally(() => true),
+    };
   } catch (err) {
     console.warn('Failed to load all-time P&L:', err.message);
-    return { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
+    const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
+    return { pregame: { ...empty }, live: { ...empty }, all: { ...empty } };
   }
 }
 
@@ -1970,6 +1979,9 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
   const isLocked = criteriaMet >= 4;
+  const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+  const isGameLive = commenceTime && Date.now() >= commenceTime;
+  const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const betOdds = bestRetail || consensusOdds;
   const units = isLocked ? calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested) : 0;
@@ -2009,12 +2021,15 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
             <span style={{
               ...T.micro, fontWeight: 900, letterSpacing: '0.04em',
               padding: '0.2rem 0.6rem', borderRadius: '5px',
-              color: '#fff', background: 'linear-gradient(135deg, #10B981, #059669)',
-              border: '1px solid rgba(16,185,129,0.4)',
+              color: '#fff',
+              background: lockType === 'LIVE'
+                ? 'linear-gradient(135deg, #F59E0B, #D97706)'
+                : 'linear-gradient(135deg, #10B981, #059669)',
+              border: `1px solid ${lockType === 'LIVE' ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.4)'}`,
               display: 'flex', alignItems: 'center', gap: '0.25rem',
-              boxShadow: '0 0 8px rgba(16,185,129,0.3)',
+              boxShadow: `0 0 8px ${lockType === 'LIVE' ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.3)'}`,
             }}>
-              <Lock size={10} /> LOCKED IN
+              <Lock size={10} /> {lockType === 'LIVE' ? 'LIVE LOCK' : 'LOCKED IN'}
             </span>
           )}
           <span style={{
@@ -2628,6 +2643,10 @@ export default function SharpFlow() {
         const docId = `${date}_${key}`;
 
         if (criteriaMet >= 4 && !lockedPicks[docId]) {
+          const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+          const isLive = commenceTime && Date.now() >= commenceTime;
+          const lockType = isLive ? 'LIVE' : 'PREGAME';
+
           const betOdds = bestRetail || odds;
           const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested);
           const potentialProfit = profitFromOdds(betOdds, units);
@@ -2640,6 +2659,7 @@ export default function SharpFlow() {
             consensusSide: side,
             consensusTeam: team,
             market: 'MONEYLINE',
+            lockType,
             criteriaMet,
             criteria: {
               sharps3Plus: uniqueWallets >= 3,
@@ -2816,15 +2836,21 @@ export default function SharpFlow() {
               <FlowStatCard icon={Lock} label="Locked Plays"
                 value={(() => {
                   const locked = Object.values(lockedPicks);
-                  const totalU = locked.reduce((s, p) => s + (p.units || 1), 0);
-                  return `${locked.length} (${totalU.toFixed(1)}u)`;
+                  const pre = locked.filter(p => p.lockType !== 'LIVE');
+                  const live = locked.filter(p => p.lockType === 'LIVE');
+                  const preU = pre.reduce((s, p) => s + (p.units || 1), 0);
+                  const liveU = live.reduce((s, p) => s + (p.units || 1), 0);
+                  if (live.length > 0) return `${pre.length} (${preU.toFixed(1)}u) + ${live.length} live`;
+                  return `${pre.length} (${preU.toFixed(1)}u)`;
                 })()}
                 accent={Object.keys(lockedPicks).length > 0 ? B.green : null}
                 hint="Today's locked plays — 4+ criteria met" />
-              <FlowStatCard icon={TrendingUp} label="All-Time Record"
-                value={allTimePnL ? allTimePnL.record : '—'}
-                accent={allTimePnL && allTimePnL.totalProfit > 0 ? B.green : allTimePnL && allTimePnL.totalProfit < 0 ? B.red : null}
-                hint={allTimePnL ? `${allTimePnL.totalProfit >= 0 ? '+' : ''}${allTimePnL.totalProfit.toFixed(1)}u profit` : 'Tracking performance over time'} />
+              <FlowStatCard icon={TrendingUp} label="Pre-Game Record"
+                value={allTimePnL ? allTimePnL.pregame.record : '—'}
+                accent={allTimePnL && allTimePnL.pregame.totalProfit > 0 ? B.green : allTimePnL && allTimePnL.pregame.totalProfit < 0 ? B.red : null}
+                hint={allTimePnL
+                  ? `${allTimePnL.pregame.totalProfit >= 0 ? '+' : ''}${allTimePnL.pregame.totalProfit.toFixed(1)}u profit${allTimePnL.live.wins + allTimePnL.live.losses > 0 ? ` · Live: ${allTimePnL.live.record}` : ''}`
+                  : 'Tracking performance over time'} />
               <FlowStatCard icon={Zap} label="+EV Spots" value={evSignals.length} accent={evSignals.length > 0 ? B.green : null}
                 hint="Actionable mispriced lines" />
             </div>
