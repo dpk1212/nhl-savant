@@ -361,9 +361,9 @@ function Badge({ children, color, bg }) {
   );
 }
 
-function SectionHead({ title, subtitle, icon: Icon }) {
+function SectionHead({ title, subtitle, icon: Icon, style: overrideStyle }) {
   return (
-    <div style={{ marginBottom: '0.875rem' }}>
+    <div style={{ marginBottom: '0.875rem', ...overrideStyle }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
         {Icon && <Icon size={16} color={B.gold} style={{ opacity: 0.7 }} />}
         <h2 style={{ ...T.sub, color: B.text, margin: 0 }}>{title}</h2>
@@ -2570,6 +2570,7 @@ export default function SharpFlow() {
   const [signalSort, setSignalSort] = useState('divergence');
   const [signalType, setSignalType] = useState('all');
   const [tradeView, setTradeView] = useState('largest');
+  const [whaleIntelSport, setWhaleIntelSport] = useState('All');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -2832,9 +2833,11 @@ export default function SharpFlow() {
             {gamesWithPos > 0 && (() => {
               const allPosGames = [];
               for (const sport of ['NHL', 'CBB']) {
+                if (whaleIntelSport !== 'All' && sport !== whaleIntelSport) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
                   if (!gd.positions || gd.positions.length === 0) continue;
+                  if ((gd.summary?.totalInvested || 0) < 1000) continue;
                   allPosGames.push({ key, sport, ...gd });
                 }
               }
@@ -2842,11 +2845,26 @@ export default function SharpFlow() {
 
               return (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <SectionHead
-                    title={`Sharp Positions (${allPosGames.length} games)`}
-                    subtitle="Open bets from ELITE & PROVEN wallets — blockchain-verified profitable bettors on Polymarket"
-                    icon={Eye}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <SectionHead
+                      title={`Sharp Positions (${allPosGames.length} games)`}
+                      subtitle="Open bets from ELITE & PROVEN wallets — blockchain-verified profitable bettors on Polymarket"
+                      icon={Eye}
+                      style={{ marginBottom: 0 }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+                      {['All', 'NHL', 'CBB'].map(s => (
+                        <button key={s} onClick={() => setWhaleIntelSport(s)} style={{
+                          padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
+                          ...T.micro, fontWeight: 700,
+                          border: whaleIntelSport === s ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                          background: whaleIntelSport === s ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                          color: whaleIntelSport === s ? B.gold : B.textMuted,
+                          transition: 'all 0.2s ease',
+                        }}>{s}</button>
+                      ))}
+                    </div>
+                  </div>
                   {/* Context legend */}
                   <div style={{
                     display: 'flex', gap: '0.75rem', flexWrap: 'wrap',
