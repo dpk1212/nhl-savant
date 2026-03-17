@@ -90,24 +90,29 @@ function tierInfo(amt) {
 
 // ─── Sharp Flow Unit Sizing ───────────────────────────────────────────────────
 
-function calculateUnits(criteriaMet, evEdge, sharpCount, totalInvested) {
-  // Base: criteria strength determines tier
-  // 6/6 = 3u, 5/6 = 2u, 4/6 = 1u
+function consensusGrade(moneyPct, walletPct) {
+  const avg = (moneyPct + walletPct) / 2;
+  if (avg >= 80) return { label: 'DOMINANT', color: B.green, penalty: 0, score: avg };
+  if (avg >= 65) return { label: 'STRONG', color: B.green, penalty: 0, score: avg };
+  if (avg >= 55) return { label: 'LEAN', color: B.gold, penalty: -0.5, score: avg };
+  return { label: 'CONTESTED', color: B.red, penalty: -1, score: avg };
+}
+
+function calculateUnits(criteriaMet, evEdge, sharpCount, totalInvested, consensusPenalty = 0) {
   let units = criteriaMet >= 6 ? 3 : criteriaMet >= 5 ? 2 : 1;
 
-  // Boost for strong EV edge
   if (evEdge >= 5) units += 0.5;
   else if (evEdge >= 3) units += 0.25;
 
-  // Boost for heavy sharp conviction
   if (sharpCount >= 5) units += 0.5;
   else if (sharpCount >= 4) units += 0.25;
 
-  // Boost for massive invested capital
   if (totalInvested >= 20000) units += 0.5;
   else if (totalInvested >= 10000) units += 0.25;
 
-  return Math.min(units, 5); // cap at 5u
+  units += consensusPenalty;
+
+  return Math.min(Math.max(units, 0.5), 5);
 }
 
 function unitTier(units) {
@@ -1968,6 +1973,15 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
     return pLast > pFirst;
   })();
 
+  // Consensus strength
+  const consensusWallets = consensusSide === 'away' ? awayWallets : homeWallets;
+  const oppWallets = consensusSide === 'away' ? homeWallets : awayWallets;
+  const consensusInvested = consensusSide === 'away' ? awayInvested : homeInvested;
+  const oppInvestedAmt = consensusSide === 'away' ? homeInvested : awayInvested;
+  const moneyPct = totalInvested > 0 ? (consensusInvested / totalInvested) * 100 : 50;
+  const walletPct = (consensusWallets + oppWallets) > 0 ? (consensusWallets / (consensusWallets + oppWallets)) * 100 : 50;
+  const cGrade = consensusGrade(moneyPct, walletPct);
+
   // Lock-In Criteria System
   const criteria = [
     { id: 'sharps', label: '3+ Sharp Wallets', met: uniqueWallets >= 3 },
@@ -1978,13 +1992,13 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const isLocked = criteriaMet >= 4;
+  const isLocked = criteriaMet >= 4 && cGrade.label !== 'CONTESTED';
   const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
   const isGameLive = commenceTime && Date.now() >= commenceTime;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const betOdds = bestRetail || consensusOdds;
-  const units = isLocked ? calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested) : 0;
+  const units = isLocked ? calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested, cGrade.penalty) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -2188,6 +2202,14 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
               ✗ Pinnacle opposes
             </span>
           )}
+          <span style={{
+            ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+            fontWeight: 600,
+            background: cGrade.color === B.green ? B.greenDim : cGrade.color === B.gold ? B.goldDim : B.redDim,
+            color: cGrade.color,
+          }}>
+            {cGrade.label} ({Math.round(cGrade.score)}%)
+          </span>
           {hasEV && (
             <span style={{
               ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
@@ -2631,6 +2653,18 @@ export default function SharpFlow() {
           ? polyPts[polyPts.length - 1] > polyPts[0]
           : polyPts[polyPts.length - 1] < polyPts[0]);
 
+        // Consensus strength
+        const awayPositions = gd.positions.filter(p => p.side === 'away');
+        const homePositions = gd.positions.filter(p => p.side === 'home');
+        const consWallets = side === 'away' ? new Set(awayPositions.map(p => p.wallet)).size : new Set(homePositions.map(p => p.wallet)).size;
+        const oppWallets = side === 'away' ? new Set(homePositions.map(p => p.wallet)).size : new Set(awayPositions.map(p => p.wallet)).size;
+        const consInvested = side === 'away' ? (s.awayInvested || 0) : (s.homeInvested || 0);
+        const oppInvested = side === 'away' ? (s.homeInvested || 0) : (s.awayInvested || 0);
+        const totalInv = consInvested + oppInvested;
+        const mPct = totalInv > 0 ? (consInvested / totalInv) * 100 : 50;
+        const wPct = (consWallets + oppWallets) > 0 ? (consWallets / (consWallets + oppWallets)) * 100 : 50;
+        const cGrade = consensusGrade(mPct, wPct);
+
         const checks = [
           uniqueWallets >= 3,
           hasEV,
@@ -2642,13 +2676,13 @@ export default function SharpFlow() {
         const criteriaMet = checks.filter(Boolean).length;
         const docId = `${date}_${key}`;
 
-        if (criteriaMet >= 4 && !lockedPicks[docId]) {
+        if (criteriaMet >= 4 && cGrade.label !== 'CONTESTED' && !lockedPicks[docId]) {
           const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
           const isLive = commenceTime && Date.now() >= commenceTime;
           const lockType = isLive ? 'LIVE' : 'PREGAME';
 
           const betOdds = bestRetail || odds;
-          const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested);
+          const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested, cGrade.penalty);
           const potentialProfit = profitFromOdds(betOdds, units);
           const pick = {
             date,
@@ -2660,6 +2694,7 @@ export default function SharpFlow() {
             consensusTeam: team,
             market: 'MONEYLINE',
             lockType,
+            consensusStrength: { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label },
             criteriaMet,
             criteria: {
               sharps3Plus: uniqueWallets >= 3,
