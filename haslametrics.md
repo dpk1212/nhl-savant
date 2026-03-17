@@ -603,17 +603,17 @@ Away teams firstProjected winners first
 
 |  |  |  |  |  |  |  |  |  |  |  |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [South Alabama](https://haslametrics.com/ratings2.php?yr=&tid=35) 207[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=35&tid2=27&neut=0) | 64.20 |  | [NC State](https://haslametrics.com/ratings2.php?yr=&tid=327) 38[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=525&tid2=327&neut=1) | 81.42 |  | [Stephen F. Austin](https://haslametrics.com/ratings2.php?yr=&tid=5257) 97[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=5257&tid2=427&neut=0) | 71.96 |  | [Davidson](https://haslametrics.com/ratings2.php?yr=&tid=4355) 129[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4355&tid2=417&neut=0) | 70.81 |
-| [Auburn](https://haslametrics.com/ratings2.php?yr=&tid=27) 37 | 82.52 |  | [Texas](https://haslametrics.com/ratings2.php?yr=&tid=525) 41 | 80.86 |  | [Tulsa](https://haslametrics.com/ratings2.php?yr=&tid=427) 75 | 77.75 |  | [Oklahoma State](https://haslametrics.com/ratings2.php?yr=&tid=417) 77 | 79.53 |
-| 10:00pm ET -- ESPN2 |  |  | 9:15pm ET -- truTV |  |  | 9:00pm ET -- ESPNU |  |  | 8:00pm ET -- ESPN2 |  |
+| [NC State](https://haslametrics.com/ratings2.php?yr=&tid=327) 38[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=525&tid2=327&neut=1) | 81.42 |  | [UMBC](https://haslametrics.com/ratings2.php?yr=&tid=4779) 192[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4779&tid2=117&neut=1) | 71.04 |  |  |  |  |  |  |
+| [Texas](https://haslametrics.com/ratings2.php?yr=&tid=525) 41 | 80.86 |  | [Howard](https://haslametrics.com/ratings2.php?yr=&tid=117) 209 | 70.15 |  |  |  |  |  |  |
+| 9:15pm ET -- truTV |  |  | 6:40pm ET -- truTV |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [UNC Wilmington](https://haslametrics.com/ratings2.php?yr=&tid=723) 117[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=723&tid2=109&neut=0) | 67.91 |  | [Wyoming](https://haslametrics.com/ratings2.php?yr=&tid=5525) 124[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=5525&tid2=5471&neut=0) | 68.09 |  | [St. Thomas](https://haslametrics.com/ratings2.php?yr=&tid=5823) 96[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=5823&tid2=5117&neut=0) | 69.38 |  | [Liberty](https://haslametrics.com/ratings2.php?yr=&tid=4693) 131[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4693&tid2=4511&neut=0) | 67.43 |
-| [Yale](https://haslametrics.com/ratings2.php?yr=&tid=109) 90 | 73.50 |  | [Wichita State](https://haslametrics.com/ratings2.php?yr=&tid=5471) 91 | 74.17 |  | [Seattle](https://haslametrics.com/ratings2.php?yr=&tid=5117) 110 | 71.17 |  | [George Mason](https://haslametrics.com/ratings2.php?yr=&tid=4511) 103 | 72.51 |
-| 7:00pm ET -- ESPN+ |  |  | 7:00pm ET -- ESPNU |  |  | 10:00pm ET -- ESPN+ |  |  | 6:00pm ET -- ESPN2 |  |
 |  |  |  |  |  |  |  |  |  |  |  |
-| [UNLV](https://haslametrics.com/ratings2.php?yr=&tid=4901) 114[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4901&tid2=623&neut=0) | 71.70 |  | [UMBC](https://haslametrics.com/ratings2.php?yr=&tid=4779) 192[![](https://haslametrics.com/images/preview_icon.gif)](https://haslametrics.com/preview.php?yr=&tid1=4779&tid2=117&neut=1) | 71.04 |  |  |  |  |  |  |
-| [UC Irvine](https://haslametrics.com/ratings2.php?yr=&tid=623) 111 | 75.26 |  | [Howard](https://haslametrics.com/ratings2.php?yr=&tid=117) 209 | 70.15 |  |  |  |  |  |  |
-| 11:00pm ET -- ESPNU |  |  | 6:40pm ET -- truTV |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |  |  |  |  |
