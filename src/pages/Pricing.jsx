@@ -152,11 +152,13 @@ const Pricing = () => {
   // All tiers get the same features - only commitment level differs
   const universalFeatures = [
     'All daily +EV picks with quality grades',
+    'Whale Intel — real-time sharp money tracker',
+    'Blockchain-verified sharp wallet positions',
+    'Auto-locked plays with unit sizing',
     'Advanced ensemble prediction model',
     'Live win probability tracking',
     'Expert AI analysis & insights',
     'Complete performance & ROI dashboard',
-    'Top scorers & player trends',
     'Direct email support',
     'Full model transparency'
   ];
@@ -242,7 +244,7 @@ const Pricing = () => {
             lineHeight: '1.6',
             padding: window.innerWidth < 640 ? '0 0.5rem' : '0'
           }}>
-            Premium tools to find +EV, avoid -EV, and hold cappers accountable.
+            Premium tools to find +EV, track sharp money, and bet with real edge.
             <br />Cancel anytime.
           </p>
           
@@ -542,6 +544,91 @@ const Pricing = () => {
             `}</style>
           </div>
         )}
+
+        {/* Whale Intel Feature Highlight */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(16,185,129,0.06) 50%, rgba(59,130,246,0.06) 100%)',
+          border: '1px solid rgba(212,175,55,0.25)',
+          borderRadius: window.innerWidth < 640 ? '14px' : '18px',
+          padding: window.innerWidth < 640 ? '1.5rem' : '2rem 2.5rem',
+          marginBottom: '3rem',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+            background: 'linear-gradient(90deg, transparent, #D4AF37, #10B981, transparent)',
+          }} />
+          <div style={{
+            display: 'flex',
+            flexDirection: window.innerWidth < 640 ? 'column' : 'row',
+            gap: window.innerWidth < 640 ? '1.25rem' : '2rem',
+            alignItems: window.innerWidth < 640 ? 'flex-start' : 'center',
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                marginBottom: '0.5rem',
+              }}>
+                <span style={{ fontSize: '1.25rem' }}>⚡</span>
+                <h3 style={{
+                  fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem',
+                  fontWeight: 800, color: '#D4AF37', margin: 0,
+                  letterSpacing: '-0.02em',
+                }}>
+                  Whale Intel — Sharp Money Tracker
+                </h3>
+              </div>
+              <p style={{
+                fontSize: window.innerWidth < 640 ? '0.875rem' : '0.938rem',
+                color: 'rgba(241,245,249,0.8)', lineHeight: '1.6', margin: '0 0 0.75rem 0',
+              }}>
+                See exactly where the sharpest bettors on the planet are putting their money — verified on-chain, not self-reported.
+                We track 200+ wallets with $100K to $5M+ in lifetime profit and surface their positions on today's games in real time.
+              </p>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(2, 1fr)',
+                gap: '0.375rem',
+              }}>
+                {[
+                  'Blockchain-verified sharp positions',
+                  'Pinnacle fair value + retail EV edge',
+                  'Auto-locked plays when 4+ signals align',
+                  'Unit sizing based on signal strength',
+                  'Consensus strength: contested vs dominant',
+                  'Pre-game & live play tracking with P&L',
+                ].map((f, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ color: '#10B981', fontSize: '0.75rem', flexShrink: 0 }}>✓</span>
+                    <span style={{
+                      fontSize: window.innerWidth < 640 ? '0.8rem' : '0.85rem',
+                      color: 'rgba(241,245,249,0.7)', fontWeight: 500,
+                    }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{
+              flexShrink: 0, textAlign: 'center',
+              padding: window.innerWidth < 640 ? '1rem' : '1.25rem 1.5rem',
+              borderRadius: '12px',
+              background: 'rgba(212,175,55,0.08)',
+              border: '1px solid rgba(212,175,55,0.2)',
+              alignSelf: window.innerWidth < 640 ? 'stretch' : 'center',
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(212,175,55,0.7)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>
+                Included in all plans
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#D4AF37', marginBottom: '0.25rem' }}>
+                200+
+              </div>
+              <div style={{ fontSize: '0.813rem', color: 'rgba(241,245,249,0.6)' }}>
+                Elite wallets tracked
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Pricing Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
