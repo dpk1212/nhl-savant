@@ -625,6 +625,26 @@ const Basketball = () => {
         </p>
       </div>
 
+      {/* Whale Intel CTA */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto 1rem auto', padding: isMobile ? '0 1rem' : '0' }}>
+        <Link to="/sharp-flow" style={{ textDecoration: 'none', display: 'block' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            padding: '0.75rem 1.25rem', borderRadius: '10px',
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%)',
+            border: '1px solid rgba(212,175,55,0.25)',
+            cursor: 'pointer', transition: 'all 0.3s ease',
+          }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.08) 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(212,175,55,0.2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            <span style={{ fontSize: '1rem' }}>⚡</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#D4AF37' }}>Whale Intel — Sharp Money Tracker</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(212,175,55,0.7)' }}>→</span>
+          </div>
+        </Link>
+      </div>
+
       {/* Unit Sizing Explainer - Premium (No Emoji) */}
       <div style={{ 
         maxWidth: '1200px', 
