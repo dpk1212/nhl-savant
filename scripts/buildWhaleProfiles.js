@@ -24,8 +24,8 @@ const httpFetch = typeof globalThis.fetch === 'function'
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const isSeedMode = process.argv.includes('--seed');
-const MAX_WALLETS_PER_RUN = isSeedMode ? 50 : 40;
-const MAX_PROFILES = 300;
+const MAX_WALLETS_PER_RUN = isSeedMode ? 75 : 50;
+const MAX_PROFILES = 500;
 const STALE_DAYS = 30;
 const RETRY_LIMIT = 3;
 const DELAY_MS = isSeedMode ? 800 : 1200;
@@ -218,9 +218,10 @@ async function buildProfile(wallet) {
 }
 
 async function fetchLeaderboard() {
-  console.log('🏆 Fetching sports leaderboard (top 200)...');
+  const LB_DEPTH = 500;
+  console.log(`🏆 Fetching sports leaderboard (top ${LB_DEPTH})...`);
   const all = [];
-  for (let offset = 0; offset < 200; offset += 50) {
+  for (let offset = 0; offset < LB_DEPTH; offset += 50) {
     const url = `${DATA_API}/v1/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&limit=50&offset=${offset}`;
     const data = await fetchWithRetry(url);
     if (!data || !Array.isArray(data) || data.length === 0) break;
@@ -271,7 +272,7 @@ async function run() {
       if (!ex) return true;
       return !ex.builtAt || (now - ex.builtAt) > refreshHours * 60 * 60 * 1000;
     })
-    .slice(0, seedOnly ? MAX_WALLETS_PER_RUN : 15);
+    .slice(0, seedOnly ? MAX_WALLETS_PER_RUN : 25);
 
   // Trade wallets (skip in seed-only mode)
   const tradeToProcess = seedOnly ? [] : wallets
@@ -354,10 +355,14 @@ async function run() {
   const totalProfiles = Object.keys(output).length;
   const eliteCount = entries.filter(([, p]) => p.tier === 'ELITE').length;
   const provenCount = entries.filter(([, p]) => p.tier === 'PROVEN').length;
-  const mmCount = entries.filter(([, p]) => (p.mmScore || 0) > 50).length;
-  const suspectCount = entries.filter(([, p]) => (p.mmScore || 0) > 25 && (p.mmScore || 0) <= 50).length;
+  const mmCount = entries.filter(([, p]) => (p.mmScore || 0) > 40).length;
+  const sportLoserCount = entries.filter(([, p]) => {
+    if ((p.mmScore || 0) > 40) return false;
+    const sp = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+    return sp < -100000;
+  }).length;
   console.log(`\n✅ Wrote ${outPath} — ${totalProfiles} profiles (${eliteCount} ELITE, ${provenCount} PROVEN)`);
-  console.log(`   MM detection: ${mmCount} likely MMs excluded from sharp signals, ${suspectCount} suspect`);
+  console.log(`   Filtering: ${mmCount} MMs + ${sportLoserCount} sport losers excluded, ${eliteCount + provenCount - mmCount - sportLoserCount} clean sharps`);
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
