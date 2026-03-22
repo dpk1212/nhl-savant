@@ -1373,10 +1373,10 @@ function scoreWhaleSignal(game, whaleProfiles, pinnacleData, sharpPositionsData)
   // Wallet tier bonus
   if (bestSharpTier === 'ELITE') {
     score += 20;
-    factors.push({ label: 'ELITE wallet', pts: 20 });
+    factors.push({ label: 'ELITE bettor', pts: 20 });
   } else if (bestSharpTier === 'PROVEN') {
     score += 12;
-    factors.push({ label: 'PROVEN wallet', pts: 12 });
+    factors.push({ label: 'PROVEN bettor', pts: 12 });
   }
 
   // If no sharp or fade signal, fall back to raw volume (weaker)
@@ -1449,13 +1449,13 @@ function scoreWhaleSignal(game, whaleProfiles, pinnacleData, sharpPositionsData)
       sharpPosInvested = posInvested;
       if (posInvested >= 10000) {
         score += 20;
-        factors.push({ label: `${posCount} sharp wallet(s) positioned`, pts: 20 });
+        factors.push({ label: `${posCount} sharp bettor(s) positioned`, pts: 20 });
       } else if (posCount >= 2) {
         score += 15;
-        factors.push({ label: `${posCount} sharp wallets in`, pts: 15 });
+        factors.push({ label: `${posCount} sharp bettors in`, pts: 15 });
       } else {
         score += 8;
-        factors.push({ label: `Sharp wallet positioned`, pts: 8 });
+        factors.push({ label: `Sharp bettor positioned`, pts: 8 });
       }
     }
     // If sharp positions disagree with signal direction, it's a conflicting signal
@@ -1598,7 +1598,7 @@ function WhaleSignalCard({ game, signal, isMobile, whaleProfiles }) {
             }}>
               <span style={{ ...T.caption, fontWeight: 800, color: B.gold }}>
                 {signal.sharpPosCount > 0 && signal.signalType === 'volume'
-                  ? `${signal.sharpPosCount} sharp wallet${signal.sharpPosCount > 1 ? 's' : ''} → ${teamShort}`
+                  ? `${signal.sharpPosCount} sharp bettor${signal.sharpPosCount > 1 ? 's' : ''} → ${teamShort}`
                   : signal.signalType === 'fade' ? `Fade degens → ${teamShort}`
                   : signal.signalType === 'sharp+fade' ? `Sharp + Fade → ${teamShort}`
                   : signal.signalType === 'sharp' ? `Sharp money → ${teamShort}`
@@ -1763,7 +1763,7 @@ function SharpPositionsBlock({ positions, game, signal }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           <span style={{ ...T.micro, fontWeight: 700, color: B.gold }}>
-            SHARP WALLETS IN
+            SHARP BETTORS IN
           </span>
           <span style={{ ...T.micro, color: B.textSec }}>
             {pos.length} position{pos.length !== 1 ? 's' : ''} · {fmtVol(summary.totalInvested)} invested
@@ -2033,7 +2033,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
 
   // Lock-In Criteria System
   const criteria = [
-    { id: 'sharps', label: '3+ Sharp Wallets', met: uniqueWallets >= 3 },
+    { id: 'sharps', label: '3+ Sharp Bettors', met: uniqueWallets >= 3 },
     { id: 'ev', label: '+EV Edge', met: hasEV },
     { id: 'pinnacle', label: 'Pinnacle Confirms', met: pinnConfirms },
     { id: 'invested', label: '$5K+ Invested', met: s.totalInvested >= 5000 },
@@ -2261,7 +2261,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
             ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
             background: B.goldDim, color: B.gold, fontWeight: 600,
           }}>
-            {uniqueWallets} sharp wallet{uniqueWallets !== 1 ? 's' : ''}
+            {uniqueWallets} sharp bettor{uniqueWallets !== 1 ? 's' : ''}
           </span>
           <span style={{
             ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
@@ -2970,7 +2970,7 @@ export default function SharpFlow() {
               border: `1px solid ${B.goldBorder}`,
             }}>
               <p style={{ ...T.body, color: B.text, margin: 0, lineHeight: 1.6 }}>
-                We track <span style={{ color: B.gold, fontWeight: 800 }}>{trackedCount} verified sharp wallets</span> with
+                We track <span style={{ color: B.gold, fontWeight: 800 }}>{trackedCount} verified sharp bettors</span> with
                 a combined <span style={{ color: B.green, fontWeight: 800 }}>+{fmtVol(totalSharpPnl)}</span> lifetime P&L on Polymarket.
                 When multiple sharps position on the same side of a game, we surface the play, cross-reference it against
                 Pinnacle lines and retail sportsbooks, and rate it on a 5-star system so you can bet with conviction.
@@ -2983,12 +2983,12 @@ export default function SharpFlow() {
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
-              <FlowStatCard icon={Eye} label="Sharp Wallets" value={trackedCount} accent={B.gold}
-                hint={totalExcluded > 0 ? `${totalExcluded} non-sharp wallets filtered` : 'ELITE + PROVEN directional bettors'} />
+              <FlowStatCard icon={Eye} label="Sharp Bettors" value={trackedCount} accent={B.gold}
+                hint={totalExcluded > 0 ? `${totalExcluded} non-sharp bettors filtered` : 'ELITE + PROVEN directional bettors'} />
               <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(totalSharpInvested)} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
               <FlowStatCard icon={TrendingUp} label="Combined Lifetime P&L" value={`+${fmtVol(totalSharpPnl)}`} accent={B.green}
-                hint="Aggregate P&L of all tracked sharp wallets" />
+                hint="Aggregate P&L of all tracked sharp bettors" />
             </div>
 
             {/* ─── Sharp Positions Section ─── */}
@@ -3065,7 +3065,7 @@ export default function SharpFlow() {
                       { id: 'time', label: '⏱ Game Time' },
                       { id: 'edge', label: '+EV Edge' },
                       { id: 'money', label: '$ Invested' },
-                      { id: 'wallets', label: '# Wallets' },
+                      { id: 'wallets', label: '# Sharps' },
                       { id: 'live', label: '● Live' },
                     ].map(opt => (
                       <button key={opt.id} onClick={() => setSortBy(opt.id)} style={{
@@ -3133,7 +3133,7 @@ export default function SharpFlow() {
                 <Eye size={28} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
                 <div style={{ ...T.sub, color: B.text, marginBottom: '0.25rem' }}>No sharp positions detected</div>
                 <div style={{ ...T.label, color: B.textSec }}>
-                  Positions appear when verified sharp wallets have open bets on today's games.
+                  Positions appear when verified sharp bettors have open bets on today's games.
                 </div>
               </div>
             )}
