@@ -925,10 +925,29 @@ function TopTradeChip({ trade, rank }) {
 // ─── Money Flow View ──────────────────────────────────────────────────────────
 
 function MoneyFlowView({ games, isMobile }) {
+  const [showPositions, setShowPositions] = useState(false);
+  const [tradeView, setTradeView] = useState('largest');
+
   const flowGames = useMemo(() => {
     return [...games]
       .filter(g => g.totalCash > 0)
       .sort((a, b) => b.totalCash - a.totalCash);
+  }, [games]);
+
+  const topTrades = useMemo(() => {
+    const all = [];
+    for (const g of games) {
+      for (const w of g.allWhales) all.push(w);
+    }
+    return all.sort((a, b) => b.amount - a.amount).slice(0, 10);
+  }, [games]);
+
+  const recentTrades = useMemo(() => {
+    const all = [];
+    for (const g of games) {
+      for (const w of g.allWhales) all.push(w);
+    }
+    return all.filter(t => t.ts).sort((a, b) => b.ts - a.ts).slice(0, 10);
   }, [games]);
 
   if (flowGames.length === 0) {
@@ -1009,6 +1028,47 @@ function MoneyFlowView({ games, isMobile }) {
           hint="Money & tickets on opposite sides"
         />
       </div>
+
+      {/* Largest Positions (collapsible) */}
+      {topTrades.length > 0 && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <button onClick={() => setShowPositions(!showPositions)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            width: '100%', padding: '0.625rem 0.875rem', borderRadius: '10px',
+            cursor: 'pointer', border: `1px solid ${B.borderSubtle}`,
+            background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {showPositions ? <ChevronUp size={14} color={B.gold} /> : <ChevronDown size={14} color={B.gold} />}
+              <TrendingUp size={14} color={B.gold} style={{ opacity: 0.7 }} />
+              <span style={{ ...T.sub, color: B.text, margin: 0 }}>Largest Positions</span>
+              <span style={{ ...T.micro, color: B.textMuted }}>
+                Top 10 whale trades today
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              {showPositions && ['largest', 'recent'].map(key => (
+                <span key={key} onClick={e => { e.stopPropagation(); setTradeView(key); }} style={{
+                  padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                  ...T.micro, fontWeight: 700,
+                  border: tradeView === key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                  background: tradeView === key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                  color: tradeView === key ? B.gold : B.textMuted,
+                }}>
+                  {key === 'largest' ? 'Largest' : 'Most Recent'}
+                </span>
+              ))}
+            </div>
+          </button>
+          {showPositions && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.625rem' }}>
+              {(tradeView === 'largest' ? topTrades : recentTrades).map((t, i) => (
+                <TopTradeChip key={`${t.ts}-${i}`} trade={t} rank={tradeView === 'largest' ? i : -1} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Column header */}
       {!isMobile && (
@@ -2775,7 +2835,6 @@ export default function SharpFlow() {
   const [gameSort, setGameSort] = useState('volume');
   const [signalSort, setSignalSort] = useState('divergence');
   const [signalType, setSignalType] = useState('all');
-  const [tradeView, setTradeView] = useState('largest');
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
@@ -2940,22 +2999,6 @@ export default function SharpFlow() {
     else if (gameSort === 'active') g.sort((a, b) => b.latestTradeTs - a.latestTradeTs);
     return g;
   }, [filteredGames, gameSort]);
-
-  const topTrades = useMemo(() => {
-    const all = [];
-    for (const g of filteredGames) {
-      for (const w of g.allWhales) all.push(w);
-    }
-    return all.sort((a, b) => b.amount - a.amount).slice(0, 10);
-  }, [filteredGames]);
-
-  const recentTrades = useMemo(() => {
-    const all = [];
-    for (const g of filteredGames) {
-      for (const w of g.allWhales) all.push(w);
-    }
-    return all.filter(t => t.ts).sort((a, b) => b.ts - a.ts).slice(0, 10);
-  }, [filteredGames]);
 
   const whaleSignals = useMemo(() => {
     return filteredGames
@@ -3230,38 +3273,6 @@ export default function SharpFlow() {
         <FlowStatCard icon={Eye} label="Sharp Signals" value={sharpSignals.length} accent={sharpSignals.length > 0 ? B.gold : null}
           hint="Games where money & tickets disagree" />
       </div>
-
-      {/* ─── Top Whale Positions (condensed leaderboard) ─── */}
-      {topTrades.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-            <SectionHead
-              title="Largest Positions"
-              subtitle={tradeView === 'largest' ? 'The 10 biggest individual whale trades today' : 'The most recent whale trades today'}
-              icon={TrendingUp}
-              style={{ marginBottom: 0 }}
-            />
-            <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
-              {[
-                { key: 'largest', label: 'Largest' },
-                { key: 'recent', label: 'Most Recent' },
-              ].map(s => (
-                <button key={s.key} onClick={() => setTradeView(s.key)} style={{
-                  padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
-                  ...T.micro, fontWeight: 700,
-                  border: tradeView === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                  background: tradeView === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                  color: tradeView === s.key ? B.gold : B.textMuted,
-                  transition: 'all 0.2s ease',
-                }}>{s.label}</button>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {(tradeView === 'largest' ? topTrades : recentTrades).map((t, i) => <TopTradeChip key={`${t.ts}-${i}`} trade={t} rank={tradeView === 'largest' ? i : -1} />)}
-          </div>
-        </div>
-      )}
 
       {/* ─── Sharp Signals (most valuable section) ─── */}
       {sharpSignals.length > 0 && (
