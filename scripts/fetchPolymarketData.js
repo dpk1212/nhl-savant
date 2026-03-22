@@ -452,7 +452,7 @@ async function run() {
       }
 
       // Whale trades ($500+) with individual trade details
-      const whales = await getWhaleTrades(id, 500, 30);
+      const whales = await getWhaleTrades(id, 500, 75);
       let whaleData = null;
       if (whales.length > 0) {
         let totalCash = 0, buyCount = 0, sellCount = 0;
@@ -478,7 +478,7 @@ async function run() {
           largest: tradeDetails[0]?.amount || 0,
           buyCount,
           sellCount,
-          topTrades: tradeDetails.slice(0, 10),
+          topTrades: tradeDetails.slice(0, 25),
         };
       }
 

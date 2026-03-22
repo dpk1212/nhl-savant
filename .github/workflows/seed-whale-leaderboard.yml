@@ -2,8 +2,8 @@ name: Seed Whale Leaderboard
 
 on:
   schedule:
-    # Every 4 hours until fully seeded, then self-stops
-    - cron: '30 */4 * * *'
+    # Every 3 hours to build expanded pool faster
+    - cron: '30 */3 * * *'
   workflow_dispatch:
 
 jobs:

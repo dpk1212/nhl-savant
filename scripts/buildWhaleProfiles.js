@@ -24,8 +24,8 @@ const httpFetch = typeof globalThis.fetch === 'function'
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const isSeedMode = process.argv.includes('--seed');
-const MAX_WALLETS_PER_RUN = isSeedMode ? 75 : 50;
-const MAX_PROFILES = 500;
+const MAX_WALLETS_PER_RUN = isSeedMode ? 150 : 100;
+const MAX_PROFILES = 1000;
 const STALE_DAYS = 30;
 const RETRY_LIMIT = 3;
 const DELAY_MS = isSeedMode ? 800 : 1200;
@@ -228,7 +228,7 @@ async function fetchLeaderboard() {
     all.push(...data);
     await sleep(500);
   }
-  const profitable = all.filter(t => (t.pnl || 0) > 5000);
+  const profitable = all.filter(t => (t.pnl || 0) > 2000);
   console.log(`  Found ${profitable.length} profitable sports traders on leaderboard`);
   if (profitable.length > 0) {
     console.log(`  Range: $${Math.round(profitable[0].pnl).toLocaleString()} → $${Math.round(profitable[profitable.length - 1].pnl).toLocaleString()}\n`);
@@ -343,9 +343,15 @@ async function run() {
     }
   }
 
-  // Cap at MAX_PROFILES, keeping most recently seen
+  // Cap at MAX_PROFILES, prioritizing useful tiers then recency
+  const tierPriority = { ELITE: 0, PROVEN: 1, ACTIVE: 2, UNKNOWN: 3, LOSING: 4, DEGEN: 5 };
   const entries = Object.entries(existing)
-    .sort((a, b) => (b[1].lastSeen || 0) - (a[1].lastSeen || 0))
+    .sort((a, b) => {
+      const ta = tierPriority[a[1].tier] ?? 6;
+      const tb = tierPriority[b[1].tier] ?? 6;
+      if (ta !== tb) return ta - tb;
+      return (b[1].lastSeen || 0) - (a[1].lastSeen || 0);
+    })
     .slice(0, MAX_PROFILES);
   const output = Object.fromEntries(entries);
 

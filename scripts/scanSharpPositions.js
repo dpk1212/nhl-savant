@@ -26,7 +26,7 @@ const normalize = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
-const TIERS_TO_SCAN = ['ELITE', 'PROVEN'];
+const TIERS_TO_SCAN = ['ELITE', 'PROVEN', 'ACTIVE'];
 
 // ─── NHL team resolution ──────────────────────────────────────────────────────
 const NHL_MAP = {
