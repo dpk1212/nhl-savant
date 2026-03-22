@@ -2690,7 +2690,6 @@ export default function SharpFlow() {
   const [signalSort, setSignalSort] = useState('divergence');
   const [signalType, setSignalType] = useState('all');
   const [tradeView, setTradeView] = useState('largest');
-  const [whaleIntelSport, setWhaleIntelSport] = useState('All');
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
@@ -2998,7 +2997,7 @@ export default function SharpFlow() {
               const allPosGames = [];
               const nowMs = Date.now();
               for (const sport of ['NHL', 'CBB']) {
-                if (whaleIntelSport !== 'All' && sport !== whaleIntelSport) continue;
+                if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
                   if (!gd.positions || gd.positions.length === 0) continue;
@@ -3051,26 +3050,11 @@ export default function SharpFlow() {
 
               return (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <SectionHead
-                      title={`Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={`Open bets from ${trackedCount} verified directional sharps — market makers excluded`}
-                      icon={Eye}
-                      style={{ marginBottom: 0 }}
-                    />
-                    <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
-                      {['All', 'NHL', 'CBB'].map(s => (
-                        <button key={s} onClick={() => setWhaleIntelSport(s)} style={{
-                          padding: '0.3rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
-                          ...T.micro, fontWeight: 700,
-                          border: whaleIntelSport === s ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                          background: whaleIntelSport === s ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                          color: whaleIntelSport === s ? B.gold : B.textMuted,
-                          transition: 'all 0.2s ease',
-                        }}>{s}</button>
-                      ))}
-                    </div>
-                  </div>
+                  <SectionHead
+                    title={`Sharp Positions (${allPosGames.length} games)`}
+                    subtitle={`Open bets from ${trackedCount} verified directional sharps — market makers excluded`}
+                    icon={Eye}
+                  />
                   {/* Sort bar */}
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
