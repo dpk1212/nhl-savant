@@ -2691,7 +2691,7 @@ export default function SharpFlow() {
   const [signalType, setSignalType] = useState('all');
   const [tradeView, setTradeView] = useState('largest');
   const [whaleIntelSport, setWhaleIntelSport] = useState('All');
-  const [gameTimeFilter, setGameTimeFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -3005,28 +3005,49 @@ export default function SharpFlow() {
                   if ((gd.summary?.totalInvested || 0) < 1000) continue;
                   const pg = pinnacleHistory?.[sport]?.[key];
                   const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
-                  const minsUntil = ct ? Math.round((ct - nowMs) / 60000) : null;
                   const isLive = ct && nowMs >= ct;
 
-                  if (gameTimeFilter === 'Soon' && (isLive || minsUntil == null || minsUntil > 180)) continue;
-                  if (gameTimeFilter === 'Pre' && (isLive)) continue;
-                  if (gameTimeFilter === 'Live' && (!isLive)) continue;
+                  const ss = gd.summary;
+                  const cSide = ss.consensus;
+                  const uw = new Set(gd.positions.map(p => p.wallet)).size;
+                  const cOdds = cSide === 'away' ? pg?.current?.away : pg?.current?.home;
+                  const bRetail = cSide === 'away' ? pg?.bestAway : pg?.bestHome;
+                  const pProb = impliedProb(cOdds);
+                  const rProb = impliedProb(bRetail);
+                  const ev = (pProb && rProb) ? +((pProb - rProb) * 100).toFixed(1) : 0;
+                  const pinnH = pg?.history || [];
+                  const pinnPts = pinnH.map(h => cSide === 'away' ? h.away : h.home);
+                  const pFirstP = impliedProb(pinnPts[0]);
+                  const pLastP = impliedProb(pinnPts[pinnPts.length - 1]);
+                  const pinnMoveWith = pinnPts.length >= 2 && pLastP > pFirstP;
+                  const pinnConf = pg?.movement?.direction === cSide;
+                  const cInv = cSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
+                  const moneyPct = (ss.totalInvested || 0) > 0 ? (cInv / ss.totalInvested) * 100 : 50;
+                  const cWallets = cSide === 'away' ? new Set(gd.positions.filter(p => p.side === 'away').map(p => p.wallet)).size : new Set(gd.positions.filter(p => p.side === 'home').map(p => p.wallet)).size;
+                  const oWallets = uw - cWallets;
+                  const wPct = (cWallets + oWallets) > 0 ? (cWallets / (cWallets + oWallets)) * 100 : 50;
+                  const cg = consensusGrade(moneyPct, wPct);
+                  const polyG = polyData?.[sport]?.[key];
+                  const polyPts = polyG?.priceHistory?.points || [];
+                  const polyMoveWith = polyPts.length >= 2 && ((cSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (cSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
+                  const sr = rateStars(ev, uw, pinnConf, ss.totalInvested || 0, cg.label, pinnMoveWith, polyMoveWith);
 
-                  allPosGames.push({ key, sport, ...gd, _commence: ct, _minsUntil: minsUntil, _isLive: isLive });
+                  allPosGames.push({ key, sport, ...gd, _commence: ct, _isLive: isLive, _stars: sr.stars, _ev: ev, _wallets: uw, _invested: ss.totalInvested || 0 });
                 }
               }
-              allPosGames.sort((a, b) => {
-                if (gameTimeFilter === 'Soon') {
-                  return (a._minsUntil || 9999) - (b._minsUntil || 9999);
-                }
-                const aW = new Set((a.positions || []).map(p => p.wallet)).size;
-                const bW = new Set((b.positions || []).map(p => p.wallet)).size;
-                const aI = a.summary?.totalInvested || 0;
-                const bI = b.summary?.totalInvested || 0;
-                const aScore = aW * 3 + aI / 1000;
-                const bScore = bW * 3 + bI / 1000;
-                return bScore - aScore;
-              });
+
+              const sortFns = {
+                stars: (a, b) => b._stars - a._stars || b._invested - a._invested,
+                time: (a, b) => {
+                  if (a._isLive && !b._isLive) return -1;
+                  if (!a._isLive && b._isLive) return 1;
+                  return (a._commence || Infinity) - (b._commence || Infinity);
+                },
+                edge: (a, b) => b._ev - a._ev || b._stars - a._stars,
+                money: (a, b) => b._invested - a._invested,
+                wallets: (a, b) => b._wallets - a._wallets || b._invested - a._invested,
+              };
+              allPosGames.sort(sortFns[sortBy] || sortFns.stars);
 
               return (
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -3037,43 +3058,43 @@ export default function SharpFlow() {
                       icon={Eye}
                       style={{ marginBottom: 0 }}
                     />
-                    <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        {[
-                          { id: 'All', label: 'All' },
-                          { id: 'Soon', label: '⏰ Next Up' },
-                          { id: 'Pre', label: 'Pre-Game' },
-                          { id: 'Live', label: '● Live' },
-                        ].map(f => (
-                          <button key={f.id} onClick={() => setGameTimeFilter(f.id)} style={{
-                            padding: '0.3rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
-                            ...T.micro, fontWeight: 700,
-                            border: gameTimeFilter === f.id ? `1px solid ${f.id === 'Live' ? 'rgba(239,68,68,0.4)' : B.goldBorder}` : `1px solid ${B.border}`,
-                            background: gameTimeFilter === f.id
-                              ? f.id === 'Live' ? 'rgba(239,68,68,0.12)' : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
-                              : 'transparent',
-                            color: gameTimeFilter === f.id
-                              ? f.id === 'Live' ? B.red : B.gold
-                              : B.textMuted,
-                            transition: 'all 0.2s ease',
-                          }}>{f.label}</button>
-                        ))}
-                      </div>
-                      <div style={{ width: '1px', background: B.borderSubtle }} />
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        {['All', 'NHL', 'CBB'].map(s => (
-                          <button key={s} onClick={() => setWhaleIntelSport(s)} style={{
-                            padding: '0.3rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
-                            ...T.micro, fontWeight: 700,
-                            border: whaleIntelSport === s ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                            background: whaleIntelSport === s ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                            color: whaleIntelSport === s ? B.gold : B.textMuted,
-                            transition: 'all 0.2s ease',
-                          }}>{s}</button>
-                        ))}
-                      </div>
+                    <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+                      {['All', 'NHL', 'CBB'].map(s => (
+                        <button key={s} onClick={() => setWhaleIntelSport(s)} style={{
+                          padding: '0.3rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
+                          ...T.micro, fontWeight: 700,
+                          border: whaleIntelSport === s ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                          background: whaleIntelSport === s ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                          color: whaleIntelSport === s ? B.gold : B.textMuted,
+                          transition: 'all 0.2s ease',
+                        }}>{s}</button>
+                      ))}
                     </div>
                   </div>
+                  {/* Sort bar */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    marginBottom: '0.75rem', flexWrap: 'wrap',
+                  }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 600 }}>Sort:</span>
+                    {[
+                      { id: 'stars', label: '★ Rating' },
+                      { id: 'time', label: '⏱ Game Time' },
+                      { id: 'edge', label: '+EV Edge' },
+                      { id: 'money', label: '$ Invested' },
+                      { id: 'wallets', label: '# Wallets' },
+                    ].map(opt => (
+                      <button key={opt.id} onClick={() => setSortBy(opt.id)} style={{
+                        padding: '0.25rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                        ...T.micro, fontWeight: 700,
+                        border: sortBy === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                        background: sortBy === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                        color: sortBy === opt.id ? B.gold : B.textMuted,
+                        transition: 'all 0.2s ease',
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+
                   {/* Context legend */}
                   <div style={{
                     display: 'flex', gap: '0.75rem', flexWrap: 'wrap',
