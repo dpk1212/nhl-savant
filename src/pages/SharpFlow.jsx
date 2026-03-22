@@ -472,7 +472,7 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
 
 // ─── Unified Game Card (every game, premium layout) ───────────────────────────
 
-function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
+function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory, polyData }) {
   const [showTrades, setShowTrades] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
   const ss = sportStyle(game.sport);
@@ -490,9 +490,9 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
   const isReverse = ticketFav !== moneyFav && game.ticketDivergence >= 10;
   const hasDivergence = game.ticketDivergence >= 10;
-  const sharpTeam = moneyFav === 'away' ? game.away : game.home;
-  const sharpPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
-  const accentColor = isReverse ? B.gold : hasDivergence ? B.green : null;
+  const moneyTeam = moneyFav === 'away' ? awayShort : homeShort;
+  const moneyPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
+  const ticketPctOnMoneySide = moneyFav === 'away' ? game.awayTicketPct : game.homeTicketPct;
 
   const pinnAway = pinnGame?.current?.away;
   const pinnHome = pinnGame?.current?.home;
@@ -502,7 +502,6 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const bestHomeOdds = pinnGame?.bestHome;
   const bestAwayBook = pinnGame?.bestAwayBook;
   const bestHomeBook = pinnGame?.bestHomeBook;
-
   const pinnAwayProb = impliedProb(pinnAway);
   const pinnHomeProb = impliedProb(pinnHome);
   const bestAwayProb = impliedProb(bestAwayOdds);
@@ -510,62 +509,56 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const evAway = (pinnAwayProb && bestAwayProb) ? +((pinnAwayProb - bestAwayProb) * 100).toFixed(1) : null;
   const evHome = (pinnHomeProb && bestHomeProb) ? +((pinnHomeProb - bestHomeProb) * 100).toFixed(1) : null;
   const pinnMoveDir = pinnGame?.movement?.direction;
-
   const bookEntries = Object.entries(allBooks).filter(([k]) => k !== 'pinnacle');
 
   const maxEV = Math.max(evAway || 0, evHome || 0);
   const evSide = (evAway || 0) >= (evHome || 0) ? 'away' : 'home';
-  const evTeam = evSide === 'away' ? awayShort : homeShort;
+  const evTeamShort = evSide === 'away' ? awayShort : homeShort;
   const evBook = evSide === 'away' ? bestAwayBook : bestHomeBook;
   const evVal = evSide === 'away' ? evAway : evHome;
+  const bestOddsOnMoneySide = moneyFav === 'away' ? bestAwayOdds : bestHomeOdds;
+  const bestBookOnMoneySide = moneyFav === 'away' ? bestAwayBook : bestHomeBook;
+  const pinnOnMoneySide = moneyFav === 'away' ? pinnAway : pinnHome;
+  const pinnProbOnMoneySide = moneyFav === 'away' ? pinnAwayProb : pinnHomeProb;
+  const evOnMoneySide = moneyFav === 'away' ? evAway : evHome;
+
   const pinnConfirms = pinnMoveDir && pinnMoveDir === moneyFav;
-  const pinnOpposes = pinnMoveDir && pinnMoveDir !== moneyFav;
+  const whaleAligned = game.whaleCount >= 3 && game.whaleDirection === moneyFav;
 
-  const edgeSignals = [];
-  if (isReverse) edgeSignals.push('reverse');
-  if (maxEV >= 3) edgeSignals.push('ev');
-  if (pinnConfirms) edgeSignals.push('pinnacle');
-  if (game.whaleCount >= 3 && game.whaleDirection) edgeSignals.push('whales');
-  if (hasDivergence) edgeSignals.push('split');
-  const edgeStrength = edgeSignals.length;
+  const polyGame = polyData?.[game.sport]?.[game.key];
+  const polyPoints = polyGame?.priceHistory?.points || [];
+  const pinnHistory = pinnGame?.history || [];
+  const pinnConsensusPoints = pinnHistory.map(h => moneyFav === 'away' ? h.away : h.home);
 
-  const edgeVerdict = (() => {
-    const team = sharpTeam.split(' ').pop();
-    if (isReverse && maxEV >= 3 && pinnConfirms) return { text: `Strong edge: ${team} — reverse line move, +EV, Pinnacle confirms`, color: B.green, grade: 'A' };
-    if (isReverse && maxEV >= 3) return { text: `${team} — reverse line move with +${evVal}% EV at ${evBook}`, color: B.green, grade: 'A-' };
-    if (isReverse && pinnConfirms) return { text: `${team} — reverse line move, Pinnacle shortening`, color: B.green, grade: 'B+' };
-    if (isReverse) return { text: `Reverse signal: money on ${team} despite public on opponent`, color: B.gold, grade: 'B' };
-    if (maxEV >= 3 && pinnConfirms) return { text: `${evTeam} +${evVal}% EV at ${evBook}, Pinnacle confirms`, color: B.green, grade: 'B+' };
-    if (maxEV >= 3) return { text: `+${evVal}% EV on ${evTeam} at ${evBook}`, color: '#A3E635', grade: 'B' };
-    if (hasDivergence && pinnConfirms) return { text: `${team} — ticket/money split, Pinnacle shortening`, color: B.green, grade: 'B' };
-    if (hasDivergence) return { text: `Money favors ${team} despite public tickets`, color: B.textSec, grade: 'C+' };
-    if (maxEV > 0) return { text: `Small edge: +${evVal}% EV on ${evTeam} at ${evBook}`, color: B.textSec, grade: 'C' };
-    return null;
-  })();
+  const criteria = [
+    { label: 'Reverse Line Move', met: isReverse },
+    { label: '+EV Edge', met: maxEV > 0 },
+    { label: 'Pinnacle Confirms', met: !!pinnConfirms },
+    { label: 'Whale Consensus', met: !!whaleAligned },
+    { label: 'High Volume', met: game.totalCash >= 500000 },
+  ];
+  const criteriaMet = criteria.filter(c => c.met).length;
 
-  const gradeColors = {
-    'A': { color: '#fff', bg: 'linear-gradient(135deg, #10B981, #059669)', border: 'rgba(16,185,129,0.4)' },
-    'A-': { color: '#fff', bg: 'linear-gradient(135deg, #10B981, #059669)', border: 'rgba(16,185,129,0.4)' },
-    'B+': { color: '#fff', bg: 'linear-gradient(135deg, #3B82F6, #2563EB)', border: 'rgba(59,130,246,0.4)' },
-    'B': { color: B.gold, bg: B.goldDim, border: B.goldBorder },
-    'C+': { color: B.textSec, bg: 'rgba(255,255,255,0.04)', border: B.border },
-    'C': { color: B.textMuted, bg: 'rgba(255,255,255,0.03)', border: B.borderSubtle },
-  };
+  const accentColor = criteriaMet >= 3 ? B.green : isReverse ? B.gold : hasDivergence ? B.green : null;
+  const accentBorder = criteriaMet >= 3 ? 'rgba(16,185,129,0.35)' : isReverse ? B.goldBorder : hasDivergence ? 'rgba(16,185,129,0.25)' : B.border;
+
+  const awayCash = game.totalCash * (game.awayMoneyPct / 100);
+  const homeCash = game.totalCash * (game.homeMoneyPct / 100);
+  const awayWhales = game.whaleBuyAway || 0;
+  const homeWhales = game.whaleBuyHome || 0;
 
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden',
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${edgeStrength >= 3 ? 'rgba(16,185,129,0.3)' : isReverse ? B.goldBorder : hasDivergence ? 'rgba(16,185,129,0.25)' : B.border}`,
+      border: `1px solid ${accentBorder}`,
     }}>
-      {(edgeStrength >= 2 || accentColor) && (
-        <div style={{
-          height: '2px',
-          background: edgeStrength >= 3
-            ? `linear-gradient(90deg, transparent, ${B.green}, ${B.gold}, transparent)`
-            : `linear-gradient(90deg, transparent, ${accentColor || B.gold}, transparent)`,
-        }} />
-      )}
+      <div style={{
+        height: '3px',
+        background: accentColor
+          ? `linear-gradient(90deg, transparent, ${accentColor}, transparent)`
+          : `linear-gradient(90deg, transparent, ${B.border}, transparent)`,
+      }} />
 
       {/* ── Header ── */}
       <div style={{
@@ -575,45 +568,34 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
           <Badge color={ss.color} bg={ss.bg}>{ss.icon} {game.sport}</Badge>
           <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
-            {awayShort} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {homeShort}
+            {game.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {game.home}
           </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
           {(gameTimeFormatted || isGameLive) && (
             <span style={{
-              ...T.micro, fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '4px',
+              ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px',
               fontFeatureSettings: "'tnum'",
               ...(isGameLive ? {
                 color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
               } : {
-                color: B.textMuted, background: 'rgba(255,255,255,0.04)',
+                color: B.textSec, background: 'rgba(255,255,255,0.04)',
               }),
             }}>
               {isGameLive ? '● LIVE' : `${gameTimeFormatted} ET`}
             </span>
           )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
-          {edgeVerdict && (
-            <span style={{
-              ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
-              color: gradeColors[edgeVerdict.grade]?.color || B.textMuted,
-              background: gradeColors[edgeVerdict.grade]?.bg || 'transparent',
-              border: `1px solid ${gradeColors[edgeVerdict.grade]?.border || B.border}`,
-              fontSize: '0.6rem', letterSpacing: '0.03em',
-            }}>
-              {edgeVerdict.grade}
-            </span>
-          )}
           {hasDivergence && (
             <span style={{
-              ...T.tiny, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
               color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`,
             }}>
-              {game.ticketDivergence.toFixed(0)}pt
+              {game.ticketDivergence.toFixed(0)}pt SPLIT
             </span>
           )}
           {isReverse && (
             <span style={{
-              ...T.tiny, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
               color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
               border: '1px solid rgba(239,68,68,0.4)',
             }}>
@@ -623,236 +605,357 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
         </div>
       </div>
 
-      {/* ── Edge verdict banner ── */}
-      {edgeVerdict && (
+      {/* ── Market Direction (hero section) ── */}
+      <div style={{
+        margin: '0 0.75rem 0.5rem', padding: '0.75rem',
+        borderRadius: '10px',
+        background: criteriaMet >= 3
+          ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'
+          : isReverse
+            ? 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)'
+            : `linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)`,
+        border: `1px solid ${criteriaMet >= 3 ? 'rgba(16,185,129,0.25)' : isReverse ? B.goldBorder : B.borderSubtle}`,
+      }}>
         <div style={{
-          margin: '0 0.75rem 0.5rem', padding: '0.4rem 0.75rem', borderRadius: '8px',
-          background: edgeStrength >= 3 ? 'rgba(16,185,129,0.06)' : edgeStrength >= 2 ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
-          border: `1px solid ${edgeStrength >= 3 ? 'rgba(16,185,129,0.15)' : edgeStrength >= 2 ? 'rgba(212,175,55,0.12)' : B.borderSubtle}`,
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+          marginBottom: '0.375rem',
         }}>
-          {edgeStrength >= 3 ? <TrendingUp size={13} color={B.green} /> : edgeStrength >= 2 ? <Eye size={13} color={B.gold} /> : <Activity size={13} color={B.textMuted} />}
-          <span style={{ ...T.micro, color: edgeVerdict.color, fontWeight: 600, lineHeight: 1.3 }}>
-            {edgeVerdict.text}
+          <span style={{ ...T.micro, fontWeight: 800, color: criteriaMet >= 3 ? B.green : isReverse ? B.gold : B.textSec, letterSpacing: '0.06em' }}>
+            MARKET DIRECTION
           </span>
+          <span style={{
+            ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+            color: criteriaMet >= 3 ? '#fff' : criteriaMet >= 2 ? B.gold : B.textMuted,
+            background: criteriaMet >= 3 ? 'linear-gradient(135deg, #10B981, #059669)' : criteriaMet >= 2 ? B.goldDim : 'rgba(255,255,255,0.04)',
+            border: `1px solid ${criteriaMet >= 3 ? 'rgba(16,185,129,0.4)' : criteriaMet >= 2 ? B.goldBorder : B.border}`,
+            fontSize: '0.6rem',
+          }}>
+            {criteriaMet}/5
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.25rem' }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 800, color: B.text, letterSpacing: '-0.01em' }}>
+            {moneyTeam} ML
+          </span>
+          {pinnOnMoneySide != null && (
+            <span style={{ ...T.caption, fontWeight: 700, color: B.gold, fontFeatureSettings: "'tnum'" }}>
+              {fmtOdds(pinnOnMoneySide)}
+            </span>
+          )}
+          {pinnProbOnMoneySide != null && (
+            <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+              ({(pinnProbOnMoneySide * 100).toFixed(1)}%)
+            </span>
+          )}
+        </div>
+        <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.4, marginBottom: '0.5rem' }}>
+          {moneyPct.toFixed(1)}% of {fmtVol(game.totalCash)} on {moneyTeam}
+          {isReverse ? ` despite only ${ticketPctOnMoneySide.toFixed(1)}% of tickets` : ''}
+        </div>
+        {bestOddsOnMoneySide != null && (
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '0.375rem 0.5rem', borderRadius: '6px',
+            background: 'rgba(255,255,255,0.03)',
+            border: `1px solid ${B.borderSubtle}`,
+          }}>
+            <div>
+              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>BEST PRICE</div>
+              <div style={{ ...T.sub, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                {fmtOdds(bestOddsOnMoneySide)}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>{bestBookOnMoneySide || 'Best Book'}</div>
+              {evOnMoneySide != null && evOnMoneySide > 0 && (
+                <div style={{ ...T.micro, fontWeight: 800, color: evOnMoneySide >= 3 ? B.green : '#A3E635' }}>
+                  +{evOnMoneySide}% EV
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Signal Checklist ── */}
+      {criteriaMet > 0 && (
+        <div style={{
+          margin: '0 0.75rem 0.5rem', padding: '0.5rem 0.625rem',
+          borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${B.borderSubtle}`,
+        }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: '0.375rem',
+          }}>
+            <span style={{ ...T.micro, fontWeight: 700, color: criteriaMet >= 3 ? B.green : B.textSec, letterSpacing: '0.06em', fontSize: '0.575rem' }}>
+              {criteriaMet >= 4 ? 'STRONG ALIGNMENT' : criteriaMet >= 3 ? 'SIGNALS ALIGNED' : 'SIGNAL CHECK'}
+            </span>
+            <span style={{ ...T.micro, color: B.textMuted }}>{criteriaMet}/5</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.5rem' }}>
+            {criteria.map(c => (
+              <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                {c.met
+                  ? <CheckCircle size={11} color={B.green} />
+                  : <Circle size={11} color='rgba(255,255,255,0.12)' />}
+                <span style={{ ...T.micro, fontSize: '0.575rem', color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 600 : 400 }}>
+                  {c.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ── Flow bars ── */}
-      <div style={{ padding: '0.375rem 1rem 0.625rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.2rem',
-            }}>
-              <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.06em' }}>TICKETS</span>
-              <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{game.totalTrades} bets</span>
+      {/* ── Side-by-side flow comparison ── */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+        margin: '0 0.75rem 0.5rem', gap: 0,
+      }}>
+        {[
+          { side: 'away', team: awayShort, ticketPct: game.awayTicketPct, moneyPct: game.awayMoneyPct, cash: awayCash, whales: awayWhales },
+          null,
+          { side: 'home', team: homeShort, ticketPct: game.homeTicketPct, moneyPct: game.homeMoneyPct, cash: homeCash, whales: homeWhales },
+        ].map((item, idx) => {
+          if (!item) return (
+            <div key="vs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ ...T.micro, color: B.textMuted, fontWeight: 600 }}>vs</span>
             </div>
-            <FlowBar
-              leftPct={game.awayTicketPct} rightPct={game.homeTicketPct}
-              leftLabel={awayShort} rightLabel={homeShort}
-              height={14}
-            />
+          );
+          const isMoneySide = item.side === moneyFav;
+          return (
+            <div key={item.side} style={{
+              padding: '0.5rem',
+              borderRadius: '8px',
+              background: isMoneySide
+                ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
+                : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${isMoneySide ? B.goldBorder : B.borderSubtle}`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                <span style={{ ...T.caption, fontWeight: 800, color: isMoneySide ? B.text : B.textSec }}>
+                  {item.team}
+                </span>
+                {isMoneySide && (
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 800, padding: '0.1rem 0.3rem', borderRadius: '3px',
+                    color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`,
+                  }}>
+                    MONEY SIDE
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ ...T.micro, fontSize: '0.575rem', color: B.textMuted }}>Tickets</span>
+                  <span style={{ ...T.micro, fontSize: '0.575rem', color: B.textSec, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>{item.ticketPct.toFixed(1)}%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ ...T.micro, fontSize: '0.575rem', color: isMoneySide ? B.gold : B.textMuted }}>Money</span>
+                  <span style={{ ...T.micro, fontSize: '0.575rem', color: isMoneySide ? B.gold : B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>{item.moneyPct.toFixed(1)}%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ ...T.micro, fontSize: '0.575rem', color: B.textMuted }}>Volume</span>
+                  <span style={{ ...T.micro, fontSize: '0.575rem', color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(item.cash)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Flow bars (compact) ── */}
+      <div style={{ padding: '0 0.75rem 0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', marginBottom: '0.25rem' }}>
+          <span style={{ ...T.micro, fontSize: '0.55rem', color: B.textMuted, minWidth: '38px' }}>TICKETS</span>
+          <div style={{ flex: 1 }}>
+            <FlowBar leftPct={game.awayTicketPct} rightPct={game.homeTicketPct} leftLabel={awayShort} rightLabel={homeShort} height={12} />
           </div>
-          <div>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.2rem',
-            }}>
-              <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.06em' }}>MONEY</span>
-              <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{fmtVol(game.totalCash)} sampled</span>
-            </div>
-            <FlowBar
-              leftPct={game.awayMoneyPct} rightPct={game.homeMoneyPct}
-              leftLabel={awayShort} rightLabel={homeShort}
-              leftColor={B.gold} rightColor={B.gold}
-              height={14}
-            />
+        </div>
+        <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+          <span style={{ ...T.micro, fontSize: '0.55rem', color: B.gold, minWidth: '38px' }}>MONEY</span>
+          <div style={{ flex: 1 }}>
+            <FlowBar leftPct={game.awayMoneyPct} rightPct={game.homeMoneyPct} leftLabel={awayShort} rightLabel={homeShort} leftColor={B.gold} rightColor={B.gold} height={12} />
           </div>
         </div>
       </div>
 
-      {/* ── Pinnacle Lines & EV ── */}
+      {/* ── Pinnacle Fair Value ── */}
       {pinnAway != null && (
         <div style={{
-          margin: '0 0.75rem 0.375rem', padding: '0.5rem 0.625rem', borderRadius: '8px',
-          background: 'rgba(255,255,255,0.02)',
+          margin: '0 0.75rem 0.5rem', borderRadius: '8px', overflow: 'hidden',
           border: `1px solid ${B.borderSubtle}`,
         }}>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            gap: '0.375rem', alignItems: 'center',
+            padding: '0.375rem 0.625rem',
+            background: 'rgba(212,175,55,0.04)',
+            borderBottom: `1px solid ${B.borderSubtle}`,
           }}>
-            {/* Away side */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>{awayShort}</div>
-              <div style={{ ...T.caption, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
-                {fmtOdds(pinnAway)}
-              </div>
-              {openAway != null && pinnAway !== openAway && (
-                <div style={{ ...T.micro, fontSize: '0.575rem', color: pinnAway < openAway ? B.green : B.red, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>
-                  {pinnAway < openAway ? '↓' : '↑'} from {fmtOdds(openAway)}
+            <span style={{ ...T.micro, fontWeight: 700, color: B.gold, letterSpacing: '0.06em', fontSize: '0.575rem' }}>
+              PINNACLE FAIR VALUE
+            </span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem', background: 'rgba(255,255,255,0.015)' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr',
+              gap: '0.5rem', marginBottom: '0.375rem',
+            }}>
+              {[
+                { team: awayShort, odds: pinnAway, prob: pinnAwayProb, open: openAway, ev: evAway, bestOdds: bestAwayOdds, bestBook: bestAwayBook, side: 'away' },
+                { team: homeShort, odds: pinnHome, prob: pinnHomeProb, open: openHome, ev: evHome, bestOdds: bestHomeOdds, bestBook: bestHomeBook, side: 'home' },
+              ].map(s => (
+                <div key={s.side}>
+                  <div style={{ ...T.micro, color: s.side === moneyFav ? B.gold : B.textMuted, fontWeight: 600, marginBottom: '0.15rem' }}>{s.team}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                      {fmtOdds(s.odds)}
+                    </span>
+                    {s.prob != null && (
+                      <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                        ({(s.prob * 100).toFixed(1)}%)
+                      </span>
+                    )}
+                  </div>
+                  {s.open != null && s.odds !== s.open && (
+                    <div style={{ ...T.micro, fontSize: '0.575rem', color: s.odds < s.open ? B.green : B.red, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>
+                      Open {fmtOdds(s.open)} → Now {fmtOdds(s.odds)}
+                    </div>
+                  )}
+                  {s.ev != null && s.ev > 0 && (
+                    <div style={{ ...T.micro, fontWeight: 800, color: s.ev >= 3 ? B.green : '#A3E635', marginTop: '0.1rem' }}>
+                      +{s.ev}% EV <span style={{ fontWeight: 400, color: B.textMuted }}>@ {s.bestBook}</span>
+                    </div>
+                  )}
+                  {s.bestOdds != null && s.bestOdds !== s.odds && (
+                    <div style={{ ...T.micro, fontSize: '0.575rem', color: B.textSec, fontFeatureSettings: "'tnum'", marginTop: '0.1rem' }}>
+                      Best: {fmtOdds(s.bestOdds)} <span style={{ color: B.textMuted }}>({s.bestBook})</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              {evAway != null && evAway > 0 && (
-                <div style={{
-                  ...T.micro, fontSize: '0.575rem', fontWeight: 800,
-                  color: evAway >= 3 ? B.green : '#A3E635',
-                  marginTop: '0.1rem',
-                }}>
-                  +{evAway}% EV
-                  {bestAwayBook && <span style={{ fontWeight: 400, color: B.textMuted }}> @ {bestAwayBook}</span>}
-                </div>
-              )}
+              ))}
             </div>
-
-            {/* Center divider */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
-              <span style={{ ...T.micro, color: B.gold, fontWeight: 700, letterSpacing: '0.06em' }}>PINNACLE</span>
-              {pinnMoveDir && (
-                <span style={{
-                  ...T.micro, fontSize: '0.55rem', fontWeight: 700,
-                  color: pinnMoveDir === moneyFav ? B.green : B.red,
-                }}>
-                  {pinnMoveDir === moneyFav ? '✓ Confirms' : '✗ Opposes'}
+            {pinnMoveDir && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                paddingTop: '0.375rem', borderTop: `1px solid ${B.borderSubtle}`,
+              }}>
+                {pinnConfirms ? <CheckCircle size={11} color={B.green} /> : <Circle size={11} color={B.red} />}
+                <span style={{ ...T.micro, fontSize: '0.575rem', fontWeight: 700, color: pinnConfirms ? B.green : B.red }}>
+                  Pinnacle {pinnConfirms ? 'confirms' : 'opposes'} — line moving toward {pinnMoveDir === 'away' ? awayShort : homeShort}
                 </span>
-              )}
-            </div>
-
-            {/* Home side */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>{homeShort}</div>
-              <div style={{ ...T.caption, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
-                {fmtOdds(pinnHome)}
               </div>
-              {openHome != null && pinnHome !== openHome && (
-                <div style={{ ...T.micro, fontSize: '0.575rem', color: pinnHome < openHome ? B.green : B.red, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>
-                  {pinnHome < openHome ? '↓' : '↑'} from {fmtOdds(openHome)}
-                </div>
-              )}
-              {evHome != null && evHome > 0 && (
-                <div style={{
-                  ...T.micro, fontSize: '0.575rem', fontWeight: 800,
-                  color: evHome >= 3 ? B.green : '#A3E635',
-                  marginTop: '0.1rem',
-                }}>
-                  +{evHome}% EV
-                  {bestHomeBook && <span style={{ fontWeight: 400, color: B.textMuted }}> @ {bestHomeBook}</span>}
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Best / Worst line row */}
-          {bookEntries.length > 0 && (
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              borderTop: `1px solid ${B.borderSubtle}`, marginTop: '0.375rem', paddingTop: '0.375rem',
-            }}>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                {bestAwayOdds != null && (
-                  <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'" }}>
-                    <span style={{ color: B.green, fontWeight: 700 }}>Best {awayShort}</span>
-                    <span style={{ color: B.textSec }}> {fmtOdds(bestAwayOdds)}</span>
-                    {bestAwayBook && <span style={{ color: B.textMuted }}> ({bestAwayBook})</span>}
-                  </span>
-                )}
-                {bestHomeOdds != null && (
-                  <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'" }}>
-                    <span style={{ color: B.green, fontWeight: 700 }}>Best {homeShort}</span>
-                    <span style={{ color: B.textSec }}> {fmtOdds(bestHomeOdds)}</span>
-                    {bestHomeBook && <span style={{ color: B.textMuted }}> ({bestHomeBook})</span>}
-                  </span>
-                )}
-              </div>
-              {bookEntries.length > 1 && (
-                <button onClick={() => setShowBooks(!showBooks)} style={{
-                  ...T.micro, fontSize: '0.575rem', color: B.gold, fontWeight: 600,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '0.2rem',
-                }}>
+          {/* Book prices */}
+          {bookEntries.length > 1 && (
+            <>
+              <button onClick={() => setShowBooks(!showBooks)} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%',
+                padding: '0.375rem 0.625rem', cursor: 'pointer',
+                background: 'none', border: 'none', borderTop: `1px solid ${B.borderSubtle}`,
+              }}>
+                <span style={{ ...T.micro, fontSize: '0.575rem', color: B.textMuted }}>
+                  Book Prices — {moneyTeam} ML
+                </span>
+                <span style={{ ...T.micro, fontSize: '0.575rem', color: B.gold, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                   {showBooks ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                   {bookEntries.length + 1} books
-                </button>
+                </span>
+              </button>
+              {showBooks && (
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  {[['pinnacle', { name: 'Pinnacle', away: pinnAway, home: pinnHome }], ...bookEntries]
+                    .sort(([, a], [, b]) => {
+                      const aO = moneyFav === 'away' ? a.away : a.home;
+                      const bO = moneyFav === 'away' ? b.away : b.home;
+                      return bO - aO;
+                    })
+                    .map(([key, book]) => {
+                      const odds = moneyFav === 'away' ? book.away : book.home;
+                      const isBest = odds === bestOddsOnMoneySide && evOnMoneySide > 0;
+                      const isPinn = key === 'pinnacle';
+                      return (
+                        <div key={key} style={{
+                          flex: '1 1 auto', minWidth: '65px',
+                          padding: '0.375rem 0.5rem',
+                          borderRight: `1px solid ${B.borderSubtle}`,
+                          borderTop: `1px solid ${B.borderSubtle}`,
+                          background: isBest ? B.greenDim : 'transparent',
+                        }}>
+                          <div style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400 }}>
+                            {book.name}
+                          </div>
+                          <div style={{ ...T.caption, fontWeight: 700, color: isBest ? B.green : isPinn ? B.gold : B.text, fontFeatureSettings: "'tnum'" }}>
+                            {fmtOdds(odds)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
               )}
-            </div>
-          )}
-
-          {/* Collapsible book prices */}
-          {showBooks && (
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', borderTop: `1px solid ${B.borderSubtle}`,
-              marginTop: '0.375rem',
-            }}>
-              {[['pinnacle', { name: 'Pinnacle', away: pinnAway, home: pinnHome }], ...bookEntries]
-                .sort(([, a], [, b]) => b.away - a.away)
-                .map(([key, book]) => {
-                  const isPinn = key === 'pinnacle';
-                  return (
-                    <div key={key} style={{
-                      flex: '1 1 auto', minWidth: '60px',
-                      padding: '0.3rem 0.4rem',
-                      borderRight: `1px solid ${B.borderSubtle}`,
-                      borderTop: `1px solid ${B.borderSubtle}`,
-                    }}>
-                      <div style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400 }}>
-                        {book.name}
-                      </div>
-                      <div style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'" }}>
-                        <span style={{ color: B.text, fontWeight: 600 }}>{fmtOdds(book.away)}</span>
-                        <span style={{ color: B.textMuted }}> / </span>
-                        <span style={{ color: B.text, fontWeight: 600 }}>{fmtOdds(book.home)}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
+            </>
           )}
         </div>
       )}
 
-      {/* ── Stats row ── */}
-      <div style={{
-        display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
-        padding: '0.375rem 1rem 0.625rem',
-      }}>
-        <span style={{
-          ...T.micro, fontFeatureSettings: "'tnum'", color: B.textSec,
-          padding: '0.15rem 0.45rem', borderRadius: '4px',
-          background: 'rgba(255,255,255,0.04)',
+      {/* ── Price Movement Sparklines ── */}
+      {(pinnConsensusPoints.length >= 2 || polyPoints.length >= 2) && (
+        <div style={{
+          margin: '0 0.75rem 0.5rem', padding: '0.5rem 0.625rem',
+          borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${B.borderSubtle}`,
         }}>
+          <div style={{ ...T.micro, fontWeight: 700, color: B.textMuted, letterSpacing: '0.06em', fontSize: '0.575rem', marginBottom: '0.375rem' }}>
+            PRICE MOVEMENT
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {pinnConsensusPoints.length >= 2 && (
+              <MiniSparkline
+                points={pinnConsensusPoints.map(o => impliedProb(o) * 100)}
+                label={`Pinnacle — ${moneyTeam} ML`}
+                startLabel={fmtOdds(pinnConsensusPoints[0])}
+                endLabel={fmtOdds(pinnConsensusPoints[pinnConsensusPoints.length - 1])}
+                color={B.gold}
+                width={isMobile ? 130 : 140}
+                height={32}
+              />
+            )}
+            {polyPoints.length >= 2 && (
+              <MiniSparkline
+                points={polyPoints}
+                label={`Prediction Market — ${awayShort}`}
+                startLabel={`${polyPoints[0]}¢`}
+                endLabel={`${polyPoints[polyPoints.length - 1]}¢`}
+                color={B.green}
+                width={isMobile ? 130 : 140}
+                height={32}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Summary stats strip ── */}
+      <div style={{
+        display: 'flex', gap: '0.375rem', flexWrap: 'wrap', alignItems: 'center',
+        padding: '0.25rem 0.75rem 0.5rem',
+      }}>
+        <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'", color: B.textSec, padding: '0.1rem 0.35rem', borderRadius: '4px', background: 'rgba(255,255,255,0.04)' }}>
           {fmtVol(game.volume)} vol
         </span>
+        <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'", color: B.textSec, padding: '0.1rem 0.35rem', borderRadius: '4px', background: 'rgba(255,255,255,0.04)' }}>
+          {game.totalTrades.toLocaleString()} bets
+        </span>
         {game.whaleCount > 0 && (
-          <span style={{
-            ...T.micro, fontFeatureSettings: "'tnum'",
-            color: game.whaleCash >= 5000 ? B.gold : B.textSec,
-            padding: '0.15rem 0.45rem', borderRadius: '4px',
-            background: game.whaleCash >= 5000 ? B.goldDim : 'rgba(255,255,255,0.04)',
-            fontWeight: game.whaleCash >= 5000 ? 700 : 400,
-          }}>
+          <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'", color: B.gold, fontWeight: 700, padding: '0.1rem 0.35rem', borderRadius: '4px', background: B.goldDim }}>
             {game.whaleCount} whales · {fmtVol(game.whaleCash)}
           </span>
         )}
         {game.priceChange != null && game.priceChange !== 0 && (
-          <span style={{
-            ...T.micro, fontFeatureSettings: "'tnum'", fontWeight: 700,
-            color: game.priceChange > 0 ? B.green : B.red,
-            padding: '0.15rem 0.45rem', borderRadius: '4px',
-            background: game.priceChange > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-          }}>
+          <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'", fontWeight: 700, color: game.priceChange > 0 ? B.green : B.red, padding: '0.1rem 0.35rem', borderRadius: '4px', background: game.priceChange > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
             {game.priceMovedTeam?.split(' ').pop()} {game.priceChange > 0 ? '↑' : '↓'} {Math.abs(game.priceChange)}¢
-          </span>
-        )}
-        {game.whaleDirection && (
-          <span style={{
-            ...T.micro, fontWeight: 700, color: B.gold,
-            padding: '0.15rem 0.45rem', borderRadius: '4px',
-            background: B.goldDim,
-          }}>
-            Whales → {game.whaleDirection === 'away' ? awayShort : homeShort}
           </span>
         )}
       </div>
@@ -861,13 +964,19 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
       {game.allWhales.length > 0 && (
         <div style={{ borderTop: `1px solid ${B.borderSubtle}` }}>
           <button onClick={() => setShowTrades(!showTrades)} style={{
-            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             background: 'none', border: 'none', cursor: 'pointer',
-            ...T.micro, color: B.textSec, padding: '0.5rem 1rem',
-            width: '100%',
+            padding: '0.5rem 0.75rem', width: '100%',
           }}>
-            {showTrades ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {showTrades ? 'Hide' : 'View'} {game.allWhales.length} whale trades ({fmtVol(game.whaleCash)})
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              {showTrades ? <ChevronUp size={12} color={B.gold} /> : <ChevronDown size={12} color={B.gold} />}
+              <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
+                {game.allWhales.length} WHALE TRADE{game.allWhales.length !== 1 ? 'S' : ''}
+              </span>
+            </div>
+            <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+              {fmtVol(game.whaleCash)} total
+            </span>
           </button>
           {showTrades && (
             <div style={{ padding: '0 0.75rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
@@ -3386,7 +3495,7 @@ export default function SharpFlow() {
               }
               return true;
             })
-            .map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} pinnacleHistory={pinnacleHistory} />)
+            .map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} pinnacleHistory={pinnacleHistory} polyData={polyData} />)
           }
         </div>
       </div>
