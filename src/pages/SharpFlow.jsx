@@ -474,10 +474,12 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
 
 function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const [showTrades, setShowTrades] = useState(false);
+  const [showBooks, setShowBooks] = useState(false);
   const ss = sportStyle(game.sport);
   const awayShort = game.away.split(' ').pop();
   const homeShort = game.home.split(' ').pop();
   const pinnGame = pinnacleHistory?.[game.sport]?.[game.key];
+  const allBooks = pinnGame?.allBooks || {};
   const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
   const nowMs = Date.now();
   const isGameLive = commenceTime && nowMs >= commenceTime;
@@ -491,6 +493,27 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const sharpTeam = moneyFav === 'away' ? game.away : game.home;
   const sharpPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
   const accentColor = isReverse ? B.gold : hasDivergence ? B.green : null;
+
+  const pinnAway = pinnGame?.current?.away;
+  const pinnHome = pinnGame?.current?.home;
+  const openAway = pinnGame?.opener?.away;
+  const openHome = pinnGame?.opener?.home;
+  const bestAwayOdds = pinnGame?.bestAway;
+  const bestHomeOdds = pinnGame?.bestHome;
+  const bestAwayBook = pinnGame?.bestAwayBook;
+  const bestHomeBook = pinnGame?.bestHomeBook;
+
+  const pinnAwayProb = impliedProb(pinnAway);
+  const pinnHomeProb = impliedProb(pinnHome);
+  const bestAwayProb = impliedProb(bestAwayOdds);
+  const bestHomeProb = impliedProb(bestHomeOdds);
+  const evAway = (pinnAwayProb && bestAwayProb) ? +((pinnAwayProb - bestAwayProb) * 100).toFixed(1) : null;
+  const evHome = (pinnHomeProb && bestHomeProb) ? +((pinnHomeProb - bestHomeProb) * 100).toFixed(1) : null;
+  const pinnMoveDir = pinnGame?.movement?.direction;
+
+  const bookEntries = Object.entries(allBooks).filter(([k]) => k !== 'pinnacle');
+  const worstAwayEntry = bookEntries.length ? bookEntries.reduce((w, e) => (e[1].away < w[1].away ? e : w), bookEntries[0]) : null;
+  const worstHomeEntry = bookEntries.length ? bookEntries.reduce((w, e) => (e[1].home < w[1].home ? e : w), bookEntries[0]) : null;
 
   return (
     <div style={{
@@ -605,6 +628,146 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
         </div>
       </div>
 
+      {/* ── Pinnacle Lines & EV ── */}
+      {pinnAway != null && (
+        <div style={{
+          margin: '0 0.75rem 0.375rem', padding: '0.5rem 0.625rem', borderRadius: '8px',
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${B.borderSubtle}`,
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            gap: '0.375rem', alignItems: 'center',
+          }}>
+            {/* Away side */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>{awayShort}</div>
+              <div style={{ ...T.caption, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                {fmtOdds(pinnAway)}
+              </div>
+              {openAway != null && pinnAway !== openAway && (
+                <div style={{ ...T.micro, fontSize: '0.575rem', color: pinnAway < openAway ? B.green : B.red, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>
+                  {pinnAway < openAway ? '↓' : '↑'} from {fmtOdds(openAway)}
+                </div>
+              )}
+              {evAway != null && evAway > 0 && (
+                <div style={{
+                  ...T.micro, fontSize: '0.575rem', fontWeight: 800,
+                  color: evAway >= 3 ? B.green : '#A3E635',
+                  marginTop: '0.1rem',
+                }}>
+                  +{evAway}% EV
+                  {bestAwayBook && <span style={{ fontWeight: 400, color: B.textMuted }}> @ {bestAwayBook}</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Center divider */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+              <span style={{ ...T.micro, color: B.gold, fontWeight: 700, letterSpacing: '0.06em' }}>PINNACLE</span>
+              {pinnMoveDir && (
+                <span style={{
+                  ...T.micro, fontSize: '0.55rem', fontWeight: 700,
+                  color: pinnMoveDir === moneyFav ? B.green : B.red,
+                }}>
+                  {pinnMoveDir === moneyFav ? '✓ Confirms' : '✗ Opposes'}
+                </span>
+              )}
+            </div>
+
+            {/* Home side */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>{homeShort}</div>
+              <div style={{ ...T.caption, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                {fmtOdds(pinnHome)}
+              </div>
+              {openHome != null && pinnHome !== openHome && (
+                <div style={{ ...T.micro, fontSize: '0.575rem', color: pinnHome < openHome ? B.green : B.red, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>
+                  {pinnHome < openHome ? '↓' : '↑'} from {fmtOdds(openHome)}
+                </div>
+              )}
+              {evHome != null && evHome > 0 && (
+                <div style={{
+                  ...T.micro, fontSize: '0.575rem', fontWeight: 800,
+                  color: evHome >= 3 ? B.green : '#A3E635',
+                  marginTop: '0.1rem',
+                }}>
+                  +{evHome}% EV
+                  {bestHomeBook && <span style={{ fontWeight: 400, color: B.textMuted }}> @ {bestHomeBook}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Best / Worst line row */}
+          {bookEntries.length > 0 && (
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              borderTop: `1px solid ${B.borderSubtle}`, marginTop: '0.375rem', paddingTop: '0.375rem',
+            }}>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {bestAwayOdds != null && (
+                  <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'" }}>
+                    <span style={{ color: B.green, fontWeight: 700 }}>Best {awayShort}</span>
+                    <span style={{ color: B.textSec }}> {fmtOdds(bestAwayOdds)}</span>
+                    {bestAwayBook && <span style={{ color: B.textMuted }}> ({bestAwayBook})</span>}
+                  </span>
+                )}
+                {bestHomeOdds != null && (
+                  <span style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'" }}>
+                    <span style={{ color: B.green, fontWeight: 700 }}>Best {homeShort}</span>
+                    <span style={{ color: B.textSec }}> {fmtOdds(bestHomeOdds)}</span>
+                    {bestHomeBook && <span style={{ color: B.textMuted }}> ({bestHomeBook})</span>}
+                  </span>
+                )}
+              </div>
+              {bookEntries.length > 1 && (
+                <button onClick={() => setShowBooks(!showBooks)} style={{
+                  ...T.micro, fontSize: '0.575rem', color: B.gold, fontWeight: 600,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '0.2rem',
+                }}>
+                  {showBooks ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                  {bookEntries.length + 1} books
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Collapsible book prices */}
+          {showBooks && (
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', borderTop: `1px solid ${B.borderSubtle}`,
+              marginTop: '0.375rem',
+            }}>
+              {[['pinnacle', { name: 'Pinnacle', away: pinnAway, home: pinnHome }], ...bookEntries]
+                .sort(([, a], [, b]) => b.away - a.away)
+                .map(([key, book]) => {
+                  const isPinn = key === 'pinnacle';
+                  return (
+                    <div key={key} style={{
+                      flex: '1 1 auto', minWidth: '60px',
+                      padding: '0.3rem 0.4rem',
+                      borderRight: `1px solid ${B.borderSubtle}`,
+                      borderTop: `1px solid ${B.borderSubtle}`,
+                    }}>
+                      <div style={{ ...T.micro, fontSize: '0.55rem', color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400 }}>
+                        {book.name}
+                      </div>
+                      <div style={{ ...T.micro, fontSize: '0.575rem', fontFeatureSettings: "'tnum'" }}>
+                        <span style={{ color: B.text, fontWeight: 600 }}>{fmtOdds(book.away)}</span>
+                        <span style={{ color: B.textMuted }}> / </span>
+                        <span style={{ color: B.text, fontWeight: 600 }}>{fmtOdds(book.home)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Stats row ── */}
       <div style={{
         display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
@@ -645,16 +808,6 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
             background: B.goldDim,
           }}>
             Whales → {game.whaleDirection === 'away' ? awayShort : homeShort}
-          </span>
-        )}
-        {game.awayProb != null && (
-          <span style={{
-            ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'",
-            padding: '0.15rem 0.45rem', borderRadius: '4px',
-            background: 'rgba(255,255,255,0.04)',
-            marginLeft: 'auto',
-          }}>
-            {awayShort} {fmtPct(game.awayProb)} | {homeShort} {fmtPct(game.homeProb)}
           </span>
         )}
       </div>
@@ -3132,6 +3285,7 @@ export default function SharpFlow() {
           <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.125rem' }}>Show:</span>
           {[
             { key: 'all', label: 'All Games' },
+            { key: 'live', label: 'Live' },
             { key: 'signals', label: 'Signals Only' },
             { key: 'reverse', label: 'Reverse Only' },
           ].map(s => (
@@ -3152,6 +3306,11 @@ export default function SharpFlow() {
         }}>
           {sortedGames
             .filter(g => {
+              if (signalType === 'live') {
+                const pg = pinnacleHistory?.[g.sport]?.[g.key];
+                const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
+                return ct && Date.now() >= ct;
+              }
               if (signalType === 'all') return true;
               if (signalType === 'signals') return g.ticketDivergence >= 10;
               if (signalType === 'reverse') {
