@@ -391,216 +391,6 @@ function SectionHead({ title, subtitle, icon: Icon, style: overrideStyle }) {
   );
 }
 
-// ─── Sharp Signal Card (games with ticket/money divergence) ───────────────────
-
-function SharpSignalCard({ game, isMobile, whaleProfiles }) {
-  const [showTrades, setShowTrades] = useState(false);
-  const ss = sportStyle(game.sport);
-  const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
-  const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
-  const isReverse = ticketFav !== moneyFav;
-  const sharpTeam = moneyFav === 'away' ? game.away : game.home;
-  const sharpPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
-  const pubTeam = ticketFav === 'away' ? game.away : game.home;
-  const pubPct = ticketFav === 'away' ? game.awayTicketPct : game.homeTicketPct;
-  const awayShort = game.away.split(' ').pop();
-  const homeShort = game.home.split(' ').pop();
-
-  const verdictColor = isReverse ? B.gold : B.green;
-
-  return (
-    <div style={{
-      borderRadius: '12px', overflow: 'hidden',
-      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${B.border}`,
-      transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-    }}>
-      {/* Top accent bar */}
-      <div style={{
-        height: '2px',
-        background: `linear-gradient(90deg, transparent, ${verdictColor}, transparent)`,
-      }} />
-
-      {/* ── Row 1: Matchup header ── */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.875rem 1rem 0.625rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <Badge color={ss.color} bg={ss.bg}>{ss.icon} {game.sport}</Badge>
-          <span style={{ ...T.body, color: B.text }}>{game.away}</span>
-          <span style={{ ...T.caption, color: B.textMuted }}>vs</span>
-          <span style={{ ...T.body, color: B.text }}>{game.home}</span>
-        </div>
-        {game.awayProb != null && (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ ...T.micro, color: B.textSubtle, marginBottom: '0.1rem' }}>MARKET ODDS</div>
-            <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {game.away.split(' ').pop()} {fmtPct(game.awayProb)} | {game.home.split(' ').pop()} {fmtPct(game.homeProb)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Row 2: Verdict banner (most important info) ── */}
-      <div style={{
-        margin: '0 0.75rem', padding: '0.625rem 0.875rem', borderRadius: '8px',
-        background: isReverse ? 'rgba(212,175,55,0.07)' : 'rgba(16,185,129,0.06)',
-        border: `1px solid ${isReverse ? B.goldBorder : 'rgba(16,185,129,0.15)'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: '0.75rem', flexWrap: 'wrap',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {isReverse ? <Eye size={16} color={B.gold} /> : <TrendingUp size={16} color={B.green} />}
-          <div>
-            <div style={{ ...T.label, fontWeight: 700, color: verdictColor }}>
-              {isReverse
-                ? `Sharps loading ${sharpTeam}`
-                : `Heavy conviction on ${sharpTeam}`}
-            </div>
-            <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>
-              {isReverse
-                ? `${sharpPct}% of money vs ${pubPct}% of tickets on ${pubTeam}`
-                : `${sharpPct}% of money and tickets aligned`}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{
-            ...T.tiny, color: B.gold, background: B.goldDim,
-            padding: '0.2rem 0.6rem', borderRadius: '6px',
-          }}>
-            {game.ticketDivergence.toFixed(0)}pt SPLIT
-          </div>
-          {isReverse && (
-            <div style={{
-              ...T.tiny, color: B.red, background: B.redDim,
-              padding: '0.2rem 0.5rem', borderRadius: '6px',
-            }}>
-              REVERSE
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Row 3: Stacked flow bars (easy visual comparison) ── */}
-      <div style={{ padding: '0.875rem 1rem 0.625rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          {/* Tickets bar */}
-          <div>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.25rem',
-            }}>
-              <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.06em' }}>
-                TICKETS
-              </span>
-              <span style={{ ...T.micro, color: B.textMuted }}>{game.totalTrades} bets</span>
-            </div>
-            <FlowBar
-              leftPct={game.awayTicketPct} rightPct={game.homeTicketPct}
-              leftLabel={awayShort} rightLabel={homeShort}
-              height={16}
-            />
-          </div>
-          {/* Money bar */}
-          <div>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: '0.25rem',
-            }}>
-              <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.06em' }}>
-                MONEY
-              </span>
-              <span style={{ ...T.micro, color: B.textMuted }}>{fmtVol(game.totalCash)} sampled</span>
-            </div>
-            <FlowBar
-              leftPct={game.awayMoneyPct} rightPct={game.homeMoneyPct}
-              leftLabel={awayShort} rightLabel={homeShort}
-              leftColor={B.gold} rightColor={B.gold}
-              height={16}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Row 4: Metrics grid ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
-        gap: '1px',
-        margin: '0 0.75rem 0.75rem',
-        borderRadius: '8px', overflow: 'hidden',
-        background: B.borderSubtle,
-      }}>
-        {[
-          { label: 'Volume', value: fmtVol(game.volume), accent: game.volume >= 100_000 },
-          { label: 'Whale #', value: game.whaleCount, accent: game.whaleCount >= 10 },
-          { label: 'Whale $', value: fmtVol(game.whaleCash), accent: game.whaleCash >= 5_000 },
-          ...(game.priceChange != null && game.priceChange !== 0 ? [{
-            label: `${game.priceMovedTeam?.split(' ').pop() || ''} Moving`,
-            value: `${game.priceChange > 0 ? '↑' : '↓'} ${Math.abs(game.priceChange)}¢`,
-            accent: false,
-            color: game.priceChange > 0 ? B.green : B.red,
-          }] : []),
-          ...(game.whaleDirection ? [{
-            label: 'Whale Side',
-            value: game.whaleDirection === 'away' ? awayShort : homeShort,
-            accent: true,
-          }] : []),
-        ].map((m, i) => (
-          <div key={i} style={{
-            padding: '0.5rem 0.625rem', textAlign: 'center',
-            background: 'rgba(21,25,35,0.9)',
-          }}>
-            <div style={{ ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.15rem' }}>
-              {m.label}
-            </div>
-            <div style={{
-              ...T.caption, fontWeight: 700, fontFeatureSettings: "'tnum'",
-              color: m.color || (m.accent ? B.gold : B.textSec),
-            }}>
-              {m.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Row 5: Expandable whale trades ── */}
-      {game.allWhales.length > 0 && (
-        <div style={{
-          padding: '0 1rem 0.875rem',
-          borderTop: `1px solid ${B.borderSubtle}`,
-        }}>
-          <button onClick={() => setShowTrades(!showTrades)} style={{
-            display: 'flex', alignItems: 'center', gap: '0.375rem',
-            background: 'none', border: 'none', cursor: 'pointer',
-            ...T.micro, color: B.textSec, padding: '0.625rem 0 0',
-            width: '100%',
-          }}>
-            {showTrades ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {showTrades ? 'Hide' : 'View'} {game.allWhales.length} whale trades ({fmtVol(game.whaleCash)})
-          </button>
-          {showTrades && (
-            <div style={{
-              marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.3rem',
-            }}>
-              {game.allWhales.slice(0, 10).map((w, i) => (
-                <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
-              ))}
-              {game.allWhales.length > 10 && (
-                <div style={{ ...T.micro, color: B.textMuted, textAlign: 'center', padding: '0.25rem' }}>
-                  +{game.allWhales.length - 10} more trades
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function MetricPill({ label, value, accent }) {
   return (
     <div>
@@ -680,174 +470,199 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
   );
 }
 
-// ─── Game Flow Row (compact game summary in grid) ─────────────────────────────
+// ─── Unified Game Card (every game, premium layout) ───────────────────────────
 
 function GameFlowCard({ game, isMobile, whaleProfiles }) {
-  const [expanded, setExpanded] = useState(false);
+  const [showTrades, setShowTrades] = useState(false);
   const ss = sportStyle(game.sport);
+  const awayShort = game.away.split(' ').pop();
+  const homeShort = game.home.split(' ').pop();
+  const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
   const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
-  const moneyTeam = moneyFav === 'away' ? game.away : game.home;
-  const moneyPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
+  const isReverse = ticketFav !== moneyFav && game.ticketDivergence >= 10;
   const hasDivergence = game.ticketDivergence >= 10;
+  const sharpTeam = moneyFav === 'away' ? game.away : game.home;
+  const sharpPct = moneyFav === 'away' ? game.awayMoneyPct : game.homeMoneyPct;
+  const accentColor = isReverse ? B.gold : hasDivergence ? B.green : null;
 
   return (
     <div style={{
-      borderRadius: '10px', overflow: 'hidden',
+      borderRadius: '12px', overflow: 'hidden',
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${hasDivergence ? B.goldBorder : B.border}`,
-      transition: 'all 0.2s ease',
+      border: `1px solid ${isReverse ? B.goldBorder : hasDivergence ? 'rgba(16,185,129,0.25)' : B.border}`,
     }}>
-      {hasDivergence && (
+      {accentColor && (
         <div style={{
-          height: '1.5px',
-          background: `linear-gradient(90deg, transparent, ${B.gold}, transparent)`,
+          height: '2px',
+          background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
         }} />
       )}
 
-      <div
-        onClick={() => setExpanded(!expanded)}
-        style={{
-          padding: isMobile ? '0.75rem' : '0.75rem 1rem',
-          cursor: 'pointer',
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr auto' : '2fr 1fr 1fr 1fr auto',
-          gap: isMobile ? '0.5rem' : '1rem',
-          alignItems: 'center',
-        }}
-      >
-        {/* Col 1: Matchup */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.2rem' }}>
-            <Badge color={ss.color} bg={ss.bg}>{game.sport}</Badge>
-            <span style={{ ...T.caption, fontWeight: 700, color: B.text }}>
-              {game.away} vs {game.home}
+      {/* ── Header ── */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0.75rem 1rem 0.5rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <Badge color={ss.color} bg={ss.bg}>{ss.icon} {game.sport}</Badge>
+          <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
+            {game.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {game.home}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          {hasDivergence && (
+            <span style={{
+              ...T.tiny, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`,
+            }}>
+              {game.ticketDivergence.toFixed(0)}pt SPLIT
             </span>
-          </div>
-          {game.awayProb != null && (
-            <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-              Market: {game.away.split(' ').pop()} {fmtPct(game.awayProb)} | {game.home.split(' ').pop()} {fmtPct(game.homeProb)}
+          )}
+          {isReverse && (
+            <span style={{
+              ...T.tiny, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+              border: '1px solid rgba(239,68,68,0.4)',
+            }}>
+              REVERSE
             </span>
           )}
         </div>
+      </div>
 
-        {/* Col 2: Money flow */}
-        {!isMobile && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.15rem' }}>
-              Money
+      {/* ── Signal verdict (only for divergent games) ── */}
+      {hasDivergence && (
+        <div style={{
+          margin: '0 0.75rem 0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px',
+          background: isReverse ? 'rgba(212,175,55,0.06)' : 'rgba(16,185,129,0.05)',
+          border: `1px solid ${isReverse ? 'rgba(212,175,55,0.12)' : 'rgba(16,185,129,0.12)'}`,
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+        }}>
+          {isReverse ? <Eye size={14} color={B.gold} /> : <TrendingUp size={14} color={B.green} />}
+          <span style={{ ...T.micro, color: isReverse ? B.gold : B.green, fontWeight: 700 }}>
+            {isReverse
+              ? `Sharps loading ${sharpTeam.split(' ').pop()}`
+              : `Heavy conviction on ${sharpTeam.split(' ').pop()}`}
+          </span>
+          <span style={{ ...T.micro, color: B.textMuted }}>
+            — {sharpPct}% of money
+          </span>
+        </div>
+      )}
+
+      {/* ── Flow bars ── */}
+      <div style={{ padding: '0.375rem 1rem 0.625rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: '0.2rem',
+            }}>
+              <span style={{ ...T.tiny, color: B.textMuted, letterSpacing: '0.06em' }}>TICKETS</span>
+              <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{game.totalTrades} bets</span>
             </div>
-            <div style={{ ...T.caption, fontWeight: 700, color: hasDivergence ? B.gold : B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {moneyPct}% {moneyTeam.split(' ').pop()}
-            </div>
+            <FlowBar
+              leftPct={game.awayTicketPct} rightPct={game.homeTicketPct}
+              leftLabel={awayShort} rightLabel={homeShort}
+              height={14}
+            />
           </div>
-        )}
-
-        {/* Col 3: Volume */}
-        {!isMobile && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.15rem' }}>
-              Vol
+          <div>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: '0.2rem',
+            }}>
+              <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.06em' }}>MONEY</span>
+              <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>{fmtVol(game.totalCash)} sampled</span>
             </div>
-            <div style={{ ...T.caption, fontWeight: 700, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {fmtVol(game.volume)}
-            </div>
+            <FlowBar
+              leftPct={game.awayMoneyPct} rightPct={game.homeMoneyPct}
+              leftLabel={awayShort} rightLabel={homeShort}
+              leftColor={B.gold} rightColor={B.gold}
+              height={14}
+            />
           </div>
-        )}
-
-        {/* Col 4: Whales */}
-        {!isMobile && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.15rem' }}>
-              Whales
-            </div>
-            <div style={{ ...T.caption, fontWeight: 700, color: game.whaleCount > 0 ? B.textSec : B.textSubtle, fontFeatureSettings: "'tnum'" }}>
-              {game.whaleCount > 0 ? `${game.whaleCount} (${fmtVol(game.whaleCash)})` : '—'}
-            </div>
-          </div>
-        )}
-
-        {/* Mobile: condensed right side */}
-        {isMobile && (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ ...T.caption, fontWeight: 700, color: hasDivergence ? B.gold : B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {moneyPct}% {moneyTeam.split(' ').pop()}
-            </div>
-            <div style={{ ...T.micro, color: B.textMuted }}>{fmtVol(game.volume)} · {game.whaleCount} whales</div>
-          </div>
-        )}
-
-        {/* Expand icon */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {expanded ? <ChevronUp size={14} color={B.textMuted} /> : <ChevronDown size={14} color={B.textMuted} />}
         </div>
       </div>
 
-      {/* Expanded detail */}
-      {expanded && (
-        <div style={{
-          padding: '0 1rem 1rem',
-          borderTop: `1px solid ${B.borderSubtle}`,
+      {/* ── Stats row ── */}
+      <div style={{
+        display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
+        padding: '0.375rem 1rem 0.625rem',
+      }}>
+        <span style={{
+          ...T.micro, fontFeatureSettings: "'tnum'", color: B.textSec,
+          padding: '0.15rem 0.45rem', borderRadius: '4px',
+          background: 'rgba(255,255,255,0.04)',
         }}>
-          <div style={{ paddingTop: '0.75rem' }}>
-            {/* Flow bars */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <div>
-                <div style={{ ...T.tiny, color: B.textMuted, marginBottom: '0.3rem', letterSpacing: '0.06em' }}>TICKETS</div>
-                <FlowBar
-                  leftPct={game.awayTicketPct} rightPct={game.homeTicketPct}
-                  leftLabel={game.away.split(' ').pop()} rightLabel={game.home.split(' ').pop()}
-                />
-              </div>
-              <div>
-                <div style={{ ...T.tiny, color: B.gold, marginBottom: '0.3rem', letterSpacing: '0.06em' }}>MONEY</div>
-                <FlowBar
-                  leftPct={game.awayMoneyPct} rightPct={game.homeMoneyPct}
-                  leftLabel={game.away.split(' ').pop()} rightLabel={game.home.split(' ').pop()}
-                  leftColor={B.gold} rightColor={B.gold}
-                />
-              </div>
-            </div>
+          {fmtVol(game.volume)} vol
+        </span>
+        {game.whaleCount > 0 && (
+          <span style={{
+            ...T.micro, fontFeatureSettings: "'tnum'",
+            color: game.whaleCash >= 5000 ? B.gold : B.textSec,
+            padding: '0.15rem 0.45rem', borderRadius: '4px',
+            background: game.whaleCash >= 5000 ? B.goldDim : 'rgba(255,255,255,0.04)',
+            fontWeight: game.whaleCash >= 5000 ? 700 : 400,
+          }}>
+            {game.whaleCount} whales · {fmtVol(game.whaleCash)}
+          </span>
+        )}
+        {game.priceChange != null && game.priceChange !== 0 && (
+          <span style={{
+            ...T.micro, fontFeatureSettings: "'tnum'", fontWeight: 700,
+            color: game.priceChange > 0 ? B.green : B.red,
+            padding: '0.15rem 0.45rem', borderRadius: '4px',
+            background: game.priceChange > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+          }}>
+            {game.priceMovedTeam?.split(' ').pop()} {game.priceChange > 0 ? '↑' : '↓'} {Math.abs(game.priceChange)}¢
+          </span>
+        )}
+        {game.whaleDirection && (
+          <span style={{
+            ...T.micro, fontWeight: 700, color: B.gold,
+            padding: '0.15rem 0.45rem', borderRadius: '4px',
+            background: B.goldDim,
+          }}>
+            Whales → {game.whaleDirection === 'away' ? awayShort : homeShort}
+          </span>
+        )}
+        {game.awayProb != null && (
+          <span style={{
+            ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'",
+            padding: '0.15rem 0.45rem', borderRadius: '4px',
+            background: 'rgba(255,255,255,0.04)',
+            marginLeft: 'auto',
+          }}>
+            {awayShort} {fmtPct(game.awayProb)} | {homeShort} {fmtPct(game.homeProb)}
+          </span>
+        )}
+      </div>
 
-            {/* Metrics */}
-            <div style={{
-              display: 'flex', gap: '1rem', flexWrap: 'wrap',
-              padding: '0.5rem 0.625rem', borderRadius: '6px',
-              background: 'rgba(255,255,255,0.02)', marginBottom: '0.5rem',
-            }}>
-              <MetricPill label="Trades" value={game.totalTrades} />
-              <MetricPill label="Sample $" value={fmtVol(game.totalCash)} />
-              <MetricPill label="Whales" value={game.whaleCount} accent={game.whaleCount > 10} />
-              <MetricPill label="Whale $" value={fmtVol(game.whaleCash)} accent={game.whaleCash >= 5000} />
-              {game.priceChange != null && game.priceChange !== 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                  <PriceArrow change={game.priceChange} />
-                  <MetricPill
-                    label={`${game.priceMovedTeam?.split(' ').pop() || ''} Moving`}
-                    value={`${game.priceChange > 0 ? '↑' : '↓'} ${Math.abs(game.priceChange)}¢`}
-                  />
+      {/* ── Whale trades (expandable) ── */}
+      {game.allWhales.length > 0 && (
+        <div style={{ borderTop: `1px solid ${B.borderSubtle}` }}>
+          <button onClick={() => setShowTrades(!showTrades)} style={{
+            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            background: 'none', border: 'none', cursor: 'pointer',
+            ...T.micro, color: B.textSec, padding: '0.5rem 1rem',
+            width: '100%',
+          }}>
+            {showTrades ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {showTrades ? 'Hide' : 'View'} {game.allWhales.length} whale trades ({fmtVol(game.whaleCash)})
+          </button>
+          {showTrades && (
+            <div style={{ padding: '0 0.75rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              {game.allWhales.slice(0, 10).map((w, i) => (
+                <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
+              ))}
+              {game.allWhales.length > 10 && (
+                <div style={{ ...T.micro, color: B.textMuted, textAlign: 'center', padding: '0.25rem' }}>
+                  +{game.allWhales.length - 10} more trades
                 </div>
               )}
             </div>
-
-            {/* Whale trades */}
-            {game.allWhales.length > 0 && (
-              <div>
-                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.375rem' }}>
-                  Individual whale positions:
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  {game.allWhales.slice(0, 8).map((w, i) => (
-                    <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
-                  ))}
-                  {game.allWhales.length > 8 && (
-                    <div style={{ ...T.micro, color: B.textMuted, textAlign: 'center', padding: '0.25rem' }}>
-                      +{game.allWhales.length - 8} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -2833,7 +2648,6 @@ export default function SharpFlow() {
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
   const [gameSort, setGameSort] = useState('volume');
-  const [signalSort, setSignalSort] = useState('divergence');
   const [signalType, setSignalType] = useState('all');
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
@@ -2972,24 +2786,9 @@ export default function SharpFlow() {
     return g;
   }, [allGames, sportFilter]);
 
-  const sharpSignals = useMemo(() => {
-    let signals = filteredGames.filter(g => g.totalTrades > 0 && g.ticketDivergence >= 10);
-
-    if (signalType === 'reverse') {
-      signals = signals.filter(g => {
-        const ticketFav = g.awayTicketPct >= g.homeTicketPct ? 'away' : 'home';
-        const moneyFav = g.awayMoneyPct >= g.homeMoneyPct ? 'away' : 'home';
-        return ticketFav !== moneyFav;
-      });
-    }
-
-    if (signalSort === 'divergence') signals.sort((a, b) => b.ticketDivergence - a.ticketDivergence);
-    else if (signalSort === 'volume') signals.sort((a, b) => b.volume - a.volume);
-    else if (signalSort === 'whales') signals.sort((a, b) => b.whaleCash - a.whaleCash);
-    else if (signalSort === 'active') signals.sort((a, b) => b.latestTradeTs - a.latestTradeTs);
-
-    return signals;
-  }, [filteredGames, signalSort, signalType]);
+  const signalCount = useMemo(() => {
+    return filteredGames.filter(g => g.totalTrades > 0 && g.ticketDivergence >= 10).length;
+  }, [filteredGames]);
 
   const sortedGames = useMemo(() => {
     const g = [...filteredGames];
@@ -3270,96 +3069,68 @@ export default function SharpFlow() {
           hint="Individual trades sampled" />
         <FlowStatCard icon={Activity} label="Whale Positions" value={totalWhales} accent={totalWhales > 20 ? B.gold : null}
           hint="Large bets ($500+) detected" />
-        <FlowStatCard icon={Eye} label="Sharp Signals" value={sharpSignals.length} accent={sharpSignals.length > 0 ? B.gold : null}
+        <FlowStatCard icon={Eye} label="Sharp Signals" value={signalCount} accent={signalCount > 0 ? B.gold : null}
           hint="Games where money & tickets disagree" />
       </div>
 
-      {/* ─── Sharp Signals (most valuable section) ─── */}
-      {sharpSignals.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <SectionHead
-            title={`Sharp Signals (${sharpSignals.length})`}
-            subtitle="Games where money and tickets disagree — the clearest edge indicators"
-            icon={Eye}
-          />
-
-          {/* Signal filters */}
-          <div style={{
-            display: 'flex', gap: '0.375rem', marginBottom: '0.875rem',
-            flexWrap: 'wrap', alignItems: 'center',
-          }}>
-            <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Sort:</span>
-            {[
-              { key: 'divergence', label: 'Divergence' },
-              { key: 'volume', label: 'Volume' },
-              { key: 'whales', label: 'Whale $' },
-              { key: 'active', label: 'Most Active' },
-            ].map(s => (
-              <button key={s.key} onClick={() => setSignalSort(s.key)} style={{
-                padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
-                ...T.micro, fontWeight: 700,
-                border: signalSort === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                background: signalSort === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                color: signalSort === s.key ? B.gold : B.textMuted,
-                transition: 'all 0.2s ease',
-              }}>{s.label}</button>
-            ))}
-            <div style={{ width: '1px', height: '16px', background: B.border, margin: '0 0.25rem' }} />
-            <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Show:</span>
-            {[
-              { key: 'all', label: 'All Signals' },
-              { key: 'reverse', label: 'Reverse Only' },
-            ].map(s => (
-              <button key={s.key} onClick={() => setSignalType(s.key)} style={{
-                padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
-                ...T.micro, fontWeight: 700,
-                border: signalType === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                background: signalType === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                color: signalType === s.key ? B.gold : B.textMuted,
-                transition: 'all 0.2s ease',
-              }}>{s.label}</button>
-            ))}
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : sharpSignals.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-            gap: '0.75rem',
-          }}>
-            {sharpSignals.map(g => <SharpSignalCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} />)}
-          </div>
-        </div>
-      )}
-
-
-      {/* ─── All Games (sortable, expandable) ─── */}
+      {/* ─── All Games (unified view) ─── */}
       <div style={{ marginBottom: '2rem' }}>
         <SectionHead
           title={`All Games (${sortedGames.length})`}
-          subtitle="Click any game to see full flow breakdown and individual whale trades"
+          subtitle={`${signalCount} signal${signalCount !== 1 ? 's' : ''} detected — games where money and tickets disagree`}
           icon={BarChart3}
         />
-        <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.875rem', flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex', gap: '0.375rem', marginBottom: '0.875rem',
+          flexWrap: 'wrap', alignItems: 'center',
+        }}>
+          <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.125rem' }}>Sort:</span>
           {[
-            { key: 'volume', label: 'Volume' },
             { key: 'divergence', label: 'Divergence' },
+            { key: 'volume', label: 'Volume' },
             { key: 'whales', label: 'Whale $' },
             { key: 'active', label: 'Most Active' },
           ].map(s => (
             <button key={s.key} onClick={() => setGameSort(s.key)} style={{
-              padding: '0.35rem 0.875rem', borderRadius: '6px', cursor: 'pointer',
+              padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
               ...T.micro, fontWeight: 700,
               border: gameSort === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
               background: gameSort === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
               color: gameSort === s.key ? B.gold : B.textMuted,
               transition: 'all 0.2s ease',
-            }}>
-              {s.label}
-            </button>
+            }}>{s.label}</button>
+          ))}
+          <div style={{ width: '1px', height: '16px', background: B.border, margin: '0 0.25rem' }} />
+          <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.125rem' }}>Show:</span>
+          {[
+            { key: 'all', label: 'All Games' },
+            { key: 'signals', label: 'Signals Only' },
+            { key: 'reverse', label: 'Reverse Only' },
+          ].map(s => (
+            <button key={s.key} onClick={() => setSignalType(s.key)} style={{
+              padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
+              ...T.micro, fontWeight: 700,
+              border: signalType === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+              background: signalType === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+              color: signalType === s.key ? B.gold : B.textMuted,
+              transition: 'all 0.2s ease',
+            }}>{s.label}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {sortedGames.map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} />)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {sortedGames
+            .filter(g => {
+              if (signalType === 'all') return true;
+              if (signalType === 'signals') return g.ticketDivergence >= 10;
+              if (signalType === 'reverse') {
+                const tf = g.awayTicketPct >= g.homeTicketPct ? 'away' : 'home';
+                const mf = g.awayMoneyPct >= g.homeMoneyPct ? 'away' : 'home';
+                return tf !== mf && g.ticketDivergence >= 10;
+              }
+              return true;
+            })
+            .map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} />)
+          }
         </div>
       </div>
 
