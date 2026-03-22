@@ -272,13 +272,17 @@ async function run() {
     return;
   }
 
-  // Select ELITE and PROVEN wallets to scan
-  const walletsToScan = Object.entries(profiles)
-    .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier))
-    .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {} }))
+  // Select ELITE and PROVEN wallets to scan, excluding likely market makers
+  const MM_THRESHOLD = 50;
+  const allEligible = Object.entries(profiles)
+    .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
+  const mmFiltered = allEligible.filter(([, p]) => (p.mmScore || 0) > MM_THRESHOLD);
+  const walletsToScan = allEligible
+    .filter(([, p]) => (p.mmScore || 0) <= MM_THRESHOLD)
+    .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }))
     .sort((a, b) => b.totalPnl - a.totalPnl);
 
-  console.log(`Scanning ${walletsToScan.length} ELITE/PROVEN wallets...\n`);
+  console.log(`Scanning ${walletsToScan.length} ELITE/PROVEN wallets (${mmFiltered.length} market makers excluded)...\n`);
 
   const result = { NHL: {}, CBB: {} };
   let matchCount = 0;
@@ -386,6 +390,7 @@ async function run() {
 
   result.scannedAt = new Date().toISOString();
   result.walletsScanned = walletsToScan.length;
+  result.mmExcluded = mmFiltered.length;
 
   const outPath = join(ROOT, 'public', 'sharp_positions.json');
   writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8');

@@ -2849,7 +2849,9 @@ export default function SharpFlow() {
       {viewMode === 'whaleSignals' && (() => {
         const evSignals = whaleSignals.filter(({ signal }) => signal.evEdge > 0);
         const otherSignals = whaleSignals.filter(({ signal }) => !signal.evEdge || signal.evEdge <= 0);
-        const trackedCount = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)).length : 0;
+        const allEliteProven = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
+        const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 50).length;
+        const trackedCount = allEliteProven.length - mmExcluded;
         const gamesWithPos = sharpPositions
           ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length
           : 0;
@@ -2866,8 +2868,8 @@ export default function SharpFlow() {
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
-              <FlowStatCard icon={Eye} label="Wallets Tracked" value={trackedCount} accent={B.gold}
-                hint="ELITE + PROVEN profitable bettors" />
+              <FlowStatCard icon={Eye} label="Sharp Wallets" value={trackedCount} accent={B.gold}
+                hint={mmExcluded > 0 ? `${mmExcluded} market makers excluded` : 'ELITE + PROVEN directional bettors'} />
               <FlowStatCard icon={Lock} label="Locked Plays"
                 value={(() => {
                   const locked = Object.values(lockedPicks);
@@ -2909,7 +2911,7 @@ export default function SharpFlow() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                     <SectionHead
                       title={`Sharp Positions (${allPosGames.length} games)`}
-                      subtitle="Open bets from ELITE & PROVEN wallets — blockchain-verified profitable bettors on Polymarket"
+                      subtitle={`Open bets from ${trackedCount} verified directional sharps — market makers excluded`}
                       icon={Eye}
                       style={{ marginBottom: 0 }}
                     />
@@ -2946,6 +2948,11 @@ export default function SharpFlow() {
                     <span style={{ ...T.micro, color: B.textSec }}>
                       <span style={{ fontWeight: 700, color: B.green }}>+EV</span> = retail book price beats Pinnacle fair value
                     </span>
+                    {mmExcluded > 0 && (
+                      <span style={{ ...T.micro, color: B.textSec }}>
+                        <span style={{ fontWeight: 700, color: B.red }}>MM</span> = {mmExcluded} market makers filtered out
+                      </span>
+                    )}
                   </div>
                   <div style={{
                     display: 'grid',

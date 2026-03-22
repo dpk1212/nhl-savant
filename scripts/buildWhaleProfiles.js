@@ -66,6 +66,49 @@ function classifySport(title) {
   return null;
 }
 
+function calculateMMScore(profile, leaderboardVol) {
+  let score = 0;
+
+  // Factor 1: Volume/PnL ratio — MMs have massive volume relative to profit
+  const vol = leaderboardVol || 0;
+  const pnl = Math.abs(profile.totalPnl || 1);
+  if (vol > 0) {
+    const ratio = vol / pnl;
+    if (ratio > 50) score += 20;
+    else if (ratio > 20) score += 12;
+    else if (ratio > 10) score += 5;
+  }
+
+  // Factor 2: Market breadth — MMs are generalists across 100+ markets
+  const markets = profile.marketsTraded || 0;
+  if (markets > 200) score += 20;
+  else if (markets > 100) score += 12;
+  else if (markets > 50) score += 5;
+
+  // Factor 3: Sport concentration — low concentration = MM (generalist)
+  const sportMarkets = profile.sportMarkets || {};
+  const totalSportMarkets = Object.values(sportMarkets).reduce((s, v) => s + v, 0);
+  const maxSportMarkets = Math.max(...Object.values(sportMarkets), 0);
+  const concentration = totalSportMarkets > 0 ? maxSportMarkets / totalSportMarkets : 0;
+  if (concentration < 0.3) score += 20;
+  else if (concentration < 0.5) score += 10;
+
+  // Factor 4: PnL consistency — MMs have tiny steady gains (low variance)
+  const pnlHistory = profile.pnlHistory || [];
+  if (pnlHistory.length >= 5) {
+    const deltas = [];
+    for (let i = 1; i < pnlHistory.length; i++) {
+      deltas.push(Math.abs(pnlHistory[i].pnl - pnlHistory[i - 1].pnl));
+    }
+    const avgDelta = deltas.reduce((s, d) => s + d, 0) / deltas.length;
+    const pnlMag = Math.abs(profile.totalPnl || 1);
+    if (avgDelta / pnlMag < 0.01) score += 20;
+    else if (avgDelta / pnlMag < 0.03) score += 10;
+  }
+
+  return Math.min(score, 100);
+}
+
 function tierFromStats(totalPnl, marketsTraded) {
   if (totalPnl > 100000 && marketsTraded > 50) return 'ELITE';
   if (totalPnl > 25000 && marketsTraded > 20) return 'PROVEN';
@@ -254,6 +297,11 @@ async function run() {
         if (pnlHistory.length > 30) pnlHistory.splice(0, pnlHistory.length - 30);
       }
 
+      const mmScore = calculateMMScore(
+        { totalPnl: pnl, marketsTraded: profile.marketsTraded, sportMarkets: profile.sportMarkets, pnlHistory },
+        isLB ? (w.vol || 0) : (prev?.vol || 0)
+      );
+
       existing[w.wallet] = {
         name: w.name || prev?.name || 'Anonymous',
         totalPnl: pnl,
@@ -265,9 +313,12 @@ async function run() {
         builtAt: now,
         pnlHistory,
         source: isLB ? 'leaderboard' : (prev?.source || 'trade'),
+        vol: isLB ? (w.vol || 0) : (prev?.vol || 0),
+        mmScore,
       };
 
-      console.log(`$${pnl.toLocaleString()} P&L, ${profile.marketsTraded} markets → ${tier}`);
+      const mmLabel = mmScore > 50 ? ' ⚠️ LIKELY MM' : mmScore > 25 ? ' 🔶 SUSPECT' : '';
+      console.log(`$${pnl.toLocaleString()} P&L, ${profile.marketsTraded} markets → ${tier} (MM:${mmScore})${mmLabel}`);
     } catch (e) {
       console.log(`error — ${e.message}`);
       if (!existing[w.wallet]) {
@@ -294,7 +345,10 @@ async function run() {
   const totalProfiles = Object.keys(output).length;
   const eliteCount = entries.filter(([, p]) => p.tier === 'ELITE').length;
   const provenCount = entries.filter(([, p]) => p.tier === 'PROVEN').length;
+  const mmCount = entries.filter(([, p]) => (p.mmScore || 0) > 50).length;
+  const suspectCount = entries.filter(([, p]) => (p.mmScore || 0) > 25 && (p.mmScore || 0) <= 50).length;
   console.log(`\n✅ Wrote ${outPath} — ${totalProfiles} profiles (${eliteCount} ELITE, ${provenCount} PROVEN)`);
+  console.log(`   MM detection: ${mmCount} likely MMs excluded from sharp signals, ${suspectCount} suspect`);
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
