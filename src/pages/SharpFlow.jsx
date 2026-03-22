@@ -1936,6 +1936,8 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
 
 function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const [showWallets, setShowWallets] = useState(false);
+  const [walletSideFilter, setWalletSideFilter] = useState('all');
+  const [walletTimeFilter, setWalletTimeFilter] = useState('all');
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -1991,6 +1993,16 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const totalLifetimePnl = awayLifetimePnl + homeLifetimePnl;
   const totalInvested = awayInvested + homeInvested;
   const awayPct = totalInvested > 0 ? (awayInvested / totalInvested) * 100 : 50;
+
+  const consensusPositions = consensusSide === 'away' ? awayPositions : homePositions;
+  const consensusWalletCount = consensusSide === 'away' ? awayWallets : homeWallets;
+  const consensusInvestedAmt = consensusSide === 'away' ? awayInvested : homeInvested;
+  const consensusLifetimePnl = consensusSide === 'away' ? awayLifetimePnl : homeLifetimePnl;
+  const consensusAvgBet = consensusWalletCount > 0 ? consensusInvestedAmt / consensusPositions.length : 0;
+  const oppPositions = consensusSide === 'away' ? homePositions : awayPositions;
+  const oppAvgBet = oppPositions.length > 0 ? (consensusSide === 'away' ? homeInvested : awayInvested) / oppPositions.length : 0;
+  const awayAvgBet = awayPositions.length > 0 ? awayInvested / awayPositions.length : 0;
+  const homeAvgBet = homePositions.length > 0 ? homeInvested / homePositions.length : 0;
 
   // Price movement data
   const pinnHistory = pinnGame?.history || [];
@@ -2176,8 +2188,8 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
               )}
             </div>
           </div>
-          <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.4 }}>
-            {sr.summary}
+          <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
+            {consensusWalletCount} sharp bettor{consensusWalletCount !== 1 ? 's have' : ' has'} invested <span style={{ color: B.gold, fontWeight: 700 }}>{fmtVol(consensusInvestedAmt)}</span> on {consensusShort} (avg <span style={{ fontWeight: 700 }}>{fmtVol(consensusAvgBet)}</span>/bet) with a combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(consensusLifetimePnl)}</span> lifetime P&L.{pinnConfirms ? ` Pinnacle's line confirms the play.` : ''}{hasEV ? ` +${evEdge}% EV edge at ${bestBook}.` : ''}
           </div>
         </div>
 
@@ -2188,7 +2200,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
         }}>
           <div>
             <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
-              {uniqueWallets} sharp{uniqueWallets !== 1 ? 's' : ''} backing
+              {consensusWalletCount} sharp{consensusWalletCount !== 1 ? 's' : ''} backing
             </div>
             <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>
               {consensusShort} ML
@@ -2261,13 +2273,13 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
             ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
             background: B.goldDim, color: B.gold, fontWeight: 600,
           }}>
-            {uniqueWallets} sharp bettor{uniqueWallets !== 1 ? 's' : ''}
+            {consensusWalletCount} sharp bettor{consensusWalletCount !== 1 ? 's' : ''}
           </span>
           <span style={{
             ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
             background: 'rgba(255,255,255,0.04)', color: B.textSec,
           }}>
-            {fmtVol(s.totalInvested)} invested
+            {fmtVol(consensusInvestedAmt)} invested
           </span>
           {pinnConfirms && (
             <span style={{
@@ -2370,7 +2382,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
             overflow: 'hidden',
           });
 
-          const SidePanel = ({ team, wallets, invested, pnl, isActive, align }) => (
+          const SidePanel = ({ team, wallets, invested, pnl, avgBet, isActive, align }) => (
             <div style={panelStyle(isActive)}>
               {isActive && (
                 <div style={{
@@ -2416,7 +2428,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
                     {fmtVol(invested)}
                   </div>
                   <div style={{ ...T.micro, color: B.textMuted }}>
-                    {wallets} sharp{wallets !== 1 ? 's' : ''}
+                    {wallets} sharp{wallets !== 1 ? 's' : ''} · avg {fmtVol(avgBet)}
                   </div>
                 </div>
                 <div style={{
@@ -2445,7 +2457,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <SidePanel team={awayShort} wallets={awayWallets} invested={awayInvested} pnl={awayLifetimePnl} isActive={awaySide} align="left" />
+                <SidePanel team={awayShort} wallets={awayWallets} invested={awayInvested} pnl={awayLifetimePnl} avgBet={awayAvgBet} isActive={awaySide} align="left" />
 
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -2454,7 +2466,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
                   <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
                 </div>
 
-                <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} isActive={homeSide} align="right" />
+                <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} avgBet={homeAvgBet} isActive={homeSide} align="right" />
               </div>
 
               {/* Money flow bar */}
@@ -2605,7 +2617,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
           </div>
         )}
 
-        {/* ─── Wallet Positions (collapsible) ─── */}
+        {/* ─── Verified Sharps (collapsible, with filters) ─── */}
         <button onClick={() => setShowWallets(!showWallets)} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           width: '100%', cursor: 'pointer',
@@ -2625,56 +2637,147 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
             </span>
           </span>
         </button>
-        {showWallets && (
-          <div style={{
-            marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden',
-            border: `1px solid ${B.borderSubtle}`,
-          }}>
-            {gd.positions.map((p, i) => {
-              const sideTeam = p.side === 'away' ? gd.away : gd.home;
-              const sideShort = sideTeam.split(' ').pop();
-              const posColor = p.pnl >= 0 ? B.green : B.red;
-              const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
-              const tc = p.tier === 'ELITE'
-                ? { color: B.gold, bg: B.goldDim }
-                : { color: B.green, bg: B.greenDim };
+        {showWallets && (() => {
+          const sideOpts = [
+            { key: 'all', label: 'All Bets' },
+            { key: 'consensus', label: consensusShort },
+            { key: 'opposing', label: consensusSide === 'away' ? homeShort : awayShort },
+          ];
+          const timeOpts = [
+            { key: 'all', label: 'All Time' },
+            { key: '1h', label: '1h', ms: 60 * 60 * 1000 },
+            { key: '3h', label: '3h', ms: 3 * 60 * 60 * 1000 },
+            { key: '6h', label: '6h', ms: 6 * 60 * 60 * 1000 },
+            { key: '1d', label: '24h', ms: 24 * 60 * 60 * 1000 },
+          ];
+          const now = Date.now();
+          const filtered = gd.positions.filter(p => {
+            if (walletSideFilter === 'consensus' && p.side !== consensusSide) return false;
+            if (walletSideFilter === 'opposing' && p.side === consensusSide) return false;
+            if (walletTimeFilter !== 'all' && p.firstSeen) {
+              const opt = timeOpts.find(t => t.key === walletTimeFilter);
+              if (opt && (now - new Date(p.firstSeen).getTime()) > opt.ms) return false;
+            }
+            return true;
+          });
+          const hasTimestamps = gd.positions.some(p => p.firstSeen);
 
-              return (
-                <div key={`${p.wallet}-${i}`} style={{
-                  display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  padding: '0.5rem 0.625rem',
-                  borderBottom: i < gd.positions.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
-                  background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                  flexWrap: 'wrap',
+          return (
+            <div style={{
+              marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden',
+              border: `1px solid ${B.borderSubtle}`,
+            }}>
+              {/* Filter bar */}
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center',
+                padding: '0.5rem 0.625rem',
+                borderBottom: `1px solid ${B.borderSubtle}`,
+                background: 'rgba(255,255,255,0.02)',
+              }}>
+                <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Side:</span>
+                {sideOpts.map(o => (
+                  <button key={o.key} onClick={() => setWalletSideFilter(o.key)} style={{
+                    ...T.micro, fontWeight: walletSideFilter === o.key ? 700 : 400,
+                    padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer',
+                    border: 'none',
+                    color: walletSideFilter === o.key ? B.gold : B.textMuted,
+                    background: walletSideFilter === o.key ? B.goldDim : 'rgba(255,255,255,0.04)',
+                  }}>
+                    {o.label}
+                  </button>
+                ))}
+                <div style={{ width: '1px', height: '14px', background: B.borderSubtle, margin: '0 0.25rem' }} />
+                <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Seen:</span>
+                {timeOpts.map(o => (
+                  <button key={o.key} onClick={() => setWalletTimeFilter(o.key)} style={{
+                    ...T.micro, fontWeight: walletTimeFilter === o.key ? 700 : 400,
+                    padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer',
+                    border: 'none',
+                    color: walletTimeFilter === o.key ? B.sky : B.textMuted,
+                    background: walletTimeFilter === o.key ? 'rgba(56,189,248,0.1)' : 'rgba(255,255,255,0.04)',
+                    opacity: !hasTimestamps && o.key !== 'all' ? 0.4 : 1,
+                  }} disabled={!hasTimestamps && o.key !== 'all'}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filtered count */}
+              {(walletSideFilter !== 'all' || walletTimeFilter !== 'all') && (
+                <div style={{
+                  padding: '0.25rem 0.625rem',
+                  borderBottom: `1px solid ${B.borderSubtle}`,
+                  background: 'rgba(255,255,255,0.015)',
                 }}>
-                  <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                  <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                    ...{p.wallet.slice(-4)}
-                  </span>
-                  <span style={{
-                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                    color: lifeColor,
-                    padding: '0.1rem 0.3rem', borderRadius: '3px',
-                    background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                  }}>
-                    {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
-                  </span>
-                  <span style={{ ...T.micro, color: B.gold, fontWeight: 700, marginLeft: 'auto' }}>
-                    {sideShort}
-                  </span>
-                  <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                    {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
-                  </span>
-                  <span style={{
-                    ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor,
-                  }}>
-                    {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                  <span style={{ ...T.micro, color: B.textMuted }}>
+                    Showing {filtered.length} of {gd.positions.length} positions
                   </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+
+              {/* Position rows */}
+              {filtered.length === 0 ? (
+                <div style={{ padding: '1rem 0.625rem', textAlign: 'center' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>No positions match filters</span>
+                </div>
+              ) : filtered.map((p, i) => {
+                const sideTeam = p.side === 'away' ? gd.away : gd.home;
+                const sideShort = sideTeam.split(' ').pop();
+                const posColor = p.pnl >= 0 ? B.green : B.red;
+                const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
+                const tc = p.tier === 'ELITE'
+                  ? { color: B.gold, bg: B.goldDim }
+                  : { color: B.green, bg: B.greenDim };
+                const seenAgo = p.firstSeen ? (() => {
+                  const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000);
+                  if (mins < 60) return `${mins}m ago`;
+                  const hrs = Math.round(mins / 60);
+                  if (hrs < 24) return `${hrs}h ago`;
+                  return `${Math.round(hrs / 24)}d ago`;
+                })() : null;
+
+                return (
+                  <div key={`${p.wallet}-${i}`} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.5rem 0.625rem',
+                    borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
+                    background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
+                    flexWrap: 'wrap',
+                  }}>
+                    <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                    <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                      ...{p.wallet.slice(-4)}
+                    </span>
+                    <span style={{
+                      ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                      color: lifeColor,
+                      padding: '0.1rem 0.3rem', borderRadius: '3px',
+                      background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                    }}>
+                      {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
+                    </span>
+                    <span style={{ ...T.micro, color: B.gold, fontWeight: 700, marginLeft: 'auto' }}>
+                      {sideShort}
+                    </span>
+                    <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                      {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
+                    </span>
+                    <span style={{
+                      ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor,
+                    }}>
+                      {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                    </span>
+                    {seenAgo && (
+                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontFeatureSettings: "'tnum'" }}>
+                        {seenAgo}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

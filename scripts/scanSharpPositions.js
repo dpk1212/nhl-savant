@@ -295,6 +295,21 @@ async function run() {
 
   console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers excluded)...\n`);
 
+  // Build lookup of previous firstSeen timestamps to preserve across rescans
+  const prevData = loadJSON('sharp_positions.json');
+  const prevPositions = {};
+  if (prevData) {
+    for (const sport of ['NHL', 'CBB']) {
+      for (const [gameKey, game] of Object.entries(prevData[sport] || {})) {
+        for (const pos of (game.positions || [])) {
+          if (pos.firstSeen) {
+            prevPositions[`${pos.wallet}_${gameKey}_${pos.side}`] = pos.firstSeen;
+          }
+        }
+      }
+    }
+  }
+
   const result = { NHL: {}, CBB: {} };
   let matchCount = 0;
   let errorCount = 0;
@@ -349,6 +364,9 @@ async function run() {
         };
       }
 
+      const posKey = `${wallet.addr}_${match.key}_${side}`;
+      const prevFirstSeen = prevPositions[posKey] || null;
+
       result[sport][match.key].positions.push({
         wallet: wallet.addr,
         name: wallet.name,
@@ -362,6 +380,7 @@ async function run() {
         curPrice: +curPrice.toFixed(3),
         currentValue,
         pnl: Math.round(cashPnl),
+        firstSeen: prevFirstSeen || new Date().toISOString(),
       });
 
       const summary = result[sport][match.key].summary;
