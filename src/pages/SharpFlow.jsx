@@ -1884,22 +1884,54 @@ function MiniSparkline({ points, width = 140, height = 32, color = B.gold, label
   );
 }
 
-function rateValue(evEdge, sharpCount, pinnConfirms, totalInvested) {
+function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, polyMovingWith) {
   let pts = 0;
-  if (evEdge > 3) pts += 4;
-  else if (evEdge > 1) pts += 3;
-  else if (evEdge > 0) pts += 2;
-  if (sharpCount >= 3) pts += 3;
-  else if (sharpCount >= 2) pts += 2;
-  else pts += 1;
-  if (pinnConfirms) pts += 2;
-  if (totalInvested >= 10000) pts += 2;
-  else if (totalInvested >= 3000) pts += 1;
 
-  if (pts >= 8) return { label: 'STRONG VALUE', color: B.green, bg: B.greenDim, icon: '◆◆◆' };
-  if (pts >= 5) return { label: 'VALUE', color: B.green, bg: 'rgba(16,185,129,0.08)', icon: '◆◆' };
-  if (pts >= 3) return { label: 'LEAN', color: B.gold, bg: B.goldDim, icon: '◆' };
-  return { label: 'MONITOR', color: B.textSec, bg: 'rgba(255,255,255,0.04)', icon: '○' };
+  // Sharp wallet conviction (max 3 pts)
+  if (sharpCount >= 5) pts += 3;
+  else if (sharpCount >= 3) pts += 2;
+  else if (sharpCount >= 1) pts += 1;
+
+  // Money deployed (max 2 pts)
+  if (totalInvested >= 25000) pts += 2;
+  else if (totalInvested >= 5000) pts += 1;
+
+  // EV edge (max 2 pts)
+  if (evEdge > 3) pts += 2;
+  else if (evEdge > 0) pts += 1;
+
+  // Pinnacle alignment (max 2 pts)
+  if (pinnConfirms) pts += 1;
+  if (pinnMovingWith) pts += 1;
+
+  // Consensus strength (max 1.5 pts)
+  if (consensusGradeLabel === 'DOMINANT') pts += 1.5;
+  else if (consensusGradeLabel === 'STRONG') pts += 1;
+  else if (consensusGradeLabel === 'LEAN') pts += 0.5;
+
+  // Prediction market alignment (max 0.5 pts)
+  if (polyMovingWith) pts += 0.5;
+
+  const maxPts = 11;
+  const raw = (pts / maxPts) * 5;
+  const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
+
+  const labels = {
+    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                         summary: 'Maximum conviction — all signals aligned' },
+    4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                         summary: 'Near-perfect signal alignment' },
+    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Strong conviction — sharps + line movement agree' },
+    3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Above-average conviction across multiple signals' },
+    3:   { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                           summary: 'Good sharp support — some confirming signals' },
+    2.5: { label: 'LEAN',          color: B.gold,    bg: B.goldDim,                           summary: 'Moderate sharp interest — limited confirmation' },
+    2:   { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Early sharp activity — watching for more signals' },
+    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Minimal sharp activity so far' },
+    1:   { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Low activity — not yet actionable' },
+    0.5: { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Minimal data available' },
+  };
+  const info = labels[stars] || labels[1];
+  const isActionable = stars >= 3.5;
+
+  return { stars, pts, maxPts, ...info, isActionable };
 }
 
 function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
@@ -2002,8 +2034,8 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
-  const vr = rateValue(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested);
-  const isActionable = vr.label === 'STRONG VALUE' || vr.label === 'VALUE';
+  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested, cGrade.label, pinnMovingWith, polyMovingWith);
+  const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
   const accentBorder = isLocked ? 'rgba(16,185,129,0.4)' : isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
 
@@ -2049,10 +2081,24 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
           <span style={{
             ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
             padding: '0.2rem 0.6rem', borderRadius: '5px',
-            color: vr.color, background: vr.bg,
+            color: sr.color, background: sr.bg,
             border: `1px solid ${isActionable ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+            display: 'flex', alignItems: 'center', gap: '0.2rem',
           }}>
-            {vr.icon} {vr.label}
+            {Array.from({ length: 5 }, (_, i) => {
+              const filled = i + 1 <= Math.floor(sr.stars);
+              const half = !filled && i + 0.5 === sr.stars;
+              return (
+                <span key={i} style={{
+                  fontSize: '0.5rem',
+                  color: filled || half ? sr.color : 'rgba(255,255,255,0.15)',
+                  lineHeight: 1,
+                }}>
+                  {filled ? '★' : half ? '⯨' : '★'}
+                </span>
+              );
+            })}
+            <span style={{ marginLeft: '0.15rem' }}>{sr.label}</span>
           </span>
         </div>
       </div>
@@ -2066,35 +2112,40 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
           : `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)`,
         border: `1px solid ${isActionable ? 'rgba(16,185,129,0.25)' : B.goldBorder}`,
       }}>
-        {/* Top: Recommendation + EV badge + Units */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: '0.625rem',
-        }}>
-          <span style={{ ...T.label, fontWeight: 800, color: isActionable ? B.green : B.gold }}>
-            {isActionable ? 'RECOMMENDED BET' : 'SHARP CONSENSUS'}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            {isLocked && (
-              <span style={{
-                ...T.body, fontWeight: 900, color: '#fff',
-                padding: '0.2rem 0.6rem', borderRadius: '5px',
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-                border: '1px solid rgba(16,185,129,0.4)',
-                fontFeatureSettings: "'tnum'",
-              }}>
-                {ut.icon} {units.toFixed(1)}u
-              </span>
-            )}
-            {hasEV && (
-              <span style={{
-                ...T.body, fontWeight: 900, color: B.green,
-                padding: '0.2rem 0.6rem', borderRadius: '5px',
-                background: B.greenDim,
-              }}>
-                +{evEdge}% EV
-              </span>
-            )}
+        {/* Top: Recommendation + narrative */}
+        <div style={{ marginBottom: '0.625rem' }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: '0.25rem',
+          }}>
+            <span style={{ ...T.label, fontWeight: 800, color: isActionable ? B.green : B.gold }}>
+              {isActionable ? 'RECOMMENDED BET' : 'SHARP CONSENSUS'}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              {isLocked && (
+                <span style={{
+                  ...T.body, fontWeight: 900, color: '#fff',
+                  padding: '0.2rem 0.6rem', borderRadius: '5px',
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  border: '1px solid rgba(16,185,129,0.4)',
+                  fontFeatureSettings: "'tnum'",
+                }}>
+                  {ut.icon} {units.toFixed(1)}u
+                </span>
+              )}
+              {hasEV && (
+                <span style={{
+                  ...T.body, fontWeight: 900, color: B.green,
+                  padding: '0.2rem 0.6rem', borderRadius: '5px',
+                  background: B.greenDim,
+                }}>
+                  +{evEdge}% EV
+                </span>
+              )}
+            </div>
+          </div>
+          <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.4 }}>
+            {sr.summary}
           </div>
         </div>
 
@@ -2847,8 +2898,6 @@ export default function SharpFlow() {
 
       {/* ─── Whale Signals View ─── */}
       {viewMode === 'whaleSignals' && (() => {
-        const evSignals = whaleSignals.filter(({ signal }) => signal.evEdge > 0);
-        const otherSignals = whaleSignals.filter(({ signal }) => !signal.evEdge || signal.evEdge <= 0);
         const allEliteProven = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
         const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 40).length;
         const sportLosers = allEliteProven.filter(p => {
@@ -2861,7 +2910,6 @@ export default function SharpFlow() {
         const gamesWithPos = sharpPositions
           ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length
           : 0;
-        const posWithSignals = whaleSignals.filter(({ signal }) => signal.sharpPosCount > 0).length;
         const scannedAt = sharpPositions?.scannedAt
           ? fmtTime(sharpPositions.scannedAt).ago
           : null;
@@ -2894,8 +2942,22 @@ export default function SharpFlow() {
                 hint={allTimePnL
                   ? `${allTimePnL.pregame.totalProfit >= 0 ? '+' : ''}${allTimePnL.pregame.totalProfit.toFixed(1)}u profit${allTimePnL.live.wins + allTimePnL.live.losses > 0 ? ` · Live: ${allTimePnL.live.record}` : ''}`
                   : 'Tracking performance over time'} />
-              <FlowStatCard icon={Zap} label="+EV Spots" value={evSignals.length} accent={evSignals.length > 0 ? B.green : null}
-                hint="Actionable mispriced lines" />
+              <FlowStatCard icon={Zap} label="Top Plays"
+                value={(() => {
+                  const allPG = [];
+                  for (const sport of ['NHL', 'CBB']) {
+                    const sg = sharpPositions?.[sport] || {};
+                    for (const [, gd] of Object.entries(sg)) {
+                      if (!gd.positions || gd.positions.length === 0) continue;
+                      if ((gd.summary?.totalInvested || 0) < 1000) continue;
+                      const uw = new Set(gd.positions.map(p => p.wallet)).size;
+                      if (uw >= 3 && (gd.summary?.totalInvested || 0) >= 5000) allPG.push(gd);
+                    }
+                  }
+                  return allPG.length;
+                })()}
+                accent={B.green}
+                hint="Games with 3+ sharps & $5K+ invested" />
             </div>
 
             {/* ─── Sharp Positions Section ─── */}
@@ -2910,7 +2972,15 @@ export default function SharpFlow() {
                   allPosGames.push({ key, sport, ...gd });
                 }
               }
-              allPosGames.sort((a, b) => (b.summary?.totalInvested || 0) - (a.summary?.totalInvested || 0));
+              allPosGames.sort((a, b) => {
+                const aW = new Set((a.positions || []).map(p => p.wallet)).size;
+                const bW = new Set((b.positions || []).map(p => p.wallet)).size;
+                const aI = a.summary?.totalInvested || 0;
+                const bI = b.summary?.totalInvested || 0;
+                const aScore = aW * 3 + aI / 1000;
+                const bScore = bW * 3 + bI / 1000;
+                return bScore - aScore;
+              });
 
               return (
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -2973,57 +3043,16 @@ export default function SharpFlow() {
               );
             })()}
 
-            {/* +EV Opportunities */}
-            <SectionHead
-              title={evSignals.length > 0 ? `+EV Opportunities (${evSignals.length})` : 'Whale Intel'}
-              subtitle={evSignals.length > 0
-                ? 'Sharp money + mispriced retail books — actionable edges'
-                : 'Whale trades + Pinnacle lines — scanning for mispriced retail books'}
-              icon={Zap}
-            />
-
-            {evSignals.length > 0 && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : evSignals.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                gap: '0.75rem', marginBottom: '1.5rem',
-              }}>
-                {evSignals.map(({ game, signal }) => (
-                  <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} whaleProfiles={whaleProfiles} />
-                ))}
-              </div>
-            )}
-
-            {/* Other signals (no +EV yet) */}
-            {otherSignals.length > 0 && (
-              <>
-                <SectionHead
-                  title={`Monitoring (${otherSignals.length})`}
-                  subtitle="Whale activity detected — watching for retail mispricing"
-                  icon={Eye}
-                />
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : otherSignals.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                  gap: '0.75rem',
-                }}>
-                  {otherSignals.map(({ game, signal }) => (
-                    <WhaleSignalCard key={game.key} game={game} signal={signal} isMobile={isMobile} whaleProfiles={whaleProfiles} />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {whaleSignals.length === 0 && (
+            {gamesWithPos === 0 && (
               <div style={{
                 textAlign: 'center', padding: '3rem', borderRadius: '12px',
                 background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
                 border: `1px solid ${B.border}`,
               }}>
-                <Zap size={28} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
-                <div style={{ ...T.sub, color: B.text, marginBottom: '0.25rem' }}>No whale activity detected</div>
+                <Eye size={28} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
+                <div style={{ ...T.sub, color: B.text, marginBottom: '0.25rem' }}>No sharp positions detected</div>
                 <div style={{ ...T.label, color: B.textSec }}>
-                  Signals surface when whale trades appear and book prices are available for comparison.
+                  Positions appear when verified sharp wallets have open bets on today's games.
                 </div>
               </div>
             )}
