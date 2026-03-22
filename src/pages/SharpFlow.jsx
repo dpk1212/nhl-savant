@@ -512,19 +512,58 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const pinnMoveDir = pinnGame?.movement?.direction;
 
   const bookEntries = Object.entries(allBooks).filter(([k]) => k !== 'pinnacle');
-  const worstAwayEntry = bookEntries.length ? bookEntries.reduce((w, e) => (e[1].away < w[1].away ? e : w), bookEntries[0]) : null;
-  const worstHomeEntry = bookEntries.length ? bookEntries.reduce((w, e) => (e[1].home < w[1].home ? e : w), bookEntries[0]) : null;
+
+  const maxEV = Math.max(evAway || 0, evHome || 0);
+  const evSide = (evAway || 0) >= (evHome || 0) ? 'away' : 'home';
+  const evTeam = evSide === 'away' ? awayShort : homeShort;
+  const evBook = evSide === 'away' ? bestAwayBook : bestHomeBook;
+  const evVal = evSide === 'away' ? evAway : evHome;
+  const pinnConfirms = pinnMoveDir && pinnMoveDir === moneyFav;
+  const pinnOpposes = pinnMoveDir && pinnMoveDir !== moneyFav;
+
+  const edgeSignals = [];
+  if (isReverse) edgeSignals.push('reverse');
+  if (maxEV >= 3) edgeSignals.push('ev');
+  if (pinnConfirms) edgeSignals.push('pinnacle');
+  if (game.whaleCount >= 3 && game.whaleDirection) edgeSignals.push('whales');
+  if (hasDivergence) edgeSignals.push('split');
+  const edgeStrength = edgeSignals.length;
+
+  const edgeVerdict = (() => {
+    const team = sharpTeam.split(' ').pop();
+    if (isReverse && maxEV >= 3 && pinnConfirms) return { text: `Strong edge: ${team} — reverse line move, +EV, Pinnacle confirms`, color: B.green, grade: 'A' };
+    if (isReverse && maxEV >= 3) return { text: `${team} — reverse line move with +${evVal}% EV at ${evBook}`, color: B.green, grade: 'A-' };
+    if (isReverse && pinnConfirms) return { text: `${team} — reverse line move, Pinnacle shortening`, color: B.green, grade: 'B+' };
+    if (isReverse) return { text: `Reverse signal: money on ${team} despite public on opponent`, color: B.gold, grade: 'B' };
+    if (maxEV >= 3 && pinnConfirms) return { text: `${evTeam} +${evVal}% EV at ${evBook}, Pinnacle confirms`, color: B.green, grade: 'B+' };
+    if (maxEV >= 3) return { text: `+${evVal}% EV on ${evTeam} at ${evBook}`, color: '#A3E635', grade: 'B' };
+    if (hasDivergence && pinnConfirms) return { text: `${team} — ticket/money split, Pinnacle shortening`, color: B.green, grade: 'B' };
+    if (hasDivergence) return { text: `Money favors ${team} despite public tickets`, color: B.textSec, grade: 'C+' };
+    if (maxEV > 0) return { text: `Small edge: +${evVal}% EV on ${evTeam} at ${evBook}`, color: B.textSec, grade: 'C' };
+    return null;
+  })();
+
+  const gradeColors = {
+    'A': { color: '#fff', bg: 'linear-gradient(135deg, #10B981, #059669)', border: 'rgba(16,185,129,0.4)' },
+    'A-': { color: '#fff', bg: 'linear-gradient(135deg, #10B981, #059669)', border: 'rgba(16,185,129,0.4)' },
+    'B+': { color: '#fff', bg: 'linear-gradient(135deg, #3B82F6, #2563EB)', border: 'rgba(59,130,246,0.4)' },
+    'B': { color: B.gold, bg: B.goldDim, border: B.goldBorder },
+    'C+': { color: B.textSec, bg: 'rgba(255,255,255,0.04)', border: B.border },
+    'C': { color: B.textMuted, bg: 'rgba(255,255,255,0.03)', border: B.borderSubtle },
+  };
 
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden',
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${isReverse ? B.goldBorder : hasDivergence ? 'rgba(16,185,129,0.25)' : B.border}`,
+      border: `1px solid ${edgeStrength >= 3 ? 'rgba(16,185,129,0.3)' : isReverse ? B.goldBorder : hasDivergence ? 'rgba(16,185,129,0.25)' : B.border}`,
     }}>
-      {accentColor && (
+      {(edgeStrength >= 2 || accentColor) && (
         <div style={{
           height: '2px',
-          background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+          background: edgeStrength >= 3
+            ? `linear-gradient(90deg, transparent, ${B.green}, ${B.gold}, transparent)`
+            : `linear-gradient(90deg, transparent, ${accentColor || B.gold}, transparent)`,
         }} />
       )}
 
@@ -536,7 +575,7 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
           <Badge color={ss.color} bg={ss.bg}>{ss.icon} {game.sport}</Badge>
           <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
-            {game.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {game.home}
+            {awayShort} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {homeShort}
           </span>
           {(gameTimeFormatted || isGameLive) && (
             <span style={{
@@ -553,12 +592,23 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+          {edgeVerdict && (
+            <span style={{
+              ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              color: gradeColors[edgeVerdict.grade]?.color || B.textMuted,
+              background: gradeColors[edgeVerdict.grade]?.bg || 'transparent',
+              border: `1px solid ${gradeColors[edgeVerdict.grade]?.border || B.border}`,
+              fontSize: '0.6rem', letterSpacing: '0.03em',
+            }}>
+              {edgeVerdict.grade}
+            </span>
+          )}
           {hasDivergence && (
             <span style={{
               ...T.tiny, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
               color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`,
             }}>
-              {game.ticketDivergence.toFixed(0)}pt SPLIT
+              {game.ticketDivergence.toFixed(0)}pt
             </span>
           )}
           {isReverse && (
@@ -567,28 +617,23 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
               color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
               border: '1px solid rgba(239,68,68,0.4)',
             }}>
-              REVERSE
+              RLM
             </span>
           )}
         </div>
       </div>
 
-      {/* ── Signal verdict (only for divergent games) ── */}
-      {hasDivergence && (
+      {/* ── Edge verdict banner ── */}
+      {edgeVerdict && (
         <div style={{
-          margin: '0 0.75rem 0.5rem', padding: '0.5rem 0.75rem', borderRadius: '8px',
-          background: isReverse ? 'rgba(212,175,55,0.06)' : 'rgba(16,185,129,0.05)',
-          border: `1px solid ${isReverse ? 'rgba(212,175,55,0.12)' : 'rgba(16,185,129,0.12)'}`,
+          margin: '0 0.75rem 0.5rem', padding: '0.4rem 0.75rem', borderRadius: '8px',
+          background: edgeStrength >= 3 ? 'rgba(16,185,129,0.06)' : edgeStrength >= 2 ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+          border: `1px solid ${edgeStrength >= 3 ? 'rgba(16,185,129,0.15)' : edgeStrength >= 2 ? 'rgba(212,175,55,0.12)' : B.borderSubtle}`,
           display: 'flex', alignItems: 'center', gap: '0.5rem',
         }}>
-          {isReverse ? <Eye size={14} color={B.gold} /> : <TrendingUp size={14} color={B.green} />}
-          <span style={{ ...T.micro, color: isReverse ? B.gold : B.green, fontWeight: 700 }}>
-            {isReverse
-              ? `Sharps loading ${sharpTeam.split(' ').pop()}`
-              : `Heavy conviction on ${sharpTeam.split(' ').pop()}`}
-          </span>
-          <span style={{ ...T.micro, color: B.textMuted }}>
-            — {sharpPct}% of money
+          {edgeStrength >= 3 ? <TrendingUp size={13} color={B.green} /> : edgeStrength >= 2 ? <Eye size={13} color={B.gold} /> : <Activity size={13} color={B.textMuted} />}
+          <span style={{ ...T.micro, color: edgeVerdict.color, fontWeight: 600, lineHeight: 1.3 }}>
+            {edgeVerdict.text}
           </span>
         </div>
       )}
@@ -2821,7 +2866,7 @@ export default function SharpFlow() {
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
   const [gameSort, setGameSort] = useState('time');
-  const [signalType, setSignalType] = useState('all');
+  const [signalType, setSignalType] = useState('upcoming');
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
@@ -3256,10 +3301,22 @@ export default function SharpFlow() {
       {/* ─── All Games (unified view) ─── */}
       <div style={{ marginBottom: '2rem' }}>
         <SectionHead
-          title={`All Games (${sortedGames.length})`}
-          subtitle={`${signalCount} signal${signalCount !== 1 ? 's' : ''} detected — games where money and tickets disagree`}
+          title={`Market Signals (${sortedGames.length} games)`}
+          subtitle="Full market flow — all bettors, all money, all ticket action across every book"
           icon={BarChart3}
         />
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          padding: '0.5rem 0.75rem', borderRadius: '8px', marginBottom: '0.875rem',
+          background: `linear-gradient(135deg, rgba(212,175,55,0.04) 0%, ${B.card} 100%)`,
+          border: `1px solid ${B.borderSubtle}`,
+        }}>
+          <Activity size={12} color={B.gold} style={{ flexShrink: 0 }} />
+          <span style={{ ...T.micro, color: B.textSec, lineHeight: 1.4 }}>
+            <span style={{ color: B.gold, fontWeight: 700 }}>Signals</span> tracks where all money is flowing — public, sharps, and whales combined.
+            For verified sharp bettor positions only, see <span style={{ color: B.gold, fontWeight: 700 }}>Sharp Intel</span>.
+          </span>
+        </div>
         <div style={{
           display: 'flex', gap: '0.375rem', marginBottom: '0.875rem',
           flexWrap: 'wrap', alignItems: 'center',
@@ -3284,20 +3341,29 @@ export default function SharpFlow() {
           <div style={{ width: '1px', height: '16px', background: B.border, margin: '0 0.25rem' }} />
           <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.125rem' }}>Show:</span>
           {[
-            { key: 'all', label: 'All Games' },
-            { key: 'live', label: 'Live' },
+            { key: 'upcoming', label: 'Upcoming' },
+            { key: 'live', label: '● Live' },
+            { key: 'all', label: 'All' },
             { key: 'signals', label: 'Signals Only' },
             { key: 'reverse', label: 'Reverse Only' },
-          ].map(s => (
-            <button key={s.key} onClick={() => setSignalType(s.key)} style={{
-              padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
-              ...T.micro, fontWeight: 700,
-              border: signalType === s.key ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-              background: signalType === s.key ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-              color: signalType === s.key ? B.gold : B.textMuted,
-              transition: 'all 0.2s ease',
-            }}>{s.label}</button>
-          ))}
+          ].map(s => {
+            const isLive = s.key === 'live';
+            const active = signalType === s.key;
+            return (
+              <button key={s.key} onClick={() => setSignalType(s.key)} style={{
+                padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
+                ...T.micro, fontWeight: 700,
+                border: active
+                  ? `1px solid ${isLive ? 'rgba(239,68,68,0.5)' : B.goldBorder}`
+                  : `1px solid ${B.border}`,
+                background: active
+                  ? isLive ? 'rgba(239,68,68,0.15)' : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                  : 'transparent',
+                color: active ? (isLive ? '#EF4444' : B.gold) : B.textMuted,
+                transition: 'all 0.2s ease',
+              }}>{s.label}</button>
+            );
+          })}
         </div>
         <div style={{
           display: 'grid',
@@ -3306,11 +3372,11 @@ export default function SharpFlow() {
         }}>
           {sortedGames
             .filter(g => {
-              if (signalType === 'live') {
-                const pg = pinnacleHistory?.[g.sport]?.[g.key];
-                const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
-                return ct && Date.now() >= ct;
-              }
+              const pg = pinnacleHistory?.[g.sport]?.[g.key];
+              const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
+              const live = ct && Date.now() >= ct;
+              if (signalType === 'upcoming') return !live;
+              if (signalType === 'live') return live;
               if (signalType === 'all') return true;
               if (signalType === 'signals') return g.ticketDivergence >= 10;
               if (signalType === 'reverse') {
