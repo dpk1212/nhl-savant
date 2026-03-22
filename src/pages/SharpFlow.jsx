@@ -472,11 +472,18 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
 
 // ─── Unified Game Card (every game, premium layout) ───────────────────────────
 
-function GameFlowCard({ game, isMobile, whaleProfiles }) {
+function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory }) {
   const [showTrades, setShowTrades] = useState(false);
   const ss = sportStyle(game.sport);
   const awayShort = game.away.split(' ').pop();
   const homeShort = game.home.split(' ').pop();
+  const pinnGame = pinnacleHistory?.[game.sport]?.[game.key];
+  const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+  const nowMs = Date.now();
+  const isGameLive = commenceTime && nowMs >= commenceTime;
+  const gameTimeFormatted = commenceTime
+    ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
+    : null;
   const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
   const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
   const isReverse = ticketFav !== moneyFav && game.ticketDivergence >= 10;
@@ -503,13 +510,26 @@ function GameFlowCard({ game, isMobile, whaleProfiles }) {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '0.75rem 1rem 0.5rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
           <Badge color={ss.color} bg={ss.bg}>{ss.icon} {game.sport}</Badge>
           <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
             {game.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {game.home}
           </span>
+          {(gameTimeFormatted || isGameLive) && (
+            <span style={{
+              ...T.micro, fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '4px',
+              fontFeatureSettings: "'tnum'",
+              ...(isGameLive ? {
+                color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+              } : {
+                color: B.textMuted, background: 'rgba(255,255,255,0.04)',
+              }),
+            }}>
+              {isGameLive ? '● LIVE' : `${gameTimeFormatted} ET`}
+            </span>
+          )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
           {hasDivergence && (
             <span style={{
               ...T.tiny, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
@@ -2647,7 +2667,7 @@ export default function SharpFlow() {
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, loading } = useMarketData();
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
-  const [gameSort, setGameSort] = useState('volume');
+  const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('all');
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
@@ -2792,12 +2812,19 @@ export default function SharpFlow() {
 
   const sortedGames = useMemo(() => {
     const g = [...filteredGames];
-    if (gameSort === 'volume') g.sort((a, b) => b.volume - a.volume);
+    if (gameSort === 'time') {
+      g.sort((a, b) => {
+        const aT = pinnacleHistory?.[a.sport]?.[a.key]?.commence;
+        const bT = pinnacleHistory?.[b.sport]?.[b.key]?.commence;
+        return (aT ? new Date(aT).getTime() : Infinity) - (bT ? new Date(bT).getTime() : Infinity);
+      });
+    }
+    else if (gameSort === 'volume') g.sort((a, b) => b.volume - a.volume);
     else if (gameSort === 'divergence') g.sort((a, b) => b.ticketDivergence - a.ticketDivergence);
     else if (gameSort === 'whales') g.sort((a, b) => b.whaleCash - a.whaleCash);
     else if (gameSort === 'active') g.sort((a, b) => b.latestTradeTs - a.latestTradeTs);
     return g;
-  }, [filteredGames, gameSort]);
+  }, [filteredGames, gameSort, pinnacleHistory]);
 
   const whaleSignals = useMemo(() => {
     return filteredGames
@@ -3086,6 +3113,7 @@ export default function SharpFlow() {
         }}>
           <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.125rem' }}>Sort:</span>
           {[
+            { key: 'time', label: 'Game Time' },
             { key: 'divergence', label: 'Divergence' },
             { key: 'volume', label: 'Volume' },
             { key: 'whales', label: 'Whale $' },
@@ -3117,7 +3145,11 @@ export default function SharpFlow() {
             }}>{s.label}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: '0.75rem',
+        }}>
           {sortedGames
             .filter(g => {
               if (signalType === 'all') return true;
@@ -3129,7 +3161,7 @@ export default function SharpFlow() {
               }
               return true;
             })
-            .map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} />)
+            .map(g => <GameFlowCard key={g.key} game={g} isMobile={isMobile} whaleProfiles={whaleProfiles} pinnacleHistory={pinnacleHistory} />)
           }
         </div>
       </div>
