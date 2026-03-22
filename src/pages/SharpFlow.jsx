@@ -2711,40 +2711,50 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
 
                 return (
                   <div key={`${p.wallet}-${i}`} style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
                     padding: '0.5rem 0.625rem',
                     borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none',
                     background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent',
-                    flexWrap: 'wrap',
                   }}>
-                    <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                    <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                      ...{p.wallet.slice(-4)}
-                    </span>
-                    <span style={{
-                      ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                      color: lifeColor,
-                      padding: '0.1rem 0.3rem', borderRadius: '3px',
-                      background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      gap: '0.5rem', marginBottom: '0.25rem',
                     }}>
-                      {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
-                    </span>
-                    <span style={{ ...T.micro, color: B.gold, fontWeight: 700, marginLeft: 'auto' }}>
-                      {sideShort}
-                    </span>
-                    <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                      {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
-                    </span>
-                    <span style={{
-                      ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor,
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                        <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                        <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                          ...{p.wallet.slice(-4)}
+                        </span>
+                        <span style={{
+                          ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                          color: lifeColor,
+                          padding: '0.1rem 0.3rem', borderRadius: '3px',
+                          background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                        }}>
+                          {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
+                        </span>
+                      </div>
+                      {seenAgo && (
+                        <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
+                          {seenAgo}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      paddingLeft: '0.25rem',
                     }}>
-                      {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
-                    </span>
-                    {seenAgo && (
-                      <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontFeatureSettings: "'tnum'" }}>
-                        {seenAgo}
+                      <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
+                        {sideShort}
                       </span>
-                    )}
+                      <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                        {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
+                      </span>
+                      <span style={{
+                        ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor,
+                      }}>
+                        {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
@@ -3038,21 +3048,6 @@ export default function SharpFlow() {
 
         return (
           <div>
-            {/* Hero explainer */}
-            <div style={{
-              marginBottom: '1.25rem', padding: '1rem 1.25rem',
-              borderRadius: '12px',
-              background: `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 100%)`,
-              border: `1px solid ${B.goldBorder}`,
-            }}>
-              <p style={{ ...T.body, color: B.text, margin: 0, lineHeight: 1.6 }}>
-                We track <span style={{ color: B.gold, fontWeight: 800 }}>{trackedCount} verified sharp bettors</span> with
-                a combined <span style={{ color: B.green, fontWeight: 800 }}>+{fmtVol(totalSharpPnl)}</span> lifetime P&L on Polymarket.
-                When multiple sharps position on the same side of a game, we surface the play, cross-reference it against
-                Pinnacle lines and retail sportsbooks, and rate it on a 5-star system so you can bet with conviction.
-              </p>
-            </div>
-
             {/* Stat cards */}
             <div style={{
               display: 'grid',
