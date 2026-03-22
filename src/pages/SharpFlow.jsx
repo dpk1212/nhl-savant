@@ -1947,6 +1947,23 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const homeShort = gd.home.split(' ').pop();
   const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
   const allBooks = pinnGame?.allBooks || {};
+  const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+  const nowMs = Date.now();
+  const isGameLive = commenceTime && nowMs >= commenceTime;
+  const minsUntilStart = commenceTime ? Math.round((commenceTime - nowMs) / 60000) : null;
+
+  const gameTimeLabel = (() => {
+    if (!commenceTime) return null;
+    if (isGameLive) return 'LIVE';
+    if (minsUntilStart <= 30) return `${minsUntilStart}min`;
+    const hours = Math.floor(minsUntilStart / 60);
+    const mins = minsUntilStart % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  })();
+
+  const gameTimeFormatted = commenceTime
+    ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
+    : null;
 
   const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
   const oppOdds = consensusSide === 'away' ? pinnGame?.current?.home : pinnGame?.current?.away;
@@ -2025,8 +2042,6 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
   const isLocked = criteriaMet >= 4 && cGrade.label !== 'CONTESTED';
-  const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
-  const isGameLive = commenceTime && Date.now() >= commenceTime;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const betOdds = bestRetail || consensusOdds;
@@ -2061,6 +2076,23 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
           <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
             {gd.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {gd.home}
           </span>
+          {gameTimeLabel && (
+            <span style={{
+              ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              fontFeatureSettings: "'tnum'",
+              ...(isGameLive ? {
+                color: '#fff', background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                animation: 'pulse 2s ease-in-out infinite',
+              } : minsUntilStart <= 60 ? {
+                color: '#F59E0B', background: 'rgba(245,158,11,0.12)',
+                border: '1px solid rgba(245,158,11,0.25)',
+              } : {
+                color: B.textSec, background: 'rgba(255,255,255,0.04)',
+              }),
+            }}>
+              {isGameLive ? '● LIVE' : gameTimeFormatted ? `${gameTimeFormatted} ET` : gameTimeLabel}
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           {isLocked && (
@@ -2659,6 +2691,7 @@ export default function SharpFlow() {
   const [signalType, setSignalType] = useState('all');
   const [tradeView, setTradeView] = useState('largest');
   const [whaleIntelSport, setWhaleIntelSport] = useState('All');
+  const [gameTimeFilter, setGameTimeFilter] = useState('All');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -2963,16 +2996,29 @@ export default function SharpFlow() {
             {/* ─── Sharp Positions Section ─── */}
             {gamesWithPos > 0 && (() => {
               const allPosGames = [];
+              const nowMs = Date.now();
               for (const sport of ['NHL', 'CBB']) {
                 if (whaleIntelSport !== 'All' && sport !== whaleIntelSport) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
                   if (!gd.positions || gd.positions.length === 0) continue;
                   if ((gd.summary?.totalInvested || 0) < 1000) continue;
-                  allPosGames.push({ key, sport, ...gd });
+                  const pg = pinnacleHistory?.[sport]?.[key];
+                  const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
+                  const minsUntil = ct ? Math.round((ct - nowMs) / 60000) : null;
+                  const isLive = ct && nowMs >= ct;
+
+                  if (gameTimeFilter === 'Soon' && (isLive || minsUntil == null || minsUntil > 180)) continue;
+                  if (gameTimeFilter === 'Pre' && (isLive)) continue;
+                  if (gameTimeFilter === 'Live' && (!isLive)) continue;
+
+                  allPosGames.push({ key, sport, ...gd, _commence: ct, _minsUntil: minsUntil, _isLive: isLive });
                 }
               }
               allPosGames.sort((a, b) => {
+                if (gameTimeFilter === 'Soon') {
+                  return (a._minsUntil || 9999) - (b._minsUntil || 9999);
+                }
                 const aW = new Set((a.positions || []).map(p => p.wallet)).size;
                 const bW = new Set((b.positions || []).map(p => p.wallet)).size;
                 const aI = a.summary?.totalInvested || 0;
@@ -2991,17 +3037,41 @@ export default function SharpFlow() {
                       icon={Eye}
                       style={{ marginBottom: 0 }}
                     />
-                    <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
-                      {['All', 'NHL', 'CBB'].map(s => (
-                        <button key={s} onClick={() => setWhaleIntelSport(s)} style={{
-                          padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
-                          ...T.micro, fontWeight: 700,
-                          border: whaleIntelSport === s ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                          background: whaleIntelSport === s ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                          color: whaleIntelSport === s ? B.gold : B.textMuted,
-                          transition: 'all 0.2s ease',
-                        }}>{s}</button>
-                      ))}
+                    <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        {[
+                          { id: 'All', label: 'All' },
+                          { id: 'Soon', label: '⏰ Next Up' },
+                          { id: 'Pre', label: 'Pre-Game' },
+                          { id: 'Live', label: '● Live' },
+                        ].map(f => (
+                          <button key={f.id} onClick={() => setGameTimeFilter(f.id)} style={{
+                            padding: '0.3rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 700,
+                            border: gameTimeFilter === f.id ? `1px solid ${f.id === 'Live' ? 'rgba(239,68,68,0.4)' : B.goldBorder}` : `1px solid ${B.border}`,
+                            background: gameTimeFilter === f.id
+                              ? f.id === 'Live' ? 'rgba(239,68,68,0.12)' : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                              : 'transparent',
+                            color: gameTimeFilter === f.id
+                              ? f.id === 'Live' ? B.red : B.gold
+                              : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>{f.label}</button>
+                        ))}
+                      </div>
+                      <div style={{ width: '1px', background: B.borderSubtle }} />
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        {['All', 'NHL', 'CBB'].map(s => (
+                          <button key={s} onClick={() => setWhaleIntelSport(s)} style={{
+                            padding: '0.3rem 0.6rem', borderRadius: '6px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 700,
+                            border: whaleIntelSport === s ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                            background: whaleIntelSport === s ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                            color: whaleIntelSport === s ? B.gold : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>{s}</button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   {/* Context legend */}
