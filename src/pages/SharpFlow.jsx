@@ -3032,17 +3032,17 @@ export default function SharpFlow() {
                   const polyMoveWith = polyPts.length >= 2 && ((cSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (cSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
                   const sr = rateStars(ev, uw, pinnConf, ss.totalInvested || 0, cg.label, pinnMoveWith, polyMoveWith);
 
+                  if (sortBy === 'live' && !isLive) continue;
+                  if (sortBy !== 'live' && isLive) continue;
+
                   allPosGames.push({ key, sport, ...gd, _commence: ct, _isLive: isLive, _stars: sr.stars, _ev: ev, _wallets: uw, _invested: ss.totalInvested || 0 });
                 }
               }
 
               const sortFns = {
                 stars: (a, b) => b._stars - a._stars || b._invested - a._invested,
-                time: (a, b) => {
-                  if (a._isLive && !b._isLive) return -1;
-                  if (!a._isLive && b._isLive) return 1;
-                  return (a._commence || Infinity) - (b._commence || Infinity);
-                },
+                live: (a, b) => b._invested - a._invested,
+                time: (a, b) => (a._commence || Infinity) - (b._commence || Infinity),
                 edge: (a, b) => b._ev - a._ev || b._stars - a._stars,
                 money: (a, b) => b._invested - a._invested,
                 wallets: (a, b) => b._wallets - a._wallets || b._invested - a._invested,
@@ -3083,13 +3083,20 @@ export default function SharpFlow() {
                       { id: 'edge', label: '+EV Edge' },
                       { id: 'money', label: '$ Invested' },
                       { id: 'wallets', label: '# Wallets' },
+                      { id: 'live', label: '● Live' },
                     ].map(opt => (
                       <button key={opt.id} onClick={() => setSortBy(opt.id)} style={{
                         padding: '0.25rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
                         ...T.micro, fontWeight: 700,
-                        border: sortBy === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-                        background: sortBy === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
-                        color: sortBy === opt.id ? B.gold : B.textMuted,
+                        border: sortBy === opt.id
+                          ? `1px solid ${opt.id === 'live' ? 'rgba(239,68,68,0.4)' : B.goldBorder}`
+                          : `1px solid ${B.border}`,
+                        background: sortBy === opt.id
+                          ? opt.id === 'live' ? 'rgba(239,68,68,0.12)' : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                          : 'transparent',
+                        color: sortBy === opt.id
+                          ? opt.id === 'live' ? B.red : B.gold
+                          : B.textMuted,
                         transition: 'all 0.2s ease',
                       }}>{opt.label}</button>
                     ))}
