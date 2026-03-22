@@ -1937,7 +1937,6 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
 function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
-  const [walletTimeFilter, setWalletTimeFilter] = useState('all');
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -2643,24 +2642,12 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
             { key: 'consensus', label: consensusShort },
             { key: 'opposing', label: consensusSide === 'away' ? homeShort : awayShort },
           ];
-          const timeOpts = [
-            { key: 'all', label: 'All Time' },
-            { key: '1h', label: '1h', ms: 60 * 60 * 1000 },
-            { key: '3h', label: '3h', ms: 3 * 60 * 60 * 1000 },
-            { key: '6h', label: '6h', ms: 6 * 60 * 60 * 1000 },
-            { key: '1d', label: '24h', ms: 24 * 60 * 60 * 1000 },
-          ];
           const now = Date.now();
           const filtered = gd.positions.filter(p => {
             if (walletSideFilter === 'consensus' && p.side !== consensusSide) return false;
             if (walletSideFilter === 'opposing' && p.side === consensusSide) return false;
-            if (walletTimeFilter !== 'all' && p.firstSeen) {
-              const opt = timeOpts.find(t => t.key === walletTimeFilter);
-              if (opt && (now - new Date(p.firstSeen).getTime()) > opt.ms) return false;
-            }
             return true;
           });
-          const hasTimestamps = gd.positions.some(p => p.firstSeen);
 
           return (
             <div style={{
@@ -2686,24 +2673,10 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
                     {o.label}
                   </button>
                 ))}
-                <div style={{ width: '1px', height: '14px', background: B.borderSubtle, margin: '0 0.25rem' }} />
-                <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Seen:</span>
-                {timeOpts.map(o => (
-                  <button key={o.key} onClick={() => setWalletTimeFilter(o.key)} style={{
-                    ...T.micro, fontWeight: walletTimeFilter === o.key ? 700 : 400,
-                    padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer',
-                    border: 'none',
-                    color: walletTimeFilter === o.key ? B.sky : B.textMuted,
-                    background: walletTimeFilter === o.key ? 'rgba(56,189,248,0.1)' : 'rgba(255,255,255,0.04)',
-                    opacity: !hasTimestamps && o.key !== 'all' ? 0.4 : 1,
-                  }} disabled={!hasTimestamps && o.key !== 'all'}>
-                    {o.label}
-                  </button>
-                ))}
               </div>
 
               {/* Filtered count */}
-              {(walletSideFilter !== 'all' || walletTimeFilter !== 'all') && (
+              {walletSideFilter !== 'all' && (
                 <div style={{
                   padding: '0.25rem 0.625rem',
                   borderBottom: `1px solid ${B.borderSubtle}`,
