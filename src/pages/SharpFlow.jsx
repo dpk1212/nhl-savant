@@ -3424,7 +3424,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
               color: viewMode === 'whaleSignals' ? B.gold : B.textMuted,
               transition: 'all 0.2s ease',
             }}>
-              <Zap size={12} /> Whale Intel
+              <Zap size={12} /> Sharp Intel
             </button>
           </div>
           <SportTabs active={sportFilter} onChange={setSportFilter} />
