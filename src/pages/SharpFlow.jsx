@@ -2946,50 +2946,49 @@ export default function SharpFlow() {
           ? fmtTime(sharpPositions.scannedAt).ago
           : null;
 
+        const cleanWallets = allEliteProven.filter(p => {
+          if ((p.mmScore || 0) > 40) return false;
+          const sp = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+          return sp >= -100000;
+        });
+        const totalSharpPnl = cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0);
+        let totalSharpInvested = 0;
+        for (const sport of ['NHL', 'CBB']) {
+          const sg = sharpPositions?.[sport] || {};
+          for (const [, gd] of Object.entries(sg)) {
+            totalSharpInvested += gd.summary?.totalInvested || 0;
+          }
+        }
+
         return (
           <div>
-            {/* Sharp tracker summary */}
+            {/* Hero explainer */}
+            <div style={{
+              marginBottom: '1.25rem', padding: '1rem 1.25rem',
+              borderRadius: '12px',
+              background: `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 100%)`,
+              border: `1px solid ${B.goldBorder}`,
+            }}>
+              <p style={{ ...T.body, color: B.text, margin: 0, lineHeight: 1.6 }}>
+                We track <span style={{ color: B.gold, fontWeight: 800 }}>{trackedCount} verified sharp wallets</span> with
+                a combined <span style={{ color: B.green, fontWeight: 800 }}>+{fmtVol(totalSharpPnl)}</span> lifetime P&L on Polymarket.
+                When multiple sharps position on the same side of a game, we surface the play, cross-reference it against
+                Pinnacle lines and retail sportsbooks, and rate it on a 5-star system so you can bet with conviction.
+              </p>
+            </div>
+
+            {/* Stat cards */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
               <FlowStatCard icon={Eye} label="Sharp Wallets" value={trackedCount} accent={B.gold}
                 hint={totalExcluded > 0 ? `${totalExcluded} non-sharp wallets filtered` : 'ELITE + PROVEN directional bettors'} />
-              <FlowStatCard icon={Lock} label="Locked Plays"
-                value={(() => {
-                  const locked = Object.values(lockedPicks);
-                  const pre = locked.filter(p => p.lockType !== 'LIVE');
-                  const live = locked.filter(p => p.lockType === 'LIVE');
-                  const preU = pre.reduce((s, p) => s + (p.units || 1), 0);
-                  const liveU = live.reduce((s, p) => s + (p.units || 1), 0);
-                  if (live.length > 0) return `${pre.length} (${preU.toFixed(1)}u) + ${live.length} live`;
-                  return `${pre.length} (${preU.toFixed(1)}u)`;
-                })()}
-                accent={Object.keys(lockedPicks).length > 0 ? B.green : null}
-                hint="Today's locked plays — 4+ criteria met" />
-              <FlowStatCard icon={TrendingUp} label="Pre-Game Record"
-                value={allTimePnL ? allTimePnL.pregame.record : '—'}
-                accent={allTimePnL && allTimePnL.pregame.totalProfit > 0 ? B.green : allTimePnL && allTimePnL.pregame.totalProfit < 0 ? B.red : null}
-                hint={allTimePnL
-                  ? `${allTimePnL.pregame.totalProfit >= 0 ? '+' : ''}${allTimePnL.pregame.totalProfit.toFixed(1)}u profit${allTimePnL.live.wins + allTimePnL.live.losses > 0 ? ` · Live: ${allTimePnL.live.record}` : ''}`
-                  : 'Tracking performance over time'} />
-              <FlowStatCard icon={Zap} label="Top Plays"
-                value={(() => {
-                  const allPG = [];
-                  for (const sport of ['NHL', 'CBB']) {
-                    const sg = sharpPositions?.[sport] || {};
-                    for (const [, gd] of Object.entries(sg)) {
-                      if (!gd.positions || gd.positions.length === 0) continue;
-                      if ((gd.summary?.totalInvested || 0) < 1000) continue;
-                      const uw = new Set(gd.positions.map(p => p.wallet)).size;
-                      if (uw >= 3 && (gd.summary?.totalInvested || 0) >= 5000) allPG.push(gd);
-                    }
-                  }
-                  return allPG.length;
-                })()}
-                accent={B.green}
-                hint="Games with 3+ sharps & $5K+ invested" />
+              <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(totalSharpInvested)} accent={B.green}
+                hint="Total verified sharp $ on today's games" />
+              <FlowStatCard icon={TrendingUp} label="Combined Lifetime P&L" value={`+${fmtVol(totalSharpPnl)}`} accent={B.green}
+                hint="Aggregate P&L of all tracked sharp wallets" />
             </div>
 
             {/* ─── Sharp Positions Section ─── */}
