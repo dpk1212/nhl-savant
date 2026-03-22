@@ -81,17 +81,17 @@ function calculateMMScore(profile, leaderboardVol) {
 
   // Factor 2: Market breadth — MMs are generalists across 100+ markets
   const markets = profile.marketsTraded || 0;
-  if (markets > 200) score += 20;
-  else if (markets > 100) score += 12;
-  else if (markets > 50) score += 5;
+  if (markets > 200) score += 15;
+  else if (markets > 100) score += 8;
+  else if (markets > 50) score += 4;
 
   // Factor 3: Sport concentration — low concentration = MM (generalist)
   const sportMarkets = profile.sportMarkets || {};
   const totalSportMarkets = Object.values(sportMarkets).reduce((s, v) => s + v, 0);
   const maxSportMarkets = Math.max(...Object.values(sportMarkets), 0);
   const concentration = totalSportMarkets > 0 ? maxSportMarkets / totalSportMarkets : 0;
-  if (concentration < 0.3) score += 20;
-  else if (concentration < 0.5) score += 10;
+  if (concentration < 0.3) score += 15;
+  else if (concentration < 0.5) score += 8;
 
   // Factor 4: PnL consistency — MMs have tiny steady gains (low variance)
   const pnlHistory = profile.pnlHistory || [];
@@ -102,9 +102,18 @@ function calculateMMScore(profile, leaderboardVol) {
     }
     const avgDelta = deltas.reduce((s, d) => s + d, 0) / deltas.length;
     const pnlMag = Math.abs(profile.totalPnl || 1);
-    if (avgDelta / pnlMag < 0.01) score += 20;
-    else if (avgDelta / pnlMag < 0.03) score += 10;
+    if (avgDelta / pnlMag < 0.01) score += 15;
+    else if (avgDelta / pnlMag < 0.03) score += 8;
   }
+
+  // Factor 5: Negative sport PnL — wallet profits from non-sport markets
+  // but LOSES money on sports. Strongest disqualifier.
+  const sportPnl = profile.sportPnl || {};
+  const totalSportPnl = Object.values(sportPnl).reduce((s, v) => s + v, 0);
+  if (totalSportPnl < -100000) score += 35;
+  else if (totalSportPnl < -25000) score += 25;
+  else if (totalSportPnl < -5000) score += 15;
+  else if (totalSportPnl < 0) score += 5;
 
   return Math.min(score, 100);
 }

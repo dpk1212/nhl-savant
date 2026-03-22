@@ -272,17 +272,28 @@ async function run() {
     return;
   }
 
-  // Select ELITE and PROVEN wallets to scan, excluding likely market makers
-  const MM_THRESHOLD = 50;
+  // Select ELITE and PROVEN wallets to scan, excluding market makers + sports losers
+  const MM_THRESHOLD = 40;
+  const SPORT_PNL_FLOOR = -100000;
+
   const allEligible = Object.entries(profiles)
     .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
-  const mmFiltered = allEligible.filter(([, p]) => (p.mmScore || 0) > MM_THRESHOLD);
+
+  const isExcluded = (p) => {
+    if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
+    const sportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+    if (sportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
+    return false;
+  };
+
+  const mmFiltered = allEligible.filter(([, p]) => isExcluded(p) === 'mm');
+  const sportLosers = allEligible.filter(([, p]) => isExcluded(p) === 'sport_loser');
   const walletsToScan = allEligible
-    .filter(([, p]) => (p.mmScore || 0) <= MM_THRESHOLD)
+    .filter(([, p]) => !isExcluded(p))
     .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }))
     .sort((a, b) => b.totalPnl - a.totalPnl);
 
-  console.log(`Scanning ${walletsToScan.length} ELITE/PROVEN wallets (${mmFiltered.length} market makers excluded)...\n`);
+  console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers excluded)...\n`);
 
   const result = { NHL: {}, CBB: {} };
   let matchCount = 0;
@@ -391,6 +402,8 @@ async function run() {
   result.scannedAt = new Date().toISOString();
   result.walletsScanned = walletsToScan.length;
   result.mmExcluded = mmFiltered.length;
+  result.sportLosersExcluded = sportLosers.length;
+  result.totalExcluded = mmFiltered.length + sportLosers.length;
 
   const outPath = join(ROOT, 'public', 'sharp_positions.json');
   writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8');

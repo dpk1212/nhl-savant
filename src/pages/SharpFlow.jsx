@@ -2850,8 +2850,14 @@ export default function SharpFlow() {
         const evSignals = whaleSignals.filter(({ signal }) => signal.evEdge > 0);
         const otherSignals = whaleSignals.filter(({ signal }) => !signal.evEdge || signal.evEdge <= 0);
         const allEliteProven = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
-        const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 50).length;
-        const trackedCount = allEliteProven.length - mmExcluded;
+        const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 40).length;
+        const sportLosers = allEliteProven.filter(p => {
+          if ((p.mmScore || 0) > 40) return false;
+          const sp = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+          return sp < -100000;
+        }).length;
+        const totalExcluded = mmExcluded + sportLosers;
+        const trackedCount = allEliteProven.length - totalExcluded;
         const gamesWithPos = sharpPositions
           ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length
           : 0;
@@ -2869,7 +2875,7 @@ export default function SharpFlow() {
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
               <FlowStatCard icon={Eye} label="Sharp Wallets" value={trackedCount} accent={B.gold}
-                hint={mmExcluded > 0 ? `${mmExcluded} market makers excluded` : 'ELITE + PROVEN directional bettors'} />
+                hint={totalExcluded > 0 ? `${totalExcluded} non-sharp wallets filtered` : 'ELITE + PROVEN directional bettors'} />
               <FlowStatCard icon={Lock} label="Locked Plays"
                 value={(() => {
                   const locked = Object.values(lockedPicks);
@@ -2948,9 +2954,9 @@ export default function SharpFlow() {
                     <span style={{ ...T.micro, color: B.textSec }}>
                       <span style={{ fontWeight: 700, color: B.green }}>+EV</span> = retail book price beats Pinnacle fair value
                     </span>
-                    {mmExcluded > 0 && (
+                    {totalExcluded > 0 && (
                       <span style={{ ...T.micro, color: B.textSec }}>
-                        <span style={{ fontWeight: 700, color: B.red }}>MM</span> = {mmExcluded} market makers filtered out
+                        <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {mmExcluded} MMs + {sportLosers} sport losers removed
                       </span>
                     )}
                   </div>
