@@ -170,14 +170,14 @@ const Pricing = () => {
   // All tiers get the same features - only commitment level differs
   const universalFeatures = [
     'All daily +EV picks with quality grades',
-    'Whale Intel — real-time sharp money tracker',
-    'Blockchain-verified sharp wallet positions',
-    'Auto-locked plays with unit sizing',
+    'Sharp Intel — verified sharp bettor tracking',
+    'Pinnacle fair value + best retail EV edge',
+    'Auto-locked plays with smart unit sizing',
+    'Full market flow — tickets, money, & whale action',
+    'Line movement alerts + reverse line moves',
     'Advanced ensemble prediction model',
-    'Live win probability tracking',
-    'Expert AI analysis & insights',
     'Complete performance & ROI dashboard',
-    'Direct email support',
+    'Expert AI analysis & insights',
     'Full model transparency'
   ];
 
@@ -641,15 +641,16 @@ const Pricing = () => {
                   fontWeight: 800, color: '#D4AF37', margin: 0,
                   letterSpacing: '-0.02em',
                 }}>
-                  Whale Intel — Sharp Money Tracker
+                  Sharp Intel — Verified Sharp Bettor Tracking
                 </h3>
               </div>
               <p style={{
                 fontSize: window.innerWidth < 640 ? '0.875rem' : '0.938rem',
                 color: 'rgba(241,245,249,0.8)', lineHeight: '1.6', margin: '0 0 0.75rem 0',
               }}>
-                See exactly where the sharpest bettors on the planet are putting their money — verified on-chain, not self-reported.
-                We track 200+ wallets with $100K to $5M+ in lifetime profit and surface their positions on today's games in real time.
+                We track 200+ verified sharp bettors with proven, profitable track records and surface
+                their real positions on today's games. Combined with Pinnacle fair odds, EV edges, and full
+                market flow — so every bet you place has real data behind it.
               </p>
               <div style={{
                 display: 'grid',
@@ -657,12 +658,12 @@ const Pricing = () => {
                 gap: '0.375rem',
               }}>
                 {[
-                  'Blockchain-verified sharp positions',
-                  'Pinnacle fair value + retail EV edge',
+                  'Verified sharp bettor positions in real time',
+                  'Pinnacle fair value + best retail EV edge',
                   'Auto-locked plays when 4+ signals align',
-                  'Unit sizing based on signal strength',
-                  'Consensus strength: contested vs dominant',
-                  'Pre-game & live play tracking with P&L',
+                  'Smart unit sizing based on signal strength',
+                  'Full market flow — tickets, money, & whales',
+                  'Line movement tracking with P&L history',
                 ].map((f, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                     <span style={{ color: '#10B981', fontSize: '0.75rem', flexShrink: 0 }}>✓</span>
@@ -689,7 +690,7 @@ const Pricing = () => {
                 200+
               </div>
               <div style={{ fontSize: '0.813rem', color: 'rgba(241,245,249,0.6)' }}>
-                Elite wallets tracked
+                Verified sharp bettors tracked
               </div>
             </div>
           </div>
