@@ -35,7 +35,6 @@ import { getBasketballContext } from '../utils/basketballContextGenerator';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { 
-  CBBEarlyAccessBanner, 
   CBBSoftPaywall, 
   CBBUpgradeModal 
 } from '../components/CBBPaywall';
@@ -530,8 +529,6 @@ const Basketball = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: '0' }}>
-      {/* 🎯 CBB EARLY ACCESS BANNER - Only for free users */}
-      <CBBEarlyAccessBanner />
       
       <div style={{ padding: isMobile ? '1rem' : '20px' }}>
         {/* Header - NHL Standard */}

@@ -3185,6 +3185,9 @@ export default function SharpFlow() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }}>
       <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
 
+      {/* ─── Founding Member Promo ─── */}
+      <FoundingMemberBanner isMobile={isMobile} />
+
       {/* ─── Money Flow View ─── */}
       {viewMode === 'flow' && (
         <MoneyFlowView games={filteredGames} isMobile={isMobile} />
@@ -3578,6 +3581,150 @@ function SportTabs({ active, onChange }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function FoundingMemberBanner({ isMobile }) {
+  const [copied, setCopied] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try { return sessionStorage.getItem('sf_promo_dismissed') === '1'; } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  const handleCopy = async () => {
+    try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    try { sessionStorage.setItem('sf_promo_dismissed', '1'); } catch { /* noop */ }
+  };
+
+  const features = [
+    'Blockchain-verified sharp positions',
+    'Pinnacle fair value + retail EV edge',
+    'Auto-locked plays with unit sizing',
+    'Real-time whale consensus tracking',
+  ];
+
+  return (
+    <div style={{
+      position: 'relative',
+      marginBottom: '1.5rem',
+      borderRadius: '14px',
+      overflow: 'hidden',
+      background: `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 40%, rgba(16,185,129,0.05) 100%)`,
+      border: `1px solid ${B.goldBorder}`,
+    }}>
+      {/* Top accent line */}
+      <div style={{
+        height: '3px',
+        background: `linear-gradient(90deg, ${B.gold}, ${B.green}, ${B.gold})`,
+      }} />
+
+      {/* Dismiss button */}
+      <button onClick={handleDismiss} style={{
+        position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'none',
+        border: 'none', cursor: 'pointer', color: B.textMuted, fontSize: '1rem',
+        lineHeight: 1, padding: '0.25rem', zIndex: 2,
+      }}>✕</button>
+
+      <div style={{ padding: isMobile ? '1.25rem 1rem' : '1.75rem 2rem' }}>
+        {/* Badge */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+          padding: '0.25rem 0.75rem', borderRadius: '6px',
+          background: B.goldDim, border: `1px solid ${B.goldBorder}`,
+          marginBottom: '0.875rem',
+        }}>
+          <span style={{ fontSize: '0.75rem' }}>🏆</span>
+          <span style={{ ...T.tiny, color: B.gold, letterSpacing: '0.08em' }}>FOUNDING MEMBER OFFER</span>
+        </div>
+
+        {/* Headline */}
+        <h2 style={{
+          fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900,
+          color: B.text, margin: '0 0 0.375rem 0', lineHeight: 1.2,
+          letterSpacing: '-0.02em',
+        }}>
+          You're early. <span style={{ color: B.gold }}>That pays off.</span>
+        </h2>
+        <p style={{
+          ...T.body, color: B.textSec, margin: '0 0 1.25rem 0',
+          maxWidth: '600px', lineHeight: 1.6,
+        }}>
+          Sharp Flow is the only tool that tracks <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp wallets</span> on-chain
+          — real money, not self-reported picks. Lock in <span style={{ color: B.green, fontWeight: 700 }}>50% off forever</span> before
+          the paywall goes live.
+        </p>
+
+        {/* Feature grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '0.4rem 1.5rem',
+          marginBottom: '1.25rem',
+        }}>
+          {features.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <CheckCircle size={13} color={B.green} />
+              <span style={{ ...T.label, color: B.textSec }}>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA row */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '0.75rem' : '1rem',
+        }}>
+          {/* Code block */}
+          <button onClick={handleCopy} style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.625rem 1.25rem', borderRadius: '8px',
+            background: 'rgba(212,175,55,0.08)',
+            border: `1.5px dashed ${B.gold}`,
+            cursor: 'pointer', transition: 'all 0.2s ease',
+            width: isMobile ? '100%' : 'auto', justifyContent: 'center',
+          }}>
+            <span style={{ ...T.label, color: B.textSec }}>Code:</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: B.gold, letterSpacing: '0.04em' }}>SHARPMONEY</span>
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.5rem', borderRadius: '4px',
+              background: copied ? B.greenDim : 'rgba(212,175,55,0.12)',
+              color: copied ? B.green : B.gold,
+              fontWeight: 700, transition: 'all 0.2s ease',
+            }}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </span>
+          </button>
+
+          {/* Pricing */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+            <span style={{ fontSize: isMobile ? '1.375rem' : '1.5rem', fontWeight: 900, color: B.green }}>$13/mo</span>
+            <span style={{
+              ...T.label, color: B.textMuted,
+              textDecoration: 'line-through', opacity: 0.6,
+            }}>$25.99</span>
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: B.greenDim, color: B.green, fontWeight: 800,
+            }}>50% OFF</span>
+          </div>
+
+          {/* Urgency note */}
+          <span style={{
+            ...T.caption, color: B.textMuted, fontStyle: 'italic',
+          }}>
+            Limited time — won't last forever
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
