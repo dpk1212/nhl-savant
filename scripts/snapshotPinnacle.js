@@ -209,14 +209,18 @@ async function run() {
       if (hist.length > MAX_HISTORY) hist.splice(0, hist.length - MAX_HISTORY);
       existing.history = hist;
 
-      // Pinnacle movement
+      // Pinnacle movement — use implied probability so it works for both favorites and underdogs
       const opAway = existing.opener.away;
       const opHome = existing.opener.home;
+      const currAwayProb = impliedProb(pinnAway);
+      const openAwayProb = impliedProb(opAway);
+      const currHomeProb = impliedProb(pinnHome);
+      const openHomeProb = impliedProb(opHome);
       existing.movement = {
         away: pinnAway - opAway,
         home: pinnHome - opHome,
-        direction: Math.abs(pinnAway) < Math.abs(opAway) ? 'away'
-                 : Math.abs(pinnHome) < Math.abs(opHome) ? 'home'
+        direction: currAwayProb > openAwayProb ? 'away'
+                 : currHomeProb > openHomeProb ? 'home'
                  : null,
       };
 
