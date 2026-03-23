@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, Check, Shield, Zap, TrendingUp, BarChart3 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { redirectToCheckout } from '../utils/stripe';
 
@@ -10,13 +10,14 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
 
   if (!isOpen) return null;
 
+  const isMobile = window.innerWidth < 640;
+
   const handleSignIn = async () => {
     setIsSigningIn(true);
     try {
       const result = await signInWithGoogle();
       if (result) {
         if (tier) {
-          console.log('User signed in, creating checkout session for tier:', tier);
           await redirectToCheckout(tier, result);
         } else {
           setTimeout(() => {
@@ -33,193 +34,162 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
     }
   };
 
-  const tierNames = {
-    scout: 'Scout',
-    elite: 'Elite',
-    pro: 'SAVANT PRO'
-  };
+  const tierNames = { scout: 'Scout', elite: 'Elite', pro: 'SAVANT PRO' };
+  const tierTrials = { scout: '5-day', elite: '7-day', pro: '10-day' };
 
-  // Render modal outside the DOM hierarchy using portal to avoid z-index issues
+  const features = [
+    { icon: Zap, text: 'Whale Intel — verified sharp money tracker' },
+    { icon: TrendingUp, text: 'Daily +EV picks with quality grades' },
+    { icon: BarChart3, text: 'Pinnacle fair value + retail EV edge' },
+    { icon: Shield, text: 'Blockchain-verified sharp positions' },
+  ];
+
   const modalContent = (
-    <div 
+    <div
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         background: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2147483647,
-        padding: '1rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 2147483647, padding: '1rem',
         animation: 'fadeIn 0.2s ease-out',
-        overflow: 'auto',
-        isolation: 'isolate',
-        WebkitTransform: 'translateZ(0)',
-        transform: 'translateZ(0)'
+        overflow: 'auto', isolation: 'isolate',
+        WebkitTransform: 'translateZ(0)', transform: 'translateZ(0)',
       }}
       onClick={onClose}
     >
-      <div 
+      <div
         style={{
           background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
+          border: '1px solid rgba(212, 175, 55, 0.25)',
           borderRadius: '20px',
-          padding: window.innerWidth < 640 ? '1.5rem' : '2.5rem',
-          maxWidth: '480px',
-          width: '100%',
-          margin: 'auto',
+          padding: isMobile ? '1.5rem' : '2.5rem',
+          maxWidth: '480px', width: '100%', margin: 'auto',
           position: 'relative',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(212, 175, 55, 0.08)',
           animation: 'slideUp 0.3s ease-out',
-          maxHeight: '90vh',
-          overflowY: 'auto'
+          maxHeight: '90vh', overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
+        {/* Top accent */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+          borderRadius: '20px 20px 0 0', overflow: 'hidden',
+          background: 'linear-gradient(90deg, #D4AF37, #10B981, #D4AF37)',
+        }} />
+
+        {/* Close */}
         <button
           onClick={onClose}
           disabled={isSigningIn || loading}
           style={{
-            position: 'absolute',
-            top: window.innerWidth < 640 ? '1rem' : '1.5rem',
-            right: window.innerWidth < 640 ? '1rem' : '1.5rem',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            width: window.innerWidth < 640 ? '32px' : '36px',
-            height: window.innerWidth < 640 ? '32px' : '36px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: 'absolute', top: isMobile ? '1rem' : '1.25rem',
+            right: isMobile ? '1rem' : '1.25rem',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '8px', width: '32px', height: '32px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: (isSigningIn || loading) ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease',
-            opacity: (isSigningIn || loading) ? 0.3 : 1
-          }}
-          onMouseEnter={(e) => {
-            if (!isSigningIn && !loading) {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            opacity: (isSigningIn || loading) ? 0.3 : 1,
           }}
         >
-          <X size={window.innerWidth < 640 ? 18 : 20} color="#E2E8F0" />
+          <X size={18} color="#E2E8F0" />
         </button>
 
-        {/* Logo/Branding */}
-        <div style={{ 
-          textAlign: 'center', 
-          marginBottom: window.innerWidth < 640 ? '1.5rem' : '2rem' 
-        }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? '1.25rem' : '1.75rem' }}>
           <div style={{
-            fontSize: window.innerWidth < 640 ? '2rem' : '2.5rem',
-            fontWeight: '800',
+            fontSize: isMobile ? '1.75rem' : '2rem', fontWeight: 900,
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            marginBottom: '0.5rem',
-            letterSpacing: '-0.02em'
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', marginBottom: '0.5rem', letterSpacing: '-0.02em',
           }}>
             🏒 NHL Savant
           </div>
           <p style={{
-            fontSize: window.innerWidth < 640 ? '1rem' : '1.125rem',
-            fontWeight: '600',
-            color: '#F1F5F9',
-            margin: 0
+            fontSize: isMobile ? '1.05rem' : '1.2rem', fontWeight: 700,
+            color: '#F1F5F9', margin: '0 0 0.25rem 0',
           }}>
-            {tier ? `Sign in to unlock ${tierNames[tier]}` : 'Sign in to continue'}
+            {tier ? `Start your free ${tierTrials[tier] || ''} trial` : 'Sign in to continue'}
           </p>
+          {tier && (
+            <p style={{
+              fontSize: '0.813rem', color: '#94A3B8', margin: 0, lineHeight: 1.5,
+            }}>
+              No charge today — cancel anytime before your trial ends
+            </p>
+          )}
         </div>
 
-        {/* Benefits */}
+        {/* Features */}
         {tier && (
           <div style={{
-            background: 'rgba(212, 175, 55, 0.08)',
-            border: '1px solid rgba(212, 175, 55, 0.2)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            marginBottom: '2rem'
+            background: 'rgba(212, 175, 55, 0.05)',
+            border: '1px solid rgba(212, 175, 55, 0.15)',
+            borderRadius: '12px', padding: '1rem 1.25rem',
+            marginBottom: '1.5rem',
           }}>
             <div style={{
-              fontSize: '0.875rem',
-              color: 'rgba(241, 245, 249, 0.9)',
-              lineHeight: '1.6'
+              fontSize: '0.688rem', fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.06em', color: '#D4AF37', marginBottom: '0.75rem',
             }}>
-              <div style={{ fontWeight: '600', marginBottom: '0.75rem', color: '#D4AF37' }}>
-                ✨ What you'll get:
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
-                <li>All daily +EV picks</li>
-                <li>Performance tracking</li>
-                <li>Expert analysis & insights</li>
-                <li>Complete transparency</li>
-                {tier === 'elite' && <li>Priority support</li>}
-                {tier === 'pro' && (
-                  <>
-                    <li>Priority support</li>
-                    <li>Annual performance reports</li>
-                  </>
-                )}
-              </ul>
+              Everything included
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {features.map(({ icon: Icon, text }, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <div style={{
+                    width: '22px', height: '22px', borderRadius: '6px',
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Icon size={12} color="#10B981" />
+                  </div>
+                  <span style={{ fontSize: '0.875rem', color: '#CBD5E1', fontWeight: 500, lineHeight: 1.4 }}>{text}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Google Sign In Button */}
+        {/* Google Sign In */}
         <button
           onClick={handleSignIn}
           disabled={isSigningIn || loading}
           style={{
-            width: '100%',
-            padding: '1rem',
+            width: '100%', padding: isMobile ? '0.875rem' : '1rem',
             background: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%)',
-            border: 'none',
-            borderRadius: '12px',
-            color: '#0A0E27',
-            fontSize: '1rem',
-            fontWeight: '700',
+            border: 'none', borderRadius: '12px',
+            color: '#0A0E27', fontSize: '1rem', fontWeight: 700,
             cursor: isSigningIn || loading ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease',
-            boxShadow: '0 4px 14px 0 rgba(212, 175, 55, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
+            boxShadow: '0 4px 14px rgba(212, 175, 55, 0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
             opacity: isSigningIn || loading ? 0.7 : 1,
-            marginBottom: '1rem'
+            marginBottom: '1rem',
           }}
           onMouseEnter={(e) => {
             if (!isSigningIn && !loading) {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px 0 rgba(212, 175, 55, 0.5)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
             }
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(212, 175, 55, 0.4)';
+            e.currentTarget.style.boxShadow = '0 4px 14px rgba(212, 175, 55, 0.4)';
           }}
         >
           {isSigningIn || loading ? (
             <>
-              <div className="spinner" style={{
-                width: '20px',
-                height: '20px',
-                border: '3px solid rgba(10, 14, 39, 0.3)',
-                borderTopColor: '#0A0E27',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite'
+              <div style={{
+                width: '20px', height: '20px',
+                border: '3px solid rgba(10,14,39,0.3)',
+                borderTopColor: '#0A0E27', borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
               }} />
               {tier ? 'Signing in & starting checkout...' : 'Signing in...'}
             </>
@@ -236,36 +206,45 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
           )}
         </button>
 
-        {/* Error message */}
+        {/* Error */}
         {error && (
           <div style={{
             padding: '0.875rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
-            color: '#FCA5A5',
-            fontSize: '0.875rem',
-            marginBottom: '1rem',
-            textAlign: 'center'
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            borderRadius: '8px', color: '#FCA5A5',
+            fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center',
           }}>
             {error}
           </div>
         )}
 
-        {/* Trust indicators */}
-        <div style={{
-          textAlign: 'center',
-          fontSize: window.innerWidth < 640 ? '0.75rem' : '0.813rem',
-          color: 'rgba(241, 245, 249, 0.6)',
-          lineHeight: '1.5'
-        }}>
-          <div style={{ marginBottom: '0.5rem' }}>
-            🔒 Secure sign-in with Google
-          </div>
-          <div style={{ 
-            fontSize: window.innerWidth < 640 ? '0.688rem' : '0.813rem' 
+        {/* Trust */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+            fontSize: '0.75rem', color: 'rgba(241,245,249,0.5)', marginBottom: '0.625rem',
           }}>
-            26% ROI, 38% Kelly (as of Nov 6) | Tracked Since Oct 2025 | Cancel Anytime
+            <Shield size={12} color="#94A3B8" />
+            Secure sign-in with Google · No password needed
+          </div>
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+            gap: isMobile ? '0.5rem' : '1rem',
+          }}>
+            {[
+              { label: 'Tracked Since Oct 2025', color: '#D4AF37' },
+              { label: '200+ Sharp Wallets', color: '#10B981' },
+              { label: 'Cancel Anytime', color: '#60A5FA' },
+            ].map(({ label, color }, i) => (
+              <span key={i} style={{
+                fontSize: '0.688rem', fontWeight: 600, color,
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+              }}>
+                <Check size={10} color={color} />
+                {label}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -275,18 +254,10 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        
         @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -295,9 +266,7 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
     </div>
   );
 
-  // Render to document.body to escape stacking context issues
   return createPortal(modalContent, document.body);
 };
 
 export default AuthModal;
-
