@@ -11,6 +11,8 @@ import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarCha
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
 
 // ─── Brand Design System ──────────────────────────────────────────────────────
 const B = {
@@ -3586,12 +3588,14 @@ function SportTabs({ active, onChange }) {
 }
 
 function FoundingMemberBanner({ isMobile }) {
+  const { user } = useAuth();
+  const { isPremium } = useSubscription(user);
   const [copied, setCopied] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     try { return sessionStorage.getItem('sf_promo_dismissed') === '1'; } catch { return false; }
   });
 
-  if (dismissed) return null;
+  if (isPremium || dismissed) return null;
 
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
