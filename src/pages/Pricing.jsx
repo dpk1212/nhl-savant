@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, Crown, Zap, Target, TrendingUp, Shield, Gift, X, Copy, Clock, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -24,8 +24,13 @@ const logEvent = (eventName, params) => {
   }
 };
 
+const PROMO_CODES = {
+  SHARPMONEY: { code: 'SHARPMONEY', discount: 50 },
+};
+
 const Pricing = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { tier: currentTier, isPremium } = useSubscription(user);
   const { stats: combinedStats, loading: statsLoading } = useCombinedStats();
@@ -35,9 +40,22 @@ const Pricing = () => {
   const [spinsRemaining, setSpinsRemaining] = useState(2);
   const [activeDiscount, setActiveDiscount] = useState(null); // { code, discount, timeLeft }
   const [copied, setCopied] = useState(false);
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  // Check for promo code in URL query params (e.g. ?promo=SHARPMONEY)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const promo = params.get('promo')?.toUpperCase();
+    if (promo && PROMO_CODES[promo]) {
+      const p = PROMO_CODES[promo];
+      setActiveDiscount({ code: p.code, discount: p.discount, timeLeft: null });
+      setPromoApplied(true);
+    }
+  }, [location.search]);
 
   // Load spins remaining and check for active discount on mount
   useEffect(() => {
+    if (promoApplied) return;
     const loadSpins = async () => {
       try {
         const { getDailySpins, checkAndResetDaily } = await import('../utils/spinTracker');
@@ -67,11 +85,11 @@ const Pricing = () => {
       }
     };
     checkExistingDiscount();
-  }, [user]);
+  }, [user, promoApplied]);
 
-  // Countdown timer for active discount
+  // Countdown timer for active discount (skip for promo-applied discounts which have no expiry)
   useEffect(() => {
-    if (!activeDiscount || activeDiscount.timeLeft <= 0) return;
+    if (!activeDiscount || activeDiscount.timeLeft == null || activeDiscount.timeLeft <= 0) return;
 
     const timer = setInterval(() => {
       setActiveDiscount(prev => {
@@ -294,8 +312,55 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Spin for Discount Section - Show for non-premium users */}
-        {!isPremium && (spinsRemaining > 0 || activeDiscount) && (
+        {/* Promo code applied banner — replaces spinner when arriving via promo link */}
+        {!isPremium && promoApplied && activeDiscount && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(212,175,55,0.12) 100%)',
+            border: '2px solid rgba(16,185,129,0.5)',
+            borderRadius: '16px',
+            padding: window.innerWidth < 640 ? '1.5rem' : '2rem',
+            marginBottom: '3rem',
+            textAlign: 'center',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+              background: 'linear-gradient(90deg, transparent, #10B981, #D4AF37, transparent)',
+            }} />
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: '0.75rem', marginBottom: '0.5rem',
+            }}>
+              <Check size={24} color="#10B981" />
+              <h3 style={{
+                fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 800,
+                background: 'linear-gradient(135deg, #10B981 0%, #D4AF37 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0,
+              }}>
+                {activeDiscount.discount}% Founding Member Discount Applied
+              </h3>
+            </div>
+            <p style={{
+              fontSize: window.innerWidth < 640 ? '0.938rem' : '1rem',
+              color: 'rgba(241,245,249,0.8)', marginBottom: '0.75rem', lineHeight: 1.5,
+            }}>
+              Code <strong style={{ color: '#D4AF37' }}>{activeDiscount.code}</strong> is applied to all plans below. Lock this rate in forever.
+            </p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '10px',
+              background: 'rgba(0,0,0,0.35)', padding: '10px 20px', borderRadius: '10px',
+              border: '1px solid rgba(16,185,129,0.35)',
+            }}>
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CODE:</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10B981', fontFamily: 'monospace', letterSpacing: '0.08em' }}>{activeDiscount.code}</span>
+              <span style={{ ...{ fontSize: '0.688rem', fontWeight: 700 }, padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(16,185,129,0.2)', color: '#10B981' }}>
+                {activeDiscount.discount}% OFF
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Spin for Discount Section - Show for non-premium users (hidden when promo is pre-applied) */}
+        {!isPremium && !promoApplied && (spinsRemaining > 0 || activeDiscount) && (
           <div style={{
             background: activeDiscount 
               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(212, 175, 55, 0.15) 100%)'
