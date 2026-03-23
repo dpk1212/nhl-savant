@@ -38,10 +38,10 @@ const AuthModal = ({ isOpen, onClose, tier = null }) => {
   const tierTrials = { scout: '5-day', elite: '7-day', pro: '10-day' };
 
   const features = [
-    { icon: Zap, text: 'Whale Intel — verified sharp money tracker' },
+    { icon: Zap, text: 'Verified sharp bettor tracking in real time' },
     { icon: TrendingUp, text: 'Daily +EV picks with quality grades' },
-    { icon: BarChart3, text: 'Pinnacle fair value + retail EV edge' },
-    { icon: Shield, text: 'Blockchain-verified sharp positions' },
+    { icon: BarChart3, text: 'Pinnacle fair value + best retail EV edge' },
+    { icon: Shield, text: 'Full market flow, line moves, & whale action' },
   ];
 
   const modalContent = (

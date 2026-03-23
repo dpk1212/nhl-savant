@@ -3611,10 +3611,12 @@ function FoundingMemberBanner({ isMobile }) {
   };
 
   const features = [
-    'Blockchain-verified sharp positions',
-    'Pinnacle fair value + retail EV edge',
-    'Auto-locked plays with unit sizing',
-    'Real-time whale consensus tracking',
+    'Verified sharp bettor tracking in real time',
+    'Pinnacle fair value + best retail EV edge',
+    'Auto-locked plays with smart unit sizing',
+    'Full market flow — tickets, money, & whale action',
+    'Line movement alerts + reverse line moves',
+    'Complete performance dashboard with ROI tracking',
   ];
 
   return (
@@ -3670,9 +3672,9 @@ function FoundingMemberBanner({ isMobile }) {
             ...T.body, color: B.textSec, margin: '0 0 1.25rem 0',
             maxWidth: '600px', lineHeight: 1.6,
           }}>
-            Sharp Flow is the only tool that tracks <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp wallets</span> on-chain
-            — real money, not self-reported picks. Lock in <span style={{ color: B.green, fontWeight: 700 }}>50% off forever</span> before
-            the paywall goes live.
+            We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, surface their real positions
+            on today's games, and combine it with Pinnacle fair odds, EV edges, and full market flow
+            — so you bet with an edge, not a hunch. Lock in <span style={{ color: B.green, fontWeight: 700 }}>50% off forever</span> before the paywall goes live.
           </p>
 
           {/* Feature grid */}
