@@ -3661,21 +3661,45 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
         ) : null;
       })()}
 
-      {/* Whale Intel CTA */}
+      {/* Sharp Flow CTA */}
       <Link to="/sharp-flow" style={{ textDecoration: 'none', display: 'block', marginBottom: '1rem' }}>
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-          padding: '0.75rem 1.25rem', borderRadius: '10px',
-          background: 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%)',
+          position: 'relative', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.75rem 1.25rem', borderRadius: '12px',
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.10) 0%, rgba(16,185,129,0.06) 100%)',
           border: '1px solid rgba(212,175,55,0.25)',
           cursor: 'pointer', transition: 'all 0.3s ease',
         }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.08) 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(212,175,55,0.2)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.5)'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(212,175,55,0.15)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
         >
-          <span style={{ fontSize: '1rem' }}>⚡</span>
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#D4AF37' }}>Whale Intel — Sharp Money Tracker</span>
-          <span style={{ fontSize: '0.75rem', color: 'rgba(212,175,55,0.7)' }}>→</span>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #D4AF37, #10B981, #D4AF37)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '8px',
+              background: 'rgba(212,175,55,0.15)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <span style={{ fontSize: '0.875rem' }}>⚡</span>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#D4AF37', letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+                Sharp Flow
+              </div>
+              <div style={{ fontSize: '0.688rem', fontWeight: 500, color: 'rgba(148,163,184,0.9)', lineHeight: 1.3 }}>
+                Sharp bettors · Market flow · EV edges
+              </div>
+            </div>
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            padding: '0.3rem 0.625rem', borderRadius: '6px',
+            background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
+          }}>
+            <span style={{ fontSize: '0.688rem', fontWeight: 700, color: '#10B981' }}>LIVE</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(212,175,55,0.8)' }}>→</span>
+          </div>
         </div>
       </Link>
 
