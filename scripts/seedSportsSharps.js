@@ -244,7 +244,7 @@ async function run() {
     : 0;
 
   output._meta = {
-    ready: qualified.length >= 50,
+    ready: qualified.length > 0,
     seededAt: now,
     walletCount: qualified.length,
     minSportPnl: minPnl,

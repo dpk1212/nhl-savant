@@ -109,8 +109,8 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 │  Polymarket ──────→ whale_profiles.json   (legacy, 4x/day) │
 │  Scan step  ──────→ sharp_positions.json  (every 15 min)    │
 │                                                              │
-│  scanSharpPositions reads sports_sharps.json if ready,      │
-│  falls back to whale_profiles.json otherwise.               │
+│  scanSharpPositions merges whale_profiles.json (base)        │
+│  + sports_sharps.json (supplementary sport-profitable).     │
 │                                                              │
 ├──────────────────────────────────────────────────────────────┤
 │                    UI (SharpFlow.jsx)                         │
@@ -167,9 +167,9 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 - **Note**: This pipeline is kept running as a fallback. `scanSharpPositions.js` uses `whale_profiles.json` only if `sports_sharps.json` is missing or not ready.
 
 #### `scripts/scanSharpPositions.js`
-- **Dual-source loading**: Prefers `sports_sharps.json` (if `_meta.ready` and `walletCount >= 50`), otherwise falls back to `whale_profiles.json` with legacy tier/mmScore filtering
-- **When using `sports_sharps.json`**: Scans all wallets in the file — no tier/mmScore filtering needed (pre-qualified by sport PnL)
-- **When using `whale_profiles.json`**: Scans ELITE + PROVEN + ACTIVE wallets, excluding mmScore > 40 and sport PnL < -$100K
+- **Additive merge**: Loads `whale_profiles.json` as the base (tier/mmScore filtering), then merges in any additional wallets from `sports_sharps.json` that aren't already in the base list
+- **Base wallets**: ELITE + PROVEN + ACTIVE wallets from `whale_profiles.json`, excluding mmScore > 40 and sport PnL < -$100K
+- **Supplementary wallets**: All wallets from `sports_sharps.json` not already in the base list — pre-qualified by sport PnL, no tier/mmScore filtering needed
 - **API**: Polymarket `/positions?user={wallet}` for each wallet
 - **Filters out**: Resolved positions (curPrice ≤ 0.01 or ≥ 0.99), totals (Over/Under outcomes)
 - **Matches**: Position titles to today's games using team name mapping
