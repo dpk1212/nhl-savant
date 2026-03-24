@@ -1,0 +1,38 @@
+name: Seed Sports Sharps
+
+on:
+  schedule:
+    # 10 AM and 10 PM ET (14:00 and 02:00 UTC)
+    - cron: '0 14,2 * * *'
+  workflow_dispatch:
+
+jobs:
+  seed-sharps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed sports sharps
+        run: node scripts/seedSportsSharps.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/sports_sharps.json
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-seed: Sports sharps [$(date +'%Y-%m-%d %H:%M')]" &&
+            git pull --rebase -X theirs || (git add -A && git rebase --continue) &&
+            git push
+          )

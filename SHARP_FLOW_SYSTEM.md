@@ -12,7 +12,11 @@ Unlike tout services that sell picks based on opinions, Sharp Flow is built on *
 
 **1. Finding the Sharps**
 
-We scan the Polymarket leaderboard for the top 200 most profitable sports bettors by all-time P&L. These are wallets with verifiable track records — some with **$5M+ in lifetime profit**. Every wallet gets assigned a tier:
+We scan the top 1,500 entries on the Polymarket sports leaderboard, profile every wallet's positions, and **rank them purely by sport P&L** — the sum of profit/loss across all sports markets (NHL, CBB, NBA, NFL, MLB). We take the **top 250 wallets with $5K+ sport P&L**. These are the most profitable *sports* bettors on the platform, not just high-volume generalists.
+
+This list is rebuilt twice a day by a dedicated `seedSportsSharps.js` pipeline and stored in `sports_sharps.json`. Because qualification is based solely on verified sport profit, there is no need for market-maker scoring or tier-based filtering — every wallet in the file is pre-qualified.
+
+**Legacy tiers** (still used as a fallback if `sports_sharps.json` is unavailable):
 
 | Tier | Criteria | What It Means |
 |------|----------|---------------|
@@ -95,29 +99,33 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 ### Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    DATA COLLECTION                       │
-│                                                          │
-│  Polymarket API ──→ polymarket_data.json (every 15 min) │
-│  Kalshi API ──────→ kalshi_data.json     (every 15 min) │
-│  Odds API ────────→ pinnacle_history.json(every 15 min) │
-│  Polymarket ──────→ whale_profiles.json  (2x daily)     │
-│  Polymarket ──────→ sharp_positions.json (every 2 hrs)  │
-│                                                          │
-├─────────────────────────────────────────────────────────┤
-│                    UI (SharpFlow.jsx)                    │
-│                                                          │
-│  Reads all 5 JSON files from public/                    │
-│  Scores signals, applies criteria, renders cards        │
-│  Writes locked picks to Firebase (sharpFlowPicks)       │
-│                                                          │
-├─────────────────────────────────────────────────────────┤
-│                    GRADING (Firebase Functions)          │
-│                                                          │
-│  updateBetResults ──→ Grades bets + sharpFlowPicks      │
-│  Runs every 10 min, uses live_scores/current            │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    DATA COLLECTION                            │
+│                                                              │
+│  Polymarket API ──→ polymarket_data.json  (every 15 min)    │
+│  Kalshi API ──────→ kalshi_data.json      (every 15 min)    │
+│  Odds API ────────→ pinnacle_history.json (every 15 min)    │
+│  Polymarket ──────→ sports_sharps.json    (2x daily)  [NEW] │
+│  Polymarket ──────→ whale_profiles.json   (legacy, 4x/day) │
+│  Scan step  ──────→ sharp_positions.json  (every 15 min)    │
+│                                                              │
+│  scanSharpPositions reads sports_sharps.json if ready,      │
+│  falls back to whale_profiles.json otherwise.               │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│                    UI (SharpFlow.jsx)                         │
+│                                                              │
+│  Reads all 5 JSON files from public/                        │
+│  Scores signals, applies criteria, renders cards            │
+│  Writes locked picks to Firebase (sharpFlowPicks)           │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│                    GRADING (Firebase Functions)               │
+│                                                              │
+│  updateBetResults ──→ Grades bets + sharpFlowPicks          │
+│  Runs every 10 min, uses live_scores/current                │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### GitHub Actions Workflows
@@ -125,8 +133,9 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 | Workflow | Schedule | Script(s) | Data Written | Deploys UI? |
 |----------|----------|-----------|--------------|-------------|
 | **fetch-polymarket.yml** | Every 15 min | `fetchPolymarketData.js`, `fetchKalshiData.js`, `snapshotPinnacle.js`, `scanSharpPositions.js`, `auditMarketData.js` | `polymarket_data.json`, `kalshi_data.json`, `pinnacle_history.json`, `sharp_positions.json` | **YES** — builds & deploys to gh-pages |
-| **build-whale-profiles.yml** | 10 AM & 4 PM ET | `buildWhaleProfiles.js` | `whale_profiles.json` | No |
-| **seed-whale-leaderboard.yml** | Every 4 hrs (:30) | `buildWhaleProfiles.js --seed` | `whale_profiles.json` | No |
+| **seed-sports-sharps.yml** | 10 AM & 10 PM ET | `seedSportsSharps.js` | `sports_sharps.json` | No |
+| **build-whale-profiles.yml** | 8 AM, 12 PM, 4 PM, 8 PM ET | `buildWhaleProfiles.js` | `whale_profiles.json` | No |
+| **seed-whale-leaderboard.yml** | Every 3 hrs (:30) | `buildWhaleProfiles.js --seed` | `whale_profiles.json` | No |
 | **scan-sharp-positions.yml** | Every 2 hrs (:15) | `scanSharpPositions.js` | `sharp_positions.json` | No |
 
 **Critical Note**: The `fetch-polymarket.yml` workflow is the **only workflow that deploys the UI**. Any code changes to `src/` MUST be pushed to `main` before this workflow runs, or the deployment will overwrite local deploys with stale code.
@@ -139,15 +148,28 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 - **Price History**: Fetches 24h candles from CLOB for token[0] of the ML market, samples ~12 points for sparkline. Flips if token[0] is not the away team.
 - **Output**: `public/polymarket_data.json` keyed by sport → game_key (e.g., `NHL.bos_njd`)
 
-#### `scripts/buildWhaleProfiles.js`
+#### `scripts/seedSportsSharps.js`
+- **Purpose**: Builds the definitive list of top 250 most profitable sports bettors
+- **Sources**: Polymarket leaderboard API (`/v1/leaderboard?category=SPORTS`), depth 1,500 entries
+- **Per wallet**: Fetches `/positions` (P&L by sport) and `/traded` (market count)
+- **Ranking**: Sorts all wallets by `sportPnlTotal` (sum of all sport P&L), takes top 250 above $5K
+- **No MM scoring**: Wallets are qualified purely by sport profit — no tier/mmScore logic
+- **Incremental**: Only re-profiles wallets whose `builtAt` is older than 48 hours
+- **Ready flag**: Output includes `_meta.ready` — `scanSharpPositions.js` only uses the file when `ready: true` and `walletCount >= 50`
+- **Output**: `public/sports_sharps.json` — `{ _meta: {...}, [walletAddress]: { totalPnl, sportPnl, sportPnlTotal, sportMarkets, marketsTraded, ... } }`
+
+#### `scripts/buildWhaleProfiles.js` (legacy, unchanged)
 - **Sources**: Polymarket leaderboard API (`/v1/leaderboard?category=SPORTS`) + whale trades from `polymarket_data.json`
 - **Per wallet**: Fetches `/positions` (P&L) and `/traded` (market count)
 - **Tier assignment**: `tierFromStats(totalPnl, marketsTraded)` — see Part 1 table
 - **Rate limiting**: 1.5s delay between API calls (1s in seed mode), max 40 wallets/run (50 in seed)
 - **Output**: `public/whale_profiles.json` — `{ [walletAddress]: { totalPnl, sportPnl, marketsTraded, tier, lastSeen, pnlHistory } }`
+- **Note**: This pipeline is kept running as a fallback. `scanSharpPositions.js` uses `whale_profiles.json` only if `sports_sharps.json` is missing or not ready.
 
 #### `scripts/scanSharpPositions.js`
-- **Scans**: All ELITE + PROVEN wallets from `whale_profiles.json`
+- **Dual-source loading**: Prefers `sports_sharps.json` (if `_meta.ready` and `walletCount >= 50`), otherwise falls back to `whale_profiles.json` with legacy tier/mmScore filtering
+- **When using `sports_sharps.json`**: Scans all wallets in the file — no tier/mmScore filtering needed (pre-qualified by sport PnL)
+- **When using `whale_profiles.json`**: Scans ELITE + PROVEN + ACTIVE wallets, excluding mmScore > 40 and sport PnL < -$100K
 - **API**: Polymarket `/positions?user={wallet}` for each wallet
 - **Filters out**: Resolved positions (curPrice ≤ 0.01 or ≥ 0.99), totals (Over/Under outcomes)
 - **Matches**: Position titles to today's games using team name mapping
@@ -281,7 +303,8 @@ This accepts the remote version on conflict (safe because each workflow regenera
 | `pinnacle_history.json` | 24 snapshots/game max, 36-hour stale purge | **None** — self-cleaning |
 | `polymarket_data.json` | Rewritten from scratch each run (today's games only) | **None** — self-cleaning |
 | `sharp_positions.json` | Rewritten from scratch each run (today's games only) | **None** — self-cleaning |
-| `whale_profiles.json` | 300 profile cap, 30-day stale pruning, 30-entry pnlHistory cap | **None** — bounded |
+| `sports_sharps.json` | 250 wallet cap, 48-hour incremental refresh | **None** — bounded |
+| `whale_profiles.json` | 1000 profile cap, 30-day stale pruning, 30-entry pnlHistory cap | **None** — bounded |
 | Firebase `sharpFlowPicks` | No cleanup — documents accumulate indefinitely | **Low** — ~500 docs/season |
 | Git commit history | ~96 auto-commits/day from data file updates across workflows | **Medium** — repo clone size grows over months |
 

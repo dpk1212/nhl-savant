@@ -254,9 +254,40 @@ async function run() {
   console.log('Scanning sharp wallet positions on today\'s games...\n');
 
   const polyData = loadJSON('polymarket_data.json');
-  const profiles = loadJSON('whale_profiles.json');
-  if (!polyData || !profiles) {
-    console.log('Missing polymarket_data.json or whale_profiles.json');
+  if (!polyData) {
+    console.log('Missing polymarket_data.json');
+    process.exit(0);
+  }
+
+  // Prefer sports_sharps.json (pre-qualified top sport bettors) over whale_profiles.json
+  const sharpsFile = join(ROOT, 'public', 'sports_sharps.json');
+  let useSportsSharps = false;
+  let profiles;
+
+  if (existsSync(sharpsFile)) {
+    try {
+      const raw = JSON.parse(readFileSync(sharpsFile, 'utf-8'));
+      const meta = raw._meta || {};
+      if (meta.ready && meta.walletCount >= 50) {
+        useSportsSharps = true;
+        const { _meta, ...wallets } = raw;
+        profiles = wallets;
+        console.log(`Using sports_sharps.json (${meta.walletCount} wallets, seeded ${new Date(meta.seededAt).toISOString()})`);
+      } else {
+        console.log(`sports_sharps.json exists but not ready (ready=${meta.ready}, count=${meta.walletCount}) — falling back`);
+      }
+    } catch (e) {
+      console.log(`sports_sharps.json parse error — falling back: ${e.message}`);
+    }
+  }
+
+  if (!useSportsSharps) {
+    profiles = loadJSON('whale_profiles.json');
+    console.log('Using whale_profiles.json (legacy mode)');
+  }
+
+  if (!profiles) {
+    console.log('No profile source available');
     process.exit(0);
   }
 
@@ -272,28 +303,39 @@ async function run() {
     return;
   }
 
-  // Select ELITE and PROVEN wallets to scan, excluding market makers + sports losers
-  const MM_THRESHOLD = 40;
-  const SPORT_PNL_FLOOR = -100000;
+  let walletsToScan;
+  let mmFiltered = [];
+  let sportLosers = [];
 
-  const allEligible = Object.entries(profiles)
-    .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
+  if (useSportsSharps) {
+    // All wallets in sports_sharps.json are pre-qualified by sport PnL — no filtering needed
+    walletsToScan = Object.entries(profiles)
+      .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier || 'SHARP', totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0 }))
+      .sort((a, b) => (b.sportPnlTotal || 0) - (a.sportPnlTotal || 0));
+    console.log(`Scanning ${walletsToScan.length} pre-qualified sports sharps...\n`);
+  } else {
+    // Legacy filtering: tier + mmScore + sport PnL floor
+    const MM_THRESHOLD = 40;
+    const SPORT_PNL_FLOOR = -100000;
 
-  const isExcluded = (p) => {
-    if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
-    const sportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-    if (sportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
-    return false;
-  };
+    const allEligible = Object.entries(profiles)
+      .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
 
-  const mmFiltered = allEligible.filter(([, p]) => isExcluded(p) === 'mm');
-  const sportLosers = allEligible.filter(([, p]) => isExcluded(p) === 'sport_loser');
-  const walletsToScan = allEligible
-    .filter(([, p]) => !isExcluded(p))
-    .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }))
-    .sort((a, b) => b.totalPnl - a.totalPnl);
+    const isExcluded = (p) => {
+      if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
+      const sportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+      if (sportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
+      return false;
+    };
 
-  console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers excluded)...\n`);
+    mmFiltered = allEligible.filter(([, p]) => isExcluded(p) === 'mm');
+    sportLosers = allEligible.filter(([, p]) => isExcluded(p) === 'sport_loser');
+    walletsToScan = allEligible
+      .filter(([, p]) => !isExcluded(p))
+      .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }))
+      .sort((a, b) => b.totalPnl - a.totalPnl);
+    console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers excluded)...\n`);
+  }
 
   // Build lookup of previous firstSeen timestamps to preserve across rescans
   const prevData = loadJSON('sharp_positions.json');
