@@ -9,7 +9,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle } from 'lucide-react';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
-import { collection, doc, setDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -133,17 +133,28 @@ function profitFromOdds(odds, units) {
 async function writeLockedPick(pick) {
   try {
     const docId = `${pick.date}_${pick.gameKey}`;
-    await setDoc(doc(db, 'sharpFlowPicks', docId), pick, { merge: true });
+    const ref = doc(db, 'sharpFlowPicks', docId);
+    const snap = await getDoc(ref);
+    if (snap.exists()) return;
+    await setDoc(ref, pick);
   } catch (err) {
     console.warn('Failed to write locked pick:', err.message);
   }
 }
 
-async function loadLockedPicks(date) {
+function gameDate(commenceTime) {
+  if (!commenceTime) return todayET();
+  return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+async function loadLockedPicks() {
   try {
+    const today = todayET();
+    const yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
+      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     const q = query(
       collection(db, 'sharpFlowPicks'),
-      where('date', '==', date),
+      where('date', 'in', [today, yesterday]),
       orderBy('lockedAt', 'desc'),
     );
     const snap = await getDocs(q);
@@ -2985,14 +2996,13 @@ export default function SharpFlow() {
 
   // Load existing locked picks + all-time P&L on mount
   useEffect(() => {
-    loadLockedPicks(todayET()).then(setLockedPicks);
+    loadLockedPicks().then(setLockedPicks);
     loadAllTimePnL().then(setAllTimePnL);
   }, []);
 
-  // Auto-lock qualifying picks to Firebase
+  // Auto-lock qualifying PREGAME picks to Firebase
   const syncLockedPicks = useCallback(() => {
     if (!sharpPositions || !pinnacleHistory) return;
-    const date = todayET();
     for (const sport of ['NHL', 'CBB']) {
       const sportGames = sharpPositions?.[sport] || {};
       for (const [key, gd] of Object.entries(sportGames)) {
@@ -3001,6 +3011,12 @@ export default function SharpFlow() {
         const side = s.consensus;
         const team = side === 'away' ? gd.away : gd.home;
         const pinnGame = pinnacleHistory?.[sport]?.[key];
+
+        // Only lock pregame — skip live/started games
+        const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+        const isLive = commenceTime && Date.now() >= commenceTime;
+        if (isLive) continue;
+
         const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
         const odds = side === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
         const bestRetail = side === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
@@ -3045,13 +3061,12 @@ export default function SharpFlow() {
           polyMovingWith,
         ];
         const criteriaMet = checks.filter(Boolean).length;
+
+        // Use game date (from commence time) as the canonical date, not wall clock
+        const date = gameDate(commenceTime);
         const docId = `${date}_${key}`;
 
         if (criteriaMet >= 4 && cGrade.label !== 'CONTESTED' && !lockedPicks[docId]) {
-          const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
-          const isLive = commenceTime && Date.now() >= commenceTime;
-          const lockType = isLive ? 'LIVE' : 'PREGAME';
-
           const betOdds = bestRetail || odds;
           const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested, cGrade.penalty);
           const potentialProfit = profitFromOdds(betOdds, units);
@@ -3064,7 +3079,8 @@ export default function SharpFlow() {
             consensusSide: side,
             consensusTeam: team,
             market: 'MONEYLINE',
-            lockType,
+            lockType: 'PREGAME',
+            commenceTime: commenceTime || null,
             consensusStrength: { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label },
             criteriaMet,
             criteria: {
