@@ -3136,11 +3136,15 @@ export default function SharpFlow() {
             pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
             sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength,
           }).then(({ docId: id, action }) => {
-            if (action === 'created' || action === 'side_added' || action === 'peak_updated') {
+            if (action !== 'error') {
               setLockedPicks(prev => {
                 const prevDoc = prev[id] || {};
                 const prevSides = prevDoc.sides || {};
                 const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label };
+                if (action === 'no_change') {
+                  if (prevSides[evalSide]) return prev;
+                  return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { peak: prevSides[evalSide]?.peak || sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
+                }
                 return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { ...prevSides[evalSide], peak: sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
               });
             }
