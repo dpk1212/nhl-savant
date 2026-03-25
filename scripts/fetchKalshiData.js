@@ -466,7 +466,7 @@ function extractTotalData(markets) {
 
 // ─── Main ────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
   const { validCBB, validNHL } = await loadTodaysSchedule(cbbMap);
 
@@ -709,8 +709,9 @@ async function run() {
   writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
   const cbbCount = Object.keys(out.CBB).length;
   const nhlCount = Object.keys(out.NHL).length;
-  console.log(`\n✅ Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}`);
-  if (cbbCount === 0 && nhlCount === 0) {
+  const mlbCount = Object.keys(out.MLB).length;
+  console.log(`\n✅ Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}`);
+  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0) {
     console.log('(No Kalshi markets matched today\'s schedule)');
   }
 }

@@ -181,6 +181,45 @@ function parseCSVLine(line) {
   return values;
 }
 
+// ─── MLB: Polymarket names -> team codes ─────────────────────────────────────
+const MLB_NAME_TO_CODE = {
+  'Arizona': 'ARI', 'Atlanta': 'ATL', 'Baltimore': 'BAL', 'Boston': 'BOS',
+  'Chicago Cubs': 'CHC', 'Chicago White Sox': 'CWS', 'Cincinnati': 'CIN',
+  'Cleveland': 'CLE', 'Colorado': 'COL', 'Detroit': 'DET', 'Houston': 'HOU',
+  'Kansas City': 'KCR', 'Los Angeles Angels': 'LAA', 'Los Angeles Dodgers': 'LAD',
+  'Miami': 'MIA', 'Milwaukee': 'MIL', 'Minnesota': 'MIN', 'New York Mets': 'NYM',
+  'New York Yankees': 'NYY', 'Oakland': 'OAK', 'Philadelphia': 'PHI',
+  'Pittsburgh': 'PIT', 'San Diego': 'SDP', 'San Francisco': 'SFG',
+  'Seattle': 'SEA', 'St. Louis': 'STL', 'Tampa Bay': 'TBR', 'Texas': 'TEX',
+  'Toronto': 'TOR', 'Washington': 'WSH',
+};
+const MLB_MAP = {
+  diamondbacks: 'ARI', dbacks: 'ARI', braves: 'ATL', orioles: 'BAL',
+  redsox: 'BOS', cubs: 'CHC', whitesox: 'CWS', reds: 'CIN',
+  guardians: 'CLE', rockies: 'COL', tigers: 'DET', astros: 'HOU',
+  royals: 'KCR', angels: 'LAA', dodgers: 'LAD', marlins: 'MIA',
+  brewers: 'MIL', twins: 'MIN', mets: 'NYM', yankees: 'NYY',
+  athletics: 'OAK', as: 'OAK', phillies: 'PHI', pirates: 'PIT',
+  padres: 'SDP', giants: 'SFG', mariners: 'SEA', cardinals: 'STL',
+  stlouis: 'STL', rays: 'TBR', tampabay: 'TBR', rangers: 'TEX',
+  bluejays: 'TOR', nationals: 'WSH',
+};
+Object.entries(MLB_NAME_TO_CODE).forEach(([name, code]) => {
+  const n = normalize(name);
+  if (!MLB_MAP[n]) MLB_MAP[n] = code;
+});
+
+function resolveMLBTeam(raw) {
+  const n = normalize(raw);
+  if (MLB_MAP[n]) return MLB_MAP[n];
+  const words = raw.split(/\s+/);
+  for (const w of words) {
+    const wn = normalize(w);
+    if (MLB_MAP[wn]) return MLB_MAP[wn];
+  }
+  return null;
+}
+
 // ─── NHL: Polymarket names -> OddsTrader TEAM CODES (LAK, NYI, etc.) ────────
 const NHL_NAME_TO_CODE = {
   'Boston': 'BOS', 'Toronto': 'TOR', 'Montreal': 'MTL', 'Ottawa': 'OTT',
@@ -284,6 +323,12 @@ function matchToGameKey(teams, cbbMap, sport) {
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
+  if (sport === 'MLB') {
+    const aCode = resolveMLBTeam(normalize(a)) || resolveMLBTeam(normalize(a.replace(/\s/g, '')));
+    const bCode = resolveMLBTeam(normalize(b)) || resolveMLBTeam(normalize(b.replace(/\s/g, '')));
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
+  }
   return null;
 }
 
@@ -291,6 +336,7 @@ function matchToGameKey(teams, cbbMap, sport) {
 async function loadTodaysSchedule(cbbMap) {
   const validCBB = new Set();
   const validNHL = new Set();
+  const validMLB = new Set();
 
   // CBB: use Odds API (reliable, structured) instead of scraping OddsTrader markdown
   if (ODDS_API_KEY) {
@@ -331,14 +377,39 @@ async function loadTodaysSchedule(cbbMap) {
   } catch (e) {
     console.warn('Could not load NHL schedule:', e.message);
   }
-  return { validCBB, validNHL };
+
+  // MLB: use Odds API
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = resolveMLBTeam(g.away_team);
+          const home = resolveMLBTeam(g.home_team);
+          if (away && home) {
+            validMLB.add(`${normalize(away)}_${normalize(home)}`);
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's MLB (Odds API): ${validMLB.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API MLB error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load MLB schedule from Odds API:', e.message);
+    }
+  }
+
+  return { validCBB, validNHL, validMLB };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -347,6 +418,8 @@ async function run() {
     { slug: 'basketball', sport: null },
     { slug: 'cbb', sport: 'CBB' },
     { slug: 'nhl', sport: 'NHL' },
+    { slug: 'mlb', sport: 'MLB' },
+    { slug: 'baseball', sport: 'MLB' },
   ];
 
   const seen = new Set();
@@ -377,30 +450,31 @@ async function run() {
     const teams = extractTeamsFromTitle(title);
     if (!teams) continue;
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'nba' ? 'NBA' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : null;
     if (!sport) {
       const t = title.toLowerCase();
       if (/ncaa|college|basketball/.test(t) && !/nba|champion|winner|tournament winner/.test(t)) sport = 'CBB';
       else if (/nhl|hockey/.test(t) && !/champion|winner|stanley/.test(t)) sport = 'NHL';
+      else if (/mlb|baseball/.test(t) && !/champion|winner|world series winner/.test(t)) sport = 'MLB';
       else {
-        // Infer from team matching: try CBB first, then NHL (for "Team A vs Team B" with no sport keywords)
         const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
         const nhlKey = matchToGameKey(teams, cbbMap, 'NHL');
+        const mlbKey = matchToGameKey(teams, cbbMap, 'MLB');
         if (cbbKey && validCBB.has(cbbKey)) sport = 'CBB';
         else if (nhlKey && validNHL.has(nhlKey)) sport = 'NHL';
+        else if (mlbKey && validMLB.has(mlbKey)) sport = 'MLB';
       }
     }
-    if (!sport || (sport !== 'CBB' && sport !== 'NHL')) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB'].includes(sport)) continue;
 
     const key = matchToGameKey(teams, cbbMap, sport);
     if (!key || seen.has(key)) continue;
 
-    const sportKey = sport === 'CBB' ? 'CBB' : 'NHL';
-    const validSet = sportKey === 'CBB' ? validCBB : validNHL;
+    const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : validNHL;
     if (!validSet.has(key)) continue;
     seen.add(key);
 
-    const bucket = out[sportKey];
+    const bucket = out[sport];
 
     try {
       const live = await getLiveVolume(id);
@@ -561,8 +635,9 @@ async function run() {
   writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
   const cbbCount = Object.keys(out.CBB).length;
   const nhlCount = Object.keys(out.NHL).length;
-  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}`);
-  if (cbbCount === 0 && nhlCount === 0) {
+  const mlbCount = Object.keys(out.MLB).length;
+  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}`);
+  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0) {
     console.log('(No Polymarket markets matched today\'s schedule)');
   }
 }

@@ -28,6 +28,7 @@ if (!API_KEY) {
 const SPORTS = [
   { key: 'icehockey_nhl', label: 'NHL' },
   { key: 'basketball_ncaab', label: 'CBB' },
+  { key: 'baseball_mlb', label: 'MLB' },
 ];
 
 const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
@@ -50,6 +51,20 @@ const NHL_CODES = {
   'Utah Hockey Club': 'uta', 'Utah Mammoth': 'uta',
   'Vancouver Canucks': 'van', 'Vegas Golden Knights': 'vgk',
   'Washington Capitals': 'wsh', 'Winnipeg Jets': 'wpg',
+};
+
+const MLB_CODES = {
+  'Arizona Diamondbacks': 'ari', 'Atlanta Braves': 'atl', 'Baltimore Orioles': 'bal',
+  'Boston Red Sox': 'bos', 'Chicago Cubs': 'chc', 'Chicago White Sox': 'cws',
+  'Cincinnati Reds': 'cin', 'Cleveland Guardians': 'cle', 'Colorado Rockies': 'col',
+  'Detroit Tigers': 'det', 'Houston Astros': 'hou', 'Kansas City Royals': 'kcr',
+  'Los Angeles Angels': 'laa', 'Los Angeles Dodgers': 'lad', 'Miami Marlins': 'mia',
+  'Milwaukee Brewers': 'mil', 'Minnesota Twins': 'min', 'New York Mets': 'nym',
+  'New York Yankees': 'nyy', 'Oakland Athletics': 'oak', 'Philadelphia Phillies': 'phi',
+  'Pittsburgh Pirates': 'pit', 'San Diego Padres': 'sdp', 'San Francisco Giants': 'sfg',
+  'Seattle Mariners': 'sea', 'St. Louis Cardinals': 'stl', 'St Louis Cardinals': 'stl',
+  'Tampa Bay Rays': 'tbr', 'Texas Rangers': 'tex', 'Toronto Blue Jays': 'tor',
+  'Washington Nationals': 'wsh',
 };
 
 const BOOK_DISPLAY = {
@@ -103,6 +118,11 @@ function makeGameKey(away, home, sportLabel) {
   if (sportLabel === 'NHL') {
     const a = NHL_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     const h = NHL_CODES[home] || home.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
+    return `${a}_${h}`;
+  }
+  if (sportLabel === 'MLB') {
+    const a = MLB_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
+    const h = MLB_CODES[home] || home.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     return `${a}_${h}`;
   }
   const aCanon = findCBBTeam(cbbMap, away);

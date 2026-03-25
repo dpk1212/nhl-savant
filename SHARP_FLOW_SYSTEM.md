@@ -143,10 +143,11 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 ### Scripts Reference
 
 #### `scripts/fetchPolymarketData.js`
-- **APIs**: Gamma API (events), Data API (trades, volume, positions), CLOB (price history), Odds API (CBB schedule)
+- **APIs**: Gamma API (events), Data API (trades, volume, positions), CLOB (price history), Odds API (CBB + MLB schedule)
+- **Sports**: NHL (from `odds_money.md`), CBB (from Odds API `basketball_ncaab`), MLB (from Odds API `baseball_mlb`)
 - **ML Market Selection**: Filters out markets where `groupItemTitle` contains "o/u"/"spread" or outcomes include "Over"/"Under". First remaining market = moneyline.
 - **Price History**: Fetches 24h candles from CLOB for token[0] of the ML market, samples ~12 points for sparkline. Flips if token[0] is not the away team.
-- **Output**: `public/polymarket_data.json` keyed by sport → game_key (e.g., `NHL.bos_njd`)
+- **Output**: `public/polymarket_data.json` keyed by sport → game_key (e.g., `NHL.bos_njd`, `MLB.nyy_bos`)
 
 #### `scripts/seedSportsSharps.js`
 - **Purpose**: Builds the definitive list of top 250 most profitable sports bettors
@@ -176,7 +177,7 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 - **Output**: `public/sharp_positions.json` — per-game breakdown with `summary` (consensus, invested per side) and `positions` array
 
 #### `scripts/snapshotPinnacle.js`
-- **API**: The Odds API — `icehockey_nhl` and `basketball_ncaab` with bookmakers `pinnacle,draftkings,fanduel,betmgm,caesars`
+- **API**: The Odds API — `icehockey_nhl`, `basketball_ncaab`, and `baseball_mlb` with bookmakers `pinnacle,draftkings,fanduel,betmgm,caesars`
 - **Tracks**: Opener, current, history (timestamped array), movement direction, best retail price per side, EV calculation
 - **Output**: `public/pinnacle_history.json` keyed by sport → game_key
 
@@ -262,7 +263,7 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 1. Reads `live_scores/current` for FINAL games
 2. Grades regular `bets` collection (existing system)
 3. **Then grades `sharpFlowPicks`**:
-   - Queries `status == "PENDING"`, filters to `sport == "NHL"`
+   - Queries `status == "PENDING"`, filters to `sport == "NHL"` (MLB grading deferred — MLB picks stay PENDING until scoring is added)
    - Maps `gameKey` (e.g., `uta_dal`) to NHL abbreviations (`UTA`, `DAL`) via `ABBREV_MAP`
    - Matches against final games by `awayTeam`/`homeTeam`
    - **v2 format** (`doc.sides` exists): iterates each side, grades using `side.peak.units` and `side.peak.odds`, marks each side's `status: "COMPLETED"`. Top-level `status` becomes `"COMPLETED"` when all sides are graded.

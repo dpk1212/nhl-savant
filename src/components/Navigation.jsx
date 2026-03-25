@@ -16,7 +16,7 @@ const Navigation = () => {
   const sports = [
     { id: 'nhl', label: 'NHL', emoji: '🏒', path: '/', color: '#D4AF37' },
     { id: 'cbb', label: 'College BB', emoji: '🏀', path: '/basketball', color: '#FF6B35' },
-    { id: 'mlb', label: 'Baseball', emoji: '⚾', path: '/mlb', color: '#22C55E', badge: 'COMING SOON' },
+    { id: 'mlb', label: 'Baseball', emoji: '⚾', path: '/mlb', color: '#E31837', badge: 'NEW' },
   ];
   
   const { user, signOut, loading: authLoading } = useAuth();

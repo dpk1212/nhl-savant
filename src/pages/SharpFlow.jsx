@@ -78,9 +78,9 @@ function fmtTime(ts) {
 }
 
 function sportStyle(sport) {
-  return sport === 'CBB'
-    ? { color: '#FF6B35', bg: 'rgba(255,107,53,0.12)', icon: '🏀' }
-    : { color: '#D4AF37', bg: 'rgba(212,175,55,0.12)', icon: '🏒' };
+  if (sport === 'CBB') return { color: '#FF6B35', bg: 'rgba(255,107,53,0.12)', icon: '🏀' };
+  if (sport === 'MLB') return { color: '#E31837', bg: 'rgba(227,24,55,0.12)', icon: '⚾' };
+  return { color: '#D4AF37', bg: 'rgba(212,175,55,0.12)', icon: '🏒' };
 }
 
 function tierInfo(amt) {
@@ -377,6 +377,7 @@ function buildGameData(polyData, kalshiData) {
 
   processSport('CBB');
   processSport('NHL');
+  processSport('MLB');
 
   games.sort((a, b) => b.volume - a.volume);
   return games;
@@ -3050,7 +3051,7 @@ export default function SharpFlow() {
   // Auto-lock qualifying PREGAME picks to Firebase (with peak tracking + flip support)
   const syncLockedPicks = useCallback(() => {
     if (!sharpPositions || !pinnacleHistory) return;
-    for (const sport of ['NHL', 'CBB']) {
+    for (const sport of ['NHL', 'CBB', 'MLB']) {
       const sportGames = sharpPositions?.[sport] || {};
       for (const [key, gd] of Object.entries(sportGames)) {
         if (!gd.positions || gd.positions.length === 0) continue;
@@ -3272,7 +3273,7 @@ export default function SharpFlow() {
         });
         const totalSharpPnl = cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0);
         let totalSharpInvested = 0;
-        for (const sport of ['NHL', 'CBB']) {
+        for (const sport of ['NHL', 'CBB', 'MLB']) {
           const sg = sharpPositions?.[sport] || {};
           for (const [, gd] of Object.entries(sg)) {
             totalSharpInvested += gd.summary?.totalInvested || 0;
@@ -3299,7 +3300,7 @@ export default function SharpFlow() {
             {gamesWithPos > 0 && (() => {
               const allPosGames = [];
               const nowMs = Date.now();
-              for (const sport of ['NHL', 'CBB']) {
+              for (const sport of ['NHL', 'CBB', 'MLB']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
@@ -3619,9 +3620,9 @@ function FlowStatCard({ icon: Icon, label, value, accent, hint }) {
 function SportTabs({ active, onChange }) {
   return (
     <div style={{ display: 'flex', gap: '0.375rem' }}>
-      {['All', 'CBB', 'NHL'].map(key => {
+      {['All', 'CBB', 'NHL', 'MLB'].map(key => {
         const isActive = active === key;
-        const ss = key === 'CBB' ? sportStyle('CBB') : key === 'NHL' ? sportStyle('NHL') : null;
+        const ss = key === 'All' ? null : sportStyle(key);
         return (
           <button key={key} onClick={() => onChange(key)} style={{
             padding: '0.5rem 1.125rem', borderRadius: '8px', cursor: 'pointer',

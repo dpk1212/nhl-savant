@@ -152,6 +152,7 @@ console.log('╚═════════════════════�
 
 auditSport('CBB', poly.CBB || {}, kalshi.CBB || {});
 auditSport('NHL', poly.NHL || {}, kalshi.NHL || {});
+auditSport('MLB', poly.MLB || {}, kalshi.MLB || {});
 
 // Divergence summary
 console.log('DIVERGENCE SUMMARY (Reverse Signals — money ≠ tickets, ≥10pt split)');
@@ -159,6 +160,7 @@ console.log(THIN);
 const allGames = [
   ...Object.keys(poly.CBB || {}).map(k => ({ key: k, sport: 'CBB' })),
   ...Object.keys(poly.NHL || {}).map(k => ({ key: k, sport: 'NHL' })),
+  ...Object.keys(poly.MLB || {}).map(k => ({ key: k, sport: 'MLB' })),
 ];
 let reverseCount = 0;
 for (const { key, sport } of allGames) {

@@ -92,6 +92,50 @@ function loadCBBTeamMap() {
   return map;
 }
 
+// ─── MLB team resolution ──────────────────────────────────────────────────────
+const MLB_MAP = {
+  diamondbacks: 'ari', dbacks: 'ari', arizona: 'ari',
+  braves: 'atl', atlanta: 'atl',
+  orioles: 'bal', baltimore: 'bal',
+  redsox: 'bos', boston: 'bos',
+  cubs: 'chc', chicagocubs: 'chc',
+  whitesox: 'cws', chicagowhitesox: 'cws',
+  reds: 'cin', cincinnati: 'cin',
+  guardians: 'cle', cleveland: 'cle',
+  rockies: 'col', colorado: 'col',
+  tigers: 'det', detroit: 'det',
+  astros: 'hou', houston: 'hou',
+  royals: 'kcr', kansascity: 'kcr',
+  angels: 'laa', losangelesangels: 'laa',
+  dodgers: 'lad', losangelesdodgers: 'lad',
+  marlins: 'mia', miami: 'mia',
+  brewers: 'mil', milwaukee: 'mil',
+  twins: 'min', minnesota: 'min',
+  mets: 'nym', newyorkmets: 'nym',
+  yankees: 'nyy', newyorkyankees: 'nyy',
+  athletics: 'oak', oakland: 'oak', as: 'oak',
+  phillies: 'phi', philadelphia: 'phi',
+  pirates: 'pit', pittsburgh: 'pit',
+  padres: 'sdp', sandiego: 'sdp',
+  giants: 'sfg', sanfrancisco: 'sfg',
+  mariners: 'sea', seattle: 'sea',
+  cardinals: 'stl', stlouis: 'stl',
+  rays: 'tbr', tampabay: 'tbr',
+  rangers: 'tex', texas: 'tex',
+  bluejays: 'tor', toronto: 'tor',
+  nationals: 'wsh', washington: 'wsh',
+};
+
+function resolveMLBCode(raw) {
+  const n = normalize(raw);
+  if (MLB_MAP[n]) return MLB_MAP[n];
+  for (const w of raw.split(/\s+/)) {
+    const wn = normalize(w);
+    if (MLB_MAP[wn]) return MLB_MAP[wn];
+  }
+  return null;
+}
+
 function findCBBTeam(cbbMap, name) {
   const n = normalize(name);
   if (cbbMap.has(n)) return cbbMap.get(n);
@@ -179,20 +223,24 @@ function loadJSON(filename) {
 }
 
 // ─── Build today's game lookup ──────────────────────────────────────────────
+// Keys are sport-prefixed ("NHL:bos_tor") to prevent collisions when
+// NHL and MLB share 3-letter city codes (bos, tor, min, col, etc.)
 function buildTodaysGames(polyData) {
   const games = {};
-  for (const sport of ['NHL', 'CBB']) {
+  for (const sport of ['NHL', 'CBB', 'MLB']) {
     const sportGames = polyData?.[sport] || {};
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
       const home = g.homeTeam || '';
-      games[key] = { sport, away, home, key, title: g.title || '' };
+      games[`${sport}:${key}`] = { sport, away, home, key, title: g.title || '' };
     }
   }
   return games;
 }
 
 // ─── Match a position title to one of today's game keys ──────────────────────
+// Returns { key (unprefixed), sport, side, awayName, homeName } or null.
+// Uses sport-prefixed lookups to avoid cross-sport collisions.
 function matchPositionToGame(posTitle, todaysGames, cbbMap) {
   const teams = extractTeamsFromTitle(posTitle);
   if (!teams) return null;
@@ -203,9 +251,9 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
   const nhlB = resolveNHLCode(rawB);
   if (nhlA && nhlB) {
     const key = `${nhlA}_${nhlB}`;
-    if (todaysGames[key]) return { key, side: 'away', awayName: rawA, homeName: rawB };
+    if (todaysGames[`NHL:${key}`]) return { key, sport: 'NHL', side: 'away', awayName: rawA, homeName: rawB };
     const rev = `${nhlB}_${nhlA}`;
-    if (todaysGames[rev]) return { key: rev, side: 'home', awayName: rawB, homeName: rawA };
+    if (todaysGames[`NHL:${rev}`]) return { key: rev, sport: 'NHL', side: 'home', awayName: rawB, homeName: rawA };
   }
 
   // Try CBB
@@ -213,9 +261,19 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
   const cbbB = findCBBTeam(cbbMap, rawB);
   if (cbbA && cbbB) {
     const key = `${normalize(cbbA)}_${normalize(cbbB)}`;
-    if (todaysGames[key]) return { key, side: 'away', awayName: cbbA, homeName: cbbB };
+    if (todaysGames[`CBB:${key}`]) return { key, sport: 'CBB', side: 'away', awayName: cbbA, homeName: cbbB };
     const rev = `${normalize(cbbB)}_${normalize(cbbA)}`;
-    if (todaysGames[rev]) return { key: rev, side: 'home', awayName: cbbB, homeName: cbbA };
+    if (todaysGames[`CBB:${rev}`]) return { key: rev, sport: 'CBB', side: 'home', awayName: cbbB, homeName: cbbA };
+  }
+
+  // Try MLB
+  const mlbA = resolveMLBCode(rawA);
+  const mlbB = resolveMLBCode(rawB);
+  if (mlbA && mlbB) {
+    const key = `${mlbA}_${mlbB}`;
+    if (todaysGames[`MLB:${key}`]) return { key, sport: 'MLB', side: 'away', awayName: rawA, homeName: rawB };
+    const rev = `${mlbB}_${mlbA}`;
+    if (todaysGames[`MLB:${rev}`]) return { key: rev, sport: 'MLB', side: 'home', awayName: rawB, homeName: rawA };
   }
 
   return null;
@@ -277,12 +335,12 @@ async function run() {
   const cbbMap = loadCBBTeamMap();
   const todaysGames = buildTodaysGames(polyData);
   const gameKeys = Object.keys(todaysGames);
-  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB)\n`);
+  console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB)\n`);
 
   if (gameKeys.length === 0) {
     console.log('No games today — skipping scan');
     const outPath = join(ROOT, 'public', 'sharp_positions.json');
-    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
+    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
     return;
   }
 
@@ -323,7 +381,7 @@ async function run() {
   const prevData = loadJSON('sharp_positions.json');
   const prevPositions = {};
   if (prevData) {
-    for (const sport of ['NHL', 'CBB']) {
+    for (const sport of ['NHL', 'CBB', 'MLB']) {
       for (const [gameKey, game] of Object.entries(prevData[sport] || {})) {
         for (const pos of (game.positions || [])) {
           if (pos.firstSeen) {
@@ -334,7 +392,7 @@ async function run() {
     }
   }
 
-  const result = { NHL: {}, CBB: {} };
+  const result = { NHL: {}, CBB: {}, MLB: {} };
   let matchCount = 0;
   let errorCount = 0;
 
@@ -369,8 +427,8 @@ async function run() {
       // Skip resolved positions (price collapsed to 0 or 1)
       if (curPrice <= 0.01 || curPrice >= 0.99) continue;
 
-      const game = todaysGames[match.key];
-      const sport = game.sport;
+      const game = todaysGames[`${match.sport}:${match.key}`];
+      const sport = match.sport;
       const side = resolveOutcomeSide(outcome, game.away, game.home, title);
 
       const size = parseFloat(pos.size || '0');
@@ -452,7 +510,7 @@ async function run() {
   writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8');
 
   let totalGamesWithPositions = 0;
-  for (const sport of ['NHL', 'CBB']) {
+  for (const sport of ['NHL', 'CBB', 'MLB']) {
     totalGamesWithPositions += Object.keys(result[sport]).length;
   }
 
