@@ -188,48 +188,72 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 | **bets** | NHL model bets | betTracker.js (client) | updateBetResults (function) |
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
 
-#### `sharpFlowPicks` Document Schema
+#### `sharpFlowPicks` Document Schema (v2 — per-side with peak tracking)
+
+Each document represents one game. Up to two sides can independently lock if both reach 4+ criteria. Each side tracks its original lock and peak conviction. Grading uses peak units/odds.
 
 ```javascript
 {
-  date: "2026-03-16",           // ET date
+  date: "2026-03-24",           // ET date (derived from commence time)
   sport: "NHL",
-  gameKey: "uta_dal",
-  away: "Utah",
-  home: "Stars",
-  consensusSide: "away",        // "away" or "home"
-  consensusTeam: "Utah",
-  market: "MONEYLINE",
-  criteriaMet: 4,               // 4-6
-  criteria: {
-    sharps3Plus: true,
-    plusEV: false,
-    pinnacleConfirms: true,
-    invested5kPlus: true,
-    lineMovingWith: true,
-    predMarketAligns: true,
+  gameKey: "tor_bos",
+  away: "Maple Leafs",
+  home: "Bruins",
+  commenceTime: 1711300000000,  // epoch ms
+  lockType: "PREGAME",          // always PREGAME (live games are skipped)
+  status: "PENDING",            // PENDING → COMPLETED (when all sides graded)
+
+  sides: {
+    home: {                     // one entry per side that reached 4+ criteria
+      team: "Bruins",
+      lock: {                   // original lock snapshot (never changes)
+        odds: -190,
+        book: "BetMGM",
+        pinnacleOdds: -194,
+        evEdge: 5.0,
+        criteriaMet: 6,
+        criteria: { sharps3Plus: true, plusEV: true, ... },
+        sharpCount: 6,
+        totalInvested: 9824,
+        units: 3.5,
+        unitTier: "MAX",
+        lockedAt: 1711300000000,
+      },
+      peak: {                   // high-water mark (updated pregame when units grow)
+        odds: -210,
+        book: "BetMGM",
+        criteriaMet: 6,
+        sharpCount: 9,
+        totalInvested: 15200,
+        units: 4.0,
+        unitTier: "MAX",
+        updatedAt: 1711305000000,
+      },
+      status: "PENDING",        // PENDING → COMPLETED
+      result: {
+        outcome: null,          // WIN / LOSS / PUSH
+        profit: null,           // graded at peak.units and peak.odds
+        gradedAt: null,
+      },
+    },
+    away: {                     // only present if away side also hit 4+ criteria
+      team: "Maple Leafs",
+      lock: { ... },
+      peak: { ... },
+      status: "PENDING",
+      result: { ... },
+    },
   },
-  odds: 135,                    // Best retail odds at lock time
-  book: "BetMGM",
-  pinnacleOdds: 137,
-  evEdge: 0,
-  sharpCount: 2,
-  totalInvested: 5572,
-  units: 1.0,
-  unitTier: "STANDARD",        // STANDARD / STRONG / MAX
-  potentialProfit: 1.35,
-  lockedAt: 1710612000000,     // epoch ms
-  status: "PENDING",           // PENDING → COMPLETED
-  result: {
-    outcome: null,              // WIN / LOSS / PUSH
+
+  result: {                     // game-level scores (shared)
     awayScore: null,
     homeScore: null,
     winner: null,               // "away" or "home"
-    profit: null,               // +1.35 or -1.0
-    gradedAt: null,
-  }
+  },
 }
 ```
+
+**Legacy format** (pre-v2 docs): Flat structure with `consensusSide`, `units`, `odds` at top level. The grading function and P&L loader handle both formats — if `doc.sides` exists, use v2 logic; otherwise fall back to flat format.
 
 ### Grading (Firebase Function: `updateBetResults`)
 
@@ -241,8 +265,9 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
    - Queries `status == "PENDING"`, filters to `sport == "NHL"`
    - Maps `gameKey` (e.g., `uta_dal`) to NHL abbreviations (`UTA`, `DAL`) via `ABBREV_MAP`
    - Matches against final games by `awayTeam`/`homeTeam`
+   - **v2 format** (`doc.sides` exists): iterates each side, grades using `side.peak.units` and `side.peak.odds`, marks each side's `status: "COMPLETED"`. Top-level `status` becomes `"COMPLETED"` when all sides are graded.
+   - **Legacy format** (flat `consensusSide`): grades as before with top-level `units` and `odds`
    - Uses same `calculateOutcome` and `calculateProfit` functions as the main bet tracker
-   - Updates doc with result + `status: "COMPLETED"`
 
 ### Firestore Indexes Required
 

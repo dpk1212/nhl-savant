@@ -128,26 +128,80 @@ exports.updateBetResults = onSchedule({
 
           if (!matchingGame) continue;
 
-          const side = pick.consensusSide === "away" ? "AWAY" : "HOME";
-          const outcome = calculateOutcome(matchingGame, {
-            market: "MONEYLINE",
-            side: side,
-          });
-          const units = pick.units || 1;
-          const profit = calculateProfit(outcome, pick.odds, units);
+          const winner = matchingGame.awayScore > matchingGame.homeScore ?
+            "away" : "home";
 
-          await sfDoc.ref.update({
-            "result.outcome": outcome,
-            "result.awayScore": matchingGame.awayScore,
-            "result.homeScore": matchingGame.homeScore,
-            "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "away" : "home",
-            "result.profit": parseFloat(profit.toFixed(2)),
-            "result.gradedAt": admin.firestore.FieldValue.serverTimestamp(),
-            "status": "COMPLETED",
-          });
+          // New format: doc.sides with per-side grading
+          if (pick.sides) {
+            const updates = {
+              "result.awayScore": matchingGame.awayScore,
+              "result.homeScore": matchingGame.homeScore,
+              "result.winner": winner,
+            };
+            let allSidesGraded = true;
 
-          sfGraded++;
-          logger.info(`🔒 Sharp Flow: ${pick.consensusTeam} ML ${pick.odds} → ${outcome} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}u)`);
+            for (const [side, sideData] of Object.entries(pick.sides)) {
+              if (sideData.status === "COMPLETED") continue;
+
+              const sideUpper = side === "away" ? "AWAY" : "HOME";
+              const outcome = calculateOutcome(matchingGame, {
+                market: "MONEYLINE",
+                side: sideUpper,
+              });
+              const units = sideData.peak?.units ||
+                sideData.lock?.units || 1;
+              const odds = sideData.peak?.odds ||
+                sideData.lock?.odds || 0;
+              const profit = calculateProfit(outcome, odds, units);
+              const team = sideData.team || side;
+
+              updates[`sides.${side}.status`] = "COMPLETED";
+              updates[`sides.${side}.result.outcome`] = outcome;
+              updates[`sides.${side}.result.profit`] =
+                parseFloat(profit.toFixed(2));
+              updates[`sides.${side}.result.gradedAt`] =
+                admin.firestore.FieldValue.serverTimestamp();
+
+              sfGraded++;
+              logger.info(`🔒 Sharp Flow: ${team} ML ${odds} (peak ${units}u) → ${outcome} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}u)`);
+            }
+
+            for (const [side, sideData] of Object.entries(pick.sides)) {
+              if (sideData.status !== "COMPLETED" &&
+                !updates[`sides.${side}.status`]) {
+                allSidesGraded = false;
+              }
+            }
+
+            if (allSidesGraded) {
+              updates["status"] = "COMPLETED";
+            }
+
+            await sfDoc.ref.update(updates);
+          } else {
+            // Legacy flat format: grade as before
+            const side = pick.consensusSide === "away" ? "AWAY" : "HOME";
+            const outcome = calculateOutcome(matchingGame, {
+              market: "MONEYLINE",
+              side: side,
+            });
+            const units = pick.units || 1;
+            const profit = calculateProfit(outcome, pick.odds, units);
+
+            await sfDoc.ref.update({
+              "result.outcome": outcome,
+              "result.awayScore": matchingGame.awayScore,
+              "result.homeScore": matchingGame.homeScore,
+              "result.winner": winner,
+              "result.profit": parseFloat(profit.toFixed(2)),
+              "result.gradedAt":
+                admin.firestore.FieldValue.serverTimestamp(),
+              "status": "COMPLETED",
+            });
+
+            sfGraded++;
+            logger.info(`🔒 Sharp Flow: ${pick.consensusTeam} ML ${pick.odds} → ${outcome} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}u)`);
+          }
         }
 
         logger.info(`Sharp Flow: Graded ${sfGraded} picks`);

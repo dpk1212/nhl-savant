@@ -130,21 +130,68 @@ function profitFromOdds(odds, units) {
 
 // ─── Sharp Flow Locked Picks — Firebase ───────────────────────────────────────
 
-async function writeLockedPick(pick) {
-  try {
-    const docId = `${pick.date}_${pick.gameKey}`;
-    const ref = doc(db, 'sharpFlowPicks', docId);
-    const snap = await getDoc(ref);
-    if (snap.exists()) return;
-    await setDoc(ref, pick);
-  } catch (err) {
-    console.warn('Failed to write locked pick:', err.message);
-  }
+function todayET() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
 function gameDate(commenceTime) {
   if (!commenceTime) return todayET();
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength) {
+  const now = Date.now();
+  const tier = unitTier(units).label;
+  const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength };
+  return {
+    team,
+    lock: { ...snapshot, lockedAt: now },
+    peak: { ...snapshot, updatedAt: now },
+    status: 'PENDING',
+    result: { outcome: null, profit: null, gradedAt: null },
+  };
+}
+
+async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength }) {
+  try {
+    const docId = `${date}_${gameKey}`;
+    const ref = doc(db, 'sharpFlowPicks', docId);
+    const existing = await getDoc(ref);
+
+    if (!existing.exists()) {
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength);
+      await setDoc(ref, {
+        date, sport, gameKey, away, home, commenceTime: commenceTime || null,
+        lockType: 'PREGAME',
+        sides: { [side]: sideData },
+        status: 'PENDING',
+        result: { awayScore: null, homeScore: null, winner: null },
+      });
+      return { docId, action: 'created' };
+    }
+
+    const data = existing.data();
+    const sides = data.sides || {};
+
+    if (sides[side]) {
+      const currentPeak = sides[side].peak?.units || 0;
+      if (units > currentPeak) {
+        const tier = unitTier(units).label;
+        await setDoc(ref, {
+          sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, updatedAt: Date.now() } } }
+        }, { merge: true });
+        return { docId, action: 'peak_updated' };
+      }
+      return { docId, action: 'no_change' };
+    }
+
+    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength);
+    await setDoc(ref, { sides: { [side]: sideData } }, { merge: true });
+    return { docId, action: 'side_added' };
+  } catch (err) {
+    console.warn('Failed to sync pick:', err.message);
+    return { docId: `${date}_${gameKey}`, action: 'error' };
+  }
 }
 
 async function loadLockedPicks() {
@@ -155,7 +202,6 @@ async function loadLockedPicks() {
     const q = query(
       collection(db, 'sharpFlowPicks'),
       where('date', 'in', [today, yesterday]),
-      orderBy('lockedAt', 'desc'),
     );
     const snap = await getDocs(q);
     const picks = {};
@@ -167,39 +213,40 @@ async function loadLockedPicks() {
   }
 }
 
+function tallySides(snap) {
+  let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
+  snap.forEach(d => {
+    const data = d.data();
+    if (data.sides) {
+      for (const sideData of Object.values(data.sides)) {
+        if (sideData.status !== 'COMPLETED') continue;
+        const u = sideData.peak?.units || sideData.lock?.units || 1;
+        totalUnits += u;
+        if (sideData.result?.outcome === 'WIN') { wins++; totalProfit += (sideData.result?.profit || 0); }
+        else if (sideData.result?.outcome === 'LOSS') { losses++; totalProfit -= u; }
+        else if (sideData.result?.outcome === 'PUSH') { pushes++; }
+      }
+    } else {
+      if (data.status !== 'COMPLETED') return;
+      const u = data.units || 1;
+      totalUnits += u;
+      if (data.result?.outcome === 'WIN') { wins++; totalProfit += (data.result?.profit || 0); }
+      else if (data.result?.outcome === 'LOSS') { losses++; totalProfit -= u; }
+      else if (data.result?.outcome === 'PUSH') { pushes++; }
+    }
+  });
+  return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
+}
+
 async function loadAllTimePnL() {
   try {
-    const q = query(
-      collection(db, 'sharpFlowPicks'),
-      where('status', '==', 'COMPLETED'),
-    );
-    const snap = await getDocs(q);
-    const tally = (filter) => {
-      let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
-      snap.forEach(d => {
-        const p = d.data();
-        if (!filter(p)) return;
-        if (p.result?.outcome === 'WIN') { wins++; totalProfit += (p.result?.profit || 0); }
-        else if (p.result?.outcome === 'LOSS') { losses++; totalProfit += -(p.units || 1); }
-        else if (p.result?.outcome === 'PUSH') { pushes++; }
-        totalUnits += (p.units || 1);
-      });
-      return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
-    };
-    return {
-      pregame: tally(p => p.lockType !== 'LIVE'),
-      live: tally(p => p.lockType === 'LIVE'),
-      all: tally(() => true),
-    };
+    const snap = await getDocs(collection(db, 'sharpFlowPicks'));
+    return { pregame: tallySides(snap), all: tallySides(snap) };
   } catch (err) {
     console.warn('Failed to load all-time P&L:', err.message);
     const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
-    return { pregame: { ...empty }, live: { ...empty }, all: { ...empty } };
+    return { pregame: { ...empty }, all: { ...empty } };
   }
-}
-
-function todayET() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
@@ -3000,119 +3047,104 @@ export default function SharpFlow() {
     loadAllTimePnL().then(setAllTimePnL);
   }, []);
 
-  // Auto-lock qualifying PREGAME picks to Firebase
+  // Auto-lock qualifying PREGAME picks to Firebase (with peak tracking + flip support)
   const syncLockedPicks = useCallback(() => {
     if (!sharpPositions || !pinnacleHistory) return;
     for (const sport of ['NHL', 'CBB']) {
       const sportGames = sharpPositions?.[sport] || {};
       for (const [key, gd] of Object.entries(sportGames)) {
         if (!gd.positions || gd.positions.length === 0) continue;
-        const s = gd.summary;
-        const side = s.consensus;
-        const team = side === 'away' ? gd.away : gd.home;
         const pinnGame = pinnacleHistory?.[sport]?.[key];
 
-        // Only lock pregame — skip live/started games
         const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
         const isLive = commenceTime && Date.now() >= commenceTime;
         if (isLive) continue;
 
-        const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
-        const odds = side === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
-        const bestRetail = side === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
-        const bestBook = side === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
-        const pinnProb = impliedProb(odds);
-        const retailProb = impliedProb(bestRetail);
-        const evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
-        const hasEV = evEdge != null && evEdge > 0;
-        const pinnMoved = pinnGame?.movement?.direction;
-        const pinnConfirms = pinnMoved === side;
-
-        const pinnHistory = pinnGame?.history || [];
-        const pinnPoints = side === 'away' ? pinnHistory.map(h => h.away) : pinnHistory.map(h => h.home);
-        const pinnFirstP = impliedProb(pinnPoints[0]);
-        const pinnLastP = impliedProb(pinnPoints[pinnPoints.length - 1]);
-        const pinnMovingWith = pinnPoints.length >= 2 && pinnLastP > pinnFirstP;
-
-        const polyGame = polyData?.[sport]?.[key];
-        const polyPts = polyGame?.priceHistory?.points || [];
-        const polyMovingWith = polyPts.length >= 2 && (side === 'away'
-          ? polyPts[polyPts.length - 1] > polyPts[0]
-          : polyPts[polyPts.length - 1] < polyPts[0]);
-
-        // Consensus strength
-        const awayPositions = gd.positions.filter(p => p.side === 'away');
-        const homePositions = gd.positions.filter(p => p.side === 'home');
-        const consWallets = side === 'away' ? new Set(awayPositions.map(p => p.wallet)).size : new Set(homePositions.map(p => p.wallet)).size;
-        const oppWallets = side === 'away' ? new Set(homePositions.map(p => p.wallet)).size : new Set(awayPositions.map(p => p.wallet)).size;
-        const consInvested = side === 'away' ? (s.awayInvested || 0) : (s.homeInvested || 0);
-        const oppInvested = side === 'away' ? (s.homeInvested || 0) : (s.awayInvested || 0);
-        const totalInv = consInvested + oppInvested;
-        const mPct = totalInv > 0 ? (consInvested / totalInv) * 100 : 50;
-        const wPct = (consWallets + oppWallets) > 0 ? (consWallets / (consWallets + oppWallets)) * 100 : 50;
-        const cGrade = consensusGrade(mPct, wPct);
-
-        const checks = [
-          uniqueWallets >= 3,
-          hasEV,
-          pinnConfirms,
-          s.totalInvested >= 5000,
-          pinnMovingWith,
-          polyMovingWith,
-        ];
-        const criteriaMet = checks.filter(Boolean).length;
-
-        // Use game date (from commence time) as the canonical date, not wall clock
         const date = gameDate(commenceTime);
         const docId = `${date}_${key}`;
 
-        if (criteriaMet >= 4 && cGrade.label !== 'CONTESTED' && !lockedPicks[docId]) {
+        // Evaluate BOTH sides independently
+        for (const evalSide of ['away', 'home']) {
+          const sidePositions = gd.positions.filter(p => p.side === evalSide);
+          if (sidePositions.length === 0) continue;
+
+          const team = evalSide === 'away' ? gd.away : gd.home;
+          const uniqueWallets = new Set(sidePositions.map(p => p.wallet)).size;
+          const sideInvested = sidePositions.reduce((sum, p) => sum + (p.invested || 0), 0);
+
+          const odds = evalSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+          const bestRetail = evalSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
+          const bestBook = evalSide === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
+          const pinnProb = impliedProb(odds);
+          const retailProb = impliedProb(bestRetail);
+          const evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
+          const hasEV = evEdge != null && evEdge > 0;
+          const pinnMoved = pinnGame?.movement?.direction;
+          const pinnConfirms = pinnMoved === evalSide;
+
+          const pinnHistory = pinnGame?.history || [];
+          const pinnPoints = evalSide === 'away' ? pinnHistory.map(h => h.away) : pinnHistory.map(h => h.home);
+          const pinnFirstP = impliedProb(pinnPoints[0]);
+          const pinnLastP = impliedProb(pinnPoints[pinnPoints.length - 1]);
+          const pinnMovingWith = pinnPoints.length >= 2 && pinnLastP > pinnFirstP;
+
+          const polyGame = polyData?.[sport]?.[key];
+          const polyPts = polyGame?.priceHistory?.points || [];
+          const polyMovingWith = polyPts.length >= 2 && (evalSide === 'away'
+            ? polyPts[polyPts.length - 1] > polyPts[0]
+            : polyPts[polyPts.length - 1] < polyPts[0]);
+
+          const oppPositions = gd.positions.filter(p => p.side !== evalSide);
+          const oppWallets = new Set(oppPositions.map(p => p.wallet)).size;
+          const oppInvested = oppPositions.reduce((sum, p) => sum + (p.invested || 0), 0);
+          const totalInv = sideInvested + oppInvested;
+          const mPct = totalInv > 0 ? (sideInvested / totalInv) * 100 : 50;
+          const wPct = (uniqueWallets + oppWallets) > 0 ? (uniqueWallets / (uniqueWallets + oppWallets)) * 100 : 50;
+          const cGrade = consensusGrade(mPct, wPct);
+
+          const checks = [
+            uniqueWallets >= 3,
+            hasEV,
+            pinnConfirms,
+            sideInvested >= 5000,
+            pinnMovingWith,
+            polyMovingWith,
+          ];
+          const criteriaMet = checks.filter(Boolean).length;
+          if (criteriaMet < 4 || cGrade.label === 'CONTESTED') continue;
+
           const betOdds = bestRetail || odds;
-          const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested, cGrade.penalty);
-          const potentialProfit = profitFromOdds(betOdds, units);
-          const pick = {
-            date,
-            sport,
-            gameKey: key,
-            away: gd.away,
-            home: gd.home,
-            consensusSide: side,
-            consensusTeam: team,
-            market: 'MONEYLINE',
-            lockType: 'PREGAME',
-            commenceTime: commenceTime || null,
-            consensusStrength: { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label },
-            criteriaMet,
-            criteria: {
-              sharps3Plus: uniqueWallets >= 3,
-              plusEV: hasEV,
-              pinnacleConfirms: pinnConfirms,
-              invested5kPlus: s.totalInvested >= 5000,
-              lineMovingWith: pinnMovingWith,
-              predMarketAligns: polyMovingWith,
-            },
-            odds: betOdds,
-            book: bestBook || 'Pinnacle',
-            pinnacleOdds: odds || null,
-            evEdge: evEdge || 0,
-            sharpCount: uniqueWallets,
-            totalInvested: s.totalInvested,
-            units,
-            unitTier: unitTier(units).label,
-            potentialProfit: +potentialProfit.toFixed(2),
-            lockedAt: Date.now(),
-            status: 'PENDING',
-            result: {
-              outcome: null,
-              awayScore: null,
-              homeScore: null,
-              winner: null,
-              profit: null,
-              gradedAt: null,
-            },
+          const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, sideInvested, cGrade.penalty);
+          const criteriaObj = {
+            sharps3Plus: uniqueWallets >= 3,
+            plusEV: hasEV,
+            pinnacleConfirms: pinnConfirms,
+            invested5kPlus: sideInvested >= 5000,
+            lineMovingWith: pinnMovingWith,
+            predMarketAligns: polyMovingWith,
           };
-          writeLockedPick(pick);
-          setLockedPicks(prev => ({ ...prev, [docId]: pick }));
+          const consStrength = { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label };
+
+          // Check if this side already has a lock with higher peak
+          const existingDoc = lockedPicks[docId];
+          const existingSide = existingDoc?.sides?.[evalSide];
+          if (existingSide && units <= (existingSide.peak?.units || 0)) continue;
+
+          syncPickToFirebase({
+            date, sport, gameKey: key, away: gd.away, home: gd.home, commenceTime,
+            side: evalSide, team, odds: betOdds, book: bestBook || 'Pinnacle',
+            pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
+            sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength,
+          }).then(({ docId: id, action }) => {
+            if (action === 'created' || action === 'side_added' || action === 'peak_updated') {
+              setLockedPicks(prev => {
+                const prevDoc = prev[id] || {};
+                const prevSides = prevDoc.sides || {};
+                const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label };
+                return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { ...prevSides[evalSide], peak: sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
+              });
+            }
+          });
         }
       }
     }
