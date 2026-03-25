@@ -318,14 +318,14 @@ function matchToGameKey(teams, cbbMap, sport) {
     return `${normalize(aCanon)}_${normalize(bCanon)}`;
   }
   if (sport === 'NHL') {
-    const aCode = resolveNHLTeam(normalize(a)) || resolveNHLTeam(normalize(a.replace(/\s/g, '')));
-    const bCode = resolveNHLTeam(normalize(b)) || resolveNHLTeam(normalize(b.replace(/\s/g, '')));
+    const aCode = resolveNHLTeam(a);
+    const bCode = resolveNHLTeam(b);
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
   if (sport === 'MLB') {
-    const aCode = resolveMLBTeam(normalize(a)) || resolveMLBTeam(normalize(a.replace(/\s/g, '')));
-    const bCode = resolveMLBTeam(normalize(b)) || resolveMLBTeam(normalize(b.replace(/\s/g, '')));
+    const aCode = resolveMLBTeam(a);
+    const bCode = resolveMLBTeam(b);
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
