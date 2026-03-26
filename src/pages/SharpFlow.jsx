@@ -493,6 +493,96 @@ function Badge({ children, color, bg }) {
   );
 }
 
+function SharpFlowInfo({ isMobile }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div style={{ position: 'relative', display: 'inline-flex' }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        onMouseEnter={() => !isMobile && setIsOpen(true)}
+        onMouseLeave={() => !isMobile && setIsOpen(false)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: isMobile ? '22px' : '24px', height: isMobile ? '22px' : '24px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, rgba(251,191,36,0.12) 0%, rgba(245,158,11,0.06) 100%)',
+          border: '1px solid rgba(251,191,36,0.25)', cursor: 'pointer',
+          transition: 'all 0.2s ease', padding: 0,
+        }}
+        aria-label="How Sharp Flow works"
+      >
+        <span style={{ fontSize: isMobile ? '0.75rem' : '0.813rem', fontWeight: 700, color: 'rgba(251,191,36,0.85)' }}>?</span>
+      </button>
+
+      {isOpen && (
+        <>
+          {isMobile && <div onClick={() => setIsOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 998 }} />}
+          <div style={{
+            position: isMobile ? 'fixed' : 'absolute', zIndex: 999,
+            top: isMobile ? '50%' : '100%', left: isMobile ? '50%' : 'auto', right: isMobile ? 'auto' : 0,
+            transform: isMobile ? 'translate(-50%,-50%)' : 'none', marginTop: isMobile ? 0 : '10px',
+            width: isMobile ? 'calc(100vw - 48px)' : '340px', maxWidth: '380px',
+            padding: isMobile ? '1.25rem' : '1rem',
+            background: 'linear-gradient(145deg, rgba(15,23,42,0.99) 0%, rgba(30,41,59,0.99) 100%)',
+            border: '1px solid rgba(251,191,36,0.2)', borderRadius: '14px',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.1rem' }}>⚡</span>
+                <span style={{ fontSize: '1rem', fontWeight: 700, color: 'rgba(251,191,36,0.95)' }}>How Sharp Flow Works</span>
+              </div>
+              {isMobile && <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '1.5rem', cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.8rem' }}>★</span>
+                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.gold }}>Conviction Star Rating</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
+                  Every play is scored across <strong style={{ color: B.gold }}>7 weighted signal dimensions</strong> — sharp wallet count, money deployed, EV edge, Pinnacle alignment, line movement, consensus strength, and prediction market direction. Points are converted to a 0.5–5.0 star rating.
+                </p>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                  <Lock size={12} color={B.green} />
+                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.green }}>Locking & Unit Sizing</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
+                  Plays with <strong style={{ color: B.green }}>3+ stars</strong> are automatically locked and tracked. Units scale from 1.5u (★★★) to 3.5u (★★★★★). Thin volume (under $7K on side) and contested consensus are penalized directly in the star score.
+                </p>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                  <Eye size={12} color="#60A5FA" />
+                  <span style={{ fontSize: '0.813rem', fontWeight: 700, color: '#60A5FA' }}>Game Cards</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
+                  Each card shows the <strong style={{ color: '#60A5FA' }}>full sharp money picture</strong> — both sides of the action, Pinnacle line movement, prediction market price, best retail odds, and the 6-criteria checklist. All data is blockchain-verified from Polymarket.
+                </p>
+              </div>
+
+              <div style={{
+                marginTop: '0.25rem', padding: '0.625rem 0.75rem',
+                background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(212,175,55,0.06) 100%)',
+                border: `1px solid rgba(16,185,129,0.15)`, borderRadius: '8px',
+              }}>
+                <p style={{ fontSize: '0.688rem', color: 'rgba(148,163,184,0.95)', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
+                  Every locked play is graded after the game. Performance is tracked by star tier to validate the system. <span style={{ color: B.green }}>Stars are the single source of truth</span> — what you see is what drives the bet.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function SectionHead({ title, subtitle, icon: Icon, style: overrideStyle }) {
   return (
     <div style={{ marginBottom: '0.875rem', ...overrideStyle }}>
@@ -2938,7 +3028,7 @@ export default function SharpFlow() {
                           })}
                         </div>
                         <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.5rem', fontSize: '0.55rem', opacity: 0.6 }}>
-                          {totalGraded} graded picks since Mar 16 · NHL only (CBB & MLB grading coming soon)
+                          {totalGraded} graded picks since Mar 16
                         </div>
                       </div>
                     </div>
@@ -3005,11 +3095,14 @@ export default function SharpFlow() {
 
               return (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <SectionHead
-                    title={`Sharp Positions (${allPosGames.length} games)`}
-                    subtitle={`Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
-                    icon={Eye}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <SectionHead
+                      title={`Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={`Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      icon={Eye}
+                    />
+                    <SharpFlowInfo isMobile={isMobile} />
+                  </div>
                   {/* Sort bar */}
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
