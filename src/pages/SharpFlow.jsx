@@ -100,20 +100,9 @@ function consensusGrade(moneyPct, walletPct) {
   return { label: 'CONTESTED', color: B.red, penalty: -1, score: avg };
 }
 
-function calculateUnits(criteriaMet, evEdge, sharpCount, totalInvested, consensusPenalty = 0) {
-  let units = criteriaMet >= 6 ? 3 : criteriaMet >= 5 ? 2 : 1;
-
-  if (evEdge >= 5) units += 0.5;
-  else if (evEdge >= 3) units += 0.25;
-
-  if (sharpCount >= 5) units += 0.5;
-  else if (sharpCount >= 4) units += 0.25;
-
-  if (totalInvested >= 20000) units += 0.5;
-  else if (totalInvested >= 10000) units += 0.25;
-
+function calculateUnits(stars, consensusPenalty = 0) {
+  let units = stars >= 5 ? 3.5 : stars >= 4.5 ? 3 : stars >= 4 ? 2.5 : stars >= 3.5 ? 2 : 1.5;
   units += consensusPenalty;
-
   return Math.min(Math.max(units, 0.5), 5);
 }
 
@@ -2354,15 +2343,15 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const isLocked = criteriaMet >= 4 && cGrade.label !== 'CONTESTED';
+  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested, cGrade.label, pinnMovingWith, polyMovingWith);
+  const isLocked = sr.stars >= 3 && cGrade.label !== 'CONTESTED';
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const betOdds = bestRetail || consensusOdds;
-  const units = isLocked ? calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, s.totalInvested, cGrade.penalty) : 0;
+  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
-  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested, cGrade.label, pinnMovingWith, polyMovingWith);
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
   const accentBorder = isLocked ? 'rgba(16,185,129,0.4)' : isActionable ? 'rgba(16,185,129,0.3)' : B.goldBorder;
@@ -2631,7 +2620,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
           marginBottom: '0.375rem',
         }}>
           <span style={{ ...T.micro, color: isLocked ? B.green : B.textMuted, fontWeight: 700 }}>
-            {isLocked ? 'PLAY LOCKED — ALL CRITERIA MET' : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
+            {isLocked ? `PLAY LOCKED — ${sr.stars >= 4.5 ? '★★★★★ ELITE' : sr.stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}` : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
           </span>
           <span style={{
             ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
@@ -3151,6 +3140,9 @@ export default function SharpFlow() {
           const wPct = (uniqueWallets + oppWallets) > 0 ? (uniqueWallets / (uniqueWallets + oppWallets)) * 100 : 50;
           const cGrade = consensusGrade(mPct, wPct);
 
+          const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith);
+          if (sr.stars < 3 || cGrade.label === 'CONTESTED') continue;
+
           const checks = [
             uniqueWallets >= 3,
             hasEV,
@@ -3160,10 +3152,9 @@ export default function SharpFlow() {
             polyMovingWith,
           ];
           const criteriaMet = checks.filter(Boolean).length;
-          if (criteriaMet < 4 || cGrade.label === 'CONTESTED') continue;
 
           const betOdds = bestRetail || odds;
-          const units = calculateUnits(criteriaMet, evEdge || 0, uniqueWallets, sideInvested, cGrade.penalty);
+          const units = calculateUnits(sr.stars, cGrade.penalty);
           const criteriaObj = {
             sharps3Plus: uniqueWallets >= 3,
             plusEV: hasEV,
@@ -3173,7 +3164,6 @@ export default function SharpFlow() {
             predMarketAligns: polyMovingWith,
           };
           const consStrength = { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label };
-          const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith);
 
           const syncKey = `${docId}:${evalSide}`;
           if (syncedRef.current.has(syncKey)) continue;
