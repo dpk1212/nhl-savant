@@ -239,7 +239,7 @@ function estimateStarsFromSnap(snap) {
   if (snap.criteria?.pinnacleConfirms) pts += 1;
   if (snap.criteria?.lineMovingWith) pts += 1;
   const cg = snap.consensusStrength?.grade || '';
-  if (cg === 'DOMINANT') pts += 1.5; else if (cg === 'STRONG') pts += 1; else if (cg === 'LEAN') pts += 0.5;
+  if (cg === 'DOMINANT') pts += 1.5; else if (cg === 'STRONG') pts += 1; else if (cg === 'LEAN') pts += 0.5; else if (cg === 'CONTESTED') pts -= 1.5;
   if (snap.criteria?.predMarketAligns) pts += 0.5;
   const raw = (pts / 11) * 5;
   return Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
@@ -2216,10 +2216,11 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
   if (pinnConfirms) pts += 1;
   if (pinnMovingWith) pts += 1;
 
-  // Consensus strength (max 1.5 pts)
+  // Consensus strength (max 1.5 pts, CONTESTED penalized)
   if (consensusGradeLabel === 'DOMINANT') pts += 1.5;
   else if (consensusGradeLabel === 'STRONG') pts += 1;
   else if (consensusGradeLabel === 'LEAN') pts += 0.5;
+  else if (consensusGradeLabel === 'CONTESTED') pts -= 1.5;
 
   // Prediction market alignment (max 0.5 pts)
   if (polyMovingWith) pts += 0.5;
@@ -2365,7 +2366,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
   const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested, cGrade.label, pinnMovingWith, polyMovingWith);
-  const isLocked = sr.stars >= 3 && cGrade.label !== 'CONTESTED';
+  const isLocked = sr.stars >= 3;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const betOdds = bestRetail || consensusOdds;
@@ -3164,7 +3165,7 @@ export default function SharpFlow() {
           const cGrade = consensusGrade(mPct, wPct);
 
           const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith);
-          if (sr.stars < 3 || cGrade.label === 'CONTESTED') continue;
+          if (sr.stars < 3) continue;
 
           const checks = [
             uniqueWallets >= 3,
