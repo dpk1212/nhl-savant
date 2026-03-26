@@ -542,7 +542,7 @@ function SharpFlowInfo({ isMobile }) {
                   <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.gold }}>Conviction Star Rating</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  Every play is scored across <strong style={{ color: B.gold }}>7 weighted signal dimensions</strong> — sharp wallet count, money deployed, EV edge, Pinnacle alignment, line movement, consensus strength, and prediction market direction. Points are converted to a 0.5–5.0 star rating.
+                  Every play is scored using a <strong style={{ color: B.gold }}>proprietary weighted signal model</strong> that evaluates multiple dimensions of sharp activity, market pricing, and directional momentum. The result is a 0.5–5.0 conviction rating that captures the full strength of the signal.
                 </p>
               </div>
 
@@ -552,7 +552,7 @@ function SharpFlowInfo({ isMobile }) {
                   <span style={{ fontSize: '0.813rem', fontWeight: 700, color: B.green }}>Locking & Unit Sizing</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  Plays with <strong style={{ color: B.green }}>3+ stars</strong> are automatically locked and tracked. Units scale from 1.5u (★★★) to 3.5u (★★★★★). Thin volume (under $7K on side) and contested consensus are penalized directly in the star score.
+                  Plays that exceed our <strong style={{ color: B.green }}>conviction threshold</strong> are automatically locked and tracked with dynamically sized units. Higher-rated plays receive larger positions. Built-in safeguards penalize thin volume and split consensus before a play can lock.
                 </p>
               </div>
 
@@ -562,7 +562,7 @@ function SharpFlowInfo({ isMobile }) {
                   <span style={{ fontSize: '0.813rem', fontWeight: 700, color: '#60A5FA' }}>Game Cards</span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-                  Each card shows the <strong style={{ color: '#60A5FA' }}>full sharp money picture</strong> — both sides of the action, Pinnacle line movement, prediction market price, best retail odds, and the 6-criteria checklist. All data is blockchain-verified from Polymarket.
+                  Each card shows the <strong style={{ color: '#60A5FA' }}>full sharp money picture</strong> — both sides of the action, real-time line movement, market pricing, best available odds, and a signal checklist. All positions are verified from public on-chain and exchange data.
                 </p>
               </div>
 
@@ -572,7 +572,7 @@ function SharpFlowInfo({ isMobile }) {
                 border: `1px solid rgba(16,185,129,0.15)`, borderRadius: '8px',
               }}>
                 <p style={{ fontSize: '0.688rem', color: 'rgba(148,163,184,0.95)', lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
-                  Every locked play is graded after the game. Performance is tracked by star tier to validate the system. <span style={{ color: B.green }}>Stars are the single source of truth</span> — what you see is what drives the bet.
+                  Every locked play is graded after the game. Performance is tracked by conviction tier to validate the model. <span style={{ color: B.green }}>The star rating drives every decision</span> — what you see is what powers the recommendation.
                 </p>
               </div>
             </div>
