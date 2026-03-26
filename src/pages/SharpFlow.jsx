@@ -6,7 +6,7 @@
  * Expandable game cards show individual whale trades in context.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle } from 'lucide-react';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
@@ -3041,10 +3041,18 @@ export default function SharpFlow() {
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const syncedRef = useRef(new Set());
 
   // Load existing locked picks + all-time P&L on mount
   useEffect(() => {
-    loadLockedPicks().then(setLockedPicks);
+    loadLockedPicks().then(picks => {
+      setLockedPicks(picks);
+      for (const [docId, doc] of Object.entries(picks)) {
+        for (const sideKey of Object.keys(doc.sides || {})) {
+          syncedRef.current.add(`${docId}:${sideKey}`);
+        }
+      }
+    });
     loadAllTimePnL().then(setAllTimePnL);
   }, []);
 
@@ -3126,10 +3134,9 @@ export default function SharpFlow() {
           };
           const consStrength = { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label };
 
-          // Check if this side already has a lock with higher peak
-          const existingDoc = lockedPicks[docId];
-          const existingSide = existingDoc?.sides?.[evalSide];
-          if (existingSide && units <= (existingSide.peak?.units || 0)) continue;
+          const syncKey = `${docId}:${evalSide}`;
+          if (syncedRef.current.has(syncKey)) continue;
+          syncedRef.current.add(syncKey);
 
           syncPickToFirebase({
             date, sport, gameKey: key, away: gd.away, home: gd.home, commenceTime,
@@ -3137,23 +3144,22 @@ export default function SharpFlow() {
             pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
             sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength,
           }).then(({ docId: id, action }) => {
-            if (action !== 'error') {
-              setLockedPicks(prev => {
-                const prevDoc = prev[id] || {};
-                const prevSides = prevDoc.sides || {};
-                const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label };
-                if (action === 'no_change') {
-                  if (prevSides[evalSide]) return prev;
-                  return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { peak: prevSides[evalSide]?.peak || sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
-                }
-                return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { ...prevSides[evalSide], peak: sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
-              });
+            if (action === 'error') {
+              syncedRef.current.delete(syncKey);
+              return;
             }
+            if (action === 'no_change') return;
+            const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label };
+            setLockedPicks(prev => {
+              const prevDoc = prev[id] || {};
+              const prevSides = prevDoc.sides || {};
+              return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { ...prevSides[evalSide], peak: sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
+            });
           });
         }
       }
     }
-  }, [sharpPositions, pinnacleHistory, polyData, lockedPicks]);
+  }, [sharpPositions, pinnacleHistory, polyData]);
 
   useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
 
