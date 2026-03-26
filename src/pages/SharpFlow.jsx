@@ -1999,14 +1999,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             {Array.from({ length: 5 }, (_, i) => {
               const filled = i + 1 <= Math.floor(sr.stars);
               const half = !filled && i + 0.5 === sr.stars;
-              return (
-                <span key={i} style={{
-                  fontSize: '0.5rem',
-                  color: filled || half ? sr.color : 'rgba(255,255,255,0.15)',
-                  lineHeight: 1,
-                }}>
-                  {filled ? '★' : half ? '⯨' : '★'}
+              return filled ? (
+                <span key={i} style={{ fontSize: '0.5rem', color: sr.color, lineHeight: 1 }}>★</span>
+              ) : half ? (
+                <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
+                  <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: sr.color }}>★</span>
                 </span>
+              ) : (
+                <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
               );
             })}
             <span style={{ marginLeft: '0.15rem' }}>{sr.label}</span>
