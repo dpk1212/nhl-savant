@@ -241,11 +241,48 @@ function tallySides(snap) {
 async function loadAllTimePnL() {
   try {
     const snap = await getDocs(collection(db, 'sharpFlowPicks'));
-    return { pregame: tallySides(snap), all: tallySides(snap) };
+    const overall = tallySides(snap);
+
+    const byStars = {};
+    snap.forEach(d => {
+      const data = d.data();
+      const processSide = (sd) => {
+        const cm = sd.peak?.criteriaMet || sd.lock?.criteriaMet || 0;
+        if (!byStars[cm]) byStars[cm] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0 };
+        byStars[cm].totalPicks++;
+        if (sd.status !== 'COMPLETED') return;
+        const u = sd.peak?.units || sd.lock?.units || 1;
+        byStars[cm].totalUnits += u;
+        if (sd.result?.outcome === 'WIN') { byStars[cm].wins++; byStars[cm].totalProfit += (sd.result?.profit || 0); }
+        else if (sd.result?.outcome === 'LOSS') { byStars[cm].losses++; byStars[cm].totalProfit -= u; }
+        else if (sd.result?.outcome === 'PUSH') { byStars[cm].pushes++; }
+      };
+      if (data.sides) {
+        for (const sd of Object.values(data.sides)) processSide(sd);
+      } else {
+        const cm = data.criteriaMet || 0;
+        if (!byStars[cm]) byStars[cm] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0 };
+        byStars[cm].totalPicks++;
+        if (data.status !== 'COMPLETED') return;
+        const u = data.units || 1;
+        byStars[cm].totalUnits += u;
+        if (data.result?.outcome === 'WIN') { byStars[cm].wins++; byStars[cm].totalProfit += (data.result?.profit || 0); }
+        else if (data.result?.outcome === 'LOSS') { byStars[cm].losses++; byStars[cm].totalProfit -= u; }
+        else if (data.result?.outcome === 'PUSH') { byStars[cm].pushes++; }
+      }
+    });
+
+    for (const v of Object.values(byStars)) {
+      v.totalProfit = +v.totalProfit.toFixed(2);
+      v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
+      v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
+    }
+
+    return { pregame: overall, all: overall, byStars };
   } catch (err) {
     console.warn('Failed to load all-time P&L:', err.message);
     const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
-    return { pregame: { ...empty }, all: { ...empty } };
+    return { pregame: { ...empty }, all: { ...empty }, byStars: {} };
   }
 }
 
@@ -3040,6 +3077,7 @@ export default function SharpFlow() {
   const [sortBy, setSortBy] = useState('stars');
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
+  const [showPerf, setShowPerf] = useState(false);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const syncedRef = useRef(new Set());
 
@@ -3301,6 +3339,129 @@ export default function SharpFlow() {
               <FlowStatCard icon={TrendingUp} label="Combined Lifetime P&L" value={`+${fmtVol(totalSharpPnl)}`} accent={B.green}
                 hint="Aggregate P&L of all tracked sharp bettors" />
             </div>
+
+            {/* ─── Pick Performance Tracker ─── */}
+            {allTimePnL && (allTimePnL.pregame?.wins > 0 || allTimePnL.pregame?.losses > 0) && (() => {
+              const pnl = allTimePnL.pregame;
+              const totalGraded = pnl.wins + pnl.losses + pnl.pushes;
+              const winPct = totalGraded > 0 ? ((pnl.wins / totalGraded) * 100).toFixed(1) : '0.0';
+              const roi = pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : '0.0';
+              const stars = allTimePnL.byStars || {};
+
+              return (
+                <div style={{ marginBottom: '1rem' }}>
+                  <button onClick={() => setShowPerf(p => !p)} style={{
+                    width: '100%', background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
+                    border: `1px solid ${B.goldBorder}`, borderRadius: '10px', padding: '0.75rem 1rem',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <BarChart3 size={15} color={B.gold} />
+                      <span style={{ ...T.micro, fontWeight: 800, color: B.gold, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        Pick Performance
+                      </span>
+                      <span style={{
+                        ...T.micro, fontWeight: 700, color: B.green, fontSize: '0.7rem',
+                        background: B.greenDim, padding: '0.15rem 0.5rem', borderRadius: '4px',
+                      }}>
+                        {pnl.record} · {winPct}% · {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
+                      </span>
+                    </div>
+                    {showPerf ? <ChevronUp size={14} color={B.textMuted} /> : <ChevronDown size={14} color={B.textMuted} />}
+                  </button>
+
+                  {showPerf && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
+                      border: `1px solid ${B.border}`, borderTop: 'none',
+                      borderRadius: '0 0 10px 10px', padding: '1rem',
+                      marginTop: '-1px',
+                    }}>
+                      <div style={{
+                        display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                        gap: '0.5rem', marginBottom: '1rem',
+                      }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ ...T.heading, color: B.text, fontSize: '1.1rem' }}>{pnl.record}</div>
+                          <div style={{ ...T.micro, color: B.textMuted }}>RECORD</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ ...T.heading, color: B.green, fontSize: '1.1rem' }}>{winPct}%</div>
+                          <div style={{ ...T.micro, color: B.textMuted }}>WIN RATE</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ ...T.heading, color: pnl.totalProfit >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
+                            {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
+                          </div>
+                          <div style={{ ...T.micro, color: B.textMuted }}>PROFIT</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ ...T.heading, color: Number(roi) >= 0 ? B.green : B.red, fontSize: '1.1rem' }}>
+                            {Number(roi) >= 0 ? '+' : ''}{roi}%
+                          </div>
+                          <div style={{ ...T.micro, color: B.textMuted }}>ROI</div>
+                        </div>
+                      </div>
+
+                      <div style={{ borderTop: `1px solid ${B.border}`, paddingTop: '0.75rem' }}>
+                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+                          BY CONVICTION RATING
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          {[6, 5, 4].map(n => {
+                            const s = stars[n];
+                            if (!s) return null;
+                            const graded = s.wins + s.losses + s.pushes;
+                            const sWinPct = graded > 0 ? ((s.wins / graded) * 100).toFixed(0) : '—';
+                            const sRoi = s.totalUnits > 0 ? ((s.totalProfit / s.totalUnits) * 100).toFixed(1) : '—';
+                            return (
+                              <div key={n} style={{
+                                display: 'grid', gridTemplateColumns: '90px 1fr 60px 60px 60px',
+                                alignItems: 'center', gap: '0.5rem',
+                                padding: '0.4rem 0.5rem', borderRadius: '6px',
+                                background: n === 6 ? B.goldDim : 'rgba(255,255,255,0.02)',
+                                border: n === 6 ? `1px solid ${B.goldBorder}` : `1px solid transparent`,
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <span style={{ color: B.gold, fontSize: '0.65rem', letterSpacing: '-1px' }}>
+                                    {'★'.repeat(n)}{'☆'.repeat(6 - n)}
+                                  </span>
+                                </div>
+                                <div style={{
+                                  height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden',
+                                }}>
+                                  {graded > 0 && (
+                                    <div style={{
+                                      height: '100%', borderRadius: '2px', width: `${(s.wins / graded) * 100}%`,
+                                      background: `linear-gradient(90deg, ${B.green}, ${B.green}cc)`,
+                                    }} />
+                                  )}
+                                </div>
+                                <span style={{ ...T.micro, color: B.textSec, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                                  {s.record}
+                                </span>
+                                <span style={{ ...T.micro, color: graded > 0 ? B.text : B.textMuted, textAlign: 'right', fontFeatureSettings: "'tnum'" }}>
+                                  {sWinPct}{graded > 0 ? '%' : ''}
+                                </span>
+                                <span style={{
+                                  ...T.micro, textAlign: 'right', fontFeatureSettings: "'tnum'",
+                                  color: s.totalProfit > 0 ? B.green : s.totalProfit < 0 ? B.red : B.textMuted,
+                                }}>
+                                  {s.totalProfit > 0 ? '+' : ''}{s.totalProfit.toFixed(1)}u
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.5rem', fontSize: '0.55rem', opacity: 0.6 }}>
+                          {totalGraded} graded picks since Mar 16 · NHL only (CBB & MLB grading coming soon)
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* ─── Sharp Positions Section ─── */}
             {gamesWithPos > 0 && (() => {
