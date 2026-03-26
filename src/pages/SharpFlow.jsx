@@ -6,7 +6,7 @@
  * Expandable game cards show individual whale trades in context.
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle } from 'lucide-react';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
@@ -247,6 +247,12 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
+    const cacheKey = 'sharpFlow_pnl';
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, ts } = JSON.parse(cached);
+      if (Date.now() - ts < 5 * 60 * 1000) return data;
+    }
     const snap = await getDocs(collection(db, 'sharpFlowPicks'));
     const overall = tallySides(snap);
 
@@ -290,7 +296,9 @@ async function loadAllTimePnL() {
       v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
     }
 
-    return { pregame: overall, all: overall, byStars };
+    const result = { pregame: overall, all: overall, byStars };
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: result, ts: Date.now() })); } catch {}
+    return result;
   } catch (err) {
     console.warn('Failed to load all-time P&L:', err.message);
     const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
@@ -582,7 +590,7 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
 
 // ─── Unified Game Card (every game, premium layout) ───────────────────────────
 
-function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory, polyData }) {
+const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory, polyData }) {
   const [showTrades, setShowTrades] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
   const ss = sportStyle(game.sport);
@@ -1104,7 +1112,7 @@ function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory, polyData
       )}
     </div>
   );
-}
+});
 
 // ─── Top Trade Card (condensed leaderboard card) ──────────────────────────────
 
@@ -1602,556 +1610,11 @@ function fmtOdds(american) {
   return american > 0 ? `+${american}` : `${american}`;
 }
 
-// ─── Whale Signal Scoring ──────────────────────────────────────────────────────
-
-function scoreWhaleSignal(game, whaleProfiles, pinnacleData, sharpPositionsData) {
-  const pinnGame = pinnacleData?.[game.sport]?.[game.key] || null;
-  const sharpPos = sharpPositionsData?.[game.sport]?.[game.key] || null;
-
-  if ((!game.allWhales || game.allWhales.length === 0) && !sharpPos) return null;
-
-  // Analyze whale money by profitability — smart $ vs degen $
-  let smartAway = 0, smartHome = 0, degenAway = 0, degenHome = 0;
-  let unknownAway = 0, unknownHome = 0;
-  let bestSharpTier = 'UNKNOWN';
-  let bestSharpWallet = null;
-
-  for (const w of game.allWhales) {
-    const side = resolveOutcomeSide(w.outcome, game.away, game.home);
-    const isAway = side === 'away';
-    const addr = w.wallet?.toLowerCase();
-    const profile = addr && whaleProfiles ? whaleProfiles[addr] : null;
-    const pnl = profile?.totalPnl || 0;
-    const cash = w.amount || 0;
-
-    if (profile && pnl > 5000) {
-      if (isAway) smartAway += cash; else smartHome += cash;
-      const tierRank = { ELITE: 4, PROVEN: 3, ACTIVE: 2 };
-      if ((tierRank[profile.tier] || 0) > ({ ELITE: 4, PROVEN: 3, ACTIVE: 2, UNKNOWN: 0 }[bestSharpTier] || 0)) {
-        bestSharpTier = profile.tier;
-        bestSharpWallet = { ...profile, address: w.wallet };
-      }
-    } else if (profile && pnl < -10000) {
-      if (isAway) degenAway += cash; else degenHome += cash;
-    } else {
-      if (isAway) unknownAway += cash; else unknownHome += cash;
-    }
-  }
-
-  // Determine signal direction: follow sharp, fade degen
-  const smartDir = smartAway > smartHome ? 'away' : smartHome > smartAway ? 'home' : null;
-  const degenDir = degenAway > degenHome ? 'away' : degenHome > degenAway ? 'home' : null;
-  const fadeDir = degenDir === 'away' ? 'home' : degenDir === 'home' ? 'away' : null;
-  const rawDir = game.whaleDirection;
-
-  // Sharp position consensus direction
-  const sharpPosDir = sharpPos?.summary?.consensus || null;
-
-  // Priority: sharp money > sharp positions > fade degens > raw volume
-  let signalDir = smartDir || sharpPosDir || fadeDir || rawDir;
-  if (!signalDir) return null;
-
-  const isAway = signalDir === 'away';
-  const smartCash = isAway ? smartAway : smartHome;
-  const degenCashOnOpp = isAway ? degenHome : degenAway;
-  const totalSignalCash = isAway ? game.whaleCashAway : game.whaleCashHome;
-
-  let score = 0;
-  const factors = [];
-  let signalType = 'volume';
-
-  // Sharp wallet following
-  if (smartCash > 0) {
-    signalType = 'sharp';
-    if (smartCash >= 25000) {
-      score += 30;
-      factors.push({ label: `Sharp $${fmtVol(smartCash)} following`, pts: 30 });
-    } else if (smartCash >= 5000) {
-      score += 20;
-      factors.push({ label: `Sharp $${fmtVol(smartCash)} following`, pts: 20 });
-    } else {
-      score += 12;
-      factors.push({ label: `Sharp $${fmtVol(smartCash)} following`, pts: 12 });
-    }
-  }
-
-  // Degen fade signal
-  if (fadeDir === signalDir && degenCashOnOpp > 10000) {
-    signalType = signalType === 'sharp' ? 'sharp+fade' : 'fade';
-    score += 15;
-    factors.push({ label: `Fade degen $${fmtVol(degenCashOnOpp)}`, pts: 15 });
-  }
-
-  // Wallet tier bonus
-  if (bestSharpTier === 'ELITE') {
-    score += 20;
-    factors.push({ label: 'ELITE bettor', pts: 20 });
-  } else if (bestSharpTier === 'PROVEN') {
-    score += 12;
-    factors.push({ label: 'PROVEN bettor', pts: 12 });
-  }
-
-  // If no sharp or fade signal, fall back to raw volume (weaker)
-  if (signalType === 'volume') {
-    const whaleCash = isAway ? game.whaleCashAway : game.whaleCashHome;
-    if (whaleCash >= 25000) {
-      score += 10;
-      factors.push({ label: `$${fmtVol(whaleCash)} volume`, pts: 10 });
-    } else if (whaleCash >= 1000) {
-      score += 5;
-      factors.push({ label: `$${fmtVol(whaleCash)} volume`, pts: 5 });
-    }
-  }
-
-  // Pinnacle movement confirmation
-  if (pinnGame?.movement) {
-    const pinnDir = pinnGame.movement.direction;
-    if ((isAway && pinnDir === 'away') || (!isAway && pinnDir === 'home')) {
-      score += 20;
-      factors.push({ label: 'Pinnacle confirms', pts: 20 });
-    }
-  }
-
-  // +EV on retail book
-  const pinnOdds = isAway ? pinnGame?.current?.away : pinnGame?.current?.home;
-  const bestRetail = isAway ? pinnGame?.bestAway : pinnGame?.bestHome;
-  const bestBook = isAway ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
-  const pinnProb = impliedProb(pinnOdds);
-  const retailProb = impliedProb(bestRetail);
-  let evEdge = null;
-
-  if (pinnProb && retailProb) {
-    evEdge = +((pinnProb - retailProb) * 100).toFixed(1);
-    if (evEdge > 3) {
-      score += 25;
-      factors.push({ label: `+${evEdge}% EV (${bestBook})`, pts: 25 });
-    } else if (evEdge > 1) {
-      score += 15;
-      factors.push({ label: `+${evEdge}% EV (${bestBook})`, pts: 15 });
-    } else if (evEdge > 0) {
-      score += 5;
-      factors.push({ label: `+${evEdge}% EV (${bestBook})`, pts: 5 });
-    }
-  }
-
-  // Ticket/money divergence
-  if (game.ticketDivergence >= 10) {
-    score += 8;
-    factors.push({ label: `${Math.round(game.ticketDivergence)}pt split`, pts: 8 });
-  }
-
-  // Cross-platform volume
-  if (game.awayMoneyPct != null) {
-    const pct = isAway ? game.awayMoneyPct : game.homeMoneyPct;
-    if (pct >= 60) {
-      score += 7;
-      factors.push({ label: 'Cross-platform volume', pts: 7 });
-    }
-  }
-
-  // Sharp wallet positions (from proactive scan)
-  let sharpPosCount = 0;
-  let sharpPosInvested = 0;
-  if (sharpPos) {
-    const s = sharpPos.summary;
-    const posCount = isAway ? s.sharpAway : s.sharpHome;
-    const posInvested = isAway ? s.awayInvested : s.homeInvested;
-    if (posCount > 0) {
-      sharpPosCount = posCount;
-      sharpPosInvested = posInvested;
-      if (posInvested >= 10000) {
-        score += 20;
-        factors.push({ label: `${posCount} sharp bettor(s) positioned`, pts: 20 });
-      } else if (posCount >= 2) {
-        score += 15;
-        factors.push({ label: `${posCount} sharp bettors in`, pts: 15 });
-      } else {
-        score += 8;
-        factors.push({ label: `Sharp bettor positioned`, pts: 8 });
-      }
-    }
-    // If sharp positions disagree with signal direction, it's a conflicting signal
-    if (s.consensus && s.consensus !== (isAway ? 'away' : 'home') && s.totalInvested > 1000) {
-      score -= 10;
-      factors.push({ label: 'Sharp positions oppose', pts: -10 });
-    }
-  }
-
-  const whaleCash = isAway ? game.whaleCashAway : game.whaleCashHome;
-
-  return {
-    score: Math.min(Math.max(score, 0), 100),
-    side: isAway ? 'away' : 'home',
-    teamName: isAway ? game.away : game.home,
-    whaleCash,
-    smartCash,
-    signalType,
-    bestTier: bestSharpTier,
-    bestWallet: bestSharpWallet,
-    factors,
-    pinnacle: pinnGame,
-    evEdge,
-    pinnOdds,
-    bestRetail,
-    bestBook,
-    pinnProb: pinnProb ? +(pinnProb * 100).toFixed(1) : null,
-    sharpPositions: sharpPos,
-    sharpPosCount,
-    sharpPosInvested,
-  };
-}
-
-function WhaleSignalCard({ game, signal, isMobile, whaleProfiles }) {
-  const [expanded, setExpanded] = useState(false);
-  const ss = sportStyle(game.sport);
-  const teamShort = signal.teamName.split(' ').pop();
-  const hasEV = signal.evEdge != null && signal.evEdge > 0;
-  const barColor = hasEV ? B.green : signal.score >= 50 ? B.gold : B.sky;
-  const pinnacle = signal.pinnacle;
-  const allBooks = pinnacle?.allBooks || {};
-
-  return (
-    <div style={{
-      background: B.card, borderRadius: '12px', overflow: 'hidden',
-      border: `1px solid ${hasEV ? 'rgba(16,185,129,0.3)' : B.border}`,
-    }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.875rem 1rem',
-        borderBottom: `1px solid ${B.borderSubtle}`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{
-            ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '4px',
-            background: ss.bg, color: ss.color, letterSpacing: '0.05em',
-          }}>{game.sport}</span>
-          <span style={{ ...T.caption, fontWeight: 700, color: B.text }}>
-            {game.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {game.home}
-          </span>
-        </div>
-        <div style={{
-          ...T.small, fontWeight: 800, color: barColor,
-          display: 'flex', alignItems: 'center', gap: '0.25rem',
-        }}>
-          <Zap size={14} /> {signal.score}
-        </div>
-      </div>
-
-      {/* ─── Actionable Bet Box ─── */}
-      {hasEV && signal.bestBook && (
-        <div style={{
-          margin: '0.75rem 1rem 0', padding: '0.75rem',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.02) 100%)',
-          border: '1px solid rgba(16,185,129,0.25)',
-        }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '0.5rem',
-          }}>
-            <span style={{ ...T.caption, fontWeight: 800, color: B.green }}>
-              +EV OPPORTUNITY
-            </span>
-            <span style={{
-              ...T.small, fontWeight: 900, color: B.green,
-              padding: '0.15rem 0.5rem', borderRadius: '4px',
-              background: B.greenDim,
-            }}>
-              +{signal.evEdge}% EV
-            </span>
-          </div>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-            gap: '0.5rem', alignItems: 'center',
-          }}>
-            <div>
-              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>BET</div>
-              <div style={{ ...T.body, fontWeight: 800, color: B.text }}>
-                {teamShort} ML
-              </div>
-            </div>
-            <div style={{ width: '1px', height: '30px', background: B.borderSubtle }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>BEST PRICE</div>
-              <div style={{ ...T.body, fontWeight: 800, color: B.green }}>
-                {fmtOdds(signal.bestRetail)}
-              </div>
-              <div style={{ ...T.micro, color: B.textSec }}>
-                {signal.bestBook}
-              </div>
-            </div>
-          </div>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between',
-            marginTop: '0.5rem', paddingTop: '0.375rem',
-            borderTop: '1px solid rgba(16,185,129,0.15)',
-          }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>
-              Fair value: {fmtOdds(signal.pinnOdds)} ({signal.pinnProb}%)
-            </span>
-            <span style={{ ...T.micro, color: B.textMuted }}>
-              {fmtVol(signal.whaleCash)} whale $
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ─── No EV but still a signal ─── */}
-      {!hasEV && (
-        <div style={{ padding: '0.75rem 1rem 0' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.625rem',
-          }}>
-            <div style={{
-              padding: '0.4rem 0.75rem', borderRadius: '8px',
-              background: `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`,
-              border: `1px solid ${B.goldBorder}`,
-            }}>
-              <span style={{ ...T.caption, fontWeight: 800, color: B.gold }}>
-                {signal.sharpPosCount > 0 && signal.signalType === 'volume'
-                  ? `${signal.sharpPosCount} sharp bettor${signal.sharpPosCount > 1 ? 's' : ''} → ${teamShort}`
-                  : signal.signalType === 'fade' ? `Fade degens → ${teamShort}`
-                  : signal.signalType === 'sharp+fade' ? `Sharp + Fade → ${teamShort}`
-                  : signal.signalType === 'sharp' ? `Sharp money → ${teamShort}`
-                  : `Volume → ${teamShort}`}
-              </span>
-            </div>
-            {signal.bestTier !== 'UNKNOWN' && (
-              <Badge
-                color={signal.bestTier === 'ELITE' ? B.gold : B.green}
-                bg={signal.bestTier === 'ELITE' ? B.goldDim : B.greenDim}
-              >{signal.bestTier}</Badge>
-            )}
-            <span style={{ ...T.micro, color: B.textMuted, marginLeft: 'auto' }}>
-              {fmtVol(signal.whaleCash)} whale $
-              {!pinnacle && ' · No book data yet'}
-            </span>
-          </div>
-        </div>
-      )}
-
-      <div style={{ padding: '0.75rem 1rem' }}>
-        {/* Score bar */}
-        <div style={{ marginBottom: '0.75rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>Signal Strength</span>
-            <span style={{ ...T.micro, color: barColor, fontWeight: 700 }}>{signal.score}/100</span>
-          </div>
-          <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: '3px', width: `${signal.score}%`,
-              background: `linear-gradient(90deg, ${barColor}, ${barColor}90)`,
-              transition: 'width 0.5s ease',
-            }} />
-          </div>
-        </div>
-
-        {/* Factor pills */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.5rem' }}>
-          {signal.factors.map((f, i) => (
-            <span key={i} style={{
-              ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '4px',
-              background: f.label.includes('EV') ? B.greenDim : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${f.label.includes('EV') ? 'rgba(16,185,129,0.2)' : B.borderSubtle}`,
-              color: f.label.includes('EV') ? B.green : B.textSec,
-            }}>
-              {f.label} <span style={{ color: B.green, fontWeight: 700 }}>+{f.pts}</span>
-            </span>
-          ))}
-        </div>
-
-        {/* Book comparison */}
-        {pinnacle && Object.keys(allBooks).length > 1 && (
-          <div style={{
-            borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
-            overflow: 'hidden',
-          }}>
-            <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>Book Prices — {signal.side === 'away' ? game.away : game.home} ML</span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-              {Object.entries(allBooks)
-                .sort(([, a], [, b]) => {
-                  const aOdds = signal.side === 'away' ? a.away : a.home;
-                  const bOdds = signal.side === 'away' ? b.away : b.home;
-                  return bOdds - aOdds;
-                })
-                .map(([key, book]) => {
-                  const odds = signal.side === 'away' ? book.away : book.home;
-                  const isBest = odds === signal.bestRetail;
-                  const isPinn = key === 'pinnacle';
-                  return (
-                    <div key={key} style={{
-                      flex: '1 1 auto', minWidth: '80px',
-                      padding: '0.4rem 0.625rem',
-                      borderRight: `1px solid ${B.borderSubtle}`,
-                      background: isBest ? B.greenDim : 'transparent',
-                    }}>
-                      <div style={{ ...T.micro, color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400 }}>
-                        {book.name}
-                      </div>
-                      <div style={{
-                        ...T.caption, fontWeight: 700,
-                        color: isBest ? B.green : isPinn ? B.gold : B.text,
-                      }}>
-                        {fmtOdds(odds)}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-
-        {/* Pinnacle movement */}
-        {pinnacle?.opener && pinnacle?.current && (
-          <div style={{
-            display: 'flex', gap: '1rem', padding: '0.375rem 0.625rem',
-            borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
-            border: `1px solid ${B.borderSubtle}`, marginBottom: '0.5rem',
-          }}>
-            <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
-            <span style={{ ...T.micro, color: B.textSec }}>
-              Open: {fmtOdds(pinnacle.opener.away)} / {fmtOdds(pinnacle.opener.home)}
-            </span>
-            <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
-              Now: {fmtOdds(pinnacle.current.away)} / {fmtOdds(pinnacle.current.home)}
-            </span>
-            {pinnacle.movement?.direction && (
-              <span style={{
-                ...T.micro, fontWeight: 700, marginLeft: 'auto',
-                color: pinnacle.movement.direction === signal.side ? B.green : B.red,
-              }}>
-                {pinnacle.movement.direction === signal.side ? '✓ Confirms' : '✗ Opposes'}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Sharp Positions (proactive wallet scan) */}
-        {signal.sharpPositions && signal.sharpPositions.positions?.length > 0 && (
-          <SharpPositionsBlock positions={signal.sharpPositions} game={game} signal={signal} />
-        )}
-
-        {/* Expand whale trades */}
-        <button onClick={() => setExpanded(!expanded)} style={{
-          display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer',
-          ...T.micro, color: B.textMuted, background: 'none', border: 'none', padding: '0.25rem 0',
-        }}>
-          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          {expanded ? 'Hide' : 'Show'} whale trades ({game.allWhales.length})
-        </button>
-        {expanded && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.375rem' }}>
-            {game.allWhales.slice(0, 8).map((w, i) => (
-              <WhaleTradeRow key={`${w.ts}-${i}`} trade={w} whaleProfiles={whaleProfiles} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SharpPositionsBlock({ positions, game, signal }) {
-  const pos = positions.positions;
-  const summary = positions.summary;
-  const awayShort = game.away.split(' ').pop();
-  const homeShort = game.home.split(' ').pop();
-  const consensusTeam = summary.consensus === 'away' ? awayShort : homeShort;
-
-  return (
-    <div style={{
-      borderRadius: '8px', marginBottom: '0.5rem', overflow: 'hidden',
-      background: 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.01) 100%)',
-      border: `1px solid ${B.goldBorder}`,
-    }}>
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0.5rem 0.625rem',
-        borderBottom: `1px solid rgba(212,175,55,0.12)`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          <span style={{ ...T.micro, fontWeight: 700, color: B.gold }}>
-            SHARP BETTORS IN
-          </span>
-          <span style={{ ...T.micro, color: B.textSec }}>
-            {pos.length} position{pos.length !== 1 ? 's' : ''} · {fmtVol(summary.totalInvested)} invested
-          </span>
-        </div>
-        {summary.consensus && (
-          <span style={{
-            ...T.micro, fontWeight: 800, color: B.gold,
-            padding: '0.1rem 0.4rem', borderRadius: '4px',
-            background: B.goldDim,
-          }}>
-            {consensusTeam}
-          </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {pos.map((p, i) => {
-          const sideTeam = p.side === 'away' ? game.away : game.home;
-          const sideShort = sideTeam.split(' ').pop();
-          const pnlColor = p.pnl >= 0 ? B.green : B.red;
-          const tierColors = {
-            ELITE: { color: B.gold, bg: B.goldDim },
-            PROVEN: { color: B.green, bg: B.greenDim },
-          };
-          const tc = tierColors[p.tier] || { color: B.textMuted, bg: 'rgba(255,255,255,0.04)' };
-
-          return (
-            <div key={`${p.wallet}-${i}`} style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.4rem 0.625rem',
-              borderBottom: i < pos.length - 1 ? `1px solid rgba(212,175,55,0.08)` : 'none',
-              flexWrap: 'wrap',
-            }}>
-              <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-              <span style={{
-                ...T.micro, color: B.text, fontWeight: 600,
-                maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                ...{p.wallet.slice(-4)}
-              </span>
-              <span style={{
-                ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                color: p.totalPnl >= 0 ? B.green : B.red,
-              }}>
-                {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)}
-              </span>
-              <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-                {sideShort}
-              </span>
-              <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
-              </span>
-              <span style={{
-                ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                color: pnlColor, marginLeft: 'auto',
-              }}>
-                {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
-              </span>
-              <span style={{
-                ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'",
-              }}>
-                now {Math.round(p.curPrice * 100)}¢
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ─── Sharp Position Card (elevated, full-featured) ────────────────────────────
 
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
 
-function MiniSparkline({ points, width = 140, height = 32, color = B.gold, label, startLabel, endLabel }) {
+const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height = 32, color = B.gold, label, startLabel, endLabel }) {
   if (!points || points.length < 2) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -2194,7 +1657,7 @@ function MiniSparkline({ points, width = 140, height = 32, color = B.gold, label
       )}
     </div>
   );
-}
+});
 
 function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, polyMovingWith) {
   let pts = 0;
@@ -2247,7 +1710,7 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
   return { stars, pts, maxPts, ...info, isActionable };
 }
 
-function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const ss = sportStyle(gd.sport);
@@ -3077,7 +2540,7 @@ function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -3092,7 +2555,13 @@ export default function SharpFlow() {
   const [allTimePnL, setAllTimePnL] = useState(null);
   const [showPerf, setShowPerf] = useState(false);
   const [picksLoaded, setPicksLoaded] = useState(false);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const syncedRef = useRef(new Set());
 
   // Load existing locked picks + all-time P&L on mount
@@ -3112,6 +2581,7 @@ export default function SharpFlow() {
   // Auto-lock qualifying PREGAME picks to Firebase (with peak tracking + flip support)
   const syncLockedPicks = useCallback(() => {
     if (!sharpPositions || !pinnacleHistory || !picksLoaded) return;
+    const pendingUpdates = [];
     for (const sport of ['NHL', 'CBB', 'MLB']) {
       const sportGames = sharpPositions?.[sport] || {};
       for (const [key, gd] of Object.entries(sportGames)) {
@@ -3193,26 +2663,37 @@ export default function SharpFlow() {
           if (syncedRef.current.has(syncKey)) continue;
           syncedRef.current.add(syncKey);
 
-          syncPickToFirebase({
-            date, sport, gameKey: key, away: gd.away, home: gd.home, commenceTime,
-            side: evalSide, team, odds: betOdds, book: bestBook || 'Pinnacle',
-            pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
-            sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength, stars: sr.stars,
-          }).then(({ docId: id, action }) => {
-            if (action === 'error') {
-              syncedRef.current.delete(syncKey);
-              return;
-            }
-            if (action === 'no_change') return;
-            const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label, stars: sr.stars };
-            setLockedPicks(prev => {
-              const prevDoc = prev[id] || {};
-              const prevSides = prevDoc.sides || {};
-              return { ...prev, [id]: { ...prevDoc, sides: { ...prevSides, [evalSide]: { ...prevSides[evalSide], peak: sideSnap, lock: prevSides[evalSide]?.lock || sideSnap } } } };
-            });
-          });
+          const capturedSide = evalSide;
+          const capturedSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label, stars: sr.stars };
+          pendingUpdates.push(
+            syncPickToFirebase({
+              date, sport, gameKey: key, away: gd.away, home: gd.home, commenceTime,
+              side: capturedSide, team, odds: betOdds, book: bestBook || 'Pinnacle',
+              pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
+              sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength, stars: sr.stars,
+            }).then(({ docId: id, action }) => {
+              if (action === 'error') { syncedRef.current.delete(syncKey); return null; }
+              if (action === 'no_change') return null;
+              return { id, side: capturedSide, snap: capturedSnap };
+            })
+          );
         }
       }
+    }
+    if (pendingUpdates.length > 0) {
+      Promise.all(pendingUpdates).then(results => {
+        const updates = results.filter(Boolean);
+        if (updates.length === 0) return;
+        setLockedPicks(prev => {
+          const next = { ...prev };
+          for (const { id, side, snap } of updates) {
+            const prevDoc = next[id] || {};
+            const prevSides = prevDoc.sides || {};
+            next[id] = { ...prevDoc, sides: { ...prevSides, [side]: { ...prevSides[side], peak: snap, lock: prevSides[side]?.lock || snap } } };
+          }
+          return next;
+        });
+      });
     }
   }, [sharpPositions, pinnacleHistory, polyData, picksLoaded]);
 
@@ -3249,23 +2730,37 @@ export default function SharpFlow() {
     return g;
   }, [filteredGames, gameSort, pinnacleHistory]);
 
-  const whaleSignals = useMemo(() => {
-    return filteredGames
-      .map(g => ({ game: g, signal: scoreWhaleSignal(g, whaleProfiles, pinnacleHistory, sharpPositions) }))
-      .filter(({ signal }) => signal && signal.score >= 20)
-      .sort((a, b) => {
-        const aEV = a.signal.evEdge || 0;
-        const bEV = b.signal.evEdge || 0;
-        if (aEV > 0 && bEV <= 0) return -1;
-        if (bEV > 0 && aEV <= 0) return 1;
-        if (aEV > 0 && bEV > 0) return bEV - aEV;
-        return b.signal.score - a.signal.score;
-      });
-  }, [filteredGames, whaleProfiles, pinnacleHistory, sharpPositions]);
+  const { totalVol, totalTrades, totalWhales } = useMemo(() => {
+    let vol = 0, trades = 0, whales = 0;
+    for (const g of filteredGames) { vol += g.volume; trades += g.totalTrades; whales += g.whaleCount; }
+    return { totalVol: vol, totalTrades: trades, totalWhales: whales };
+  }, [filteredGames]);
 
-  const totalVol = filteredGames.reduce((s, g) => s + g.volume, 0);
-  const totalTrades = filteredGames.reduce((s, g) => s + g.totalTrades, 0);
-  const totalWhales = filteredGames.reduce((s, g) => s + g.whaleCount, 0);
+  const sharpStats = useMemo(() => {
+    const allEliteProven = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
+    const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 40).length;
+    const sportLosers = allEliteProven.filter(p => {
+      if ((p.mmScore || 0) > 40) return false;
+      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) < -100000;
+    }).length;
+    const totalExcluded = mmExcluded + sportLosers;
+    const cleanWallets = allEliteProven.filter(p => {
+      if ((p.mmScore || 0) > 40) return false;
+      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -100000;
+    });
+    let totalSharpInvested = 0;
+    for (const sport of ['NHL', 'CBB', 'MLB']) {
+      const sg = sharpPositions?.[sport] || {};
+      for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
+    }
+    return {
+      trackedCount: allEliteProven.length - totalExcluded,
+      totalExcluded, mmExcluded, sportLosers,
+      gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length : 0,
+      totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
+      totalSharpInvested,
+    };
+  }, [whaleProfiles, sharpPositions]);
 
   if (loading) {
     return (
@@ -3311,36 +2806,6 @@ export default function SharpFlow() {
 
       {/* ─── Whale Signals View ─── */}
       {viewMode === 'whaleSignals' && (() => {
-        const allEliteProven = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
-        const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 40).length;
-        const sportLosers = allEliteProven.filter(p => {
-          if ((p.mmScore || 0) > 40) return false;
-          const sp = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-          return sp < -100000;
-        }).length;
-        const totalExcluded = mmExcluded + sportLosers;
-        const trackedCount = allEliteProven.length - totalExcluded;
-        const gamesWithPos = sharpPositions
-          ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length
-          : 0;
-        const scannedAt = sharpPositions?.scannedAt
-          ? fmtTime(sharpPositions.scannedAt).ago
-          : null;
-
-        const cleanWallets = allEliteProven.filter(p => {
-          if ((p.mmScore || 0) > 40) return false;
-          const sp = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-          return sp >= -100000;
-        });
-        const totalSharpPnl = cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0);
-        let totalSharpInvested = 0;
-        for (const sport of ['NHL', 'CBB', 'MLB']) {
-          const sg = sharpPositions?.[sport] || {};
-          for (const [, gd] of Object.entries(sg)) {
-            totalSharpInvested += gd.summary?.totalInvested || 0;
-          }
-        }
-
         return (
           <div>
             {/* Stat cards */}
@@ -3349,11 +2814,11 @@ export default function SharpFlow() {
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
-              <FlowStatCard icon={Eye} label="Sharp Bettors" value={trackedCount} accent={B.gold}
-                hint={totalExcluded > 0 ? `${totalExcluded} non-sharp bettors filtered` : 'ELITE + PROVEN directional bettors'} />
-              <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(totalSharpInvested)} accent={B.green}
+              <FlowStatCard icon={Eye} label="Sharp Bettors" value={sharpStats.trackedCount} accent={B.gold}
+                hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'ELITE + PROVEN directional bettors'} />
+              <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
-              <FlowStatCard icon={TrendingUp} label="Combined Lifetime P&L" value={`+${fmtVol(totalSharpPnl)}`} accent={B.green}
+              <FlowStatCard icon={TrendingUp} label="Combined Lifetime P&L" value={`+${fmtVol(sharpStats.totalSharpPnl)}`} accent={B.green}
                 hint="Aggregate P&L of all tracked sharp bettors" />
             </div>
 
@@ -3482,7 +2947,7 @@ export default function SharpFlow() {
             })()}
 
             {/* ─── Sharp Positions Section ─── */}
-            {gamesWithPos > 0 && (() => {
+            {sharpStats.gamesWithPos > 0 && (() => {
               const allPosGames = [];
               const nowMs = Date.now();
               for (const sport of ['NHL', 'CBB', 'MLB']) {
@@ -3541,7 +3006,7 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <SectionHead
                     title={`Sharp Positions (${allPosGames.length} games)`}
-                    subtitle={`Open bets from ${trackedCount} verified directional sharps — market makers excluded`}
+                    subtitle={`Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
                     icon={Eye}
                   />
                   {/* Sort bar */}
@@ -3595,9 +3060,9 @@ export default function SharpFlow() {
                     <span style={{ ...T.micro, color: B.textSec }}>
                       <span style={{ fontWeight: 700, color: B.green }}>+EV</span> = retail book price beats Pinnacle fair value
                     </span>
-                    {totalExcluded > 0 && (
+                    {sharpStats.totalExcluded > 0 && (
                       <span style={{ ...T.micro, color: B.textSec }}>
-                        <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {mmExcluded} MMs + {sportLosers} sport losers removed
+                        <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {sharpStats.mmExcluded} MMs + {sharpStats.sportLosers} sport losers removed
                       </span>
                     )}
                   </div>
@@ -3614,7 +3079,7 @@ export default function SharpFlow() {
               );
             })()}
 
-            {gamesWithPos === 0 && (
+            {sharpStats.gamesWithPos === 0 && (
               <div style={{
                 textAlign: 'center', padding: '3rem', borderRadius: '12px',
                 background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -3754,7 +3219,7 @@ function StatCard({ icon: Icon, label, value, accent }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
       padding: '0.875rem 1.25rem', borderRadius: '10px',
       background: 'linear-gradient(135deg, rgba(21,25,35,0.9) 0%, rgba(26,31,46,0.7) 100%)',
-      border: `1px solid ${B.border}`, backdropFilter: 'blur(8px)',
+      border: `1px solid ${B.border}`,
       minWidth: '110px', position: 'relative', overflow: 'hidden',
     }}>
       <div style={{
@@ -3772,13 +3237,13 @@ function StatCard({ icon: Icon, label, value, accent }) {
   );
 }
 
-function FlowStatCard({ icon: Icon, label, value, accent, hint }) {
+const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, accent, hint }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
       padding: '0.875rem 1.25rem 0.625rem', borderRadius: '10px',
       background: 'linear-gradient(135deg, rgba(21,25,35,0.9) 0%, rgba(26,31,46,0.7) 100%)',
-      border: `1px solid ${B.border}`, backdropFilter: 'blur(8px)',
+      border: `1px solid ${B.border}`,
       minWidth: '110px', position: 'relative', overflow: 'hidden',
     }}>
       <div style={{
@@ -3800,7 +3265,7 @@ function FlowStatCard({ icon: Icon, label, value, accent, hint }) {
       )}
     </div>
   );
-}
+});
 
 function SportTabs({ active, onChange }) {
   return (
