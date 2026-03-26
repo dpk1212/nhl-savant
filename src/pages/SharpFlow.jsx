@@ -233,7 +233,7 @@ function estimateStarsFromSnap(snap) {
   const sc = snap.sharpCount || 0;
   if (sc >= 5) pts += 3; else if (sc >= 3) pts += 2; else if (sc >= 1) pts += 1;
   const inv = snap.totalInvested || 0;
-  if (inv >= 25000) pts += 2; else if (inv >= 5000) pts += 1;
+  if (inv >= 25000) pts += 2; else if (inv >= 7000) pts += 1; else pts -= 1;
   const ev = snap.evEdge || 0;
   if (ev > 3) pts += 2; else if (ev > 0) pts += 1;
   if (snap.criteria?.pinnacleConfirms) pts += 1;
@@ -1667,9 +1667,10 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
   else if (sharpCount >= 3) pts += 2;
   else if (sharpCount >= 1) pts += 1;
 
-  // Money deployed (max 2 pts)
+  // Money deployed (max 2 pts, penalize thin volume)
   if (totalInvested >= 25000) pts += 2;
-  else if (totalInvested >= 5000) pts += 1;
+  else if (totalInvested >= 7000) pts += 1;
+  else pts -= 1;
 
   // EV edge (max 2 pts)
   if (evEdge > 3) pts += 2;
@@ -1823,12 +1824,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'sharps', label: '3+ Sharp Bettors', met: uniqueWallets >= 3 },
     { id: 'ev', label: '+EV Edge', met: hasEV },
     { id: 'pinnacle', label: 'Pinnacle Confirms', met: pinnConfirms },
-    { id: 'invested', label: '$5K+ Invested', met: s.totalInvested >= 5000 },
+    { id: 'invested', label: '$7K+ on Side', met: consensusInvested >= 7000 },
     { id: 'pinnMove', label: 'Line Moving With Play', met: pinnMovingWith },
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, s.totalInvested, cGrade.label, pinnMovingWith, polyMovingWith);
+  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith);
   const isLocked = sr.stars >= 3;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
@@ -2653,7 +2654,7 @@ export default function SharpFlow() {
             sharps3Plus: uniqueWallets >= 3,
             plusEV: hasEV,
             pinnacleConfirms: pinnConfirms,
-            invested5kPlus: sideInvested >= 5000,
+            invested7kPlus: sideInvested >= 7000,
             lineMovingWith: pinnMovingWith,
             predMarketAligns: polyMovingWith,
           };
