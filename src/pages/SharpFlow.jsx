@@ -227,21 +227,42 @@ function tallySides(snap) {
   return { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` };
 }
 
+function estimateStarsFromSnap(snap) {
+  if (!snap) return 3;
+  let pts = 0;
+  const sc = snap.sharpCount || 0;
+  if (sc >= 5) pts += 3; else if (sc >= 3) pts += 2; else if (sc >= 1) pts += 1;
+  const inv = snap.totalInvested || 0;
+  if (inv >= 25000) pts += 2; else if (inv >= 5000) pts += 1;
+  const ev = snap.evEdge || 0;
+  if (ev > 3) pts += 2; else if (ev > 0) pts += 1;
+  if (snap.criteria?.pinnacleConfirms) pts += 1;
+  if (snap.criteria?.lineMovingWith) pts += 1;
+  const cg = snap.consensusStrength?.grade || '';
+  if (cg === 'DOMINANT') pts += 1.5; else if (cg === 'STRONG') pts += 1; else if (cg === 'LEAN') pts += 0.5;
+  if (snap.criteria?.predMarketAligns) pts += 0.5;
+  const raw = (pts / 11) * 5;
+  return Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
+}
+
 async function loadAllTimePnL() {
   try {
     const snap = await getDocs(collection(db, 'sharpFlowPicks'));
     const overall = tallySides(snap);
 
     const byStars = {};
+    const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
+    const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' });
     snap.forEach(d => {
       const data = d.data();
       const processSide = (sd) => {
-        const s = sd.peak?.stars || sd.lock?.stars || 0;
-        const key = s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
-        if (!byStars[key]) byStars[key] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' };
+        const bestSnap = sd.peak || sd.lock;
+        const s = bestSnap?.stars || estimateStarsFromSnap(bestSnap);
+        const key = starBucket(s);
+        if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
         if (sd.status !== 'COMPLETED') return;
-        const u = sd.peak?.units || sd.lock?.units || 1;
+        const u = bestSnap?.units || 1;
         byStars[key].totalUnits += u;
         if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
         else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
@@ -250,9 +271,9 @@ async function loadAllTimePnL() {
       if (data.sides) {
         for (const sd of Object.values(data.sides)) processSide(sd);
       } else {
-        const s = data.stars || 0;
-        const key = s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
-        if (!byStars[key]) byStars[key] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' };
+        const s = data.stars || estimateStarsFromSnap(data);
+        const key = starBucket(s);
+        if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
         if (data.status !== 'COMPLETED') return;
         const u = data.units || 1;
@@ -3069,6 +3090,7 @@ export default function SharpFlow() {
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const [showPerf, setShowPerf] = useState(false);
+  const [picksLoaded, setPicksLoaded] = useState(false);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const syncedRef = useRef(new Set());
 
@@ -3081,13 +3103,14 @@ export default function SharpFlow() {
           syncedRef.current.add(`${docId}:${sideKey}`);
         }
       }
+      setPicksLoaded(true);
     });
     loadAllTimePnL().then(setAllTimePnL);
   }, []);
 
   // Auto-lock qualifying PREGAME picks to Firebase (with peak tracking + flip support)
   const syncLockedPicks = useCallback(() => {
-    if (!sharpPositions || !pinnacleHistory) return;
+    if (!sharpPositions || !pinnacleHistory || !picksLoaded) return;
     for (const sport of ['NHL', 'CBB', 'MLB']) {
       const sportGames = sharpPositions?.[sport] || {};
       for (const [key, gd] of Object.entries(sportGames)) {
@@ -3190,7 +3213,7 @@ export default function SharpFlow() {
         }
       }
     }
-  }, [sharpPositions, pinnacleHistory, polyData]);
+  }, [sharpPositions, pinnacleHistory, polyData, picksLoaded]);
 
   useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
 
