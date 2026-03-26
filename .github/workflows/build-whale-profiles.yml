@@ -2,8 +2,8 @@ name: Build Whale Profiles
 
 on:
   schedule:
-    # 8 AM, 12 PM, 4 PM, 8 PM ET (12, 16, 20, 00 UTC)
-    - cron: '0 12,16,20,0 * * *'
+    # 6 AM and 11 PM ET (11, 3 UTC)
+    - cron: '0 3,11 * * *'
   workflow_dispatch:
 
 jobs:
