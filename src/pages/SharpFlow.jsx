@@ -164,7 +164,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
 
     if (sides[side]) {
       const currentPeak = sides[side].peak?.units || 0;
-      if (units > currentPeak) {
+      const currentPeakStars = sides[side].peak?.stars || 0;
+      if (units > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(units).label;
         await setDoc(ref, {
           sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() } } }
@@ -2653,15 +2654,16 @@ export default function SharpFlow() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-  const syncedRef = useRef(new Set());
+  const syncedRef = useRef(new Map());
 
   // Load existing locked picks + all-time P&L on mount
   useEffect(() => {
     loadLockedPicks().then(picks => {
       setLockedPicks(picks);
       for (const [docId, doc] of Object.entries(picks)) {
-        for (const sideKey of Object.keys(doc.sides || {})) {
-          syncedRef.current.add(`${docId}:${sideKey}`);
+        for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
+          const storedStars = sd.peak?.stars || sd.lock?.stars || 0;
+          if (storedStars >= 3) syncedRef.current.set(`${docId}:${sideKey}`, storedStars);
         }
       }
       setPicksLoaded(true);
@@ -2751,8 +2753,9 @@ export default function SharpFlow() {
           const consStrength = { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label };
 
           const syncKey = `${docId}:${evalSide}`;
-          if (syncedRef.current.has(syncKey)) continue;
-          syncedRef.current.add(syncKey);
+          const prevStars = syncedRef.current.get(syncKey);
+          if (prevStars !== undefined && sr.stars <= prevStars) continue;
+          syncedRef.current.set(syncKey, sr.stars);
 
           const capturedSide = evalSide;
           const capturedSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label, stars: sr.stars };
@@ -2763,7 +2766,7 @@ export default function SharpFlow() {
               pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
               sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength, stars: sr.stars,
             }).then(({ docId: id, action }) => {
-              if (action === 'error') { syncedRef.current.delete(syncKey); return null; }
+              if (action === 'error') { syncedRef.current.delete(syncKey); if (prevStars !== undefined) syncedRef.current.set(syncKey, prevStars); return null; }
               if (action === 'no_change') return null;
               return { id, side: capturedSide, snap: capturedSnap };
             })
