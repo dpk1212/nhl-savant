@@ -1,7 +1,7 @@
 /**
  * NHL Savant - Bet Tracking Functions
  * Updates bet results with game outcomes
- * Also grades Sharp Flow locked picks
+ * Also grades Sharp Flow locked picks (NHL, CBB, MLB)
  */
 
 const {onSchedule} = require("firebase-functions/v2/scheduler");
@@ -17,6 +17,86 @@ const ABBREV_MAP = {
   ana: "ANA", sjs: "SJS", cgy: "CGY", edm: "EDM", van: "VAN", sea: "SEA",
   nyr: "NYR", nyi: "NYI",
 };
+
+// ESPN abbreviation → our 3-letter MLB code
+const ESPN_MLB_TO_CODE = {
+  ARI: "ari", ATL: "atl", BAL: "bal", BOS: "bos", CHC: "chc", CWS: "cws",
+  CIN: "cin", CLE: "cle", COL: "col", DET: "det", HOU: "hou", KC: "kcr",
+  LAA: "laa", LAD: "lad", MIA: "mia", MIL: "mil", MIN: "min", NYM: "nym",
+  NYY: "nyy", OAK: "oak", PHI: "phi", PIT: "pit", SD: "sdp", SF: "sfg",
+  SEA: "sea", STL: "stl", TB: "tbr", TEX: "tex", TOR: "tor", WSH: "wsh",
+};
+
+const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
+const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
+
+function normalizeName(s) {
+  return (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function teamNamesMatch(a, b) {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.length >= 4 && nb.length >= 4) {
+    const ratio = Math.min(na.length, nb.length) / Math.max(na.length, nb.length);
+    if (ratio >= 0.7 && (na.includes(nb) || nb.includes(na))) return true;
+  }
+  return false;
+}
+
+async function fetchNCAAFinalGames(dateStr) {
+  try {
+    const formatted = dateStr.replace(/-/g, "/");
+    const res = await fetch(`${NCAA_API_URL}/${formatted}`);
+    if (!res.ok) { logger.warn(`NCAA API ${res.status}`); return []; }
+    const data = await res.json();
+    return (data.games || [])
+        .filter((g) => g.game?.gameState === "final")
+        .map((g) => ({
+          awayTeam: g.game.away?.names?.short || "",
+          homeTeam: g.game.home?.names?.short || "",
+          awayScore: parseInt(g.game.away?.score) || 0,
+          homeScore: parseInt(g.game.home?.score) || 0,
+        }));
+  } catch (e) {
+    logger.error("NCAA fetch error:", e.message);
+    return [];
+  }
+}
+
+async function fetchMLBFinalGames() {
+  try {
+    const res = await fetch(ESPN_MLB_URL);
+    if (!res.ok) { logger.warn(`ESPN MLB API ${res.status}`); return []; }
+    const data = await res.json();
+    return (data.events || [])
+        .filter((e) => {
+          const st = e.competitions?.[0]?.status?.type;
+          return st?.state === "post" || st?.completed;
+        })
+        .map((e) => {
+          const comp = e.competitions[0];
+          const comps = comp.competitors || [];
+          const away = comps.find((c) => c.homeAway === "away") || {};
+          const home = comps.find((c) => c.homeAway === "home") || {};
+          const awayAbbr = away.team?.abbreviation || "";
+          const homeAbbr = home.team?.abbreviation || "";
+          return {
+            awayCode: ESPN_MLB_TO_CODE[awayAbbr] || awayAbbr.toLowerCase(),
+            homeCode: ESPN_MLB_TO_CODE[homeAbbr] || homeAbbr.toLowerCase(),
+            awayTeam: away.team?.displayName || awayAbbr,
+            homeTeam: home.team?.displayName || homeAbbr,
+            awayScore: parseInt(away.score) || 0,
+            homeScore: parseInt(home.score) || 0,
+          };
+        });
+  } catch (e) {
+    logger.error("ESPN MLB fetch error:", e.message);
+    return [];
+  }
+}
 
 /**
  * Scheduled function: Updates bet results with game outcomes
@@ -36,13 +116,7 @@ exports.updateBetResults = onSchedule({
         .where("status", "==", "PENDING")
         .get();
 
-    if (betsSnapshot.empty) {
-      logger.info("No pending bets to update");
-      return null;
-    }
-
-    logger.info(`Found ${betsSnapshot.size} pending bets`);
-
+    // ─── Grade NHL bets from live_scores ───────────────────────────────
     const liveScoresDoc = await admin.firestore()
         .collection("live_scores")
         .doc("current")
@@ -50,59 +124,57 @@ exports.updateBetResults = onSchedule({
 
     const liveGames = liveScoresDoc.data()?.games || [];
     const finalGames = liveGames.filter((g) => g.status === "FINAL");
-    logger.info(`Found ${finalGames.length} FINAL games`);
+    logger.info(`Found ${finalGames.length} FINAL NHL games`);
 
-    if (finalGames.length === 0) {
-      logger.info("No final games yet");
-      return null;
-    }
+    if (!betsSnapshot.empty && finalGames.length > 0) {
+      logger.info(`Found ${betsSnapshot.size} pending bets`);
+      let updatedCount = 0;
 
-    let updatedCount = 0;
+      for (const betDoc of betsSnapshot.docs) {
+        const bet = betDoc.data();
+        const betId = betDoc.id;
 
-    for (const betDoc of betsSnapshot.docs) {
-      const bet = betDoc.data();
-      const betId = betDoc.id;
+        const matchingGame = finalGames.find((g) =>
+          g.awayTeam === bet.game.awayTeam && g.homeTeam === bet.game.homeTeam,
+        );
 
-      const matchingGame = finalGames.find((g) =>
-        g.awayTeam === bet.game.awayTeam && g.homeTeam === bet.game.homeTeam
-      );
+        if (!matchingGame) {
+          continue;
+        }
 
-      if (!matchingGame) {
-        continue;
+        logger.info(`Updating bet ${betId}: ${bet.bet.pick} for ${matchingGame.awayTeam} @ ${matchingGame.homeTeam} (${matchingGame.awayScore}-${matchingGame.homeScore})`);
+
+        const outcome = calculateOutcome(matchingGame, bet.bet);
+        const units = bet.prediction?.dynamicUnits ||
+          bet.prediction?.recommendedUnit || 1;
+        const profit = calculateProfit(outcome, bet.bet.odds, units);
+
+        await admin.firestore()
+            .collection("bets")
+            .doc(betId)
+            .update({
+              "result.awayScore": matchingGame.awayScore,
+              "result.homeScore": matchingGame.homeScore,
+              "result.totalScore": matchingGame.totalScore,
+              "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "AWAY" : "HOME",
+              "result.outcome": outcome,
+              "result.profit": profit,
+              "result.units": units,
+              "result.fetched": true,
+              "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
+              "result.source": "NHL_API",
+              "result.periodType": matchingGame.periodType || "REG",
+              "status": "COMPLETED",
+            });
+
+        updatedCount++;
+        logger.info(`✅ Updated ${betId}: ${outcome} @ ${units}u → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`);
       }
 
-      logger.info(`Updating bet ${betId}: ${bet.bet.pick} for ${matchingGame.awayTeam} @ ${matchingGame.homeTeam} (${matchingGame.awayScore}-${matchingGame.homeScore})`);
-
-      const outcome = calculateOutcome(matchingGame, bet.bet);
-      // Use actual dynamic units from the bet (priority), then recommendedUnit, then fallback to 1
-      const units = bet.prediction?.dynamicUnits || bet.prediction?.recommendedUnit || 1;
-      const profit = calculateProfit(outcome, bet.bet.odds, units);
-
-      await admin.firestore()
-          .collection("bets")
-          .doc(betId)
-          .update({
-            "result.awayScore": matchingGame.awayScore,
-            "result.homeScore": matchingGame.homeScore,
-            "result.totalScore": matchingGame.totalScore,
-            "result.winner": matchingGame.awayScore > matchingGame.homeScore ? "AWAY" : "HOME",
-            "result.outcome": outcome,
-            "result.profit": profit,
-            "result.units": units,  // Store actual units used for grading
-            "result.fetched": true,
-            "result.fetchedAt": admin.firestore.FieldValue.serverTimestamp(),
-            "result.source": "NHL_API",
-            "result.periodType": matchingGame.periodType || "REG",
-            "status": "COMPLETED",
-          });
-
-      updatedCount++;
-      logger.info(`✅ Updated ${betId}: ${outcome} @ ${units}u → ${profit > 0 ? "+" : ""}${profit.toFixed(2)}u`);
+      logger.info(`Finished: Updated ${updatedCount} bets`);
     }
 
-    logger.info(`Finished: Updated ${updatedCount} bets`);
-
-    // ─── Grade Sharp Flow Locked Picks ─────────────────────────────────
+    // ─── Grade Sharp Flow Locked Picks (NHL, CBB, MLB) ─────────────────
     try {
       const sfSnapshot = await admin.firestore()
           .collection("sharpFlowPicks")
@@ -113,30 +185,139 @@ exports.updateBetResults = onSchedule({
         logger.info(`Found ${sfSnapshot.size} pending Sharp Flow picks`);
         let sfGraded = 0;
 
+        // Build date string for NCAA API (today ET)
+        const nowET = new Date().toLocaleString("en-US", {
+          timeZone: "America/New_York",
+        });
+        const etDate = new Date(nowET);
+        const todayStr = [
+          etDate.getFullYear(),
+          String(etDate.getMonth() + 1).padStart(2, "0"),
+          String(etDate.getDate()).padStart(2, "0"),
+        ].join("-");
+
+        // Also check yesterday for late-finishing games
+        const yestDate = new Date(etDate);
+        yestDate.setDate(yestDate.getDate() - 1);
+        const yestStr = [
+          yestDate.getFullYear(),
+          String(yestDate.getMonth() + 1).padStart(2, "0"),
+          String(yestDate.getDate()).padStart(2, "0"),
+        ].join("-");
+
+        // Collect unique pick dates to fetch scores for
+        const pickDates = new Set();
+        sfSnapshot.docs.forEach((d) => {
+          const date = d.data().date;
+          if (date) pickDates.add(date);
+        });
+
+        // Determine which sport APIs we need
+        const sports = new Set();
+        sfSnapshot.docs.forEach((d) => sports.add(d.data().sport));
+
+        let cbbFinalGames = [];
+        if (sports.has("CBB")) {
+          const datesToFetch = [...pickDates].filter((d) =>
+            d === todayStr || d === yestStr);
+          if (datesToFetch.length === 0) datesToFetch.push(todayStr);
+          for (const d of datesToFetch) {
+            const games = await fetchNCAAFinalGames(d);
+            cbbFinalGames = cbbFinalGames.concat(games);
+            logger.info(`NCAA API: ${games.length} final CBB games for ${d}`);
+          }
+        }
+
+        let mlbFinalGames = [];
+        if (sports.has("MLB")) {
+          mlbFinalGames = await fetchMLBFinalGames();
+          logger.info(
+              `ESPN MLB API: ${mlbFinalGames.length} final MLB games`,
+          );
+        }
+
         for (const sfDoc of sfSnapshot.docs) {
           const pick = sfDoc.data();
-          if (pick.sport !== "NHL") continue;
+          const sport = pick.sport;
 
-          const parts = (pick.gameKey || "").split("_");
-          if (parts.length !== 2) continue;
-          const awayAbbrev = ABBREV_MAP[parts[0]] || parts[0].toUpperCase();
-          const homeAbbrev = ABBREV_MAP[parts[1]] || parts[1].toUpperCase();
+          let matchingGame = null;
 
-          const matchingGame = finalGames.find((g) =>
-            g.awayTeam === awayAbbrev && g.homeTeam === homeAbbrev,
-          );
+          if (sport === "NHL") {
+            // Strip sport prefix if present
+            const rawKey = (pick.gameKey || "").replace(/^NHL:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length !== 2) continue;
+            const awayAbbrev =
+              ABBREV_MAP[parts[0]] || parts[0].toUpperCase();
+            const homeAbbrev =
+              ABBREV_MAP[parts[1]] || parts[1].toUpperCase();
+
+            matchingGame = finalGames.find((g) =>
+              g.awayTeam === awayAbbrev && g.homeTeam === homeAbbrev,
+            );
+          } else if (sport === "CBB") {
+            // Fuzzy match pick.away / pick.home against NCAA final games
+            // NCAA API may have away/home reversed, so check both
+            for (const g of cbbFinalGames) {
+              const normalMatch =
+                teamNamesMatch(pick.away, g.awayTeam) &&
+                teamNamesMatch(pick.home, g.homeTeam);
+              const reversedMatch =
+                teamNamesMatch(pick.away, g.homeTeam) &&
+                teamNamesMatch(pick.home, g.awayTeam);
+
+              if (normalMatch) {
+                matchingGame = {
+                  awayScore: g.awayScore,
+                  homeScore: g.homeScore,
+                };
+                break;
+              }
+              if (reversedMatch) {
+                matchingGame = {
+                  awayScore: g.homeScore,
+                  homeScore: g.awayScore,
+                };
+                break;
+              }
+            }
+          } else if (sport === "MLB") {
+            const rawKey = (pick.gameKey || "").replace(/^MLB:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = mlbFinalGames.find((g) =>
+                g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            // Fallback: fuzzy match on team display names
+            if (!matchingGame) {
+              for (const g of mlbFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          }
 
           if (!matchingGame) continue;
 
           const winner = matchingGame.awayScore > matchingGame.homeScore ?
             "away" : "home";
 
-          // New format: doc.sides with per-side grading
+          logger.info(
+              `📊 ${sport}: ${pick.away} (${matchingGame.awayScore}) @ ` +
+              `${pick.home} (${matchingGame.homeScore})`,
+          );
+
           if (pick.sides) {
             const updates = {
               "result.awayScore": matchingGame.awayScore,
               "result.homeScore": matchingGame.homeScore,
               "result.winner": winner,
+              "result.source": sport === "NHL" ? "NHL_API" :
+                sport === "CBB" ? "NCAA_API" : "ESPN_MLB_API",
             };
             let allSidesGraded = true;
 
@@ -163,7 +344,11 @@ exports.updateBetResults = onSchedule({
                 admin.firestore.FieldValue.serverTimestamp();
 
               sfGraded++;
-              logger.info(`🔒 Sharp Flow: ${team} ML ${odds} (peak ${units}u) → ${outcome} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}u)`);
+              logger.info(
+                  `🔒 ${sport}: ${team} ML ${odds} (${units}u) → ` +
+                  `${outcome} (${profit >= 0 ? "+" : ""}` +
+                  `${profit.toFixed(2)}u)`,
+              );
             }
 
             for (const [side, sideData] of Object.entries(pick.sides)) {
@@ -179,7 +364,7 @@ exports.updateBetResults = onSchedule({
 
             await sfDoc.ref.update(updates);
           } else {
-            // Legacy flat format: grade as before
+            // Legacy flat format
             const side = pick.consensusSide === "away" ? "AWAY" : "HOME";
             const outcome = calculateOutcome(matchingGame, {
               market: "MONEYLINE",
@@ -194,13 +379,19 @@ exports.updateBetResults = onSchedule({
               "result.homeScore": matchingGame.homeScore,
               "result.winner": winner,
               "result.profit": parseFloat(profit.toFixed(2)),
+              "result.source": sport === "NHL" ? "NHL_API" :
+                sport === "CBB" ? "NCAA_API" : "ESPN_MLB_API",
               "result.gradedAt":
                 admin.firestore.FieldValue.serverTimestamp(),
               "status": "COMPLETED",
             });
 
             sfGraded++;
-            logger.info(`🔒 Sharp Flow: ${pick.consensusTeam} ML ${pick.odds} → ${outcome} (${profit >= 0 ? "+" : ""}${profit.toFixed(2)}u)`);
+            logger.info(
+                `🔒 ${sport}: ${pick.consensusTeam} ML ${pick.odds} → ` +
+                `${outcome} (${profit >= 0 ? "+" : ""}` +
+                `${profit.toFixed(2)}u)`,
+            );
           }
         }
 
