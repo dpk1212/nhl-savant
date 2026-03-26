@@ -42,55 +42,33 @@ When the best retail price beats Pinnacle's implied probability, that's a **+EV 
 
 We track the Polymarket moneyline price over 24 hours. If the price is moving in the same direction as the sharp consensus, that's additional confirmation. If it's moving against, it's a caution flag.
 
-### How Plays Get "Locked In"
+### How Plays Get Rated & Locked In
 
-Every game with sharp positions gets evaluated against **6 criteria**:
+Every game with sharp positions is scored using a **weighted 11-point star rating system** that evaluates 7 signal dimensions: sharp wallet count, money deployed on side, EV edge, Pinnacle alignment, line movement, consensus strength, and prediction market direction.
 
-| # | Criteria | What It Checks |
-|---|----------|----------------|
-| 1 | **3+ Sharp Wallets** | At least 3 unique ELITE/PROVEN wallets aligned on one side |
-| 2 | **+EV Edge** | The best retail sportsbook price beats Pinnacle's fair value |
-| 3 | **Pinnacle Confirms** | Pinnacle's line has moved toward the sharp consensus side |
-| 4 | **$5K+ Invested** | Meaningful capital deployed (not just small test bets) |
-| 5 | **Line Moving With Play** | Pinnacle odds trending in the direction of the play |
-| 6 | **Prediction Market Aligns** | Polymarket price moving toward the consensus side |
+The points are converted to a 0.5–5.0 star rating. **Plays with 3+ stars are automatically LOCKED IN** — saved to our database with a unit size for performance tracking.
 
-When **4 or more criteria are met**, the play is automatically **LOCKED IN** — saved to our database with a unit size for performance tracking.
+The star rating is the **single source of truth** — there are no separate gates or overrides. Penalties for thin volume (under $7K on side) and contested consensus (sharps split on both sides) are baked directly into the point score.
+
+> **Full details**: See [STAR_RATING_SYSTEM.md](./STAR_RATING_SYSTEM.md) for the complete formula, point values, unit sizing table, and worked examples.
 
 ### Unit Sizing
 
-Locked plays are sized based on signal strength:
+Units are derived directly from the star rating:
 
-| Signal Strength | Base Units |
-|----------------|------------|
-| 6/6 criteria met | 3.0u |
-| 5/6 criteria met | 2.0u |
-| 4/6 criteria met | 1.0u |
+| Star Rating | Base Units | Tier |
+|-------------|-----------|------|
+| ★★★★★ (5.0) | 3.5u | MAX |
+| ★★★★½ (4.5) | 3.0u | MAX |
+| ★★★★ (4.0) | 2.5u | STRONG |
+| ★★★½ (3.5) | 2.0u | STRONG |
+| ★★★ (3.0) | 1.5u | STANDARD |
 
-**Boosters** (each adds to the base):
-- EV edge 5%+ → +0.5u
-- EV edge 3%+ → +0.25u
-- 5+ sharp wallets aligned → +0.5u
-- 4 sharp wallets → +0.25u
-- $20K+ total invested → +0.5u
-- $10K+ total invested → +0.25u
-
-Maximum: 5.0u cap.
-
-### Value Ratings
-
-Each game also gets a value rating based on a point system:
-
-| Rating | Points Required | Factors |
-|--------|----------------|---------|
-| **STRONG VALUE** | 8+ points | High EV + many sharps + Pinnacle confirms + heavy investment |
-| **VALUE** | 5-7 points | Good EV + solid sharp backing |
-| **LEAN** | 3-4 points | Some sharp interest but missing key confirmations |
-| **MONITOR** | 0-2 points | Sharp activity present but insufficient confluence |
+A consensus penalty (−0.5u for LEAN, −1.0u for CONTESTED) is applied after the base. Final units are capped between 0.5u and 5.0u.
 
 ### Performance Tracking
 
-Every locked play is recorded with its odds, book, unit size, and criteria at time of lock. After games finish, results are automatically graded and profit/loss tracked. This creates a verifiable, auditable record of the system's performance over time.
+Every locked play is recorded with its odds, book, unit size, star rating, and criteria at time of lock. After games finish, results are automatically graded and profit/loss tracked. Performance is broken down by star tier (5★, 4★, 3★, 2★) to validate whether higher-conviction plays outperform.
 
 ---
 
@@ -191,7 +169,7 @@ Every locked play is recorded with its odds, book, unit size, and criteria at ti
 
 #### `sharpFlowPicks` Document Schema (v2 — per-side with peak tracking)
 
-Each document represents one game. Up to two sides can independently lock if both reach 4+ criteria. Each side tracks its original lock and peak conviction. Grading uses peak units/odds.
+Each document represents one game. Up to two sides can independently lock if both reach 3+ stars. Each side tracks its original lock and peak conviction (including star rating). Grading uses peak units/odds.
 
 ```javascript
 {
@@ -205,7 +183,7 @@ Each document represents one game. Up to two sides can independently lock if bot
   status: "PENDING",            // PENDING → COMPLETED (when all sides graded)
 
   sides: {
-    home: {                     // one entry per side that reached 4+ criteria
+    home: {                     // one entry per side that reached 3+ stars
       team: "Bruins",
       lock: {                   // original lock snapshot (never changes)
         odds: -190,
@@ -237,7 +215,7 @@ Each document represents one game. Up to two sides can independently lock if bot
         gradedAt: null,
       },
     },
-    away: {                     // only present if away side also hit 4+ criteria
+    away: {                     // only present if away side also hit 3+ stars
       team: "Maple Leafs",
       lock: { ... },
       peak: { ... },
@@ -263,7 +241,7 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 1. Reads `live_scores/current` for FINAL games
 2. Grades regular `bets` collection (existing system)
 3. **Then grades `sharpFlowPicks`**:
-   - Queries `status == "PENDING"`, filters to `sport == "NHL"` (MLB grading deferred — MLB picks stay PENDING until scoring is added)
+   - Queries `status == "PENDING"` for all sports (NHL, CBB, MLB)
    - Maps `gameKey` (e.g., `uta_dal`) to NHL abbreviations (`UTA`, `DAL`) via `ABBREV_MAP`
    - Matches against final games by `awayTeam`/`homeTeam`
    - **v2 format** (`doc.sides` exists): iterates each side, grades using `side.peak.units` and `side.peak.odds`, marks each side's `status: "COMPLETED"`. Top-level `status` becomes `"COMPLETED"` when all sides are graded.
@@ -285,8 +263,9 @@ Defined in `firestore.indexes.json`.
 
 **Key Functions**:
 - `useMarketData()` — loads all 5 JSON files
-- `scoreWhaleSignal()` — calculates 0-100 signal strength per game
-- `SharpPositionCard` — main card component with both-sides battle, sparklines, criteria checklist, unit sizing
+- `rateStars()` — weighted 11-point scoring → 0.5–5.0 star rating (drives lock + unit decisions)
+- `calculateUnits()` — maps star rating to unit size with consensus penalty
+- `SharpPositionCard` — main card component (React.memo) with both-sides battle, sparklines, criteria checklist, unit sizing
 - `MiniSparkline` — SVG sparkline for Pinnacle/prediction market price movement
 - `syncLockedPicks()` — auto-evaluates criteria, writes qualifying picks to Firebase
 - `loadAllTimePnL()` — queries completed picks for running record
