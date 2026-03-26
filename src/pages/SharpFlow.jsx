@@ -139,10 +139,10 @@ function gameDate(commenceTime) {
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength) {
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars) {
   const now = Date.now();
   const tier = unitTier(units).label;
-  const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength };
+  const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
   return {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -152,14 +152,14 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
 }
 
-async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength }) {
+async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
   try {
     const docId = `${date}_${gameKey}`;
     const ref = doc(db, 'sharpFlowPicks', docId);
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength);
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
@@ -178,14 +178,14 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       if (units > currentPeak) {
         const tier = unitTier(units).label;
         await setDoc(ref, {
-          sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, updatedAt: Date.now() } } }
+          sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() } } }
         }, { merge: true });
         return { docId, action: 'peak_updated' };
       }
       return { docId, action: 'no_change' };
     }
 
-    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength);
+    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
     await setDoc(ref, { sides: { [side]: sideData } }, { merge: true });
     return { docId, action: 'side_added' };
   } catch (err) {
@@ -247,28 +247,30 @@ async function loadAllTimePnL() {
     snap.forEach(d => {
       const data = d.data();
       const processSide = (sd) => {
-        const cm = sd.peak?.criteriaMet || sd.lock?.criteriaMet || 0;
-        if (!byStars[cm]) byStars[cm] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0 };
-        byStars[cm].totalPicks++;
+        const s = sd.peak?.stars || sd.lock?.stars || 0;
+        const key = s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
+        if (!byStars[key]) byStars[key] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' };
+        byStars[key].totalPicks++;
         if (sd.status !== 'COMPLETED') return;
         const u = sd.peak?.units || sd.lock?.units || 1;
-        byStars[cm].totalUnits += u;
-        if (sd.result?.outcome === 'WIN') { byStars[cm].wins++; byStars[cm].totalProfit += (sd.result?.profit || 0); }
-        else if (sd.result?.outcome === 'LOSS') { byStars[cm].losses++; byStars[cm].totalProfit -= u; }
-        else if (sd.result?.outcome === 'PUSH') { byStars[cm].pushes++; }
+        byStars[key].totalUnits += u;
+        if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
+        else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
+        else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
       };
       if (data.sides) {
         for (const sd of Object.values(data.sides)) processSide(sd);
       } else {
-        const cm = data.criteriaMet || 0;
-        if (!byStars[cm]) byStars[cm] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0 };
-        byStars[cm].totalPicks++;
+        const s = data.stars || 0;
+        const key = s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
+        if (!byStars[key]) byStars[key] = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' };
+        byStars[key].totalPicks++;
         if (data.status !== 'COMPLETED') return;
         const u = data.units || 1;
-        byStars[cm].totalUnits += u;
-        if (data.result?.outcome === 'WIN') { byStars[cm].wins++; byStars[cm].totalProfit += (data.result?.profit || 0); }
-        else if (data.result?.outcome === 'LOSS') { byStars[cm].losses++; byStars[cm].totalProfit -= u; }
-        else if (data.result?.outcome === 'PUSH') { byStars[cm].pushes++; }
+        byStars[key].totalUnits += u;
+        if (data.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (data.result?.profit || 0); }
+        else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
+        else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
       }
     });
 
@@ -3171,6 +3173,7 @@ export default function SharpFlow() {
             predMarketAligns: polyMovingWith,
           };
           const consStrength = { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label };
+          const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith);
 
           const syncKey = `${docId}:${evalSide}`;
           if (syncedRef.current.has(syncKey)) continue;
@@ -3180,14 +3183,14 @@ export default function SharpFlow() {
             date, sport, gameKey: key, away: gd.away, home: gd.home, commenceTime,
             side: evalSide, team, odds: betOdds, book: bestBook || 'Pinnacle',
             pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
-            sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength,
+            sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength, stars: sr.stars,
           }).then(({ docId: id, action }) => {
             if (action === 'error') {
               syncedRef.current.delete(syncKey);
               return;
             }
             if (action === 'no_change') return;
-            const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label };
+            const sideSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label, stars: sr.stars };
             setLockedPicks(prev => {
               const prevDoc = prev[id] || {};
               const prevSides = prevDoc.sides || {};
@@ -3408,9 +3411,10 @@ export default function SharpFlow() {
                           BY CONVICTION RATING
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                          {[6, 5, 4].map(n => {
+                          {[5, 4, 3, 2].map(n => {
                             const s = stars[n];
                             if (!s) return null;
+                            const starLabels = { 5: 'ELITE', 4: 'STRONG', 3: 'SOLID', 2: 'DEVELOPING' };
                             const graded = s.wins + s.losses + s.pushes;
                             const sWinPct = graded > 0 ? ((s.wins / graded) * 100).toFixed(0) : '—';
                             const sRoi = s.totalUnits > 0 ? ((s.totalProfit / s.totalUnits) * 100).toFixed(1) : '—';
@@ -3419,12 +3423,12 @@ export default function SharpFlow() {
                                 display: 'grid', gridTemplateColumns: '90px 1fr 60px 60px 60px',
                                 alignItems: 'center', gap: '0.5rem',
                                 padding: '0.4rem 0.5rem', borderRadius: '6px',
-                                background: n === 6 ? B.goldDim : 'rgba(255,255,255,0.02)',
-                                border: n === 6 ? `1px solid ${B.goldBorder}` : `1px solid transparent`,
+                                background: n === 5 ? B.goldDim : 'rgba(255,255,255,0.02)',
+                                border: n === 5 ? `1px solid ${B.goldBorder}` : `1px solid transparent`,
                               }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                   <span style={{ color: B.gold, fontSize: '0.65rem', letterSpacing: '-1px' }}>
-                                    {'★'.repeat(n)}{'☆'.repeat(6 - n)}
+                                    {'★'.repeat(n)}{'☆'.repeat(5 - n)}
                                   </span>
                                 </div>
                                 <div style={{
