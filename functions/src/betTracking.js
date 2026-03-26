@@ -31,7 +31,23 @@ const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
 
 function normalizeName(s) {
-  return (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return (s || "").toLowerCase()
+      .replace(/\(.*?\)/g, "")
+      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/\bsaint\b/g, "st")
+      .replace(/\bstate\b/g, "st")
+      .replace(/\bnc\b/g, "northcarolina")
+      .replace(/\buconn\b/g, "connecticut")
+      .replace(/\bole miss\b/g, "mississippi")
+      .replace(/\bsmu\b/g, "southernmethodist")
+      .replace(/\busc\b/g, "southerncalifornia")
+      .replace(/\bucf\b/g, "centralflorida")
+      .replace(/\btcu\b/g, "texaschristian")
+      .replace(/\bbyu\b/g, "brighamyoung")
+      .replace(/\blsu\b/g, "louisianast")
+      .replace(/\bvcu\b/g, "virginiacommonwealth")
+      .replace(/\s+/g, "")
+      .trim();
 }
 
 function teamNamesMatch(a, b) {
@@ -39,9 +55,12 @@ function teamNamesMatch(a, b) {
   const nb = normalizeName(b);
   if (!na || !nb) return false;
   if (na === nb) return true;
-  if (na.length >= 4 && nb.length >= 4) {
-    const ratio = Math.min(na.length, nb.length) / Math.max(na.length, nb.length);
-    if (ratio >= 0.7 && (na.includes(nb) || nb.includes(na))) return true;
+  const shorter = na.length <= nb.length ? na : nb;
+  const longer = na.length <= nb.length ? nb : na;
+  if (shorter.length >= 4 && longer.startsWith(shorter)) return true;
+  if (shorter.length >= 5 && longer.includes(shorter)) {
+    const ratio = shorter.length / longer.length;
+    if (ratio >= 0.4) return true;
   }
   return false;
 }
@@ -216,17 +235,20 @@ exports.updateBetResults = onSchedule({
         const sports = new Set();
         sfSnapshot.docs.forEach((d) => sports.add(d.data().sport));
 
-        let cbbFinalGames = [];
+        let cbbFinalByDate = {};
         if (sports.has("CBB")) {
-          const datesToFetch = [...pickDates].filter((d) =>
-            d === todayStr || d === yestStr);
-          if (datesToFetch.length === 0) datesToFetch.push(todayStr);
-          for (const d of datesToFetch) {
+          const cbbDates = new Set();
+          sfSnapshot.docs.forEach((d) => {
+            const p = d.data();
+            if (p.sport === "CBB" && p.date) cbbDates.add(p.date);
+          });
+          for (const d of cbbDates) {
             const games = await fetchNCAAFinalGames(d);
-            cbbFinalGames = cbbFinalGames.concat(games);
+            cbbFinalByDate[d] = games;
             logger.info(`NCAA API: ${games.length} final CBB games for ${d}`);
           }
         }
+        const cbbFinalGames = Object.values(cbbFinalByDate).flat();
 
         let mlbFinalGames = [];
         if (sports.has("MLB")) {
