@@ -3125,13 +3125,14 @@ export default function SharpFlow() {
             </div>
 
             {/* ─── Pick Performance Tracker ─── */}
-            {allTimePnL && (allTimePnL.pregame?.wins > 0 || allTimePnL.pregame?.losses > 0) && (() => {
-              const fp = filteredPnL || { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars };
-              const pnl = fp.pregame;
+            {(() => {
+              const hasData = allTimePnL && (allTimePnL.picks?.length > 0);
+              const fp = hasData ? (filteredPnL || { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars }) : null;
+              const pnl = fp?.pregame || { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '—' };
               const totalGraded = pnl.wins + pnl.losses + pnl.pushes;
               const winPct = totalGraded > 0 ? ((pnl.wins / totalGraded) * 100).toFixed(1) : '0.0';
               const roi = pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : '0.0';
-              const stars = fp.byStars || {};
+              const stars = fp?.byStars || {};
               const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL';
               const dateLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
 
@@ -3147,17 +3148,32 @@ export default function SharpFlow() {
                       <span style={{ ...T.micro, fontWeight: 800, color: B.gold, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Pick Performance
                       </span>
-                      <span style={{
-                        ...T.micro, fontWeight: 700, color: B.green, fontSize: '0.7rem',
-                        background: B.greenDim, padding: '0.15rem 0.5rem', borderRadius: '4px',
-                      }}>
-                        {pnl.record} · {winPct}% · {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
-                      </span>
+                      {hasData ? (
+                        <span style={{
+                          ...T.micro, fontWeight: 700, color: B.green, fontSize: '0.7rem',
+                          background: B.greenDim, padding: '0.15rem 0.5rem', borderRadius: '4px',
+                        }}>
+                          {pnl.record} · {winPct}% · {pnl.totalProfit >= 0 ? '+' : ''}{pnl.totalProfit.toFixed(1)}u
+                        </span>
+                      ) : showPerf ? (
+                        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.65rem' }}>Loading...</span>
+                      ) : null}
                     </div>
                     {showPerf ? <ChevronUp size={14} color={B.textMuted} /> : <ChevronDown size={14} color={B.textMuted} />}
                   </button>
 
-                  {showPerf && (
+                  {showPerf && !hasData && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
+                      border: `1px solid ${B.border}`, borderTop: 'none',
+                      borderRadius: '0 0 10px 10px', padding: '2rem',
+                      marginTop: '-1px', textAlign: 'center',
+                    }}>
+                      <span style={{ ...T.label, color: B.textMuted }}>Loading performance data...</span>
+                    </div>
+                  )}
+
+                  {showPerf && hasData && (
                     <div style={{
                       background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
                       border: `1px solid ${B.border}`, borderTop: 'none',
