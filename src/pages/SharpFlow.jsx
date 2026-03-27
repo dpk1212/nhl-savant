@@ -2077,7 +2077,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // Lock-In Criteria System
   const criteria = [
-    { id: 'sharps', label: '3+ Sharp Bettors', met: uniqueWallets >= 3 },
+    { id: 'sharps', label: '3+ Sharp Bettors', met: consensusWallets >= 3 },
     { id: 'ev', label: '+EV Edge', met: hasEV },
     { id: 'pinnacle', label: 'Pinnacle Confirms', met: pinnConfirms },
     { id: 'invested', label: '$7K+ on Side', met: consensusInvested >= 7000 },
@@ -2905,7 +2905,24 @@ export default function SharpFlow() {
           const cGrade = consensusGrade(mPct, wPct);
 
           const oppSide = evalSide === 'away' ? 'home' : 'away';
-          const oppPeakStars = syncedRef.current.get(`${docId}:${oppSide}`) || 0;
+          const oppOdds = oppSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+          const oppBestRetail = oppSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
+          const oppPinnProb = impliedProb(oppOdds);
+          const oppRetailProb = impliedProb(oppBestRetail);
+          const oppEvEdge = (oppPinnProb && oppRetailProb) ? +((oppPinnProb - oppRetailProb) * 100).toFixed(1) : null;
+          const oppPinnConfirms = pinnMoved === oppSide;
+          const oppPinnPoints = oppSide === 'away' ? pinnHistory.map(h => h.away) : pinnHistory.map(h => h.home);
+          const oppPinnFirstP = impliedProb(oppPinnPoints[0]);
+          const oppPinnLastP = impliedProb(oppPinnPoints[oppPinnPoints.length - 1]);
+          const oppPinnMovingWith = oppPinnPoints.length >= 2 && oppPinnLastP > oppPinnFirstP;
+          const oppPolyMovingWith = polyPts.length >= 2 && (oppSide === 'away'
+            ? polyPts[polyPts.length - 1] > polyPts[0]
+            : polyPts[polyPts.length - 1] < polyPts[0]);
+          const oppMoneyPct = totalInv > 0 ? (oppInvested / totalInv) * 100 : 50;
+          const oppWalletPct = (uniqueWallets + oppWallets) > 0 ? (oppWallets / (uniqueWallets + oppWallets)) * 100 : 50;
+          const oppCGrade = consensusGrade(oppMoneyPct, oppWalletPct);
+          const oppSr = rateStars(oppEvEdge || 0, oppWallets, oppPinnConfirms, oppInvested, oppCGrade.label, oppPinnMovingWith, oppPolyMovingWith);
+          const oppPeakStars = oppSr.stars;
 
           const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
           if (sr.stars < 3) continue;
