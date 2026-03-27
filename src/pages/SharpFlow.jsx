@@ -252,7 +252,7 @@ async function loadAllTimePnL() {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
-      if (Date.now() - ts < 5 * 60 * 1000 && data.picks) return data;
+      if (Date.now() - ts < 30 * 60 * 1000 && data.picks) return data;
     }
     const snap = await getDocs(collection(db, 'sharpFlowPicks'));
     const overall = tallySides(snap);
@@ -2798,7 +2798,7 @@ export default function SharpFlow() {
   }, []);
   const syncedRef = useRef(new Map());
 
-  // Load existing locked picks + all-time P&L on mount
+  // Load existing locked picks on mount
   useEffect(() => {
     loadLockedPicks().then(picks => {
       setLockedPicks(picks);
@@ -2810,8 +2810,16 @@ export default function SharpFlow() {
       }
       setPicksLoaded(true);
     });
-    loadAllTimePnL().then(setAllTimePnL);
   }, []);
+
+  // Lazy-load P&L data only when performance section is opened
+  const pnlLoadedRef = useRef(false);
+  useEffect(() => {
+    if (showPerf && !pnlLoadedRef.current) {
+      pnlLoadedRef.current = true;
+      loadAllTimePnL().then(setAllTimePnL);
+    }
+  }, [showPerf]);
 
   // Auto-lock qualifying PREGAME picks to Firebase (with peak tracking + flip support)
   const syncLockedPicks = useCallback(() => {
@@ -2933,7 +2941,13 @@ export default function SharpFlow() {
     }
   }, [sharpPositions, pinnacleHistory, polyData, picksLoaded]);
 
-  useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
+  const lastSyncRef = useRef(0);
+  useEffect(() => {
+    const now = Date.now();
+    if (now - lastSyncRef.current < 10000) return;
+    lastSyncRef.current = now;
+    syncLockedPicks();
+  }, [syncLockedPicks]);
 
   const filteredPnL = useMemo(() => {
     if (!allTimePnL) return null;
