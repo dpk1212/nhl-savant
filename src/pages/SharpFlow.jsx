@@ -248,7 +248,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v4';
+    const cacheKey = 'sharpFlow_pnl_v5';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -276,8 +276,9 @@ async function loadAllTimePnL() {
           else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
-        if (s >= 3) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
+        const explicitStars = bestSnap && 'stars' in bestSnap ? bestSnap.stars : 0;
+        if (explicitStars >= 3) {
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: explicitStars, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
@@ -300,8 +301,9 @@ async function loadAllTimePnL() {
           else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
-        if (s >= 3) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
+        const explicitStars = 'stars' in data ? data.stars : 0;
+        if (explicitStars >= 3) {
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: explicitStars, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
           if (data.status === 'COMPLETED') {
             pick.outcome = data.result?.outcome || null;
             if (data.result?.outcome === 'WIN') { pick.profit = data.result?.profit || 0; }
