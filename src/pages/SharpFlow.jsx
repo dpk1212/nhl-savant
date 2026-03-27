@@ -258,6 +258,7 @@ async function loadAllTimePnL() {
     const overall = tallySides(snap);
 
     const byStars = {};
+    const picks = [];
     const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
     const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' });
     snap.forEach(d => {
@@ -268,12 +269,16 @@ async function loadAllTimePnL() {
         const key = starBucket(s);
         if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
-        if (sd.status !== 'COMPLETED') return;
         const u = bestSnap?.units || 1;
-        byStars[key].totalUnits += u;
-        if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
-        else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
-        else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
+        const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
+        if (sd.status === 'COMPLETED') {
+          byStars[key].totalUnits += u;
+          pick.outcome = sd.result?.outcome || null;
+          if (sd.result?.outcome === 'WIN') { byStars[key].wins++; const p = sd.result?.profit || 0; byStars[key].totalProfit += p; pick.profit = p; }
+          else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; pick.profit = -u; }
+          else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
+        }
+        picks.push(pick);
       };
       if (data.sides) {
         for (const sd of Object.values(data.sides)) processSide(sd);
@@ -282,12 +287,16 @@ async function loadAllTimePnL() {
         const key = starBucket(s);
         if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
-        if (data.status !== 'COMPLETED') return;
         const u = data.units || 1;
-        byStars[key].totalUnits += u;
-        if (data.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (data.result?.profit || 0); }
-        else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
-        else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
+        const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
+        if (data.status === 'COMPLETED') {
+          byStars[key].totalUnits += u;
+          pick.outcome = data.result?.outcome || null;
+          if (data.result?.outcome === 'WIN') { byStars[key].wins++; const p = data.result?.profit || 0; byStars[key].totalProfit += p; pick.profit = p; }
+          else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; pick.profit = -u; }
+          else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
+        }
+        picks.push(pick);
       }
     });
 
@@ -297,7 +306,7 @@ async function loadAllTimePnL() {
       v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
     }
 
-    const result = { pregame: overall, all: overall, byStars };
+    const result = { pregame: overall, all: overall, byStars, picks };
     try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: result, ts: Date.now() })); } catch {}
     return result;
   } catch (err) {
@@ -1802,6 +1811,119 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
   return { stars, pts, maxPts, ...info, isActionable };
 }
 
+const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
+  const { team, away, home, sport, stars, units, odds, book, peakAt, gameTime, status, outcome, profit } = pick;
+  const ss = sportStyle(sport);
+  const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY' };
+  const starLabel = starLabels[stars] || 'SOLID PLAY';
+  const starColor = stars >= 3.5 ? B.green : B.gold;
+  const isGraded = status === 'COMPLETED' && outcome;
+  const isWin = outcome === 'WIN';
+  const isLoss = outcome === 'LOSS';
+
+  const fmtET = (ts) => {
+    if (!ts) return '';
+    return new Date(ts).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+      border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.3)' : isLoss ? 'rgba(239,68,68,0.3)' : B.border) : 'rgba(16,185,129,0.2)'}`,
+      borderRadius: '10px', padding: isMobile ? '0.75rem' : '0.875rem',
+      display: 'flex', flexDirection: 'column', gap: '0.5rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{
+            ...T.micro, fontWeight: 800, padding: '0.15rem 0.4rem', borderRadius: '4px',
+            color: ss.color, background: ss.bg,
+          }}>{sport}</span>
+          <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>
+            {away} <span style={{ color: B.textMuted, fontWeight: 500 }}>vs</span> {home}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{
+            ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+            color: starColor, background: stars >= 3.5 ? B.greenDim : B.goldDim,
+            border: `1px solid ${stars >= 3.5 ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+            display: 'flex', alignItems: 'center', gap: '0.15rem',
+          }}>
+            {Array.from({ length: 5 }, (_, i) => {
+              const filled = i + 1 <= Math.floor(stars);
+              const half = !filled && i + 0.5 === stars;
+              return filled ? (
+                <span key={i} style={{ fontSize: '0.45rem', color: starColor, lineHeight: 1 }}>★</span>
+              ) : half ? (
+                <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.45rem', lineHeight: 1, width: '0.45rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
+                  <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span>
+                </span>
+              ) : (
+                <span key={i} style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
+              );
+            })}
+            <span style={{ marginLeft: '0.1rem' }}>{starLabel}</span>
+          </span>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0.5rem 0.625rem', borderRadius: '8px',
+        background: isGraded
+          ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)')
+          : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : B.borderSubtle}`,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Lock size={10} color={B.green} />
+            <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>{team}</span>
+          </div>
+          <span style={{ ...T.micro, color: B.textSec }}>
+            {units}u @ {odds > 0 ? '+' : ''}{odds} <span style={{ color: B.textMuted }}>·</span> {book}
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+          {isGraded ? (
+            <>
+              <span style={{
+                ...T.micro, fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: '4px',
+                color: isWin ? B.green : isLoss ? B.red : B.textSec,
+                background: isWin ? B.greenDim : isLoss ? B.redDim : 'rgba(255,255,255,0.04)',
+              }}>
+                {outcome === 'PUSH' ? 'PUSH' : isWin ? 'WIN' : 'LOSS'}
+              </span>
+              <span style={{
+                ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                color: isWin ? B.green : isLoss ? B.red : B.textSec,
+              }}>
+                {isWin ? '+' : isLoss ? '-' : ''}{Math.abs(profit || 0).toFixed(2)}u
+              </span>
+            </>
+          ) : (
+            <>
+              <span style={{
+                ...T.micro, fontWeight: 700, color: B.gold,
+                padding: '0.1rem 0.4rem', borderRadius: '4px', background: B.goldDim,
+              }}>PENDING</span>
+              <span style={{ ...T.micro, color: B.textMuted }}>{gameTime ? fmtET(gameTime) + ' ET' : ''}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
+          Peak: {peakAt ? fmtET(peakAt) : '—'}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
@@ -2647,6 +2769,8 @@ export default function SharpFlow() {
   const [lockedPicks, setLockedPicks] = useState({});
   const [allTimePnL, setAllTimePnL] = useState(null);
   const [showPerf, setShowPerf] = useState(false);
+  const [perfDateRange, setPerfDateRange] = useState('all');
+  const [perfSport, setPerfSport] = useState('ALL');
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   useEffect(() => {
@@ -2794,6 +2918,57 @@ export default function SharpFlow() {
 
   useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
 
+  const filteredPnL = useMemo(() => {
+    if (!allTimePnL) return null;
+    if (perfDateRange === 'all' && perfSport === 'ALL') {
+      return { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars };
+    }
+    const rawPicks = allTimePnL.picks || [];
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    let cutoff = null;
+    if (perfDateRange === 'today') cutoff = todayStr;
+    else if (perfDateRange === '7d') {
+      const d = new Date(now); d.setDate(d.getDate() - 7);
+      cutoff = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    } else if (perfDateRange === '30d') {
+      const d = new Date(now); d.setDate(d.getDate() - 30);
+      cutoff = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    }
+    const filtered = rawPicks.filter(p => {
+      if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
+      if (perfDateRange === 'today') return p.date === todayStr;
+      if (cutoff) return p.date >= cutoff;
+      return true;
+    });
+    const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
+    const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0 });
+    let wins = 0, losses = 0, pushes = 0, totalProfit = 0, totalUnits = 0;
+    const byStars = {};
+    for (const p of filtered) {
+      const key = starBucket(p.stars);
+      if (!byStars[key]) byStars[key] = emptyBucket();
+      byStars[key].totalPicks++;
+      if (p.status !== 'COMPLETED' && !p.outcome) continue;
+      if (!p.outcome) continue;
+      const u = p.units || 1;
+      totalUnits += u;
+      byStars[key].totalUnits += u;
+      if (p.outcome === 'WIN') { wins++; totalProfit += p.profit; byStars[key].wins++; byStars[key].totalProfit += p.profit; }
+      else if (p.outcome === 'LOSS') { losses++; totalProfit -= u; byStars[key].losses++; byStars[key].totalProfit -= u; }
+      else if (p.outcome === 'PUSH') { pushes++; byStars[key].pushes++; }
+    }
+    for (const v of Object.values(byStars)) {
+      v.totalProfit = +v.totalProfit.toFixed(2);
+      v.record = `${v.wins}-${v.losses}${v.pushes > 0 ? `-${v.pushes}` : ''}`;
+      v.roi = v.totalUnits > 0 ? +((v.totalProfit / v.totalUnits) * 100).toFixed(1) : 0;
+    }
+    return {
+      pregame: { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` },
+      byStars,
+    };
+  }, [allTimePnL, perfDateRange, perfSport]);
+
   const allGames = useMemo(
     () => (polyData || kalshiData) ? buildGameData(polyData, kalshiData) : [],
     [polyData, kalshiData]
@@ -2919,11 +3094,14 @@ export default function SharpFlow() {
 
             {/* ─── Pick Performance Tracker ─── */}
             {allTimePnL && (allTimePnL.pregame?.wins > 0 || allTimePnL.pregame?.losses > 0) && (() => {
-              const pnl = allTimePnL.pregame;
+              const fp = filteredPnL || { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars };
+              const pnl = fp.pregame;
               const totalGraded = pnl.wins + pnl.losses + pnl.pushes;
               const winPct = totalGraded > 0 ? ((pnl.wins / totalGraded) * 100).toFixed(1) : '0.0';
               const roi = pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : '0.0';
-              const stars = allTimePnL.byStars || {};
+              const stars = fp.byStars || {};
+              const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL';
+              const dateLabels = { today: 'Today', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
 
               return (
                 <div style={{ marginBottom: '1rem' }}>
@@ -2932,7 +3110,7 @@ export default function SharpFlow() {
                     border: `1px solid ${B.goldBorder}`, borderRadius: '10px', padding: '0.75rem 1rem',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <BarChart3 size={15} color={B.gold} />
                       <span style={{ ...T.micro, fontWeight: 800, color: B.gold, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                         Pick Performance
@@ -2954,6 +3132,43 @@ export default function SharpFlow() {
                       borderRadius: '0 0 10px 10px', padding: '1rem',
                       marginTop: '-1px',
                     }}>
+                      {/* Date range + Sport filters */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+                          {[
+                            { id: 'today', label: 'Today' },
+                            { id: '7d', label: '7D' },
+                            { id: '30d', label: '30D' },
+                            { id: 'all', label: 'All Time' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setPerfDateRange(opt.id)} style={{
+                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: perfDateRange === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                              background: perfDateRange === opt.id ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)` : 'transparent',
+                              color: perfDateRange === opt.id ? B.gold : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
+                          ))}
+                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                          {[
+                            { id: 'ALL', label: 'ALL', color: B.gold },
+                            { id: 'NHL', label: 'NHL', color: '#D4AF37' },
+                            { id: 'CBB', label: 'CBB', color: '#FF6B35' },
+                            { id: 'MLB', label: 'MLB', color: '#E31837' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setPerfSport(opt.id)} style={{
+                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: perfSport === opt.id ? `1px solid ${opt.color}33` : `1px solid ${B.border}`,
+                              background: perfSport === opt.id ? `${opt.color}18` : 'transparent',
+                              color: perfSport === opt.id ? opt.color : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div style={{
                         display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
                         gap: '0.5rem', marginBottom: '1rem',
@@ -2991,7 +3206,6 @@ export default function SharpFlow() {
                             const starLabels = { 5: 'ELITE', 4: 'STRONG', 3: 'SOLID', 2: 'DEVELOPING' };
                             const graded = s.wins + s.losses + s.pushes;
                             const sWinPct = graded > 0 ? ((s.wins / graded) * 100).toFixed(0) : '—';
-                            const sRoi = s.totalUnits > 0 ? ((s.totalProfit / s.totalUnits) * 100).toFixed(1) : '—';
                             return (
                               <div key={n} style={{
                                 display: 'grid', gridTemplateColumns: '90px 1fr 60px 60px 60px',
@@ -3032,7 +3246,7 @@ export default function SharpFlow() {
                           })}
                         </div>
                         <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.5rem', fontSize: '0.55rem', opacity: 0.6 }}>
-                          {totalGraded} graded picks since Mar 16
+                          {totalGraded} graded picks{isFiltered ? ` · ${dateLabels[perfDateRange]}${perfSport !== 'ALL' ? ` · ${perfSport}` : ''}` : ' since Mar 16'}
                         </div>
                       </div>
                     </div>
@@ -3080,6 +3294,7 @@ export default function SharpFlow() {
                   const polyMoveWith = polyPts.length >= 2 && ((cSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (cSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
                   const sr = rateStars(ev, uw, pinnConf, ss.totalInvested || 0, cg.label, pinnMoveWith, polyMoveWith);
 
+                  if (sortBy === 'locked') continue;
                   if (sortBy === 'live' && !isLive) continue;
                   if (sortBy !== 'live' && isLive) continue;
 
@@ -3101,9 +3316,9 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
-                      title={`Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={`Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
-                      icon={Eye}
+                      title={sortBy === 'locked' ? 'Locked Picks — Today' : `Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={sortBy === 'locked' ? 'All plays that crossed the conviction threshold today at peak snapshot' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      icon={sortBy === 'locked' ? Lock : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
                   </div>
@@ -3120,59 +3335,110 @@ export default function SharpFlow() {
                       { id: 'money', label: '$ Invested' },
                       { id: 'wallets', label: '# Sharps' },
                       { id: 'live', label: '● Live' },
+                      { id: 'locked', label: '🔒 Locked' },
                     ].map(opt => (
                       <button key={opt.id} onClick={() => setSortBy(opt.id)} style={{
                         padding: '0.25rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
                         ...T.micro, fontWeight: 700,
                         border: sortBy === opt.id
-                          ? `1px solid ${opt.id === 'live' ? 'rgba(239,68,68,0.4)' : B.goldBorder}`
+                          ? `1px solid ${opt.id === 'live' ? 'rgba(239,68,68,0.4)' : opt.id === 'locked' ? 'rgba(16,185,129,0.4)' : B.goldBorder}`
                           : `1px solid ${B.border}`,
                         background: sortBy === opt.id
-                          ? opt.id === 'live' ? 'rgba(239,68,68,0.12)' : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                          ? opt.id === 'live' ? 'rgba(239,68,68,0.12)' : opt.id === 'locked' ? B.greenDim : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
                           : 'transparent',
                         color: sortBy === opt.id
-                          ? opt.id === 'live' ? B.red : B.gold
+                          ? opt.id === 'live' ? B.red : opt.id === 'locked' ? B.green : B.gold
                           : B.textMuted,
                         transition: 'all 0.2s ease',
                       }}>{opt.label}</button>
                     ))}
                   </div>
 
-                  {/* Context legend */}
-                  <div style={{
-                    display: 'flex', gap: '0.75rem', flexWrap: 'wrap',
-                    marginBottom: '1rem', padding: '0.625rem 0.875rem',
-                    borderRadius: '8px',
-                    background: `linear-gradient(135deg, rgba(212,175,55,0.04) 0%, ${B.card} 100%)`,
-                    border: `1px solid ${B.borderSubtle}`,
-                  }}>
-                    <span style={{ ...T.micro, color: B.textSec }}>
-                      <span style={{ color: B.gold, fontWeight: 700 }}>ELITE</span> = $100K+ lifetime profit
-                    </span>
-                    <span style={{ ...T.micro, color: B.textSec }}>
-                      <span style={{ color: B.green, fontWeight: 700 }}>PROVEN</span> = $25K+ lifetime profit
-                    </span>
-                    <span style={{ ...T.micro, color: B.textSec }}>
-                      <span style={{ fontWeight: 700, color: B.green }}>+$5.5M</span> = all-time P&L on Polymarket
-                    </span>
-                    <span style={{ ...T.micro, color: B.textSec }}>
-                      <span style={{ fontWeight: 700, color: B.green }}>+EV</span> = retail book price beats Pinnacle fair value
-                    </span>
-                    {sharpStats.totalExcluded > 0 && (
-                      <span style={{ ...T.micro, color: B.textSec }}>
-                        <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {sharpStats.mmExcluded} MMs + {sharpStats.sportLosers} sport losers removed
-                      </span>
-                    )}
-                  </div>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                    gap: '0.75rem',
-                  }}>
-                    {allPosGames.map(gd => (
-                      <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} />
-                    ))}
-                  </div>
+                  {sortBy === 'locked' ? (() => {
+                    const today = todayET();
+                    const lockedArr = [];
+                    for (const [docId, doc] of Object.entries(lockedPicks)) {
+                      if (!docId.startsWith(today)) continue;
+                      const docSport = doc.sport || 'NHL';
+                      if (sportFilter !== 'All' && docSport !== sportFilter) continue;
+                      for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
+                        const peak = sd.peak || sd.lock || {};
+                        const lock = sd.lock || {};
+                        const stars = peak.stars || lock.stars || 0;
+                        if (stars < 3) continue;
+                        const units = peak.units || lock.units || 1;
+                        const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(units) : 0;
+                        lockedArr.push({
+                          key: `${docId}:${sideKey}`,
+                          team: sd.team || sideKey,
+                          away: doc.away || '', home: doc.home || '',
+                          sport: docSport, stars, units,
+                          odds: peak.odds || lock.odds || 0,
+                          book: peak.book || lock.book || '',
+                          peakAt: peak.updatedAt || lock.lockedAt,
+                          gameTime: doc.commenceTime,
+                          status: sd.status || doc.status || 'PENDING',
+                          outcome: sd.result?.outcome || null,
+                          profit,
+                        });
+                      }
+                    }
+                    lockedArr.sort((a, b) => b.stars - a.stars || b.units - a.units);
+                    if (lockedArr.length === 0) return (
+                      <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
+                        No locked picks for today yet
+                      </div>
+                    );
+                    return (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr' : lockedArr.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                        gap: '0.75rem',
+                      }}>
+                        {lockedArr.map(p => (
+                          <LockedPickCard key={p.key} pick={p} isMobile={isMobile} />
+                        ))}
+                      </div>
+                    );
+                  })() : (
+                    <>
+                      {/* Context legend */}
+                      <div style={{
+                        display: 'flex', gap: '0.75rem', flexWrap: 'wrap',
+                        marginBottom: '1rem', padding: '0.625rem 0.875rem',
+                        borderRadius: '8px',
+                        background: `linear-gradient(135deg, rgba(212,175,55,0.04) 0%, ${B.card} 100%)`,
+                        border: `1px solid ${B.borderSubtle}`,
+                      }}>
+                        <span style={{ ...T.micro, color: B.textSec }}>
+                          <span style={{ color: B.gold, fontWeight: 700 }}>ELITE</span> = $100K+ lifetime profit
+                        </span>
+                        <span style={{ ...T.micro, color: B.textSec }}>
+                          <span style={{ color: B.green, fontWeight: 700 }}>PROVEN</span> = $25K+ lifetime profit
+                        </span>
+                        <span style={{ ...T.micro, color: B.textSec }}>
+                          <span style={{ fontWeight: 700, color: B.green }}>+$5.5M</span> = all-time P&L on Polymarket
+                        </span>
+                        <span style={{ ...T.micro, color: B.textSec }}>
+                          <span style={{ fontWeight: 700, color: B.green }}>+EV</span> = retail book price beats Pinnacle fair value
+                        </span>
+                        {sharpStats.totalExcluded > 0 && (
+                          <span style={{ ...T.micro, color: B.textSec }}>
+                            <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {sharpStats.mmExcluded} MMs + {sharpStats.sportLosers} sport losers removed
+                          </span>
+                        )}
+                      </div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                        gap: '0.75rem',
+                      }}>
+                        {allPosGames.map(gd => (
+                          <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })()}
