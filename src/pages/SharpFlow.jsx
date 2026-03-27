@@ -1776,7 +1776,7 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
   );
 });
 
-function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, polyMovingWith) {
+function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, polyMovingWith, oppPeakStars = 0) {
   let pts = 0;
 
   // Sharp wallet conviction (max 3 pts)
@@ -1805,6 +1805,11 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
 
   // Prediction market alignment (max 0.5 pts)
   if (polyMovingWith) pts += 0.5;
+
+  // Flip penalty — opposing side already locked at peak
+  if (oppPeakStars >= 4.5) pts -= 2;
+  else if (oppPeakStars >= 3.5) pts -= 1.5;
+  else if (oppPeakStars >= 3) pts -= 1;
 
   const maxPts = 11;
   const raw = (pts / maxPts) * 5;
@@ -2050,6 +2055,26 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const walletPct = (consensusWallets + oppWallets) > 0 ? (consensusWallets / (consensusWallets + oppWallets)) * 100 : 50;
   const cGrade = consensusGrade(moneyPct, walletPct);
 
+  // Compute opposing side's raw stars (no flip penalty) for flip-detection
+  const oppSide = consensusSide === 'away' ? 'home' : 'away';
+  const oppBestRetail = oppSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
+  const oppPinnProb = impliedProb(oppOdds);
+  const oppRetailProb = impliedProb(oppBestRetail);
+  const oppEvEdge = (oppPinnProb && oppRetailProb) ? +((oppPinnProb - oppRetailProb) * 100).toFixed(1) : null;
+  const oppPinnConfirms = pinnMoved === oppSide;
+  const oppPinnPoints = oppSide === 'away' ? pinnAwayPoints : pinnHomePoints;
+  const oppPinnFirstProb = impliedProb(oppPinnPoints[0]);
+  const oppPinnLastProb = impliedProb(oppPinnPoints[oppPinnPoints.length - 1]);
+  const oppPinnMovingWith = oppPinnPoints.length >= 2 && oppPinnLastProb > oppPinnFirstProb;
+  const oppPolyMovingWith = polyPoints.length >= 2 && (oppSide === 'away'
+    ? polyPoints[polyPoints.length - 1] > polyPoints[0]
+    : polyPoints[polyPoints.length - 1] < polyPoints[0]);
+  const oppMoneyPct = totalInvested > 0 ? (oppInvestedAmt / totalInvested) * 100 : 50;
+  const oppWalletPct = (consensusWallets + oppWallets) > 0 ? (oppWallets / (consensusWallets + oppWallets)) * 100 : 50;
+  const oppCGrade = consensusGrade(oppMoneyPct, oppWalletPct);
+  const oppSr = rateStars(oppEvEdge || 0, oppWallets, oppPinnConfirms, oppInvestedAmt, oppCGrade.label, oppPinnMovingWith, oppPolyMovingWith);
+  const oppPeakStars = oppSr.stars;
+
   // Lock-In Criteria System
   const criteria = [
     { id: 'sharps', label: '3+ Sharp Bettors', met: uniqueWallets >= 3 },
@@ -2060,7 +2085,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith);
+  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
   const isLocked = sr.stars >= 3;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
@@ -2879,7 +2904,10 @@ export default function SharpFlow() {
           const wPct = (uniqueWallets + oppWallets) > 0 ? (uniqueWallets / (uniqueWallets + oppWallets)) * 100 : 50;
           const cGrade = consensusGrade(mPct, wPct);
 
-          const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith);
+          const oppSide = evalSide === 'away' ? 'home' : 'away';
+          const oppPeakStars = syncedRef.current.get(`${docId}:${oppSide}`) || 0;
+
+          const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
           if (sr.stars < 3) continue;
 
           const checks = [
@@ -3337,7 +3365,27 @@ export default function SharpFlow() {
                   const polyG = polyData?.[sport]?.[key];
                   const polyPts = polyG?.priceHistory?.points || [];
                   const polyMoveWith = polyPts.length >= 2 && ((cSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (cSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
-                  const sr = rateStars(ev, uw, pinnConf, ss.totalInvested || 0, cg.label, pinnMoveWith, polyMoveWith);
+
+                  // Opposing side stars for flip penalty
+                  const oSide = cSide === 'away' ? 'home' : 'away';
+                  const oOdds = oSide === 'away' ? pg?.current?.away : pg?.current?.home;
+                  const oBestRetail = oSide === 'away' ? pg?.bestAway : pg?.bestHome;
+                  const oPProb = impliedProb(oOdds);
+                  const oRProb = impliedProb(oBestRetail);
+                  const oEv = (oPProb && oRProb) ? +((oPProb - oRProb) * 100).toFixed(1) : 0;
+                  const oPinnConf = pg?.movement?.direction === oSide;
+                  const oPinnPts = pinnH.map(h => oSide === 'away' ? h.away : h.home);
+                  const oPFirstP = impliedProb(oPinnPts[0]);
+                  const oPLastP = impliedProb(oPinnPts[oPinnPts.length - 1]);
+                  const oPinnMoveWith = oPinnPts.length >= 2 && oPLastP > oPFirstP;
+                  const oPolyMoveWith = polyPts.length >= 2 && ((oSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (oSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
+                  const oInv = oSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
+                  const oMoneyPct = (ss.totalInvested || 0) > 0 ? (oInv / ss.totalInvested) * 100 : 50;
+                  const oWPct = (cWallets + oWallets) > 0 ? (oWallets / (cWallets + oWallets)) * 100 : 50;
+                  const oCg = consensusGrade(oMoneyPct, oWPct);
+                  const oSr = rateStars(oEv, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPolyMoveWith);
+
+                  const sr = rateStars(ev, uw, pinnConf, ss.totalInvested || 0, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
 
                   if (sortBy === 'locked') continue;
                   if (sortBy === 'live' && !isLive) continue;
