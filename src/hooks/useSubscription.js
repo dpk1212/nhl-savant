@@ -90,10 +90,7 @@ export function useSubscription(user) {
       return;
     }
 
-    // 1. First, check Stripe directly (source of truth)
-    refreshSubscriptionFromStripe();
-
-    // 2. Also listen to Firestore for cached updates (faster on subsequent loads)
+    // 1. Listen to Firestore first for fast cached state (resolves loading)
     const userRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -142,17 +139,24 @@ export function useSubscription(user) {
       setLoading(false);
     });
 
-    // 3. Set up periodic refresh from Stripe (every 5 minutes)
+    // 2. Background sync from Stripe (source of truth) — non-blocking
+    // Firestore snapshot above resolves loading instantly; this just ensures
+    // Stripe and Firestore stay in sync without slowing down page load.
+    const stripeTimeout = setTimeout(() => {
+      refreshSubscriptionFromStripe();
+    }, 2000);
+
+    // 3. Periodic refresh from Stripe (every 5 minutes)
     const refreshInterval = setInterval(() => {
       const timeSinceLastCheck = Date.now() - (lastCheck || 0);
-      if (timeSinceLastCheck > 5 * 60 * 1000) { // 5 minutes
-        console.log('Refreshing subscription from Stripe (periodic check)...');
+      if (timeSinceLastCheck > 5 * 60 * 1000) {
         refreshSubscriptionFromStripe();
       }
-    }, 60 * 1000); // Check every minute if refresh is needed
+    }, 60 * 1000);
 
     return () => {
       unsubscribe();
+      clearTimeout(stripeTimeout);
       clearInterval(refreshInterval);
     };
   }, [user?.uid, user?.email]);
