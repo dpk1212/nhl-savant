@@ -3710,11 +3710,10 @@ function useCountdown(targetDate) {
     }, 1000);
     return () => clearInterval(id);
   }, [targetDate, remaining <= 0]);
-  const d = Math.floor(remaining / 86400000);
-  const h = Math.floor((remaining % 86400000) / 3600000);
+  const totalH = Math.floor(remaining / 3600000);
   const m = Math.floor((remaining % 3600000) / 60000);
   const s = Math.floor((remaining % 60000) / 1000);
-  return { d, h, m, s, expired: remaining <= 0 };
+  return { totalH, m, s, expired: remaining <= 0 };
 }
 
 const PROMO_DEADLINE = new Date('2026-03-31T03:59:00Z').getTime(); // March 30 11:59 PM ET
@@ -3750,17 +3749,18 @@ function FoundingMemberBanner({ isMobile }) {
   ];
 
   const pad = (n) => String(n).padStart(2, '0');
+  const isUrgent = countdown.totalH < 24;
   const countdownText = countdown.expired
     ? 'OFFER EXPIRED'
-    : `${countdown.d > 0 ? `${countdown.d}d ` : ''}${pad(countdown.h)}h ${pad(countdown.m)}m ${pad(countdown.s)}s`;
+    : `${countdown.totalH}h ${pad(countdown.m)}m ${pad(countdown.s)}s`;
 
-  const CountdownUnit = ({ value, label }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isMobile ? '3rem' : '3.5rem' }}>
+  const CountdownUnit = ({ value, label, wide }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: wide ? (isMobile ? '3.5rem' : '4rem') : (isMobile ? '3rem' : '3.5rem') }}>
       <span style={{
         fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900,
-        color: countdown.d === 0 ? '#ef4444' : B.gold,
+        color: isUrgent ? '#ef4444' : '#f59e0b',
         fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-      }}>{pad(value)}</span>
+      }}>{wide ? value : pad(value)}</span>
       <span style={{ ...T.micro, color: B.textMuted, fontWeight: 600, marginTop: '0.2rem' }}>{label}</span>
     </div>
   );
@@ -3768,7 +3768,7 @@ function FoundingMemberBanner({ isMobile }) {
   const CountdownSep = () => (
     <span style={{
       fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900,
-      color: countdown.d === 0 ? '#ef4444' : B.gold,
+      color: isUrgent ? '#ef4444' : '#f59e0b',
       lineHeight: 1, opacity: 0.6, alignSelf: 'flex-start', paddingTop: '0.1rem',
     }}>:</span>
   );
@@ -3780,10 +3780,10 @@ function FoundingMemberBanner({ isMobile }) {
       borderRadius: '14px',
       overflow: 'hidden',
       background: `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, ${B.card} 35%, rgba(239,68,68,0.04) 100%)`,
-      border: `1px solid ${countdown.d === 0 ? 'rgba(239,68,68,0.3)' : B.goldBorder}`,
-      boxShadow: countdown.d === 0
+      border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
+      boxShadow: isUrgent
         ? '0 0 20px rgba(239,68,68,0.08), 0 4px 20px rgba(0,0,0,0.3)'
-        : '0 4px 20px rgba(0,0,0,0.3)',
+        : '0 0 15px rgba(245,158,11,0.06), 0 4px 20px rgba(0,0,0,0.3)',
     }}>
       <style>{`
         @keyframes pulseGlow {
@@ -3799,9 +3799,9 @@ function FoundingMemberBanner({ isMobile }) {
       {/* Top accent line */}
       <div style={{
         height: '3px',
-        background: countdown.d === 0
+        background: isUrgent
           ? 'linear-gradient(90deg, #ef4444, #f59e0b, #ef4444)'
-          : `linear-gradient(90deg, ${B.gold}, ${B.green}, ${B.gold})`,
+          : 'linear-gradient(90deg, #f59e0b, #ef4444, #f59e0b)',
       }} />
 
       {/* Collapsed header — always visible */}
@@ -3823,9 +3823,9 @@ function FoundingMemberBanner({ isMobile }) {
             display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
             ...T.micro, fontWeight: 800, letterSpacing: '0.02em',
             padding: '0.15rem 0.5rem', borderRadius: '4px',
-            background: countdown.d === 0 ? 'rgba(239,68,68,0.15)' : 'rgba(212,175,55,0.12)',
-            color: countdown.d === 0 ? '#ef4444' : B.gold,
-            animation: countdown.d === 0 ? 'pulseGlow 2s ease-in-out infinite' : 'none',
+            background: isUrgent ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+            color: isUrgent ? '#ef4444' : '#f59e0b',
+            animation: 'pulseGlow 2s ease-in-out infinite',
             fontVariantNumeric: 'tabular-nums',
           }}>
             <Clock size={10} />
@@ -3849,17 +3849,17 @@ function FoundingMemberBanner({ isMobile }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             padding: '0.6rem 0.875rem', borderRadius: '8px',
-            background: countdown.d === 0 ? 'rgba(239,68,68,0.08)' : 'rgba(212,175,55,0.06)',
-            border: `1px solid ${countdown.d === 0 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.15)'}`,
+            background: isUrgent ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.06)',
+            border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)'}`,
             marginBottom: '1rem',
           }}>
-            <AlertTriangle size={14} color={countdown.d === 0 ? '#ef4444' : '#f59e0b'} />
-            <span style={{ ...T.label, color: countdown.d === 0 ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
+            <AlertTriangle size={14} color={isUrgent ? '#ef4444' : '#f59e0b'} />
+            <span style={{ ...T.label, color: isUrgent ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
               {countdown.expired
                 ? 'This offer has expired.'
-                : countdown.d === 0
-                  ? 'FINAL HOURS — Offer ends tonight at 11:59 PM ET'
-                  : `Only ${countdown.d} day${countdown.d !== 1 ? 's' : ''} left — offer ends Monday, March 30 at 11:59 PM ET`}
+                : isUrgent
+                  ? 'FINAL HOURS — Free access and founding member pricing end Monday at midnight ET'
+                  : `Less than ${countdown.totalH} hours left — free access and founding member pricing end Monday at midnight ET`}
             </span>
           </div>
 
@@ -3870,10 +3870,9 @@ function FoundingMemberBanner({ isMobile }) {
               gap: isMobile ? '0.375rem' : '0.5rem',
               padding: '1rem', marginBottom: '1.25rem', borderRadius: '10px',
               background: 'rgba(0,0,0,0.3)',
-              border: `1px solid ${countdown.d === 0 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.15)'}`,
+              border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)'}`,
             }}>
-              {countdown.d > 0 && <><CountdownUnit value={countdown.d} label="DAYS" /><CountdownSep /></>}
-              <CountdownUnit value={countdown.h} label="HOURS" />
+              <CountdownUnit value={countdown.totalH} label="HOURS" wide />
               <CountdownSep />
               <CountdownUnit value={countdown.m} label="MIN" />
               <CountdownSep />
@@ -3899,7 +3898,7 @@ function FoundingMemberBanner({ isMobile }) {
           <p style={{
             ...T.label, color: B.textMuted, margin: '0 0 1.25rem 0', fontStyle: 'italic',
           }}>
-            Free access ends Tuesday, March 31. Lock your rate now — it never goes up.
+            Free access ends Monday at midnight ET. The founding member discount goes with it — lock your rate now.
           </p>
 
           {/* Feature grid */}
