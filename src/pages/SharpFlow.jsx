@@ -248,7 +248,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v2';
+    const cacheKey = 'sharpFlow_pnl_v3';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -270,15 +270,21 @@ async function loadAllTimePnL() {
         if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
         const u = bestSnap?.units || 1;
-        const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
         if (sd.status === 'COMPLETED') {
           byStars[key].totalUnits += u;
-          pick.outcome = sd.result?.outcome || null;
-          if (sd.result?.outcome === 'WIN') { byStars[key].wins++; const p = sd.result?.profit || 0; byStars[key].totalProfit += p; pick.profit = p; }
-          else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; pick.profit = -u; }
+          if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
+          else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
-        picks.push(pick);
+        if (s >= 3) {
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
+          if (sd.status === 'COMPLETED') {
+            pick.outcome = sd.result?.outcome || null;
+            if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
+            else if (sd.result?.outcome === 'LOSS') { pick.profit = -u; }
+          }
+          picks.push(pick);
+        }
       };
       if (data.sides) {
         for (const sd of Object.values(data.sides)) processSide(sd);
@@ -288,15 +294,21 @@ async function loadAllTimePnL() {
         if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
         const u = data.units || 1;
-        const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
         if (data.status === 'COMPLETED') {
           byStars[key].totalUnits += u;
-          pick.outcome = data.result?.outcome || null;
-          if (data.result?.outcome === 'WIN') { byStars[key].wins++; const p = data.result?.profit || 0; byStars[key].totalProfit += p; pick.profit = p; }
-          else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; pick.profit = -u; }
+          if (data.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (data.result?.profit || 0); }
+          else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
-        picks.push(pick);
+        if (s >= 3) {
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
+          if (data.status === 'COMPLETED') {
+            pick.outcome = data.result?.outcome || null;
+            if (data.result?.outcome === 'WIN') { pick.profit = data.result?.profit || 0; }
+            else if (data.result?.outcome === 'LOSS') { pick.profit = -u; }
+          }
+          picks.push(pick);
+        }
       }
     });
 
