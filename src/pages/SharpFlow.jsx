@@ -248,7 +248,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v3';
+    const cacheKey = 'sharpFlow_pnl_v4';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -265,7 +265,7 @@ async function loadAllTimePnL() {
       const data = d.data();
       const processSide = (sd) => {
         const bestSnap = sd.peak || sd.lock;
-        const s = bestSnap?.stars || estimateStarsFromSnap(bestSnap);
+        const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
         const key = starBucket(s);
         if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
@@ -289,7 +289,7 @@ async function loadAllTimePnL() {
       if (data.sides) {
         for (const sd of Object.values(data.sides)) processSide(sd);
       } else {
-        const s = data.stars || estimateStarsFromSnap(data);
+        const s = data.stars ?? estimateStarsFromSnap(data);
         const key = starBucket(s);
         if (!byStars[key]) byStars[key] = emptyBucket();
         byStars[key].totalPicks++;
