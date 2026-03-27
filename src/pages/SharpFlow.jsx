@@ -3719,14 +3719,14 @@ function useCountdown(targetDate) {
 const PROMO_DEADLINE = new Date('2026-03-31T03:59:00Z').getTime(); // March 30 11:59 PM ET
 
 function FoundingMemberBanner({ isMobile }) {
-  const { user } = useAuth();
-  const { isPremium } = useSubscription(user);
+  const { user, loading: authLoading } = useAuth();
+  const { isPremium, loading: subLoading } = useSubscription(user);
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const countdown = useCountdown(PROMO_DEADLINE);
 
-  if (isPremium || dismissed) return null;
+  if (authLoading || subLoading || isPremium || dismissed) return null;
 
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
