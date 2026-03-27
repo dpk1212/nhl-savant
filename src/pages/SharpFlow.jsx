@@ -248,7 +248,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v6';
+    const cacheKey = 'sharpFlow_pnl_v7';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -261,8 +261,10 @@ async function loadAllTimePnL() {
     const picks = [];
     const starBucket = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : s >= 2.5 ? 3 : s >= 1.5 ? 2 : 1;
     const emptyBucket = () => ({ wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, totalPicks: 0, label: '' });
+    const STARS_LIVE_DATE = '2026-03-26';
     snap.forEach(d => {
       const data = d.data();
+      const isPostDeploy = data.date >= STARS_LIVE_DATE;
       const processSide = (sd) => {
         const bestSnap = sd.peak || sd.lock;
         const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
@@ -276,8 +278,9 @@ async function loadAllTimePnL() {
           else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
-        if (s >= 3) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
+        const pickStars = isPostDeploy ? (bestSnap?.stars ?? 0) : s;
+        if (pickStars >= 3) {
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
@@ -300,8 +303,9 @@ async function loadAllTimePnL() {
           else if (data.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
           else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
-        if (s >= 3) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: s, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
+        const pickStars = isPostDeploy ? (data.stars ?? 0) : s;
+        if (pickStars >= 3) {
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
           if (data.status === 'COMPLETED') {
             pick.outcome = data.result?.outcome || null;
             if (data.result?.outcome === 'WIN') { pick.profit = data.result?.profit || 0; }
@@ -2782,6 +2786,7 @@ export default function SharpFlow() {
   const [allTimePnL, setAllTimePnL] = useState(null);
   const [showPerf, setShowPerf] = useState(false);
   const [perfDateRange, setPerfDateRange] = useState('all');
+  const [lockedDay, setLockedDay] = useState('today');
   const [perfSport, setPerfSport] = useState('ALL');
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
@@ -2938,8 +2943,11 @@ export default function SharpFlow() {
     const rawPicks = allTimePnL.picks || [];
     const now = new Date();
     const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const yesterdayD = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayStr = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     let cutoff = null;
     if (perfDateRange === 'today') cutoff = todayStr;
+    else if (perfDateRange === 'yesterday') cutoff = yesterdayStr;
     else if (perfDateRange === '7d') {
       const d = new Date(now); d.setDate(d.getDate() - 7);
       cutoff = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -2950,6 +2958,7 @@ export default function SharpFlow() {
     const filtered = rawPicks.filter(p => {
       if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
       if (perfDateRange === 'today') return p.date === todayStr;
+      if (perfDateRange === 'yesterday') return p.date === yesterdayStr;
       if (cutoff) return p.date >= cutoff;
       return true;
     });
@@ -3113,7 +3122,7 @@ export default function SharpFlow() {
               const roi = pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : '0.0';
               const stars = fp.byStars || {};
               const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL';
-              const dateLabels = { today: 'Today', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
+              const dateLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
 
               return (
                 <div style={{ marginBottom: '1rem' }}>
@@ -3149,6 +3158,7 @@ export default function SharpFlow() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
                           {[
                             { id: 'today', label: 'Today' },
+                            { id: 'yesterday', label: 'Yesterday' },
                             { id: '7d', label: '7D' },
                             { id: '30d', label: '30D' },
                             { id: 'all', label: 'All Time' },
@@ -3328,8 +3338,8 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
-                      title={sortBy === 'locked' ? 'Locked Picks — Today' : `Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={sortBy === 'locked' ? 'All plays that crossed the conviction threshold today at peak snapshot' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : `Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
                       icon={sortBy === 'locked' ? Lock : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
@@ -3368,9 +3378,12 @@ export default function SharpFlow() {
 
                   {sortBy === 'locked' ? (() => {
                     const today = todayET();
+                    const yesterdayD = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+                    const yesterday = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+                    const targetDate = lockedDay === 'today' ? today : yesterday;
                     const lockedArr = [];
                     for (const [docId, doc] of Object.entries(lockedPicks)) {
-                      if (!docId.startsWith(today)) continue;
+                      if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
                       if (sportFilter !== 'All' && docSport !== sportFilter) continue;
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
@@ -3396,21 +3409,39 @@ export default function SharpFlow() {
                       }
                     }
                     lockedArr.sort((a, b) => b.stars - a.stars || b.units - a.units);
-                    if (lockedArr.length === 0) return (
-                      <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
-                        No locked picks for today yet
-                      </div>
-                    );
                     return (
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : lockedArr.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                        gap: '0.75rem',
-                      }}>
-                        {lockedArr.map(p => (
-                          <LockedPickCard key={p.key} pick={p} isMobile={isMobile} />
-                        ))}
-                      </div>
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.75rem' }}>
+                          {[
+                            { id: 'today', label: 'Today' },
+                            { id: 'yesterday', label: 'Yesterday' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedDay(opt.id)} style={{
+                              padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: lockedDay === opt.id ? '1px solid rgba(16,185,129,0.4)' : `1px solid ${B.border}`,
+                              background: lockedDay === opt.id ? B.greenDim : 'transparent',
+                              color: lockedDay === opt.id ? B.green : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
+                          ))}
+                        </div>
+                        {lockedArr.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
+                            No locked picks for {lockedDay === 'today' ? 'today' : 'yesterday'}
+                          </div>
+                        ) : (
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : lockedArr.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                            gap: '0.75rem',
+                          }}>
+                            {lockedArr.map(p => (
+                              <LockedPickCard key={p.key} pick={p} isMobile={isMobile} />
+                            ))}
+                          </div>
+                        )}
+                      </>
                     );
                   })() : (
                     <>
