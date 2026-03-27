@@ -716,7 +716,8 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const allBooks = pinnGame?.allBooks || {};
   const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
   const nowMs = Date.now();
-  const isGameLive = commenceTime && nowMs >= commenceTime;
+  const MAX_GAME_MS = 6 * 60 * 60 * 1000;
+  const isGameLive = commenceTime && nowMs >= commenceTime && (nowMs - commenceTime) < MAX_GAME_MS;
   const gameTimeFormatted = commenceTime
     ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
     : null;
@@ -1956,7 +1957,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const allBooks = pinnGame?.allBooks || {};
   const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
   const nowMs = Date.now();
-  const isGameLive = commenceTime && nowMs >= commenceTime;
+  const MAX_GAME_MS = 6 * 60 * 60 * 1000;
+  const isGameLive = commenceTime && nowMs >= commenceTime && (nowMs - commenceTime) < MAX_GAME_MS;
   const minsUntilStart = commenceTime ? Math.round((commenceTime - nowMs) / 60000) : null;
 
   const gameTimeLabel = (() => {
@@ -2832,7 +2834,7 @@ export default function SharpFlow() {
         const pinnGame = pinnacleHistory?.[sport]?.[key];
 
         const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
-        const isLive = commenceTime && Date.now() >= commenceTime;
+        const isLive = commenceTime && Date.now() >= commenceTime && (Date.now() - commenceTime) < 6 * 60 * 60 * 1000;
         if (isLive) continue;
 
         const date = gameDate(commenceTime);
@@ -2941,13 +2943,7 @@ export default function SharpFlow() {
     }
   }, [sharpPositions, pinnacleHistory, polyData, picksLoaded]);
 
-  const lastSyncRef = useRef(0);
-  useEffect(() => {
-    const now = Date.now();
-    if (now - lastSyncRef.current < 10000) return;
-    lastSyncRef.current = now;
-    syncLockedPicks();
-  }, [syncLockedPicks]);
+  useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
 
   const filteredPnL = useMemo(() => {
     if (!allTimePnL) return null;

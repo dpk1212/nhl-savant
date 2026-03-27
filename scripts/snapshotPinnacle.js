@@ -35,6 +35,7 @@ const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
 const RETAIL_BOOKS = ['draftkings', 'fanduel', 'betmgm', 'caesars'];
 const MAX_HISTORY = 24;
 const STALE_HOURS = 36;
+const COMPLETED_HOURS = 6;
 const OUT_PATH = join(ROOT, 'public', 'pinnacle_history.json');
 
 const NHL_CODES = {
@@ -268,10 +269,15 @@ async function run() {
       history[label][gameKey] = existing;
     }
 
-    // Purge stale
+    // Purge stale and completed games
+    const completedCutoff = now - COMPLETED_HOURS * 3600;
     for (const [gk, gd] of Object.entries(history[label])) {
       const lastT = gd.history?.[gd.history.length - 1]?.t || 0;
-      if (lastT < staleCutoff) delete history[label][gk];
+      if (lastT < staleCutoff) { delete history[label][gk]; continue; }
+      if (gd.commence) {
+        const commenceEpoch = Math.floor(new Date(gd.commence).getTime() / 1000);
+        if (commenceEpoch < completedCutoff) { delete history[label][gk]; continue; }
+      }
     }
   }
 
