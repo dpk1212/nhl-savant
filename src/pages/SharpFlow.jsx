@@ -2937,9 +2937,6 @@ export default function SharpFlow() {
 
   const filteredPnL = useMemo(() => {
     if (!allTimePnL) return null;
-    if (perfDateRange === 'all' && perfSport === 'ALL') {
-      return { pregame: allTimePnL.pregame, byStars: allTimePnL.byStars };
-    }
     const rawPicks = allTimePnL.picks || [];
     const now = new Date();
     const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
