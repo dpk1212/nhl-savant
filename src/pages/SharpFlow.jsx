@@ -248,11 +248,11 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl';
+    const cacheKey = 'sharpFlow_pnl_v2';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
-      if (Date.now() - ts < 5 * 60 * 1000) return data;
+      if (Date.now() - ts < 5 * 60 * 1000 && data.picks) return data;
     }
     const snap = await getDocs(collection(db, 'sharpFlowPicks'));
     const overall = tallySides(snap);
