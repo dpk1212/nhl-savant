@@ -218,7 +218,7 @@ async function buildProfile(wallet) {
 }
 
 async function fetchLeaderboard() {
-  const LB_DEPTH = 500;
+  const LB_DEPTH = 1000;
   console.log(`🏆 Fetching sports leaderboard (top ${LB_DEPTH})...`);
   const all = [];
   for (let offset = 0; offset < LB_DEPTH; offset += 50) {
