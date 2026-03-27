@@ -2085,7 +2085,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
+  const sr = rateStars(evEdge || 0, consensusWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
   const isLocked = sr.stars >= 3;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
@@ -3385,7 +3385,7 @@ export default function SharpFlow() {
                   const oCg = consensusGrade(oMoneyPct, oWPct);
                   const oSr = rateStars(oEv, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPolyMoveWith);
 
-                  const sr = rateStars(ev, uw, pinnConf, ss.totalInvested || 0, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
+                  const sr = rateStars(ev, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
 
                   if (sortBy === 'locked') continue;
                   if (sortBy === 'live' && !isLive) continue;
