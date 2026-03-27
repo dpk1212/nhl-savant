@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -3697,14 +3697,35 @@ function SportTabs({ active, onChange }) {
   );
 }
 
+function useCountdown(targetDate) {
+  const [remaining, setRemaining] = useState(() => {
+    const diff = targetDate - Date.now();
+    return diff > 0 ? diff : 0;
+  });
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const id = setInterval(() => {
+      const diff = targetDate - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [targetDate, remaining <= 0]);
+  const d = Math.floor(remaining / 86400000);
+  const h = Math.floor((remaining % 86400000) / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  return { d, h, m, s, expired: remaining <= 0 };
+}
+
+const PROMO_DEADLINE = new Date('2026-03-31T03:59:00Z').getTime(); // March 30 11:59 PM ET
+
 function FoundingMemberBanner({ isMobile }) {
   const { user } = useAuth();
   const { isPremium } = useSubscription(user);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [dismissed, setDismissed] = useState(() => {
-    try { return sessionStorage.getItem('sf_promo_dismissed') === '1'; } catch { return false; }
-  });
+  const [dismissed, setDismissed] = useState(false);
+  const countdown = useCountdown(PROMO_DEADLINE);
 
   if (isPremium || dismissed) return null;
 
@@ -3717,7 +3738,6 @@ function FoundingMemberBanner({ isMobile }) {
   const handleDismiss = (e) => {
     e.stopPropagation();
     setDismissed(true);
-    try { sessionStorage.setItem('sf_promo_dismissed', '1'); } catch { /* noop */ }
   };
 
   const features = [
@@ -3729,19 +3749,59 @@ function FoundingMemberBanner({ isMobile }) {
     'Complete performance dashboard with ROI tracking',
   ];
 
+  const pad = (n) => String(n).padStart(2, '0');
+  const countdownText = countdown.expired
+    ? 'OFFER EXPIRED'
+    : `${countdown.d > 0 ? `${countdown.d}d ` : ''}${pad(countdown.h)}h ${pad(countdown.m)}m ${pad(countdown.s)}s`;
+
+  const CountdownUnit = ({ value, label }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isMobile ? '3rem' : '3.5rem' }}>
+      <span style={{
+        fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900,
+        color: countdown.d === 0 ? '#ef4444' : B.gold,
+        fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+      }}>{pad(value)}</span>
+      <span style={{ ...T.micro, color: B.textMuted, fontWeight: 600, marginTop: '0.2rem' }}>{label}</span>
+    </div>
+  );
+
+  const CountdownSep = () => (
+    <span style={{
+      fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900,
+      color: countdown.d === 0 ? '#ef4444' : B.gold,
+      lineHeight: 1, opacity: 0.6, alignSelf: 'flex-start', paddingTop: '0.1rem',
+    }}>:</span>
+  );
+
   return (
     <div style={{
       position: 'relative',
       marginBottom: '1.5rem',
       borderRadius: '14px',
       overflow: 'hidden',
-      background: `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 40%, rgba(16,185,129,0.05) 100%)`,
-      border: `1px solid ${B.goldBorder}`,
+      background: `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, ${B.card} 35%, rgba(239,68,68,0.04) 100%)`,
+      border: `1px solid ${countdown.d === 0 ? 'rgba(239,68,68,0.3)' : B.goldBorder}`,
+      boxShadow: countdown.d === 0
+        ? '0 0 20px rgba(239,68,68,0.08), 0 4px 20px rgba(0,0,0,0.3)'
+        : '0 4px 20px rgba(0,0,0,0.3)',
     }}>
+      <style>{`
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+      `}</style>
+
       {/* Top accent line */}
       <div style={{
         height: '3px',
-        background: `linear-gradient(90deg, ${B.gold}, ${B.green}, ${B.gold})`,
+        background: countdown.d === 0
+          ? 'linear-gradient(90deg, #ef4444, #f59e0b, #ef4444)'
+          : `linear-gradient(90deg, ${B.gold}, ${B.green}, ${B.gold})`,
       }} />
 
       {/* Collapsed header — always visible */}
@@ -3749,16 +3809,30 @@ function FoundingMemberBanner({ isMobile }) {
         width: '100%', background: 'none', border: 'none', cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: isMobile ? '0.75rem 1rem' : '0.75rem 2rem',
-        gap: '0.75rem',
+        gap: '0.5rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', flex: 1 }}>
           <span style={{ fontSize: '0.85rem' }}>🏆</span>
           <span style={{ ...T.label, color: B.gold, letterSpacing: '0.04em' }}>FOUNDING MEMBER — </span>
-          <span style={{ ...T.label, color: B.green, fontWeight: 800 }}>50% off forever</span>
-          <span style={{ ...T.label, color: B.textMuted }}>· Code:</span>
-          <span style={{ ...T.label, color: B.gold, fontWeight: 900, letterSpacing: '0.03em' }}>SHARPMONEY</span>
+          <span style={{ ...T.label, color: B.green, fontWeight: 800 }}>50% OFF FOR LIFE</span>
+          {!isMobile && <>
+            <span style={{ ...T.label, color: B.textMuted }}>· Code:</span>
+            <span style={{ ...T.label, color: B.gold, fontWeight: 900, letterSpacing: '0.03em' }}>SHARPMONEY</span>
+          </>}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+            ...T.micro, fontWeight: 800, letterSpacing: '0.02em',
+            padding: '0.15rem 0.5rem', borderRadius: '4px',
+            background: countdown.d === 0 ? 'rgba(239,68,68,0.15)' : 'rgba(212,175,55,0.12)',
+            color: countdown.d === 0 ? '#ef4444' : B.gold,
+            animation: countdown.d === 0 ? 'pulseGlow 2s ease-in-out infinite' : 'none',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            <Clock size={10} />
+            {countdownText}
+          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
           {expanded
             ? <ChevronUp size={16} color={B.textMuted} />
             : <ChevronDown size={16} color={B.textMuted} />}
@@ -3771,6 +3845,42 @@ function FoundingMemberBanner({ isMobile }) {
         <div style={{ padding: isMobile ? '0 1rem 1.25rem' : '0 2rem 1.75rem' }}>
           <div style={{ height: '1px', background: B.borderSubtle, marginBottom: '1rem' }} />
 
+          {/* Urgency bar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.6rem 0.875rem', borderRadius: '8px',
+            background: countdown.d === 0 ? 'rgba(239,68,68,0.08)' : 'rgba(212,175,55,0.06)',
+            border: `1px solid ${countdown.d === 0 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.15)'}`,
+            marginBottom: '1rem',
+          }}>
+            <AlertTriangle size={14} color={countdown.d === 0 ? '#ef4444' : '#f59e0b'} />
+            <span style={{ ...T.label, color: countdown.d === 0 ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
+              {countdown.expired
+                ? 'This offer has expired.'
+                : countdown.d === 0
+                  ? 'FINAL HOURS — Offer ends tonight at 11:59 PM ET'
+                  : `Only ${countdown.d} day${countdown.d !== 1 ? 's' : ''} left — offer ends Monday, March 30 at 11:59 PM ET`}
+            </span>
+          </div>
+
+          {/* Countdown timer */}
+          {!countdown.expired && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: isMobile ? '0.375rem' : '0.5rem',
+              padding: '1rem', marginBottom: '1.25rem', borderRadius: '10px',
+              background: 'rgba(0,0,0,0.3)',
+              border: `1px solid ${countdown.d === 0 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.15)'}`,
+            }}>
+              {countdown.d > 0 && <><CountdownUnit value={countdown.d} label="DAYS" /><CountdownSep /></>}
+              <CountdownUnit value={countdown.h} label="HOURS" />
+              <CountdownSep />
+              <CountdownUnit value={countdown.m} label="MIN" />
+              <CountdownSep />
+              <CountdownUnit value={countdown.s} label="SEC" />
+            </div>
+          )}
+
           <h2 style={{
             fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900,
             color: B.text, margin: '0 0 0.375rem 0', lineHeight: 1.2,
@@ -3779,12 +3889,17 @@ function FoundingMemberBanner({ isMobile }) {
             You're early. <span style={{ color: B.gold }}>That pays off.</span>
           </h2>
           <p style={{
-            ...T.body, color: B.textSec, margin: '0 0 1.25rem 0',
+            ...T.body, color: B.textSec, margin: '0 0 0.25rem 0',
             maxWidth: '600px', lineHeight: 1.6,
           }}>
             We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, surface their real positions
             on today's games, and combine it with Pinnacle fair odds, EV edges, and full market flow
             — so you bet with an edge, not a hunch. Lock in <span style={{ color: B.green, fontWeight: 700 }}>50% off forever</span> before the paywall goes live.
+          </p>
+          <p style={{
+            ...T.label, color: B.textMuted, margin: '0 0 1.25rem 0', fontStyle: 'italic',
+          }}>
+            Free access ends Tuesday, March 31. Lock your rate now — it never goes up.
           </p>
 
           {/* Feature grid */}
@@ -3839,27 +3954,22 @@ function FoundingMemberBanner({ isMobile }) {
               <span style={{
                 ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
                 background: B.greenDim, color: B.green, fontWeight: 800,
-              }}>50% OFF</span>
+              }}>50% OFF FOREVER</span>
             </div>
-
-            {/* Urgency note */}
-            <span style={{
-              ...T.caption, color: B.textMuted, fontStyle: 'italic',
-            }}>
-              Limited time — won't last forever
-            </span>
           </div>
 
           {/* Link to pricing */}
           <a href="#/pricing?promo=SHARPMONEY" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-            marginTop: '1rem', padding: '0.5rem 1.25rem', borderRadius: '8px',
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            marginTop: '1rem', padding: isMobile ? '0.75rem 1.5rem' : '0.625rem 1.5rem', borderRadius: '8px',
             background: `linear-gradient(135deg, ${B.green}, #059669)`,
-            color: '#fff', fontWeight: 800, fontSize: '0.875rem',
+            color: '#fff', fontWeight: 800, fontSize: isMobile ? '1rem' : '0.9rem',
             textDecoration: 'none', letterSpacing: '0.01em',
-            transition: 'opacity 0.2s ease',
+            transition: 'all 0.2s ease',
+            width: isMobile ? '100%' : 'auto', justifyContent: 'center',
+            boxShadow: '0 2px 12px rgba(16,185,129,0.3)',
           }}>
-            View Plans with 50% Off Applied →
+            Lock In 50% Off Forever →
           </a>
         </div>
       )}
