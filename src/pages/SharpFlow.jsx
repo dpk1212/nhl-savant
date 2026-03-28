@@ -1946,9 +1946,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
+  const lastSyncedStars = useRef(null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -1960,7 +1961,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const homeShort = gd.home.split(' ').pop();
   const pinnGame = pinnacleHistory?.[gd.sport]?.[gd.key];
   const allBooks = pinnGame?.allBooks || {};
-  const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+  const polyGameData = polyData?.[gd.sport]?.[gd.key];
+  const commenceTime = polyGameData?.commence ? new Date(polyGameData.commence).getTime()
+    : pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
   const nowMs = Date.now();
   const MAX_GAME_MS = 6 * 60 * 60 * 1000;
   const isGameLive = commenceTime && nowMs >= commenceTime && (nowMs - commenceTime) < MAX_GAME_MS;
@@ -2018,8 +2021,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // Price movement data
   const pinnHistory = pinnGame?.history || [];
-  const polyGame = polyData?.[gd.sport]?.[gd.key];
-  const polyPriceHistory = polyGame?.priceHistory;
+  const polyPriceHistory = polyGameData?.priceHistory;
   const polyPoints = polyPriceHistory?.points || [];
   const pinnAwayPoints = pinnHistory.map(h => h.away);
   const pinnHomePoints = pinnHistory.map(h => h.home);
@@ -2093,6 +2095,34 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
+
+  useEffect(() => {
+    if (!isLocked || isGameLive || !commenceTime || !onPickSynced) return;
+    if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current) return;
+    const date = gameDate(commenceTime);
+    const docId = `${date}_${gd.key}`;
+    syncPickToFirebase({
+      date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
+      commenceTime, side: consensusSide, team: consensusTeam,
+      odds: betOdds, book: bestBook || 'Pinnacle',
+      pinnacleOdds: consensusOdds, evEdge,
+      criteriaMet,
+      criteria: {
+        sharps3Plus: consensusWallets >= 3, plusEV: hasEV,
+        pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000,
+        lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith,
+      },
+      sharpCount: consensusWallets, totalInvested: consensusInvested,
+      units, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label },
+      stars: sr.stars,
+    }).then(({ action }) => {
+      if (action === 'error') return;
+      lastSyncedStars.current = sr.stars;
+      if (action !== 'no_change') {
+        onPickSynced(docId, consensusSide, { odds: betOdds, criteriaMet, units, unitTier: ut.label, stars: sr.stars });
+      }
+    });
+  }, [isLocked, sr.stars]);
 
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
@@ -2823,18 +2853,10 @@ export default function SharpFlow() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-  const syncedRef = useRef(new Map());
-
   // Load existing locked picks on mount
   useEffect(() => {
     loadLockedPicks().then(picks => {
       setLockedPicks(picks);
-      for (const [docId, doc] of Object.entries(picks)) {
-        for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
-          const storedStars = sd.peak?.stars || sd.lock?.stars || 0;
-          if (storedStars >= 3) syncedRef.current.set(`${docId}:${sideKey}`, storedStars);
-        }
-      }
       setPicksLoaded(true);
     });
   }, []);
@@ -2848,149 +2870,15 @@ export default function SharpFlow() {
     }
   }, [showPerf]);
 
-  // Auto-lock qualifying PREGAME picks to Firebase (with peak tracking + flip support)
-  const syncLockedPicks = useCallback(() => {
-    if (!sharpPositions || !pinnacleHistory || !picksLoaded) return;
-    const pendingUpdates = [];
-    for (const sport of ['NHL', 'CBB', 'MLB']) {
-      const sportGames = sharpPositions?.[sport] || {};
-      for (const [key, gd] of Object.entries(sportGames)) {
-        if (!gd.positions || gd.positions.length === 0) continue;
-        const pinnGame = pinnacleHistory?.[sport]?.[key];
-        const polyGame = polyData?.[sport]?.[key];
-
-        const commenceTime = polyGame?.commence ? new Date(polyGame.commence).getTime()
-          : pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
-        const isLive = commenceTime && Date.now() >= commenceTime && (Date.now() - commenceTime) < 6 * 60 * 60 * 1000;
-        if (isLive) continue;
-
-        const date = gameDate(commenceTime);
-        const docId = `${date}_${key}`;
-
-        // Evaluate BOTH sides independently
-        for (const evalSide of ['away', 'home']) {
-          const sidePositions = gd.positions.filter(p => p.side === evalSide);
-          if (sidePositions.length === 0) continue;
-
-          const team = evalSide === 'away' ? gd.away : gd.home;
-          const uniqueWallets = new Set(sidePositions.map(p => p.wallet)).size;
-          const sideInvested = sidePositions.reduce((sum, p) => sum + (p.invested || 0), 0);
-
-          const odds = evalSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
-          const bestRetail = evalSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
-          const bestBook = evalSide === 'away' ? pinnGame?.bestAwayBook : pinnGame?.bestHomeBook;
-          const pinnProb = impliedProb(odds);
-          const retailProb = impliedProb(bestRetail);
-          const evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
-          const hasEV = evEdge != null && evEdge > 0;
-          const pinnMoved = pinnGame?.movement?.direction;
-          const pinnConfirms = pinnMoved === evalSide;
-
-          const pinnHistory = pinnGame?.history || [];
-          const pinnPoints = evalSide === 'away' ? pinnHistory.map(h => h.away) : pinnHistory.map(h => h.home);
-          const pinnFirstP = impliedProb(pinnPoints[0]);
-          const pinnLastP = impliedProb(pinnPoints[pinnPoints.length - 1]);
-          const pinnMovingWith = pinnPoints.length >= 2 && pinnLastP > pinnFirstP;
-
-          const polyGame = polyData?.[sport]?.[key];
-          const polyPts = polyGame?.priceHistory?.points || [];
-          const polyMovingWith = polyPts.length >= 2 && (evalSide === 'away'
-            ? polyPts[polyPts.length - 1] > polyPts[0]
-            : polyPts[polyPts.length - 1] < polyPts[0]);
-
-          const oppPositions = gd.positions.filter(p => p.side !== evalSide);
-          const oppWallets = new Set(oppPositions.map(p => p.wallet)).size;
-          const oppInvested = oppPositions.reduce((sum, p) => sum + (p.invested || 0), 0);
-          const totalInv = sideInvested + oppInvested;
-          const mPct = totalInv > 0 ? (sideInvested / totalInv) * 100 : 50;
-          const wPct = (uniqueWallets + oppWallets) > 0 ? (uniqueWallets / (uniqueWallets + oppWallets)) * 100 : 50;
-          const cGrade = consensusGrade(mPct, wPct);
-
-          const oppSide = evalSide === 'away' ? 'home' : 'away';
-          const oppOdds = oppSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
-          const oppBestRetail = oppSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
-          const oppPinnProb = impliedProb(oppOdds);
-          const oppRetailProb = impliedProb(oppBestRetail);
-          const oppEvEdge = (oppPinnProb && oppRetailProb) ? +((oppPinnProb - oppRetailProb) * 100).toFixed(1) : null;
-          const oppPinnConfirms = pinnMoved === oppSide;
-          const oppPinnPoints = oppSide === 'away' ? pinnHistory.map(h => h.away) : pinnHistory.map(h => h.home);
-          const oppPinnFirstP = impliedProb(oppPinnPoints[0]);
-          const oppPinnLastP = impliedProb(oppPinnPoints[oppPinnPoints.length - 1]);
-          const oppPinnMovingWith = oppPinnPoints.length >= 2 && oppPinnLastP > oppPinnFirstP;
-          const oppPolyMovingWith = polyPts.length >= 2 && (oppSide === 'away'
-            ? polyPts[polyPts.length - 1] > polyPts[0]
-            : polyPts[polyPts.length - 1] < polyPts[0]);
-          const oppMoneyPct = totalInv > 0 ? (oppInvested / totalInv) * 100 : 50;
-          const oppWalletPct = (uniqueWallets + oppWallets) > 0 ? (oppWallets / (uniqueWallets + oppWallets)) * 100 : 50;
-          const oppCGrade = consensusGrade(oppMoneyPct, oppWalletPct);
-          const oppSr = rateStars(oppEvEdge || 0, oppWallets, oppPinnConfirms, oppInvested, oppCGrade.label, oppPinnMovingWith, oppPolyMovingWith);
-          const oppPeakStars = oppSr.stars;
-
-          const sr = rateStars(evEdge || 0, uniqueWallets, pinnConfirms, sideInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
-          if (sr.stars < 3) continue;
-
-          const checks = [
-            uniqueWallets >= 3,
-            hasEV,
-            pinnConfirms,
-            sideInvested >= 5000,
-            pinnMovingWith,
-            polyMovingWith,
-          ];
-          const criteriaMet = checks.filter(Boolean).length;
-
-          const betOdds = bestRetail || odds;
-          const units = calculateUnits(sr.stars, cGrade.penalty);
-          const criteriaObj = {
-            sharps3Plus: uniqueWallets >= 3,
-            plusEV: hasEV,
-            pinnacleConfirms: pinnConfirms,
-            invested7kPlus: sideInvested >= 7000,
-            lineMovingWith: pinnMovingWith,
-            predMarketAligns: polyMovingWith,
-          };
-          const consStrength = { moneyPct: Math.round(mPct), walletPct: Math.round(wPct), grade: cGrade.label };
-
-          const syncKey = `${docId}:${evalSide}`;
-          const prevStars = syncedRef.current.get(syncKey);
-          if (prevStars !== undefined && sr.stars <= prevStars) continue;
-          syncedRef.current.set(syncKey, sr.stars);
-
-          const capturedSide = evalSide;
-          const capturedSnap = { odds: betOdds, criteriaMet, units, unitTier: unitTier(units).label, stars: sr.stars };
-          pendingUpdates.push(
-            syncPickToFirebase({
-              date, sport, gameKey: key, away: gd.away, home: gd.home, commenceTime,
-              side: capturedSide, team, odds: betOdds, book: bestBook || 'Pinnacle',
-              pinnacleOdds: odds || null, evEdge, criteriaMet, criteria: criteriaObj,
-              sharpCount: uniqueWallets, totalInvested: sideInvested, units, consensusStrength: consStrength, stars: sr.stars,
-            }).then(({ docId: id, action }) => {
-              if (action === 'error') { syncedRef.current.delete(syncKey); if (prevStars !== undefined) syncedRef.current.set(syncKey, prevStars); return null; }
-              if (action === 'no_change') return null;
-              return { id, side: capturedSide, snap: capturedSnap };
-            })
-          );
-        }
-      }
-    }
-    if (pendingUpdates.length > 0) {
-      Promise.all(pendingUpdates).then(results => {
-        const updates = results.filter(Boolean);
-        if (updates.length === 0) return;
-        setLockedPicks(prev => {
-          const next = { ...prev };
-          for (const { id, side, snap } of updates) {
-            const prevDoc = next[id] || {};
-            const prevSides = prevDoc.sides || {};
-            next[id] = { ...prevDoc, sides: { ...prevSides, [side]: { ...prevSides[side], peak: snap, lock: prevSides[side]?.lock || snap } } };
-          }
-          return next;
-        });
-      });
-    }
-  }, [sharpPositions, pinnacleHistory, polyData, picksLoaded]);
-
-  useEffect(() => { syncLockedPicks(); }, [syncLockedPicks]);
+  const onPickSynced = useCallback((docId, side, snap) => {
+    setLockedPicks(prev => {
+      const next = { ...prev };
+      const prevDoc = next[docId] || {};
+      const prevSides = prevDoc.sides || {};
+      next[docId] = { ...prevDoc, sides: { ...prevSides, [side]: { ...prevSides[side], peak: snap, lock: prevSides[side]?.lock || snap } } };
+      return next;
+    });
+  }, []);
 
   const filteredPnL = useMemo(() => {
     if (!allTimePnL) return null;
@@ -3567,7 +3455,7 @@ export default function SharpFlow() {
                         gap: '0.75rem',
                       }}>
                         {allPosGames.map(gd => (
-                          <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} />
+                          <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} />
                         ))}
                       </div>
                     </>
