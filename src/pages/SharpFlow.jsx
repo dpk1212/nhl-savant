@@ -155,6 +155,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         sides: { [side]: sideData },
         status: 'PENDING',
         result: { awayScore: null, homeScore: null, winner: null },
+        source: 'ui_card_sync',
+        createdAt: Date.now(),
       });
       return { docId, action: 'created' };
     }
@@ -168,7 +170,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       if (units > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(units).label;
         await setDoc(ref, {
-          sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() } } }
+          sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() } } },
+          source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated',
         }, { merge: true });
         return { docId, action: 'peak_updated' };
       }
@@ -176,7 +179,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     }
 
     const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
-    await setDoc(ref, { sides: { [side]: sideData } }, { merge: true });
+    await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
     return { docId, action: 'side_added' };
   } catch (err) {
     console.warn('Failed to sync pick:', err.message);
