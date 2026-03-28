@@ -3092,18 +3092,28 @@ export default function SharpFlow() {
       return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -100000;
     });
     let totalSharpInvested = 0;
+    let gamesWithPos = 0;
+    const nowMs = Date.now();
+    const MAX_GAME = 6 * 60 * 60 * 1000;
     for (const sport of ['NHL', 'CBB', 'MLB']) {
       const sg = sharpPositions?.[sport] || {};
-      for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
+      for (const [key, gd] of Object.entries(sg)) {
+        const pg = pinnacleHistory?.[sport]?.[key];
+        if (!pg) continue;
+        const ct = pg.commence ? new Date(pg.commence).getTime() : null;
+        if (ct && nowMs - ct > MAX_GAME) continue;
+        totalSharpInvested += gd.summary?.totalInvested || 0;
+        gamesWithPos++;
+      }
     }
     return {
       trackedCount: allEliteProven.length - totalExcluded,
       totalExcluded, mmExcluded, sportLosers,
-      gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length : 0,
+      gamesWithPos,
       totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
       totalSharpInvested,
     };
-  }, [whaleProfiles, sharpPositions]);
+  }, [whaleProfiles, sharpPositions, pinnacleHistory]);
 
   if (loading) {
     return (
@@ -3356,8 +3366,11 @@ export default function SharpFlow() {
                   if (!gd.positions || gd.positions.length === 0) continue;
                   if ((gd.summary?.totalInvested || 0) < 1000) continue;
                   const pg = pinnacleHistory?.[sport]?.[key];
-                  const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
-                  const isLive = ct && nowMs >= ct;
+                  if (!pg) continue;
+                  const ct = pg.commence ? new Date(pg.commence).getTime() : null;
+                  const MAX_GAME = 6 * 60 * 60 * 1000;
+                  if (ct && nowMs - ct > MAX_GAME) continue;
+                  const isLive = ct && nowMs >= ct && (nowMs - ct) < MAX_GAME;
 
                   const ss = gd.summary;
                   const cSide = ss.consensus;
