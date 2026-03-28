@@ -162,9 +162,11 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     }
 
     const data = existing.data();
+    if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
     const sides = data.sides || {};
 
     if (sides[side]) {
+      if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
       if (units > currentPeak || stars > currentPeakStars) {
