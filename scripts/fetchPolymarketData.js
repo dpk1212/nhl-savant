@@ -629,6 +629,7 @@ async function run() {
         awayTeam: awayRaw,
         homeTeam: homeRaw,
         eventId: id,
+        conditionId: mlMarket?.conditionId || null,
         title: title.substring(0, 80),
         commence: commenceTimes[`${sport}:${key}`] || null,
       };
