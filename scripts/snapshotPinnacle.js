@@ -218,6 +218,18 @@ async function run() {
 
       const existing = history[label][gameKey] || {};
 
+      // Different game under the same key (e.g. back-to-back series)
+      // The Odds API id is unique per game — use it to tell them apart
+      if (existing.apiId && existing.apiId !== game.id) {
+        const existingDist = Math.abs(new Date(existing.commence).getTime() - Date.now());
+        const newDist = Math.abs(new Date(game.commence_time).getTime() - Date.now());
+        if (existingDist <= newDist) continue; // existing game is closer to now, keep it
+        // new game is closer — reset the entry so it starts fresh
+        delete existing.opener;
+        delete existing.history;
+        delete existing.movement;
+      }
+
       // Pinnacle history
       const snapshot = { t: now, away: pinnAway, home: pinnHome };
       if (!existing.opener) {
@@ -265,6 +277,7 @@ async function run() {
       existing.awayTeam = awayName;
       existing.homeTeam = homeName;
       existing.commence = game.commence_time;
+      existing.apiId = game.id;
 
       history[label][gameKey] = existing;
     }
