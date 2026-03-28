@@ -3302,7 +3302,7 @@ export default function SharpFlow() {
                   if (sortBy === 'live' && !isLive) continue;
                   if (sortBy !== 'live' && isLive) continue;
 
-                  allPosGames.push({ key, sport, ...gd, _commence: ct, _isLive: isLive, _stars: sr.stars, _ev: ev, _wallets: uw, _invested: ss.totalInvested || 0 });
+                  allPosGames.push({ key, sport, ...gd, _commence: ct, _isLive: isLive, _stars: sr.stars, _ev: ev, _wallets: cWallets + oWallets, _invested: ss.totalInvested || 0 });
                 }
               }
 
