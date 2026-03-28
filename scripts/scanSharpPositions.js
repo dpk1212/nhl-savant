@@ -427,11 +427,11 @@ async function run() {
       // Skip resolved positions (price collapsed to 0 or 1)
       if (curPrice <= 0.01 || curPrice >= 0.99) continue;
 
+      const game = todaysGames[`${match.sport}:${match.key}`];
       // Prevent consecutive-day matchup bleed: only accept positions
       // whose conditionId matches the specific Polymarket event for this game
       if (game.conditionId && pos.conditionId && pos.conditionId !== game.conditionId) continue;
 
-      const game = todaysGames[`${match.sport}:${match.key}`];
       const sport = match.sport;
       const side = resolveOutcomeSide(outcome, game.away, game.home, title);
 
