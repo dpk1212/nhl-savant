@@ -125,7 +125,8 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 - **Sports**: NHL (from `odds_money.md`), CBB (from Odds API `basketball_ncaab`), MLB (from Odds API `baseball_mlb`)
 - **ML Market Selection**: Filters out markets where `groupItemTitle` contains "o/u"/"spread" or outcomes include "Over"/"Under". First remaining market = moneyline.
 - **Price History**: Fetches 24h candles from CLOB for token[0] of the ML market, samples ~12 points for sparkline. Flips if token[0] is not the away team.
-- **Output**: `public/polymarket_data.json` keyed by sport → game_key (e.g., `NHL.bos_njd`, `MLB.nyy_bos`)
+- **Series collision guard**: Each Polymarket event has an `endDate` field that is the game start time. When multiple Polymarket events share the same game key (e.g., back-to-back MLB series), the script compares each event's `endDate` (ET calendar day) against the Odds API `commence_time` for that game key. Only the event whose date matches today's game is accepted. If a wrong-day event was already enriched and a correct-day event appears later, it replaces it.
+- **Output**: `public/polymarket_data.json` keyed by sport → game_key (e.g., `NHL.bos_njd`, `MLB.nyy_bos`). Each entry includes `commence` (Odds API time, falling back to Polymarket `endDate`) and `polyGameTime` (Polymarket's native game start time).
 
 #### `scripts/seedSportsSharps.js`
 - **Purpose**: Builds the definitive list of top 250 most profitable sports bettors
@@ -157,7 +158,8 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 #### `scripts/snapshotPinnacle.js`
 - **API**: The Odds API — `icehockey_nhl`, `basketball_ncaab`, and `baseball_mlb` with bookmakers `pinnacle,draftkings,fanduel,betmgm,caesars`
 - **Tracks**: Opener, current, history (timestamped array), movement direction, best retail price per side, EV calculation
-- **Output**: `public/pinnacle_history.json` keyed by sport → game_key
+- **Series collision guard**: Stores the Odds API unique `game.id` as `apiId` per game key. When a new game arrives for an existing key but with a different `apiId` (different game in a series), compares `commence_time` distances to `Date.now()`. Keeps whichever game is closer; if swapping, resets `opener`/`history`/`movement` so the new game starts fresh.
+- **Output**: `public/pinnacle_history.json` keyed by sport → game_key. Each entry includes `commence` (ISO game time) and `apiId` (Odds API UUID).
 
 ### Firebase Collections
 

@@ -427,8 +427,13 @@ async function run() {
     { slug: 'baseball', sport: 'MLB' },
   ];
 
-  const seen = new Set();
+  const seenDates = new Map();  // key -> ET date string of accepted Poly event
   const events = [];
+
+  function toETDate(iso) {
+    if (!iso) return null;
+    return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  }
 
   for (const { slug, sport } of tags) {
     try {
@@ -473,11 +478,25 @@ async function run() {
     if (!sport || !['CBB', 'NHL', 'MLB'].includes(sport)) continue;
 
     const key = matchToGameKey(teams, cbbMap, sport);
-    if (!key || seen.has(key)) continue;
+    if (!key) continue;
 
     const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : validNHL;
     if (!validSet.has(key)) continue;
-    seen.add(key);
+
+    // Date-match: use Polymarket's endDate (= game time) vs Odds API commence_time
+    const polyGameDate = toETDate(ev.endDate);
+    const oddsGameDate = toETDate(commenceTimes[`${sport}:${key}`]);
+
+    if (seenDates.has(key)) {
+      const prevDate = seenDates.get(key);
+      if (prevDate === oddsGameDate) continue;        // already accepted correct-day event
+      if (polyGameDate !== oddsGameDate) continue;     // this one is also wrong day
+      // This event matches today but the previous didn't — replace it below
+    } else if (polyGameDate && oddsGameDate && polyGameDate !== oddsGameDate) {
+      continue; // wrong day in a series — skip, wait for correct-day event
+    }
+
+    seenDates.set(key, polyGameDate);
 
     const bucket = out[sport];
 
@@ -630,7 +649,8 @@ async function run() {
         homeTeam: homeRaw,
         eventId: id,
         title: title.substring(0, 80),
-        commence: commenceTimes[`${sport}:${key}`] || null,
+        commence: commenceTimes[`${sport}:${key}`] || ev.endDate || null,
+        polyGameTime: ev.endDate || null,
       };
     } catch (e) {
       console.warn(`Failed to enrich ${title}:`, e.message);
