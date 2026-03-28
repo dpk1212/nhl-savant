@@ -262,6 +262,8 @@ exports.updateBetResults = onSchedule({
           const pick = sfDoc.data();
           const sport = pick.sport;
 
+          if (pick.commenceTime && pick.commenceTime > Date.now()) continue;
+
           let matchingGame = null;
 
           if (sport === "NHL") {
