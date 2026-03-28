@@ -718,9 +718,15 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const nowMs = Date.now();
   const MAX_GAME_MS = 6 * 60 * 60 * 1000;
   const isGameLive = commenceTime && nowMs >= commenceTime && (nowMs - commenceTime) < MAX_GAME_MS;
-  const gameTimeFormatted = commenceTime
-    ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
-    : null;
+  const gameTimeFormatted = (() => {
+    if (!commenceTime) return null;
+    const gd2 = new Date(commenceTime);
+    const time = gd2.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+    const gameStr = gd2.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+    if (gameStr === todayStr) return time;
+    return `${gd2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })} · ${time}`;
+  })();
   const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
   const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
   const isReverse = ticketFav !== moneyFav && game.ticketDivergence >= 10;
@@ -1975,9 +1981,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   })();
 
-  const gameTimeFormatted = commenceTime
-    ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
-    : null;
+  const gameTimeFormatted = (() => {
+    if (!commenceTime) return null;
+    const gd2 = new Date(commenceTime);
+    const time = gd2.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
+    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+    const gameStr = gd2.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+    if (gameStr === todayStr) return time;
+    return `${gd2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })} · ${time}`;
+  })();
 
   const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
   const oppOdds = consensusSide === 'away' ? pinnGame?.current?.home : pinnGame?.current?.away;
