@@ -3099,8 +3099,9 @@ export default function SharpFlow() {
       const sg = sharpPositions?.[sport] || {};
       for (const [key, gd] of Object.entries(sg)) {
         const pg = pinnacleHistory?.[sport]?.[key];
-        if (!pg) continue;
-        const ct = pg.commence ? new Date(pg.commence).getTime() : null;
+        const polyCommence = polyData?.[sport]?.[key]?.commence;
+        const rawCommence = pg?.commence || polyCommence;
+        const ct = rawCommence ? new Date(rawCommence).getTime() : null;
         if (ct && nowMs - ct > MAX_GAME) continue;
         totalSharpInvested += gd.summary?.totalInvested || 0;
         gamesWithPos++;
@@ -3113,7 +3114,7 @@ export default function SharpFlow() {
       totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
       totalSharpInvested,
     };
-  }, [whaleProfiles, sharpPositions, pinnacleHistory]);
+  }, [whaleProfiles, sharpPositions, pinnacleHistory, polyData]);
 
   if (loading) {
     return (
@@ -3366,8 +3367,9 @@ export default function SharpFlow() {
                   if (!gd.positions || gd.positions.length === 0) continue;
                   if ((gd.summary?.totalInvested || 0) < 1000) continue;
                   const pg = pinnacleHistory?.[sport]?.[key];
-                  if (!pg) continue;
-                  const ct = pg.commence ? new Date(pg.commence).getTime() : null;
+                  const polyCommence = polyData?.[sport]?.[key]?.commence;
+                  const rawCommence = pg?.commence || polyCommence;
+                  const ct = rawCommence ? new Date(rawCommence).getTime() : null;
                   const MAX_GAME = 6 * 60 * 60 * 1000;
                   if (ct && nowMs - ct > MAX_GAME) continue;
                   const isLive = ct && nowMs >= ct && (nowMs - ct) < MAX_GAME;
