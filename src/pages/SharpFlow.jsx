@@ -3254,12 +3254,11 @@ export default function SharpFlow() {
 
                   const ss = gd.summary;
                   const cSide = ss.consensus;
-                  const uw = new Set(gd.positions.map(p => p.wallet)).size;
                   const cOdds = cSide === 'away' ? pg?.current?.away : pg?.current?.home;
                   const bRetail = cSide === 'away' ? pg?.bestAway : pg?.bestHome;
                   const pProb = impliedProb(cOdds);
                   const rProb = impliedProb(bRetail);
-                  const ev = (pProb && rProb) ? +((pProb - rProb) * 100).toFixed(1) : 0;
+                  const ev = (pProb && rProb) ? +((pProb - rProb) * 100).toFixed(1) : null;
                   const pinnH = pg?.history || [];
                   const pinnPts = pinnH.map(h => cSide === 'away' ? h.away : h.home);
                   const pFirstP = impliedProb(pinnPts[0]);
@@ -3267,22 +3266,24 @@ export default function SharpFlow() {
                   const pinnMoveWith = pinnPts.length >= 2 && pLastP > pFirstP;
                   const pinnConf = pg?.movement?.direction === cSide;
                   const cInv = cSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
-                  const moneyPct = (ss.totalInvested || 0) > 0 ? (cInv / ss.totalInvested) * 100 : 50;
-                  const cWallets = cSide === 'away' ? new Set(gd.positions.filter(p => p.side === 'away').map(p => p.wallet)).size : new Set(gd.positions.filter(p => p.side === 'home').map(p => p.wallet)).size;
-                  const oWallets = uw - cWallets;
+                  const awayPos = gd.positions.filter(p => p.side === 'away');
+                  const homePos = gd.positions.filter(p => p.side === 'home');
+                  const cWallets = cSide === 'away' ? new Set(awayPos.map(p => p.wallet)).size : new Set(homePos.map(p => p.wallet)).size;
+                  const oWallets = cSide === 'away' ? new Set(homePos.map(p => p.wallet)).size : new Set(awayPos.map(p => p.wallet)).size;
+                  const totalInv = (ss.totalInvested || 0);
+                  const moneyPct = totalInv > 0 ? (cInv / totalInv) * 100 : 50;
                   const wPct = (cWallets + oWallets) > 0 ? (cWallets / (cWallets + oWallets)) * 100 : 50;
                   const cg = consensusGrade(moneyPct, wPct);
                   const polyG = polyData?.[sport]?.[key];
                   const polyPts = polyG?.priceHistory?.points || [];
                   const polyMoveWith = polyPts.length >= 2 && ((cSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (cSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
 
-                  // Opposing side stars for flip penalty
                   const oSide = cSide === 'away' ? 'home' : 'away';
                   const oOdds = oSide === 'away' ? pg?.current?.away : pg?.current?.home;
                   const oBestRetail = oSide === 'away' ? pg?.bestAway : pg?.bestHome;
                   const oPProb = impliedProb(oOdds);
                   const oRProb = impliedProb(oBestRetail);
-                  const oEv = (oPProb && oRProb) ? +((oPProb - oRProb) * 100).toFixed(1) : 0;
+                  const oEv = (oPProb && oRProb) ? +((oPProb - oRProb) * 100).toFixed(1) : null;
                   const oPinnConf = pg?.movement?.direction === oSide;
                   const oPinnPts = pinnH.map(h => oSide === 'away' ? h.away : h.home);
                   const oPFirstP = impliedProb(oPinnPts[0]);
@@ -3290,12 +3291,12 @@ export default function SharpFlow() {
                   const oPinnMoveWith = oPinnPts.length >= 2 && oPLastP > oPFirstP;
                   const oPolyMoveWith = polyPts.length >= 2 && ((oSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (oSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
                   const oInv = oSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
-                  const oMoneyPct = (ss.totalInvested || 0) > 0 ? (oInv / ss.totalInvested) * 100 : 50;
+                  const oMoneyPct = totalInv > 0 ? (oInv / totalInv) * 100 : 50;
                   const oWPct = (cWallets + oWallets) > 0 ? (oWallets / (cWallets + oWallets)) * 100 : 50;
                   const oCg = consensusGrade(oMoneyPct, oWPct);
-                  const oSr = rateStars(oEv, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPolyMoveWith);
+                  const oSr = rateStars(oEv || 0, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPolyMoveWith);
 
-                  const sr = rateStars(ev, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
+                  const sr = rateStars(ev || 0, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
 
                   if (sortBy === 'locked') continue;
                   if (sortBy === 'live' && !isLive) continue;
