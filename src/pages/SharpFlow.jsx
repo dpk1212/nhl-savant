@@ -2857,8 +2857,10 @@ export default function SharpFlow() {
       for (const [key, gd] of Object.entries(sportGames)) {
         if (!gd.positions || gd.positions.length === 0) continue;
         const pinnGame = pinnacleHistory?.[sport]?.[key];
+        const polyGame = polyData?.[sport]?.[key];
 
-        const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+        const commenceTime = polyGame?.commence ? new Date(polyGame.commence).getTime()
+          : pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
         const isLive = commenceTime && Date.now() >= commenceTime && (Date.now() - commenceTime) < 6 * 60 * 60 * 1000;
         if (isLive) continue;
 

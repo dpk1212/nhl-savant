@@ -337,6 +337,7 @@ async function loadTodaysSchedule(cbbMap) {
   const validCBB = new Set();
   const validNHL = new Set();
   const validMLB = new Set();
+  const commenceTimes = {};
 
   // CBB: use Odds API (reliable, structured) instead of scraping OddsTrader markdown
   if (ODDS_API_KEY) {
@@ -349,7 +350,9 @@ async function loadTodaysSchedule(cbbMap) {
           const away = findCBBTeam(cbbMap, g.away_team);
           const home = findCBBTeam(cbbMap, g.home_team);
           if (away && home) {
-            validCBB.add(`${normalize(away)}_${normalize(home)}`);
+            const gk = `${normalize(away)}_${normalize(home)}`;
+            validCBB.add(gk);
+            if (g.commence_time && !commenceTimes[`CBB:${gk}`]) commenceTimes[`CBB:${gk}`] = g.commence_time;
           }
         }
         const remaining = res.headers.get('x-requests-remaining');
@@ -389,7 +392,9 @@ async function loadTodaysSchedule(cbbMap) {
           const away = resolveMLBTeam(g.away_team);
           const home = resolveMLBTeam(g.home_team);
           if (away && home) {
-            validMLB.add(`${normalize(away)}_${normalize(home)}`);
+            const gk = `${normalize(away)}_${normalize(home)}`;
+            validMLB.add(gk);
+            if (g.commence_time && !commenceTimes[`MLB:${gk}`]) commenceTimes[`MLB:${gk}`] = g.commence_time;
           }
         }
         const remaining = res.headers.get('x-requests-remaining');
@@ -402,14 +407,14 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  return { validCBB, validNHL, validMLB };
+  return { validCBB, validNHL, validMLB, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
   const out = { CBB: {}, NHL: {}, MLB: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -625,6 +630,7 @@ async function run() {
         homeTeam: homeRaw,
         eventId: id,
         title: title.substring(0, 80),
+        commence: commenceTimes[`${sport}:${key}`] || null,
       };
     } catch (e) {
       console.warn(`Failed to enrich ${title}:`, e.message);
