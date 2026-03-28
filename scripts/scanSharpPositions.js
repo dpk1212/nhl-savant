@@ -232,7 +232,7 @@ function buildTodaysGames(polyData) {
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
       const home = g.homeTeam || '';
-      games[`${sport}:${key}`] = { sport, away, home, key, title: g.title || '', conditionId: g.conditionId || null };
+      games[`${sport}:${key}`] = { sport, away, home, key, title: g.title || '' };
     }
   }
   return games;
@@ -428,10 +428,6 @@ async function run() {
       if (curPrice <= 0.01 || curPrice >= 0.99) continue;
 
       const game = todaysGames[`${match.sport}:${match.key}`];
-      // Prevent consecutive-day matchup bleed: only accept positions
-      // whose conditionId matches the specific Polymarket event for this game
-      if (game.conditionId && pos.conditionId && pos.conditionId !== game.conditionId) continue;
-
       const sport = match.sport;
       const side = resolveOutcomeSide(outcome, game.away, game.home, title);
 

@@ -718,15 +718,9 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
   const nowMs = Date.now();
   const MAX_GAME_MS = 6 * 60 * 60 * 1000;
   const isGameLive = commenceTime && nowMs >= commenceTime && (nowMs - commenceTime) < MAX_GAME_MS;
-  const gameTimeFormatted = (() => {
-    if (!commenceTime) return null;
-    const gd2 = new Date(commenceTime);
-    const time = gd2.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-    const gameStr = gd2.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-    if (gameStr === todayStr) return time;
-    return `${gd2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })} · ${time}`;
-  })();
+  const gameTimeFormatted = commenceTime
+    ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
+    : null;
   const ticketFav = game.awayTicketPct >= game.homeTicketPct ? 'away' : 'home';
   const moneyFav = game.awayMoneyPct >= game.homeMoneyPct ? 'away' : 'home';
   const isReverse = ticketFav !== moneyFav && game.ticketDivergence >= 10;
@@ -1981,15 +1975,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   })();
 
-  const gameTimeFormatted = (() => {
-    if (!commenceTime) return null;
-    const gd2 = new Date(commenceTime);
-    const time = gd2.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' });
-    const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-    const gameStr = gd2.toLocaleDateString('en-US', { timeZone: 'America/New_York' });
-    if (gameStr === todayStr) return time;
-    return `${gd2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })} · ${time}`;
-  })();
+  const gameTimeFormatted = commenceTime
+    ? new Date(commenceTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })
+    : null;
 
   const consensusOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
   const oppOdds = consensusSide === 'away' ? pinnGame?.current?.home : pinnGame?.current?.away;
@@ -3104,29 +3092,18 @@ export default function SharpFlow() {
       return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -100000;
     });
     let totalSharpInvested = 0;
-    let gamesWithPos = 0;
-    const nowMs = Date.now();
-    const MAX_GAME = 6 * 60 * 60 * 1000;
     for (const sport of ['NHL', 'CBB', 'MLB']) {
       const sg = sharpPositions?.[sport] || {};
-      for (const [key, gd] of Object.entries(sg)) {
-        const pg = pinnacleHistory?.[sport]?.[key];
-        const polyCommence = polyData?.[sport]?.[key]?.commence;
-        const rawCommence = pg?.commence || polyCommence;
-        const ct = rawCommence ? new Date(rawCommence).getTime() : null;
-        if (ct && nowMs - ct > MAX_GAME) continue;
-        totalSharpInvested += gd.summary?.totalInvested || 0;
-        gamesWithPos++;
-      }
+      for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
     return {
       trackedCount: allEliteProven.length - totalExcluded,
       totalExcluded, mmExcluded, sportLosers,
-      gamesWithPos,
+      gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length : 0,
       totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
       totalSharpInvested,
     };
-  }, [whaleProfiles, sharpPositions, pinnacleHistory, polyData]);
+  }, [whaleProfiles, sharpPositions]);
 
   if (loading) {
     return (
@@ -3379,12 +3356,8 @@ export default function SharpFlow() {
                   if (!gd.positions || gd.positions.length === 0) continue;
                   if ((gd.summary?.totalInvested || 0) < 1000) continue;
                   const pg = pinnacleHistory?.[sport]?.[key];
-                  const polyCommence = polyData?.[sport]?.[key]?.commence;
-                  const rawCommence = pg?.commence || polyCommence;
-                  const ct = rawCommence ? new Date(rawCommence).getTime() : null;
-                  const MAX_GAME = 6 * 60 * 60 * 1000;
-                  if (ct && nowMs - ct > MAX_GAME) continue;
-                  const isLive = ct && nowMs >= ct && (nowMs - ct) < MAX_GAME;
+                  const ct = pg?.commence ? new Date(pg.commence).getTime() : null;
+                  const isLive = ct && nowMs >= ct;
 
                   const ss = gd.summary;
                   const cSide = ss.consensus;
