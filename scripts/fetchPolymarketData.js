@@ -483,8 +483,9 @@ async function run() {
     const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : validNHL;
     if (!validSet.has(key)) continue;
 
-    // Date-match: use Polymarket's endDate (= game time) vs Odds API commence_time
-    const polyGameDate = toETDate(ev.endDate);
+    // Date-match: use Polymarket eventDate (actual game date, NOT endDate which is series end).
+    // Filters wrong-day events and breaks ties when multiple events share the same key.
+    const polyGameDate = ev.eventDate || toETDate(ev.startTime);
     const oddsGameDate = toETDate(commenceTimes[`${sport}:${key}`]);
 
     if (seenDates.has(key)) {
@@ -493,7 +494,7 @@ async function run() {
       if (polyGameDate !== oddsGameDate) continue;     // this one is also wrong day
       // This event matches today but the previous didn't — replace it below
     } else if (polyGameDate && oddsGameDate && polyGameDate !== oddsGameDate) {
-      continue; // wrong day in a series — skip, wait for correct-day event
+      continue; // wrong day — skip, wait for correct-day event
     }
 
     seenDates.set(key, polyGameDate);
@@ -649,8 +650,9 @@ async function run() {
         homeTeam: homeRaw,
         eventId: id,
         title: title.substring(0, 80),
-        commence: commenceTimes[`${sport}:${key}`] || ev.endDate || null,
-        polyGameTime: ev.endDate || null,
+        commence: commenceTimes[`${sport}:${key}`] || ev.startTime || null,
+        polyGameTime: ev.startTime || null,
+        polyGameDate: ev.eventDate || null,
       };
     } catch (e) {
       console.warn(`Failed to enrich ${title}:`, e.message);
