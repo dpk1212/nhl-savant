@@ -2857,15 +2857,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           );
         })()}
 
-        {canPickGames && (
-          <div style={{ padding: '0 0.875rem 0.875rem', marginTop: '0.375rem' }}>
+        <div style={{ padding: '0 0.875rem 0.875rem', marginTop: '0.375rem' }}>
+          {canPickGames ? (
             <button
               onClick={() => onToggleMyPick(gd.key, isMyPick ? null : { side: consensusSide, team: consensusTeam, sport: gd.sport })}
               style={{
                 width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
                 fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                border: isMyPick ? '1.5px solid rgba(99,102,241,0.6)' : `1.5px solid rgba(99,102,241,0.25)`,
+                border: isMyPick ? '1.5px solid rgba(99,102,241,0.6)' : '1.5px solid rgba(99,102,241,0.25)',
                 background: isMyPick
                   ? 'linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(129,140,248,0.10) 100%)'
                   : 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.02) 100%)',
@@ -2877,8 +2877,26 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               <CheckCircle size={15} style={{ strokeWidth: isMyPick ? 2.5 : 2 }} />
               {isMyPick ? '✓ Added to My Picks' : '+ Add to My Picks'}
             </button>
-          </div>
-        )}
+          ) : (
+            <a
+              href="#/pricing?promo=SHARPMONEY"
+              style={{
+                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
+                fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                border: '1.5px solid rgba(99,102,241,0.25)',
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.02) 100%)',
+                color: '#818CF8',
+                transition: 'all 0.2s ease',
+                textDecoration: 'none',
+              }}
+            >
+              <Lock size={13} />
+              + Add to My Picks
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.7, marginLeft: '0.15rem' }}>PRO</span>
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -3414,7 +3432,7 @@ export default function SharpFlow() {
                       { id: 'wallets', label: '# Sharps' },
                       { id: 'live', label: '● Live' },
                       { id: 'locked', label: '🔒 Locked' },
-                      ...(user && isPremium ? [{ id: 'myPicks', label: '⭐ My Picks' }] : []),
+                      { id: 'myPicks', label: '⭐ My Picks' },
                     ].map(opt => {
                       const isActive = sortBy === opt.id;
                       const accentMap = { live: { border: 'rgba(239,68,68,0.4)', bg: 'rgba(239,68,68,0.12)', color: B.red }, locked: { border: 'rgba(16,185,129,0.4)', bg: B.greenDim, color: B.green }, myPicks: { border: 'rgba(99,102,241,0.4)', bg: 'rgba(99,102,241,0.12)', color: '#818CF8' } };
@@ -3539,9 +3557,28 @@ export default function SharpFlow() {
                           background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
                           border: `1px solid ${B.border}`,
                         }}>
-                          <CheckCircle size={28} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
-                          <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>No picks selected yet</div>
-                          <div style={{ ...T.micro, color: B.textMuted }}>Browse the games and tap "Add to My Picks" on any card to start building your slip.</div>
+                          <CheckCircle size={28} color="#818CF8" style={{ marginBottom: '0.5rem' }} />
+                          {user && isPremium ? (
+                            <>
+                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>No picks selected yet</div>
+                              <div style={{ ...T.micro, color: B.textMuted }}>Browse the games and tap "Add to My Picks" on any card to start building your slip.</div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Build your personal pick list</div>
+                              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem' }}>Pro members can save games to their personal picks list for easy tracking.</div>
+                              <a href="#/pricing?promo=SHARPMONEY" style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                                padding: '0.5rem 1.25rem', borderRadius: '8px',
+                                background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(129,140,248,0.08) 100%)',
+                                border: '1px solid rgba(99,102,241,0.3)',
+                                color: '#A5B4FC', fontWeight: 700, fontSize: '0.8rem',
+                                textDecoration: 'none', transition: 'all 0.2s ease',
+                              }}>
+                                <Lock size={13} /> Unlock My Picks
+                              </a>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div style={{
