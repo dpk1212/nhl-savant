@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -2902,6 +2903,155 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   );
 });
 
+// ─── Profit Over Time Chart ───────────────────────────────────────────────────
+
+const starBucketLabel = (s) => s >= 4.5 ? 5 : s >= 3.5 ? 4 : 3;
+
+const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
+  const [showChart, setShowChart] = useState(false);
+  const [chartSport, setChartSport] = useState('ALL');
+  const [chartStars, setChartStars] = useState('ALL');
+
+  const chartData = useMemo(() => {
+    if (!picks || picks.length === 0) return [];
+    const completed = picks.filter(p => p.status === 'COMPLETED' && p.outcome);
+    if (completed.length === 0) return [];
+
+    const filtered = completed.filter(p => {
+      if (chartSport !== 'ALL' && p.sport !== chartSport) return false;
+      if (chartStars !== 'ALL' && starBucketLabel(p.stars) !== chartStars) return false;
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+    let cumulative = 0;
+    return sorted.map((p, i) => {
+      cumulative += p.profit;
+      return {
+        index: i + 1,
+        date: new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        profit: +cumulative.toFixed(2),
+        pickProfit: p.profit,
+        sport: p.sport,
+        stars: p.stars,
+      };
+    });
+  }, [picks, chartSport, chartStars]);
+
+  const finalProfit = chartData.length > 0 ? chartData[chartData.length - 1].profit : 0;
+  const isProfit = finalProfit >= 0;
+  const totalPicks = chartData.length;
+
+  const ChartTooltip = ({ active, payload }) => {
+    if (!active || !payload?.[0]) return null;
+    const d = payload[0].payload;
+    const v = payload[0].value;
+    return (
+      <div style={{
+        background: 'rgba(17,24,39,0.95)', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px', padding: '0.6rem 0.75rem', backdropFilter: 'blur(8px)',
+      }}>
+        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.35rem' }}>
+          {d.date} · Pick #{d.index}
+        </div>
+        <div style={{ fontSize: '1rem', fontWeight: 800, color: v >= 0 ? '#10B981' : '#EF4444' }}>
+          {v >= 0 ? '+' : ''}{v.toFixed(2)}u
+        </div>
+        <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
+          This pick: {d.pickProfit >= 0 ? '+' : ''}{d.pickProfit.toFixed(2)}u · {d.sport} · {d.stars}★
+        </div>
+      </div>
+    );
+  };
+
+  const FilterBtn = ({ isActive, onClick, children, color }) => (
+    <button onClick={onClick} style={{
+      padding: '0.3rem 0.7rem', fontSize: '0.75rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer',
+      border: isActive ? `1.5px solid ${color || B.gold}` : '1px solid rgba(255,255,255,0.1)',
+      background: isActive ? `${color || B.gold}22` : 'rgba(255,255,255,0.03)',
+      color: isActive ? (color || B.gold) : 'rgba(255,255,255,0.5)',
+      transition: 'all 0.2s ease', letterSpacing: '0.03em',
+    }}>{children}</button>
+  );
+
+  return (
+    <div style={{ marginTop: '0.75rem' }}>
+      <button onClick={() => setShowChart(c => !c)} style={{
+        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0.625rem 0.875rem', borderRadius: '8px', cursor: 'pointer',
+        background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <TrendingUp size={15} color={B.green} />
+          <span style={{ ...T.micro, fontWeight: 700, color: B.text, letterSpacing: '0.04em' }}>Profit Over Time</span>
+          {totalPicks > 0 && (
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.6rem' }}>· {totalPicks} picks</span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {totalPicks > 0 && (
+            <span style={{
+              padding: '0.2rem 0.5rem', borderRadius: '5px', fontSize: '0.75rem', fontWeight: 800,
+              color: isProfit ? B.green : B.red,
+              background: isProfit ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${isProfit ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+            }}>
+              {isProfit ? '+' : ''}{finalProfit.toFixed(1)}u
+            </span>
+          )}
+          {showChart ? <ChevronUp size={13} color={B.textMuted} /> : <ChevronDown size={13} color={B.textMuted} />}
+        </div>
+      </button>
+
+      {showChart && (
+        <div style={{
+          marginTop: '0.5rem', padding: '1rem', borderRadius: '8px',
+          background: 'rgba(17,24,39,0.4)', border: `1px solid ${B.borderSubtle}`,
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1rem' }}>
+            <div>
+              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Sport</div>
+              <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }].map(s => (
+                  <FilterBtn key={s.k} isActive={chartSport === s.k} onClick={() => setChartSport(s.k)} color="#3B82F6">{s.l}</FilterBtn>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Rating</div>
+              <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                {[{ k: 'ALL', l: 'All Ratings', c: '#64748B' }, { k: 5, l: '★★★★★', c: '#10B981' }, { k: 4, l: '★★★★', c: '#059669' }, { k: 3, l: '★★★', c: '#0EA5E9' }].map(r => (
+                  <FilterBtn key={r.k} isActive={chartStars === r.k} onClick={() => setChartStars(r.k)} color={r.c}>{r.l}</FilterBtn>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {chartData.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+              <TrendingUp size={24} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
+              <div style={{ ...T.micro, color: B.textMuted }}>No graded picks match these filters yet.</div>
+            </div>
+          ) : (
+            <div style={{ height: '280px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 15, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="date" stroke="rgba(255,255,255,0.25)" style={{ fontSize: '0.65rem' }} tickLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.25)" style={{ fontSize: '0.65rem' }} tickLine={false} tickFormatter={v => `${v >= 0 ? '+' : ''}${v}u`} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Line type="monotone" dataKey="profit" stroke={isProfit ? '#10B981' : '#EF4444'} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: isProfit ? '#10B981' : '#EF4444' }} animationDuration={400} />
+                  <Line type="monotone" dataKey={() => 0} stroke="rgba(255,255,255,0.15)" strokeWidth={1} strokeDasharray="5 5" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SharpFlow() {
@@ -3321,6 +3471,8 @@ export default function SharpFlow() {
                         <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.5rem', fontSize: '0.55rem', opacity: 0.6 }}>
                           {totalGraded} graded picks{isFiltered ? ` · ${dateLabels[perfDateRange]}${perfSport !== 'ALL' ? ` · ${perfSport}` : ''}` : ' since Mar 16'}
                         </div>
+
+                        <SharpFlowProfitChart picks={allTimePnL?.picks} />
                       </div>
                     </div>
                   )}
