@@ -337,7 +337,7 @@ async function loadAllTimePnL() {
   }
 }
 
-// ─── User My Picks ────────────────────────────────────────────────────────────
+// ─── User Watchlist ───────────────────────────────────────────────────────────
 
 async function loadUserPicks(uid) {
   if (!uid) return {};
@@ -2875,7 +2875,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}
             >
               <CheckCircle size={15} style={{ strokeWidth: isMyPick ? 2.5 : 2 }} />
-              {isMyPick ? '✓ Added to My Picks' : '+ Add to My Picks'}
+              {isMyPick ? '✓ On Watchlist' : '+ Add to Watchlist'}
             </button>
           ) : (
             <a
@@ -2892,7 +2892,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}
             >
               <Lock size={13} />
-              + Add to My Picks
+              + Add to Watchlist
               <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.7, marginLeft: '0.15rem' }}>PRO</span>
             </a>
           )}
@@ -2935,7 +2935,7 @@ export default function SharpFlow() {
       setPicksLoaded(true);
     });
   }, []);
-  // Load user's My Picks on mount (premium users only)
+  // Load user's watchlist on mount (premium users only)
   useEffect(() => {
     if (user?.uid && isPremium) {
       loadUserPicks(user.uid).then(setUserPicks);
@@ -3412,8 +3412,8 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
-                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'myPicks' ? `My Picks (${allPosGames.length})` : `Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'myPicks' ? 'Games you selected to tail today' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'myPicks' ? `My Watchlist (${allPosGames.length})` : `Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'myPicks' ? 'Games you added to your watchlist today' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
                       icon={sortBy === 'locked' ? Lock : sortBy === 'myPicks' ? CheckCircle : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
@@ -3432,7 +3432,7 @@ export default function SharpFlow() {
                       { id: 'wallets', label: '# Sharps' },
                       { id: 'live', label: '● Live' },
                       { id: 'locked', label: '🔒 Locked' },
-                      { id: 'myPicks', label: '⭐ My Picks' },
+                      { id: 'myPicks', label: '⭐ My Watchlist' },
                     ].map(opt => {
                       const isActive = sortBy === opt.id;
                       const accentMap = { live: { border: 'rgba(239,68,68,0.4)', bg: 'rgba(239,68,68,0.12)', color: B.red }, locked: { border: 'rgba(16,185,129,0.4)', bg: B.greenDim, color: B.green }, myPicks: { border: 'rgba(99,102,241,0.4)', bg: 'rgba(99,102,241,0.12)', color: '#818CF8' } };
@@ -3560,13 +3560,13 @@ export default function SharpFlow() {
                           <CheckCircle size={28} color="#818CF8" style={{ marginBottom: '0.5rem' }} />
                           {user && isPremium ? (
                             <>
-                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>No picks selected yet</div>
-                              <div style={{ ...T.micro, color: B.textMuted }}>Browse the games and tap "Add to My Picks" on any card to start building your slip.</div>
+                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Watchlist is empty</div>
+                              <div style={{ ...T.micro, color: B.textMuted }}>Browse the games and tap "Add to Watchlist" on any card to start tracking.</div>
                             </>
                           ) : (
                             <>
-                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Build your personal pick list</div>
-                              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem' }}>Pro members can save games to their personal picks list for easy tracking.</div>
+                              <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Build your personal watchlist</div>
+                              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem' }}>Pro members can save games to their watchlist for easy tracking.</div>
                               <a href="#/pricing?promo=SHARPMONEY" style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                                 padding: '0.5rem 1.25rem', borderRadius: '8px',
@@ -3575,7 +3575,7 @@ export default function SharpFlow() {
                                 color: '#A5B4FC', fontWeight: 700, fontSize: '0.8rem',
                                 textDecoration: 'none', transition: 'all 0.2s ease',
                               }}>
-                                <Lock size={13} /> Unlock My Picks
+                                <Lock size={13} /> Unlock Watchlist
                               </a>
                             </>
                           )}
