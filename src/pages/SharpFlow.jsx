@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -334,6 +334,31 @@ async function loadAllTimePnL() {
     console.warn('Failed to load all-time P&L:', err.message);
     const empty = { wins: 0, losses: 0, pushes: 0, totalProfit: 0, totalUnits: 0, record: '0-0' };
     return { pregame: { ...empty }, all: { ...empty }, byStars: {} };
+  }
+}
+
+// ─── User My Picks ────────────────────────────────────────────────────────────
+
+async function loadUserPicks(uid) {
+  if (!uid) return {};
+  try {
+    const date = todayET();
+    const ref = doc(db, 'user_sharp_actions', `${uid}_${date}`);
+    const snap = await getDoc(ref);
+    return snap.exists() ? (snap.data().picks || {}) : {};
+  } catch (err) {
+    console.warn('Failed to load user picks:', err.message);
+    return {};
+  }
+}
+
+async function toggleUserPick(uid, date, gameKey, pickData) {
+  if (!uid) return;
+  const docRef = doc(db, 'user_sharp_actions', `${uid}_${date}`);
+  if (pickData) {
+    await setDoc(docRef, { userId: uid, date, picks: { [gameKey]: { ...pickData, addedAt: Date.now() } } }, { merge: true });
+  } else {
+    await setDoc(docRef, { picks: { [gameKey]: deleteField() } }, { merge: true });
   }
 }
 
@@ -1951,7 +1976,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const lastSyncedStars = useRef(null);
@@ -2137,7 +2162,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     <div style={{
       borderRadius: '12px', overflow: 'hidden',
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${accentBorder}`,
+      border: isMyPick ? '1px solid rgba(99,102,241,0.5)' : `1px solid ${accentBorder}`,
+      boxShadow: isMyPick ? '0 0 12px rgba(99,102,241,0.15)' : undefined,
     }}>
       {/* Top accent */}
       <div style={{
@@ -2830,6 +2856,26 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </div>
           );
         })()}
+
+        {canPickGames && (
+          <div style={{ padding: '0 0.875rem 0.75rem', marginTop: '0.25rem' }}>
+            <button
+              onClick={() => onToggleMyPick(gd.key, isMyPick ? null : { side: consensusSide, team: consensusTeam, sport: gd.sport })}
+              style={{
+                width: '100%', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer',
+                ...T.micro, fontWeight: 700, letterSpacing: '0.03em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                border: isMyPick ? '1px solid rgba(99,102,241,0.4)' : `1px solid ${B.border}`,
+                background: isMyPick ? 'rgba(99,102,241,0.12)' : 'transparent',
+                color: isMyPick ? '#818CF8' : B.textMuted,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <CheckCircle size={13} />
+              {isMyPick ? 'Added to My Picks' : 'Add to My Picks'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2839,6 +2885,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
 export default function SharpFlow() {
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, loading } = useMarketData();
+  const { user } = useAuth();
+  const { isPremium } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
   const [gameSort, setGameSort] = useState('time');
@@ -2851,6 +2899,7 @@ export default function SharpFlow() {
   const [lockedDay, setLockedDay] = useState('today');
   const [perfSport, setPerfSport] = useState('ALL');
   const [picksLoaded, setPicksLoaded] = useState(false);
+  const [userPicks, setUserPicks] = useState({});
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -2865,6 +2914,12 @@ export default function SharpFlow() {
       setPicksLoaded(true);
     });
   }, []);
+  // Load user's My Picks on mount (premium users only)
+  useEffect(() => {
+    if (user?.uid && isPremium) {
+      loadUserPicks(user.uid).then(setUserPicks);
+    }
+  }, [user?.uid, isPremium]);
 
   // Lazy-load P&L data only when performance section is opened
   const pnlLoadedRef = useRef(false);
@@ -2884,6 +2939,18 @@ export default function SharpFlow() {
       return next;
     });
   }, []);
+
+  const onToggleMyPick = useCallback((gameKey, pickData) => {
+    if (!user?.uid) return;
+    const isAdding = !userPicks[gameKey];
+    setUserPicks(prev => {
+      if (isAdding) return { ...prev, [gameKey]: { ...pickData, addedAt: Date.now() } };
+      const next = { ...prev };
+      delete next[gameKey];
+      return next;
+    });
+    toggleUserPick(user.uid, todayET(), gameKey, isAdding ? pickData : null).catch(console.warn);
+  }, [user?.uid, userPicks]);
 
   const filteredPnL = useMemo(() => {
     if (!allTimePnL) return null;
@@ -3301,8 +3368,9 @@ export default function SharpFlow() {
                   const sr = rateStars(ev || 0, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
 
                   if (sortBy === 'locked') continue;
+                  if (sortBy === 'myPicks' && !userPicks[key]) continue;
                   if (sortBy === 'live' && !isLive) continue;
-                  if (sortBy !== 'live' && isLive) continue;
+                  if (sortBy !== 'live' && sortBy !== 'myPicks' && isLive) continue;
 
                   allPosGames.push({ key, sport, ...gd, _commence: ct, _isLive: isLive, _stars: sr.stars, _ev: ev, _wallets: cWallets + oWallets, _invested: ss.totalInvested || 0 });
                 }
@@ -3315,6 +3383,7 @@ export default function SharpFlow() {
                 edge: (a, b) => b._ev - a._ev || b._stars - a._stars,
                 money: (a, b) => b._invested - a._invested,
                 wallets: (a, b) => b._wallets - a._wallets || b._invested - a._invested,
+                myPicks: (a, b) => b._stars - a._stars || b._invested - a._invested,
               };
               allPosGames.sort(sortFns[sortBy] || sortFns.stars);
 
@@ -3322,9 +3391,9 @@ export default function SharpFlow() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <SectionHead
-                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : `Sharp Positions (${allPosGames.length} games)`}
-                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
-                      icon={sortBy === 'locked' ? Lock : Eye}
+                      title={sortBy === 'locked' ? `Locked Picks — ${lockedDay === 'today' ? 'Today' : 'Yesterday'}` : sortBy === 'myPicks' ? `My Picks (${allPosGames.length})` : `Sharp Positions (${allPosGames.length} games)`}
+                      subtitle={sortBy === 'locked' ? `All plays that crossed the conviction threshold ${lockedDay === 'today' ? 'today' : 'yesterday'} at peak snapshot` : sortBy === 'myPicks' ? 'Games you selected to tail today' : `Open bets from ${sharpStats.trackedCount} verified directional sharps — market makers excluded`}
+                      icon={sortBy === 'locked' ? Lock : sortBy === 'myPicks' ? CheckCircle : Eye}
                     />
                     <SharpFlowInfo isMobile={isMobile} />
                   </div>
@@ -3342,22 +3411,28 @@ export default function SharpFlow() {
                       { id: 'wallets', label: '# Sharps' },
                       { id: 'live', label: '● Live' },
                       { id: 'locked', label: '🔒 Locked' },
-                    ].map(opt => (
+                      ...(user && isPremium ? [{ id: 'myPicks', label: '⭐ My Picks' }] : []),
+                    ].map(opt => {
+                      const isActive = sortBy === opt.id;
+                      const accentMap = { live: { border: 'rgba(239,68,68,0.4)', bg: 'rgba(239,68,68,0.12)', color: B.red }, locked: { border: 'rgba(16,185,129,0.4)', bg: B.greenDim, color: B.green }, myPicks: { border: 'rgba(99,102,241,0.4)', bg: 'rgba(99,102,241,0.12)', color: '#818CF8' } };
+                      const ac = accentMap[opt.id];
+                      return (
                       <button key={opt.id} onClick={() => setSortBy(opt.id)} style={{
                         padding: '0.25rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
                         ...T.micro, fontWeight: 700,
-                        border: sortBy === opt.id
-                          ? `1px solid ${opt.id === 'live' ? 'rgba(239,68,68,0.4)' : opt.id === 'locked' ? 'rgba(16,185,129,0.4)' : B.goldBorder}`
+                        border: isActive
+                          ? `1px solid ${ac?.border || B.goldBorder}`
                           : `1px solid ${B.border}`,
-                        background: sortBy === opt.id
-                          ? opt.id === 'live' ? 'rgba(239,68,68,0.12)' : opt.id === 'locked' ? B.greenDim : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                        background: isActive
+                          ? ac?.bg || `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
                           : 'transparent',
-                        color: sortBy === opt.id
-                          ? opt.id === 'live' ? B.red : opt.id === 'locked' ? B.green : B.gold
+                        color: isActive
+                          ? ac?.color || B.gold
                           : B.textMuted,
                         transition: 'all 0.2s ease',
-                      }}>{opt.label}</button>
-                    ))}
+                      }}>{opt.label}{opt.id === 'myPicks' && Object.keys(userPicks).length > 0 ? ` (${Object.keys(userPicks).length})` : ''}</button>
+                      );
+                    })}
                   </div>
 
                   {sortBy === 'locked' ? (() => {
@@ -3455,15 +3530,27 @@ export default function SharpFlow() {
                           </span>
                         )}
                       </div>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                        gap: '0.75rem',
-                      }}>
-                        {allPosGames.map(gd => (
-                          <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} />
-                        ))}
-                      </div>
+                      {allPosGames.length === 0 && sortBy === 'myPicks' ? (
+                        <div style={{
+                          textAlign: 'center', padding: '2.5rem 1rem', borderRadius: '12px',
+                          background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                          border: `1px solid ${B.border}`,
+                        }}>
+                          <CheckCircle size={28} color={B.textMuted} style={{ marginBottom: '0.5rem' }} />
+                          <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>No picks selected yet</div>
+                          <div style={{ ...T.micro, color: B.textMuted }}>Browse the games and tap "Add to My Picks" on any card to start building your slip.</div>
+                        </div>
+                      ) : (
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                          gap: '0.75rem',
+                        }}>
+                          {allPosGames.map(gd => (
+                            <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} />
+                          ))}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
