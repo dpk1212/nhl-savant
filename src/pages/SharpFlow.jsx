@@ -2858,21 +2858,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         })()}
 
         {canPickGames && (
-          <div style={{ padding: '0 0.875rem 0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ padding: '0 0.875rem 0.875rem', marginTop: '0.375rem' }}>
             <button
               onClick={() => onToggleMyPick(gd.key, isMyPick ? null : { side: consensusSide, team: consensusTeam, sport: gd.sport })}
               style={{
-                width: '100%', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer',
-                ...T.micro, fontWeight: 700, letterSpacing: '0.03em',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                border: isMyPick ? '1px solid rgba(99,102,241,0.4)' : `1px solid ${B.border}`,
-                background: isMyPick ? 'rgba(99,102,241,0.12)' : 'transparent',
-                color: isMyPick ? '#818CF8' : B.textMuted,
+                width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
+                fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                border: isMyPick ? '1.5px solid rgba(99,102,241,0.6)' : `1.5px solid rgba(99,102,241,0.25)`,
+                background: isMyPick
+                  ? 'linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(129,140,248,0.10) 100%)'
+                  : 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.02) 100%)',
+                color: isMyPick ? '#A5B4FC' : '#818CF8',
+                boxShadow: isMyPick ? '0 0 10px rgba(99,102,241,0.2)' : 'none',
                 transition: 'all 0.2s ease',
               }}
             >
-              <CheckCircle size={13} />
-              {isMyPick ? 'Added to My Picks' : 'Add to My Picks'}
+              <CheckCircle size={15} style={{ strokeWidth: isMyPick ? 2.5 : 2 }} />
+              {isMyPick ? '✓ Added to My Picks' : '+ Add to My Picks'}
             </button>
           </div>
         )}
