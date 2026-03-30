@@ -2085,13 +2085,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const pinnHomePoints = pinnHistory.map(h => h.home);
   const pinnConsensusPoints = consensusSide === 'away' ? pinnAwayPoints : pinnHomePoints;
 
-  // Directional context: is price moving WITH the recommended play?
-  // For ML odds, LOWER number = MORE favored (e.g. +141→+137 = getting shorter = moving WITH)
-  // Compare implied probabilities so it works for both positive and negative odds
-  const pinnFirstProb = impliedProb(pinnConsensusPoints[0]);
-  const pinnLastProb = impliedProb(pinnConsensusPoints[pinnConsensusPoints.length - 1]);
-  const pinnMovingWith = pinnConsensusPoints.length >= 2 && pinnLastProb > pinnFirstProb;
-  const pinnMovingAgainst = pinnConsensusPoints.length >= 2 && pinnLastProb < pinnFirstProb;
+  // Directional context: use opener-to-current (not sparkline) to avoid intraday noise
+  const pinnOpenOdds = consensusSide === 'away' ? pinnGame?.opener?.away : pinnGame?.opener?.home;
+  const pinnCurrentOdds = consensusSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+  const pinnOpenProb = impliedProb(pinnOpenOdds);
+  const pinnCurrentProb = impliedProb(pinnCurrentOdds);
+  const pinnMovingWith = !!(pinnOpenProb && pinnCurrentProb) && pinnCurrentProb > pinnOpenProb;
+  const pinnMovingAgainst = !!(pinnOpenProb && pinnCurrentProb) && pinnCurrentProb < pinnOpenProb;
 
   const polyMovingWith = polyPoints.length >= 2 && (() => {
     const pFirst = polyPoints[0];
@@ -2122,11 +2122,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const oppRetailProb = impliedProb(oppBestRetail);
   const oppEvEdge = (oppPinnProb && oppRetailProb) ? +((oppPinnProb - oppRetailProb) * 100).toFixed(1) : null;
   const oppPinnConfirms = pinnMoved === oppSide;
-  const oppPinnPoints = oppSide === 'away' ? pinnAwayPoints : pinnHomePoints;
-  const oppPinnFirstProb = impliedProb(oppPinnPoints[0]);
-  const oppPinnLastProb = impliedProb(oppPinnPoints[oppPinnPoints.length - 1]);
-  const oppPinnMovingWith = oppPinnPoints.length >= 2 && oppPinnLastProb > oppPinnFirstProb;
-  const oppPinnMovingAgainst = oppPinnPoints.length >= 2 && oppPinnLastProb < oppPinnFirstProb;
+  const oppPinnOpenOdds = oppSide === 'away' ? pinnGame?.opener?.away : pinnGame?.opener?.home;
+  const oppPinnCurrentOdds = oppSide === 'away' ? pinnGame?.current?.away : pinnGame?.current?.home;
+  const oppPinnOpenProb = impliedProb(oppPinnOpenOdds);
+  const oppPinnCurrentProb = impliedProb(oppPinnCurrentOdds);
+  const oppPinnMovingWith = !!(oppPinnOpenProb && oppPinnCurrentProb) && oppPinnCurrentProb > oppPinnOpenProb;
+  const oppPinnMovingAgainst = !!(oppPinnOpenProb && oppPinnCurrentProb) && oppPinnCurrentProb < oppPinnOpenProb;
   const oppPolyMovingWith = polyPoints.length >= 2 && (oppSide === 'away'
     ? polyPoints[polyPoints.length - 1] > polyPoints[0]
     : polyPoints[polyPoints.length - 1] < polyPoints[0]);
@@ -3532,13 +3533,13 @@ export default function SharpFlow() {
                   const pProb = impliedProb(cOdds);
                   const rProb = impliedProb(bRetail);
                   const ev = (pProb && rProb) ? +((pProb - rProb) * 100).toFixed(1) : null;
-                  const pinnH = pg?.history || [];
-                  const pinnPts = pinnH.map(h => cSide === 'away' ? h.away : h.home);
-                  const pFirstP = impliedProb(pinnPts[0]);
-                  const pLastP = impliedProb(pinnPts[pinnPts.length - 1]);
-                  const pinnMoveWith = pinnPts.length >= 2 && pLastP > pFirstP;
-                  const pinnMoveAgainst = pinnPts.length >= 2 && pLastP < pFirstP;
                   const pinnConf = pg?.movement?.direction === cSide;
+                  const cOpenOdds = cSide === 'away' ? pg?.opener?.away : pg?.opener?.home;
+                  const cCurOdds = cSide === 'away' ? pg?.current?.away : pg?.current?.home;
+                  const cOpenP = impliedProb(cOpenOdds);
+                  const cCurP = impliedProb(cCurOdds);
+                  const pinnMoveWith = !!(cOpenP && cCurP) && cCurP > cOpenP;
+                  const pinnMoveAgainst = !!(cOpenP && cCurP) && cCurP < cOpenP;
                   const cInv = cSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
                   const awayPos = gd.positions.filter(p => p.side === 'away');
                   const homePos = gd.positions.filter(p => p.side === 'home');
@@ -3559,11 +3560,12 @@ export default function SharpFlow() {
                   const oRProb = impliedProb(oBestRetail);
                   const oEv = (oPProb && oRProb) ? +((oPProb - oRProb) * 100).toFixed(1) : null;
                   const oPinnConf = pg?.movement?.direction === oSide;
-                  const oPinnPts = pinnH.map(h => oSide === 'away' ? h.away : h.home);
-                  const oPFirstP = impliedProb(oPinnPts[0]);
-                  const oPLastP = impliedProb(oPinnPts[oPinnPts.length - 1]);
-                  const oPinnMoveWith = oPinnPts.length >= 2 && oPLastP > oPFirstP;
-                  const oPinnMoveAgainst = oPinnPts.length >= 2 && oPLastP < oPFirstP;
+                  const oOpenOdds = oSide === 'away' ? pg?.opener?.away : pg?.opener?.home;
+                  const oCurOdds = oSide === 'away' ? pg?.current?.away : pg?.current?.home;
+                  const oOpenP = impliedProb(oOpenOdds);
+                  const oCurP = impliedProb(oCurOdds);
+                  const oPinnMoveWith = !!(oOpenP && oCurP) && oCurP > oOpenP;
+                  const oPinnMoveAgainst = !!(oOpenP && oCurP) && oCurP < oOpenP;
                   const oPolyMoveWith = polyPts.length >= 2 && ((oSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (oSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
                   const oInv = oSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
                   const oMoneyPct = totalInv > 0 ? (oInv / totalInv) * 100 : 50;
