@@ -17,15 +17,20 @@ Every play is scored using a **proprietary weighted signal model** that evaluate
 
 ### Signal Weights (max 12 points)
 
-The model assigns weights based on backtested predictive value. **Consensus strength** is the dominant factor — it is the only signal with consistently positive correlation to winning outcomes.
+The model treats **Consensus** and **Pinnacle Alignment** as co-primary signals. Together they represent 58% of the maximum score. This weighting is driven by historical data analysis of 84 completed picks:
+
+- DOMINANT + Line Moving With: **81.8% WR, +89.9% ROI** (n=11)
+- DOMINANT + Line Moving Against: **33.3% WR, -44.6% ROI** (n=6)
+- DOMINANT + Pinnacle Confirms: **77.8% WR, +79.4% ROI** (n=9)
+- DOMINANT + Pinnacle No: **50.0% WR, -0.5% ROI** (n=8)
 
 | Signal | Max Points | Weight | Rationale |
 |--------|-----------|--------|-----------|
-| **Consensus Grade** | 4 pts | **33%** | Only factor with meaningful positive win correlation. DOMINANT consensus is the strongest single predictor. |
-| Money Invested | 2 pts | 17% | Sweet-spot rewarded ($5K–$10K and $50K–$100K outperform). Extremes penalized via reduced score, not hard penalty. |
-| Sharp Count | 1.5 pts | 12.5% | Reduced from prior weight. High sharp count alone does not predict wins. |
-| EV Edge | 1.5 pts | 12.5% | Mid-to-high +EV (>1%) rewarded. Low +EV (0–1%) is actively penalized — this range is a demonstrated trap zone. |
-| Pinnacle Alignment | 1 pt | 8% | Pinnacle confirms (0.5) + line moving with play (0.5). Marginal standalone predictor. |
+| **Consensus Grade** | 4 pts | **33%** | Primary predictor. DOMINANT consensus is the strongest single signal. |
+| **Pinnacle Alignment** | 3 pts / -2 penalty | **25%** | Co-primary signal. Line direction is the most important confirmation factor. Without Pinnacle, even DOMINANT consensus is a coin flip. |
+| Money Invested | 1.5 pts | 12.5% | Sweet-spot rewarded ($5K–$10K and $50K–$100K outperform). |
+| Sharp Count | 1 pt | 8% | Secondary factor. High sharp count alone does not predict wins. |
+| EV Edge | 1 pt | 8% | Reduced weight — data shows weak/negative correlation with outcomes. 0–1% trap zone penalty retained. |
 | Pred Market | up to 1.5 pts | conditional | Weight varies by consensus tier. Critical for LEAN plays; negligible for DOMINANT. |
 
 ### Detailed Scoring
@@ -36,27 +41,29 @@ The model assigns weights based on backtested predictive value. **Consensus stre
 - LEAN (avg ≥ 55%): +0.5 pts
 - CONTESTED (avg < 55%): −2 pts
 
-**Sharp Wallet Count (max 1.5 pts)**
-- 5+ sharps: +1.5 pts
-- 3–4 sharps: +1 pt
-- 1–2 sharps: +0.5 pts
+**Pinnacle Alignment (max 3 pts / -2 penalty)**
+- Pinnacle confirms + line moving with play: +3 pts
+- Pinnacle confirms only (line flat): +1.5 pts
+- Line moving with play only (no structural confirm): +1.5 pts
+- Neutral (no data or flat): 0 pts
+- **Line moving against consensus: −2 pts** (active penalty — historically the strongest negative predictor)
 
-**Money Invested (max 2 pts)**
-- $5K–$10K or $50K–$100K (sweet spot): +2 pts
-- $20K–$35K: +1 pt
-- $10K+ (other): +0.5 pts
+**Sharp Wallet Count (max 1 pt)**
+- 5+ sharps: +1 pt
+- 3–4 sharps: +0.5 pts
+- 1–2 sharps: +0.25 pts
+
+**Money Invested (max 1.5 pts)**
+- $5K–$10K or $50K–$100K (sweet spot): +1.5 pts
+- $20K–$35K: +0.75 pts
+- $10K+ (other): +0.25 pts
 - Below $5K: 0 pts (no penalty)
-- Above $100K: 0 pts (diminishing signal)
 
-**EV Edge (max 1.5 pts)**
-- Above 3%: +1.5 pts
-- 1–3%: +1 pt
-- **0–1%: −0.5 pts** (trap zone — 31% WR in backtest)
-- Negative: 0 pts (no penalty — negative EV picks hit 71% WR)
-
-**Pinnacle Alignment (max 1 pt)**
-- Pinnacle confirms: +0.5 pts
-- Line moving with play: +0.5 pts
+**EV Edge (max 1 pt)**
+- Above 3%: +1 pt
+- 1–3%: +0.5 pts
+- **0–1%: −0.5 pts** (trap zone — demonstrated value trap in backtest)
+- Negative: 0 pts (no penalty)
 
 **Prediction Market (conditional)**
 - LEAN consensus + pred aligns: +1.5 pts
@@ -89,7 +96,7 @@ The model assigns weights based on backtested predictive value. **Consensus stre
 
 A play is **LOCKED IN** (auto-tracked, assigned units, tracked for performance) when it reaches **2.5 stars or higher**.
 
-There are no separate gates or manual overrides. The star rating already accounts for all relevant factors — consensus strength, market pricing, volume, and more. If the card shows the play is locked, it met the threshold. If it doesn't, it didn't.
+There are no separate gates or manual overrides. The star rating already accounts for all relevant factors — consensus strength, Pinnacle alignment, market pricing, volume, and more. If the card shows the play is locked, it met the threshold. If it doesn't, it didn't.
 
 Plays below the threshold are displayed for monitoring but not tracked as recommendations.
 
@@ -117,17 +124,17 @@ After the base size is set, the model applies a consensus-quality adjustment. Pl
 
 The model includes safeguards that are baked directly into the star score — not applied as external filters or gates.
 
+### Pinnacle Opposition Protection
+
+When Pinnacle's line is actively moving against the sharp consensus side, the play receives a **-2 pt penalty**. This is the heaviest directional safeguard in the model. Historical data shows DOMINANT consensus plays with opposing Pinnacle movement win at only 33.3% with -44.6% ROI. Pinnacle's line reflects the aggregate of all sharp action across global markets — when it disagrees with the tracked wallets, the wallets are usually wrong.
+
 ### EV Trap Protection
 
 Low positive EV (0–1%) receives a scoring penalty. Backtesting showed this range has a 31% win rate and is the single largest profit destroyer. The market often prices these as traps. Only mid-to-high EV (>1%) adds conviction.
 
-### Volume Protection
-
-Plays backed by thin capital no longer receive a hard penalty. Backtesting showed sub-$7K picks actually outperform. Instead, specific investment sweet spots ($5K–$10K and $50K–$100K) receive a bonus.
-
 ### Contested Consensus Protection
 
-When sharp money is roughly split between both sides, the play receives a significant scoring penalty (−2 pts). This is the heaviest safeguard in the model — if sharps themselves disagree, there's no clear directional edge to act on.
+When sharp money is roughly split between both sides, the play receives a significant scoring penalty (−2 pts). If sharps themselves disagree, there's no clear directional edge to act on.
 
 ### Conditional Prediction Market
 
@@ -189,13 +196,13 @@ ROI = (total profit / total units wagered) × 100
 
 ## Design Principles
 
-1. **Consensus is king.** The model is built around consensus strength as the primary predictor. All other signals are secondary.
+1. **Consensus + Pinnacle are co-primary.** The model is built around the interaction between sharp consensus and Pinnacle line direction. Historical data shows this combination is the strongest predictor of outcomes by a wide margin.
 
 2. **Stars are the single source of truth.** No hidden gates, no overrides. What you see is what the system believes.
 
-3. **Penalties are baked in, not bolted on.** Contested consensus, EV traps, and flip situations reduce the star count directly — they don't silently block an otherwise high-rated play.
+3. **Penalties are baked in, not bolted on.** Pinnacle opposition, contested consensus, EV traps, and flip situations reduce the star count directly — they don't silently block an otherwise high-rated play.
 
-4. **The model favors confluence.** No single signal can carry a play to the conviction threshold alone. You need multiple confirming factors to reach a lock.
+4. **The model favors confluence.** No single signal can carry a play to the conviction threshold alone. Dominant consensus without Pinnacle confirmation is a coin flip; Pinnacle confirmation without consensus is directionless.
 
 5. **Data-driven weights.** Signal weights are validated against historical outcomes. Factors that don't predict wins are downweighted. Factors that inversely predict wins are penalized.
 

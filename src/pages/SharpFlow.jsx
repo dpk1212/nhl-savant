@@ -254,18 +254,19 @@ function tallySides(snap) {
 function estimateStarsFromSnap(snap) {
   if (!snap) return 3;
   let pts = 0;
-  const sc = snap.sharpCount || 0;
-  if (sc >= 5) pts += 3; else if (sc >= 3) pts += 2; else if (sc >= 1) pts += 1;
-  const inv = snap.totalInvested || 0;
-  if (inv >= 25000) pts += 2; else if (inv >= 7000) pts += 1; else pts -= 1;
-  const ev = snap.evEdge || 0;
-  if (ev > 3) pts += 2; else if (ev > 0) pts += 1;
-  if (snap.criteria?.pinnacleConfirms) pts += 1;
-  if (snap.criteria?.lineMovingWith) pts += 1;
   const cg = snap.consensusStrength?.grade || '';
-  if (cg === 'DOMINANT') pts += 1.5; else if (cg === 'STRONG') pts += 1; else if (cg === 'LEAN') pts += 0.5; else if (cg === 'CONTESTED') pts -= 1.5;
+  if (cg === 'DOMINANT') pts += 4; else if (cg === 'STRONG') pts += 2; else if (cg === 'LEAN') pts += 0.5; else if (cg === 'CONTESTED') pts -= 2;
+  const pinnConf = !!snap.criteria?.pinnacleConfirms;
+  const lineWith = !!snap.criteria?.lineMovingWith;
+  if (pinnConf && lineWith) pts += 3; else if (pinnConf) pts += 1.5; else if (lineWith) pts += 1.5;
+  const sc = snap.sharpCount || 0;
+  if (sc >= 5) pts += 1; else if (sc >= 3) pts += 0.5; else if (sc >= 1) pts += 0.25;
+  const inv = snap.totalInvested || 0;
+  if ((inv >= 5000 && inv < 10000) || (inv >= 50000 && inv < 100000)) pts += 1.5; else if (inv >= 20000 && inv < 35000) pts += 0.75; else if (inv >= 10000) pts += 0.25;
+  const ev = snap.evEdge || 0;
+  if (ev > 3) pts += 1; else if (ev > 1) pts += 0.5; else if (ev > 0) pts -= 0.5;
   if (snap.criteria?.predMarketAligns) pts += 0.5;
-  const raw = (pts / 11) * 5;
+  const raw = (pts / 12) * 5;
   return Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
 }
 
@@ -1825,33 +1826,36 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
   );
 });
 
-function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, polyMovingWith, oppPeakStars = 0) {
+function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, pinnMovingAgainst, polyMovingWith, oppPeakStars = 0) {
   let pts = 0;
 
-  // Consensus strength — primary signal (max 4 pts, 33%)
+  // Consensus strength — co-primary signal (max 4 pts, 33%)
   if (consensusGradeLabel === 'DOMINANT') pts += 4;
   else if (consensusGradeLabel === 'STRONG') pts += 2;
   else if (consensusGradeLabel === 'LEAN') pts += 0.5;
   else if (consensusGradeLabel === 'CONTESTED') pts -= 2;
 
-  // Sharp wallet count (max 1.5 pts, 12.5%)
-  if (sharpCount >= 5) pts += 1.5;
-  else if (sharpCount >= 3) pts += 1;
-  else if (sharpCount >= 1) pts += 0.5;
+  // Pinnacle alignment — co-primary signal (max 3 pts / -2 penalty, 25%)
+  // Data: DOMINANT+LineWith = 81.8% WR / +89.9% ROI vs DOMINANT+LineAgainst = 33.3% WR / -44.6% ROI
+  if (pinnConfirms && pinnMovingWith) pts += 3;
+  else if (pinnConfirms) pts += 1.5;
+  else if (pinnMovingWith) pts += 1.5;
+  if (pinnMovingAgainst) pts -= 2;
 
-  // Money deployed — sweet-spot rewarded, no penalty for low (max 2 pts, 17%)
-  if ((totalInvested >= 5000 && totalInvested < 10000) || (totalInvested >= 50000 && totalInvested < 100000)) pts += 2;
-  else if (totalInvested >= 20000 && totalInvested < 35000) pts += 1;
-  else if (totalInvested >= 10000) pts += 0.5;
+  // Sharp wallet count (max 1 pt, 8%)
+  if (sharpCount >= 5) pts += 1;
+  else if (sharpCount >= 3) pts += 0.5;
+  else if (sharpCount >= 1) pts += 0.25;
 
-  // EV edge — 0-1% trap penalized (max 1.5 pts, 12.5%)
-  if (evEdge > 3) pts += 1.5;
-  else if (evEdge > 1) pts += 1;
+  // Money deployed — sweet-spot rewarded (max 1.5 pts, 12.5%)
+  if ((totalInvested >= 5000 && totalInvested < 10000) || (totalInvested >= 50000 && totalInvested < 100000)) pts += 1.5;
+  else if (totalInvested >= 20000 && totalInvested < 35000) pts += 0.75;
+  else if (totalInvested >= 10000) pts += 0.25;
+
+  // EV edge — 0-1% trap penalized (max 1 pt, 8%)
+  if (evEdge > 3) pts += 1;
+  else if (evEdge > 1) pts += 0.5;
   else if (evEdge > 0) pts -= 0.5;
-
-  // Pinnacle alignment (max 1 pt)
-  if (pinnConfirms) pts += 0.5;
-  if (pinnMovingWith) pts += 0.5;
 
   // Prediction market — conditional on consensus tier
   if (polyMovingWith) {
@@ -2122,13 +2126,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const oppPinnFirstProb = impliedProb(oppPinnPoints[0]);
   const oppPinnLastProb = impliedProb(oppPinnPoints[oppPinnPoints.length - 1]);
   const oppPinnMovingWith = oppPinnPoints.length >= 2 && oppPinnLastProb > oppPinnFirstProb;
+  const oppPinnMovingAgainst = oppPinnPoints.length >= 2 && oppPinnLastProb < oppPinnFirstProb;
   const oppPolyMovingWith = polyPoints.length >= 2 && (oppSide === 'away'
     ? polyPoints[polyPoints.length - 1] > polyPoints[0]
     : polyPoints[polyPoints.length - 1] < polyPoints[0]);
   const oppMoneyPct = totalInvested > 0 ? (oppInvestedAmt / totalInvested) * 100 : 50;
   const oppWalletPct = (consensusWallets + oppWallets) > 0 ? (oppWallets / (consensusWallets + oppWallets)) * 100 : 50;
   const oppCGrade = consensusGrade(oppMoneyPct, oppWalletPct);
-  const oppSr = rateStars(oppEvEdge || 0, oppWallets, oppPinnConfirms, oppInvestedAmt, oppCGrade.label, oppPinnMovingWith, oppPolyMovingWith);
+  const oppSr = rateStars(oppEvEdge || 0, oppWallets, oppPinnConfirms, oppInvestedAmt, oppCGrade.label, oppPinnMovingWith, oppPinnMovingAgainst, oppPolyMovingWith);
   const oppPeakStars = oppSr.stars;
 
   // Lock-In Criteria System
@@ -2141,7 +2146,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const sr = rateStars(evEdge || 0, consensusWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
+  const sr = rateStars(evEdge || 0, consensusWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, pinnMovingAgainst, polyMovingWith, oppPeakStars);
   const isLocked = sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
