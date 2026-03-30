@@ -1127,7 +1127,9 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
               }}>
                 {pinnConfirms ? <CheckCircle size={11} color={B.green} /> : <Circle size={11} color={B.red} />}
                 <span style={{ ...T.micro, fontSize: '0.575rem', fontWeight: 700, color: pinnConfirms ? B.green : B.red }}>
-                  Pinnacle {pinnConfirms ? 'confirms' : 'opposes'} — line moving toward {pinnMoveDir === 'away' ? awayShort : homeShort}
+                  {pinnConfirms
+                    ? `Pinnacle confirms — line moving toward ${moneyTeam}`
+                    : `Pinnacle opposes ${moneyTeam} — line moving toward ${pinnMoveDir === 'away' ? awayShort : homeShort}`}
                 </span>
               </div>
             )}
