@@ -3537,6 +3537,7 @@ export default function SharpFlow() {
                   const pFirstP = impliedProb(pinnPts[0]);
                   const pLastP = impliedProb(pinnPts[pinnPts.length - 1]);
                   const pinnMoveWith = pinnPts.length >= 2 && pLastP > pFirstP;
+                  const pinnMoveAgainst = pinnPts.length >= 2 && pLastP < pFirstP;
                   const pinnConf = pg?.movement?.direction === cSide;
                   const cInv = cSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
                   const awayPos = gd.positions.filter(p => p.side === 'away');
@@ -3562,14 +3563,15 @@ export default function SharpFlow() {
                   const oPFirstP = impliedProb(oPinnPts[0]);
                   const oPLastP = impliedProb(oPinnPts[oPinnPts.length - 1]);
                   const oPinnMoveWith = oPinnPts.length >= 2 && oPLastP > oPFirstP;
+                  const oPinnMoveAgainst = oPinnPts.length >= 2 && oPLastP < oPFirstP;
                   const oPolyMoveWith = polyPts.length >= 2 && ((oSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (oSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
                   const oInv = oSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
                   const oMoneyPct = totalInv > 0 ? (oInv / totalInv) * 100 : 50;
                   const oWPct = (cWallets + oWallets) > 0 ? (oWallets / (cWallets + oWallets)) * 100 : 50;
                   const oCg = consensusGrade(oMoneyPct, oWPct);
-                  const oSr = rateStars(oEv || 0, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPolyMoveWith);
+                  const oSr = rateStars(oEv || 0, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPinnMoveAgainst, oPolyMoveWith);
 
-                  const sr = rateStars(ev || 0, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, polyMoveWith, oSr.stars);
+                  const sr = rateStars(ev || 0, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, pinnMoveAgainst, polyMoveWith, oSr.stars);
 
                   if (sortBy === 'locked') continue;
                   if (sortBy === 'myPicks' && !userPicks[key]) continue;
