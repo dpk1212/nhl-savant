@@ -95,7 +95,7 @@ function tierInfo(amt) {
 // ─── Sharp Flow Unit Sizing ───────────────────────────────────────────────────
 
 function consensusGrade(moneyPct, walletPct) {
-  const avg = (moneyPct + walletPct) / 2;
+  const avg = moneyPct * 0.6 + walletPct * 0.4;
   if (avg >= 80) return { label: 'DOMINANT', color: B.green, penalty: 0, score: avg };
   if (avg >= 65) return { label: 'STRONG', color: B.green, penalty: 0, score: avg };
   if (avg >= 55) return { label: 'LEAN', color: B.gold, penalty: -0.5, score: avg };
