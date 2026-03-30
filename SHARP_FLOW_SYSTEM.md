@@ -12,7 +12,7 @@ Unlike tout services that sell picks based on opinions, Sharp Flow is built on *
 
 **1. Finding the Sharps**
 
-We scan the top 1,500 entries on the Polymarket sports leaderboard, profile every wallet's positions, and **rank them purely by sport P&L** — the sum of profit/loss across all sports markets (NHL, CBB, NBA, NFL, MLB). We take the **top 250 wallets with $5K+ sport P&L**. These are the most profitable *sports* bettors on the platform, not just high-volume generalists.
+We scan the top 1,500 entries on the Polymarket sports leaderboard, profile every wallet's positions, and **rank them purely by sport P&L** — the sum of profit/loss across all sports markets (NHL, CBB, NBA, NFL, MLB). We take the **top 250 wallets with $5K+ sport P&L**. These are the most profitable *sports* bettors on the platform, not just high-volume generalists. Sharp Flow currently tracks **four sports**: NHL, CBB, MLB, and NBA.
 
 This list is rebuilt twice a day by a dedicated `seedSportsSharps.js` pipeline and stored in `sports_sharps.json`. Because qualification is based solely on verified sport profit, there is no need for market-maker scoring or tier-based filtering — every wallet in the file is pre-qualified.
 
@@ -83,9 +83,11 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 │  Polymarket API ──→ polymarket_data.json  (every 15 min)    │
 │  Kalshi API ──────→ kalshi_data.json      (every 15 min)    │
 │  Odds API ────────→ pinnacle_history.json (every 15 min)    │
-│  Polymarket ──────→ sports_sharps.json    (2x daily)  [NEW] │
+│  Polymarket ──────→ sports_sharps.json    (2x daily)        │
 │  Polymarket ──────→ whale_profiles.json   (legacy, 4x/day) │
 │  Scan step  ──────→ sharp_positions.json  (every 15 min)    │
+│                                                              │
+│  Sports: NHL, CBB, MLB, NBA                                 │
 │                                                              │
 │  scanSharpPositions merges whale_profiles.json (base)        │
 │  + sports_sharps.json (supplementary sport-profitable).     │
@@ -121,8 +123,8 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 ### Scripts Reference
 
 #### `scripts/fetchPolymarketData.js`
-- **APIs**: Gamma API (events), Data API (trades, volume, positions), CLOB (price history), Odds API (CBB + MLB schedule)
-- **Sports**: NHL (from `odds_money.md`), CBB (from Odds API `basketball_ncaab`), MLB (from Odds API `baseball_mlb`)
+- **APIs**: Gamma API (events), Data API (trades, volume, positions), CLOB (price history), Odds API (CBB + MLB + NBA schedule)
+- **Sports**: NHL (from `odds_money.md`), CBB (from Odds API `basketball_ncaab`), MLB (from Odds API `baseball_mlb`), NBA (from Odds API `basketball_nba`)
 - **ML Market Selection**: Filters out markets where `groupItemTitle` contains "o/u"/"spread" or outcomes include "Over"/"Under". First remaining market = moneyline.
 - **Price History**: Fetches 24h candles from CLOB for token[0] of the ML market, samples ~12 points for sparkline. Flips if token[0] is not the away team.
 - **Series collision guard**: Each Polymarket event has an `endDate` field that is the game start time. When multiple Polymarket events share the same game key (e.g., back-to-back MLB series), the script compares each event's `endDate` (ET calendar day) against the Odds API `commence_time` for that game key. Only the event whose date matches today's game is accepted. If a wrong-day event was already enriched and a correct-day event appears later, it replaces it.
@@ -156,7 +158,7 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 - **Output**: `public/sharp_positions.json` — per-game breakdown with `summary` (consensus, invested per side) and `positions` array
 
 #### `scripts/snapshotPinnacle.js`
-- **API**: The Odds API — `icehockey_nhl`, `basketball_ncaab`, and `baseball_mlb` with bookmakers `pinnacle,draftkings,fanduel,betmgm,caesars`
+- **API**: The Odds API — `icehockey_nhl`, `basketball_ncaab`, `baseball_mlb`, and `basketball_nba` with bookmakers `pinnacle,draftkings,fanduel,betmgm,caesars`
 - **Tracks**: Opener, current, history (timestamped array), movement direction, best retail price per side, EV calculation
 - **Series collision guard**: Stores the Odds API unique `game.id` as `apiId` per game key. When a new game arrives for an existing key but with a different `apiId` (different game in a series), compares `commence_time` distances to `Date.now()`. Keeps whichever game is closer; if swapping, resets `opener`/`history`/`movement` so the new game starts fresh.
 - **Output**: `public/pinnacle_history.json` keyed by sport → game_key. Each entry includes `commence` (ISO game time) and `apiId` (Odds API UUID).
@@ -176,7 +178,7 @@ Each document represents one game. Up to two sides can independently lock if bot
 ```javascript
 {
   date: "2026-03-24",           // ET date (derived from commence time)
-  sport: "NHL",
+  sport: "NHL",                  // NHL | CBB | MLB | NBA
   gameKey: "tor_bos",
   away: "Maple Leafs",
   home: "Bruins",
@@ -243,7 +245,7 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 1. Reads `live_scores/current` for FINAL games
 2. Grades regular `bets` collection (existing system)
 3. **Then grades `sharpFlowPicks`**:
-   - Queries `status == "PENDING"` for all sports (NHL, CBB, MLB)
+   - Queries `status == "PENDING"` for all sports (NHL, CBB, MLB, NBA)
    - Maps `gameKey` (e.g., `uta_dal`) to NHL abbreviations (`UTA`, `DAL`) via `ABBREV_MAP`
    - Matches against final games by `awayTeam`/`homeTeam`
    - **v2 format** (`doc.sides` exists): iterates each side, grades using `side.peak.units` and `side.peak.odds`, marks each side's `status: "COMPLETED"`. Top-level `status` becomes `"COMPLETED"` when all sides are graded.

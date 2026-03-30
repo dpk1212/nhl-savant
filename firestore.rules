@@ -13,12 +13,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // Sharp Flow locked picks - public read, writes require source tag
+    // Sharp Flow locked picks - public read, writes require source tag + pregame only
     // Cloud Functions (Admin SDK) bypass these rules for grading
     match /sharpFlowPicks/{document=**} {
       allow read: if true;
-      allow create: if request.resource.data.source == 'ui_card_sync';
-      allow update: if request.resource.data.source == 'ui_card_sync';
+      allow create: if request.resource.data.source == 'ui_card_sync'
+                    && request.resource.data.commenceTime is number
+                    && request.resource.data.commenceTime > request.time.toMillis() + 300000;
+      allow update: if request.resource.data.source == 'ui_card_sync'
+                    && resource.data.commenceTime is number
+                    && resource.data.commenceTime > request.time.toMillis() + 300000;
       allow delete: if false;
     }
     

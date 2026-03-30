@@ -29,6 +29,7 @@ const SPORTS = [
   { key: 'icehockey_nhl', label: 'NHL' },
   { key: 'basketball_ncaab', label: 'CBB' },
   { key: 'baseball_mlb', label: 'MLB' },
+  { key: 'basketball_nba', label: 'NBA' },
 ];
 
 const BOOKMAKERS = 'pinnacle,draftkings,fanduel,betmgm,caesars';
@@ -66,6 +67,19 @@ const MLB_CODES = {
   'Seattle Mariners': 'sea', 'St. Louis Cardinals': 'stl', 'St Louis Cardinals': 'stl',
   'Tampa Bay Rays': 'tbr', 'Texas Rangers': 'tex', 'Toronto Blue Jays': 'tor',
   'Washington Nationals': 'wsh',
+};
+
+const NBA_CODES = {
+  'Atlanta Hawks': 'atl', 'Boston Celtics': 'bos', 'Brooklyn Nets': 'bkn',
+  'Charlotte Hornets': 'cha', 'Chicago Bulls': 'chi', 'Cleveland Cavaliers': 'cle',
+  'Dallas Mavericks': 'dal', 'Denver Nuggets': 'den', 'Detroit Pistons': 'det',
+  'Golden State Warriors': 'gsw', 'Houston Rockets': 'hou', 'Indiana Pacers': 'ind',
+  'Los Angeles Clippers': 'lac', 'Los Angeles Lakers': 'lal', 'Memphis Grizzlies': 'mem',
+  'Miami Heat': 'mia', 'Milwaukee Bucks': 'mil', 'Minnesota Timberwolves': 'min',
+  'New Orleans Pelicans': 'nop', 'New York Knicks': 'nyk', 'Oklahoma City Thunder': 'okc',
+  'Orlando Magic': 'orl', 'Philadelphia 76ers': 'phi', 'Phoenix Suns': 'phx',
+  'Portland Trail Blazers': 'por', 'Sacramento Kings': 'sac', 'San Antonio Spurs': 'sas',
+  'Toronto Raptors': 'tor', 'Utah Jazz': 'uth', 'Washington Wizards': 'was',
 };
 
 const BOOK_DISPLAY = {
@@ -124,6 +138,11 @@ function makeGameKey(away, home, sportLabel) {
   if (sportLabel === 'MLB') {
     const a = MLB_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     const h = MLB_CODES[home] || home.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
+    return `${a}_${h}`;
+  }
+  if (sportLabel === 'NBA') {
+    const a = NBA_CODES[away] || away.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
+    const h = NBA_CODES[home] || home.toLowerCase().replace(/[^a-z]/g, '').slice(0, 3);
     return `${a}_${h}`;
   }
   const aCanon = findCBBTeam(cbbMap, away);

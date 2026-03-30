@@ -1,7 +1,7 @@
 /**
  * NHL Savant - Bet Tracking Functions
  * Updates bet results with game outcomes
- * Also grades Sharp Flow locked picks (NHL, CBB, MLB)
+ * Also grades Sharp Flow locked picks (NHL, CBB, MLB, NBA)
  */
 
 const {onSchedule} = require("firebase-functions/v2/scheduler");
@@ -27,8 +27,20 @@ const ESPN_MLB_TO_CODE = {
   SEA: "sea", STL: "stl", TB: "tbr", TEX: "tex", TOR: "tor", WSH: "wsh",
 };
 
+// ESPN abbreviation → our 3-letter NBA code
+const ESPN_NBA_TO_CODE = {
+  ATL: "atl", BOS: "bos", BKN: "bkn", CHA: "cha", CHI: "chi", CLE: "cle",
+  DAL: "dal", DEN: "den", DET: "det", GS: "gsw", HOU: "hou", IND: "ind",
+  LAC: "lac", LAL: "lal", MEM: "mem", MIA: "mia", MIL: "mil", MIN: "min",
+  NO: "nop", NY: "nyk", NYK: "nyk", OKC: "okc", ORL: "orl", PHI: "phi",
+  PHX: "phx", POR: "por", SAC: "sac", SA: "sas", SAS: "sas", TOR: "tor",
+  UTAH: "uth", UTA: "uth", WAS: "was", WSH: "was",
+  GSW: "gsw", NOP: "nop",
+};
+
 const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
+const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 
 function normalizeName(s) {
   return (s || "").toLowerCase()
@@ -113,6 +125,38 @@ async function fetchMLBFinalGames() {
         });
   } catch (e) {
     logger.error("ESPN MLB fetch error:", e.message);
+    return [];
+  }
+}
+
+async function fetchNBAFinalGames() {
+  try {
+    const res = await fetch(ESPN_NBA_URL);
+    if (!res.ok) { logger.warn(`ESPN NBA API ${res.status}`); return []; }
+    const data = await res.json();
+    return (data.events || [])
+        .filter((e) => {
+          const st = e.competitions?.[0]?.status?.type;
+          return st?.state === "post" || st?.completed;
+        })
+        .map((e) => {
+          const comp = e.competitions[0];
+          const comps = comp.competitors || [];
+          const away = comps.find((c) => c.homeAway === "away") || {};
+          const home = comps.find((c) => c.homeAway === "home") || {};
+          const awayAbbr = away.team?.abbreviation || "";
+          const homeAbbr = home.team?.abbreviation || "";
+          return {
+            awayCode: ESPN_NBA_TO_CODE[awayAbbr] || awayAbbr.toLowerCase(),
+            homeCode: ESPN_NBA_TO_CODE[homeAbbr] || homeAbbr.toLowerCase(),
+            awayTeam: away.team?.displayName || awayAbbr,
+            homeTeam: home.team?.displayName || homeAbbr,
+            awayScore: parseInt(away.score) || 0,
+            homeScore: parseInt(home.score) || 0,
+          };
+        });
+  } catch (e) {
+    logger.error("ESPN NBA fetch error:", e.message);
     return [];
   }
 }
@@ -258,6 +302,14 @@ exports.updateBetResults = onSchedule({
           );
         }
 
+        let nbaFinalGames = [];
+        if (sports.has("NBA")) {
+          nbaFinalGames = await fetchNBAFinalGames();
+          logger.info(
+              `ESPN NBA API: ${nbaFinalGames.length} final NBA games`,
+          );
+        }
+
         for (const sfDoc of sfSnapshot.docs) {
           const pick = sfDoc.data();
           const sport = pick.sport;
@@ -323,6 +375,23 @@ exports.updateBetResults = onSchedule({
                 }
               }
             }
+          } else if (sport === "NBA") {
+            const rawKey = (pick.gameKey || "").replace(/^NBA:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = nbaFinalGames.find((g) =>
+                g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of nbaFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
           }
 
           if (!matchingGame) continue;
@@ -341,7 +410,8 @@ exports.updateBetResults = onSchedule({
               "result.homeScore": matchingGame.homeScore,
               "result.winner": winner,
               "result.source": sport === "NHL" ? "NHL_API" :
-                sport === "CBB" ? "NCAA_API" : "ESPN_MLB_API",
+                sport === "CBB" ? "NCAA_API" :
+                sport === "NBA" ? "ESPN_NBA_API" : "ESPN_MLB_API",
             };
             let allSidesGraded = true;
 
@@ -353,10 +423,8 @@ exports.updateBetResults = onSchedule({
                 market: "MONEYLINE",
                 side: sideUpper,
               });
-              const units = sideData.peak?.units ||
-                sideData.lock?.units || 1;
-              const odds = sideData.peak?.odds ||
-                sideData.lock?.odds || 0;
+              const units = sideData.lock?.units || 1;
+              const odds = sideData.lock?.odds || 0;
               const profit = calculateProfit(outcome, odds, units);
               const team = sideData.team || side;
 
@@ -404,7 +472,8 @@ exports.updateBetResults = onSchedule({
               "result.winner": winner,
               "result.profit": parseFloat(profit.toFixed(2)),
               "result.source": sport === "NHL" ? "NHL_API" :
-                sport === "CBB" ? "NCAA_API" : "ESPN_MLB_API",
+                sport === "CBB" ? "NCAA_API" :
+                sport === "NBA" ? "ESPN_NBA_API" : "ESPN_MLB_API",
               "result.gradedAt":
                 admin.firestore.FieldValue.serverTimestamp(),
               "status": "COMPLETED",

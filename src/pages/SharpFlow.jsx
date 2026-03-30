@@ -81,6 +81,7 @@ function fmtTime(ts) {
 function sportStyle(sport) {
   if (sport === 'CBB') return { color: '#FF6B35', bg: 'rgba(255,107,53,0.12)', icon: '🏀' };
   if (sport === 'MLB') return { color: '#E31837', bg: 'rgba(227,24,55,0.12)', icon: '⚾' };
+  if (sport === 'NBA') return { color: '#FF8C00', bg: 'rgba(255,140,0,0.12)', icon: '🏀' };
   return { color: '#D4AF37', bg: 'rgba(212,175,55,0.12)', icon: '🏒' };
 }
 
@@ -102,7 +103,7 @@ function consensusGrade(moneyPct, walletPct) {
 }
 
 function calculateUnits(stars, consensusPenalty = 0) {
-  let units = stars >= 5 ? 3.5 : stars >= 4.5 ? 3 : stars >= 4 ? 2.5 : stars >= 3.5 ? 2 : 1.5;
+  let units = stars >= 5 ? 3.5 : stars >= 4.5 ? 3 : stars >= 4 ? 2.5 : stars >= 3.5 ? 2 : stars >= 3 ? 1.5 : 1;
   units += consensusPenalty;
   return Math.min(Math.max(units, 0.5), 5);
 }
@@ -144,7 +145,11 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
 
 async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
   try {
-    const docId = `${date}_${gameKey}`;
+    const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+      return { docId: `${date}_${sport}_${gameKey}`, action: 'no_change' };
+    }
+    const docId = `${date}_${sport}_${gameKey}`;
     const ref = doc(db, 'sharpFlowPicks', docId);
     const existing = await getDoc(ref);
 
@@ -186,7 +191,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     return { docId, action: 'side_added' };
   } catch (err) {
     console.warn('Failed to sync pick:', err.message);
-    return { docId: `${date}_${gameKey}`, action: 'error' };
+    return { docId: `${date}_${sport}_${gameKey}`, action: 'error' };
   }
 }
 
@@ -285,7 +290,7 @@ async function loadAllTimePnL() {
           else if (sd.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
         const pickStars = isPostDeploy ? (bestSnap?.stars ?? 0) : s;
-        if (pickStars >= 3) {
+        if (pickStars >= 2.5) {
           const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
@@ -310,7 +315,7 @@ async function loadAllTimePnL() {
           else if (data.result?.outcome === 'PUSH') { byStars[key].pushes++; }
         }
         const pickStars = isPostDeploy ? (data.stars ?? 0) : s;
-        if (pickStars >= 3) {
+        if (pickStars >= 2.5) {
           const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
           if (data.status === 'COMPLETED') {
             pick.outcome = data.result?.outcome || null;
@@ -492,6 +497,7 @@ function buildGameData(polyData, kalshiData) {
   processSport('CBB');
   processSport('NHL');
   processSport('MLB');
+  processSport('NBA');
 
   games.sort((a, b) => b.volume - a.volume);
   return games;
@@ -1810,56 +1816,61 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, polyMovingWith, oppPeakStars = 0) {
   let pts = 0;
 
-  // Sharp wallet conviction (max 3 pts)
-  if (sharpCount >= 5) pts += 3;
-  else if (sharpCount >= 3) pts += 2;
-  else if (sharpCount >= 1) pts += 1;
-
-  // Money deployed (max 2 pts, penalize thin volume)
-  if (totalInvested >= 25000) pts += 2;
-  else if (totalInvested >= 7000) pts += 1;
-  else pts -= 1;
-
-  // EV edge (max 2 pts)
-  if (evEdge > 3) pts += 2;
-  else if (evEdge > 0) pts += 1;
-
-  // Pinnacle alignment (max 2 pts)
-  if (pinnConfirms) pts += 1;
-  if (pinnMovingWith) pts += 1;
-
-  // Consensus strength (max 1.5 pts, CONTESTED penalized)
-  if (consensusGradeLabel === 'DOMINANT') pts += 1.5;
-  else if (consensusGradeLabel === 'STRONG') pts += 1;
+  // Consensus strength — primary signal (max 4 pts, 33%)
+  if (consensusGradeLabel === 'DOMINANT') pts += 4;
+  else if (consensusGradeLabel === 'STRONG') pts += 2;
   else if (consensusGradeLabel === 'LEAN') pts += 0.5;
-  else if (consensusGradeLabel === 'CONTESTED') pts -= 1.5;
+  else if (consensusGradeLabel === 'CONTESTED') pts -= 2;
 
-  // Prediction market alignment (max 0.5 pts)
-  if (polyMovingWith) pts += 0.5;
+  // Sharp wallet count (max 1.5 pts, 12.5%)
+  if (sharpCount >= 5) pts += 1.5;
+  else if (sharpCount >= 3) pts += 1;
+  else if (sharpCount >= 1) pts += 0.5;
+
+  // Money deployed — sweet-spot rewarded, no penalty for low (max 2 pts, 17%)
+  if ((totalInvested >= 5000 && totalInvested < 10000) || (totalInvested >= 50000 && totalInvested < 100000)) pts += 2;
+  else if (totalInvested >= 20000 && totalInvested < 35000) pts += 1;
+  else if (totalInvested >= 10000) pts += 0.5;
+
+  // EV edge — 0-1% trap penalized (max 1.5 pts, 12.5%)
+  if (evEdge > 3) pts += 1.5;
+  else if (evEdge > 1) pts += 1;
+  else if (evEdge > 0) pts -= 0.5;
+
+  // Pinnacle alignment (max 1 pt)
+  if (pinnConfirms) pts += 0.5;
+  if (pinnMovingWith) pts += 0.5;
+
+  // Prediction market — conditional on consensus tier
+  if (polyMovingWith) {
+    if (consensusGradeLabel === 'LEAN') pts += 1.5;
+    else if (consensusGradeLabel === 'STRONG') pts += 0.5;
+    else pts += 0.25;
+  }
 
   // Flip penalty — opposing side already locked at peak
   if (oppPeakStars >= 4.5) pts -= 2;
   else if (oppPeakStars >= 3.5) pts -= 1.5;
   else if (oppPeakStars >= 3) pts -= 1;
 
-  const maxPts = 11;
+  const maxPts = 12;
   const raw = (pts / maxPts) * 5;
   const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
 
   const labels = {
     5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                         summary: 'Maximum conviction — all signals aligned' },
     4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                         summary: 'Near-perfect signal alignment' },
-    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Strong conviction — sharps + line movement agree' },
+    4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Strong conviction — dominant consensus + confirming signals' },
     3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Above-average conviction across multiple signals' },
-    3:   { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                           summary: 'Good sharp support — some confirming signals' },
-    2.5: { label: 'LEAN',          color: B.gold,    bg: B.goldDim,                           summary: 'Moderate sharp interest — limited confirmation' },
-    2:   { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Early sharp activity — watching for more signals' },
-    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Minimal sharp activity so far' },
+    3:   { label: 'SOLID PLAY',    color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Strong consensus with confirming signals' },
+    2.5: { label: 'SOLID PLAY',    color: B.gold,    bg: B.goldDim,                           summary: 'Good consensus support — meets conviction threshold' },
+    2:   { label: 'LEAN',          color: B.gold,    bg: B.goldDim,                           summary: 'Moderate sharp interest — limited confirmation' },
+    1.5: { label: 'DEVELOPING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Early sharp activity — watching for more signals' },
     1:   { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Low activity — not yet actionable' },
     0.5: { label: 'MONITORING',    color: B.textSec, bg: 'rgba(255,255,255,0.04)',             summary: 'Minimal data available' },
   };
   const info = labels[stars] || labels[1];
-  const isActionable = stars >= 3.5;
+  const isActionable = stars >= 3;
 
   return { stars, pts, maxPts, ...info, isActionable };
 }
@@ -1867,9 +1878,9 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const { team, away, home, sport, stars, units, odds, book, peakAt, gameTime, status, outcome, profit } = pick;
   const ss = sportStyle(sport);
-  const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY' };
+  const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
   const starLabel = starLabels[stars] || 'SOLID PLAY';
-  const starColor = stars >= 3.5 ? B.green : B.gold;
+  const starColor = stars >= 3 ? B.green : B.gold;
   const isGraded = status === 'COMPLETED' && outcome;
   const isWin = outcome === 'WIN';
   const isLoss = outcome === 'LOSS';
@@ -2119,7 +2130,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
   const sr = rateStars(evEdge || 0, consensusWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, polyMovingWith, oppPeakStars);
-  const isLocked = sr.stars >= 3;
+  const isLocked = sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const betOdds = bestRetail || consensusOdds;
@@ -2129,6 +2140,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   useEffect(() => {
     if (!isLocked || isGameLive || !commenceTime || !onPickSynced) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.key}`;
@@ -2425,7 +2437,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           marginBottom: '0.375rem',
         }}>
           <span style={{ ...T.micro, color: isLocked ? B.green : B.textMuted, fontWeight: 700 }}>
-            {isLocked ? `PLAY LOCKED — ${sr.stars >= 4.5 ? '★★★★★ ELITE' : sr.stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}` : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
+            {isLocked ? `PLAY LOCKED — ${sr.stars >= 4.5 ? '★★★★★ ELITE' : sr.stars >= 3.5 ? '★★★★ STRONG' : sr.stars >= 3 ? '★★★ SOLID' : '★★½ SOLID'}` : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
           </span>
           <span style={{
             ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
@@ -3012,7 +3024,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
             <div>
               <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '0.375rem' }}>Sport</div>
               <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }].map(s => (
+                {[{ k: 'ALL', l: 'All Sports' }, { k: 'NHL', l: 'NHL' }, { k: 'CBB', l: 'CBB' }, { k: 'MLB', l: 'MLB' }, { k: 'NBA', l: 'NBA' }].map(s => (
                   <FilterBtn key={s.k} isActive={chartSport === s.k} onClick={() => setChartSport(s.k)} color="#3B82F6">{s.l}</FilterBtn>
                 ))}
               </div>
@@ -3225,14 +3237,14 @@ export default function SharpFlow() {
       return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -100000;
     });
     let totalSharpInvested = 0;
-    for (const sport of ['NHL', 'CBB', 'MLB']) {
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
     return {
       trackedCount: allEliteProven.length - totalExcluded,
       totalExcluded, mmExcluded, sportLosers,
-      gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length : 0,
+      gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length + Object.values(sharpPositions.NBA || {}).length : 0,
       totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
       totalSharpInvested,
     };
@@ -3379,6 +3391,7 @@ export default function SharpFlow() {
                             { id: 'NHL', label: 'NHL', color: '#D4AF37' },
                             { id: 'CBB', label: 'CBB', color: '#FF6B35' },
                             { id: 'MLB', label: 'MLB', color: '#E31837' },
+                            { id: 'NBA', label: 'NBA', color: '#FF8C00' },
                           ].map(opt => (
                             <button key={opt.id} onClick={() => setPerfSport(opt.id)} style={{
                               padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
@@ -3484,7 +3497,7 @@ export default function SharpFlow() {
             {sharpStats.gamesWithPos > 0 && (() => {
               const allPosGames = [];
               const nowMs = Date.now();
-              for (const sport of ['NHL', 'CBB', 'MLB']) {
+              for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
                 if (sportFilter !== 'All' && sport !== sportFilter) continue;
                 const sportGames = sharpPositions?.[sport] || {};
                 for (const [key, gd] of Object.entries(sportGames)) {
@@ -3940,7 +3953,7 @@ const FlowStatCard = memo(function FlowStatCard({ icon: Icon, label, value, acce
 function SportTabs({ active, onChange }) {
   return (
     <div style={{ display: 'flex', gap: '0.375rem' }}>
-      {['All', 'CBB', 'NHL', 'MLB'].map(key => {
+      {['All', 'CBB', 'NHL', 'MLB', 'NBA'].map(key => {
         const isActive = active === key;
         const ss = key === 'All' ? null : sportStyle(key);
         return (

@@ -240,6 +240,47 @@ function resolveNHLTeam(raw) {
   return null;
 }
 
+// ─── NBA Team Map ─────────────────────────────────────────────────────────
+const NBA_NAME_TO_CODE = {
+  'Atlanta': 'ATL', 'Boston': 'BOS', 'Brooklyn': 'BKN', 'Charlotte': 'CHA',
+  'Chicago': 'CHI', 'Cleveland': 'CLE', 'Dallas': 'DAL', 'Denver': 'DEN',
+  'Detroit': 'DET', 'Golden State': 'GSW', 'Houston': 'HOU', 'Indiana': 'IND',
+  'Los Angeles Clippers': 'LAC', 'Los Angeles Lakers': 'LAL', 'LA Clippers': 'LAC',
+  'LA Lakers': 'LAL', 'Los Angeles L': 'LAL', 'Los Angeles C': 'LAC',
+  'Memphis': 'MEM', 'Miami': 'MIA', 'Milwaukee': 'MIL',
+  'Minnesota': 'MIN', 'New Orleans': 'NOP', 'New York': 'NYK',
+  'Oklahoma City': 'OKC', 'Orlando': 'ORL', 'Philadelphia': 'PHI',
+  'Phoenix': 'PHX', 'Portland': 'POR', 'Sacramento': 'SAC',
+  'San Antonio': 'SAS', 'Toronto': 'TOR', 'Utah': 'UTH', 'Washington': 'WAS',
+};
+const NBA_MAP = {
+  hawks: 'ATL', celtics: 'BOS', nets: 'BKN', hornets: 'CHA',
+  bulls: 'CHI', cavaliers: 'CLE', cavs: 'CLE',
+  mavericks: 'DAL', mavs: 'DAL', nuggets: 'DEN', pistons: 'DET',
+  warriors: 'GSW', dubs: 'GSW', rockets: 'HOU', pacers: 'IND',
+  clippers: 'LAC', lakers: 'LAL', grizzlies: 'MEM',
+  heat: 'MIA', bucks: 'MIL', timberwolves: 'MIN', wolves: 'MIN',
+  pelicans: 'NOP', knicks: 'NYK', thunder: 'OKC',
+  magic: 'ORL', '76ers': 'PHI', sixers: 'PHI',
+  suns: 'PHX', trailblazers: 'POR', blazers: 'POR',
+  kings: 'SAC', spurs: 'SAS', raptors: 'TOR',
+  jazz: 'UTH', wizards: 'WAS',
+};
+Object.entries(NBA_NAME_TO_CODE).forEach(([name, code]) => {
+  const n = normalize(name);
+  if (!NBA_MAP[n]) NBA_MAP[n] = code;
+});
+
+function resolveNBATeam(raw) {
+  const n = normalize(raw);
+  if (NBA_MAP[n]) return NBA_MAP[n];
+  for (const w of raw.split(/\s+/)) {
+    const wn = normalize(w);
+    if (NBA_MAP[wn]) return NBA_MAP[wn];
+  }
+  return null;
+}
+
 // ─── Extract teams from Kalshi event title ("TeamA at TeamB") ────────────
 function extractTeamsFromTitle(title) {
   const t = (title || '').trim()
@@ -290,6 +331,12 @@ function matchToGameKey(teams, cbbMap, sport) {
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
+  if (sport === 'NBA') {
+    const aCode = resolveNBATeam(a);
+    const bCode = resolveNBATeam(b);
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
+  }
   return null;
 }
 
@@ -337,7 +384,32 @@ async function loadTodaysSchedule(cbbMap) {
   } catch (e) {
     console.warn('Could not load NHL schedule:', e.message);
   }
-  return { validCBB, validNHL };
+  // NBA: use Odds API
+  const validNBA = new Set();
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+      const res = await httpFetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = resolveNBATeam(g.away_team);
+          const home = resolveNBATeam(g.home_team);
+          if (away && home) {
+            validNBA.add(`${normalize(away)}_${normalize(home)}`);
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's NBA (Odds API): ${validNBA.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API NBA error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load NBA schedule from Odds API:', e.message);
+    }
+  }
+
+  return { validCBB, validNHL, validNBA };
 }
 
 // ─── Extract win probabilities from Kalshi markets ──────────────────────
@@ -466,9 +538,9 @@ function extractTotalData(markets) {
 
 // ─── Main ────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, NBA: {}, MLB: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validNBA } = await loadTodaysSchedule(cbbMap);
 
   // Series to fetch for game-level data
   const seriesConfig = [
@@ -509,9 +581,12 @@ async function run() {
     { ticker: 'KXNHLGAME', sport: 'NHL', type: 'game' },
     { ticker: 'KXNHLSPREAD', sport: 'NHL', type: 'spread' },
     { ticker: 'KXNHLTOTAL', sport: 'NHL', type: 'total' },
+    { ticker: 'KXNBAGAME', sport: 'NBA', type: 'game' },
+    { ticker: 'KXNBASPREAD', sport: 'NBA', type: 'spread' },
+    { ticker: 'KXNBATOTAL', sport: 'NBA', type: 'total' },
   ];
 
-  const eventsByKey = { CBB: {}, NHL: {} };
+  const eventsByKey = { CBB: {}, NHL: {}, NBA: {} };
 
   let prevSport = '';
   for (let si = 0; si < seriesConfig.length; si++) {
@@ -535,7 +610,7 @@ async function run() {
       const key = matchToGameKey(teams, cbbMap, sport);
       if (!key) continue;
 
-      const validSet = sport === 'CBB' ? validCBB : validNHL;
+      const validSet = sport === 'CBB' ? validCBB : sport === 'NBA' ? validNBA : validNHL;
       if (!validSet.has(key)) continue;
 
       if (!eventsByKey[sport][key]) {
@@ -556,7 +631,7 @@ async function run() {
   }
 
   // Build output for each matched game
-  for (const sport of ['CBB', 'NHL']) {
+  for (const sport of ['CBB', 'NHL', 'NBA']) {
     for (const [key, entry] of Object.entries(eventsByKey[sport])) {
       const { awayRaw, homeRaw, gameEvent, spreadEvent, totalEvent } = entry;
 
@@ -709,9 +784,10 @@ async function run() {
   writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf8');
   const cbbCount = Object.keys(out.CBB).length;
   const nhlCount = Object.keys(out.NHL).length;
+  const nbaCount = Object.keys(out.NBA).length;
   const mlbCount = Object.keys(out.MLB).length;
-  console.log(`\n✅ Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}`);
-  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0) {
+  console.log(`\n✅ Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, NBA: ${nbaCount}, MLB: ${mlbCount}`);
+  if (cbbCount === 0 && nhlCount === 0 && nbaCount === 0 && mlbCount === 0) {
     console.log('(No Kalshi markets matched today\'s schedule)');
   }
 }

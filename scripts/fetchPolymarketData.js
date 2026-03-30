@@ -271,6 +271,47 @@ function resolveNHLTeam(raw) {
   return null;
 }
 
+// ─── NBA: Polymarket names -> team codes ─────────────────────────────────────
+const NBA_NAME_TO_CODE = {
+  'Atlanta': 'ATL', 'Boston': 'BOS', 'Brooklyn': 'BKN', 'Charlotte': 'CHA',
+  'Chicago': 'CHI', 'Cleveland': 'CLE', 'Dallas': 'DAL', 'Denver': 'DEN',
+  'Detroit': 'DET', 'Golden State': 'GSW', 'Houston': 'HOU', 'Indiana': 'IND',
+  'Los Angeles Clippers': 'LAC', 'Los Angeles Lakers': 'LAL', 'LA Clippers': 'LAC',
+  'LA Lakers': 'LAL', 'Memphis': 'MEM', 'Miami': 'MIA', 'Milwaukee': 'MIL',
+  'Minnesota': 'MIN', 'New Orleans': 'NOP', 'New York': 'NYK',
+  'Oklahoma City': 'OKC', 'Orlando': 'ORL', 'Philadelphia': 'PHI',
+  'Phoenix': 'PHX', 'Portland': 'POR', 'Sacramento': 'SAC',
+  'San Antonio': 'SAS', 'Toronto': 'TOR', 'Utah': 'UTH', 'Washington': 'WAS',
+};
+const NBA_MAP = {
+  hawks: 'ATL', celtics: 'BOS', nets: 'BKN', hornets: 'CHA',
+  bulls: 'CHI', cavaliers: 'CLE', cavs: 'CLE',
+  mavericks: 'DAL', mavs: 'DAL', nuggets: 'DEN', pistons: 'DET',
+  warriors: 'GSW', dubs: 'GSW', rockets: 'HOU', pacers: 'IND',
+  clippers: 'LAC', lakers: 'LAL', grizzlies: 'MEM',
+  heat: 'MIA', bucks: 'MIL', timberwolves: 'MIN', wolves: 'MIN',
+  pelicans: 'NOP', knicks: 'NYK', thunder: 'OKC',
+  magic: 'ORL', '76ers': 'PHI', sixers: 'PHI',
+  suns: 'PHX', trailblazers: 'POR', blazers: 'POR',
+  kings: 'SAC', spurs: 'SAS', raptors: 'TOR',
+  jazz: 'UTH', wizards: 'WAS',
+};
+Object.entries(NBA_NAME_TO_CODE).forEach(([name, code]) => {
+  const n = normalize(name);
+  if (!NBA_MAP[n]) NBA_MAP[n] = code;
+});
+
+function resolveNBATeam(raw) {
+  const n = normalize(raw);
+  if (NBA_MAP[n]) return NBA_MAP[n];
+  const words = raw.split(/\s+/);
+  for (const w of words) {
+    const wn = normalize(w);
+    if (NBA_MAP[wn]) return NBA_MAP[wn];
+  }
+  return null;
+}
+
 // ─── Extract team names from Polymarket title ───────────────────────────────
 function extractTeamsFromTitle(title) {
   const t = (title || '').trim();
@@ -326,6 +367,12 @@ function matchToGameKey(teams, cbbMap, sport) {
   if (sport === 'MLB') {
     const aCode = resolveMLBTeam(a);
     const bCode = resolveMLBTeam(b);
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
+  }
+  if (sport === 'NBA') {
+    const aCode = resolveNBATeam(a);
+    const bCode = resolveNBATeam(b);
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
@@ -407,14 +454,41 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  return { validCBB, validNHL, validMLB, commenceTimes };
+  // NBA: use Odds API
+  const validNBA = new Set();
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = resolveNBATeam(g.away_team);
+          const home = resolveNBATeam(g.home_team);
+          if (away && home) {
+            const gk = `${normalize(away)}_${normalize(home)}`;
+            validNBA.add(gk);
+            if (g.commence_time && !commenceTimes[`NBA:${gk}`]) commenceTimes[`NBA:${gk}`] = g.commence_time;
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's NBA (Odds API): ${validNBA.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API NBA error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load NBA schedule from Odds API:', e.message);
+    }
+  }
+
+  return { validCBB, validNHL, validMLB, validNBA, commenceTimes };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function run() {
-  const out = { CBB: {}, NHL: {}, MLB: {}, updatedAt: new Date().toISOString() };
+  const out = { CBB: {}, NHL: {}, MLB: {}, NBA: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validMLB, commenceTimes } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validMLB, validNBA, commenceTimes } = await loadTodaysSchedule(cbbMap);
 
   const tags = [
     { slug: 'sports', sport: null },
@@ -425,6 +499,7 @@ async function run() {
     { slug: 'nhl', sport: 'NHL' },
     { slug: 'mlb', sport: 'MLB' },
     { slug: 'baseball', sport: 'MLB' },
+    { slug: 'nba', sport: 'NBA' },
   ];
 
   const seenDates = new Map();  // key -> ET date string of accepted Poly event
@@ -460,27 +535,30 @@ async function run() {
     const teams = extractTeamsFromTitle(title);
     if (!teams) continue;
 
-    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : null;
+    let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : null;
     if (!sport) {
       const t = title.toLowerCase();
       if (/ncaa|college|basketball/.test(t) && !/nba|champion|winner|tournament winner/.test(t)) sport = 'CBB';
+      else if (/nba/.test(t) && !/champion|winner|mvp|award/.test(t)) sport = 'NBA';
       else if (/nhl|hockey/.test(t) && !/champion|winner|stanley/.test(t)) sport = 'NHL';
       else if (/mlb|baseball/.test(t) && !/champion|winner|world series winner/.test(t)) sport = 'MLB';
       else {
         const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
         const nhlKey = matchToGameKey(teams, cbbMap, 'NHL');
         const mlbKey = matchToGameKey(teams, cbbMap, 'MLB');
+        const nbaKey = matchToGameKey(teams, cbbMap, 'NBA');
         if (cbbKey && validCBB.has(cbbKey)) sport = 'CBB';
         else if (nhlKey && validNHL.has(nhlKey)) sport = 'NHL';
         else if (mlbKey && validMLB.has(mlbKey)) sport = 'MLB';
+        else if (nbaKey && validNBA.has(nbaKey)) sport = 'NBA';
       }
     }
-    if (!sport || !['CBB', 'NHL', 'MLB'].includes(sport)) continue;
+    if (!sport || !['CBB', 'NHL', 'MLB', 'NBA'].includes(sport)) continue;
 
     const key = matchToGameKey(teams, cbbMap, sport);
     if (!key) continue;
 
-    const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : validNHL;
+    const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : sport === 'NBA' ? validNBA : validNHL;
     if (!validSet.has(key)) continue;
 
     // Date-match: use Polymarket eventDate (actual game date, NOT endDate which is series end).
@@ -664,8 +742,9 @@ async function run() {
   const cbbCount = Object.keys(out.CBB).length;
   const nhlCount = Object.keys(out.NHL).length;
   const mlbCount = Object.keys(out.MLB).length;
-  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}`);
-  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0) {
+  const nbaCount = Object.keys(out.NBA).length;
+  console.log(`Wrote ${outPath} — CBB: ${cbbCount}, NHL: ${nhlCount}, MLB: ${mlbCount}, NBA: ${nbaCount}`);
+  if (cbbCount === 0 && nhlCount === 0 && mlbCount === 0 && nbaCount === 0) {
     console.log('(No Polymarket markets matched today\'s schedule)');
   }
 }

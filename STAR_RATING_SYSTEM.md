@@ -13,19 +13,60 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 ## The Star Rating Model
 
-Every play is scored using a **proprietary weighted signal model** that evaluates multiple dimensions of sharp activity, market pricing, and directional momentum. Signals are assigned different weights based on their predictive value and combined into a composite score, which is then mapped to a **0.5–5.0 star conviction rating**.
+Every play is scored using a **proprietary weighted signal model** that evaluates multiple dimensions of sharp activity, market pricing, and directional momentum. Signals are assigned different weights based on their predictive value (validated against historical results) and combined into a composite score, which is then mapped to a **0.5–5.0 star conviction rating**.
 
-### What the Model Evaluates
+### Signal Weights (max 12 points)
 
-The model considers a range of real-time inputs including — but not limited to:
-- **Sharp bettor activity** — the volume and concentration of professional wallets on a side
-- **Capital deployment** — how much money is behind a position, not just how many bettors
-- **Market pricing signals** — where the sharpest sportsbook in the world has its line, and whether it's moving
-- **Expected value** — whether the best available retail price offers an edge over true fair value
-- **Consensus direction** — how aligned or divided sharp activity is across both sides
-- **External market indicators** — corroborating signals from prediction and exchange markets
+The model assigns weights based on backtested predictive value. **Consensus strength** is the dominant factor — it is the only signal with consistently positive correlation to winning outcomes.
 
-Each of these dimensions carries a different weight. Some signals are far more predictive than others, and the model reflects that.
+| Signal | Max Points | Weight | Rationale |
+|--------|-----------|--------|-----------|
+| **Consensus Grade** | 4 pts | **33%** | Only factor with meaningful positive win correlation. DOMINANT consensus is the strongest single predictor. |
+| Money Invested | 2 pts | 17% | Sweet-spot rewarded ($5K–$10K and $50K–$100K outperform). Extremes penalized via reduced score, not hard penalty. |
+| Sharp Count | 1.5 pts | 12.5% | Reduced from prior weight. High sharp count alone does not predict wins. |
+| EV Edge | 1.5 pts | 12.5% | Mid-to-high +EV (>1%) rewarded. Low +EV (0–1%) is actively penalized — this range is a demonstrated trap zone. |
+| Pinnacle Alignment | 1 pt | 8% | Pinnacle confirms (0.5) + line moving with play (0.5). Marginal standalone predictor. |
+| Pred Market | up to 1.5 pts | conditional | Weight varies by consensus tier. Critical for LEAN plays; negligible for DOMINANT. |
+
+### Detailed Scoring
+
+**Consensus Grade (max 4 pts)**
+- DOMINANT (avg ≥ 80%): +4 pts
+- STRONG (avg ≥ 65%): +2 pts
+- LEAN (avg ≥ 55%): +0.5 pts
+- CONTESTED (avg < 55%): −2 pts
+
+**Sharp Wallet Count (max 1.5 pts)**
+- 5+ sharps: +1.5 pts
+- 3–4 sharps: +1 pt
+- 1–2 sharps: +0.5 pts
+
+**Money Invested (max 2 pts)**
+- $5K–$10K or $50K–$100K (sweet spot): +2 pts
+- $20K–$35K: +1 pt
+- $10K+ (other): +0.5 pts
+- Below $5K: 0 pts (no penalty)
+- Above $100K: 0 pts (diminishing signal)
+
+**EV Edge (max 1.5 pts)**
+- Above 3%: +1.5 pts
+- 1–3%: +1 pt
+- **0–1%: −0.5 pts** (trap zone — 31% WR in backtest)
+- Negative: 0 pts (no penalty — negative EV picks hit 71% WR)
+
+**Pinnacle Alignment (max 1 pt)**
+- Pinnacle confirms: +0.5 pts
+- Line moving with play: +0.5 pts
+
+**Prediction Market (conditional)**
+- LEAN consensus + pred aligns: +1.5 pts
+- STRONG consensus + pred aligns: +0.5 pts
+- DOMINANT consensus + pred aligns: +0.25 pts
+
+**Flip Penalty (opposing side already locked)**
+- Opposing side peaked at ≥4.5★: −2 pts
+- Opposing side peaked at ≥3.5★: −1.5 pts
+- Opposing side peaked at ≥3★: −1 pt
 
 ### Star-to-Label Mapping
 
@@ -33,12 +74,12 @@ Each of these dimensions carries a different weight. Some signals are far more p
 |-------|-------|---------|
 | ★★★★★ (5.0) | **ELITE PLAY** | Maximum conviction — all signals aligned |
 | ★★★★½ (4.5) | **ELITE PLAY** | Near-perfect signal alignment |
-| ★★★★ (4.0) | **STRONG PLAY** | High conviction across multiple dimensions |
-| ★★★½ (3.5) | **STRONG PLAY** | Above-average conviction with confirming signals |
-| ★★★ (3.0) | **SOLID PLAY** | Good sharp support with multiple confirmations |
-| ★★½ (2.5) | LEAN | Moderate sharp interest — limited confirmation |
-| ★★ (2.0) | DEVELOPING | Early sharp activity — watching for more signals |
-| ★½ (1.5) | DEVELOPING | Minimal sharp activity so far |
+| ★★★★ (4.0) | **STRONG PLAY** | Dominant consensus + confirming signals |
+| ★★★½ (3.5) | **STRONG PLAY** | Above-average conviction across multiple signals |
+| ★★★ (3.0) | **SOLID PLAY** | Strong consensus with confirming signals |
+| ★★½ (2.5) | **SOLID PLAY** | Good consensus support — meets conviction threshold |
+| ★★ (2.0) | LEAN | Moderate sharp interest — limited confirmation |
+| ★½ (1.5) | DEVELOPING | Early sharp activity — watching for more signals |
 | ★ (1.0) | MONITORING | Low activity — not yet actionable |
 | ½ (0.5) | MONITORING | Minimal data available |
 
@@ -46,9 +87,9 @@ Each of these dimensions carries a different weight. Some signals are far more p
 
 ## Lock Threshold
 
-A play is **LOCKED IN** (auto-tracked, assigned units, tracked for performance) when it crosses the model's **conviction threshold**.
+A play is **LOCKED IN** (auto-tracked, assigned units, tracked for performance) when it reaches **2.5 stars or higher**.
 
-There are no separate gates or manual overrides. The star rating already accounts for all relevant factors — signal strength, market consensus, volume confidence, and more. If the card shows the play is locked, it met the threshold. If it doesn't, it didn't.
+There are no separate gates or manual overrides. The star rating already accounts for all relevant factors — consensus strength, market pricing, volume, and more. If the card shows the play is locked, it met the threshold. If it doesn't, it didn't.
 
 Plays below the threshold are displayed for monitoring but not tracked as recommendations.
 
@@ -58,11 +99,13 @@ Plays below the threshold are displayed for monitoring but not tracked as recomm
 
 Units are derived directly from the star rating. Higher-conviction plays receive proportionally larger positions. The system also adjusts unit sizing based on consensus quality — plays with weaker or more divided consensus receive a reduction.
 
-| Conviction Level | Position Size | Description |
-|-----------------|--------------|-------------|
-| Elite (highest) | Largest | Maximum confidence — full signals aligned |
-| Strong | Above average | Multiple strong confirming signals |
-| Solid (threshold) | Standard | Meets conviction threshold, base position |
+| Conviction Level | Star Range | Position Size |
+|-----------------|------------|---------------|
+| Elite (highest) | ★★★★½–★★★★★ | 3.0–3.5u |
+| Strong | ★★★★ | 2.5u |
+| Above Average | ★★★½ | 2.0u |
+| Solid | ★★★ | 1.5u |
+| Threshold | ★★½ | 1.0u |
 
 ### Consensus Adjustment
 
@@ -74,15 +117,21 @@ After the base size is set, the model applies a consensus-quality adjustment. Pl
 
 The model includes safeguards that are baked directly into the star score — not applied as external filters or gates.
 
+### EV Trap Protection
+
+Low positive EV (0–1%) receives a scoring penalty. Backtesting showed this range has a 31% win rate and is the single largest profit destroyer. The market often prices these as traps. Only mid-to-high EV (>1%) adds conviction.
+
 ### Volume Protection
 
-Plays backed by thin capital receive a scoring penalty. A handful of dollars from a few wallets can be noise, not signal. The model requires meaningful capital commitment before a play can reach the conviction threshold.
+Plays backed by thin capital no longer receive a hard penalty. Backtesting showed sub-$7K picks actually outperform. Instead, specific investment sweet spots ($5K–$10K and $50K–$100K) receive a bonus.
 
 ### Contested Consensus Protection
 
-When sharp money is roughly split between both sides, the play receives a significant scoring penalty. This is the heaviest safeguard in the model — if sharps themselves disagree, there's no clear directional edge to act on.
+When sharp money is roughly split between both sides, the play receives a significant scoring penalty (−2 pts). This is the heaviest safeguard in the model — if sharps themselves disagree, there's no clear directional edge to act on.
 
-These penalties reduce the star count directly, which means you can see their effect reflected in the rating. A play with strong signals but thin volume or contested consensus will display a lower star count and may fall below the lock threshold.
+### Conditional Prediction Market
+
+Prediction market alignment is weighted differently based on consensus tier. For LEAN plays, it's a critical confirming signal (+1.5 pts). For DOMINANT plays, it's nearly irrelevant (+0.25 pts). This reflects the finding that strong consensus doesn't need external confirmation, but weak consensus does.
 
 ---
 
@@ -109,7 +158,7 @@ Think of the checklist as a "signal dashboard" — useful context, but the star 
 Every locked play is saved with:
 - **Lock snapshot**: Odds, book, units, stars, and signal data at the moment of lock
 - **Peak snapshot**: Updated pregame if the play's conviction increases (more capital flows in, market shifts, etc.)
-- **Grading**: Uses peak snapshot for profit/loss calculation after the game
+- **Grading**: Uses lock snapshot for profit/loss calculation after the game
 
 ### Conviction-Based Performance Breakdown
 
@@ -140,12 +189,14 @@ ROI = (total profit / total units wagered) × 100
 
 ## Design Principles
 
-1. **Stars are the single source of truth.** No hidden gates, no overrides. What you see is what the system believes.
+1. **Consensus is king.** The model is built around consensus strength as the primary predictor. All other signals are secondary.
 
-2. **Penalties are baked in, not bolted on.** Contested consensus and thin volume reduce the star count directly — they don't silently block an otherwise high-rated play.
+2. **Stars are the single source of truth.** No hidden gates, no overrides. What you see is what the system believes.
 
-3. **The model favors confluence.** No single signal can carry a play to the conviction threshold alone. You need multiple confirming factors to reach a lock.
+3. **Penalties are baked in, not bolted on.** Contested consensus, EV traps, and flip situations reduce the star count directly — they don't silently block an otherwise high-rated play.
 
-4. **Volume matters.** A small amount of money from a couple of wallets is noise. The system penalizes low-volume plays and rewards heavy investment because professional bettors put more money where they have the most conviction.
+4. **The model favors confluence.** No single signal can carry a play to the conviction threshold alone. You need multiple confirming factors to reach a lock.
 
-5. **The market is the final judge.** Performance is tracked, graded, and displayed transparently. If the star system doesn't predict winners, the numbers will show it.
+5. **Data-driven weights.** Signal weights are validated against historical outcomes. Factors that don't predict wins are downweighted. Factors that inversely predict wins are penalized.
+
+6. **The market is the final judge.** Performance is tracked, graded, and displayed transparently. If the star system doesn't predict winners, the numbers will show it.
