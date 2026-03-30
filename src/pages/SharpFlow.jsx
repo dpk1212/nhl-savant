@@ -149,9 +149,21 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId: `${date}_${sport}_${gameKey}`, action: 'no_change' };
     }
-    const docId = `${date}_${sport}_${gameKey}`;
-    const ref = doc(db, 'sharpFlowPicks', docId);
-    const existing = await getDoc(ref);
+    // Check new format first, then fall back to legacy format for backward compat
+    const newId = `${date}_${sport}_${gameKey}`;
+    const legacyId = `${date}_${gameKey}`;
+    let docId = newId;
+    let ref = doc(db, 'sharpFlowPicks', newId);
+    let existing = await getDoc(ref);
+    if (!existing.exists()) {
+      const legacyRef = doc(db, 'sharpFlowPicks', legacyId);
+      const legacyDoc = await getDoc(legacyRef);
+      if (legacyDoc.exists()) {
+        docId = legacyId;
+        ref = legacyRef;
+        existing = legacyDoc;
+      }
+    }
 
     if (!existing.exists()) {
       const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
@@ -2143,7 +2155,6 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current) return;
     const date = gameDate(commenceTime);
-    const docId = `${date}_${gd.key}`;
     syncPickToFirebase({
       date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
       commenceTime, side: consensusSide, team: consensusTeam,
@@ -2158,11 +2169,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       sharpCount: consensusWallets, totalInvested: consensusInvested,
       units, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label },
       stars: sr.stars,
-    }).then(({ action }) => {
+    }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
       if (action !== 'no_change') {
-        onPickSynced(docId, consensusSide, { odds: betOdds, criteriaMet, units, unitTier: ut.label, stars: sr.stars });
+        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', criteriaMet, units, unitTier: ut.label, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime });
       }
     });
   }, [isLocked, sr.stars]);
@@ -3113,12 +3124,14 @@ export default function SharpFlow() {
     }
   }, [showPerf]);
 
-  const onPickSynced = useCallback((docId, side, snap) => {
+  const onPickSynced = useCallback((docId, side, snap, meta) => {
     setLockedPicks(prev => {
       const next = { ...prev };
       const prevDoc = next[docId] || {};
       const prevSides = prevDoc.sides || {};
-      next[docId] = { ...prevDoc, sides: { ...prevSides, [side]: { ...prevSides[side], peak: snap, lock: prevSides[side]?.lock || snap } } };
+      const docUpdate = { ...prevDoc, sides: { ...prevSides, [side]: { ...prevSides[side], peak: snap, lock: prevSides[side]?.lock || snap, team: snap.team } } };
+      if (meta) { docUpdate.sport = meta.sport; docUpdate.away = meta.away; docUpdate.home = meta.home; docUpdate.commenceTime = meta.commenceTime; }
+      next[docId] = docUpdate;
       return next;
     });
   }, []);
@@ -3635,7 +3648,7 @@ export default function SharpFlow() {
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
-                        if (stars < 3) continue;
+                        if (stars < 2.5) continue;
                         const units = peak.units || lock.units || 1;
                         const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(units) : 0;
                         lockedArr.push({
