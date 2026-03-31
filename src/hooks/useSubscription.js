@@ -90,6 +90,9 @@ export function useSubscription(user) {
       return;
     }
 
+    // Reset loading while we wait for Firestore to respond for this user
+    setLoading(true);
+
     // 1. Listen to Firestore first for fast cached state (resolves loading)
     const userRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
