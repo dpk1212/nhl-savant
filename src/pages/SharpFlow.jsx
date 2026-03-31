@@ -3282,6 +3282,15 @@ export default function SharpFlow() {
     );
   }
 
+  if (!isPremium) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }}>
+        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
+        <SharpFlowPaywall isMobile={isMobile} />
+      </div>
+    );
+  }
+
   if (filteredGames.length === 0) {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -3304,9 +3313,6 @@ export default function SharpFlow() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }}>
       <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
-
-      {/* ─── Founding Member Promo ─── */}
-      <FoundingMemberBanner isMobile={isMobile} />
 
       {/* ─── Money Flow View ─── */}
       {viewMode === 'flow' && (
@@ -4014,6 +4020,122 @@ function useCountdown(targetDate) {
   const m = Math.floor((remaining % 3600000) / 60000);
   const s = Math.floor((remaining % 60000) / 1000);
   return { totalH, m, s, expired: remaining <= 0 };
+}
+
+function SharpFlowPaywall({ isMobile }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const features = [
+    'Verified sharp bettor tracking in real time',
+    'Pinnacle fair value + best retail EV edge',
+    'Auto-locked plays with smart unit sizing',
+    'Full market flow — tickets, money, & whale action',
+    'Line movement alerts + reverse line moves',
+    'Complete performance dashboard with ROI tracking',
+  ];
+
+  return (
+    <div style={{
+      marginTop: '2rem', borderRadius: '16px', overflow: 'hidden',
+      background: `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, rgba(16,185,129,0.04) 100%)`,
+      border: `1px solid rgba(212,175,55,0.25)`,
+      boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
+    }}>
+      <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <Lock size={36} color={B.gold} style={{ marginBottom: '0.75rem', opacity: 0.85 }} />
+          <h2 style={{
+            fontSize: isMobile ? '1.5rem' : '1.75rem', fontWeight: 900,
+            color: B.text, margin: '0 0 0.5rem 0', letterSpacing: '-0.02em',
+          }}>
+            Sharp Flow is <span style={{ color: B.gold }}>Pro Only</span>
+          </h2>
+          <p style={{
+            ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '520px', lineHeight: 1.65,
+          }}>
+            We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> across
+            prediction markets, surface their real positions on today's games, and combine it with Pinnacle
+            fair odds, EV edges, and full market flow — so you bet with an edge, not a hunch.
+          </p>
+        </div>
+
+        <div style={{
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '0.5rem 1.5rem', marginBottom: '1.75rem', maxWidth: '540px', margin: '0 auto 1.75rem',
+        }}>
+          {features.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <CheckCircle size={13} color={B.green} />
+              <span style={{ ...T.label, color: B.textSec }}>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: isMobile ? '1.25rem' : '1.5rem',
+          border: `1px solid ${B.border}`, maxWidth: '480px', margin: '0 auto',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+            <span style={{
+              ...T.micro, padding: '0.2rem 0.6rem', borderRadius: '4px',
+              background: B.greenDim, color: B.green, fontWeight: 800,
+              letterSpacing: '0.05em',
+            }}>FOUNDING MEMBER RATE</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <span style={{ fontSize: isMobile ? '2rem' : '2.25rem', fontWeight: 900, color: B.green }}>$13</span>
+            <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
+            <span style={{ ...T.label, color: B.textMuted, textDecoration: 'line-through', opacity: 0.6 }}>$25.99</span>
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: B.greenDim, color: B.green, fontWeight: 800,
+            }}>50% OFF FOREVER</span>
+          </div>
+
+          <button onClick={handleCopy} style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.5rem 1rem', borderRadius: '8px', margin: '0 auto 1rem',
+            background: 'rgba(212,175,55,0.08)', border: `1.5px dashed ${B.gold}`,
+            cursor: 'pointer',
+          }}>
+            <span style={{ ...T.label, color: B.textSec }}>Code:</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: B.gold, letterSpacing: '0.04em' }}>SHARPMONEY</span>
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.5rem', borderRadius: '4px',
+              background: copied ? B.greenDim : 'rgba(212,175,55,0.12)',
+              color: copied ? B.green : B.gold, fontWeight: 700,
+            }}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </span>
+          </button>
+
+          <a href="#/pricing?promo=SHARPMONEY" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            padding: '0.75rem 1.5rem', borderRadius: '8px',
+            background: `linear-gradient(135deg, ${B.green}, #059669)`,
+            color: '#fff', fontWeight: 800, fontSize: isMobile ? '1rem' : '0.95rem',
+            textDecoration: 'none', letterSpacing: '0.01em',
+            boxShadow: '0 2px 12px rgba(16,185,129,0.3)',
+          }}>
+            Lock In 50% Off Forever →
+          </a>
+
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: '1rem',
+            marginTop: '0.75rem',
+          }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>✓ Cancel anytime</span>
+            <span style={{ ...T.micro, color: B.textMuted }}>✓ All picks verified</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const PROMO_DEADLINE = new Date('2026-03-31T03:59:00Z').getTime(); // March 30 11:59 PM ET
