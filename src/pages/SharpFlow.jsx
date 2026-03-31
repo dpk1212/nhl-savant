@@ -131,10 +131,11 @@ function computeSharpFeatures(positions, consensusSide) {
   const maxWalletInv = conWallets.length > 0 ? Math.max(...conWallets.map(p => p.invested || 0)) : 0;
   const concentration = conTotalInvested > 0 ? maxWalletInv / conTotalInvested : 0;
 
-  const counterSharpScore = oppWallets.reduce((s, p) => {
+  const tierScore = (wallets) => wallets.reduce((s, p) => {
     const t = p.tier;
     return s + (t === 'ELITE' ? 3 : t === 'SHARP' ? 2 : 0);
   }, 0);
+  const counterSharpScore = Math.max(0, tierScore(oppWallets) - tierScore(conWallets));
 
   const oppTotalInv = oppWallets.reduce((s, p) => s + (p.invested || 0), 0);
   const total = conTotalInvested + oppTotalInv;
@@ -1918,10 +1919,9 @@ function rateStars({
   if (concentration > 0.9) pts -= 1;
   else if (concentration > 0.8) pts -= 0.5;
 
-  // Counter-sharp penalty — elite/sharp wallets opposing (0 to -2 pts)
-  if (counterSharpScore >= 6) pts -= 2;
+  // Counter-sharp penalty — only when opposing quality exceeds consensus quality (net score)
+  if (counterSharpScore >= 6) pts -= 1.5;
   else if (counterSharpScore >= 3) pts -= 1;
-  else if (counterSharpScore >= 1) pts -= 0.5;
 
   // EV edge — 0-1% trap penalized (max 1 pt / -0.5 trap)
   if (evEdge > 3) pts += 1;
