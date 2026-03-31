@@ -2731,26 +2731,44 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} avgBet={homeAvgBet} isActive={homeSide} align="right" />
               </div>
 
-              {/* Money flow bar */}
-              <div style={{
-                display: 'flex', height: '4px', borderRadius: '2px', overflow: 'hidden',
-                marginTop: '0.375rem',
-                background: B.borderSubtle,
-              }}>
-                <div style={{
-                  width: `${awayPct}%`,
-                  background: awaySide
-                    ? `linear-gradient(90deg, ${accentColor}88, ${accentColor})`
-                    : 'rgba(148,163,184,0.25)',
-                  transition: 'width 0.4s ease',
-                }} />
-                <div style={{
-                  width: `${100 - awayPct}%`,
-                  background: homeSide
-                    ? `linear-gradient(90deg, ${accentColor}, ${accentColor}88)`
-                    : 'rgba(148,163,184,0.25)',
-                  transition: 'width 0.4s ease',
-                }} />
+              {/* Sharp money flow bar */}
+              <div style={{ marginTop: '0.375rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                {[
+                  { label: 'Sharp $', awayVal: awayPct, homeVal: 100 - awayPct, color: accentColor },
+                  ...(flowGame ? [
+                    { label: 'Tickets', awayVal: flowGame.awayTicketPct || 50, homeVal: flowGame.homeTicketPct || 50, color: '#818CF8' },
+                    { label: 'Money', awayVal: flowGame.awayMoneyPct || 50, homeVal: flowGame.homeMoneyPct || 50, color: '#38BDF8' },
+                  ] : []),
+                ].map(bar => (
+                  <div key={bar.label} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', width: '38px', textAlign: 'right', flexShrink: 0 }}>{bar.label}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.5rem', color: bar.color, width: '28px', textAlign: 'right', fontFeatureSettings: "'tnum'", flexShrink: 0 }}>
+                      {bar.awayVal.toFixed(0)}%
+                    </span>
+                    <div style={{
+                      display: 'flex', height: '4px', borderRadius: '2px', overflow: 'hidden',
+                      flex: 1, background: B.borderSubtle,
+                    }}>
+                      <div style={{
+                        width: `${bar.awayVal}%`,
+                        background: awaySide
+                          ? `linear-gradient(90deg, ${bar.color}88, ${bar.color})`
+                          : `${bar.color}40`,
+                        transition: 'width 0.4s ease',
+                      }} />
+                      <div style={{
+                        width: `${bar.homeVal}%`,
+                        background: homeSide
+                          ? `linear-gradient(90deg, ${bar.color}, ${bar.color}88)`
+                          : `${bar.color}40`,
+                        transition: 'width 0.4s ease',
+                      }} />
+                    </div>
+                    <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.5rem', color: bar.color, width: '28px', fontFeatureSettings: "'tnum'", flexShrink: 0 }}>
+                      {bar.homeVal.toFixed(0)}%
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           );
@@ -3878,13 +3896,14 @@ export default function SharpFlow() {
                         if (stars < 2.5) continue;
                         const units = peak.units || lock.units || 1;
                         const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(units) : 0;
+                        const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
                         lockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
                           away: doc.away || '', home: doc.home || '',
                           sport: docSport, stars, units,
-                          odds: peak.odds || lock.odds || 0,
-                          book: peak.book || lock.book || '',
+                          odds: lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0),
+                          book: lockOddsValid ? (lock.book || peak.book || '') : (peak.book || lock.book || ''),
                           peakAt: peak.updatedAt || lock.lockedAt,
                           gameTime: doc.commenceTime,
                           status: sd.status || doc.status || 'PENDING',
