@@ -3088,7 +3088,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 export default function SharpFlow() {
   const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, loading } = useMarketData();
   const { user } = useAuth();
-  const { isPremium } = useSubscription(user);
+  const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
   const [gameSort, setGameSort] = useState('time');
@@ -3271,7 +3271,7 @@ export default function SharpFlow() {
     };
   }, [whaleProfiles, sharpPositions]);
 
-  if (loading) {
+  if (loading || subLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: B.textSec }}>
         <div style={{ textAlign: 'center' }}>
