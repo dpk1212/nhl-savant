@@ -1912,10 +1912,10 @@ function rateStars({
   else if (conviction >= 0.5) pts += 1;
   else if (conviction >= 0.25) pts += 0.5;
 
-  // Concentration penalty — single wallet dominance (0 to -1.5 pts)
-  if (concentration > 0.85) pts -= 1.5;
-  else if (concentration > 0.7) pts -= 1;
-  else if (concentration > 0.6) pts -= 0.5;
+  // Concentration penalty — single wallet dominance (0 to -1 pt)
+  // Softened: whale-led positions are common in thin markets, only penalize extreme cases
+  if (concentration > 0.9) pts -= 1;
+  else if (concentration > 0.8) pts -= 0.5;
 
   // Counter-sharp penalty — elite/sharp wallets opposing (0 to -2 pts)
   if (counterSharpScore >= 6) pts -= 2;
@@ -2549,6 +2549,30 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               background: B.greenDim, color: B.green, fontWeight: 700,
             }}>
               +{evEdge}% edge
+            </span>
+          )}
+          {rlmActive && (
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: 'rgba(99,102,241,0.12)', color: '#818CF8', fontWeight: 700,
+            }}>
+              RLM +{flowTicketDiv.toFixed(0)}pt
+            </span>
+          )}
+          {sharpFeatures.concentration > 0.8 && (
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
+            }}>
+              {(sharpFeatures.concentration * 100).toFixed(0)}% 1-wallet
+            </span>
+          )}
+          {sharpFeatures.counterSharpScore >= 3 && (
+            <span style={{
+              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+              background: 'rgba(239,68,68,0.08)', color: '#F87171', fontWeight: 600,
+            }}>
+              Counter-sharp
             </span>
           )}
         </div>
@@ -3866,7 +3890,7 @@ export default function SharpFlow() {
                           status: sd.status || doc.status || 'PENDING',
                           outcome: sd.result?.outcome || null,
                           profit,
-                          lockPinnOdds: lock.pinnacleOdds || null,
+                          lockPinnOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
                           closingOdds: sd.closingOdds || null,
                           clv: sd.result?.clv ?? null,
                         });
