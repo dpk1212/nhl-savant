@@ -2731,74 +2731,81 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 <SidePanel team={homeShort} wallets={homeWallets} invested={homeInvested} pnl={homeLifetimePnl} avgBet={homeAvgBet} isActive={homeSide} align="right" />
               </div>
 
-              {/* ─── Flow Split Bars ─── */}
+              {/* ─── Market Flow Split ─── */}
               {(() => {
                 const bars = [
-                  { label: 'Sharp Money', awayVal: awayPct, homeVal: 100 - awayPct, icon: '💰', color: accentColor, dimColor: `${accentColor}18` },
+                  { label: 'Sharp Money', awayVal: awayPct, homeVal: 100 - awayPct },
                   ...(flowGame ? [
-                    { label: 'Public Tickets', awayVal: flowGame.awayTicketPct || 50, homeVal: flowGame.homeTicketPct || 50, icon: '🎟', color: '#A78BFA', dimColor: 'rgba(167,139,250,0.10)' },
-                    { label: 'Public Money', awayVal: flowGame.awayMoneyPct || 50, homeVal: flowGame.homeMoneyPct || 50, icon: '💵', color: '#38BDF8', dimColor: 'rgba(56,189,248,0.10)' },
+                    { label: 'Public Tickets', awayVal: flowGame.awayTicketPct || 50, homeVal: flowGame.homeTicketPct || 50 },
+                    { label: 'Public Money', awayVal: flowGame.awayMoneyPct || 50, homeVal: flowGame.homeMoneyPct || 50 },
                   ] : []),
                 ];
                 return (
                   <div style={{
                     marginTop: '0.5rem', borderRadius: '8px', overflow: 'hidden',
-                    border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+                    border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
                   }}>
-                    {/* Column headers */}
                     <div style={{
-                      display: 'grid', gridTemplateColumns: '42px 1fr 42px',
-                      padding: '0.35rem 0.625rem 0.2rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
                     }}>
-                      <span style={{ ...T.micro, fontSize: '0.5625rem', color: B.textMuted, fontWeight: 700, textAlign: 'left' }}>{awayShort}</span>
-                      <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', letterSpacing: '0.08em', textTransform: 'uppercase' }}>split</span>
-                      <span style={{ ...T.micro, fontSize: '0.5625rem', color: B.textMuted, fontWeight: 700, textAlign: 'right' }}>{homeShort}</span>
+                      <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
+                      <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
+                        <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
+                      </div>
                     </div>
-                    {/* Bar rows */}
-                    <div style={{ padding: '0.375rem 0.625rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <div style={{ padding: '0.5rem 0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {bars.map(bar => {
                         const awayWins = bar.awayVal > bar.homeVal;
                         const homeWins = bar.homeVal > bar.awayVal;
+                        const awayColor = awaySide && awayWins ? accentColor : awayWins ? B.textSec : B.textMuted;
+                        const homeColor = homeSide && homeWins ? accentColor : homeWins ? B.textSec : B.textMuted;
+                        const barAwayBg = awayWins
+                          ? (awaySide ? `linear-gradient(90deg, ${accentColor}44, ${accentColor})` : `linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18))`)
+                          : 'rgba(255,255,255,0.05)';
+                        const barHomeBg = homeWins
+                          ? (homeSide ? `linear-gradient(90deg, ${accentColor}, ${accentColor}44)` : `linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))`)
+                          : 'rgba(255,255,255,0.05)';
                         return (
                           <div key={bar.label}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', marginBottom: '0.2rem' }}>
-                              <span style={{ fontSize: '0.5rem' }}>{bar.icon}</span>
-                              <span style={{ ...T.micro, fontSize: '0.5625rem', color: B.textSec, fontWeight: 600 }}>{bar.label}</span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '42px 1fr 42px', alignItems: 'center', gap: '0.375rem' }}>
+                            <div style={{
+                              display: 'grid', gridTemplateColumns: '36px 1fr 36px',
+                              alignItems: 'center', gap: '0.375rem',
+                            }}>
                               <span style={{
-                                ...T.micro, fontSize: '0.6875rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-                                color: awayWins ? bar.color : B.textMuted,
-                                textAlign: 'left',
+                                ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
+                                color: awayColor, textAlign: 'left',
                               }}>
                                 {bar.awayVal.toFixed(0)}%
                               </span>
-                              <div style={{
-                                display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden',
-                                background: 'rgba(255,255,255,0.04)',
-                              }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                                 <div style={{
-                                  width: `${bar.awayVal}%`,
-                                  background: awayWins
-                                    ? `linear-gradient(90deg, ${bar.color}55, ${bar.color})`
-                                    : 'rgba(255,255,255,0.08)',
-                                  borderRadius: '3px 0 0 3px',
-                                  transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
-                                }} />
-                                <div style={{ width: '1px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
-                                <div style={{
-                                  width: `${bar.homeVal}%`,
-                                  background: homeWins
-                                    ? `linear-gradient(90deg, ${bar.color}, ${bar.color}55)`
-                                    : 'rgba(255,255,255,0.08)',
-                                  borderRadius: '0 3px 3px 0',
-                                  transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
-                                }} />
+                                  display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden',
+                                  background: 'rgba(255,255,255,0.03)',
+                                }}>
+                                  <div style={{
+                                    width: `${bar.awayVal}%`, background: barAwayBg,
+                                    borderRadius: '2.5px 0 0 2.5px',
+                                    transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
+                                  }} />
+                                  <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                                  <div style={{
+                                    width: `${bar.homeVal}%`, background: barHomeBg,
+                                    borderRadius: '0 2.5px 2.5px 0',
+                                    transition: 'width 0.5s cubic-bezier(.4,0,.2,1)',
+                                  }} />
+                                </div>
+                                <span style={{
+                                  ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)',
+                                  textAlign: 'center', letterSpacing: '0.03em',
+                                }}>
+                                  {bar.label}
+                                </span>
                               </div>
                               <span style={{
-                                ...T.micro, fontSize: '0.6875rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
-                                color: homeWins ? bar.color : B.textMuted,
-                                textAlign: 'right',
+                                ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'",
+                                color: homeColor, textAlign: 'right',
                               }}>
                                 {bar.homeVal.toFixed(0)}%
                               </span>
