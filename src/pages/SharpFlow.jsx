@@ -194,24 +194,13 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
 async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    const docId = `${date}_${sport}_${gameKey}`;
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
-      return { docId: `${date}_${sport}_${gameKey}`, action: 'no_change' };
+      return { docId, action: 'no_change' };
     }
-    // Check new format first, then fall back to legacy format for backward compat
-    const newId = `${date}_${sport}_${gameKey}`;
-    const legacyId = `${date}_${gameKey}`;
-    let docId = newId;
-    let ref = doc(db, 'sharpFlowPicks', newId);
-    let existing = await getDoc(ref);
-    if (!existing.exists()) {
-      const legacyRef = doc(db, 'sharpFlowPicks', legacyId);
-      const legacyDoc = await getDoc(legacyRef);
-      if (legacyDoc.exists()) {
-        docId = legacyId;
-        ref = legacyRef;
-        existing = legacyDoc;
-      }
-    }
+
+    const ref = doc(db, 'sharpFlowPicks', docId);
+    const existing = await getDoc(ref);
 
     if (!existing.exists()) {
       const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
@@ -267,6 +256,18 @@ async function loadLockedPicks() {
     const snap = await getDocs(q);
     const picks = {};
     snap.forEach(d => { picks[d.id] = d.data(); });
+
+    // Deduplicate: if both date_sport_key and date_key exist, keep the canonical one (with sport)
+    const ids = Object.keys(picks);
+    for (const id of ids) {
+      const data = picks[id];
+      if (!data.sport || !data.gameKey) continue;
+      const canonicalId = `${data.date}_${data.sport}_${data.gameKey}`;
+      const legacyId = `${data.date}_${data.gameKey}`;
+      if (id === legacyId && picks[canonicalId]) {
+        delete picks[legacyId];
+      }
+    }
     return picks;
   } catch (err) {
     console.warn('Failed to load locked picks:', err.message);
