@@ -94,12 +94,60 @@ function tierInfo(amt) {
 
 // ─── Sharp Flow Unit Sizing ───────────────────────────────────────────────────
 
+const TIER_WEIGHT = { ELITE: 3, SHARP: 2, PROVEN: 1.5, ACTIVE: 1 };
+
 function consensusGrade(moneyPct, walletPct) {
   const avg = moneyPct * 0.6 + walletPct * 0.4;
   if (avg >= 80) return { label: 'DOMINANT', color: B.green, penalty: 0, score: avg };
   if (avg >= 65) return { label: 'STRONG', color: B.green, penalty: 0, score: avg };
   if (avg >= 55) return { label: 'LEAN', color: B.gold, penalty: -0.5, score: avg };
   return { label: 'CONTESTED', color: B.red, penalty: -1, score: avg };
+}
+
+function computeSharpFeatures(positions, consensusSide) {
+  const conPos = positions.filter(p => p.side === consensusSide);
+  const oppPos = positions.filter(p => p.side && p.side !== consensusSide);
+
+  const dedup = (arr) => {
+    const m = new Map();
+    for (const p of arr) {
+      const ex = m.get(p.wallet);
+      if (!ex || (p.invested || 0) > (ex.invested || 0)) m.set(p.wallet, p);
+    }
+    return [...m.values()];
+  };
+  const conWallets = dedup(conPos);
+  const oppWallets = dedup(oppPos);
+  const totalWallets = conWallets.length + oppWallets.length;
+
+  const qualitySum = conWallets.reduce((s, p) => s + (TIER_WEIGHT[p.tier] || 1), 0);
+  const maxPossible = totalWallets > 0 ? totalWallets * 3 : 1;
+  const breadth = totalWallets > 0 ? qualitySum / maxPossible : 0;
+
+  const conTotalInvested = conWallets.reduce((s, p) => s + (p.invested || 0), 0);
+  const avgInvested = conWallets.length > 0 ? conTotalInvested / conWallets.length : 0;
+  const conviction = avgInvested > 0 ? Math.min(1, Math.max(0, (Math.log10(avgInvested) - 2) / 2)) : 0;
+
+  const maxWalletInv = conWallets.length > 0 ? Math.max(...conWallets.map(p => p.invested || 0)) : 0;
+  const concentration = conTotalInvested > 0 ? maxWalletInv / conTotalInvested : 0;
+
+  const counterSharpScore = oppWallets.reduce((s, p) => {
+    const t = p.tier;
+    return s + (t === 'ELITE' ? 3 : t === 'SHARP' ? 2 : 0);
+  }, 0);
+
+  const oppTotalInv = oppWallets.reduce((s, p) => s + (p.invested || 0), 0);
+  const total = conTotalInvested + oppTotalInv;
+  const conMoneyPct = total > 0 ? (conTotalInvested / total) * 100 : 50;
+  const conWalletPct = totalWallets > 0 ? (conWallets.length / totalWallets) * 100 : 50;
+  const avgScore = conMoneyPct * 0.6 + conWalletPct * 0.4;
+  const consensusTier = avgScore >= 80 ? 'DOMINANT' : avgScore >= 65 ? 'STRONG' : avgScore >= 55 ? 'LEAN' : 'CONTESTED';
+
+  return {
+    breadth, conviction, concentration, counterSharpScore, consensusTier,
+    conWalletCount: conWallets.length, oppWalletCount: oppWallets.length,
+    conTotalInvested, oppTotalInv, avgScore,
+  };
 }
 
 function calculateUnits(stars, consensusPenalty = 0) {
@@ -255,16 +303,25 @@ function estimateStarsFromSnap(snap) {
   if (!snap) return 3;
   let pts = 0;
   const cg = snap.consensusStrength?.grade || '';
-  if (cg === 'DOMINANT') pts += 4; else if (cg === 'STRONG') pts += 2; else if (cg === 'LEAN') pts += 0.5; else if (cg === 'CONTESTED') pts -= 2;
+  // Approximate breadth from old consensus grade
+  if (cg === 'DOMINANT') pts += 3;
+  else if (cg === 'STRONG') pts += 2;
+  else if (cg === 'LEAN') pts += 0.5;
+  else if (cg === 'CONTESTED') pts += 0;
+  // Pinnacle alignment
   const pinnConf = !!snap.criteria?.pinnacleConfirms;
   const lineWith = !!snap.criteria?.lineMovingWith;
   if (pinnConf && lineWith) pts += 3; else if (pinnConf) pts += 1.5; else if (lineWith) pts += 1.5;
+  // Approximate conviction from totalInvested / sharpCount
   const sc = snap.sharpCount || 0;
-  if (sc >= 5) pts += 1; else if (sc >= 3) pts += 0.5; else if (sc >= 1) pts += 0.25;
   const inv = snap.totalInvested || 0;
-  if ((inv >= 5000 && inv < 10000) || (inv >= 50000 && inv < 100000)) pts += 1.5; else if (inv >= 20000 && inv < 35000) pts += 0.75; else if (inv >= 10000) pts += 0.25;
+  const avgInv = sc > 0 ? inv / sc : inv;
+  const conv = avgInv > 0 ? Math.min(1, Math.max(0, (Math.log10(avgInv) - 2) / 2)) : 0;
+  if (conv >= 0.8) pts += 1.5; else if (conv >= 0.5) pts += 1; else if (conv >= 0.25) pts += 0.5;
+  // EV edge
   const ev = snap.evEdge || 0;
   if (ev > 3) pts += 1; else if (ev > 1) pts += 0.5; else if (ev > 0) pts -= 0.5;
+  // Pred market
   if (snap.criteria?.predMarketAligns) pts += 0.5;
   const raw = (pts / 12) * 5;
   return Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
@@ -304,11 +361,12 @@ async function loadAllTimePnL() {
         }
         const pickStars = isPostDeploy ? (bestSnap?.stars ?? 0) : s;
         if (pickStars >= 2.5) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0 };
+          const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
             else if (sd.result?.outcome === 'LOSS') { pick.profit = -u; }
+            if (sd.result?.clv != null) pick.clv = sd.result.clv;
           }
           picks.push(pick);
         }
@@ -1828,43 +1886,57 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
   );
 });
 
-function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGradeLabel, pinnMovingWith, pinnMovingAgainst, polyMovingWith, oppPeakStars = 0) {
+function rateStars({
+  evEdge = 0, pinnConfirms = false, pinnMovingWith = false, pinnMovingAgainst = false,
+  polyMovingWith = false, oppPeakStars = 0,
+  breadth = 0, conviction = 0, concentration = 0, counterSharpScore = 0,
+  consensusTier = 'LEAN',
+  isRLM = false, ticketDivergence = 0,
+} = {}) {
   let pts = 0;
 
-  // Consensus strength — co-primary signal (max 4 pts, 33%)
-  if (consensusGradeLabel === 'DOMINANT') pts += 4;
-  else if (consensusGradeLabel === 'STRONG') pts += 2;
-  else if (consensusGradeLabel === 'LEAN') pts += 0.5;
-  else if (consensusGradeLabel === 'CONTESTED') pts -= 2;
+  // Sharp breadth — quality-weighted wallet diversity (max 3 pts)
+  if (breadth >= 0.5) pts += 3;
+  else if (breadth >= 0.35) pts += 2;
+  else if (breadth >= 0.2) pts += 1;
+  else if (breadth >= 0.1) pts += 0.5;
 
-  // Pinnacle alignment — co-primary signal (max 3 pts / -2 penalty, 25%)
-  // Data: DOMINANT+LineWith = 81.8% WR / +89.9% ROI vs DOMINANT+LineAgainst = 33.3% WR / -44.6% ROI
+  // Pinnacle alignment — co-primary signal (max 3 pts / -2 penalty)
   if (pinnConfirms && pinnMovingWith) pts += 3;
   else if (pinnConfirms) pts += 1.5;
   else if (pinnMovingWith) pts += 1.5;
   if (pinnMovingAgainst) pts -= 2;
 
-  // Sharp wallet count (max 1 pt, 8%)
-  if (sharpCount >= 5) pts += 1;
-  else if (sharpCount >= 3) pts += 0.5;
-  else if (sharpCount >= 1) pts += 0.25;
+  // Sharp conviction — log-dollar per wallet (max 1.5 pts)
+  if (conviction >= 0.8) pts += 1.5;
+  else if (conviction >= 0.5) pts += 1;
+  else if (conviction >= 0.25) pts += 0.5;
 
-  // Money deployed — sweet-spot rewarded (max 1.5 pts, 12.5%)
-  if ((totalInvested >= 5000 && totalInvested < 10000) || (totalInvested >= 50000 && totalInvested < 100000)) pts += 1.5;
-  else if (totalInvested >= 20000 && totalInvested < 35000) pts += 0.75;
-  else if (totalInvested >= 10000) pts += 0.25;
+  // Concentration penalty — single wallet dominance (0 to -1.5 pts)
+  if (concentration > 0.85) pts -= 1.5;
+  else if (concentration > 0.7) pts -= 1;
+  else if (concentration > 0.6) pts -= 0.5;
 
-  // EV edge — 0-1% trap penalized (max 1 pt, 8%)
+  // Counter-sharp penalty — elite/sharp wallets opposing (0 to -2 pts)
+  if (counterSharpScore >= 6) pts -= 2;
+  else if (counterSharpScore >= 3) pts -= 1;
+  else if (counterSharpScore >= 1) pts -= 0.5;
+
+  // EV edge — 0-1% trap penalized (max 1 pt / -0.5 trap)
   if (evEdge > 3) pts += 1;
   else if (evEdge > 1) pts += 0.5;
   else if (evEdge > 0) pts -= 0.5;
 
-  // Prediction market — conditional on consensus tier
+  // Prediction market — conditional on breadth tier
   if (polyMovingWith) {
-    if (consensusGradeLabel === 'LEAN') pts += 1.5;
-    else if (consensusGradeLabel === 'STRONG') pts += 0.5;
+    if (consensusTier === 'LEAN' || consensusTier === 'CONTESTED') pts += 1.5;
+    else if (consensusTier === 'STRONG') pts += 0.5;
     else pts += 0.25;
   }
+
+  // RLM interaction — public opposes + line confirms sharps
+  if (isRLM && pinnMovingWith && ticketDivergence >= 10) pts += 1.5;
+  else if (isRLM && ticketDivergence >= 10) pts += 0.75;
 
   // Flip penalty — opposing side already locked at peak
   if (oppPeakStars >= 4.5) pts -= 2;
@@ -1894,7 +1966,7 @@ function rateStars(evEdge, sharpCount, pinnConfirms, totalInvested, consensusGra
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, units, odds, book, peakAt, gameTime, status, outcome, profit } = pick;
+  const { team, away, home, sport, stars, units, odds, book, peakAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv } = pick;
   const ss = sportStyle(sport);
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
   const starLabel = starLabels[stars] || 'SOLID PLAY';
@@ -2001,12 +2073,29 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
           Peak: {peakAt ? fmtET(peakAt) : '—'}
         </span>
+        {(() => {
+          const lockProb = lockPinnOdds ? (lockPinnOdds < 0 ? Math.abs(lockPinnOdds) / (Math.abs(lockPinnOdds) + 100) : 100 / (lockPinnOdds + 100)) : null;
+          const closeProb = closingOdds ? (closingOdds < 0 ? Math.abs(closingOdds) / (Math.abs(closingOdds) + 100) : 100 / (closingOdds + 100)) : null;
+          const liveCLV = clv ?? ((lockProb && closeProb) ? +(closeProb - lockProb).toFixed(4) : null);
+          if (liveCLV == null) return null;
+          const pct = (liveCLV * 100).toFixed(1);
+          const beating = liveCLV > 0;
+          return (
+            <span style={{
+              ...T.micro, fontWeight: 700, fontSize: '0.55rem', fontFeatureSettings: "'tnum'",
+              color: beating ? B.green : liveCLV < 0 ? B.red : B.textMuted,
+              display: 'flex', alignItems: 'center', gap: '0.2rem',
+            }}>
+              CLV {beating ? '+' : ''}{pct}%
+            </span>
+          );
+        })()}
       </div>
     </div>
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const lastSyncedStars = useRef(null);
@@ -2117,6 +2206,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const walletPct = (consensusWallets + oppWallets) > 0 ? (consensusWallets / (consensusWallets + oppWallets)) * 100 : 50;
   const cGrade = consensusGrade(moneyPct, walletPct);
 
+  // Decomposed sharp features for V3 star rating
+  const sharpFeatures = computeSharpFeatures(gd.positions, consensusSide);
+
   // Compute opposing side's raw stars (no flip penalty) for flip-detection
   const oppSide = consensusSide === 'away' ? 'home' : 'away';
   const oppBestRetail = oppSide === 'away' ? pinnGame?.bestAway : pinnGame?.bestHome;
@@ -2133,11 +2225,24 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const oppPolyMovingWith = polyPoints.length >= 2 && (oppSide === 'away'
     ? polyPoints[polyPoints.length - 1] > polyPoints[0]
     : polyPoints[polyPoints.length - 1] < polyPoints[0]);
-  const oppMoneyPct = totalInvested > 0 ? (oppInvestedAmt / totalInvested) * 100 : 50;
-  const oppWalletPct = (consensusWallets + oppWallets) > 0 ? (oppWallets / (consensusWallets + oppWallets)) * 100 : 50;
-  const oppCGrade = consensusGrade(oppMoneyPct, oppWalletPct);
-  const oppSr = rateStars(oppEvEdge || 0, oppWallets, oppPinnConfirms, oppInvestedAmt, oppCGrade.label, oppPinnMovingWith, oppPinnMovingAgainst, oppPolyMovingWith);
+  const oppSharpFeatures = computeSharpFeatures(gd.positions, oppSide);
+  const oppSr = rateStars({
+    evEdge: oppEvEdge || 0, pinnConfirms: oppPinnConfirms,
+    pinnMovingWith: oppPinnMovingWith, pinnMovingAgainst: oppPinnMovingAgainst,
+    polyMovingWith: oppPolyMovingWith,
+    breadth: oppSharpFeatures.breadth, conviction: oppSharpFeatures.conviction,
+    concentration: oppSharpFeatures.concentration, counterSharpScore: oppSharpFeatures.counterSharpScore,
+    consensusTier: oppSharpFeatures.consensusTier,
+  });
   const oppPeakStars = oppSr.stars;
+
+  // RLM data from game flow
+  const flowGame = gameFlowMap?.[`${gd.sport}_${gd.key}`];
+  const ticketPctOnConsensusSide = flowGame
+    ? (consensusSide === 'away' ? flowGame.awayTicketPct : flowGame.homeTicketPct) || 0
+    : 0;
+  const flowTicketDiv = flowGame?.ticketDivergence || 0;
+  const rlmActive = ticketPctOnConsensusSide < 50 && flowTicketDiv >= 10;
 
   // Lock-In Criteria System
   const criteria = [
@@ -2149,7 +2254,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
-  const sr = rateStars(evEdge || 0, consensusWallets, pinnConfirms, consensusInvested, cGrade.label, pinnMovingWith, pinnMovingAgainst, polyMovingWith, oppPeakStars);
+  const sr = rateStars({
+    evEdge: evEdge || 0, pinnConfirms, pinnMovingWith, pinnMovingAgainst,
+    polyMovingWith, oppPeakStars,
+    breadth: sharpFeatures.breadth, conviction: sharpFeatures.conviction,
+    concentration: sharpFeatures.concentration, counterSharpScore: sharpFeatures.counterSharpScore,
+    consensusTier: sharpFeatures.consensusTier,
+    isRLM: rlmActive, ticketDivergence: flowTicketDiv,
+  });
   const isLocked = sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
@@ -3219,6 +3331,12 @@ export default function SharpFlow() {
     return g;
   }, [allGames, sportFilter]);
 
+  const gameFlowMap = useMemo(() => {
+    const m = {};
+    for (const g of allGames) m[`${g.sport}_${g.key}`] = g;
+    return m;
+  }, [allGames]);
+
   const signalCount = useMemo(() => {
     return filteredGames.filter(g => g.totalTrades > 0 && g.ticketDivergence >= 10).length;
   }, [filteredGames]);
@@ -3513,6 +3631,57 @@ export default function SharpFlow() {
                         </div>
 
                         <SharpFlowProfitChart picks={allTimePnL?.picks} />
+
+                        {/* CLV Metrics */}
+                        {(() => {
+                          const rawP = fp?.pregame ? (filteredPnL ? (allTimePnL?.picks || []).filter(p => {
+                            if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
+                            if (perfDateRange === 'all') return true;
+                            const now = new Date();
+                            const todayS = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+                            const yesterdayS = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+                            if (perfDateRange === 'today') return p.date === todayS;
+                            if (perfDateRange === 'yesterday') return p.date === yesterdayS;
+                            const daysMap = { '7d': 7, '30d': 30 };
+                            if (daysMap[perfDateRange]) {
+                              const d = new Date(now); d.setDate(d.getDate() - daysMap[perfDateRange]);
+                              return p.date >= d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+                            }
+                            return true;
+                          }) : allTimePnL?.picks || []) : [];
+                          const clvPicks = rawP.filter(p => p.clv != null && p.outcome);
+                          if (clvPicks.length === 0) return null;
+                          const avgCLV = clvPicks.reduce((s, p) => s + p.clv, 0) / clvPicks.length;
+                          const clvPositive = clvPicks.filter(p => p.clv > 0).length;
+                          const clvPosRate = (clvPositive / clvPicks.length * 100).toFixed(0);
+                          return (
+                            <div style={{ borderTop: `1px solid ${B.border}`, paddingTop: '0.75rem', marginTop: '0.75rem' }}>
+                              <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.5rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+                                CLV — CLOSING LINE VALUE
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                                <div style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
+                                  <div style={{ ...T.heading, fontSize: '1rem', color: avgCLV > 0 ? B.green : avgCLV < 0 ? B.red : B.text }}>
+                                    {avgCLV > 0 ? '+' : ''}{(avgCLV * 100).toFixed(1)}%
+                                  </div>
+                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>AVG CLV</div>
+                                </div>
+                                <div style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
+                                  <div style={{ ...T.heading, fontSize: '1rem', color: Number(clvPosRate) >= 50 ? B.green : B.red }}>
+                                    {clvPosRate}%
+                                  </div>
+                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>BEAT CLOSE</div>
+                                </div>
+                                <div style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
+                                  <div style={{ ...T.heading, fontSize: '1rem', color: B.text }}>
+                                    {clvPicks.length}
+                                  </div>
+                                  <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>CLV PICKS</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}
@@ -3553,13 +3722,11 @@ export default function SharpFlow() {
                   const homePos = gd.positions.filter(p => p.side === 'home');
                   const cWallets = cSide === 'away' ? new Set(awayPos.map(p => p.wallet)).size : new Set(homePos.map(p => p.wallet)).size;
                   const oWallets = cSide === 'away' ? new Set(homePos.map(p => p.wallet)).size : new Set(awayPos.map(p => p.wallet)).size;
-                  const totalInv = (ss.totalInvested || 0);
-                  const moneyPct = totalInv > 0 ? (cInv / totalInv) * 100 : 50;
-                  const wPct = (cWallets + oWallets) > 0 ? (cWallets / (cWallets + oWallets)) * 100 : 50;
-                  const cg = consensusGrade(moneyPct, wPct);
                   const polyG = polyData?.[sport]?.[key];
                   const polyPts = polyG?.priceHistory?.points || [];
                   const polyMoveWith = polyPts.length >= 2 && ((cSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (cSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
+
+                  const sf = computeSharpFeatures(gd.positions, cSide);
 
                   const oSide = cSide === 'away' ? 'home' : 'away';
                   const oOdds = oSide === 'away' ? pg?.current?.away : pg?.current?.home;
@@ -3575,13 +3742,32 @@ export default function SharpFlow() {
                   const oPinnMoveWith = !!(oOpenP && oCurP) && oCurP > oOpenP;
                   const oPinnMoveAgainst = !!(oOpenP && oCurP) && oCurP < oOpenP;
                   const oPolyMoveWith = polyPts.length >= 2 && ((oSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (oSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
-                  const oInv = oSide === 'away' ? (ss.awayInvested || 0) : (ss.homeInvested || 0);
-                  const oMoneyPct = totalInv > 0 ? (oInv / totalInv) * 100 : 50;
-                  const oWPct = (cWallets + oWallets) > 0 ? (oWallets / (cWallets + oWallets)) * 100 : 50;
-                  const oCg = consensusGrade(oMoneyPct, oWPct);
-                  const oSr = rateStars(oEv || 0, oWallets, oPinnConf, oInv, oCg.label, oPinnMoveWith, oPinnMoveAgainst, oPolyMoveWith);
+                  const osf = computeSharpFeatures(gd.positions, oSide);
+                  const oSr = rateStars({
+                    evEdge: oEv || 0, pinnConfirms: oPinnConf,
+                    pinnMovingWith: oPinnMoveWith, pinnMovingAgainst: oPinnMoveAgainst,
+                    polyMovingWith: oPolyMoveWith,
+                    breadth: osf.breadth, conviction: osf.conviction,
+                    concentration: osf.concentration, counterSharpScore: osf.counterSharpScore,
+                    consensusTier: osf.consensusTier,
+                  });
 
-                  const sr = rateStars(ev || 0, cWallets, pinnConf, cInv, cg.label, pinnMoveWith, pinnMoveAgainst, polyMoveWith, oSr.stars);
+                  const sortFlowGame = gameFlowMap?.[`${sport}_${key}`];
+                  const sortTicketOnCon = sortFlowGame
+                    ? (cSide === 'away' ? sortFlowGame.awayTicketPct : sortFlowGame.homeTicketPct) || 0
+                    : 0;
+                  const sortFlowDiv = sortFlowGame?.ticketDivergence || 0;
+                  const sortRLM = sortTicketOnCon < 50 && sortFlowDiv >= 10;
+
+                  const sr = rateStars({
+                    evEdge: ev || 0, pinnConfirms: pinnConf,
+                    pinnMovingWith: pinnMoveWith, pinnMovingAgainst: pinnMoveAgainst,
+                    polyMovingWith: polyMoveWith, oppPeakStars: oSr.stars,
+                    breadth: sf.breadth, conviction: sf.conviction,
+                    concentration: sf.concentration, counterSharpScore: sf.counterSharpScore,
+                    consensusTier: sf.consensusTier,
+                    isRLM: sortRLM, ticketDivergence: sortFlowDiv,
+                  });
 
                   if (sortBy === 'locked') continue;
                   if (sortBy === 'myPicks' && !userPicks[key]) continue;
@@ -3680,6 +3866,9 @@ export default function SharpFlow() {
                           status: sd.status || doc.status || 'PENDING',
                           outcome: sd.result?.outcome || null,
                           profit,
+                          lockPinnOdds: lock.pinnacleOdds || null,
+                          closingOdds: sd.closingOdds || null,
+                          clv: sd.result?.clv ?? null,
                         });
                       }
                     }
@@ -3782,7 +3971,7 @@ export default function SharpFlow() {
                           gap: '0.75rem',
                         }}>
                           {allPosGames.map(gd => (
-                            <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} />
+                            <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} />
                           ))}
                         </div>
                       )}

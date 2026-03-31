@@ -20,9 +20,13 @@ service cloud.firestore {
       allow create: if request.resource.data.source == 'ui_card_sync'
                     && request.resource.data.commenceTime is number
                     && request.resource.data.commenceTime > request.time.toMillis() + 300000;
-      allow update: if request.resource.data.source == 'ui_card_sync'
+      allow update: if (request.resource.data.source == 'ui_card_sync'
                     && resource.data.commenceTime is number
-                    && resource.data.commenceTime > request.time.toMillis() + 300000;
+                    && resource.data.commenceTime > request.time.toMillis() + 300000)
+                    || (request.resource.data.source == 'closing_odds_sync'
+                    && resource.data.status == 'PENDING'
+                    && resource.data.commenceTime is number
+                    && resource.data.commenceTime > request.time.toMillis());
       allow delete: if false;
     }
     

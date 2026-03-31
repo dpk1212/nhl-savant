@@ -42,6 +42,13 @@ const NCAA_API_URL = "https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1";
 const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
 const ESPN_NBA_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard";
 
+function impliedProbability(american) {
+  if (!american || american === 0) return null;
+  return american < 0
+    ? Math.abs(american) / (Math.abs(american) + 100)
+    : 100 / (american + 100);
+}
+
 function normalizeName(s) {
   return (s || "").toLowerCase()
       .replace(/\(.*?\)/g, "")
@@ -434,6 +441,22 @@ exports.updateBetResults = onSchedule({
                 parseFloat(profit.toFixed(2));
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
+
+              // CLV: compare lock odds vs closing Pinnacle odds
+              const lockPinnOdds = sideData.lock?.pinnacleOdds;
+              const closeOdds = sideData.closingOdds;
+              if (lockPinnOdds && closeOdds) {
+                const lockProb = impliedProbability(lockPinnOdds);
+                const closeProb = impliedProbability(closeOdds);
+                if (lockProb != null && closeProb != null) {
+                  const clv = +(closeProb - lockProb).toFixed(4);
+                  updates[`sides.${side}.result.clv`] = clv;
+                  updates[`sides.${side}.result.lockProb`] =
+                    +lockProb.toFixed(4);
+                  updates[`sides.${side}.result.closeProb`] =
+                    +closeProb.toFixed(4);
+                }
+              }
 
               sfGraded++;
               logger.info(
