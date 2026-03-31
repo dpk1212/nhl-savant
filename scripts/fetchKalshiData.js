@@ -281,10 +281,54 @@ function resolveNBATeam(raw) {
   return null;
 }
 
+// ─── MLB Team Map ─────────────────────────────────────────────────────────
+const MLB_NAME_TO_CODE = {
+  'Arizona': 'ARI', 'Atlanta': 'ATL', 'Baltimore': 'BAL', 'Boston': 'BOS',
+  'Chicago Cubs': 'CHC', 'Chicago WS': 'CWS', 'Chicago White Sox': 'CWS',
+  'Cincinnati': 'CIN', 'Cleveland': 'CLE', 'Colorado': 'COL',
+  'Detroit': 'DET', 'Houston': 'HOU', 'Kansas City': 'KC',
+  'Los Angeles A': 'LAA', 'Los Angeles Angels': 'LAA',
+  'Los Angeles D': 'LAD', 'Los Angeles Dodgers': 'LAD',
+  'Miami': 'MIA', 'Milwaukee': 'MIL', 'Minnesota': 'MIN',
+  'New York M': 'NYM', 'New York Mets': 'NYM',
+  'New York Y': 'NYY', 'New York Yankees': 'NYY',
+  'Oakland': 'OAK', 'Athletics': 'OAK', 'Sacramento Athletics': 'OAK',
+  'Philadelphia': 'PHI', 'Pittsburgh': 'PIT',
+  'San Diego': 'SD', 'San Francisco': 'SF',
+  'Seattle': 'SEA', 'St. Louis': 'STL', 'St Louis': 'STL',
+  'Tampa Bay': 'TB', 'Texas': 'TEX', 'Toronto': 'TOR', 'Washington': 'WSH',
+};
+const MLB_MAP = {
+  diamondbacks: 'ARI', dbacks: 'ARI', braves: 'ATL', orioles: 'BAL',
+  redsox: 'BOS', cubs: 'CHC', whitesox: 'CWS', reds: 'CIN',
+  guardians: 'CLE', rockies: 'COL', tigers: 'DET', astros: 'HOU',
+  royals: 'KC', angels: 'LAA', dodgers: 'LAD', marlins: 'MIA',
+  brewers: 'MIL', twins: 'MIN', mets: 'NYM', yankees: 'NYY',
+  athletics: 'OAK', as: 'OAK', sacramentoathletics: 'OAK',
+  phillies: 'PHI', pirates: 'PIT', padres: 'SD', giants: 'SF',
+  mariners: 'SEA', cardinals: 'STL', stlouis: 'STL',
+  rays: 'TB', tampabay: 'TB', rangers: 'TEX',
+  bluejays: 'TOR', nationals: 'WSH',
+};
+Object.entries(MLB_NAME_TO_CODE).forEach(([name, code]) => {
+  const n = normalize(name);
+  if (!MLB_MAP[n]) MLB_MAP[n] = code;
+});
+
+function resolveMLBTeam(raw) {
+  const n = normalize(raw);
+  if (MLB_MAP[n]) return MLB_MAP[n];
+  for (const w of raw.split(/\s+/)) {
+    const wn = normalize(w);
+    if (MLB_MAP[wn]) return MLB_MAP[wn];
+  }
+  return null;
+}
+
 // ─── Extract teams from Kalshi event title ("TeamA at TeamB") ────────────
 function extractTeamsFromTitle(title) {
   const t = (title || '').trim()
-    .replace(/:\s*(Spread|Total Points|First Half Spread)$/i, '')
+    .replace(/:\s*(Spread|Total Points|Total Runs|Run Line|First Half Spread)$/i, '')
     .replace(/^(SEC|ACC|Big\s*(?:Ten|10|12|East)|AAC|Atlantic\s*10|Ivy\s*League|American|Sun\s*Belt|Mountain\s*West|WCC|Patriot|Missouri\s*Valley|Big\s*Sky|Southern|SWAC|CAA|MEAC|NEC|Ohio\s*Valley|Horizon|Big\s*South|MAC|Summit|Big\s*West|WAC|Atlantic\s*Sun|Conference\s*USA)\s*(?:Championship|Tournament|Conf\.?\s*Tournament)\s*:\s*/i, '');
   const patterns = [
     /^(.+?)\s+at\s+(.+?)$/i,
@@ -334,6 +378,12 @@ function matchToGameKey(teams, cbbMap, sport) {
   if (sport === 'NBA') {
     const aCode = resolveNBATeam(a);
     const bCode = resolveNBATeam(b);
+    if (!aCode || !bCode) return null;
+    return `${normalize(aCode)}_${normalize(bCode)}`;
+  }
+  if (sport === 'MLB') {
+    const aCode = resolveMLBTeam(a);
+    const bCode = resolveMLBTeam(b);
     if (!aCode || !bCode) return null;
     return `${normalize(aCode)}_${normalize(bCode)}`;
   }
@@ -409,7 +459,32 @@ async function loadTodaysSchedule(cbbMap) {
     }
   }
 
-  return { validCBB, validNHL, validNBA };
+  // MLB: use Odds API
+  const validMLB = new Set();
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+      const res = await httpFetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = resolveMLBTeam(g.away_team);
+          const home = resolveMLBTeam(g.home_team);
+          if (away && home) {
+            validMLB.add(`${normalize(away)}_${normalize(home)}`);
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's MLB (Odds API): ${validMLB.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API MLB error: ${res.status}`);
+      }
+    } catch (e) {
+      console.warn('Could not load MLB schedule from Odds API:', e.message);
+    }
+  }
+
+  return { validCBB, validNHL, validNBA, validMLB };
 }
 
 // ─── Extract win probabilities from Kalshi markets ──────────────────────
@@ -540,7 +615,7 @@ function extractTotalData(markets) {
 async function run() {
   const out = { CBB: {}, NHL: {}, NBA: {}, MLB: {}, updatedAt: new Date().toISOString() };
   const cbbMap = loadCBBTeamMap();
-  const { validCBB, validNHL, validNBA } = await loadTodaysSchedule(cbbMap);
+  const { validCBB, validNHL, validNBA, validMLB } = await loadTodaysSchedule(cbbMap);
 
   // Series to fetch for game-level data
   const seriesConfig = [
@@ -584,9 +659,12 @@ async function run() {
     { ticker: 'KXNBAGAME', sport: 'NBA', type: 'game' },
     { ticker: 'KXNBASPREAD', sport: 'NBA', type: 'spread' },
     { ticker: 'KXNBATOTAL', sport: 'NBA', type: 'total' },
+    { ticker: 'KXMLBGAME', sport: 'MLB', type: 'game' },
+    { ticker: 'KXMLBSPREAD', sport: 'MLB', type: 'spread' },
+    { ticker: 'KXMLBTOTAL', sport: 'MLB', type: 'total' },
   ];
 
-  const eventsByKey = { CBB: {}, NHL: {}, NBA: {} };
+  const eventsByKey = { CBB: {}, NHL: {}, NBA: {}, MLB: {} };
 
   let prevSport = '';
   for (let si = 0; si < seriesConfig.length; si++) {
@@ -610,7 +688,7 @@ async function run() {
       const key = matchToGameKey(teams, cbbMap, sport);
       if (!key) continue;
 
-      const validSet = sport === 'CBB' ? validCBB : sport === 'NBA' ? validNBA : validNHL;
+      const validSet = sport === 'CBB' ? validCBB : sport === 'NBA' ? validNBA : sport === 'MLB' ? validMLB : validNHL;
       if (!validSet.has(key)) continue;
 
       if (!eventsByKey[sport][key]) {
@@ -631,7 +709,7 @@ async function run() {
   }
 
   // Build output for each matched game
-  for (const sport of ['CBB', 'NHL', 'NBA']) {
+  for (const sport of ['CBB', 'NHL', 'NBA', 'MLB']) {
     for (const [key, entry] of Object.entries(eventsByKey[sport])) {
       const { awayRaw, homeRaw, gameEvent, spreadEvent, totalEvent } = entry;
 
