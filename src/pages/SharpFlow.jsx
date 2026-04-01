@@ -3330,6 +3330,8 @@ export default function SharpFlow() {
   const [showPerf, setShowPerf] = useState(false);
   const [perfDateRange, setPerfDateRange] = useState('all');
   const [lockedDay, setLockedDay] = useState('today');
+  const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
+  const [lockedSort, setLockedSort] = useState('stars');
   const [perfSport, setPerfSport] = useState('ALL');
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [userPicks, setUserPicks] = useState({});
@@ -4477,10 +4479,22 @@ export default function SharpFlow() {
                         });
                       }
                     }
-                    lockedArr.sort((a, b) => b.stars - a.stars || b.units - a.units);
+                    const filteredLocked = lockedStatusFilter === 'all' ? lockedArr
+                      : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !p.outcome)
+                      : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
+                      : lockedArr.filter(p => p.outcome === 'LOSS');
+                    filteredLocked.sort((a, b) => {
+                      if (lockedSort === 'stars') return b.stars - a.stars || b.units - a.units;
+                      const tA = a.gameTime ? new Date(a.gameTime).getTime() : 0;
+                      const tB = b.gameTime ? new Date(b.gameTime).getTime() : 0;
+                      return tA - tB || b.stars - a.stars;
+                    });
+                    const pendingCount = lockedArr.filter(p => !p.outcome).length;
+                    const wonCount = lockedArr.filter(p => p.outcome === 'WIN').length;
+                    const lostCount = lockedArr.filter(p => p.outcome === 'LOSS').length;
                     return (
                       <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                           {[
                             { id: 'today', label: 'Today' },
                             { id: 'yesterday', label: 'Yesterday' },
@@ -4494,18 +4508,50 @@ export default function SharpFlow() {
                               transition: 'all 0.2s ease',
                             }}>{opt.label}</button>
                           ))}
+                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                          {[
+                            { id: 'all', label: `All (${lockedArr.length})` },
+                            { id: 'pending', label: `Pending (${pendingCount})` },
+                            { id: 'won', label: `Won (${wonCount})`, color: B.green },
+                            { id: 'lost', label: `Lost (${lostCount})`, color: B.red },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedStatusFilter(opt.id)} style={{
+                              padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: lockedStatusFilter === opt.id ? `1px solid ${(opt.color || B.gold)}44` : `1px solid ${B.border}`,
+                              background: lockedStatusFilter === opt.id ? `${(opt.color || B.gold)}18` : 'transparent',
+                              color: lockedStatusFilter === opt.id ? (opt.color || B.gold) : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
+                          ))}
+                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                          {[
+                            { id: 'stars', label: 'Rating' },
+                            { id: 'time', label: 'Game Time' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedSort(opt.id)} style={{
+                              padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: lockedSort === opt.id ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+                              background: lockedSort === opt.id ? B.goldDim : 'transparent',
+                              color: lockedSort === opt.id ? B.gold : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
+                          ))}
                         </div>
-                        {lockedArr.length === 0 ? (
+                        {filteredLocked.length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
-                            No locked picks for {lockedDay === 'today' ? 'today' : 'yesterday'}
+                            {lockedArr.length === 0
+                              ? `No locked picks for ${lockedDay === 'today' ? 'today' : 'yesterday'}`
+                              : `No ${lockedStatusFilter === 'pending' ? 'pending' : lockedStatusFilter === 'won' ? 'winning' : 'losing'} picks`}
                           </div>
                         ) : (
                           <div style={{
                             display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : lockedArr.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                            gridTemplateColumns: isMobile ? '1fr' : filteredLocked.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                             gap: '0.75rem',
                           }}>
-                            {lockedArr.map(p => (
+                            {filteredLocked.map(p => (
                               <LockedPickCard key={p.key} pick={p} isMobile={isMobile} />
                             ))}
                           </div>
