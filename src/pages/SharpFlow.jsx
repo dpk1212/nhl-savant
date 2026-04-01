@@ -2278,6 +2278,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     isRLM: rlmActive, ticketDivergence: flowTicketDiv,
     sportSharpCount: sharpFeatures.sportSharpCount,
   });
+  const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
+  if (isExtremeOdds) return null;
   const isLocked = sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
@@ -4307,6 +4309,7 @@ export default function SharpFlow() {
                   const cOdds = cSide === 'away' ? pg?.current?.away : pg?.current?.home;
                   const bRetail = cSide === 'away' ? pg?.bestAway : pg?.bestHome;
                   const pProb = impliedProb(cOdds);
+                  if (pProb != null && pProb >= 0.85) continue;
                   const rProb = impliedProb(bRetail);
                   const ev = (pProb && rProb) ? +((pProb - rProb) * 100).toFixed(1) : null;
                   const pinnConf = pg?.movement?.direction === cSide;
