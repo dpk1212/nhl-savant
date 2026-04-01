@@ -430,8 +430,8 @@ exports.updateBetResults = onSchedule({
                 market: "MONEYLINE",
                 side: sideUpper,
               });
-              const units = sideData.lock?.units || 1;
-              const odds = sideData.lock?.odds || 0;
+              const units = sideData.peak?.units || sideData.lock?.units || 1;
+              const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
               const profit = calculateProfit(outcome, odds, units);
               const team = sideData.team || side;
 
