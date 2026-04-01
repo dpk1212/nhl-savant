@@ -451,6 +451,7 @@ function useMarketData() {
   const [whaleProfiles, setWhaleProfiles] = useState(null);
   const [pinnacleHistory, setPinnacleHistory] = useState(null);
   const [sharpPositions, setSharpPositions] = useState(null);
+  const [sportsSharps, setSportsSharps] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -460,17 +461,19 @@ function useMarketData() {
       fetch(`${import.meta.env.BASE_URL}whale_profiles.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}pinnacle_history.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}sharp_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([p, k, wp, ph, sp]) => {
+      fetch(`${import.meta.env.BASE_URL}sports_sharps.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([p, k, wp, ph, sp, ss]) => {
       setPolyData(p);
       setKalshiData(k);
       setWhaleProfiles(wp);
       setPinnacleHistory(ph);
       setSharpPositions(sp);
+      setSportsSharps(ss);
       setLoading(false);
     });
   }, []);
 
-  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, loading };
+  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, sportsSharps, loading };
 }
 
 function buildGameData(polyData, kalshiData) {
@@ -3323,11 +3326,13 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SharpFlow() {
-  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, sportsSharps, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
   const [viewMode, setViewMode] = useState('whaleSignals');
+  const [vaultSportFilter, setVaultSportFilter] = useState('ALL');
+  const [expandedVaultRow, setExpandedVaultRow] = useState(null);
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
   const [sortBy, setSortBy] = useState('stars');
@@ -3514,6 +3519,66 @@ export default function SharpFlow() {
     };
   }, [whaleProfiles, sharpPositions]);
 
+  const VAULT_SIZE = 10;
+
+  const vaultData = useMemo(() => {
+    if (!sportsSharps) return null;
+    const entries = Object.entries(sportsSharps)
+      .filter(([k]) => k !== '_meta')
+      .map(([addr, w]) => ({
+        wallet: addr,
+        name: w.name || addr.slice(0, 10),
+        totalPnl: w.totalPnl || 0,
+        sportPnl: w.sportPnl || {},
+        sportPnlTotal: w.sportPnlTotal || 0,
+        sportMarkets: w.sportMarkets || {},
+        marketsTraded: w.marketsTraded || 0,
+        vol: w.vol || 0,
+        roi: w.vol > 0 ? (w.totalPnl / w.vol) * 100 : 0,
+        avgBet: w.marketsTraded > 0 ? w.vol / w.marketsTraded : 0,
+        sportBets: Object.values(w.sportMarkets || {}).reduce((s, v) => s + v, 0),
+        sportsProfitable: Object.values(w.sportPnl || {}).filter(v => v > 0).length,
+      }))
+      .sort((a, b) => b.sportPnlTotal - a.sportPnlTotal)
+      .slice(0, VAULT_SIZE);
+
+    const walletSet = new Set(entries.map(e => e.wallet.toLowerCase()));
+
+    const todayPositions = {};
+    const convergenceMap = {};
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+      const sportGames = sharpPositions?.[sport] || {};
+      for (const [gameKey, gd] of Object.entries(sportGames)) {
+        if (!gd.positions) continue;
+        for (const pos of gd.positions) {
+          const wLower = pos.wallet?.toLowerCase();
+          if (!wLower || !walletSet.has(wLower)) continue;
+          if (!todayPositions[wLower]) todayPositions[wLower] = [];
+          todayPositions[wLower].push({ ...pos, sport, gameKey, away: gd.away, home: gd.home });
+          const convKey = `${sport}_${gameKey}_${pos.side}`;
+          if (!convergenceMap[convKey]) convergenceMap[convKey] = {
+            sport, gameKey, away: gd.away, home: gd.home, side: pos.side,
+            team: pos.side === 'home' ? gd.home : gd.away, sharps: [],
+          };
+          const entry = entries.find(e => e.wallet.toLowerCase() === wLower);
+          convergenceMap[convKey].sharps.push({
+            name: entry?.name || pos.name, sportPnl: entry?.sportPnl?.[sport] || 0,
+            invested: pos.invested || 0, wallet: wLower,
+          });
+        }
+      }
+    }
+
+    const convergences = Object.values(convergenceMap)
+      .filter(c => c.sharps.length >= 2)
+      .sort((a, b) => b.sharps.length - a.sharps.length);
+
+    const activeCount = entries.filter(e => todayPositions[e.wallet.toLowerCase()]?.length > 0).length;
+    const combinedPnl = entries.reduce((s, e) => s + e.sportPnlTotal, 0);
+
+    return { entries, todayPositions, convergences, activeCount, combinedPnl };
+  }, [sportsSharps, sharpPositions]);
+
   if (loading || authLoading || subLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: B.textSec }}>
@@ -3556,6 +3621,345 @@ export default function SharpFlow() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }}>
       <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
+
+      {/* ─── Sharp Vault View ─── */}
+      {viewMode === 'sharpVault' && vaultData && (() => {
+        const { entries, todayPositions, convergences, activeCount, combinedPnl } = vaultData;
+        const SPORT_COLORS = { NBA: '#FF8C00', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50' };
+        const sportIcons = { NBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}' };
+
+        const filteredEntries = vaultSportFilter === 'ALL'
+          ? entries
+          : [...entries]
+              .filter(e => (e.sportPnl[vaultSportFilter] || 0) > 0)
+              .sort((a, b) => (b.sportPnl[vaultSportFilter] || 0) - (a.sportPnl[vaultSportFilter] || 0));
+
+        return (
+          <div>
+            {/* Hero Stats */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gap: '0.625rem', marginBottom: '1.5rem',
+            }}>
+              <FlowStatCard icon={Lock} label="Elite Sharps" value={entries.length} accent={B.gold}
+                hint="Top sport-verified bettors by P&L" />
+              <FlowStatCard icon={DollarSign} label="Combined Sport P&L" value={`+${fmtVol(combinedPnl)}`} accent={B.green}
+                hint="Aggregate sport-specific profit" />
+              <FlowStatCard icon={Activity} label="Active Today" value={activeCount} accent={activeCount > 0 ? '#22D3EE' : B.textMuted}
+                hint="Elite sharps with positions today" />
+            </div>
+
+            {/* Today's Convergence */}
+            {convergences.length > 0 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.08em', marginBottom: '0.625rem', textTransform: 'uppercase' }}>
+                  Today's Convergence
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {convergences.map((c, ci) => (
+                    <div key={ci} style={{
+                      background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
+                      border: `1px solid ${B.goldBorder}`, borderRadius: '10px',
+                      padding: '0.875rem 1rem', position: 'relative', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+                        background: `linear-gradient(90deg, transparent 0%, ${B.gold}60 50%, transparent 100%)`,
+                      }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{
+                            ...T.micro, padding: '0.15rem 0.4rem', borderRadius: '4px',
+                            background: (SPORT_COLORS[c.sport] || B.gold) + '20',
+                            color: SPORT_COLORS[c.sport] || B.gold, fontWeight: 700,
+                          }}>{sportIcons[c.sport] || ''} {c.sport}</span>
+                          <span style={{ ...T.body, color: B.text, fontWeight: 700 }}>
+                            {c.away} vs {c.home}
+                          </span>
+                        </div>
+                        <span style={{
+                          ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '6px',
+                          background: B.goldDim, color: B.gold, fontWeight: 800, letterSpacing: '0.04em',
+                        }}>
+                          {c.sharps.length} ELITE SHARPS
+                        </span>
+                      </div>
+                      <div style={{ ...T.sub, color: B.gold, marginBottom: '0.5rem', fontWeight: 800 }}>
+                        {c.sharps.length} sharps aligned on {c.team}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        {c.sharps.map((sh, si) => (
+                          <div key={si} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ ...T.label, color: B.text }}>{sh.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>
+                                +{fmtVol(sh.sportPnl)} {c.sport}
+                              </span>
+                              <span style={{ ...T.micro, color: B.textMuted }}>
+                                {fmtVol(sh.invested)} staked
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {convergences.length === 0 && (
+              <div style={{
+                textAlign: 'center', padding: '1.25rem', borderRadius: '10px',
+                background: 'linear-gradient(135deg, rgba(21,25,35,0.9) 0%, rgba(26,31,46,0.7) 100%)',
+                border: `1px solid ${B.border}`, marginBottom: '1.5rem',
+              }}>
+                <span style={{ ...T.label, color: B.textMuted }}>No elite convergence detected today</span>
+              </div>
+            )}
+
+            {/* Sport Filter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em', marginRight: '0.25rem' }}>FILTER</span>
+              {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => (
+                <button key={sp} onClick={() => setVaultSportFilter(sp)} style={{
+                  padding: '0.3rem 0.625rem', borderRadius: '6px', cursor: 'pointer',
+                  ...T.micro, fontWeight: 700,
+                  border: vaultSportFilter === sp ? `1px solid ${(SPORT_COLORS[sp] || B.gold)}44` : `1px solid ${B.border}`,
+                  background: vaultSportFilter === sp ? `${SPORT_COLORS[sp] || B.gold}18` : 'transparent',
+                  color: vaultSportFilter === sp ? (SPORT_COLORS[sp] || B.gold) : B.textMuted,
+                  transition: 'all 0.2s ease',
+                }}>{sp === 'ALL' ? 'ALL' : `${sportIcons[sp] || ''} ${sp}`}</button>
+              ))}
+            </div>
+
+            {/* Leaderboard */}
+            <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.08em', marginBottom: '0.625rem', textTransform: 'uppercase' }}>
+              Leaderboard
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+              {filteredEntries.map((e, idx) => {
+                const isExpanded = expandedVaultRow === e.wallet;
+                const positions = todayPositions[e.wallet.toLowerCase()] || [];
+                const isActive = positions.length > 0;
+                const displayPnl = vaultSportFilter === 'ALL' ? e.sportPnlTotal : (e.sportPnl[vaultSportFilter] || 0);
+
+                return (
+                  <div key={e.wallet} style={{
+                    background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
+                    border: `1px solid ${isExpanded ? B.goldBorder : B.border}`,
+                    borderRadius: '10px', overflow: 'hidden',
+                    transition: 'border-color 0.2s ease',
+                  }}>
+                    {/* Compact Row */}
+                    <div
+                      onClick={() => setExpandedVaultRow(isExpanded ? null : e.wallet)}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '28px 1fr auto' : '28px 1.2fr 1fr 0.7fr 0.7fr 0.6fr 24px',
+                        alignItems: 'center', gap: '0.5rem',
+                        padding: '0.75rem 1rem', cursor: 'pointer',
+                      }}
+                    >
+                      {/* Rank */}
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '50%', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        background: idx < 3 ? B.goldDim : 'rgba(255,255,255,0.04)',
+                        border: idx < 3 ? `1px solid ${B.goldBorder}` : '1px solid transparent',
+                      }}>
+                        <span style={{ ...T.micro, color: idx < 3 ? B.gold : B.textSec, fontWeight: 800 }}>{idx + 1}</span>
+                      </div>
+
+                      {/* Name + Active */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                        <span style={{ ...T.body, color: B.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {e.name}
+                        </span>
+                        {isActive && (
+                          <span style={{
+                            width: '6px', height: '6px', borderRadius: '50%', background: '#22D3EE',
+                            boxShadow: '0 0 6px rgba(34,211,238,0.5)', flexShrink: 0,
+                          }} />
+                        )}
+                      </div>
+
+                      {/* Sport PnL */}
+                      <div style={{ textAlign: isMobile ? 'right' : 'left' }}>
+                        <span style={{ ...T.sub, color: B.green, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
+                          +{fmtVol(displayPnl)}
+                        </span>
+                        {!isMobile && <span style={{ ...T.micro, color: B.textMuted, marginLeft: '0.25rem' }}>sport P&L</span>}
+                      </div>
+
+                      {/* Desktop-only stats */}
+                      {!isMobile && <>
+                        <div style={{ textAlign: 'center' }}>
+                          <span style={{
+                            ...T.label, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                            color: e.roi >= 5 ? B.green : e.roi >= 1 ? '#22D3EE' : B.textSec,
+                          }}>
+                            {e.roi >= 0 ? '+' : ''}{e.roi.toFixed(1)}%
+                          </span>
+                          <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>ROI</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <span style={{ ...T.label, color: B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                            {fmtVol(e.avgBet)}
+                          </span>
+                          <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>AVG BET</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <span style={{ ...T.label, color: B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                            {e.marketsTraded.toLocaleString()}
+                          </span>
+                          <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>BETS</div>
+                        </div>
+                      </>}
+
+                      {/* Chevron */}
+                      {isExpanded
+                        ? <ChevronUp size={14} color={B.textMuted} />
+                        : <ChevronDown size={14} color={B.textMuted} />}
+                    </div>
+
+                    {/* Expanded Card */}
+                    {isExpanded && (
+                      <div style={{
+                        borderTop: `1px solid ${B.border}`, padding: '1rem',
+                        background: 'rgba(0,0,0,0.15)',
+                      }}>
+                        {/* Stat Grid */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                          gap: '0.75rem', marginBottom: '1rem',
+                        }}>
+                          {[
+                            { label: 'SPORT P&L', value: `+${fmtVol(e.sportPnlTotal)}`, color: B.green },
+                            { label: 'OVERALL P&L', value: `+${fmtVol(e.totalPnl)}`, color: e.totalPnl >= 0 ? B.green : B.red },
+                            { label: 'VOLUME', value: fmtVol(e.vol), color: B.textSec },
+                            { label: 'ROI', value: `${e.roi >= 0 ? '+' : ''}${e.roi.toFixed(1)}%`, color: e.roi >= 5 ? B.green : e.roi >= 1 ? '#22D3EE' : B.textSec },
+                            { label: 'AVG BET', value: fmtVol(e.avgBet), color: B.textSec },
+                            { label: 'TOTAL BETS', value: e.marketsTraded.toLocaleString(), color: B.textSec },
+                          ].map((stat, si) => (
+                            <div key={si} style={{ textAlign: 'center' }}>
+                              <div style={{ ...T.sub, color: stat.color, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
+                                {stat.value}
+                              </div>
+                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 600, letterSpacing: '0.06em' }}>
+                                {stat.label}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Sport Breakdown Pills */}
+                        <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                          {Object.entries(e.sportPnl)
+                            .filter(([, v]) => v > 0)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([sport, pnl]) => (
+                              <span key={sport} style={{
+                                ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 700,
+                                background: (SPORT_COLORS[sport] || B.gold) + '18',
+                                color: SPORT_COLORS[sport] || B.gold,
+                                border: `1px solid ${(SPORT_COLORS[sport] || B.gold)}30`,
+                              }}>
+                                {sport} +{fmtVol(pnl)}
+                              </span>
+                            ))
+                          }
+                          {Object.entries(e.sportPnl)
+                            .filter(([, v]) => v < 0)
+                            .sort(([, a], [, b]) => a - b)
+                            .map(([sport, pnl]) => (
+                              <span key={sport} style={{
+                                ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 700,
+                                background: 'rgba(239,68,68,0.1)', color: '#F87171',
+                                border: '1px solid rgba(239,68,68,0.2)',
+                              }}>
+                                {sport} -{fmtVol(Math.abs(pnl))}
+                              </span>
+                            ))
+                          }
+                        </div>
+
+                        {/* Sport Markets */}
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: positions.length > 0 ? '1rem' : 0 }}>
+                          {Object.entries(e.sportMarkets)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([sport, count]) => (
+                              <span key={sport} style={{ ...T.micro, color: B.textMuted }}>
+                                {sportIcons[sport] || ''} {count} {sport} bet{count !== 1 ? 's' : ''}
+                              </span>
+                            ))
+                          }
+                        </div>
+
+                        {/* Today's Positions */}
+                        {positions.length > 0 && (
+                          <div>
+                            <div style={{
+                              ...T.micro, color: '#22D3EE', fontWeight: 800, letterSpacing: '0.08em',
+                              marginBottom: '0.5rem', textTransform: 'uppercase',
+                            }}>
+                              Today's Positions
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                              {positions.map((pos, pi) => (
+                                <div key={pi} style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  padding: '0.5rem 0.75rem', borderRadius: '6px',
+                                  background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{
+                                      ...T.micro, padding: '0.1rem 0.35rem', borderRadius: '3px',
+                                      background: (SPORT_COLORS[pos.sport] || B.gold) + '20',
+                                      color: SPORT_COLORS[pos.sport] || B.gold, fontWeight: 700,
+                                    }}>{pos.sport}</span>
+                                    <span style={{ ...T.label, color: B.text }}>
+                                      {pos.away} vs {pos.home}
+                                    </span>
+                                    <span style={{
+                                      ...T.micro, color: B.gold, fontWeight: 700,
+                                    }}>
+                                      {pos.outcome || (pos.side === 'home' ? pos.home : pos.away)}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                                    <span style={{ ...T.label, color: B.green, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                                      {fmtVol(pos.invested)}
+                                    </span>
+                                    <span style={{ ...T.micro, color: B.textMuted }}>
+                                      {pos.tier}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredEntries.length === 0 && vaultSportFilter !== 'ALL' && (
+              <div style={{
+                textAlign: 'center', padding: '2rem', borderRadius: '10px',
+                background: 'linear-gradient(135deg, rgba(21,25,35,0.9) 0%, rgba(26,31,46,0.7) 100%)',
+                border: `1px solid ${B.border}`,
+              }}>
+                <span style={{ ...T.label, color: B.textMuted }}>No elite sharps profitable in {vaultSportFilter}</span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ─── Money Flow View ─── */}
       {viewMode === 'flow' && (
@@ -4767,7 +5171,7 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
             <button onClick={() => setViewMode('whaleSignals')} style={{
               padding: '0.5rem 0.875rem', cursor: 'pointer',
               ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
-              border: 'none',
+              border: 'none', borderRight: `1px solid ${B.border}`,
               background: viewMode === 'whaleSignals'
                 ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
                 : 'transparent',
@@ -4775,6 +5179,18 @@ function PageHeader({ sportFilter, setSportFilter, viewMode, setViewMode, isMobi
               transition: 'all 0.2s ease',
             }}>
               <Zap size={12} /> Sharp Intel
+            </button>
+            <button onClick={() => setViewMode('sharpVault')} style={{
+              padding: '0.5rem 0.875rem', cursor: 'pointer',
+              ...T.tiny, display: 'flex', alignItems: 'center', gap: '0.3rem',
+              border: 'none',
+              background: viewMode === 'sharpVault'
+                ? `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`
+                : 'transparent',
+              color: viewMode === 'sharpVault' ? B.gold : B.textMuted,
+              transition: 'all 0.2s ease',
+            }}>
+              <Lock size={12} /> Sharp Vault
             </button>
           </div>
           <SportTabs active={sportFilter} onChange={setSportFilter} />
