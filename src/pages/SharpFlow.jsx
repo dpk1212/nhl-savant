@@ -144,10 +144,12 @@ function computeSharpFeatures(positions, consensusSide) {
   const avgScore = conMoneyPct * 0.6 + conWalletPct * 0.4;
   const consensusTier = avgScore >= 80 ? 'DOMINANT' : avgScore >= 65 ? 'STRONG' : avgScore >= 55 ? 'LEAN' : 'CONTESTED';
 
+  const sportSharpCount = conWallets.filter(p => p.sportVerified === true).length;
+
   return {
     breadth, conviction, concentration, counterSharpScore, consensusTier,
     conWalletCount: conWallets.length, oppWalletCount: oppWallets.length,
-    conTotalInvested, oppTotalInv, avgScore,
+    conTotalInvested, oppTotalInv, avgScore, sportSharpCount,
   };
 }
 
@@ -1899,6 +1901,7 @@ function rateStars({
   breadth = 0, conviction = 0, concentration = 0, counterSharpScore = 0,
   consensusTier = 'LEAN',
   isRLM = false, ticketDivergence = 0,
+  sportSharpCount = 0,
 } = {}) {
   let pts = 0;
 
@@ -1943,6 +1946,11 @@ function rateStars({
   // RLM interaction — public opposes + line confirms sharps
   if (isRLM && pinnMovingWith && ticketDivergence >= 10) pts += 1.5;
   else if (isRLM && ticketDivergence >= 10) pts += 0.75;
+
+  // Sport specialist bonus — wallets profitable in this specific sport (max 1.5 pts)
+  if (sportSharpCount >= 3) pts += 1.5;
+  else if (sportSharpCount >= 2) pts += 1;
+  else if (sportSharpCount >= 1) pts += 0.5;
 
   // Flip penalty — opposing side already locked at peak
   if (oppPeakStars >= 4.5) pts -= 2;
@@ -2239,6 +2247,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     breadth: oppSharpFeatures.breadth, conviction: oppSharpFeatures.conviction,
     concentration: oppSharpFeatures.concentration, counterSharpScore: oppSharpFeatures.counterSharpScore,
     consensusTier: oppSharpFeatures.consensusTier,
+    sportSharpCount: oppSharpFeatures.sportSharpCount,
   });
   const oppPeakStars = oppSr.stars;
 
@@ -2267,6 +2276,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     concentration: sharpFeatures.concentration, counterSharpScore: sharpFeatures.counterSharpScore,
     consensusTier: sharpFeatures.consensusTier,
     isRLM: rlmActive, ticketDivergence: flowTicketDiv,
+    sportSharpCount: sharpFeatures.sportSharpCount,
   });
   const isLocked = sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
@@ -2581,18 +2591,6 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               Counter-sharp
             </span>
           )}
-          {(() => {
-            const sportSharpCount = gd.positions.filter(p => p.sportVerified && p.side === consensusSide).length;
-            return sportSharpCount > 0 ? (
-              <span style={{
-                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                background: 'rgba(6,182,212,0.12)', color: '#22D3EE', fontWeight: 700,
-                border: '1px solid rgba(6,182,212,0.25)',
-              }}>
-                {sportSharpCount} Sport Sharp{sportSharpCount !== 1 ? 's' : ''}
-              </span>
-            ) : null;
-          })()}
         </div>
       </div>
 
@@ -3047,7 +3045,6 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 const tc = p.tier === 'ELITE'
                   ? { color: B.gold, bg: B.goldDim }
                   : { color: B.green, bg: B.greenDim };
-                const isSportSharp = p.sportVerified === true;
                 const seenAgo = p.firstSeen ? (() => {
                   const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000);
                   if (mins < 60) return `${mins}m ago`;
@@ -3068,16 +3065,6 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
                         <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                        {isSportSharp && (
-                          <span style={{
-                            ...T.micro, padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 700,
-                            background: 'rgba(6,182,212,0.12)', color: '#22D3EE',
-                            border: '1px solid rgba(6,182,212,0.2)',
-                            fontSize: '0.5rem',
-                          }}>
-                            SPORT SHARP
-                          </span>
-                        )}
                         <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                           ...{p.wallet.slice(-4)}
                         </span>
@@ -3089,7 +3076,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                         }}>
                           {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
                         </span>
-                        {isSportSharp && p.sportPnl > 0 && (
+                        {p.sportVerified && p.sportPnl > 0 && (
                           <span style={{
                             ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
                             color: '#22D3EE',
@@ -3643,7 +3630,7 @@ export default function SharpFlow() {
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
               <FlowStatCard icon={Lock} label="Elite Sharps" value={entries.length} accent={B.gold}
-                hint="Top sport-verified bettors by P&L" />
+                hint="Top sport-proven bettors by P&L" />
               <FlowStatCard icon={DollarSign} label="Combined Sport P&L" value={`+${fmtVol(combinedPnl)}`} accent={B.green}
                 hint="Aggregate sport-specific profit" />
               <FlowStatCard icon={Activity} label="Active Today" value={activeCount} accent={activeCount > 0 ? '#22D3EE' : B.textMuted}
@@ -3653,55 +3640,69 @@ export default function SharpFlow() {
             {/* Today's Convergence */}
             {convergences.length > 0 && (
               <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.08em', marginBottom: '0.625rem', textTransform: 'uppercase' }}>
-                  Today's Convergence
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem',
+                }}>
+                  <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.gold }} />
+                  <span style={{ ...T.label, color: B.gold, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Today's Convergence
+                  </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                   {convergences.map((c, ci) => (
                     <div key={ci} style={{
-                      background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
-                      border: `1px solid ${B.goldBorder}`, borderRadius: '10px',
-                      padding: '0.875rem 1rem', position: 'relative', overflow: 'hidden',
+                      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                      border: `1px solid ${B.goldBorder}`, borderRadius: '12px',
+                      overflow: 'hidden',
                     }}>
                       <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
-                        background: `linear-gradient(90deg, transparent 0%, ${B.gold}60 50%, transparent 100%)`,
+                        height: '3px',
+                        background: `linear-gradient(90deg, transparent, ${B.gold}, transparent)`,
                       }} />
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ padding: '0.875rem 1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{
+                              ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px',
+                              background: (SPORT_COLORS[c.sport] || B.gold) + '18',
+                              color: SPORT_COLORS[c.sport] || B.gold, fontWeight: 700,
+                              border: `1px solid ${(SPORT_COLORS[c.sport] || B.gold)}30`,
+                            }}>{sportIcons[c.sport] || ''} {c.sport}</span>
+                            <span style={{ ...T.body, color: B.text, fontWeight: 700 }}>
+                              {c.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {c.home}
+                            </span>
+                          </div>
                           <span style={{
-                            ...T.micro, padding: '0.15rem 0.4rem', borderRadius: '4px',
-                            background: (SPORT_COLORS[c.sport] || B.gold) + '20',
-                            color: SPORT_COLORS[c.sport] || B.gold, fontWeight: 700,
-                          }}>{sportIcons[c.sport] || ''} {c.sport}</span>
-                          <span style={{ ...T.body, color: B.text, fontWeight: 700 }}>
-                            {c.away} vs {c.home}
+                            ...T.micro, padding: '0.2rem 0.6rem', borderRadius: '6px',
+                            background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))',
+                            color: B.gold, fontWeight: 800, letterSpacing: '0.04em',
+                            border: `1px solid ${B.goldBorder}`,
+                          }}>
+                            {c.sharps.length} ALIGNED
                           </span>
                         </div>
-                        <span style={{
-                          ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '6px',
-                          background: B.goldDim, color: B.gold, fontWeight: 800, letterSpacing: '0.04em',
-                        }}>
-                          {c.sharps.length} ELITE SHARPS
-                        </span>
-                      </div>
-                      <div style={{ ...T.sub, color: B.gold, marginBottom: '0.5rem', fontWeight: 800 }}>
-                        {c.sharps.length} sharps aligned on {c.team}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        {c.sharps.map((sh, si) => (
-                          <div key={si} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ ...T.label, color: B.text }}>{sh.name}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>
-                                +{fmtVol(sh.sportPnl)} {c.sport}
-                              </span>
-                              <span style={{ ...T.micro, color: B.textMuted }}>
-                                {fmtVol(sh.invested)} staked
-                              </span>
+                        <div style={{ ...T.sub, color: B.text, marginBottom: '0.625rem', fontWeight: 700 }}>
+                          {c.sharps.length} specialists on <span style={{ color: B.gold }}>{c.team}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          {c.sharps.map((sh, si) => (
+                            <div key={si} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              padding: '0.375rem 0.5rem', borderRadius: '6px',
+                              background: 'rgba(255,255,255,0.02)',
+                            }}>
+                              <span style={{ ...T.label, color: B.textSec, fontWeight: 600 }}>{sh.name}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                                <span style={{ ...T.micro, color: B.green, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
+                                  +{fmtVol(sh.sportPnl)} {c.sport}
+                                </span>
+                                <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                                  {fmtVol(sh.invested)}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -3710,47 +3711,59 @@ export default function SharpFlow() {
             )}
             {convergences.length === 0 && (
               <div style={{
-                textAlign: 'center', padding: '1.25rem', borderRadius: '10px',
-                background: 'linear-gradient(135deg, rgba(21,25,35,0.9) 0%, rgba(26,31,46,0.7) 100%)',
+                textAlign: 'center', padding: '1.5rem', borderRadius: '12px',
+                background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
                 border: `1px solid ${B.border}`, marginBottom: '1.5rem',
               }}>
-                <span style={{ ...T.label, color: B.textMuted }}>No elite convergence detected today</span>
+                <Activity size={16} color={B.textMuted} style={{ marginBottom: '0.375rem', opacity: 0.5 }} />
+                <div style={{ ...T.label, color: B.textMuted }}>No elite convergence detected today</div>
+                <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.25rem' }}>Convergence fires when 2+ specialists align on the same side</div>
               </div>
             )}
 
-            {/* Sport Filter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-              <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em', marginRight: '0.25rem' }}>FILTER</span>
-              {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => (
-                <button key={sp} onClick={() => setVaultSportFilter(sp)} style={{
-                  padding: '0.3rem 0.625rem', borderRadius: '6px', cursor: 'pointer',
-                  ...T.micro, fontWeight: 700,
-                  border: vaultSportFilter === sp ? `1px solid ${(SPORT_COLORS[sp] || B.gold)}44` : `1px solid ${B.border}`,
-                  background: vaultSportFilter === sp ? `${SPORT_COLORS[sp] || B.gold}18` : 'transparent',
-                  color: vaultSportFilter === sp ? (SPORT_COLORS[sp] || B.gold) : B.textMuted,
-                  transition: 'all 0.2s ease',
-                }}>{sp === 'ALL' ? 'ALL' : `${sportIcons[sp] || ''} ${sp}`}</button>
-              ))}
+            {/* Sport Filter + Leaderboard Header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.gold }} />
+                <span style={{ ...T.label, color: B.gold, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Leaderboard
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+                {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => (
+                  <button key={sp} onClick={() => setVaultSportFilter(sp)} style={{
+                    padding: '0.25rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
+                    ...T.micro, fontWeight: 700, fontSize: '0.575rem',
+                    border: vaultSportFilter === sp ? `1px solid ${(SPORT_COLORS[sp] || B.gold)}44` : `1px solid ${B.border}`,
+                    background: vaultSportFilter === sp ? `${SPORT_COLORS[sp] || B.gold}18` : 'transparent',
+                    color: vaultSportFilter === sp ? (SPORT_COLORS[sp] || B.gold) : B.textMuted,
+                    transition: 'all 0.2s ease',
+                  }}>{sp}</button>
+                ))}
+              </div>
             </div>
-
-            {/* Leaderboard */}
-            <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.08em', marginBottom: '0.625rem', textTransform: 'uppercase' }}>
-              Leaderboard
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {filteredEntries.map((e, idx) => {
                 const isExpanded = expandedVaultRow === e.wallet;
                 const positions = todayPositions[e.wallet.toLowerCase()] || [];
                 const isActive = positions.length > 0;
                 const displayPnl = vaultSportFilter === 'ALL' ? e.sportPnlTotal : (e.sportPnl[vaultSportFilter] || 0);
+                const rowAccent = idx < 3 ? B.gold : isActive ? '#22D3EE' : B.border;
 
                 return (
                   <div key={e.wallet} style={{
-                    background: 'linear-gradient(135deg, rgba(21,25,35,0.95) 0%, rgba(26,31,46,0.8) 100%)',
+                    background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
                     border: `1px solid ${isExpanded ? B.goldBorder : B.border}`,
-                    borderRadius: '10px', overflow: 'hidden',
-                    transition: 'border-color 0.2s ease',
+                    borderRadius: '12px', overflow: 'hidden',
+                    transition: 'all 0.2s ease',
                   }}>
+                    <div style={{
+                      height: '2px',
+                      background: `linear-gradient(90deg, transparent, ${rowAccent}${idx < 3 ? '' : '60'}, transparent)`,
+                    }} />
                     {/* Compact Row */}
                     <div
                       onClick={() => setExpandedVaultRow(isExpanded ? null : e.wallet)}
@@ -3763,12 +3776,12 @@ export default function SharpFlow() {
                     >
                       {/* Rank */}
                       <div style={{
-                        width: '24px', height: '24px', borderRadius: '50%', display: 'flex',
+                        width: '26px', height: '26px', borderRadius: '50%', display: 'flex',
                         alignItems: 'center', justifyContent: 'center',
                         background: idx < 3 ? B.goldDim : 'rgba(255,255,255,0.04)',
-                        border: idx < 3 ? `1px solid ${B.goldBorder}` : '1px solid transparent',
+                        border: idx < 3 ? `1px solid ${B.goldBorder}` : '1px solid rgba(255,255,255,0.06)',
                       }}>
-                        <span style={{ ...T.micro, color: idx < 3 ? B.gold : B.textSec, fontWeight: 800 }}>{idx + 1}</span>
+                        <span style={{ ...T.micro, color: idx < 3 ? B.gold : B.textSec, fontWeight: 800, fontSize: '0.65rem' }}>{idx + 1}</span>
                       </div>
 
                       {/* Name + Active */}
@@ -3778,9 +3791,11 @@ export default function SharpFlow() {
                         </span>
                         {isActive && (
                           <span style={{
-                            width: '6px', height: '6px', borderRadius: '50%', background: '#22D3EE',
-                            boxShadow: '0 0 6px rgba(34,211,238,0.5)', flexShrink: 0,
-                          }} />
+                            ...T.micro, padding: '0.1rem 0.35rem', borderRadius: '3px',
+                            background: 'rgba(34,211,238,0.1)', color: '#22D3EE',
+                            fontWeight: 700, fontSize: '0.5rem',
+                            border: '1px solid rgba(34,211,238,0.2)',
+                          }}>ACTIVE</span>
                         )}
                       </div>
 
@@ -3827,27 +3842,31 @@ export default function SharpFlow() {
                     {isExpanded && (
                       <div style={{
                         borderTop: `1px solid ${B.border}`, padding: '1rem',
-                        background: 'rgba(0,0,0,0.15)',
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.05) 100%)',
                       }}>
                         {/* Stat Grid */}
                         <div style={{
                           display: 'grid',
                           gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                          gap: '0.75rem', marginBottom: '1rem',
+                          gap: '0.5rem', marginBottom: '1rem',
                         }}>
                           {[
                             { label: 'SPORT P&L', value: `+${fmtVol(e.sportPnlTotal)}`, color: B.green },
-                            { label: 'OVERALL P&L', value: `+${fmtVol(e.totalPnl)}`, color: e.totalPnl >= 0 ? B.green : B.red },
+                            { label: 'OVERALL P&L', value: `${e.totalPnl >= 0 ? '+' : ''}${fmtVol(e.totalPnl)}`, color: e.totalPnl >= 0 ? B.green : B.red },
                             { label: 'VOLUME', value: fmtVol(e.vol), color: B.textSec },
                             { label: 'ROI', value: `${e.roi >= 0 ? '+' : ''}${e.roi.toFixed(1)}%`, color: e.roi >= 5 ? B.green : e.roi >= 1 ? '#22D3EE' : B.textSec },
                             { label: 'AVG BET', value: fmtVol(e.avgBet), color: B.textSec },
                             { label: 'TOTAL BETS', value: e.marketsTraded.toLocaleString(), color: B.textSec },
                           ].map((stat, si) => (
-                            <div key={si} style={{ textAlign: 'center' }}>
+                            <div key={si} style={{
+                              textAlign: 'center', padding: '0.5rem 0.375rem',
+                              borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
+                              border: `1px solid ${B.borderSubtle}`,
+                            }}>
                               <div style={{ ...T.sub, color: stat.color, fontWeight: 800, fontFeatureSettings: "'tnum'" }}>
                                 {stat.value}
                               </div>
-                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 600, letterSpacing: '0.06em' }}>
+                              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 600, letterSpacing: '0.06em', marginTop: '0.125rem' }}>
                                 {stat.label}
                               </div>
                             </div>
@@ -4266,6 +4285,7 @@ export default function SharpFlow() {
                     breadth: osf.breadth, conviction: osf.conviction,
                     concentration: osf.concentration, counterSharpScore: osf.counterSharpScore,
                     consensusTier: osf.consensusTier,
+                    sportSharpCount: osf.sportSharpCount,
                   });
 
                   const sortFlowGame = gameFlowMap?.[`${sport}_${key}`];
@@ -4283,6 +4303,7 @@ export default function SharpFlow() {
                     concentration: sf.concentration, counterSharpScore: sf.counterSharpScore,
                     consensusTier: sf.consensusTier,
                     isRLM: sortRLM, ticketDivergence: sortFlowDiv,
+                    sportSharpCount: sf.sportSharpCount,
                   });
 
                   if (sortBy === 'locked') continue;
