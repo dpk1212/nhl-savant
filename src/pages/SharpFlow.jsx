@@ -2578,6 +2578,18 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               Counter-sharp
             </span>
           )}
+          {(() => {
+            const sportSharpCount = gd.positions.filter(p => p.sportVerified && p.side === consensusSide).length;
+            return sportSharpCount > 0 ? (
+              <span style={{
+                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                background: 'rgba(6,182,212,0.12)', color: '#22D3EE', fontWeight: 700,
+                border: '1px solid rgba(6,182,212,0.25)',
+              }}>
+                {sportSharpCount} Sport Sharp{sportSharpCount !== 1 ? 's' : ''}
+              </span>
+            ) : null;
+          })()}
         </div>
       </div>
 
@@ -2978,7 +2990,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             if (walletSideFilter === 'consensus' && p.side !== consensusSide) return false;
             if (walletSideFilter === 'opposing' && p.side === consensusSide) return false;
             return true;
-          });
+          }).sort((a, b) => (b.sportVerified ? 1 : 0) - (a.sportVerified ? 1 : 0));
 
           return (
             <div style={{
@@ -3032,6 +3044,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 const tc = p.tier === 'ELITE'
                   ? { color: B.gold, bg: B.goldDim }
                   : { color: B.green, bg: B.greenDim };
+                const isSportSharp = p.sportVerified === true;
                 const seenAgo = p.firstSeen ? (() => {
                   const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000);
                   if (mins < 60) return `${mins}m ago`;
@@ -3052,6 +3065,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
                         <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                        {isSportSharp && (
+                          <span style={{
+                            ...T.micro, padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 700,
+                            background: 'rgba(6,182,212,0.12)', color: '#22D3EE',
+                            border: '1px solid rgba(6,182,212,0.2)',
+                            fontSize: '0.5rem',
+                          }}>
+                            SPORT SHARP
+                          </span>
+                        )}
                         <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                           ...{p.wallet.slice(-4)}
                         </span>
@@ -3063,6 +3086,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                         }}>
                           {(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime
                         </span>
+                        {isSportSharp && p.sportPnl > 0 && (
+                          <span style={{
+                            ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                            color: '#22D3EE',
+                            padding: '0.1rem 0.3rem', borderRadius: '3px',
+                            background: 'rgba(6,182,212,0.08)',
+                          }}>
+                            +{fmtVol(p.sportPnl)} {gd.sport}
+                          </span>
+                        )}
                       </div>
                       {seenAgo && (
                         <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>

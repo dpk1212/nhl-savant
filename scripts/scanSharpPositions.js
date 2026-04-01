@@ -377,18 +377,35 @@ async function run() {
     process.exit(0);
   }
 
-  // Load supplementary sports sharps (top sport-profitable bettors discovered separately)
+  // Load supplementary sports sharps and build sport PnL lookup for ALL wallets
   let sportsSharps = {};
+  const sportPnlLookup = {};
+  const TIER_RANK = { ELITE: 4, SHARP: 3, PROVEN: 2, ACTIVE: 1 };
+  const RANK_TO_TIER = { 4: 'ELITE', 3: 'SHARP', 2: 'PROVEN', 1: 'ACTIVE' };
   const sharpsFile = join(ROOT, 'public', 'sports_sharps.json');
   if (existsSync(sharpsFile)) {
     try {
       const raw = JSON.parse(readFileSync(sharpsFile, 'utf-8'));
       const { _meta, ...wallets } = raw;
       sportsSharps = wallets;
-      console.log(`Loaded ${Object.keys(sportsSharps).length} supplementary sport sharps from sports_sharps.json`);
+      for (const [addr, w] of Object.entries(wallets)) {
+        sportPnlLookup[addr] = { sportPnl: w.sportPnl || {}, sportPnlTotal: w.sportPnlTotal || 0 };
+      }
+      console.log(`Loaded ${Object.keys(sportsSharps).length} supplementary sport sharps (${Object.keys(sportPnlLookup).length} with sport PnL data)`);
     } catch (e) {
       console.log(`sports_sharps.json parse error — skipping: ${e.message}`);
     }
+  }
+
+  function effectiveTier(baseTier, walletAddr, sport) {
+    const baseRank = TIER_RANK[baseTier] || 1;
+    const lookup = sportPnlLookup[walletAddr];
+    if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false };
+    const pnl = lookup.sportPnl[sport] || 0;
+    if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false };
+    const sportRank = pnl >= 50000 ? 4 : pnl >= 10000 ? 3 : 2;
+    const finalRank = Math.max(baseRank, sportRank);
+    return { tier: RANK_TO_TIER[finalRank] || baseTier, sportPnl: pnl, sportVerified: true };
   }
 
   const cbbMap = loadCBBTeamMap();
@@ -508,10 +525,11 @@ async function run() {
       const posKey = `${wallet.addr}_${match.key}_${side}`;
       const prevFirstSeen = prevPositions[posKey] || null;
 
+      const eff = effectiveTier(wallet.tier, wallet.addr, sport);
       result[sport][match.key].positions.push({
         wallet: wallet.addr,
         name: wallet.name,
-        tier: wallet.tier,
+        tier: eff.tier,
         totalPnl: wallet.totalPnl,
         outcome,
         side,
@@ -522,6 +540,8 @@ async function run() {
         currentValue,
         pnl: Math.round(cashPnl),
         firstSeen: prevFirstSeen || new Date().toISOString(),
+        sportPnl: eff.sportPnl,
+        sportVerified: eff.sportVerified,
       });
 
       const summary = result[sport][match.key].summary;
