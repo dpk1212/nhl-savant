@@ -3332,6 +3332,7 @@ export default function SharpFlow() {
   const [lockedDay, setLockedDay] = useState('today');
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
   const [lockedSort, setLockedSort] = useState('stars');
+  const [lockedSportFilter, setLockedSportFilter] = useState('All');
   const [perfSport, setPerfSport] = useState('ALL');
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [userPicks, setUserPicks] = useState({});
@@ -4448,11 +4449,10 @@ export default function SharpFlow() {
                     const yesterdayD = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
                     const yesterday = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
                     const targetDate = lockedDay === 'today' ? today : yesterday;
-                    const lockedArr = [];
+                    const allLockedArr = [];
                     for (const [docId, doc] of Object.entries(lockedPicks)) {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
-                      if (sportFilter !== 'All' && docSport !== sportFilter) continue;
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
@@ -4461,7 +4461,7 @@ export default function SharpFlow() {
                         const units = peak.units || lock.units || 1;
                         const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(units) : 0;
                         const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
-                        lockedArr.push({
+                        allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
                           away: doc.away || '', home: doc.home || '',
@@ -4479,6 +4479,7 @@ export default function SharpFlow() {
                         });
                       }
                     }
+                    const lockedArr = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
                     const filteredLocked = lockedStatusFilter === 'all' ? lockedArr
                       : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !p.outcome)
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
@@ -4492,6 +4493,10 @@ export default function SharpFlow() {
                     const pendingCount = lockedArr.filter(p => !p.outcome).length;
                     const wonCount = lockedArr.filter(p => p.outcome === 'WIN').length;
                     const lostCount = lockedArr.filter(p => p.outcome === 'LOSS').length;
+                    const sportCounts = {};
+                    allLockedArr.forEach(p => { sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1; });
+                    const sportColorMap = { NHL: '#D4AF37', MLB: '#E31837', NBA: '#FF8C00', CBB: '#FF6B35', NFL: '#4CAF50' };
+                    const activeSports = Object.keys(sportCounts).sort();
                     return (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
@@ -4523,6 +4528,17 @@ export default function SharpFlow() {
                               color: lockedStatusFilter === opt.id ? (opt.color || B.gold) : B.textMuted,
                               transition: 'all 0.2s ease',
                             }}>{opt.label}</button>
+                          ))}
+                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                          {[{ id: 'All', label: 'All', color: B.gold }, ...activeSports.map(s => ({ id: s, label: s, color: sportColorMap[s] || B.gold }))].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedSportFilter(opt.id)} style={{
+                              padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: lockedSportFilter === opt.id ? `1px solid ${opt.color}44` : `1px solid ${B.border}`,
+                              background: lockedSportFilter === opt.id ? `${opt.color}18` : 'transparent',
+                              color: lockedSportFilter === opt.id ? opt.color : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}{opt.id !== 'All' && sportCounts[opt.id] ? ` (${sportCounts[opt.id]})` : ''}</button>
                           ))}
                           <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
                           {[
