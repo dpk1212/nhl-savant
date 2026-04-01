@@ -2451,7 +2451,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
         {/* Middle: The actual bet */}
         <div style={{
-          display: 'grid', gridTemplateColumns: bestBook ? '1fr auto 1fr' : '1fr',
+          display: 'grid', gridTemplateColumns: (bestRetail || consensusOdds) ? '1fr auto 1fr' : '1fr',
           gap: '0.625rem', alignItems: 'center',
         }}>
           <div>
@@ -2467,7 +2467,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               </div>
             )}
           </div>
-          {bestBook && (
+          {(bestRetail || consensusOdds) && (
             <>
               <div style={{ width: '1px', height: '40px', background: B.borderSubtle }} />
               <div style={{ textAlign: 'right' }}>
@@ -2478,10 +2478,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                   ...T.heading, fontWeight: 900,
                   color: hasEV ? B.green : B.text,
                 }}>
-                  {fmtOdds(bestRetail)}
+                  {fmtOdds(bestRetail || consensusOdds)}
                 </div>
                 <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
-                  {bestBook}
+                  {bestBook || 'Pinnacle'}
                 </div>
               </div>
             </>
