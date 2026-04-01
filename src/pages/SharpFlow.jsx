@@ -3527,7 +3527,7 @@ export default function SharpFlow() {
       .filter(([k]) => k !== '_meta')
       .map(([addr, w]) => ({
         wallet: addr,
-        name: w.name || addr.slice(0, 10),
+        name: '***' + addr.slice(-4),
         totalPnl: w.totalPnl || 0,
         sportPnl: w.sportPnl || {},
         sportPnlTotal: w.sportPnlTotal || 0,
@@ -3867,19 +3867,6 @@ export default function SharpFlow() {
                                 border: `1px solid ${(SPORT_COLORS[sport] || B.gold)}30`,
                               }}>
                                 {sport} +{fmtVol(pnl)}
-                              </span>
-                            ))
-                          }
-                          {Object.entries(e.sportPnl)
-                            .filter(([, v]) => v < 0)
-                            .sort(([, a], [, b]) => a - b)
-                            .map(([sport, pnl]) => (
-                              <span key={sport} style={{
-                                ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 700,
-                                background: 'rgba(239,68,68,0.1)', color: '#F87171',
-                                border: '1px solid rgba(239,68,68,0.2)',
-                              }}>
-                                {sport} -{fmtVol(Math.abs(pnl))}
                               </span>
                             ))
                           }
