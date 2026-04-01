@@ -285,16 +285,18 @@ function tallySides(snap) {
         if (sideData.status !== 'COMPLETED') continue;
         const u = sideData.peak?.units || sideData.lock?.units || 1;
         totalUnits += u;
-        if (sideData.result?.outcome === 'WIN') { wins++; totalProfit += (sideData.result?.profit || 0); }
-        else if (sideData.result?.outcome === 'LOSS') { losses++; totalProfit -= u; }
+        const profit = sideData.result?.profit ?? 0;
+        if (sideData.result?.outcome === 'WIN') { wins++; totalProfit += profit; }
+        else if (sideData.result?.outcome === 'LOSS') { losses++; totalProfit += profit; }
         else if (sideData.result?.outcome === 'PUSH') { pushes++; }
       }
     } else {
       if (data.status !== 'COMPLETED') return;
       const u = data.units || 1;
       totalUnits += u;
-      if (data.result?.outcome === 'WIN') { wins++; totalProfit += (data.result?.profit || 0); }
-      else if (data.result?.outcome === 'LOSS') { losses++; totalProfit -= u; }
+      const profit = data.result?.profit ?? 0;
+      if (data.result?.outcome === 'WIN') { wins++; totalProfit += profit; }
+      else if (data.result?.outcome === 'LOSS') { losses++; totalProfit += profit; }
       else if (data.result?.outcome === 'PUSH') { pushes++; }
     }
   });
@@ -331,7 +333,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v7';
+    const cacheKey = 'sharpFlow_pnl_v8';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
