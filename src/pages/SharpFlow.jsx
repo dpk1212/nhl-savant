@@ -3359,11 +3359,11 @@ export default function SharpFlow() {
 
   const pnlLoadedRef = useRef(false);
   useEffect(() => {
-    if ((showPerf || isFreeUser) && !pnlLoadedRef.current) {
+    if ((showPerf || !isPremium) && !pnlLoadedRef.current) {
       pnlLoadedRef.current = true;
       loadAllTimePnL().then(setAllTimePnL);
     }
-  }, [showPerf, isFreeUser]);
+  }, [showPerf, isPremium]);
 
   const onPickSynced = useCallback((docId, side, snap, meta) => {
     setLockedPicks(prev => {
