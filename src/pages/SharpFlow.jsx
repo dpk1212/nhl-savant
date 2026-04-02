@@ -1980,132 +1980,224 @@ function rateStars({
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, units, odds, book, peakAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv } = pick;
+  const { team, away, home, sport, stars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, criteriaMet, criteria, consensusStrength, pinnacleOdds } = pick;
+  const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
   const starLabel = starLabels[stars] || 'SOLID PLAY';
-  const starColor = stars >= 3 ? B.green : B.gold;
+  const starColor = stars >= 4 ? B.green : B.gold;
   const isGraded = status === 'COMPLETED' && outcome;
   const isWin = outcome === 'WIN';
   const isLoss = outcome === 'LOSS';
+  const accentColor = isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
 
   const fmtET = (ts) => {
     if (!ts) return '';
     return new Date(ts).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true });
   };
+  const fmtVol = (v) => v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`;
+  const fmtOdds = (o) => o > 0 ? `+${o}` : `${o}`;
+
+  const betOdds = odds || lockPinnOdds;
+  const lockProb = betOdds ? (betOdds < 0 ? Math.abs(betOdds) / (Math.abs(betOdds) + 100) : 100 / (betOdds + 100)) : null;
+  const closeProb = closingOdds ? (closingOdds < 0 ? Math.abs(closingOdds) / (Math.abs(closingOdds) + 100) : 100 / (closingOdds + 100)) : null;
+  const liveCLV = (lockProb && closeProb) ? +(closeProb - lockProb).toFixed(4) : null;
+  const clvPct = liveCLV != null ? (liveCLV * 100).toFixed(1) : null;
+  const clvPositive = liveCLV != null && liveCLV > 0;
+
+  const criteriaList = criteria ? [
+    { key: 'sharps3Plus', label: '3+ Sharp Bettors', met: criteria.sharps3Plus },
+    { key: 'plusEV', label: '+EV Edge', met: criteria.plusEV },
+    { key: 'pinnacleConfirms', label: 'Pinnacle Confirms', met: criteria.pinnacleConfirms },
+    { key: 'invested7kPlus', label: '$7K+ on Side', met: criteria.invested7kPlus },
+    { key: 'lineMovingWith', label: 'Line Moving With Play', met: criteria.lineMovingWith },
+    { key: 'predMarketAligns', label: 'Pred. Market Aligns', met: criteria.predMarketAligns },
+  ] : [];
 
   return (
     <div style={{
       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.3)' : isLoss ? 'rgba(239,68,68,0.3)' : B.border) : 'rgba(16,185,129,0.2)'}`,
-      borderRadius: '10px', padding: isMobile ? '0.75rem' : '0.875rem',
-      display: 'flex', flexDirection: 'column', gap: '0.5rem',
+      border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.border) : 'rgba(16,185,129,0.2)'}`,
+      borderRadius: '12px', overflow: 'hidden',
+      borderTop: `2px solid ${accentColor}44`,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{
-            ...T.micro, fontWeight: 800, padding: '0.15rem 0.4rem', borderRadius: '4px',
-            color: ss.color, background: ss.bg,
-          }}>{sport}</span>
-          <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>
-            {away} <span style={{ color: B.textMuted, fontWeight: 500 }}>vs</span> {home}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <span style={{
-            ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
-            color: starColor, background: stars >= 3.5 ? B.greenDim : B.goldDim,
-            border: `1px solid ${stars >= 3.5 ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
-            display: 'flex', alignItems: 'center', gap: '0.15rem',
-          }}>
-            {Array.from({ length: 5 }, (_, i) => {
-              const filled = i + 1 <= Math.floor(stars);
-              const half = !filled && i + 0.5 === stars;
-              return filled ? (
-                <span key={i} style={{ fontSize: '0.45rem', color: starColor, lineHeight: 1 }}>★</span>
-              ) : half ? (
-                <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.45rem', lineHeight: 1, width: '0.45rem' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
-                  <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span>
-                </span>
-              ) : (
-                <span key={i} style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
-              );
-            })}
-            <span style={{ marginLeft: '0.1rem' }}>{starLabel}</span>
-          </span>
-        </div>
-      </div>
-
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0.5rem 0.625rem', borderRadius: '8px',
-        background: isGraded
-          ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)')
-          : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : B.borderSubtle}`,
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Lock size={10} color={B.green} />
-            <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>{team}</span>
-          </div>
-          <span style={{ ...T.micro, color: B.textSec }}>
-            {units}u @ {odds > 0 ? '+' : ''}{odds} <span style={{ color: B.textMuted }}>·</span> {book}
-          </span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
-          {isGraded ? (
-            <>
-              <span style={{
-                ...T.micro, fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: '4px',
-                color: isWin ? B.green : isLoss ? B.red : B.textSec,
-                background: isWin ? B.greenDim : isLoss ? B.redDim : 'rgba(255,255,255,0.04)',
-              }}>
-                {outcome === 'PUSH' ? 'PUSH' : isWin ? 'WIN' : 'LOSS'}
-              </span>
-              <span style={{
-                ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                color: isWin ? B.green : isLoss ? B.red : B.textSec,
-              }}>
-                {isWin ? '+' : isLoss ? '-' : ''}{Math.abs(profit || 0).toFixed(2)}u
-              </span>
-            </>
-          ) : (
-            <>
-              <span style={{
-                ...T.micro, fontWeight: 700, color: B.gold,
-                padding: '0.1rem 0.4rem', borderRadius: '4px', background: B.goldDim,
-              }}>PENDING</span>
-              <span style={{ ...T.micro, color: B.textMuted }}>{gameTime ? fmtET(gameTime) + ' ET' : ''}</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>
-          Peak: {peakAt ? fmtET(peakAt) : '—'}
-        </span>
-        {(() => {
-          const betOdds = odds || lockPinnOdds;
-          const lockProb = betOdds ? (betOdds < 0 ? Math.abs(betOdds) / (Math.abs(betOdds) + 100) : 100 / (betOdds + 100)) : null;
-          const closeProb = closingOdds ? (closingOdds < 0 ? Math.abs(closingOdds) / (Math.abs(closingOdds) + 100) : 100 / (closingOdds + 100)) : null;
-          const liveCLV = (lockProb && closeProb) ? +(closeProb - lockProb).toFixed(4) : null;
-          if (liveCLV == null) return null;
-          const pct = (liveCLV * 100).toFixed(1);
-          const beating = liveCLV > 0;
-          return (
-            <span style={{
-              ...T.micro, fontWeight: 700, fontSize: '0.55rem', fontFeatureSettings: "'tnum'",
-              color: beating ? B.green : liveCLV < 0 ? B.red : B.textMuted,
-              display: 'flex', alignItems: 'center', gap: '0.2rem',
-            }}>
-              CLV {beating ? '+' : ''}{pct}%
+      {/* Collapsed summary - always visible */}
+      <div
+        onClick={() => setExpanded(e => !e)}
+        style={{ padding: isMobile ? '0.75rem' : '0.875rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+      >
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ ...T.micro, fontWeight: 800, padding: '0.15rem 0.4rem', borderRadius: '4px', color: ss.color, background: ss.bg }}>{sport}</span>
+            <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>
+              {away} <span style={{ color: B.textMuted, fontWeight: 500 }}>vs</span> {home}
             </span>
-          );
-        })()}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{
+              ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              color: starColor, background: stars >= 4 ? B.greenDim : B.goldDim,
+              border: `1px solid ${stars >= 4 ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
+              display: 'flex', alignItems: 'center', gap: '0.15rem',
+            }}>
+              {Array.from({ length: 5 }, (_, i) => {
+                const filled = i + 1 <= Math.floor(stars);
+                const half = !filled && i + 0.5 === stars;
+                return filled ? (
+                  <span key={i} style={{ fontSize: '0.45rem', color: starColor, lineHeight: 1 }}>★</span>
+                ) : half ? (
+                  <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.45rem', lineHeight: 1, width: '0.45rem' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
+                    <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span>
+                  </span>
+                ) : (
+                  <span key={i} style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
+                );
+              })}
+              <span style={{ marginLeft: '0.1rem' }}>{starLabel}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Main bet row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.5rem 0.625rem', borderRadius: '8px',
+          background: isGraded ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)') : 'rgba(255,255,255,0.02)',
+          border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : B.borderSubtle}`,
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Lock size={10} color={accentColor} />
+              <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>{team}</span>
+            </div>
+            <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+              {units}u @ {fmtOdds(odds)} <span style={{ color: B.textMuted }}>·</span> {book}
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+            {isGraded ? (
+              <>
+                <span style={{ ...T.micro, fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: '4px', color: isWin ? B.green : isLoss ? B.red : B.textSec, background: isWin ? B.greenDim : isLoss ? B.redDim : 'rgba(255,255,255,0.04)' }}>
+                  {outcome === 'PUSH' ? 'PUSH' : isWin ? 'WIN' : 'LOSS'}
+                </span>
+                <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: isWin ? B.green : isLoss ? B.red : B.textSec }}>
+                  {isWin ? '+' : isLoss ? '-' : ''}{Math.abs(profit || 0).toFixed(2)}u
+                </span>
+              </>
+            ) : (
+              <>
+                <span style={{ ...T.micro, fontWeight: 700, color: B.gold, padding: '0.1rem 0.4rem', borderRadius: '4px', background: B.goldDim }}>PENDING</span>
+                <span style={{ ...T.micro, color: B.textMuted }}>{gameTime ? fmtET(gameTime) + ' ET' : ''}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Footer row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {sharpCount && <span style={{ ...T.micro, color: B.textSec, fontSize: '0.55rem' }}>{sharpCount} sharp{sharpCount !== 1 ? 's' : ''}</span>}
+            {totalInvested && <span style={{ ...T.micro, color: B.textSec, fontSize: '0.55rem' }}>{fmtVol(totalInvested)}</span>}
+            {evEdge > 0 && <span style={{ ...T.micro, color: B.green, fontSize: '0.55rem', fontWeight: 700 }}>+{evEdge}% EV</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {clvPct != null && (
+              <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.55rem', fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
+                CLV {clvPositive ? '+' : ''}{clvPct}%
+              </span>
+            )}
+            <ChevronDown size={12} color={B.textMuted} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+          </div>
+        </div>
       </div>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div style={{
+          padding: '0 0.875rem 0.875rem',
+          borderTop: `1px solid ${B.border}`,
+          display: 'flex', flexDirection: 'column', gap: '0.75rem',
+          paddingTop: '0.75rem',
+        }}>
+          {/* Lock-in criteria */}
+          {criteriaList.length > 0 && (
+            <div>
+              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em', marginBottom: '0.4rem' }}>
+                LOCK-IN CRITERIA — {criteriaMet || criteriaList.filter(c => c.met).length}/{criteriaList.length}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.25rem 1rem' }}>
+                {criteriaList.map(c => (
+                  <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <CheckCircle size={11} color={c.met ? B.green : 'rgba(255,255,255,0.15)'} />
+                    <span style={{ ...T.micro, color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 600 : 400, fontSize: '0.6rem' }}>{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sharp snapshot at lock */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
+          }}>
+            {[
+              { label: 'SHARPS', value: sharpCount || '—', color: B.text },
+              { label: 'INVESTED', value: totalInvested ? fmtVol(totalInvested) : '—', color: B.gold },
+              { label: 'CONSENSUS', value: consensusStrength?.grade || '—', color: (consensusStrength?.grade === 'DOMINANT' || consensusStrength?.grade === 'STRONG') ? B.green : B.gold },
+            ].map(s => (
+              <div key={s.label} style={{
+                textAlign: 'center', padding: '0.5rem 0.375rem', borderRadius: '8px',
+                background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+              }}>
+                <div style={{ ...T.label, fontWeight: 800, color: s.color, fontFeatureSettings: "'tnum'" }}>{s.value}</div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.06em', marginTop: '0.1rem' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Odds comparison */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem',
+          }}>
+            {[
+              { label: 'LOCKED ODDS', value: odds ? fmtOdds(odds) : '—', sub: book || '', color: B.text },
+              { label: 'PINNACLE FAIR', value: pinnacleOdds ? fmtOdds(pinnacleOdds) : '—', sub: 'At lock', color: B.textSec },
+              { label: 'CURRENT LINE', value: closingOdds ? fmtOdds(closingOdds) : '—', sub: 'Pinnacle', color: clvPositive ? B.green : liveCLV != null && liveCLV < 0 ? B.red : B.textSec },
+            ].map(s => (
+              <div key={s.label} style={{
+                textAlign: 'center', padding: '0.5rem 0.375rem', borderRadius: '8px',
+                background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+              }}>
+                <div style={{ ...T.label, fontWeight: 800, color: s.color, fontFeatureSettings: "'tnum'" }}>{s.value}</div>
+                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.06em', marginTop: '0.1rem' }}>{s.label}</div>
+                {s.sub && <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.475rem', marginTop: '0.1rem' }}>{s.sub}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Money split + timeline */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+            {consensusStrength?.moneyPct != null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Sharp Money:</span>
+                <span style={{ ...T.micro, color: B.green, fontWeight: 700, fontSize: '0.55rem' }}>{consensusStrength.moneyPct}%</span>
+                {consensusStrength?.walletPct != null && (
+                  <>
+                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Wallets:</span>
+                    <span style={{ ...T.micro, color: B.text, fontWeight: 700, fontSize: '0.55rem' }}>{consensusStrength.walletPct}%</span>
+                  </>
+                )}
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {lockedAt && <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Locked {fmtET(lockedAt)}</span>}
+              {peakAt && peakAt !== lockedAt && <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Peak {fmtET(peakAt)}</span>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -4467,6 +4559,7 @@ export default function SharpFlow() {
                           odds: lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0),
                           book: lockOddsValid ? (lock.book || peak.book || '') : (peak.book || lock.book || ''),
                           peakAt: peak.updatedAt || lock.lockedAt,
+                          lockedAt: lock.lockedAt || null,
                           gameTime: doc.commenceTime,
                           status: sd.status || doc.status || 'PENDING',
                           outcome: sd.result?.outcome || null,
@@ -4474,6 +4567,13 @@ export default function SharpFlow() {
                           lockPinnOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
                           closingOdds: sd.closingOdds || null,
                           clv: sd.result?.clv ?? null,
+                          sharpCount: peak.sharpCount || lock.sharpCount || null,
+                          totalInvested: peak.totalInvested || lock.totalInvested || null,
+                          evEdge: peak.evEdge || lock.evEdge || null,
+                          criteriaMet: peak.criteriaMet || lock.criteriaMet || 0,
+                          criteria: peak.criteria || lock.criteria || null,
+                          consensusStrength: peak.consensusStrength || lock.consensusStrength || null,
+                          pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
                         });
                       }
                     }
