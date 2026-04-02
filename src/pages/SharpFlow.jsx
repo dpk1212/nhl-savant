@@ -3582,14 +3582,7 @@ export default function SharpFlow() {
     );
   }
 
-  if (!isPremium) {
-    return (
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '1rem' : '1.5rem 1rem' }}>
-        <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
-        <SharpFlowPaywall isMobile={isMobile} />
-      </div>
-    );
-  }
+  const isFreeUser = !isPremium;
 
   if (filteredGames.length === 0) {
     return (
@@ -3615,7 +3608,10 @@ export default function SharpFlow() {
       <PageHeader sportFilter={sportFilter} setSportFilter={setSportFilter} viewMode={viewMode} setViewMode={setViewMode} isMobile={isMobile} />
 
       {/* ─── Sharp Vault View ─── */}
-      {viewMode === 'sharpVault' && vaultData && (() => {
+      {viewMode === 'sharpVault' && isFreeUser && (
+        <SharpFlowPaywall isMobile={isMobile} />
+      )}
+      {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
         const { entries, todayPositions, convergences, activeCount, combinedPnl } = vaultData;
         const SPORT_COLORS = { NBA: '#FF8C00', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50' };
         const sportIcons = { NBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}' };
@@ -4444,7 +4440,9 @@ export default function SharpFlow() {
                     })}
                   </div>
 
-                  {sortBy === 'locked' ? (() => {
+                  {sortBy === 'locked' && isFreeUser ? (
+                    <SharpFlowPaywall isMobile={isMobile} />
+                  ) : sortBy === 'locked' ? (() => {
                     const today = todayET();
                     const yesterdayD = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
                     const yesterday = yesterdayD.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -4632,15 +4630,18 @@ export default function SharpFlow() {
                           )}
                         </div>
                       ) : (
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                          gap: '0.75rem',
-                        }}>
-                          {allPosGames.map(gd => (
-                            <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} />
-                          ))}
-                        </div>
+                        <>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                            gap: '0.75rem',
+                          }}>
+                            {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => (
+                              <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} />
+                            ))}
+                          </div>
+                          {isFreeUser && allPosGames.length > 1 && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length - 1} />}
+                        </>
                       )}
                     </>
                   )}
@@ -4878,7 +4879,7 @@ function useCountdown(targetDate) {
   return { totalH, m, s, expired: remaining <= 0 };
 }
 
-function SharpFlowPaywall({ isMobile }) {
+function SharpFlowPaywall({ isMobile, lockedCount }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
@@ -4909,14 +4910,16 @@ function SharpFlowPaywall({ isMobile }) {
             fontSize: isMobile ? '1.5rem' : '1.75rem', fontWeight: 900,
             color: B.text, margin: '0 0 0.5rem 0', letterSpacing: '-0.02em',
           }}>
-            Sharp Flow is <span style={{ color: B.gold }}>Pro Only</span>
+            {lockedCount ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked</> : <>Sharp Flow is <span style={{ color: B.gold }}>Pro Only</span></>}
           </h2>
           <p style={{
             ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '520px', lineHeight: 1.65,
           }}>
-            We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> across
+            {lockedCount
+              ? <>Upgrade to unlock all sharp intel cards, auto-locked plays, the Sharp Vault, and full performance tracking.</>
+              : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> across
             prediction markets, surface their real positions on today's games, and combine it with Pinnacle
-            fair odds, EV edges, and full market flow — so you bet with an edge, not a hunch.
+            fair odds, EV edges, and full market flow — so you bet with an edge, not a hunch.</>}
           </p>
         </div>
 
