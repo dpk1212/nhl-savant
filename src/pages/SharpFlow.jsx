@@ -3357,14 +3357,13 @@ export default function SharpFlow() {
     }
   }, [user?.uid, isPremium]);
 
-  // Lazy-load P&L data only when performance section is opened
   const pnlLoadedRef = useRef(false);
   useEffect(() => {
-    if (showPerf && !pnlLoadedRef.current) {
+    if ((showPerf || isFreeUser) && !pnlLoadedRef.current) {
       pnlLoadedRef.current = true;
       loadAllTimePnL().then(setAllTimePnL);
     }
-  }, [showPerf]);
+  }, [showPerf, isFreeUser]);
 
   const onPickSynced = useCallback((docId, side, snap, meta) => {
     setLockedPicks(prev => {
@@ -3609,7 +3608,7 @@ export default function SharpFlow() {
 
       {/* ─── Sharp Vault View ─── */}
       {viewMode === 'sharpVault' && isFreeUser && (
-        <SharpFlowPaywall isMobile={isMobile} />
+        <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
         const { entries, todayPositions, convergences, activeCount, combinedPnl } = vaultData;
@@ -4441,7 +4440,7 @@ export default function SharpFlow() {
                   </div>
 
                   {sortBy === 'locked' && isFreeUser ? (
-                    <SharpFlowPaywall isMobile={isMobile} />
+                    <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
                   ) : sortBy === 'locked' ? (() => {
                     const today = todayET();
                     const yesterdayD = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
@@ -4640,7 +4639,7 @@ export default function SharpFlow() {
                               <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} />
                             ))}
                           </div>
-                          {isFreeUser && allPosGames.length > 1 && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length - 1} />}
+                          {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
                         </>
                       )}
                     </>
@@ -4879,13 +4878,20 @@ function useCountdown(targetDate) {
   return { totalH, m, s, expired: remaining <= 0 };
 }
 
-function SharpFlowPaywall({ isMobile, lockedCount }) {
+function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
+
+  const pnl = pnlData?.pregame || null;
+  const picks = pnlData?.picks || [];
+  const graded = pnl ? (pnl.wins + pnl.losses + (pnl.pushes || 0)) : 0;
+  const winPct = graded > 0 ? ((pnl.wins / graded) * 100).toFixed(1) : null;
+  const roi = pnl && pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : null;
+  const profitStr = pnl ? (pnl.totalProfit >= 0 ? `+${pnl.totalProfit.toFixed(1)}u` : `${pnl.totalProfit.toFixed(1)}u`) : null;
 
   const features = [
     'Verified sharp bettor tracking in real time',
@@ -4904,6 +4910,32 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
       boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
     }}>
       <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
+        {graded > 0 && (
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem',
+            marginBottom: '1.5rem', maxWidth: '540px', margin: '0 auto 1.5rem',
+          }}>
+            {[
+              { label: 'RECORD', value: pnl.record, color: B.text },
+              { label: 'WIN RATE', value: `${winPct}%`, color: parseFloat(winPct) >= 55 ? B.green : B.text },
+              { label: 'PROFIT', value: profitStr, color: pnl.totalProfit >= 0 ? B.green : B.red },
+              { label: 'ROI', value: `${roi > 0 ? '+' : ''}${roi}%`, color: parseFloat(roi) >= 0 ? B.green : B.red },
+            ].map(s => (
+              <div key={s.label} style={{
+                textAlign: 'center', padding: '0.75rem 0.5rem', borderRadius: '10px',
+                background: 'rgba(0,0,0,0.3)', border: `1px solid ${B.border}`,
+              }}>
+                <div style={{ fontSize: isMobile ? '1.25rem' : '1.4rem', fontWeight: 900, color: s.color, fontFeatureSettings: "'tnum'" }}>
+                  {s.value}
+                </div>
+                <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em', marginTop: '0.2rem' }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <Lock size={36} color={B.gold} style={{ marginBottom: '0.75rem', opacity: 0.85 }} />
           <h2 style={{
@@ -4973,6 +5005,15 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
             </span>
           </button>
 
+          <div style={{
+            textAlign: 'center', marginBottom: '0.75rem',
+            padding: '0.5rem 0.75rem', borderRadius: '8px',
+            background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+          }}>
+            <span style={{ ...T.label, color: '#818CF8', fontWeight: 800 }}>5-DAY FREE TRIAL</span>
+            <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— full access, cancel anytime</span>
+          </div>
+
           <a href="#/pricing?promo=SHARPMONEY" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
             padding: '0.75rem 1.5rem', borderRadius: '8px',
@@ -4981,13 +5022,14 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
             textDecoration: 'none', letterSpacing: '0.01em',
             boxShadow: '0 2px 12px rgba(16,185,129,0.3)',
           }}>
-            Lock In 50% Off Forever →
+            Start Free Trial →
           </a>
 
           <div style={{
             display: 'flex', justifyContent: 'center', gap: '1rem',
             marginTop: '0.75rem',
           }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>✓ 5 days free</span>
             <span style={{ ...T.micro, color: B.textMuted }}>✓ Cancel anytime</span>
             <span style={{ ...T.micro, color: B.textMuted }}>✓ All picks verified</span>
           </div>
