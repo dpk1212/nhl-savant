@@ -4886,12 +4886,16 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const pnl = pnlData?.pregame || null;
-  const picks = pnlData?.picks || [];
-  const graded = pnl ? (pnl.wins + pnl.losses + (pnl.pushes || 0)) : 0;
-  const winPct = graded > 0 ? ((pnl.wins / graded) * 100).toFixed(1) : null;
-  const roi = pnl && pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : null;
-  const profitStr = pnl ? (pnl.totalProfit >= 0 ? `+${pnl.totalProfit.toFixed(1)}u` : `${pnl.totalProfit.toFixed(1)}u`) : null;
+  const picks = (pnlData?.picks || []).filter(p => p.outcome);
+  const wins = picks.filter(p => p.outcome === 'WIN').length;
+  const losses = picks.filter(p => p.outcome === 'LOSS').length;
+  const pushes = picks.filter(p => p.outcome === 'PUSH').length;
+  const graded = wins + losses + pushes;
+  const totalProfit = picks.reduce((s, p) => s + (p.profit || 0), 0);
+  const totalUnits = picks.reduce((s, p) => s + (p.units || 1), 0);
+  const winPct = graded > 0 ? ((wins / graded) * 100).toFixed(1) : null;
+  const roi = totalUnits > 0 ? ((totalProfit / totalUnits) * 100).toFixed(1) : null;
+  const profitStr = graded > 0 ? (totalProfit >= 0 ? `+${totalProfit.toFixed(1)}u` : `${totalProfit.toFixed(1)}u`) : null;
 
   const features = [
     'Verified sharp bettor tracking in real time',
@@ -4912,13 +4916,12 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
       <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
         {graded > 0 && (
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem',
-            marginBottom: '1.5rem', maxWidth: '540px', margin: '0 auto 1.5rem',
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem',
+            marginBottom: '1.5rem', maxWidth: '440px', margin: '0 auto 1.5rem',
           }}>
             {[
-              { label: 'RECORD', value: pnl.record, color: B.text },
               { label: 'WIN RATE', value: `${winPct}%`, color: parseFloat(winPct) >= 55 ? B.green : B.text },
-              { label: 'PROFIT', value: profitStr, color: pnl.totalProfit >= 0 ? B.green : B.red },
+              { label: 'PROFIT', value: profitStr, color: totalProfit >= 0 ? B.green : B.red },
               { label: 'ROI', value: `${roi > 0 ? '+' : ''}${roi}%`, color: parseFloat(roi) >= 0 ? B.green : B.red },
             ].map(s => (
               <div key={s.label} style={{
