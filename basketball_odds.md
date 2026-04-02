@@ -92,9 +92,9 @@ WCC
 
 TodayYesterday
 
-![logo-NCAAB - College Basketball Crown](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg)
+![logo-NCAAB - March Madness](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg)
 
-NCAAB - College Basketball CrownWed 04/01
+NCAAB - March MadnessThu 04/02
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -110,24 +110,31 @@ NCAAB - College Basketball CrownWed 04/01
 
 [![JustBet](https://www.oddstrader.com/wp-content/uploads/sites/2/2025/12/Justbet-hp.webp)](https://www.oddstrader.com/affiliate/?redirectTo=https://rt.oddstrader.com/694b09564c4415ff66f2d8e3)
 
-![logo-NCAAB - College Basketball Crown](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg?d=60x60)
+![logo-NCAAB - March Madness](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg?d=60x60)
 
-NCAAB - College Basketball CrownWed 04/01
+NCAAB - March MadnessSat 04/04
 
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 04/018:00 PM<br>![](https://logos.oddstrader.com/logos-original/7a943fb0-c959-4c99-b5f3-2b9d66fdc680-original.png?d=100x100)<br>Oklahoma<br>19-15<br>33%<br>-430Bet105 | -420 | -450 | -450 | -440 | -449 | -435 | -435 |
-| ![](https://logos.oddstrader.com/logos-original/918b4c3a-366f-4c38-94a1-d8604d8688f6-original.png?d=100x100)<br>Colorado<br>17-15<br>67%<br>+350BetOnline | +330 | +350 | +340 | +330 | +335 | +341 | +341 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 04/046:09 PM<br>![](https://logos.oddstrader.com/logos-original/a25de32c-03de-48bb-8a94-fb75fabc7af1-original.PNG?d=100x100)<br>#13Illinois<br>28-8<br>54%<br>-133Bet105 | -130 | -135 | -135 | -135 | -134 | -136 | -136 |
+| ![](https://logos.oddstrader.com/logos-original/c6b4c9c4-058d-495a-bbaa-4b10d2857bf5-original.png?d=100x100)<br>#7Connecticut<br>33-5<br>46%<br>+117Bet105 | +110 | +115 | +115 | +115 | +110 | +116 | +116 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 04/0110:30 PM<br>![](https://logos.oddstrader.com/logos-original/804f6e54-531b-4f5e-ae97-aafe75f52b12-original.PNG?d=100x100)<br>Baylor<br>16-16<br>0%<br>-169Bet105 | -175 | -180 | -180 | -175 | -183 | -179 | -179 |
-| ![](https://logos.oddstrader.com/logos-original/4fc43729-2e17-486a-b2e3-fdc54687d965-original.png?d=100x100)<br>Minnesota<br>15-17<br>100%<br>+157BetOnline | +153 | +157 | +155 | +150 | +149 | +154 | +154 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>SAT 04/048:49 PM<br>![](https://logos.oddstrader.com/logos-original/e8de38e1-9624-4cea-9af7-68f8ee0a7efe-original.png?d=100x100)<br>#3Michigan<br>35-3<br>44%<br>-117Bet105 | -120 | -122 | -125 | -120 | -123 | -119 | -119 |
+| ![](https://logos.oddstrader.com/logos-original/516fe8be-ae63-454f-8906-9b483b11354e-original.png?d=100x100)<br>#2Arizona<br>36-2<br>56%<br>+105BetAnything | +100 | +102 | +105 | +100 | +101 | -101 | -101 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/028:00 PM<br>![](https://logos.oddstrader.com/logos-original/712b80e7-19c4-41ad-8393-0189d67d6991-original.PNG?d=100x100)<br>Stanford<br>20-12<br>-<br>-114Bet105 | -120 | -120 | -120 | -115 | -121 | -119 | -119 |
-| ![](https://logos.oddstrader.com/logos-original/7e778855-538f-44d5-950b-0d2f91757502-original.PNG?d=100x100)<br>West Virginia<br>18-14<br>-<br>+102MyBookie | +100 | +100 | +100 | -105 | -101 | -101 | -101 |
+![logo-NCAAB - College Basketball Crown](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg?d=60x60)
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/0210:30 PM<br>![](https://logos.oddstrader.com/logos-original/f85f14e1-42f0-41b1-8e02-77c0af12c0ae-original.PNG?d=100x100)<br>Rutgers<br>14-19<br>-<br>+157BetOnline | +157 | +157 | +155 | +150 | +146 | +155 | +155 |
-| ![](https://logos.oddstrader.com/logos-original/69a714ba-c844-4748-a143-8567a8708c03-original.PNG?d=100x100)<br>Creighton<br>15-17<br>-<br>-175Bovada | -180 | -180 | -180 | -175 | -180 | -179 | -179 |
+NCAAB - College Basketball CrownThu 04/02
+
+|     |     |     |     |     |     |     |     |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/028:00 PM<br>![](https://logos.oddstrader.com/logos-original/712b80e7-19c4-41ad-8393-0189d67d6991-original.PNG?d=100x100)<br>Stanford<br>20-12<br>100%<br>-109Bet105 | -120 | -118 | -120 | -110 | -118 | -119 | -119 |
+| ![](https://logos.oddstrader.com/logos-original/7e778855-538f-44d5-950b-0d2f91757502-original.PNG?d=100x100)<br>West Virginia<br>18-14<br>0%<br>+100BetAnything | +100 | -102 | +100 | -110 | -104 | -101 | -101 |
+
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/0210:30 PM<br>![](https://logos.oddstrader.com/logos-original/f85f14e1-42f0-41b1-8e02-77c0af12c0ae-original.PNG?d=100x100)<br>Rutgers<br>14-19<br>-<br>+160Bookmaker | +157 | +157 | +155 | +150 | +146 | +160 | +160 |
+| ![](https://logos.oddstrader.com/logos-original/69a714ba-c844-4748-a143-8567a8708c03-original.PNG?d=100x100)<br>Creighton<br>15-17<br>-<br>-175Bovada | -180 | -180 | -180 | -175 | -180 | -187 | -187 |
 
 ![logo-NCAAB - NIT](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NCAAB.svg?d=60x60)
 
@@ -136,11 +143,11 @@ NCAAB - NITThu 04/02
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/027:00 PM<br>![](https://logos.oddstrader.com/logos-original/355cfcc0-b0d3-4cad-b464-472e1aabd6ca-original.png?d=100x100)<br>New Mexico<br>26-10<br>-<br>-175Bovada | -180 | -180 | -180 | -175 | -183 | -180 | -180 |
-| ![](https://logos.oddstrader.com/logos-original/1f9ed764-8ca2-4a81-b84a-46e8c405c299-original.png?d=100x100)<br>Tulsa<br>29-7<br>-<br>+157BetOnline | +157 | +157 | +155 | +150 | +149 | +155 | +155 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/027:00 PM<br>![](https://logos.oddstrader.com/logos-original/355cfcc0-b0d3-4cad-b464-472e1aabd6ca-original.png?d=100x100)<br>New Mexico<br>26-10<br>100%<br>-170Bovada | -180 | -180 | -180 | -170 | -183 | -180 | -180 |
+| ![](https://logos.oddstrader.com/logos-original/1f9ed764-8ca2-4a81-b84a-46e8c405c299-original.png?d=100x100)<br>Tulsa<br>29-7<br>0%<br>+160Everygame | +157 | +157 | +155 | +145 | +149 | +155 | +155 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/029:30 PM<br>![](https://logos.oddstrader.com/logos-original/c28390e5-7216-4ee9-953f-206145b7b6a7-original.png?d=100x100)<br>Illinois State<br>23-12<br>-<br>+250Bovada | +245 | +245 | +240 | +250 | +238 | +241 | +241 |
-| ![](https://logos.oddstrader.com/logos-original/383574ef-8f82-4a79-8427-2a3b1315d93c-original.PNG?d=100x100)<br>Auburn<br>20-16<br>-<br>-295Bookmaker | -300 | -300 | -300 | -300 | -302 | -295 | -295 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/029:30 PM<br>![](https://logos.oddstrader.com/logos-original/c28390e5-7216-4ee9-953f-206145b7b6a7-original.png?d=100x100)<br>Illinois State<br>23-12<br>-<br>+250Everygame | +245 | +245 | +240 | +240 | +240 | +241 | +241 |
+| ![](https://logos.oddstrader.com/logos-original/383574ef-8f82-4a79-8427-2a3b1315d93c-original.PNG?d=100x100)<br>Auburn<br>20-16<br>-<br>-290Bovada | -300 | -300 | -300 | -290 | -306 | -295 | -295 |
 
 OddsTrader has live betting odds for every college basketball game from the start of the season through March Madness. Betting lines update every 30 seconds for upcoming games and every 10 seconds for live games, ensuring that you’re always looking at the latest odds.
 
@@ -179,7 +186,7 @@ Our odds aren’t limited to the standard NCAA Tournament, either. The NIT, CBI,
 
 [![icon](https://otcdn.virginia.us-east-1.oddstrader.com/ot-app-icon.svg)Download the app](https://get-app.oddstrader.com/ot-app-link)
 
-Which game has the strongest spread favorite today?Generate
+Which matchup looks most likely to be a blowout?Generate
 
 ![BetStation](https://otcdn.virginia.us-east-1.oddstrader.com/otTurbo/assistant-logo.svg)
 
