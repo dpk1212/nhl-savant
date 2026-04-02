@@ -442,11 +442,11 @@ exports.updateBetResults = onSchedule({
               updates[`sides.${side}.result.gradedAt`] =
                 admin.firestore.FieldValue.serverTimestamp();
 
-              // CLV: use peak pinnacle odds (most recent valid snapshot), fall back to lock
-              const lockPinnOdds = sideData.peak?.pinnacleOdds || sideData.lock?.pinnacleOdds;
+              // CLV: compare actual bet odds (best retail) to closing Pinnacle
+              const betOddsForCLV = sideData.peak?.odds || sideData.lock?.odds || sideData.peak?.pinnacleOdds || sideData.lock?.pinnacleOdds;
               const closeOdds = sideData.closingOdds;
-              if (lockPinnOdds && closeOdds) {
-                const lockProb = impliedProbability(lockPinnOdds);
+              if (betOddsForCLV && closeOdds) {
+                const lockProb = impliedProbability(betOddsForCLV);
                 const closeProb = impliedProbability(closeOdds);
                 if (lockProb != null && closeProb != null) {
                   const clv = +(closeProb - lockProb).toFixed(4);

@@ -2088,9 +2088,10 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           Peak: {peakAt ? fmtET(peakAt) : '—'}
         </span>
         {(() => {
-          const lockProb = lockPinnOdds ? (lockPinnOdds < 0 ? Math.abs(lockPinnOdds) / (Math.abs(lockPinnOdds) + 100) : 100 / (lockPinnOdds + 100)) : null;
+          const betOdds = odds || lockPinnOdds;
+          const lockProb = betOdds ? (betOdds < 0 ? Math.abs(betOdds) / (Math.abs(betOdds) + 100) : 100 / (betOdds + 100)) : null;
           const closeProb = closingOdds ? (closingOdds < 0 ? Math.abs(closingOdds) / (Math.abs(closingOdds) + 100) : 100 / (closingOdds + 100)) : null;
-          const liveCLV = clv ?? ((lockProb && closeProb) ? +(closeProb - lockProb).toFixed(4) : null);
+          const liveCLV = (lockProb && closeProb) ? +(closeProb - lockProb).toFixed(4) : null;
           if (liveCLV == null) return null;
           const pct = (liveCLV * 100).toFixed(1);
           const beating = liveCLV > 0;
