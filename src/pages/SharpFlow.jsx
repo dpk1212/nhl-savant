@@ -116,8 +116,14 @@ function computeSharpFeatures(positions, consensusSide) {
     }
     return [...m.values()];
   };
-  const conWallets = dedup(conPos);
-  const oppWallets = dedup(oppPos);
+  const conDeduped = dedup(conPos);
+  const oppDeduped = dedup(oppPos);
+
+  // Exclude wallets betting both sides — hedgers aren't directional signals
+  const conWalletIds = new Set(conDeduped.map(p => p.wallet));
+  const oppWalletIds = new Set(oppDeduped.map(p => p.wallet));
+  const conWallets = conDeduped.filter(p => !oppWalletIds.has(p.wallet));
+  const oppWallets = oppDeduped.filter(p => !conWalletIds.has(p.wallet));
   const totalWallets = conWallets.length + oppWallets.length;
 
   const qualitySum = conWallets.reduce((s, p) => s + (TIER_WEIGHT[p.tier] || 1), 0);
@@ -1927,14 +1933,15 @@ function rateStars({
   if (concentration > 0.9) pts -= 1;
   else if (concentration > 0.8) pts -= 0.5;
 
-  // Counter-sharp penalty — only when opposing quality exceeds consensus quality (net score)
-  if (counterSharpScore >= 6) pts -= 1.5;
-  else if (counterSharpScore >= 3) pts -= 1;
+  // Counter-sharp penalty — contested games are 30.8% WR, heavily penalize opposition
+  if (counterSharpScore >= 6) pts -= 3;
+  else if (counterSharpScore >= 3) pts -= 2;
+  else if (counterSharpScore >= 1) pts -= 1;
 
-  // EV edge — 0-1% trap penalized (max 1 pt / -0.5 trap)
-  if (evEdge > 3) pts += 1;
-  else if (evEdge > 1) pts += 0.5;
-  else if (evEdge > 0) pts -= 0.5;
+  // EV edge — strongest predictive signal (max 2.5 pts / -1 trap)
+  if (evEdge > 3) pts += 2.5;
+  else if (evEdge > 1) pts += 2;
+  else if (evEdge > 0) pts -= 1;
 
   // Prediction market — conditional on breadth tier
   if (polyMovingWith) {
@@ -1957,7 +1964,7 @@ function rateStars({
   else if (oppPeakStars >= 3.5) pts -= 1.5;
   else if (oppPeakStars >= 3) pts -= 1;
 
-  const maxPts = 12;
+  const maxPts = 13.5;
   const raw = (pts / maxPts) * 5;
   const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
 
@@ -1990,13 +1997,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isWin = outcome === 'WIN';
   const isLoss = outcome === 'LOSS';
   const accentColor = isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
+  const teamShort = team?.split(' ').pop() || team;
+  const awayShort = away?.split(' ').pop() || away;
+  const homeShort = home?.split(' ').pop() || home;
+  const otherTeam = teamShort === awayShort ? homeShort : awayShort;
+  const ut = unitTier(units);
+  const potentialWin = profitFromOdds(odds, units);
 
   const fmtET = (ts) => {
     if (!ts) return '';
     return new Date(ts).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true });
   };
-  const fmtVol = (v) => v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`;
-  const fmtOdds = (o) => o > 0 ? `+${o}` : `${o}`;
+  const fmtV = (v) => v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`;
+  const fmtO = (o) => o > 0 ? `+${o}` : `${o}`;
 
   const betOdds = odds || lockPinnOdds;
   const lockProb = betOdds ? (betOdds < 0 ? Math.abs(betOdds) / (Math.abs(betOdds) + 100) : 100 / (betOdds + 100)) : null;
@@ -2004,6 +2017,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const liveCLV = (lockProb && closeProb) ? +(closeProb - lockProb).toFixed(4) : null;
   const clvPct = liveCLV != null ? (liveCLV * 100).toFixed(1) : null;
   const clvPositive = liveCLV != null && liveCLV > 0;
+  const pinnProb = pinnacleOdds ? (pinnacleOdds < 0 ? Math.abs(pinnacleOdds) / (Math.abs(pinnacleOdds) + 100) : 100 / (pinnacleOdds + 100)) : null;
 
   const criteriaList = criteria ? [
     { key: 'sharps3Plus', label: '3+ Sharp Bettors', met: criteria.sharps3Plus },
@@ -2013,98 +2027,99 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     { key: 'lineMovingWith', label: 'Line Moving With Play', met: criteria.lineMovingWith },
     { key: 'predMarketAligns', label: 'Pred. Market Aligns', met: criteria.predMarketAligns },
   ] : [];
+  const metCount = criteriaMet || criteriaList.filter(c => c.met).length;
+  const avgBet = (sharpCount && totalInvested) ? Math.round(totalInvested / sharpCount) : null;
 
   return (
     <div style={{
-      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.border) : 'rgba(16,185,129,0.2)'}`,
       borderRadius: '12px', overflow: 'hidden',
-      borderTop: `2px solid ${accentColor}44`,
+      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+      border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
+      boxShadow: isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
     }}>
-      {/* Collapsed summary - always visible */}
+      {/* Top accent */}
+      <div style={{ height: '3px', background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+
+      {/* ─── Collapsed: compact summary ─── */}
       <div
         onClick={() => setExpanded(e => !e)}
-        style={{ padding: isMobile ? '0.75rem' : '0.875rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
       >
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ ...T.micro, fontWeight: 800, padding: '0.15rem 0.4rem', borderRadius: '4px', color: ss.color, background: ss.bg }}>{sport}</span>
-            <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>
-              {away} <span style={{ color: B.textMuted, fontWeight: 500 }}>vs</span> {home}
+        {/* Header */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '0.625rem 0.875rem 0.25rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
+            <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
+              {away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {home}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
             <span style={{
-              ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+              ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
+              padding: '0.15rem 0.5rem', borderRadius: '5px',
               color: starColor, background: stars >= 4 ? B.greenDim : B.goldDim,
               border: `1px solid ${stars >= 4 ? 'rgba(16,185,129,0.2)' : B.goldBorder}`,
-              display: 'flex', alignItems: 'center', gap: '0.15rem',
+              display: 'flex', alignItems: 'center', gap: '0.2rem',
             }}>
               {Array.from({ length: 5 }, (_, i) => {
                 const filled = i + 1 <= Math.floor(stars);
                 const half = !filled && i + 0.5 === stars;
-                return filled ? (
-                  <span key={i} style={{ fontSize: '0.45rem', color: starColor, lineHeight: 1 }}>★</span>
-                ) : half ? (
-                  <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.45rem', lineHeight: 1, width: '0.45rem' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span>
-                    <span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span>
-                  </span>
-                ) : (
-                  <span key={i} style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>
-                );
+                return filled ? <span key={i} style={{ fontSize: '0.5rem', color: starColor, lineHeight: 1 }}>★</span>
+                  : half ? <span key={i} style={{ position: 'relative', display: 'inline-block', fontSize: '0.5rem', lineHeight: 1, width: '0.5rem' }}><span style={{ color: 'rgba(255,255,255,0.15)' }}>★</span><span style={{ position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: '50%', color: starColor }}>★</span></span>
+                  : <span key={i} style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1 }}>★</span>;
               })}
-              <span style={{ marginLeft: '0.1rem' }}>{starLabel}</span>
+              <span style={{ marginLeft: '0.15rem' }}>{starLabel}</span>
             </span>
           </div>
         </div>
 
-        {/* Main bet row */}
+        {/* Bet row */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.5rem 0.625rem', borderRadius: '8px',
-          background: isGraded ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)') : 'rgba(255,255,255,0.02)',
-          border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : B.borderSubtle}`,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '0.25rem 0.875rem 0.375rem',
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Lock size={10} color={accentColor} />
-              <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>{team}</span>
-            </div>
-            <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {units}u @ {fmtOdds(odds)} <span style={{ color: B.textMuted }}>·</span> {book}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Lock size={10} color={accentColor} />
+            <span style={{ ...T.label, fontWeight: 700, color: B.text }}>{team}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+              {units}u @ {fmtO(odds)} · {book}
+            </span>
             {isGraded ? (
-              <>
-                <span style={{ ...T.micro, fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: '4px', color: isWin ? B.green : isLoss ? B.red : B.textSec, background: isWin ? B.greenDim : isLoss ? B.redDim : 'rgba(255,255,255,0.04)' }}>
-                  {outcome === 'PUSH' ? 'PUSH' : isWin ? 'WIN' : 'LOSS'}
-                </span>
-                <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: isWin ? B.green : isLoss ? B.red : B.textSec }}>
-                  {isWin ? '+' : isLoss ? '-' : ''}{Math.abs(profit || 0).toFixed(2)}u
-                </span>
-              </>
+              <span style={{
+                ...T.micro, fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                color: isWin ? '#fff' : isLoss ? '#fff' : B.textSec,
+                background: isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'rgba(255,255,255,0.06)',
+              }}>{outcome}</span>
             ) : (
-              <>
-                <span style={{ ...T.micro, fontWeight: 700, color: B.gold, padding: '0.1rem 0.4rem', borderRadius: '4px', background: B.goldDim }}>PENDING</span>
-                <span style={{ ...T.micro, color: B.textMuted }}>{gameTime ? fmtET(gameTime) + ' ET' : ''}</span>
-              </>
+              <span style={{ ...T.micro, fontWeight: 700, color: B.gold, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim }}>PENDING</span>
+            )}
+            {isGraded && (
+              <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isWin ? B.green : isLoss ? B.red : B.textSec }}>
+                {isWin ? '+' : isLoss ? '' : ''}{(profit || 0).toFixed(2)}u
+              </span>
+            )}
+            {!isGraded && gameTime && (
+              <span style={{ ...T.micro, color: B.textMuted }}>{fmtET(gameTime)} ET</span>
             )}
           </div>
         </div>
 
-        {/* Footer row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {sharpCount && <span style={{ ...T.micro, color: B.textSec, fontSize: '0.55rem' }}>{sharpCount} sharp{sharpCount !== 1 ? 's' : ''}</span>}
-            {totalInvested && <span style={{ ...T.micro, color: B.textSec, fontSize: '0.55rem' }}>{fmtVol(totalInvested)}</span>}
-            {evEdge > 0 && <span style={{ ...T.micro, color: B.green, fontSize: '0.55rem', fontWeight: 700 }}>+{evEdge}% EV</span>}
+        {/* Quick stats footer */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.25rem 0.875rem 0.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Peak: {peakAt ? fmtET(peakAt) : '—'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {clvPct != null && (
-              <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.55rem', fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
+              <span style={{ ...T.micro, fontWeight: 700, fontSize: '0.6rem', fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
                 CLV {clvPositive ? '+' : ''}{clvPct}%
               </span>
             )}
@@ -2113,88 +2128,260 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         </div>
       </div>
 
-      {/* Expanded detail */}
+      {/* ─── Expanded: full premium detail ─── */}
       {expanded && (
-        <div style={{
-          padding: '0 0.875rem 0.875rem',
-          borderTop: `1px solid ${B.border}`,
-          display: 'flex', flexDirection: 'column', gap: '0.75rem',
-          paddingTop: '0.75rem',
-        }}>
-          {/* Lock-in criteria */}
-          {criteriaList.length > 0 && (
-            <div>
-              <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em', marginBottom: '0.4rem' }}>
-                LOCK-IN CRITERIA — {criteriaMet || criteriaList.filter(c => c.met).length}/{criteriaList.length}
+        <div style={{ borderTop: `1px solid ${B.border}` }}>
+
+          {/* Hero action box */}
+          <div style={{
+            margin: '0.75rem 0.875rem 0', padding: '0.75rem',
+            borderRadius: '10px',
+            background: isGraded
+              ? (isWin ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)' : isLoss ? 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)' : 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)')
+              : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)',
+            border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder) : 'rgba(16,185,129,0.25)'}`,
+          }}>
+            {/* Narrative + unit badge */}
+            <div style={{ marginBottom: '0.625rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
+                  {isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <span style={{
+                    ...T.body, fontWeight: 900, color: '#fff',
+                    padding: '0.2rem 0.6rem', borderRadius: '5px',
+                    background: isGraded
+                      ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
+                      : 'linear-gradient(135deg, #10B981, #059669)',
+                    border: `1px solid ${isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                    fontFeatureSettings: "'tnum'",
+                  }}>
+                    {ut.icon} {units}u
+                  </span>
+                  {evEdge > 0 && (
+                    <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
+                      +{evEdge}% EV
+                    </span>
+                  )}
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.25rem 1rem' }}>
+              <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.5, marginTop: '0.15rem' }}>
+                {sharpCount || '—'} sharp bettor{sharpCount !== 1 ? 's' : ''} invested <span style={{ color: B.gold, fontWeight: 700 }}>{totalInvested ? fmtV(totalInvested) : '—'}</span> on {teamShort}{avgBet ? ` (avg ${fmtV(avgBet)}/bet)` : ''}.{criteria?.pinnacleConfirms ? ` Pinnacle confirmed the play at lock.` : ''}{evEdge > 0 ? ` +${evEdge}% EV edge at ${book}.` : ''}
+              </div>
+            </div>
+
+            {/* Bet line: team + fair value | locked odds + book */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.625rem', alignItems: 'center' }}>
+              <div>
+                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
+                  {sharpCount || '—'} sharp{sharpCount !== 1 ? 's' : ''} backing
+                </div>
+                <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>{teamShort} ML</div>
+                {pinnProb && (
+                  <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
+                    Fair value: {fmtO(pinnacleOdds)} ({(pinnProb * 100).toFixed(1)}%)
+                  </div>
+                )}
+              </div>
+              <div style={{ width: '1px', height: '40px', background: B.borderSubtle }} />
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>LOCKED AT</div>
+                <div style={{ ...T.heading, fontWeight: 900, color: evEdge > 0 ? B.green : B.text }}>{fmtO(odds)}</div>
+                <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>{book}</div>
+              </div>
+            </div>
+
+            {/* Risk / Result row */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginTop: '0.625rem', padding: '0.375rem 0.5rem', borderRadius: '6px',
+              background: isGraded ? (isWin ? 'rgba(16,185,129,0.06)' : isLoss ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.02)') : 'rgba(16,185,129,0.06)',
+              border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.15)' : B.borderSubtle) : 'rgba(16,185,129,0.15)'}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <span style={{ ...T.micro, color: B.textSec }}>Risk</span>
+                <span style={{ ...T.micro, fontWeight: 800, color: B.text, fontFeatureSettings: "'tnum'" }}>{units}u</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <span style={{ ...T.micro, color: B.textSec }}>{isGraded ? 'Result' : 'To Win'}</span>
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: isGraded ? (isWin ? B.green : isLoss ? B.red : B.textSec) : B.green }}>
+                  {isGraded ? `${isWin ? '+' : isLoss ? '' : ''}${(profit || 0).toFixed(2)}u` : `+${potentialWin.toFixed(2)}u`}
+                </span>
+              </div>
+              <span style={{
+                ...T.micro, fontWeight: 800, color: ut.color,
+                padding: '0.1rem 0.35rem', borderRadius: '4px',
+                background: ut.color === B.green ? B.greenDim : ut.color === B.gold ? B.goldDim : 'rgba(255,255,255,0.04)',
+              }}>
+                {ut.icon} {ut.label}
+              </span>
+            </div>
+
+            {/* Confidence tags */}
+            <div style={{
+              display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
+              marginTop: '0.625rem', paddingTop: '0.5rem',
+              borderTop: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.15)' : isLoss ? 'rgba(239,68,68,0.12)' : 'rgba(212,175,55,0.12)') : 'rgba(16,185,129,0.15)'}`,
+            }}>
+              {sharpCount && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.goldDim, color: B.gold, fontWeight: 600 }}>{sharpCount} sharp bettor{sharpCount !== 1 ? 's' : ''}</span>}
+              {totalInvested && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', color: B.textSec }}>{fmtV(totalInvested)} invested</span>}
+              {criteria?.pinnacleConfirms && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 600 }}>✓ Pinnacle confirms</span>}
+              {consensusStrength?.grade && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 600, background: (consensusStrength.grade === 'DOMINANT' || consensusStrength.grade === 'STRONG') ? B.greenDim : B.goldDim, color: (consensusStrength.grade === 'DOMINANT' || consensusStrength.grade === 'STRONG') ? B.green : B.gold }}>{consensusStrength.grade} ({consensusStrength.moneyPct}%)</span>}
+              {evEdge > 0 && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', background: B.greenDim, color: B.green, fontWeight: 700 }}>+{evEdge}% edge</span>}
+              {clvPct != null && <span style={{ ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 700, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted, background: clvPositive ? B.greenDim : liveCLV < 0 ? B.redDim : 'rgba(255,255,255,0.04)' }}>CLV {clvPositive ? '+' : ''}{clvPct}%</span>}
+            </div>
+          </div>
+
+          {/* Lock-In Criteria */}
+          {criteriaList.length > 0 && (
+            <div style={{
+              margin: '0.5rem 0.875rem 0', padding: '0.5rem 0.625rem', borderRadius: '8px',
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)',
+              border: '1px solid rgba(16,185,129,0.25)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>
+                  PLAY LOCKED — {stars >= 4.5 ? '★★★★★ ELITE' : stars >= 3.5 ? '★★★★ STRONG' : '★★★ SOLID'}
+                </span>
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: metCount >= 4 ? B.green : B.gold }}>{metCount}/6</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '0.25rem' }}>
                 {criteriaList.map(c => (
                   <div key={c.key} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <CheckCircle size={11} color={c.met ? B.green : 'rgba(255,255,255,0.15)'} />
-                    <span style={{ ...T.micro, color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 600 : 400, fontSize: '0.6rem' }}>{c.label}</span>
+                    <CheckCircle size={11} color={c.met ? B.green : 'rgba(255,255,255,0.12)'} />
+                    <span style={{ ...T.micro, color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 600 : 400 }}>{c.label}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Sharp snapshot at lock */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
-          }}>
-            {[
-              { label: 'SHARPS', value: sharpCount || '—', color: B.text },
-              { label: 'INVESTED', value: totalInvested ? fmtVol(totalInvested) : '—', color: B.gold },
-              { label: 'CONSENSUS', value: consensusStrength?.grade || '—', color: (consensusStrength?.grade === 'DOMINANT' || consensusStrength?.grade === 'STRONG') ? B.green : B.gold },
-            ].map(s => (
-              <div key={s.label} style={{
-                textAlign: 'center', padding: '0.5rem 0.375rem', borderRadius: '8px',
-                background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
-              }}>
-                <div style={{ ...T.label, fontWeight: 800, color: s.color, fontFeatureSettings: "'tnum'" }}>{s.value}</div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.06em', marginTop: '0.1rem' }}>{s.label}</div>
+          {/* Sharp Money Battle */}
+          {consensusStrength?.moneyPct != null && (
+            <div style={{ padding: '0.75rem 0.875rem 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
+                <span style={{ ...T.micro, color: B.textMuted }}>Sharp Money — At Lock</span>
+                <span style={{ ...T.micro, fontWeight: 800, color: accentColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: `${accentColor}15` }}>
+                  {consensusStrength.moneyPct}% {teamShort}
+                </span>
               </div>
-            ))}
-          </div>
+              {(() => {
+                const pct = consensusStrength.moneyPct / 100;
+                const totalBoth = pct > 0 ? totalInvested / pct : totalInvested;
+                const otherAmt = Math.round(totalBoth - totalInvested);
+                return (
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ flex: 1, padding: '0.5rem 0.625rem', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${B.borderSubtle}` }}>
+                      <div style={{ ...T.micro, fontWeight: 700, color: B.textMuted, marginBottom: '0.25rem' }}>{otherTeam}</div>
+                      <div style={{ ...T.heading, fontWeight: 900, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtV(otherAmt)}</div>
+                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>{100 - consensusStrength.moneyPct}%</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
+                    </div>
+                    <div style={{
+                      flex: 1, padding: '0.5rem 0.625rem', borderRadius: '8px',
+                      background: `linear-gradient(135deg, ${accentColor}12 0%, ${accentColor}04 100%)`,
+                      border: `1px solid ${accentColor}40`, position: 'relative', overflow: 'hidden',
+                    }}>
+                      <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: accentColor, borderRadius: '0 8px 8px 0' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
+                        <span style={{ ...T.micro, fontWeight: 700, color: B.text }}>{teamShort}</span>
+                        <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.05rem 0.25rem', borderRadius: '3px', color: '#fff', background: accentColor }}>SHARP SIDE</span>
+                      </div>
+                      <div style={{ ...T.heading, fontWeight: 900, color: accentColor, fontFeatureSettings: "'tnum'" }}>{fmtV(totalInvested)}</div>
+                      <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>{consensusStrength.moneyPct}%</div>
+                    </div>
+                  </div>
+                );
+              })()}
 
-          {/* Odds comparison */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem',
-          }}>
-            {[
-              { label: 'LOCKED ODDS', value: odds ? fmtOdds(odds) : '—', sub: book || '', color: B.text },
-              { label: 'PINNACLE FAIR', value: pinnacleOdds ? fmtOdds(pinnacleOdds) : '—', sub: 'At lock', color: B.textSec },
-              { label: 'CURRENT LINE', value: closingOdds ? fmtOdds(closingOdds) : '—', sub: 'Pinnacle', color: clvPositive ? B.green : liveCLV != null && liveCLV < 0 ? B.red : B.textSec },
-            ].map(s => (
-              <div key={s.label} style={{
-                textAlign: 'center', padding: '0.5rem 0.375rem', borderRadius: '8px',
-                background: 'rgba(255,255,255,0.02)', border: `1px solid ${B.borderSubtle}`,
+              {/* Market flow bar */}
+              <div style={{
+                marginTop: '0.5rem', borderRadius: '8px', overflow: 'hidden',
+                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
               }}>
-                <div style={{ ...T.label, fontWeight: 800, color: s.color, fontFeatureSettings: "'tnum'" }}>{s.value}</div>
-                <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.06em', marginTop: '0.1rem' }}>{s.label}</div>
-                {s.sub && <div style={{ ...T.micro, color: B.textMuted, fontSize: '0.475rem', marginTop: '0.1rem' }}>{s.sub}</div>}
+                <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`, display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{otherTeam}</span>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{teamShort}</span>
+                  </div>
+                </div>
+                <div style={{ padding: '0.5rem 0.625rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: B.textMuted, textAlign: 'left' }}>
+                      {100 - consensusStrength.moneyPct}%
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                      <div style={{ display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden', background: 'rgba(255,255,255,0.03)' }}>
+                        <div style={{ width: `${100 - consensusStrength.moneyPct}%`, background: 'rgba(255,255,255,0.05)', borderRadius: '2.5px 0 0 2.5px' }} />
+                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                        <div style={{ width: `${consensusStrength.moneyPct}%`, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}44)`, borderRadius: '0 2.5px 2.5px 0' }} />
+                      </div>
+                      <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.03em' }}>Sharp Money</span>
+                    </div>
+                    <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: accentColor, textAlign: 'right' }}>
+                      {consensusStrength.moneyPct}%
+                    </span>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* Money split + timeline */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-            {consensusStrength?.moneyPct != null && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Sharp Money:</span>
-                <span style={{ ...T.micro, color: B.green, fontWeight: 700, fontSize: '0.55rem' }}>{consensusStrength.moneyPct}%</span>
-                {consensusStrength?.walletPct != null && (
-                  <>
-                    <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Wallets:</span>
-                    <span style={{ ...T.micro, color: B.text, fontWeight: 700, fontSize: '0.55rem' }}>{consensusStrength.walletPct}%</span>
-                  </>
-                )}
-              </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              {lockedAt && <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Locked {fmtET(lockedAt)}</span>}
-              {peakAt && peakAt !== lockedAt && <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Peak {fmtET(peakAt)}</span>}
             </div>
+          )}
+
+          {/* Book Prices */}
+          <div style={{
+            margin: '0.625rem 0.875rem 0', borderRadius: '8px', overflow: 'hidden',
+            border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+          }}>
+            <div style={{
+              padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ ...T.micro, color: B.textMuted }}>Book Prices — {teamShort} ML</span>
+              {clvPct != null && (
+                <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
+                  CLV {clvPositive ? '+' : ''}{clvPct}%
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0 }}>
+              {[
+                { label: book || 'Locked', value: odds ? fmtO(odds) : '—', color: B.text },
+                { label: 'Pinnacle', value: pinnacleOdds ? fmtO(pinnacleOdds) : '—', color: B.textSec },
+                { label: 'Current', value: closingOdds ? fmtO(closingOdds) : '—', color: clvPositive ? B.green : liveCLV != null && liveCLV < 0 ? B.red : B.textSec },
+              ].map((col, i) => (
+                <div key={col.label} style={{
+                  textAlign: 'center', padding: '0.625rem 0.375rem',
+                  borderRight: i < 2 ? `1px solid ${B.borderSubtle}` : 'none',
+                }}>
+                  <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.25rem', fontWeight: 600 }}>{col.label}</div>
+                  <div style={{ ...T.sub, fontWeight: 900, color: col.color, fontFeatureSettings: "'tnum'" }}>{col.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            padding: '0.625rem 0.875rem 0.75rem', flexWrap: 'wrap',
+          }}>
+            {lockedAt && <span style={{ ...T.micro, color: B.green, fontWeight: 600 }}>Locked {fmtET(lockedAt)}</span>}
+            {peakAt && peakAt !== lockedAt && (
+              <>
+                <span style={{ color: B.borderSubtle, fontSize: '0.5rem' }}>▸</span>
+                <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Peak {fmtET(peakAt)}</span>
+              </>
+            )}
+            {gameTime && (
+              <>
+                <span style={{ color: B.borderSubtle, fontSize: '0.5rem' }}>▸</span>
+                <span style={{ ...T.micro, color: B.textMuted }}>Game {fmtET(gameTime)}</span>
+              </>
+            )}
           </div>
         </div>
       )}
