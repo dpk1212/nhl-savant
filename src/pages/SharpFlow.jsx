@@ -2110,8 +2110,8 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 boxShadow: isEVConfirmed ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
                 display: 'flex', alignItems: 'center', gap: '0.2rem',
               }}>
-                <TrendingUp size={9} strokeWidth={3} />
-                <span>{isEVConfirmed ? 'TOP PICK · +EV' : 'TOP PICK'}</span>
+                {isEVConfirmed ? <Zap size={9} strokeWidth={3} fill="#fff" /> : <TrendingUp size={9} strokeWidth={3} />}
+                <span>TOP PICK</span>
               </span>
             )}
             <span style={{
@@ -2179,14 +2179,6 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 color: isTopPick ? '#D4AF37' : B.textSec,
               }}>
                 {lockStars}★→{stars}★
-              </span>
-            )}
-            {isTopPick && lockEV != null && evEdge != null && (
-              <span style={{
-                ...T.micro, fontSize: '0.55rem', fontWeight: 700, fontFeatureSettings: "'tnum'",
-                color: evDelta > 0 ? B.green : evDelta < -0.1 ? B.textMuted : B.textSec,
-              }}>
-                EV {lockEV > 0 ? '+' : ''}{lockEV}%→{evEdge > 0 ? '+' : ''}{evEdge}%
               </span>
             )}
           </div>
