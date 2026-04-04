@@ -187,10 +187,11 @@ function gameDate(commenceTime) {
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars) {
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
+  if (opposition) snapshot.opposition = opposition;
   return {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -200,7 +201,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
 }
 
-async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
+async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}`;
@@ -212,7 +213,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
@@ -235,8 +236,10 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       const currentPeakStars = sides[side].peak?.stars || 0;
       if (units > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(units).label;
+        const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        if (opposition) peakData.opposition = opposition;
         await setDoc(ref, {
-          sides: { [side]: { peak: { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() } } },
+          sides: { [side]: { peak: peakData } },
           source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated',
         }, { merge: true });
         return { docId, action: 'peak_updated' };
@@ -244,7 +247,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       return { docId, action: 'no_change' };
     }
 
-    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition);
     await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
     return { docId, action: 'side_added' };
   } catch (err) {
@@ -2587,6 +2590,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       sharpCount: consensusWallets, totalInvested: consensusInvested,
       units, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label },
       stars: sr.stars,
+      opposition: {
+        sharpCount: oppSharpFeatures.conWalletCount,
+        totalInvested: oppSharpFeatures.conTotalInvested,
+        avgBet: oppSharpFeatures.conWalletCount > 0 ? Math.round(oppSharpFeatures.conTotalInvested / oppSharpFeatures.conWalletCount) : 0,
+        stars: oppPeakStars,
+        counterSharpScore: sharpFeatures.counterSharpScore,
+        consensusTier: oppSharpFeatures.consensusTier,
+      },
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;

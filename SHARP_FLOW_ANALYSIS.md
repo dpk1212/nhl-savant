@@ -197,7 +197,9 @@ Big dog +201+          3-11   21.4% |   -2.36u | ROI: -10.5%  | n=14
 
 ---
 
-## Head-to-Head: Opposition Analysis
+## Head-to-Head: Comparative Margin Analysis
+
+The key insight: raw sharp count/money/avg bet are meaningless in isolation. What matters is the **margin over the other side**.
 
 ### Clean vs Contested
 ```
@@ -205,17 +207,103 @@ Clean (no opp)      176-103  63.1% |   24.49u | ROI:   5.6%  | n=279
 Contested (opp)       8-18   30.8% |  -10.99u | ROI: -34.3%  | n=26
 ```
 
-### When Contested — What Determines the Winner?
+### Sharp Count Margin (our sharps − their sharps)
 ```
-Opp 3-5 sharps        3-10   23.1% |   -7.07u | ROI: -47.1%  | n=13
-Opp 6+ sharps         4-8    33.3% |   -4.87u | ROI: -31.4%  | n=12
-
-Our money > opp       4-6    40.0% |    0.88u | ROI:   8.0%  | n=10
-Opp money > ours      4-12   25.0% |  -11.87u | ROI: -56.5%  | n=16
-
-Our avgBet > opp      4-5    44.4% |    2.38u | ROI:  23.8%  | n=9
-Opp avgBet > ours     4-13   23.5% |  -13.37u | ROI: -60.8%  | n=17
+They have MORE sharps    3-7    30.0% |   -4.81u | ROI:  -37.0%  | n=10
+TIED (margin = 0)        0-3     0.0% |   -2.00u | ROI: -100.0%  | n=3
++1 more sharp           11-6    64.7% |    4.11u | ROI:  +21.6%  | n=17
++2 more sharps          14-11   56.0% |    3.54u | ROI:  +13.5%  | n=25
++3 more sharps          31-14   68.9% |    9.69u | ROI:  +18.6%  | n=45
++4-5 more sharps        47-24   66.2% |   18.61u | ROI:  +17.9%  | n=71
 ```
+
+**Margin of +3 or more sharps is the sweet spot (67%+ WR).** Even +1 margin recovers to 64.7% WR. Tied or negative margin = death.
+
+### Clean Games by Our Sharp Count (when no opposition)
+```
+1-2 sharps (clean)     24-12   66.7% |   14.30u | ROI:  +38.4%  | n=36
+3-4 sharps (clean)     54-27   66.7% |   13.62u | ROI:  +13.2%  | n=81
+5-6 sharps (clean)     36-28   56.3% |  -12.03u | ROI:  -10.8%  | n=64
+7-9 sharps (clean)     34-22   60.7% |   -0.78u | ROI:   -0.8%  | n=56
+10+ sharps (clean)     28-14   66.7% |    9.38u | ROI:  +10.6%  | n=42
+```
+
+**Even in clean games, 5-6 sharps is a dead zone (56.3% WR, -10.8% ROI).** The sweet spot is 1-4 sharps clean, where WR is 66.7% and ROI is +13-38%.
+
+### Money Margin (our $ − their $)
+```
+They have MORE money     4-12   25.0% |  -11.87u | ROI:  -56.5%  | n=16
+We have $5-10K more      1-2    33.3% |   -0.96u | ROI:  -21.3%  | n=3
+We have $10-25K more     2-0   100.0% |    2.99u | ROI:  +99.7%  | n=2
+We have $25K+ more       1-3    25.0% |   -0.65u | ROI:  -21.7%  | n=4
+```
+
+**When they have more money than us: 25% WR, -56.5% ROI.** Money margin matters hugely.
+
+### Avg Bet Size Margin
+```
+Their avg bet HIGHER     4-13   23.5% |  -13.37u | ROI:  -60.8%  | n=17
+Our avg $0-1K higher     0-2     0.0% |   -3.00u | ROI: -120.0%  | n=2
+Our avg $1-3K higher     2-0   100.0% |    5.08u | ROI: +169.3%  | n=2
+```
+
+**Avg bet margin is the strongest contested-game predictor.** When their average bet is higher, we win only 23.5% (-60.8% ROI). This means their sharps are more convicted per position.
+
+### Sharp Money Ratio (our $ / total $, contested only)
+```
+<30% of total $          3-11   21.4% |  -10.81u | ROI:  -58.4%  | n=14
+30-50%                   1-1    50.0% |   -1.06u | ROI:  -42.4%  | n=2
+50-70%                   0-2     0.0% |   -4.00u | ROI: -133.3%  | n=2
+70-90%                   1-3    25.0% |    0.54u | ROI:  +18.0%  | n=4
+90%+ (overwhelming)      3-1    75.0% |    4.34u | ROI:  +86.8%  | n=4
+```
+
+**Need 90%+ of the sharp money to survive a contested game.** Anything less than overwhelming dominance is a losing proposition.
+
+### Clean Money by Total Invested
+```
+<$5K invested (clean)    46-27   63.0% |   12.43u | ROI:  +15.7%  | n=73
+$5-15K (clean)           48-23   67.6% |   12.63u | ROI:  +12.5%  | n=71
+$15-30K (clean)          27-17   61.4% |    3.38u | ROI:   +4.4%  | n=44
+$30-75K (clean)          27-14   65.9% |    6.29u | ROI:   +9.0%  | n=41
+$75K+ (clean)            28-22   56.0% |  -10.24u | ROI:   -9.4%  | n=50
+```
+
+**$75K+ clean = value has been fully captured.** The $5-15K sweet spot is 67.6% WR. More money doesn't always mean more edge.
+
+### Key Margin Combos (contested only)
+```
+MORE sharps + MORE $ + HIGHER avg bet    4-3   57.1% |    3.38u | ROI:  +37.6%  | n=7
+MORE sharps + LESS money                 1-4   20.0% |   -6.06u | ROI:  -86.6%  | n=5
+FEWER sharps + LESS $ + LOWER avg        3-6   33.3% |   -4.31u | ROI:  -34.5%  | n=9
+We dominate ALL 3 by 2x+                3-0   100.0% |    6.03u | ROI: +134.0%  | n=3
+They dominate ALL 3 margins              3-6   33.3% |   -4.31u | ROI:  -34.5%  | n=9
+```
+
+**Having more sharps doesn't help if they have more money (20% WR).** Money/avg bet margin matters more than headcount.
+
+### Margin × EV Edge Cross-Analysis
+```
+CLEAN + EV 1%+                          34-12   73.9% |   19.86u | ROI:  +25.9%  | n=46
+CLEAN + EV 0-1%                         56-41   57.7% |  -16.27u | ROI:  -10.5%  | n=97
+CLEAN + EV ≤0                           86-50   63.2% |   20.90u | ROI:  +10.3%  | n=136
+CONTESTED + EV 1%+                       4-0   100.0% |    9.73u | ROI: +194.6%  | n=4
+CONTESTED + EV 0-1%                      1-10    9.1% |   -8.71u | ROI:  -75.7%  | n=11
+CONTESTED + EV ≤0                        3-8    27.3% |  -12.01u | ROI:  -77.5%  | n=11
+CLEAN + ≤5 sharps                       98-48   67.1% |   38.63u | ROI:  +20.9%  | n=146
+CLEAN + 6+ sharps                       78-55   58.6% |  -14.14u | ROI:   -5.6%  | n=133
+```
+
+**The killer combo: CLEAN + EV 1%+ = 73.9% WR, +25.9% ROI (n=46).** The killer trap: CONTESTED + EV 0-1% = 9.1% WR (n=11).
+
+### Contested Game Decision Framework
+
+When opposition exists, survival requires ALL of:
+1. **90%+ of the sharp money** on our side
+2. **Higher average bet size** than their side
+3. **EV 1%+** (only 4 contested picks with EV 1%+ exist — all 4 won)
+
+If ANY of these fail, the pick is likely a loss.
 
 ---
 
