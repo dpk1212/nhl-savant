@@ -2010,9 +2010,11 @@ function rateStars({
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, criteriaMet, criteria, consensusStrength, pinnacleOdds } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, criteriaMet, criteria, consensusStrength, pinnacleOdds } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
+  const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
+  const isTopPick = starDelta >= 1.0;
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
   const starLabel = starLabels[stars] || 'SOLID PLAY';
   const starColor = stars >= 4 ? B.green : B.gold;
@@ -2055,13 +2057,21 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
 
   return (
     <div style={{
-      borderRadius: '12px', overflow: 'hidden',
-      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
+      borderRadius: '12px', overflow: 'hidden', position: 'relative',
+      background: isTopPick
+        ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
+        : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+      border: isTopPick
+        ? '1px solid rgba(212,175,55,0.45)'
+        : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
+      boxShadow: isTopPick
+        ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04)'
+        : isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
     }}>
       {/* Top accent */}
-      <div style={{ height: '3px', background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+      <div style={{ height: isTopPick ? '3px' : '3px', background: isTopPick
+        ? 'linear-gradient(90deg, transparent, #D4AF37, #F5D060, #D4AF37, transparent)'
+        : `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
 
       {/* ─── Collapsed: compact summary ─── */}
       <div
@@ -2080,6 +2090,19 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            {isTopPick && (
+              <span style={{
+                ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
+                padding: '0.15rem 0.5rem', borderRadius: '5px',
+                color: '#D4AF37',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
+                border: '1px solid rgba(212,175,55,0.35)',
+                display: 'flex', alignItems: 'center', gap: '0.2rem',
+              }}>
+                <TrendingUp size={9} strokeWidth={3} />
+                <span>TOP PICK</span>
+              </span>
+            )}
             <span style={{
               ...T.micro, fontWeight: 800, letterSpacing: '0.04em',
               padding: '0.15rem 0.5rem', borderRadius: '5px',
@@ -2139,6 +2162,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.55rem' }}>Peak: {peakAt ? fmtET(peakAt) : '—'}</span>
+            {starDelta > 0 && (
+              <span style={{
+                ...T.micro, fontSize: '0.55rem', fontWeight: 700, fontFeatureSettings: "'tnum'",
+                color: isTopPick ? '#D4AF37' : B.textSec,
+              }}>
+                {lockStars}★→{stars}★
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {clvPct != null && (
@@ -4807,11 +4838,12 @@ export default function SharpFlow() {
                         const units = peak.units || lock.units || 1;
                         const profit = sd.result?.outcome === 'WIN' ? (sd.result?.profit || 0) : sd.result?.outcome === 'LOSS' ? -(units) : 0;
                         const lockOddsValid = lock.odds && Math.abs(lock.odds) <= 400;
+                        const lockStars = lock.stars || 0;
                         allLockedArr.push({
                           key: `${docId}:${sideKey}`,
                           team: sd.team || sideKey,
                           away: doc.away || '', home: doc.home || '',
-                          sport: docSport, stars, units,
+                          sport: docSport, stars, lockStars, units,
                           odds: lockOddsValid ? lock.odds : (peak.odds || lock.odds || 0),
                           book: lockOddsValid ? (lock.book || peak.book || '') : (peak.book || lock.book || ''),
                           peakAt: peak.updatedAt || lock.lockedAt,
@@ -4839,6 +4871,11 @@ export default function SharpFlow() {
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
                       : lockedArr.filter(p => p.outcome === 'LOSS');
                     filteredLocked.sort((a, b) => {
+                      const aDelta = (a.lockStars != null ? a.stars - a.lockStars : 0);
+                      const bDelta = (b.lockStars != null ? b.stars - b.lockStars : 0);
+                      const aTop = aDelta >= 1.0 ? 1 : 0;
+                      const bTop = bDelta >= 1.0 ? 1 : 0;
+                      if (aTop !== bTop) return bTop - aTop;
                       if (lockedSort === 'stars') return b.stars - a.stars || b.units - a.units;
                       const tA = a.gameTime ? new Date(a.gameTime).getTime() : 0;
                       const tB = b.gameTime ? new Date(b.gameTime).getTime() : 0;
