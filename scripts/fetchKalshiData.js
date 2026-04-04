@@ -685,11 +685,13 @@ async function run() {
       const teams = extractTeamsFromTitle(title);
       if (!teams) continue;
 
-      const key = matchToGameKey(teams, cbbMap, sport);
-      if (!key) continue;
-
+      const key1 = matchToGameKey(teams, cbbMap, sport);
+      const key2 = matchToGameKey([teams[1], teams[0]], cbbMap, sport);
       const validSet = sport === 'CBB' ? validCBB : sport === 'NBA' ? validNBA : sport === 'MLB' ? validMLB : validNHL;
-      if (!validSet.has(key)) continue;
+      const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
+      const key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
+      if (!key) continue;
+      if (keyReversed) teams.reverse();
 
       if (!eventsByKey[sport][key]) {
         eventsByKey[sport][key] = {

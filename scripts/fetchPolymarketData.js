@@ -495,6 +495,7 @@ async function run() {
     { slug: 'sports', sport: null },
     { slug: 'ncaa', sport: 'CBB' },
     { slug: 'college-basketball', sport: 'CBB' },
+    { slug: 'march-madness', sport: 'CBB' },
     { slug: 'basketball', sport: null },
     { slug: 'cbb', sport: 'CBB' },
     { slug: 'nhl', sport: 'NHL' },
@@ -544,23 +545,30 @@ async function run() {
       else if (/nhl|hockey/.test(t) && !/champion|winner|stanley/.test(t)) sport = 'NHL';
       else if (/mlb|baseball/.test(t) && !/champion|winner|world series winner/.test(t)) sport = 'MLB';
       else {
+        const revTeams = [teams[1], teams[0]];
         const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
+        const cbbRevKey = matchToGameKey(revTeams, cbbMap, 'CBB');
         const nhlKey = matchToGameKey(teams, cbbMap, 'NHL');
+        const nhlRevKey = matchToGameKey(revTeams, cbbMap, 'NHL');
         const mlbKey = matchToGameKey(teams, cbbMap, 'MLB');
+        const mlbRevKey = matchToGameKey(revTeams, cbbMap, 'MLB');
         const nbaKey = matchToGameKey(teams, cbbMap, 'NBA');
-        if (cbbKey && validCBB.has(cbbKey)) sport = 'CBB';
-        else if (nhlKey && validNHL.has(nhlKey)) sport = 'NHL';
-        else if (mlbKey && validMLB.has(mlbKey)) sport = 'MLB';
-        else if (nbaKey && validNBA.has(nbaKey)) sport = 'NBA';
+        const nbaRevKey = matchToGameKey(revTeams, cbbMap, 'NBA');
+        if ((cbbKey && validCBB.has(cbbKey)) || (cbbRevKey && validCBB.has(cbbRevKey))) sport = 'CBB';
+        else if ((nhlKey && validNHL.has(nhlKey)) || (nhlRevKey && validNHL.has(nhlRevKey))) sport = 'NHL';
+        else if ((mlbKey && validMLB.has(mlbKey)) || (mlbRevKey && validMLB.has(mlbRevKey))) sport = 'MLB';
+        else if ((nbaKey && validNBA.has(nbaKey)) || (nbaRevKey && validNBA.has(nbaRevKey))) sport = 'NBA';
       }
     }
     if (!sport || !['CBB', 'NHL', 'MLB', 'NBA'].includes(sport)) continue;
 
-    const key = matchToGameKey(teams, cbbMap, sport);
-    if (!key) continue;
-
+    const key1 = matchToGameKey(teams, cbbMap, sport);
+    const key2 = matchToGameKey([teams[1], teams[0]], cbbMap, sport);
     const validSet = sport === 'CBB' ? validCBB : sport === 'MLB' ? validMLB : sport === 'NBA' ? validNBA : validNHL;
-    if (!validSet.has(key)) continue;
+    const keyReversed = !(key1 && validSet.has(key1)) && (key2 && validSet.has(key2));
+    const key = keyReversed ? key2 : (key1 && validSet.has(key1)) ? key1 : null;
+    if (!key) continue;
+    if (keyReversed) teams.reverse();
 
     // Date-match: use Polymarket eventDate (actual game date, NOT endDate which is series end).
     // Filters wrong-day events and breaks ties when multiple events share the same key.
