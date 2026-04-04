@@ -364,7 +364,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v8';
+    const cacheKey = 'sharpFlow_pnl_v9';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -4469,7 +4469,7 @@ export default function SharpFlow() {
               const stars = fp?.byStars || {};
               const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL' || perfGrowth !== 'all';
               const dateLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
-              const growthLabels = { all: '', topPick: ' · ▲ Top Pick', golden: ' · ⚡ Top Pick' };
+              const growthLabels = { all: '', topPick: ' · ▲ Top Pick' };
 
               return (
                 <div style={{ marginBottom: '1rem' }}>
@@ -4552,24 +4552,14 @@ export default function SharpFlow() {
                             }}>{opt.label}</button>
                           ))}
                           <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
-                          {[
-                            { id: 'all', label: 'All Picks' },
-                            { id: 'topPick', label: '▲ Top Pick' },
-                            { id: 'golden', label: '⚡ Top Pick' },
-                          ].map(opt => (
-                            <button key={opt.id} onClick={() => setPerfGrowth(opt.id)} style={{
-                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
-                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
-                              border: perfGrowth === opt.id
-                                ? (opt.id === 'golden' ? '1px solid rgba(212,175,55,0.5)' : opt.id === 'topPick' ? '1px solid rgba(212,175,55,0.35)' : `1px solid ${B.goldBorder}`)
-                                : `1px solid ${B.border}`,
-                              background: perfGrowth === opt.id
-                                ? (opt.id === 'golden' ? 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.08))' : opt.id === 'topPick' ? 'rgba(212,175,55,0.1)' : `linear-gradient(135deg, ${B.goldDim} 0%, rgba(212,175,55,0.03) 100%)`)
-                                : 'transparent',
-                              color: perfGrowth === opt.id ? '#D4AF37' : B.textMuted,
-                              transition: 'all 0.2s ease',
-                            }}>{opt.label}</button>
-                          ))}
+                          <button onClick={() => setPerfGrowth(perfGrowth === 'topPick' ? 'all' : 'topPick')} style={{
+                            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                            ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                            border: perfGrowth === 'topPick' ? '1px solid rgba(212,175,55,0.45)' : `1px solid ${B.border}`,
+                            background: perfGrowth === 'topPick' ? 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))' : 'transparent',
+                            color: perfGrowth === 'topPick' ? '#D4AF37' : B.textMuted,
+                            transition: 'all 0.2s ease',
+                          }}>▲ Top Pick</button>
                         </div>
                       </div>
 
