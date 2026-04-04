@@ -2010,11 +2010,13 @@ function rateStars({
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, criteriaMet, criteria, consensusStrength, pinnacleOdds } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
   const isTopPick = starDelta >= 1.0;
+  const evDelta = (evEdge != null && lockEV != null) ? +(evEdge - lockEV).toFixed(2) : 0;
+  const isEVConfirmed = isTopPick && evDelta > 0;
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
   const starLabel = starLabels[stars] || 'SOLID PLAY';
   const starColor = stars >= 4 ? B.green : B.gold;
@@ -2061,10 +2063,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
       background: isTopPick
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: isTopPick
+      border: isEVConfirmed
+        ? '1px solid rgba(212,175,55,0.6)'
+        : isTopPick
         ? '1px solid rgba(212,175,55,0.45)'
         : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: isTopPick
+      boxShadow: isEVConfirmed
+        ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
+        : isTopPick
         ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04)'
         : isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
     }}>
@@ -2094,13 +2100,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               <span style={{
                 ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
                 padding: '0.15rem 0.5rem', borderRadius: '5px',
-                color: '#D4AF37',
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
-                border: '1px solid rgba(212,175,55,0.35)',
+                color: isEVConfirmed ? '#fff' : '#D4AF37',
+                background: isEVConfirmed
+                  ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 50%, #D4AF37 100%)'
+                  : 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
+                border: isEVConfirmed
+                  ? '1px solid rgba(245,208,96,0.6)'
+                  : '1px solid rgba(212,175,55,0.35)',
+                boxShadow: isEVConfirmed ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
                 display: 'flex', alignItems: 'center', gap: '0.2rem',
               }}>
                 <TrendingUp size={9} strokeWidth={3} />
-                <span>TOP PICK</span>
+                <span>{isEVConfirmed ? 'TOP PICK · +EV' : 'TOP PICK'}</span>
               </span>
             )}
             <span style={{
@@ -2168,6 +2179,14 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 color: isTopPick ? '#D4AF37' : B.textSec,
               }}>
                 {lockStars}★→{stars}★
+              </span>
+            )}
+            {isTopPick && lockEV != null && evEdge != null && (
+              <span style={{
+                ...T.micro, fontSize: '0.55rem', fontWeight: 700, fontFeatureSettings: "'tnum'",
+                color: evDelta > 0 ? B.green : evDelta < -0.1 ? B.textMuted : B.textSec,
+              }}>
+                EV {lockEV > 0 ? '+' : ''}{lockEV}%→{evEdge > 0 ? '+' : ''}{evEdge}%
               </span>
             )}
           </div>
@@ -4857,7 +4876,8 @@ export default function SharpFlow() {
                           clv: sd.result?.clv ?? null,
                           sharpCount: peak.sharpCount || lock.sharpCount || null,
                           totalInvested: peak.totalInvested || lock.totalInvested || null,
-                          evEdge: peak.evEdge || lock.evEdge || null,
+                          evEdge: peak.evEdge ?? lock.evEdge ?? null,
+                          lockEV: lock.evEdge ?? null,
                           criteriaMet: peak.criteriaMet || lock.criteriaMet || 0,
                           criteria: peak.criteria || lock.criteria || null,
                           consensusStrength: peak.consensusStrength || lock.consensusStrength || null,
