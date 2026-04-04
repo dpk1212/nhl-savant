@@ -171,9 +171,16 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 | **bets** | NHL model bets | betTracker.js (client) | updateBetResults (function) |
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
 
-#### `sharpFlowPicks` Document Schema (v2 — per-side with peak tracking)
+#### `sharpFlowPicks` Document Schema (v3 — lock + peak + pregame snapshots)
 
-Each document represents one game. Up to two sides can independently lock if both reach 3+ stars. Each side tracks its original lock and peak conviction (including star rating). Grading uses peak units/odds.
+Each document represents one game. Up to two sides can independently lock if both reach 3+ stars. Each side tracks three snapshots: **lock** (first trigger), **peak** (highest stars), and **pregame** (~30 min before game). Grading uses peak units/odds.
+
+**Three Snapshots Per Side:**
+- **`lock`** — frozen at first trigger (stars ≥ 2.5). Never updated.
+- **`peak`** — high-water mark. Updated when stars or units climb higher.
+- **`pregame`** — final state captured 30-35 min before game start. Includes full opposition data. Written once.
+
+This enables **lock → peak → pregame** transformation analysis: did sharps pile on? Did opposition appear? Did EV evaporate?
 
 ```javascript
 {
@@ -201,6 +208,14 @@ Each document represents one game. Up to two sides can independently lock if bot
         units: 3.5,
         unitTier: "MAX",
         lockedAt: 1711300000000,
+        opposition: {           // opposition at lock time (added 2026-04-04)
+          sharpCount: 2,
+          totalInvested: 3500,
+          avgBet: 1750,
+          stars: 1.5,
+          counterSharpScore: 1,
+          consensusTier: "LEAN",
+        },
       },
       peak: {                   // high-water mark (updated pregame when units grow)
         odds: -210,
@@ -211,6 +226,29 @@ Each document represents one game. Up to two sides can independently lock if bot
         units: 4.0,
         unitTier: "MAX",
         updatedAt: 1711305000000,
+        opposition: { ... },    // opposition at peak time
+      },
+      pregame: {                // final snapshot ~30 min before game (added 2026-04-04)
+        odds: -215,
+        book: "BetMGM",
+        pinnacleOdds: -210,
+        evEdge: 2.1,
+        criteriaMet: 6,
+        criteria: { ... },
+        sharpCount: 11,
+        totalInvested: 22000,
+        units: 4.0,
+        stars: 4.0,
+        consensusStrength: { moneyPct: 78, walletPct: 85, grade: "DOMINANT" },
+        opposition: {           // opposition 30 min before game
+          sharpCount: 4,
+          totalInvested: 8500,
+          avgBet: 2125,
+          stars: 2.0,
+          counterSharpScore: 3,
+        },
+        minutesBeforeGame: 32,
+        capturedAt: 1711310000000,
       },
       status: "PENDING",        // PENDING → COMPLETED
       result: {
@@ -223,6 +261,7 @@ Each document represents one game. Up to two sides can independently lock if bot
       team: "Maple Leafs",
       lock: { ... },
       peak: { ... },
+      pregame: { ... },         // may or may not exist
       status: "PENDING",
       result: { ... },
     },

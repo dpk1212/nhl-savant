@@ -868,7 +868,80 @@ AVOID ≤0     22-46   32.4% |  -43.82u | ROI: -46.5%  | n=68
 - Top/bottom 2-way and 3-way combos
 - Star calibration by tier
 - Composite V2 performance by tier
+- **NEW**: Sharp margin (our sharps − opp sharps) by bucket
+- **NEW**: Lock → pregame transformation analysis
 
 ---
 
-*This analysis should be re-run weekly as the sample size grows. Key thresholds to watch: EV 1%+ maintaining 70%+ WR, contested games staying below 35% WR, and Pinnacle confirms continuing to underperform NO Pinnacle.*
+## Data Capture Changes (April 4, 2026)
+
+### Changes Deployed
+
+1. **Opposition snapshot at lock time** — Every lock write now includes `opposition: { sharpCount, totalInvested, avgBet, stars, counterSharpScore, consensusTier }`. Previously, opposition data was only captured if the other side independently triggered a lock.
+
+2. **Pregame snapshot (~30 min before game)** — A new `pregame` object is written to each locked side 30-35 minutes before game time. Captures the full state: our sharps/money/EV/odds, opposition sharps/money/avgBet/stars, criteria status, and minutes before game. This enables **lock → pregame transformation analysis**.
+
+3. **Hedge wallet exclusion** — `computeSharpFeatures()` now filters out wallets that bet on BOTH sides of the same game before calculating breadth, conviction, and counter-sharp.
+
+4. **EV edge weight boosted** — `rateStars()` EV: `>3% → +2.5`, `>1% → +2`, `0-1% → -1` (was +1/+0.5/-0.5).
+
+5. **Counter-sharp penalty boosted** — `rateStars()` counter-sharp: `≥6 → -3`, `≥3 → -2`, `≥1 → -1` (was -1.5/-1/none).
+
+### Data Gaps (Known Limitations)
+
+| Data | Available From | Before That |
+|------|---------------|-------------|
+| Lock snapshot (our side) | March 16+ (all picks) | ✓ Full |
+| Peak snapshot (our side) | March 25+ (new format) | Old format: no peak |
+| Opposition at lock time | **April 4+** | Not captured |
+| **Pregame snapshot** | **April 4+** | Not captured |
+| Opposition at pregame | **April 4+** | Not captured |
+
+The old format (126 picks, March 16-25) has no `sides` structure, no peak, and no opposition. The new format (179+ picks, March 25+) has lock/peak but opposition was only captured when the other side also triggered a lock (26 games = 52 pick-sides). Starting April 4, every pick captures opposition at lock time AND a full pregame snapshot.
+
+---
+
+## Future Analysis (Come Back in 3-5 Days)
+
+### Priority 1: Sharp Margin with Real Data (April 8+)
+
+With opposition now captured at lock time AND pregame, re-run the margin analysis on ALL picks (not just the 26 where the other side also locked). Key questions:
+
+- How many "clean" games at lock time actually had opposition by pregame?
+- Does the sharp margin at PREGAME predict better than at LOCK?
+- Is a pick that was "clean" at lock but "contested" by pregame a sell signal?
+
+### Priority 2: Lock → Pregame Transformation
+
+Compare the lock snapshot to the pregame snapshot:
+
+| Transformation | Expected Impact | Sample Size Needed |
+|---------------|----------------|-------------------|
+| Sharps grew +3 or more | Positive? Negative (value captured)? | 20+ |
+| Opposition appeared (0 → 1+) | Likely negative | 15+ |
+| EV evaporated (1%+ → <0) | Likely very negative | 10+ |
+| EV still strong at pregame | Likely very positive | 15+ |
+| Stars dropped (peak > pregame) | Unknown | 10+ |
+| Consensus shifted (DOMINANT → LEAN) | Likely negative | 10+ |
+
+### Priority 3: Sharp Margin Deep Dive (Expand Sample)
+
+Re-run the sharp margin analysis from this session with the larger dataset. Key findings to validate:
+
+- **Sharp margin is 3-6x more predictive than raw sharp count** (r=+0.19 vs r=+0.03)
+- **Negative margin or tied: 0-13 (0% WR)** — does this hold with more data?
+- **Breakeven at margin ≥ +3** in contested games
+- **NHL contested: 0-9 (0% WR)** — most critical finding to validate
+- **6-sharp and 8-sharp death zones** in clean games (45% and 44% WR)
+- **CLEAN + EV 1%+: 73.9% WR** — the golden filter
+
+### Priority 4: Pregame Opposition as a Gate
+
+If pregame data confirms that late-appearing opposition is a reliable kill signal, consider:
+- Adding a **pregame alert system** that warns when opposition appears after lock
+- Adjusting unit sizing downward if pregame shows opposition
+- Building a "confidence decay" metric: `lock_confidence - pregame_confidence`
+
+---
+
+*This analysis should be re-run weekly as the sample size grows. Key thresholds to watch: EV 1%+ maintaining 70%+ WR, contested games staying below 35% WR, and Pinnacle confirms continuing to underperform NO Pinnacle. **Next analysis target: April 8-9, 2026** — 4 days of pregame snapshot data.*

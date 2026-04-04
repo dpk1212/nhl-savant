@@ -256,6 +256,26 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
   }
 }
 
+async function syncPregameSnapshot({ docId, side, snapshot }) {
+  try {
+    const ref = doc(db, 'sharpFlowPicks', docId);
+    const existing = await getDoc(ref);
+    if (!existing.exists()) return { action: 'no_doc' };
+    const data = existing.data();
+    if (data.status === 'COMPLETED') return { action: 'no_change' };
+    if (!data.sides?.[side]?.lock) return { action: 'no_lock' };
+    if (data.sides[side].pregame) return { action: 'already_captured' };
+    await setDoc(ref, {
+      sides: { [side]: { pregame: { ...snapshot, capturedAt: Date.now() } } },
+      source: 'ui_pregame_sync', lastWriteAt: Date.now(), lastAction: 'pregame_captured',
+    }, { merge: true });
+    return { action: 'pregame_captured' };
+  } catch (err) {
+    console.warn('Failed to sync pregame snapshot:', err.message);
+    return { action: 'error' };
+  }
+}
+
 async function loadLockedPicks() {
   try {
     const today = todayET();
@@ -2396,6 +2416,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const lastSyncedStars = useRef(null);
+  const pregameSynced = useRef(false);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -2606,6 +2627,43 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       }
     });
   }, [isLocked, sr.stars]);
+
+  // Pregame snapshot — capture full state ~30 min before game for lock→pregame analysis
+  useEffect(() => {
+    if (!isLocked || isGameLive || !commenceTime || pregameSynced.current) return;
+    const now = Date.now();
+    const msUntilGame = commenceTime - now;
+    const PREGAME_WINDOW = 35 * 60 * 1000;
+    const PREGAME_CUTOFF = 5 * 60 * 1000;
+    if (msUntilGame > PREGAME_WINDOW || msUntilGame < PREGAME_CUTOFF) return;
+    const date = gameDate(commenceTime);
+    const docId = `${date}_${gd.sport}_${gd.key}`;
+    pregameSynced.current = true;
+    syncPregameSnapshot({
+      docId, side: consensusSide,
+      snapshot: {
+        odds: betOdds, book: bestBook || 'Pinnacle',
+        pinnacleOdds: consensusOdds, evEdge: evEdge || 0,
+        criteriaMet,
+        criteria: {
+          sharps3Plus: consensusWallets >= 3, plusEV: hasEV,
+          pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000,
+          lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith,
+        },
+        sharpCount: consensusWallets, totalInvested: consensusInvested,
+        units, stars: sr.stars,
+        consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label },
+        opposition: {
+          sharpCount: oppSharpFeatures.conWalletCount,
+          totalInvested: oppSharpFeatures.conTotalInvested,
+          avgBet: oppSharpFeatures.conWalletCount > 0 ? Math.round(oppSharpFeatures.conTotalInvested / oppSharpFeatures.conWalletCount) : 0,
+          stars: oppPeakStars,
+          counterSharpScore: sharpFeatures.counterSharpScore,
+        },
+        minutesBeforeGame: Math.round(msUntilGame / 60000),
+      },
+    });
+  });
 
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
