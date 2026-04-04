@@ -216,9 +216,9 @@ const FAQ = () => {
         },
         {
           id: 'meth-6',
-          question: 'What\'s the Hot Takes feature?',
-          answer: 'AI-generated expert analysis for every NHL game. Provides structured insights including model prediction, scoring outlook, and betting angles. Combines our quantitative analysis with readable narrative.',
-          link: { text: 'See Hot Takes', url: '/matchup-insights' }
+          question: 'What\'s Sharp Flow?',
+          answer: 'Sharp Flow tracks real-time sharp bettor positions across all major sports. It monitors verified directional bettors, calculates conviction ratings, and identifies the strongest plays based on sharp consensus, EV edge, and market confirmation.',
+          link: { text: 'See Sharp Flow', url: '/sharp-flow' }
         },
         {
           id: 'meth-7',

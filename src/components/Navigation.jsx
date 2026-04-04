@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, LineChart, User, LogOut, CreditCard, Crown, Flame, HelpCircle, Database, ChevronDown } from 'lucide-react';
+import { Menu, X, TrendingUp, BarChart3, BookOpen, Search, Target, User, LogOut, CreditCard, Crown, Flame, HelpCircle, Database, ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import AuthModal from './AuthModal';
@@ -26,7 +26,6 @@ const Navigation = () => {
   const navLinks = [
     { path: '/', label: "Today's Games", icon: Target },
     { path: '/sharp-flow', label: 'Sharp Flow', icon: TrendingUp },
-    { path: '/matchup-insights', label: 'Hot Takes', icon: LineChart },
     { path: '/dashboard', label: 'Analytics Hub', icon: BarChart3 },
     { path: '/performance', label: 'Performance', icon: TrendingUp },
     { path: '/methodology', label: 'Methodology', icon: BookOpen },

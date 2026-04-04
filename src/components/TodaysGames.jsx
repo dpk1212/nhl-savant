@@ -974,7 +974,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
     // Premium CTA when no bet recommendation AND no locked pick
     return (
       <Link 
-        to="/matchup-insights" 
+        to="/sharp-flow" 
         style={{ textDecoration: 'none', display: 'block' }}
       >
         <div style={{ 
@@ -1049,7 +1049,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
             maxWidth: '400px',
             margin: '0 auto 1.25rem'
           }}>
-            Odds aren't favorable for this game. Explore our Hot Takes for deeper insights and alternative angles.
+            Odds aren't favorable for this game. Check Sharp Flow for sharp bettor activity and alternative angles.
           </div>
           
           {/* CTA Button */}
@@ -1066,7 +1066,7 @@ const HeroBetCard = ({ bestEdge, game, isMobile, factors, firebaseBets, topEdges
             transition: 'all 0.2s ease',
             boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
           }}>
-            View Hot Takes
+            View Sharp Flow
             <ArrowRight size={16} strokeWidth={2.5} />
           </div>
         </div>
