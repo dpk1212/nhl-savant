@@ -5332,6 +5332,7 @@ function useCountdown(targetDate) {
 
 function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   const [copied, setCopied] = useState(false);
+  const countdown = useCountdown(FOUNDING_DEADLINE);
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
     setCopied(true);
@@ -5366,6 +5367,43 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
       boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
     }}>
       <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
+
+        {/* Founding member countdown */}
+        {!countdown.expired && (
+          <div style={{
+            maxWidth: '480px', margin: '0 auto 1.5rem',
+            borderRadius: '10px', overflow: 'hidden',
+            border: '1px solid rgba(239,68,68,0.35)',
+            background: 'rgba(239,68,68,0.08)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              padding: '0.45rem 1rem',
+              background: 'rgba(239,68,68,0.12)',
+              borderBottom: '1px solid rgba(239,68,68,0.2)',
+            }}>
+              <span style={{ fontSize: '0.65rem' }}>🔴</span>
+              <span style={{ ...T.micro, color: '#F87171', fontWeight: 800, letterSpacing: '0.06em' }}>
+                FOUNDING MEMBER RATE CLOSING
+              </span>
+            </div>
+            <div style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                <span style={{ ...T.micro, color: '#94A3B8' }}>Closes Monday at noon ET —</span>
+                <span style={{
+                  fontFeatureSettings: "'tnum'", fontWeight: 900,
+                  fontSize: '1rem', color: '#F87171', letterSpacing: '0.02em',
+                }}>
+                  {String(countdown.totalH).padStart(2, '0')}h {String(countdown.m).padStart(2, '0')}m {String(countdown.s).padStart(2, '0')}s
+                </span>
+              </div>
+              <span style={{ ...T.micro, color: '#94A3B8' }}>
+                Not everyone will be able to lock in $13/mo — after this, the founding rate is gone.
+              </span>
+            </div>
+          </div>
+        )}
+
         {graded > 0 && (
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem',
@@ -5495,6 +5533,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
 }
 
 const PROMO_DEADLINE = new Date('2026-03-31T03:59:00Z').getTime(); // March 30 11:59 PM ET
+const FOUNDING_DEADLINE = new Date('2026-04-06T16:00:00Z').getTime(); // Monday Apr 6 noon ET
 
 function FoundingMemberBanner({ isMobile }) {
   const { user, loading: authLoading } = useAuth();
