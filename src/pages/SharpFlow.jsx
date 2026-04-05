@@ -234,9 +234,13 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      if (units > currentPeak || stars > currentPeakStars) {
-        const tier = unitTier(units).label;
-        const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+      const lockStars = sides[side].lock?.stars || stars;
+      const starDelta = stars - lockStars;
+      const topPickBonus = starDelta >= 1.5 ? 1.0 : starDelta >= 1.0 ? 0.5 : 0;
+      const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 5);
+      if (bumpedUnits > currentPeak || stars > currentPeakStars) {
+        const tier = unitTier(bumpedUnits).label;
+        const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (opposition) peakData.opposition = opposition;
         await setDoc(ref, {
           sides: { [side]: { peak: peakData } },
