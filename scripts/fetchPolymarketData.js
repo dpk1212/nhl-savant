@@ -61,11 +61,15 @@ async function getAllTrades(eventId) {
   let offset = 0;
   while (true) {
     const params = new URLSearchParams({ eventId: String(eventId), limit: String(PAGE), offset: String(offset) });
-    const batch = await get(`/trades?${params}`, DATA);
-    if (!Array.isArray(batch) || batch.length === 0) break;
-    all = all.concat(batch);
-    if (batch.length < PAGE) break;
-    offset += batch.length;
+    try {
+      const batch = await get(`/trades?${params}`, DATA);
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      all = all.concat(batch);
+      if (batch.length < PAGE) break;
+      offset += batch.length;
+    } catch {
+      break;
+    }
   }
   return all;
 }
