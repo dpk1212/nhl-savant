@@ -15,7 +15,7 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 Every play is scored using a **proprietary weighted signal model** that evaluates multiple dimensions of sharp activity, market pricing, and directional momentum. V3 decomposes consensus into **breadth**, **conviction**, and **concentration** — replacing the single blended grade — and adds **counter-sharp detection**, **RLM interaction**, and **CLV tracking**.
 
-### Signal Weights (max ~12 points)
+### Signal Weights (max ~14.5 points)
 
 | Signal | Max Points | Notes |
 |--------|-----------|-------|
@@ -24,7 +24,7 @@ Every play is scored using a **proprietary weighted signal model** that evaluate
 | **Sharp Conviction** | 1.5 pts | log-dollar per wallet, normalized. Captures per-wallet sizing. |
 | **Concentration Penalty** | 0 to -1.5 pts | When one wallet dominates >60% of consensus money. |
 | **Counter-Sharp Penalty** | 0 to -2 pts | When ELITE/SHARP-tier wallets are on the opposing side. |
-| **EV Edge** | 1 pt / -0.5 trap | 0–1% trap zone penalized. |
+| **EV Edge** | 3.5 pts max | Steep 4-tier curve. Strongest predictive signal. |
 | **Prediction Market** | up to 1.5 pts | Conditional on consensus tier (LEAN/CONTESTED benefit most). |
 | **RLM Interaction** | up to 1.5 pts | Public opposes + line confirms sharps = upgrade. |
 | **Flip Penalty** | 0 to -2 pts | Opposing side already locked at peak. |
@@ -111,10 +111,11 @@ Uses opener-to-current odds comparison (not sparkline endpoints) to avoid intrad
 
 ## Other Scoring (unchanged from V2)
 
-**EV Edge (max 1 pt)**
-- Above 3%: +1 pt
-- 1–3%: +0.5 pts
-- **0–1%: −0.5 pts** (trap zone)
+**EV Edge (max 3.5 pts) — strongest predictive signal**
+- Above 3%: +3.5 pts (83% WR, +68% ROI historically)
+- 2–3%: +2.5 pts
+- 1–2%: +1.5 pts
+- 0–1%: +0.5 pts (any positive EV = gap exists, no penalty)
 
 **Prediction Market (conditional)**
 - LEAN/CONTESTED + pred aligns: +1.5 pts
@@ -158,6 +159,8 @@ sides.<side>.closingPinnProb: number    // Implied probability at close
 sides.<side>.result.clv: number         // closeProb - lockProb (computed at grading)
 sides.<side>.result.lockProb: number    // Implied prob at lock
 sides.<side>.result.closeProb: number   // Implied prob at close
+sides.<side>.maxEV: number              // Highest EV ever observed for this side
+sides.<side>.maxEVAt: number            // Timestamp when maxEV was recorded
 ```
 
 ---
@@ -223,9 +226,9 @@ When a single wallet accounts for >60% of consensus-side money, the play is pena
 
 When public bettors are heavily against the sharp side but the line still moves with sharps (Reverse Line Movement), the play gets up to **+1.5 pts**. This is the strongest possible confirming signal — the market is ignoring the public and moving with informed money.
 
-### EV Trap Protection
+### EV Edge as Primary Signal
 
-Low positive EV (0–1%) receives a scoring penalty. This range has historically been a value trap.
+EV edge uses a steep 4-tier curve (+0.5 / +1.5 / +2.5 / +3.5) reflecting its status as the strongest single predictor. No positive EV interval is penalized — any positive EV indicates a Pinnacle-retail gap exists. The system also tracks `maxEV` per side to capture transient EV windows that may close between snapshots.
 
 ### Conditional Prediction Market
 

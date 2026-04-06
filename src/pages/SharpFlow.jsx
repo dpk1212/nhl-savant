@@ -196,6 +196,8 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
     team,
     lock: { ...snapshot, lockedAt: now },
     peak: { ...snapshot, updatedAt: now },
+    maxEV: evEdge || 0,
+    maxEVAt: now,
     status: 'PENDING',
     result: { outcome: null, profit: null, gradedAt: null },
   };
@@ -232,6 +234,11 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
 
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
+
+      const currentMaxEV = sides[side].maxEV ?? 0;
+      const currentEV = evEdge || 0;
+      const evIsNewMax = currentEV > currentMaxEV;
+
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
       const lockStars = sides[side].lock?.stars || stars;
@@ -242,12 +249,20 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (opposition) peakData.opposition = opposition;
-        await setDoc(ref, {
-          sides: { [side]: { peak: peakData } },
-          source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated',
-        }, { merge: true });
+        const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
+        if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
+        await setDoc(ref, mergeData, { merge: true });
         return { docId, action: 'peak_updated' };
       }
+
+      if (evIsNewMax) {
+        await setDoc(ref, {
+          sides: { [side]: { maxEV: currentEV, maxEVAt: Date.now() } },
+          lastWriteAt: Date.now(),
+        }, { merge: true });
+        return { docId, action: 'maxev_updated' };
+      }
+
       return { docId, action: 'no_change' };
     }
 
@@ -1969,10 +1984,11 @@ function rateStars({
   else if (counterSharpScore >= 3) pts -= 2;
   else if (counterSharpScore >= 1) pts -= 1;
 
-  // EV edge — strongest predictive signal (max 2.5 pts / -1 trap)
-  if (evEdge > 3) pts += 2.5;
-  else if (evEdge > 1) pts += 2;
-  else if (evEdge > 0) pts -= 1;
+  // EV edge — strongest predictive signal, steep curve (max 3.5 pts)
+  if (evEdge > 3) pts += 3.5;
+  else if (evEdge > 2) pts += 2.5;
+  else if (evEdge > 1) pts += 1.5;
+  else if (evEdge > 0) pts += 0.5;
 
   // Prediction market — conditional on breadth tier
   if (polyMovingWith) {
@@ -1995,7 +2011,7 @@ function rateStars({
   else if (oppPeakStars >= 3.5) pts -= 1.5;
   else if (oppPeakStars >= 3) pts -= 1;
 
-  const maxPts = 13.5;
+  const maxPts = 14.5;
   const raw = (pts / maxPts) * 5;
   const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
 

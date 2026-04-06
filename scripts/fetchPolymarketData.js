@@ -251,7 +251,7 @@ const NHL_MAP = {
   avalanche: 'COL', avs: 'COL',
   coyotes: 'ARI', utah: 'UTA',
   knights: 'VGK', goldenknights: 'VGK',
-  kings: 'LAK', losangeles: 'LAK', la: 'LAK',
+  kings: 'LAK', losangeles: 'LAK',
   ducks: 'ANA', sharks: 'SJS', sanjose: 'SJS',
   flames: 'CGY', oilers: 'EDM',
   canucks: 'VAN', kraken: 'SEA',
@@ -415,18 +415,47 @@ async function loadTodaysSchedule(cbbMap) {
     console.warn('⚠️  No ODDS_API_KEY — CBB schedule will be empty');
   }
 
-  try {
-    const nhlPath = join(ROOT, 'public', 'odds_money.md');
-    const nhlMd = readFileSync(nhlPath, 'utf8');
-    const nhlGames = parseOddsTrader(nhlMd);
-    for (const g of nhlGames) {
-      if (g.awayTeam && g.homeTeam) {
-        validNHL.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+  // NHL: use Odds API (like CBB/MLB/NBA) for reliable schedule + commence times
+  if (ODDS_API_KEY) {
+    try {
+      const url = `https://api.the-odds-api.com/v4/sports/icehockey_nhl/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=h2h&oddsFormat=american&bookmakers=fanduel`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const games = await res.json();
+        for (const g of games) {
+          const away = resolveNHLTeam(g.away_team);
+          const home = resolveNHLTeam(g.home_team);
+          if (away && home) {
+            const gk = `${normalize(away)}_${normalize(home)}`;
+            validNHL.add(gk);
+            if (g.commence_time && !commenceTimes[`NHL:${gk}`]) commenceTimes[`NHL:${gk}`] = g.commence_time;
+          }
+        }
+        const remaining = res.headers.get('x-requests-remaining');
+        console.log(`📋 Today's NHL (Odds API): ${validNHL.size} games [credits left: ${remaining}]`);
+      } else {
+        console.warn(`Odds API NHL error: ${res.status}`);
       }
+    } catch (e) {
+      console.warn('Could not load NHL schedule from Odds API:', e.message);
     }
-    console.log(`📋 Today's NHL: ${nhlGames.length} games`);
-  } catch (e) {
-    console.warn('Could not load NHL schedule:', e.message);
+  }
+
+  // NHL fallback: OddsTrader markdown (no commence times, but better than nothing)
+  if (validNHL.size === 0) {
+    try {
+      const nhlPath = join(ROOT, 'public', 'odds_money.md');
+      const nhlMd = readFileSync(nhlPath, 'utf8');
+      const nhlGames = parseOddsTrader(nhlMd);
+      for (const g of nhlGames) {
+        if (g.awayTeam && g.homeTeam) {
+          validNHL.add(`${normalize(g.awayTeam)}_${normalize(g.homeTeam)}`);
+        }
+      }
+      console.log(`📋 Today's NHL (OddsTrader fallback): ${validNHL.size} games`);
+    } catch (e) {
+      console.warn('Could not load NHL schedule:', e.message);
+    }
   }
 
   // MLB: use Odds API
@@ -531,19 +560,40 @@ async function run() {
     if (!byId.has(id)) byId.set(id, ev);
   }
 
+  const nowMs = Date.now();
+  const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+
   for (const ev of byId.values()) {
     const id = ev.id ?? ev.slug;
     const title = ev.title || ev.question || '';
     const teams = extractTeamsFromTitle(title);
     if (!teams) continue;
 
+    // Reject stale events (eventDate > 2 days in the past)
+    const evDate = ev.eventDate ? new Date(ev.eventDate).getTime() : null;
+    if (evDate && evDate < nowMs - TWO_DAYS_MS) continue;
+
+    // Use event's own Polymarket tags for sport detection first
+    const evTags = (ev.tags || []).map(t => (t.slug || t || '').toLowerCase());
+    const hasNcaaTag = evTags.some(t => /ncaa|college|cbb|cwbb|ncaa-basketball/.test(t));
+    const hasNbaTag = evTags.includes('nba');
+    const hasNhlTag = evTags.includes('nhl') || evTags.includes('hockey');
+    const hasMlbTag = evTags.includes('mlb') || evTags.includes('baseball');
+
     let sport = ev._sport === 'CBB' ? 'CBB' : ev._sport === 'ncaa' ? 'CBB' : ev._sport === 'nhl' ? 'NHL' : ev._sport === 'MLB' ? 'MLB' : ev._sport === 'mlb' ? 'MLB' : ev._sport === 'baseball' ? 'MLB' : ev._sport === 'nba' ? 'NBA' : ev._sport === 'NBA' ? 'NBA' : null;
+
+    // If tag says ncaa/college, force CBB regardless of _sport from tag_slug
+    if (!sport && hasNcaaTag && !hasNbaTag) sport = 'CBB';
+
     if (!sport) {
       const t = title.toLowerCase();
       if (/ncaa|college|basketball/.test(t) && !/nba|champion|winner|tournament winner/.test(t)) sport = 'CBB';
       else if (/nba/.test(t) && !/champion|winner|mvp|award/.test(t)) sport = 'NBA';
       else if (/nhl|hockey/.test(t) && !/champion|winner|stanley/.test(t)) sport = 'NHL';
       else if (/mlb|baseball/.test(t) && !/champion|winner|world series winner/.test(t)) sport = 'MLB';
+      else if (hasNhlTag && !hasNcaaTag) sport = 'NHL';
+      else if (hasMlbTag) sport = 'MLB';
+      else if (hasNbaTag) sport = 'NBA';
       else {
         const revTeams = [teams[1], teams[0]];
         const cbbKey = matchToGameKey(teams, cbbMap, 'CBB');
