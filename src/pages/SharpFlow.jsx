@@ -3555,7 +3555,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </button>
           ) : (
             <a
-              href="#/pricing?promo=SHARPMONEY"
+              href="#/pricing"
               style={{
                 width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', cursor: 'pointer',
                 fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.04em',
@@ -5083,7 +5083,7 @@ export default function SharpFlow() {
                             <>
                               <div style={{ ...T.body, color: B.textSec, fontWeight: 600, marginBottom: '0.25rem' }}>Build your personal watchlist</div>
                               <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.75rem' }}>Pro members can save games to their watchlist for easy tracking.</div>
-                              <a href="#/pricing?promo=SHARPMONEY" style={{
+                              <a href="#/pricing" style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                                 padding: '0.5rem 1.25rem', borderRadius: '8px',
                                 background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(129,140,248,0.08) 100%)',
@@ -5327,34 +5327,7 @@ function SportTabs({ active, onChange }) {
   );
 }
 
-function useCountdown(targetDate) {
-  const [remaining, setRemaining] = useState(() => {
-    const diff = targetDate - Date.now();
-    return diff > 0 ? diff : 0;
-  });
-  useEffect(() => {
-    if (remaining <= 0) return;
-    const id = setInterval(() => {
-      const diff = targetDate - Date.now();
-      setRemaining(diff > 0 ? diff : 0);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [targetDate, remaining <= 0]);
-  const totalH = Math.floor(remaining / 3600000);
-  const m = Math.floor((remaining % 3600000) / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  return { totalH, m, s, expired: remaining <= 0 };
-}
-
 function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
-  const [copied, setCopied] = useState(false);
-  const countdown = useCountdown(FOUNDING_DEADLINE);
-  const handleCopy = async () => {
-    try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
   const picks = (pnlData?.picks || []).filter(p => p.outcome);
   const wins = picks.filter(p => p.outcome === 'WIN').length;
   const losses = picks.filter(p => p.outcome === 'LOSS').length;
@@ -5383,42 +5356,6 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
       boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
     }}>
       <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
-
-        {/* Founding member countdown */}
-        {!countdown.expired && (
-          <div style={{
-            maxWidth: '480px', margin: '0 auto 1.5rem',
-            borderRadius: '10px', overflow: 'hidden',
-            border: '1px solid rgba(239,68,68,0.35)',
-            background: 'rgba(239,68,68,0.08)',
-          }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              padding: '0.45rem 1rem',
-              background: 'rgba(239,68,68,0.12)',
-              borderBottom: '1px solid rgba(239,68,68,0.2)',
-            }}>
-              <span style={{ fontSize: '0.65rem' }}>🔴</span>
-              <span style={{ ...T.micro, color: '#F87171', fontWeight: 800, letterSpacing: '0.06em' }}>
-                FOUNDING MEMBER RATE CLOSING
-              </span>
-            </div>
-            <div style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                <span style={{ ...T.micro, color: '#94A3B8' }}>Closes Monday at noon ET —</span>
-                <span style={{
-                  fontFeatureSettings: "'tnum'", fontWeight: 900,
-                  fontSize: '1rem', color: '#F87171', letterSpacing: '0.02em',
-                }}>
-                  {String(countdown.totalH).padStart(2, '0')}h {String(countdown.m).padStart(2, '0')}m {String(countdown.s).padStart(2, '0')}s
-                </span>
-              </div>
-              <span style={{ ...T.micro, color: '#94A3B8' }}>
-                Not everyone will be able to lock in $13/mo — after this, the founding rate is gone.
-              </span>
-            </div>
-          </div>
-        )}
 
         {graded > 0 && (
           <div style={{
@@ -5480,39 +5417,10 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
           background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: isMobile ? '1.25rem' : '1.5rem',
           border: `1px solid ${B.border}`, maxWidth: '480px', margin: '0 auto',
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-            <span style={{
-              ...T.micro, padding: '0.2rem 0.6rem', borderRadius: '4px',
-              background: B.greenDim, color: B.green, fontWeight: 800,
-              letterSpacing: '0.05em',
-            }}>FOUNDING MEMBER RATE</span>
-          </div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: isMobile ? '2rem' : '2.25rem', fontWeight: 900, color: B.green }}>$13</span>
+            <span style={{ fontSize: isMobile ? '2rem' : '2.25rem', fontWeight: 900, color: B.green }}>$25.99</span>
             <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
-            <span style={{ ...T.label, color: B.textMuted, textDecoration: 'line-through', opacity: 0.6 }}>$25.99</span>
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-              background: B.greenDim, color: B.green, fontWeight: 800,
-            }}>50% OFF FOREVER</span>
           </div>
-
-          <button onClick={handleCopy} style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.5rem 1rem', borderRadius: '8px', margin: '0 auto 1rem',
-            background: 'rgba(212,175,55,0.08)', border: `1.5px dashed ${B.gold}`,
-            cursor: 'pointer',
-          }}>
-            <span style={{ ...T.label, color: B.textSec }}>Code:</span>
-            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: B.gold, letterSpacing: '0.04em' }}>SHARPMONEY</span>
-            <span style={{
-              ...T.micro, padding: '0.15rem 0.5rem', borderRadius: '4px',
-              background: copied ? B.greenDim : 'rgba(212,175,55,0.12)',
-              color: copied ? B.green : B.gold, fontWeight: 700,
-            }}>
-              {copied ? '✓ Copied' : 'Copy'}
-            </span>
-          </button>
 
           <div style={{
             textAlign: 'center', marginBottom: '0.75rem',
@@ -5523,7 +5431,7 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— full access, cancel anytime</span>
           </div>
 
-          <a href="#/pricing?promo=SHARPMONEY" style={{
+          <a href="#/pricing" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
             padding: '0.75rem 1.5rem', borderRadius: '8px',
             background: `linear-gradient(135deg, ${B.green}, #059669)`,
@@ -5544,267 +5452,6 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-const PROMO_DEADLINE = new Date('2026-03-31T03:59:00Z').getTime(); // March 30 11:59 PM ET
-const FOUNDING_DEADLINE = new Date('2026-04-06T16:00:00Z').getTime(); // Monday Apr 6 noon ET
-
-function FoundingMemberBanner({ isMobile }) {
-  const { user, loading: authLoading } = useAuth();
-  const { isPremium, loading: subLoading } = useSubscription(user);
-  const [expanded, setExpanded] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const countdown = useCountdown(PROMO_DEADLINE);
-
-  if (authLoading || subLoading || isPremium || dismissed) return null;
-
-  const handleCopy = async () => {
-    try { await navigator.clipboard.writeText('SHARPMONEY'); } catch { /* fallback */ }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  const handleDismiss = (e) => {
-    e.stopPropagation();
-    setDismissed(true);
-  };
-
-  const features = [
-    'Verified sharp bettor tracking in real time',
-    'Pinnacle fair value + best retail EV edge',
-    'Auto-locked plays with smart unit sizing',
-    'Full market flow — tickets, money, & whale action',
-    'Line movement alerts + reverse line moves',
-    'Complete performance dashboard with ROI tracking',
-  ];
-
-  const pad = (n) => String(n).padStart(2, '0');
-  const isUrgent = countdown.totalH < 24;
-  const countdownText = countdown.expired
-    ? 'OFFER EXPIRED'
-    : `${countdown.totalH}h ${pad(countdown.m)}m ${pad(countdown.s)}s`;
-
-  const CountdownUnit = ({ value, label, wide }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: wide ? (isMobile ? '3.5rem' : '4rem') : (isMobile ? '3rem' : '3.5rem') }}>
-      <span style={{
-        fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900,
-        color: isUrgent ? '#ef4444' : '#f59e0b',
-        fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-      }}>{wide ? value : pad(value)}</span>
-      <span style={{ ...T.micro, color: B.textMuted, fontWeight: 600, marginTop: '0.2rem' }}>{label}</span>
-    </div>
-  );
-
-  const CountdownSep = () => (
-    <span style={{
-      fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900,
-      color: isUrgent ? '#ef4444' : '#f59e0b',
-      lineHeight: 1, opacity: 0.6, alignSelf: 'flex-start', paddingTop: '0.1rem',
-    }}>:</span>
-  );
-
-  return (
-    <div style={{
-      position: 'relative',
-      marginBottom: '1.5rem',
-      borderRadius: '14px',
-      overflow: 'hidden',
-      background: `linear-gradient(135deg, rgba(212,175,55,0.08) 0%, ${B.card} 35%, rgba(239,68,68,0.04) 100%)`,
-      border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
-      boxShadow: isUrgent
-        ? '0 0 20px rgba(239,68,68,0.08), 0 4px 20px rgba(0,0,0,0.3)'
-        : '0 0 15px rgba(245,158,11,0.06), 0 4px 20px rgba(0,0,0,0.3)',
-    }}>
-      <style>{`
-        @keyframes pulseGlow {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-      `}</style>
-
-      {/* Top accent line */}
-      <div style={{
-        height: '3px',
-        background: isUrgent
-          ? 'linear-gradient(90deg, #ef4444, #f59e0b, #ef4444)'
-          : 'linear-gradient(90deg, #f59e0b, #ef4444, #f59e0b)',
-      }} />
-
-      {/* Collapsed header — always visible */}
-      <button onClick={() => setExpanded(p => !p)} style={{
-        width: '100%', background: 'none', border: 'none', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: isMobile ? '0.75rem 1rem' : '0.75rem 2rem',
-        gap: '0.5rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', flex: 1 }}>
-          <span style={{ fontSize: '0.85rem' }}>🏆</span>
-          <span style={{ ...T.label, color: B.gold, letterSpacing: '0.04em' }}>FOUNDING MEMBER — </span>
-          <span style={{ ...T.label, color: B.green, fontWeight: 800 }}>50% OFF FOR LIFE</span>
-          {!isMobile && <>
-            <span style={{ ...T.label, color: B.textMuted }}>· Code:</span>
-            <span style={{ ...T.label, color: B.gold, fontWeight: 900, letterSpacing: '0.03em' }}>SHARPMONEY</span>
-          </>}
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
-            ...T.micro, fontWeight: 800, letterSpacing: '0.02em',
-            padding: '0.15rem 0.5rem', borderRadius: '4px',
-            background: isUrgent ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
-            color: isUrgent ? '#ef4444' : '#f59e0b',
-            animation: 'pulseGlow 2s ease-in-out infinite',
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            <Clock size={10} />
-            {countdownText}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-          {expanded
-            ? <ChevronUp size={16} color={B.textMuted} />
-            : <ChevronDown size={16} color={B.textMuted} />}
-          <span onClick={handleDismiss} style={{ color: B.textMuted, fontSize: '0.875rem', lineHeight: 1, padding: '0.125rem' }}>✕</span>
-        </div>
-      </button>
-
-      {/* Expanded details */}
-      {expanded && (
-        <div style={{ padding: isMobile ? '0 1rem 1.25rem' : '0 2rem 1.75rem' }}>
-          <div style={{ height: '1px', background: B.borderSubtle, marginBottom: '1rem' }} />
-
-          {/* Urgency bar */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.6rem 0.875rem', borderRadius: '8px',
-            background: isUrgent ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.06)',
-            border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)'}`,
-            marginBottom: '1rem',
-          }}>
-            <AlertTriangle size={14} color={isUrgent ? '#ef4444' : '#f59e0b'} />
-            <span style={{ ...T.label, color: isUrgent ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
-              {countdown.expired
-                ? 'This offer has expired.'
-                : isUrgent
-                  ? 'FINAL HOURS — Free access and founding member pricing end Monday at midnight ET'
-                  : `Less than ${countdown.totalH} hours left — free access and founding member pricing end Monday at midnight ET`}
-            </span>
-          </div>
-
-          {/* Countdown timer */}
-          {!countdown.expired && (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: isMobile ? '0.375rem' : '0.5rem',
-              padding: '1rem', marginBottom: '1.25rem', borderRadius: '10px',
-              background: 'rgba(0,0,0,0.3)',
-              border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)'}`,
-            }}>
-              <CountdownUnit value={countdown.totalH} label="HOURS" wide />
-              <CountdownSep />
-              <CountdownUnit value={countdown.m} label="MIN" />
-              <CountdownSep />
-              <CountdownUnit value={countdown.s} label="SEC" />
-            </div>
-          )}
-
-          <h2 style={{
-            fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900,
-            color: B.text, margin: '0 0 0.375rem 0', lineHeight: 1.2,
-            letterSpacing: '-0.02em',
-          }}>
-            You're early. <span style={{ color: B.gold }}>That pays off.</span>
-          </h2>
-          <p style={{
-            ...T.body, color: B.textSec, margin: '0 0 0.25rem 0',
-            maxWidth: '600px', lineHeight: 1.6,
-          }}>
-            We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span>, surface their real positions
-            on today's games, and combine it with Pinnacle fair odds, EV edges, and full market flow
-            — so you bet with an edge, not a hunch. Lock in <span style={{ color: B.green, fontWeight: 700 }}>50% off forever</span> before the paywall goes live.
-          </p>
-          <p style={{
-            ...T.label, color: B.textMuted, margin: '0 0 1.25rem 0', fontStyle: 'italic',
-          }}>
-            Free access ends Monday at midnight ET. The founding member discount goes with it — lock your rate now.
-          </p>
-
-          {/* Feature grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: '0.4rem 1.5rem',
-            marginBottom: '1.25rem',
-          }}>
-            {features.map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <CheckCircle size={13} color={B.green} />
-                <span style={{ ...T.label, color: B.textSec }}>{f}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA row */}
-          <div style={{
-            display: 'flex', alignItems: 'center',
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '0.75rem' : '1rem',
-          }}>
-            {/* Code block */}
-            <button onClick={handleCopy} style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.625rem 1.25rem', borderRadius: '8px',
-              background: 'rgba(212,175,55,0.08)',
-              border: `1.5px dashed ${B.gold}`,
-              cursor: 'pointer', transition: 'all 0.2s ease',
-              width: isMobile ? '100%' : 'auto', justifyContent: 'center',
-            }}>
-              <span style={{ ...T.label, color: B.textSec }}>Code:</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 900, color: B.gold, letterSpacing: '0.04em' }}>SHARPMONEY</span>
-              <span style={{
-                ...T.micro, padding: '0.15rem 0.5rem', borderRadius: '4px',
-                background: copied ? B.greenDim : 'rgba(212,175,55,0.12)',
-                color: copied ? B.green : B.gold,
-                fontWeight: 700, transition: 'all 0.2s ease',
-              }}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </span>
-            </button>
-
-            {/* Pricing */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-              <span style={{ fontSize: isMobile ? '1.375rem' : '1.5rem', fontWeight: 900, color: B.green }}>$13/mo</span>
-              <span style={{
-                ...T.label, color: B.textMuted,
-                textDecoration: 'line-through', opacity: 0.6,
-              }}>$25.99</span>
-              <span style={{
-                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                background: B.greenDim, color: B.green, fontWeight: 800,
-              }}>50% OFF FOREVER</span>
-            </div>
-          </div>
-
-          {/* Link to pricing */}
-          <a href="#/pricing?promo=SHARPMONEY" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            marginTop: '1rem', padding: isMobile ? '0.75rem 1.5rem' : '0.625rem 1.5rem', borderRadius: '8px',
-            background: `linear-gradient(135deg, ${B.green}, #059669)`,
-            color: '#fff', fontWeight: 800, fontSize: isMobile ? '1rem' : '0.9rem',
-            textDecoration: 'none', letterSpacing: '0.01em',
-            transition: 'all 0.2s ease',
-            width: isMobile ? '100%' : 'auto', justifyContent: 'center',
-            boxShadow: '0 2px 12px rgba(16,185,129,0.3)',
-          }}>
-            Lock In 50% Off Forever →
-          </a>
-        </div>
-      )}
     </div>
   );
 }

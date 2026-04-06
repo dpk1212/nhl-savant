@@ -24,9 +24,7 @@ const logEvent = (eventName, params) => {
   }
 };
 
-const PROMO_CODES = {
-  SHARPMONEY: { code: 'SHARPMONEY', discount: 50 },
-};
+const PROMO_CODES = {};
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -42,7 +40,7 @@ const Pricing = () => {
   const [copied, setCopied] = useState(false);
   const [promoApplied, setPromoApplied] = useState(false);
 
-  // Check for promo code in URL query params (e.g. ?promo=SHARPMONEY)
+  // Check for promo code in URL query params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const promo = params.get('promo')?.toUpperCase();
