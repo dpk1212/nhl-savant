@@ -1,0 +1,41 @@
+name: Sharp Flow — Full Performance Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: 'Optional note (appears in run title)'
+        required: false
+        default: ''
+
+jobs:
+  analyze:
+    name: Run Complete Sharp Flow Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Sharp Flow analysis
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  SHARP FLOW COMPLETE ANALYSIS"
+          echo "  Triggered by: ${{ github.actor }}"
+          echo "  Note: ${{ github.event.inputs.notes }}"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/analyzeSharpFlow.js
