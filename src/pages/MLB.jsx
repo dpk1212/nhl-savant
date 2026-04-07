@@ -185,8 +185,25 @@ const MLB = () => {
     hour12: true,
   }) : null;
 
+  // Deduplicate: same matchup can appear for multiple days in a series.
+  // Keep the entry with the earliest commenceTime per team pair (today's game).
+  const dedup = (arr) => {
+    const best = new Map();
+    for (const item of arr) {
+      const key = `${(item.awayCode || '').toLowerCase()}_${(item.homeCode || '').toLowerCase()}`;
+      const existing = best.get(key);
+      if (!existing || new Date(item.commenceTime) < new Date(existing.commenceTime)) {
+        best.set(key, item);
+      }
+    }
+    return [...best.values()];
+  };
+
+  const dedupedPicks = dedup(picks);
+  const dedupedEvals = dedup(evaluations || []);
+
   // Sort picks
-  const sortedPicks = [...picks].sort((a, b) => {
+  const sortedPicks = [...dedupedPicks].sort((a, b) => {
     if (sortOrder === 'ev') return (b.ev || 0) - (a.ev || 0);
     if (sortOrder === 'units') return (b.units || 0) - (a.units || 0);
     if (sortOrder === 'time') return new Date(a.commenceTime) - new Date(b.commenceTime);
@@ -194,13 +211,13 @@ const MLB = () => {
   });
 
   // All evaluations (includes non-picks) for the "All Games" view
-  const sortedEvaluations = evaluations
-    ? [...evaluations].sort((a, b) => (b.ev || 0) - (a.ev || 0))
-    : [];
+  const sortedEvaluations = [...dedupedEvals].sort((a, b) => (b.ev || 0) - (a.ev || 0));
 
-  const totalUnits = picks.reduce((sum, p) => sum + (p.units || 0), 0);
-  const avgEV = picks.length > 0 ? (picks.reduce((s, p) => s + (p.ev || 0), 0) / picks.length) : 0;
-  const aGrades = picks.filter(p => p.grade === 'A').length;
+  const totalUnits = dedupedPicks.reduce((sum, p) => sum + (p.units || 0), 0);
+  const avgEV = dedupedPicks.length > 0 ? (dedupedPicks.reduce((s, p) => s + (p.ev || 0), 0) / dedupedPicks.length) : 0;
+  const aGrades = dedupedPicks.filter(p => p.grade === 'A').length;
+  const dedupedPicksCount = dedupedPicks.length;
+  const dedupedGamesCount = dedupedEvals.length;
 
   return (
     <div style={{
@@ -295,7 +312,7 @@ const MLB = () => {
             gridTemplateColumns: 'repeat(4, 1fr)',
             gap: isMobile ? '0.5rem' : '0.75rem',
           }}>
-            <StatBox label="Picks" value={picksCount} icon={Target} color={MLB_GREEN} isMobile={isMobile} />
+            <StatBox label="Picks" value={dedupedPicksCount} icon={Target} color={MLB_GREEN} isMobile={isMobile} />
             <StatBox label="Avg EV" value={`+${avgEV.toFixed(1)}%`} icon={TrendingUp} color={ACCENT} isMobile={isMobile} />
             <StatBox label="Total Units" value={totalUnits.toFixed(1)} icon={Zap} color={AMBER} isMobile={isMobile} />
             <StatBox label="A Grades" value={aGrades} icon={Shield} color="#3B82F6" isMobile={isMobile} />
@@ -360,7 +377,7 @@ const MLB = () => {
                 transition: 'all 0.2s ease',
               }}
             >
-              {showAllGames ? `All Games (${gamesEvaluated})` : `Picks Only (${picksCount})`}
+              {showAllGames ? `All Games (${dedupedGamesCount})` : `Picks Only (${dedupedPicksCount})`}
             </button>
           </div>
         </div>
@@ -370,7 +387,7 @@ const MLB = () => {
           {showAllGames
             ? sortedEvaluations.map((ev, idx) => (
                 <MLBGameCard
-                  key={`${ev.awayCode}_${ev.homeCode}_${idx}`}
+                  key={`${ev.awayCode}_${ev.homeCode}`}
                   game={ev}
                   rank={idx + 1}
                   isMobile={isMobile}
@@ -379,12 +396,12 @@ const MLB = () => {
                   kalshiData={kalshiData}
                   firebaseBets={firebaseBets}
                   isPick={ev.action === 'BET' && ev.units > 0}
-                  allPicks={picks}
+                  allPicks={dedupedPicks}
                 />
               ))
             : sortedPicks.map((pick, idx) => (
                 <MLBGameCard
-                  key={`${pick.awayCode}_${pick.homeCode}_${idx}`}
+                  key={`${pick.awayCode}_${pick.homeCode}`}
                   game={pick}
                   rank={idx + 1}
                   isMobile={isMobile}
@@ -393,7 +410,7 @@ const MLB = () => {
                   kalshiData={kalshiData}
                   firebaseBets={firebaseBets}
                   isPick={true}
-                  allPicks={picks}
+                  allPicks={dedupedPicks}
                 />
               ))
           }
