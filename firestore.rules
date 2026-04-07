@@ -36,6 +36,12 @@ service cloud.firestore {
       allow write: if true;  // TEMP: Allow writes for testing (will restrict later to service account only)
     }
     
+    // MLB bets - public read, temp write for pipeline
+    match /mlb_bets/{document=**} {
+      allow read: if true;
+      allow write: if true;  // TEMP: Allow writes for pipeline (will restrict later to service account only)
+    }
+    
     // User bookmarks - allow users to manage their own bookmarks
     match /user_bookmarks/{document=**} {
       allow read, write: if true; // Anonymous users can manage their bookmarks
