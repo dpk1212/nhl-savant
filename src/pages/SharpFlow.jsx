@@ -613,6 +613,12 @@ function buildGameData(polyData, kalshiData) {
       // Positive = away team's odds improving, Negative = away team's odds dropping (home improving)
       const priceMovedTeam = priceChange > 0 ? away : priceChange < 0 ? home : null;
 
+      // Spread and total market data (Polymarket + Kalshi)
+      const polySpread = poly?.polySpread || null;
+      const polyTotal = poly?.polyTotal || null;
+      const kalshiSpreads = kalshi?.spreads || null;
+      const kalshiTotals = kalshi?.totals || null;
+
       games.push({
         key, sport, away, home, awayProb, homeProb, volume,
         awayTicketPct, homeTicketPct, awayMoneyPct, homeMoneyPct,
@@ -622,6 +628,7 @@ function buildGameData(polyData, kalshiData) {
         whaleDirection, whaleCashAway, whaleCashHome,
         whaleBuyAway, whaleBuyHome,
         polyVol, kalshiVol, latestTradeTs,
+        polySpread, polyTotal, kalshiSpreads, kalshiTotals,
       });
     }
   };
@@ -878,6 +885,7 @@ function WhaleTradeRow({ trade, whaleProfiles }) {
 const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles, pinnacleHistory, polyData }) {
   const [showTrades, setShowTrades] = useState(false);
   const [showBooks, setShowBooks] = useState(false);
+  const [marketTab, setMarketTab] = useState('ml');
   const ss = sportStyle(game.sport);
   const awayShort = game.away.split(' ').pop();
   const homeShort = game.home.split(' ').pop();
@@ -1112,6 +1120,26 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
         </div>
       )}
 
+      {/* ── Market Tab Strip ── */}
+      {(() => {
+        const hasSpread = !!(pinnGame?.spreadCurrent || game?.polySpread || (game?.kalshiSpreads?.length > 0));
+        const hasTotal = !!(pinnGame?.totalCurrent || game?.polyTotal || (game?.kalshiTotals?.length > 0));
+        if (!hasSpread && !hasTotal) return null;
+        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} />;
+      })()}
+
+      {marketTab === 'spread' && (
+        <div style={{ margin: '0.375rem 0.75rem 0.5rem' }}>
+          <SpreadPanel pinnGame={pinnGame} game={game} isMobile={isMobile} />
+        </div>
+      )}
+      {marketTab === 'total' && (
+        <div style={{ margin: '0.375rem 0.75rem 0.5rem' }}>
+          <TotalPanel pinnGame={pinnGame} game={game} isMobile={isMobile} />
+        </div>
+      )}
+
+      {marketTab === 'ml' && <>
       {/* ── Side-by-side flow comparison ── */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr auto 1fr',
@@ -1342,6 +1370,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
           </div>
         </div>
       )}
+      </>}
 
       {/* ── Summary stats strip ── */}
       <div style={{
@@ -1899,6 +1928,384 @@ function fmtOdds(american) {
 }
 
 // ─── Sharp Position Card (elevated, full-featured) ────────────────────────────
+
+// ─── Market Tab Strip (ML | Spread | Total) ──────────────────────────────────
+
+const MarketTabStrip = memo(function MarketTabStrip({ active, onChange, hasSpread, hasTotal }) {
+  const tabs = [
+    { id: 'ml', label: 'ML' },
+    ...(hasSpread ? [{ id: 'spread', label: 'Spread' }] : []),
+    ...(hasTotal ? [{ id: 'total', label: 'Total' }] : []),
+  ];
+  if (tabs.length <= 1) return null;
+  return (
+    <div style={{ display: 'flex', gap: '0.25rem', padding: '0.375rem 0.625rem 0' }}>
+      {tabs.map(t => {
+        const isActive = active === t.id;
+        return (
+          <button key={t.id} onClick={() => onChange(t.id)} style={{
+            padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+            ...T.micro, fontWeight: 700, fontSize: '0.6rem', letterSpacing: '0.04em',
+            border: isActive ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
+            background: isActive ? B.goldDim : 'transparent',
+            color: isActive ? B.gold : B.textMuted,
+            transition: 'all 0.15s ease',
+          }}>{t.label}</button>
+        );
+      })}
+    </div>
+  );
+});
+
+// ─── Spread Panel — Pinnacle spread lines + prediction market data ───────────
+
+function SpreadPanel({ pinnGame, game, isMobile }) {
+  const sc = pinnGame?.spreadCurrent;
+  const so = pinnGame?.spreadOpener;
+  const sm = pinnGame?.spreadMovement;
+  const bestAway = pinnGame?.bestAwaySpread;
+  const bestHome = pinnGame?.bestHomeSpread;
+  const polySpread = game?.polySpread;
+  const kalshiSpreads = game?.kalshiSpreads;
+  const spreadHist = pinnGame?.spreadHistory || [];
+  const awayShort = game.away.split(' ').pop();
+  const homeShort = game.home.split(' ').pop();
+
+  const hasAnyData = sc || bestAway || bestHome || polySpread || (kalshiSpreads && kalshiSpreads.length > 0);
+  if (!hasAnyData) {
+    return (
+      <div style={{ padding: '0.75rem 0.625rem', textAlign: 'center' }}>
+        <span style={{ ...T.caption, color: B.textMuted }}>No spread data available</span>
+      </div>
+    );
+  }
+
+  const spreadPoints = spreadHist.map(h => h.awayLine);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {sc && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Pinnacle Spread</span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>
+                {awayShort} {sc.awayLine > 0 ? '+' : ''}{sc.awayLine}
+              </span>
+              <span style={{ ...T.micro, color: B.textMuted }}>
+                {fmtOdds(sc.awayOdds)}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+              {so && sm && sm.awayLine !== 0 && (
+                <span style={{
+                  ...T.micro, fontWeight: 700,
+                  color: sm.awayLine < 0 ? B.green : sm.awayLine > 0 ? B.red : B.textMuted,
+                }}>
+                  {sm.awayLine > 0 ? '+' : ''}{sm.awayLine.toFixed(1)}
+                </span>
+              )}
+              {so && (
+                <span style={{ ...T.micro, color: B.textSubtle, fontSize: '0.5rem' }}>
+                  Open: {so.awayLine > 0 ? '+' : ''}{so.awayLine}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
+              <span style={{ ...T.label, color: B.text, fontWeight: 700 }}>
+                {homeShort} {sc.homeLine > 0 ? '+' : ''}{sc.homeLine}
+              </span>
+              <span style={{ ...T.micro, color: B.textMuted }}>
+                {fmtOdds(sc.homeOdds)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(bestAway || bestHome) && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Best Retail Spread</span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem', display: 'flex', justifyContent: 'space-between' }}>
+            {bestAway && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <span style={{ ...T.label, color: B.green, fontWeight: 700 }}>
+                  {awayShort} {bestAway.line > 0 ? '+' : ''}{bestAway.line} ({fmtOdds(bestAway.odds)})
+                </span>
+                <span style={{ ...T.micro, color: B.textMuted }}>{bestAway.book}</span>
+              </div>
+            )}
+            {bestHome && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+                <span style={{ ...T.label, color: B.green, fontWeight: 700 }}>
+                  {homeShort} {bestHome.line > 0 ? '+' : ''}{bestHome.line} ({fmtOdds(bestHome.odds)})
+                </span>
+                <span style={{ ...T.micro, color: B.textMuted }}>{bestHome.book}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {polySpread && polySpread.probs && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Polymarket Spread</span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem' }}>
+            <div style={{ ...T.label, color: B.text, fontWeight: 600, marginBottom: '0.375rem' }}>
+              {polySpread.title}{polySpread.line != null ? ` (${polySpread.line > 0 ? '+' : ''}${polySpread.line})` : ''}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {polySpread.outcomes && polySpread.probs.map((p, i) => (
+                <div key={i} style={{
+                  flex: 1, padding: '0.3rem 0.5rem', borderRadius: '6px',
+                  background: i === 0 ? 'rgba(14,165,233,0.08)' : 'rgba(139,92,246,0.08)',
+                  border: `1px solid ${i === 0 ? 'rgba(14,165,233,0.2)' : 'rgba(139,92,246,0.2)'}`,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ ...T.micro, color: B.textMuted }}>{polySpread.outcomes[i] || `Side ${i + 1}`}</div>
+                  <div style={{ ...T.label, color: i === 0 ? B.sky : B.purple, fontWeight: 700 }}>{p.toFixed(1)}%</div>
+                </div>
+              ))}
+            </div>
+            {polySpread.priceHistory && polySpread.priceHistory.points?.length >= 2 && (
+              <div style={{ marginTop: '0.375rem' }}>
+                <MiniSparkline
+                  points={polySpread.priceHistory.points}
+                  color={B.sky}
+                  label="Spread Movement"
+                  startLabel={`${polySpread.priceHistory.open}%`}
+                  endLabel={`${polySpread.priceHistory.current}%`}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {kalshiSpreads && kalshiSpreads.length > 0 && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Kalshi Spreads</span>
+          </div>
+          <div style={{ padding: '0.375rem 0.625rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            {kalshiSpreads.map((s, i) => (
+              <div key={i} style={{
+                padding: '0.2rem 0.4rem', borderRadius: '5px',
+                background: 'rgba(59,130,246,0.06)', border: `1px solid rgba(59,130,246,0.15)`,
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+              }}>
+                <span style={{ ...T.micro, color: B.textSec }}>{s.label}</span>
+                <span style={{ ...T.micro, color: B.blue, fontWeight: 700 }}>{s.prob}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {spreadPoints.length >= 2 && (
+        <div style={{ padding: '0.25rem 0.625rem' }}>
+          <MiniSparkline
+            points={spreadPoints}
+            color={B.gold}
+            label={`Pinnacle Spread — ${awayShort}`}
+            startLabel={`${spreadPoints[0] > 0 ? '+' : ''}${spreadPoints[0]}`}
+            endLabel={`${spreadPoints[spreadPoints.length - 1] > 0 ? '+' : ''}${spreadPoints[spreadPoints.length - 1]}`}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Total Panel — Pinnacle O/U lines + prediction market data ───────────────
+
+function TotalPanel({ pinnGame, game, isMobile }) {
+  const tc = pinnGame?.totalCurrent;
+  const to = pinnGame?.totalOpener;
+  const tm = pinnGame?.totalMovement;
+  const bestOver = pinnGame?.bestOver;
+  const bestUnder = pinnGame?.bestUnder;
+  const polyTotal = game?.polyTotal;
+  const kalshiTotals = game?.kalshiTotals;
+  const totalHist = pinnGame?.totalHistory || [];
+
+  const hasAnyData = tc || bestOver || bestUnder || polyTotal || (kalshiTotals && kalshiTotals.length > 0);
+  if (!hasAnyData) {
+    return (
+      <div style={{ padding: '0.75rem 0.625rem', textAlign: 'center' }}>
+        <span style={{ ...T.caption, color: B.textMuted }}>No totals data available</span>
+      </div>
+    );
+  }
+
+  const totalPoints = totalHist.map(h => h.line);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {tc && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Pinnacle Total</span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <span style={{ ...T.label, color: B.green, fontWeight: 700 }}>
+                O {tc.line}
+              </span>
+              <span style={{ ...T.micro, color: B.textMuted }}>{fmtOdds(tc.overOdds)}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+              {to && tm && tm.line !== 0 && (
+                <span style={{
+                  ...T.micro, fontWeight: 700,
+                  color: tm.line > 0 ? B.green : tm.line < 0 ? B.red : B.textMuted,
+                }}>
+                  {tm.line > 0 ? '+' : ''}{tm.line.toFixed(1)}
+                </span>
+              )}
+              {to && (
+                <span style={{ ...T.micro, color: B.textSubtle, fontSize: '0.5rem' }}>
+                  Open: {to.line}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
+              <span style={{ ...T.label, color: B.red, fontWeight: 700 }}>
+                U {tc.line}
+              </span>
+              <span style={{ ...T.micro, color: B.textMuted }}>{fmtOdds(tc.underOdds)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(bestOver || bestUnder) && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Best Retail Total</span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem', display: 'flex', justifyContent: 'space-between' }}>
+            {bestOver && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <span style={{ ...T.label, color: B.green, fontWeight: 700 }}>
+                  O {bestOver.line} ({fmtOdds(bestOver.odds)})
+                </span>
+                <span style={{ ...T.micro, color: B.textMuted }}>{bestOver.book}</span>
+              </div>
+            )}
+            {bestUnder && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+                <span style={{ ...T.label, color: B.red, fontWeight: 700 }}>
+                  U {bestUnder.line} ({fmtOdds(bestUnder.odds)})
+                </span>
+                <span style={{ ...T.micro, color: B.textMuted }}>{bestUnder.book}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {polyTotal && polyTotal.probs && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Polymarket Total</span>
+          </div>
+          <div style={{ padding: '0.5rem 0.625rem' }}>
+            <div style={{ ...T.label, color: B.text, fontWeight: 600, marginBottom: '0.375rem' }}>
+              {polyTotal.title}{polyTotal.line != null ? ` (${polyTotal.line})` : ''}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {polyTotal.outcomes && polyTotal.probs.map((p, i) => (
+                <div key={i} style={{
+                  flex: 1, padding: '0.3rem 0.5rem', borderRadius: '6px',
+                  background: i === 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                  border: `1px solid ${i === 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ ...T.micro, color: B.textMuted }}>{polyTotal.outcomes[i] || (i === 0 ? 'Over' : 'Under')}</div>
+                  <div style={{ ...T.label, color: i === 0 ? B.green : B.red, fontWeight: 700 }}>{p.toFixed(1)}%</div>
+                </div>
+              ))}
+            </div>
+            {polyTotal.priceHistory && polyTotal.priceHistory.points?.length >= 2 && (
+              <div style={{ marginTop: '0.375rem' }}>
+                <MiniSparkline
+                  points={polyTotal.priceHistory.points}
+                  color={B.green}
+                  label="O/U Movement"
+                  startLabel={`${polyTotal.priceHistory.open}%`}
+                  endLabel={`${polyTotal.priceHistory.current}%`}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {kalshiTotals && kalshiTotals.length > 0 && (
+        <div style={{
+          borderRadius: '8px', overflow: 'hidden',
+          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
+        }}>
+          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+            <span style={{ ...T.micro, color: B.textMuted }}>Kalshi Totals</span>
+          </div>
+          <div style={{ padding: '0.375rem 0.625rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            {kalshiTotals.map((t, i) => (
+              <div key={i} style={{
+                padding: '0.2rem 0.4rem', borderRadius: '5px',
+                background: 'rgba(16,185,129,0.06)', border: `1px solid rgba(16,185,129,0.15)`,
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+              }}>
+                <span style={{ ...T.micro, color: B.textSec }}>{t.label}</span>
+                <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>{t.prob}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {totalPoints.length >= 2 && (
+        <div style={{ padding: '0.25rem 0.625rem' }}>
+          <MiniSparkline
+            points={totalPoints}
+            color={B.gold}
+            label="Pinnacle O/U Line"
+            startLabel={`${totalPoints[0]}`}
+            endLabel={`${totalPoints[totalPoints.length - 1]}`}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
 
@@ -2481,6 +2888,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
 const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
+  const [marketTab, setMarketTab] = useState('ml');
   const lastSyncedStars = useRef(null);
   const pregameSynced = useRef(false);
   const ss = sportStyle(gd.sport);
@@ -3060,7 +3468,26 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         </div>
       </div>
 
-      <div style={{ padding: '0.75rem 0.875rem' }}>
+      {/* ── Market Tab Strip ── */}
+      {(() => {
+        const hasSpread = !!(pinnGame?.spreadCurrent || flowGame?.polySpread || (flowGame?.kalshiSpreads?.length > 0));
+        const hasTotal = !!(pinnGame?.totalCurrent || flowGame?.polyTotal || (flowGame?.kalshiTotals?.length > 0));
+        if (!hasSpread && !hasTotal) return null;
+        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} />;
+      })()}
+
+      {marketTab === 'spread' && (
+        <div style={{ padding: '0.5rem 0.875rem' }}>
+          <SpreadPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
+        </div>
+      )}
+      {marketTab === 'total' && (
+        <div style={{ padding: '0.5rem 0.875rem' }}>
+          <TotalPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
+        </div>
+      )}
+
+      {marketTab === 'ml' && <div style={{ padding: '0.75rem 0.875rem' }}>
         {/* ─── Position Battle — Both Sides ─── */}
         {(awayWallets > 0 || homeWallets > 0) && (() => {
           const awaySide = consensusSide === 'away';
@@ -3330,7 +3757,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             </div>
           </div>
         )}
+      </div>}
 
+      <div style={{ padding: '0 0.875rem 0.75rem' }}>
         {/* ─── Book Prices ─── */}
         {pinnGame && Object.keys(allBooks).length > 1 && (
           <div style={{

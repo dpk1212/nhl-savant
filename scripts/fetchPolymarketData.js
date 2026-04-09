@@ -651,17 +651,26 @@ async function run() {
       let priceHistory = null;
       const markets = ev.markets || [];
 
-      // Find the MONEYLINE market — skip O/U and Spread markets
-      const mlMarket = markets.find(m => {
+      // Classify markets into ML, spread, and O/U
+      let mlMarket = null;
+      let spreadMarket = null;
+      let totalMarket = null;
+      for (const m of markets) {
         const git = (m.groupItemTitle || '').toLowerCase();
         const q = (m.question || '').toLowerCase();
-        if (git.includes('o/u') || git.includes('spread') || git.includes('over') || git.includes('under')) return false;
-        if (q.includes('o/u') || q.includes('spread:')) return false;
-        let outcomes = m.outcomes;
-        if (typeof outcomes === 'string') try { outcomes = JSON.parse(outcomes); } catch { outcomes = []; }
-        if (Array.isArray(outcomes) && outcomes.some(o => /^(over|under)$/i.test(o))) return false;
-        return true;
-      }) || markets[0];
+        let outs = m.outcomes;
+        if (typeof outs === 'string') try { outs = JSON.parse(outs); } catch { outs = []; }
+        const hasOverUnder = Array.isArray(outs) && outs.some(o => /^(over|under)$/i.test(o));
+
+        if (git.includes('spread') || q.includes('spread:')) {
+          if (!spreadMarket) spreadMarket = m;
+        } else if (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u') || hasOverUnder) {
+          if (!totalMarket) totalMarket = m;
+        } else {
+          if (!mlMarket) mlMarket = m;
+        }
+      }
+      if (!mlMarket) mlMarket = markets[0];
 
       let tokenIds = mlMarket?.clobTokenIds;
       if (typeof tokenIds === 'string') tokenIds = JSON.parse(tokenIds || '[]').filter(Boolean);
@@ -772,6 +781,76 @@ async function run() {
         if (priceMove1h != null) priceMove1h = -priceMove1h;
       }
 
+      // Extract spread market data
+      let polySpread = null;
+      if (spreadMarket) {
+        let sPrices = spreadMarket.outcomePrices;
+        if (typeof sPrices === 'string') try { sPrices = JSON.parse(sPrices); } catch { sPrices = null; }
+        let sOutcomes = spreadMarket.outcomes;
+        if (typeof sOutcomes === 'string') try { sOutcomes = JSON.parse(sOutcomes); } catch { sOutcomes = null; }
+        const lineMatch = (spreadMarket.groupItemTitle || spreadMarket.question || '').match(/([-+]?\d+\.?\d*)/);
+        polySpread = {
+          line: lineMatch ? Number(lineMatch[1]) : null,
+          title: (spreadMarket.groupItemTitle || spreadMarket.question || '').substring(0, 60),
+          outcomes: Array.isArray(sOutcomes) ? sOutcomes : null,
+          probs: Array.isArray(sPrices) ? sPrices.map(p => Number((Number(p) * 100).toFixed(1))) : null,
+        };
+        let sTokenIds = spreadMarket.clobTokenIds;
+        if (typeof sTokenIds === 'string') try { sTokenIds = JSON.parse(sTokenIds || '[]').filter(Boolean); } catch { sTokenIds = []; }
+        else if (spreadMarket.tokens) sTokenIds = spreadMarket.tokens.map(t => t.token_id);
+        if (Array.isArray(sTokenIds) && sTokenIds.length > 0) {
+          const sHist = await getPriceHistory(sTokenIds[0], '1d');
+          if (sHist && sHist.length >= 2) {
+            const step = Math.max(1, Math.floor(sHist.length / 12));
+            const sampled = [];
+            for (let i = 0; i < sHist.length; i += step) sampled.push(Number((sHist[i].p * 100).toFixed(1)));
+            const last = Number((sHist[sHist.length - 1].p * 100).toFixed(1));
+            if (sampled[sampled.length - 1] !== last) sampled.push(last);
+            polySpread.priceHistory = {
+              points: sampled,
+              open: Number((sHist[0].p * 100).toFixed(1)),
+              current: last,
+              change: Number((last - sampled[0]).toFixed(1)),
+            };
+          }
+        }
+      }
+
+      // Extract total (O/U) market data
+      let polyTotal = null;
+      if (totalMarket) {
+        let tPrices = totalMarket.outcomePrices;
+        if (typeof tPrices === 'string') try { tPrices = JSON.parse(tPrices); } catch { tPrices = null; }
+        let tOutcomes = totalMarket.outcomes;
+        if (typeof tOutcomes === 'string') try { tOutcomes = JSON.parse(tOutcomes); } catch { tOutcomes = null; }
+        const lineMatch = (totalMarket.groupItemTitle || totalMarket.question || '').match(/(\d+\.?\d*)/);
+        polyTotal = {
+          line: lineMatch ? Number(lineMatch[1]) : null,
+          title: (totalMarket.groupItemTitle || totalMarket.question || '').substring(0, 60),
+          outcomes: Array.isArray(tOutcomes) ? tOutcomes : null,
+          probs: Array.isArray(tPrices) ? tPrices.map(p => Number((Number(p) * 100).toFixed(1))) : null,
+        };
+        let tTokenIds = totalMarket.clobTokenIds;
+        if (typeof tTokenIds === 'string') try { tTokenIds = JSON.parse(tTokenIds || '[]').filter(Boolean); } catch { tTokenIds = []; }
+        else if (totalMarket.tokens) tTokenIds = totalMarket.tokens.map(t => t.token_id);
+        if (Array.isArray(tTokenIds) && tTokenIds.length > 0) {
+          const tHist = await getPriceHistory(tTokenIds[0], '1d');
+          if (tHist && tHist.length >= 2) {
+            const step = Math.max(1, Math.floor(tHist.length / 12));
+            const sampled = [];
+            for (let i = 0; i < tHist.length; i += step) sampled.push(Number((tHist[i].p * 100).toFixed(1)));
+            const last = Number((tHist[tHist.length - 1].p * 100).toFixed(1));
+            if (sampled[sampled.length - 1] !== last) sampled.push(last);
+            polyTotal.priceHistory = {
+              points: sampled,
+              open: Number((tHist[0].p * 100).toFixed(1)),
+              current: last,
+              change: Number((last - sampled[0]).toFixed(1)),
+            };
+          }
+        }
+      }
+
       const vol24 = ev.volume_24hr ?? ev.volume ?? 0;
       bucket[key] = {
         volume24h: Number(vol24),
@@ -787,6 +866,8 @@ async function run() {
         whales: whaleData,
         awayProb: awayProb != null ? Number((awayProb * 100).toFixed(1)) : null,
         homeProb: homeProb != null ? Number((homeProb * 100).toFixed(1)) : null,
+        polySpread,
+        polyTotal,
         awayTeam: awayRaw,
         homeTeam: homeRaw,
         eventId: id,

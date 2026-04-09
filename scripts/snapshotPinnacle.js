@@ -161,7 +161,7 @@ function impliedProb(american) {
 }
 
 async function fetchOdds(sportKey) {
-  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=${BOOKMAKERS}&markets=h2h&oddsFormat=american`;
+  const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${API_KEY}&bookmakers=${BOOKMAKERS}&markets=h2h,spreads,totals&oddsFormat=american`;
   const res = await fetch(url);
   if (!res.ok) {
     console.warn(`  ⚠️ Odds API ${sportKey}: ${res.status}`);
@@ -218,6 +218,63 @@ function extractBookOdds(game) {
   return { pinnAway, pinnHome, bestAway, bestHome, bestAwayBook, bestHomeBook, allBooks };
 }
 
+function extractSpreadOdds(game) {
+  const awayName = game.away_team;
+  const homeName = game.home_team;
+  let pinnSpread = null;
+  let bestAwaySpread = null, bestHomeSpread = null;
+  let bestAwaySpreadBook = null, bestHomeSpreadBook = null;
+
+  for (const bk of (game.bookmakers || [])) {
+    const spreadMkt = bk.markets?.find(m => m.key === 'spreads');
+    if (!spreadMkt) continue;
+    const aw = spreadMkt.outcomes.find(o => o.name === awayName);
+    const hm = spreadMkt.outcomes.find(o => o.name === homeName);
+    if (!aw || !hm) continue;
+
+    if (bk.key === 'pinnacle') {
+      pinnSpread = { awayLine: aw.point, awayOdds: aw.price, homeLine: hm.point, homeOdds: hm.price };
+    }
+    if (RETAIL_BOOKS.includes(bk.key)) {
+      const bookName = BOOK_DISPLAY[bk.key] || bk.title;
+      if (bestAwaySpread === null || aw.price > bestAwaySpread.odds) {
+        bestAwaySpread = { line: aw.point, odds: aw.price, book: bookName };
+      }
+      if (bestHomeSpread === null || hm.price > bestHomeSpread.odds) {
+        bestHomeSpread = { line: hm.point, odds: hm.price, book: bookName };
+      }
+    }
+  }
+  return { pinnSpread, bestAwaySpread, bestHomeSpread };
+}
+
+function extractTotalOdds(game) {
+  let pinnTotal = null;
+  let bestOver = null, bestUnder = null;
+
+  for (const bk of (game.bookmakers || [])) {
+    const totalMkt = bk.markets?.find(m => m.key === 'totals');
+    if (!totalMkt) continue;
+    const over = totalMkt.outcomes.find(o => o.name === 'Over');
+    const under = totalMkt.outcomes.find(o => o.name === 'Under');
+    if (!over || !under) continue;
+
+    if (bk.key === 'pinnacle') {
+      pinnTotal = { line: over.point, overOdds: over.price, underOdds: under.price };
+    }
+    if (RETAIL_BOOKS.includes(bk.key)) {
+      const bookName = BOOK_DISPLAY[bk.key] || bk.title;
+      if (bestOver === null || over.price > bestOver.odds) {
+        bestOver = { line: over.point, odds: over.price, book: bookName };
+      }
+      if (bestUnder === null || under.price > bestUnder.odds) {
+        bestUnder = { line: under.point, odds: under.price, book: bookName };
+      }
+    }
+  }
+  return { pinnTotal, bestOver, bestUnder };
+}
+
 async function run() {
   console.log('📌 Sharp odds snapshot (Pinnacle + retail books)\n');
   const now = Math.floor(Date.now() / 1000);
@@ -238,19 +295,20 @@ async function run() {
 
       const existing = history[label][gameKey] || {};
 
-      // Different game under the same key (e.g. back-to-back series)
-      // The Odds API id is unique per game — use it to tell them apart
       if (existing.apiId && existing.apiId !== game.id) {
         const existingDist = Math.abs(new Date(existing.commence).getTime() - Date.now());
         const newDist = Math.abs(new Date(game.commence_time).getTime() - Date.now());
-        if (existingDist <= newDist) continue; // existing game is closer to now, keep it
-        // new game is closer — reset the entry so it starts fresh
+        if (existingDist <= newDist) continue;
         delete existing.opener;
         delete existing.history;
         delete existing.movement;
+        delete existing.spreadOpener;
+        delete existing.spreadHistory;
+        delete existing.totalOpener;
+        delete existing.totalHistory;
       }
 
-      // Pinnacle history
+      // ML history
       const snapshot = { t: now, away: pinnAway, home: pinnHome };
       if (!existing.opener) {
         existing.opener = { ...snapshot };
@@ -262,7 +320,6 @@ async function run() {
       if (hist.length > MAX_HISTORY) hist.splice(0, hist.length - MAX_HISTORY);
       existing.history = hist;
 
-      // Pinnacle movement — use implied probability so it works for both favorites and underdogs
       const opAway = existing.opener.away;
       const opHome = existing.opener.home;
       const currAwayProb = impliedProb(pinnAway);
@@ -277,7 +334,6 @@ async function run() {
                  : null,
       };
 
-      // Best retail prices + EV
       existing.bestAway = bestAway;
       existing.bestHome = bestHome;
       existing.bestAwayBook = bestAwayBook;
@@ -298,6 +354,46 @@ async function run() {
       existing.homeTeam = homeName;
       existing.commence = game.commence_time;
       existing.apiId = game.id;
+
+      // Spread data
+      const { pinnSpread, bestAwaySpread, bestHomeSpread } = extractSpreadOdds(game);
+      if (pinnSpread) {
+        if (!existing.spreadOpener) {
+          existing.spreadOpener = { ...pinnSpread, t: now };
+        }
+        existing.spreadCurrent = pinnSpread;
+        existing.spreadMovement = {
+          awayLine: pinnSpread.awayLine - (existing.spreadOpener.awayLine || 0),
+          awayOdds: pinnSpread.awayOdds - (existing.spreadOpener.awayOdds || 0),
+          homeOdds: pinnSpread.homeOdds - (existing.spreadOpener.homeOdds || 0),
+        };
+        const sHist = existing.spreadHistory || [];
+        sHist.push({ t: now, ...pinnSpread });
+        if (sHist.length > MAX_HISTORY) sHist.splice(0, sHist.length - MAX_HISTORY);
+        existing.spreadHistory = sHist;
+      }
+      if (bestAwaySpread) existing.bestAwaySpread = bestAwaySpread;
+      if (bestHomeSpread) existing.bestHomeSpread = bestHomeSpread;
+
+      // Total data
+      const { pinnTotal, bestOver, bestUnder } = extractTotalOdds(game);
+      if (pinnTotal) {
+        if (!existing.totalOpener) {
+          existing.totalOpener = { ...pinnTotal, t: now };
+        }
+        existing.totalCurrent = pinnTotal;
+        existing.totalMovement = {
+          line: pinnTotal.line - (existing.totalOpener.line || 0),
+          overOdds: pinnTotal.overOdds - (existing.totalOpener.overOdds || 0),
+          underOdds: pinnTotal.underOdds - (existing.totalOpener.underOdds || 0),
+        };
+        const tHist = existing.totalHistory || [];
+        tHist.push({ t: now, ...pinnTotal });
+        if (tHist.length > MAX_HISTORY) tHist.splice(0, tHist.length - MAX_HISTORY);
+        existing.totalHistory = tHist;
+      }
+      if (bestOver) existing.bestOver = bestOver;
+      if (bestUnder) existing.bestUnder = bestUnder;
 
       history[label][gameKey] = existing;
     }
