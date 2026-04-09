@@ -198,11 +198,11 @@ function rateSpreadTotalStars({
   else if (breadth >= 0.2) pts += 1;
   else if (breadth >= 0.1) pts += 0.5;
 
-  // Pinnacle alignment — softened penalty
+  // Pinnacle alignment (max 3 pts / -1 penalty)
   if (pinnConfirms && pinnMovingWith) pts += 3;
   else if (pinnConfirms) pts += 1.5;
   else if (pinnMovingWith) pts += 1.5;
-  if (pinnMovingAgainst) pts -= 1.5;
+  if (pinnMovingAgainst) pts -= 1;
 
   if (conviction >= 0.8) pts += 1.5;
   else if (conviction >= 0.5) pts += 1;
@@ -2471,11 +2471,11 @@ function rateStars({
   else if (breadth >= 0.2) pts += 1;
   else if (breadth >= 0.1) pts += 0.5;
 
-  // Pinnacle alignment — softened penalty (max 3 pts / -1.5 penalty)
+  // Pinnacle alignment (max 3 pts / -1 penalty)
   if (pinnConfirms && pinnMovingWith) pts += 3;
   else if (pinnConfirms) pts += 1.5;
   else if (pinnMovingWith) pts += 1.5;
-  if (pinnMovingAgainst) pts -= 1.5;
+  if (pinnMovingAgainst) pts -= 1;
 
   // Sharp conviction — log-dollar per wallet (max 1.5 pts)
   if (conviction >= 0.8) pts += 1.5;
