@@ -119,11 +119,25 @@ function computeSharpFeatures(positions, consensusSide) {
   const conDeduped = dedup(conPos);
   const oppDeduped = dedup(oppPos);
 
-  // Exclude wallets betting both sides — hedgers aren't directional signals
-  const conWalletIds = new Set(conDeduped.map(p => p.wallet));
-  const oppWalletIds = new Set(oppDeduped.map(p => p.wallet));
-  const conWallets = conDeduped.filter(p => !oppWalletIds.has(p.wallet));
-  const oppWallets = oppDeduped.filter(p => !conWalletIds.has(p.wallet));
+  // Net-position approach: wallets on both sides count on their dominant side
+  // with the difference as invested (e.g. $1K con + $500 opp → $500 net on con side)
+  const conMap = new Map(conDeduped.map(p => [p.wallet, p]));
+  const oppMap = new Map(oppDeduped.map(p => [p.wallet, p]));
+  const allWallets = new Set([...conMap.keys(), ...oppMap.keys()]);
+  const conWallets = [];
+  const oppWallets = [];
+  for (const w of allWallets) {
+    const c = conMap.get(w);
+    const o = oppMap.get(w);
+    if (c && !o) { conWallets.push(c); continue; }
+    if (o && !c) { oppWallets.push(o); continue; }
+    const cInv = c.invested || 0;
+    const oInv = o.invested || 0;
+    const net = Math.abs(cInv - oInv);
+    if (net < 1) continue;
+    if (cInv > oInv) conWallets.push({ ...c, invested: net });
+    else oppWallets.push({ ...o, invested: net });
+  }
   const totalWallets = conWallets.length + oppWallets.length;
 
   const qualitySum = conWallets.reduce((s, p) => s + (TIER_WEIGHT[p.tier] || 1), 0);
