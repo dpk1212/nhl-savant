@@ -3266,7 +3266,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadSharpFeatures = spreadGameData ? computeSharpFeatures(spreadGameData.positions || [], spreadConsensusSide) : null;
   const spreadSr = spreadSharpFeatures ? rateSpreadTotalStars({
     evEdge: spreadEvEdge || 0,
-    pinnConfirms: !!spreadPinnLine,
+    pinnConfirms: spreadPinnMovedWith,
     pinnMovingWith: spreadPinnMovedWith,
     pinnMovingAgainst: spreadPinnMovedAgainst,
     breadth: spreadSharpFeatures.breadth,
@@ -3277,7 +3277,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sportSharpCount: spreadSharpFeatures.sportSharpCount,
   }) : null;
 
-  const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5;
+  const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
+    && (spreadSharpFeatures?.conWalletCount || 0) >= 2
+    && (spreadSharpFeatures?.conTotalInvested || 0) >= 50;
   const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars) : 0;
   const spreadBetOdds = spreadBestRetail || spreadPinnOdds;
 
@@ -3336,7 +3338,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalSharpFeatures = totalGameData ? computeSharpFeatures(totalGameData.positions || [], totalConsensusSide) : null;
   const totalSr = totalSharpFeatures ? rateSpreadTotalStars({
     evEdge: totalEvEdge || 0,
-    pinnConfirms: !!totalPinnLine,
+    pinnConfirms: totalPinnMovedWith,
     pinnMovingWith: totalPinnMovedWith,
     pinnMovingAgainst: totalPinnMovedAgainst,
     breadth: totalSharpFeatures.breadth,
@@ -3347,7 +3349,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sportSharpCount: totalSharpFeatures.sportSharpCount,
   }) : null;
 
-  const isTotalLocked = totalSr && totalSr.stars >= 2.5;
+  const isTotalLocked = totalSr && totalSr.stars >= 2.5
+    && (totalSharpFeatures?.conWalletCount || 0) >= 2
+    && (totalSharpFeatures?.conTotalInvested || 0) >= 50;
   const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars) : 0;
   const totalBetOdds = totalBestRetail || totalPinnOdds;
 
@@ -3717,17 +3721,50 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
       {marketTab === 'spread' && (
         <div style={{ padding: '0.5rem 0.875rem' }}>
-          {isSpreadLocked && spreadSr && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem 0.75rem', marginBottom: '0.5rem',
-              borderRadius: '8px', background: B.greenDim, border: `1px solid rgba(16,185,129,0.3)`,
-            }}>
-              <span style={{ fontSize: '1.1rem' }}>{'★'.repeat(Math.floor(spreadSr.stars))}{spreadSr.stars % 1 ? '½' : ''}</span>
-              <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>SPREAD LOCK — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}</span>
-              <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</span>
-            </div>
-          )}
+          {/* ─── Spread Lock-In Criteria ─── */}
+          {spreadSharpFeatures && (() => {
+            const sCriteria = [
+              { id: 's3', met: (spreadSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
+              { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 50, label: '$50+ on Side' },
+              { id: 'sev', met: spreadEvEdge > 0, label: '+EV Edge' },
+              { id: 'sline', met: spreadPinnMovedWith, label: 'Line Moving With' },
+              { id: 'spinn', met: !!pinnGame?.spreadCurrent, label: 'Pinnacle Has Line' },
+            ];
+            const sMetCount = sCriteria.filter(c => c.met).length;
+            return (
+              <div style={{
+                padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
+                background: isSpreadLocked
+                  ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
+                  : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${isSpreadLocked ? 'rgba(16,185,129,0.25)' : B.borderSubtle}`,
+              }}>
+                {isSpreadLocked && spreadSr ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(spreadSr.stars))}{spreadSr.stars % 1 ? '½' : ''}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>SPREAD LOCK — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}</span>
+                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>SPREAD CRITERIA ({sMetCount}/5)</span>
+                    <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: sMetCount >= 4 ? B.green : sMetCount >= 3 ? B.gold : B.textMuted }}>{sMetCount}/5</span>
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '0.25rem' }}>
+                  {sCriteria.map(c => (
+                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.15rem 0' }}>
+                      {c.met
+                        ? <CheckCircle size={11} color={B.green} strokeWidth={2.5} />
+                        : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
+                      }
+                      <span style={{ ...T.micro, fontSize: '0.5625rem', color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 700 : 400 }}>{c.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Position Battle — Spread */}
           {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
@@ -3807,7 +3844,132 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             );
           })()}
 
+          {/* ─── Spread Market Flow Bar ─── */}
+          {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
+            const sSummary = spreadGameData.summary;
+            const awayInv = sSummary.awayInvested || 0;
+            const homeInv = sSummary.homeInvested || 0;
+            const totalInv = awayInv + homeInv;
+            const awayPctS = totalInv > 0 ? (awayInv / totalInv) * 100 : 50;
+            const homePctS = totalInv > 0 ? (homeInv / totalInv) * 100 : 50;
+            const consSide = sSummary.consensus;
+            const consIsAway = consSide === 'away';
+            const accentC = '#8B5CF6';
+            const bars = [{ label: 'Sharp Money', awayVal: awayPctS, homeVal: homePctS }];
+            return (
+              <div style={{
+                marginBottom: '0.625rem', borderRadius: '8px', overflow: 'hidden',
+                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+              }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{awayShort}</span>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>{homeShort}</span>
+                  </div>
+                </div>
+                <div style={{ padding: '0.5rem 0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {bars.map(bar => {
+                    const awayWins = bar.awayVal > bar.homeVal;
+                    const homeWins = bar.homeVal > bar.awayVal;
+                    const awayColor = consIsAway && awayWins ? accentC : awayWins ? B.textSec : B.textMuted;
+                    const homeColor = !consIsAway && homeWins ? accentC : homeWins ? B.textSec : B.textMuted;
+                    const barAwayBg = awayWins
+                      ? (consIsAway ? `linear-gradient(90deg, ${accentC}44, ${accentC})` : `linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18))`)
+                      : 'rgba(255,255,255,0.05)';
+                    const barHomeBg = homeWins
+                      ? (!consIsAway ? `linear-gradient(90deg, ${accentC}, ${accentC}44)` : `linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))`)
+                      : 'rgba(255,255,255,0.05)';
+                    return (
+                      <div key={bar.label}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
+                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: awayColor, textAlign: 'left' }}>
+                            {bar.awayVal.toFixed(0)}%
+                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <div style={{ display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden', background: 'rgba(255,255,255,0.03)' }}>
+                              <div style={{ width: `${bar.awayVal}%`, background: barAwayBg, borderRadius: '2.5px 0 0 2.5px', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
+                              <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                              <div style={{ width: `${bar.homeVal}%`, background: barHomeBg, borderRadius: '0 2.5px 2.5px 0', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
+                            </div>
+                            <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.03em' }}>{bar.label}</span>
+                          </div>
+                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: homeColor, textAlign: 'right' }}>
+                            {bar.homeVal.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           <SpreadPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
+
+          {/* ─── Pinnacle Spread Line Confirmation ─── */}
+          {pinnGame?.spreadOpener && pinnGame?.spreadCurrent && (() => {
+            const so = pinnGame.spreadOpener;
+            const sc = pinnGame.spreadCurrent;
+            return (
+              <div style={{
+                display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
+                padding: '0.375rem 0.625rem', marginTop: '0.25rem',
+                borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
+                border: `1px solid ${B.borderSubtle}`,
+              }}>
+                <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
+                <span style={{ ...T.micro, color: B.textSec }}>
+                  Open: {so.awayLine > 0 ? '+' : ''}{so.awayLine} / {so.homeLine > 0 ? '+' : ''}{so.homeLine}
+                </span>
+                <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
+                  Now: {sc.awayLine > 0 ? '+' : ''}{sc.awayLine} / {sc.homeLine > 0 ? '+' : ''}{sc.homeLine}
+                </span>
+                {spreadPinnMovedWith && <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>✓ Confirms</span>}
+                {spreadPinnMovedAgainst && <span style={{ ...T.micro, color: B.red, fontWeight: 700 }}>✗ Opposes</span>}
+              </div>
+            );
+          })()}
+
+          {/* ─── Spread Price Movement — Polymarket ─── */}
+          {flowGame?.polySpread?.priceHistory && flowGame.polySpread.priceHistory.points?.length >= 2 && (() => {
+            const pH = flowGame.polySpread.priceHistory;
+            const polySpreadPts = pH.points;
+            const consIsAway = spreadGameData?.summary?.consensus === 'away';
+            const polyMoving = pH.change > 0 === consIsAway;
+            const polyAgainst = pH.change > 0 !== consIsAway && pH.change !== 0;
+            return (
+              <div style={{
+                borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem',
+                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+              }}>
+                <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Prediction Market — Spread</span>
+                </div>
+                <div style={{ padding: '0.5rem 0.625rem' }}>
+                  <MiniSparkline
+                    points={polySpreadPts}
+                    color={polyMoving ? B.green : polyAgainst ? B.red : B.sky}
+                    label={`${flowGame.polySpread.title || 'Spread'}`}
+                    startLabel={`${pH.open}¢`}
+                    endLabel={`${pH.current}¢`}
+                    width={isMobile ? 120 : 140}
+                    height={32}
+                  />
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
+                    color: polyMoving ? B.green : polyAgainst ? B.red : B.textMuted,
+                  }}>
+                    {polyMoving ? '↑ Moving with play' : polyAgainst ? '↓ Moving against play' : '— Stable'}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Spread Wallet Trades */}
           {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
@@ -3885,17 +4047,50 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       )}
       {marketTab === 'total' && (
         <div style={{ padding: '0.5rem 0.875rem' }}>
-          {isTotalLocked && totalSr && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem 0.75rem', marginBottom: '0.5rem',
-              borderRadius: '8px', background: B.greenDim, border: `1px solid rgba(16,185,129,0.3)`,
-            }}>
-              <span style={{ fontSize: '1.1rem' }}>{'★'.repeat(Math.floor(totalSr.stars))}{totalSr.stars % 1 ? '½' : ''}</span>
-              <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>TOTAL LOCK — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}</span>
-              <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{totalUnits}u @ {fmtOdds(totalBetOdds)}</span>
-            </div>
-          )}
+          {/* ─── Total Lock-In Criteria ─── */}
+          {totalSharpFeatures && (() => {
+            const tCriteria = [
+              { id: 't3', met: (totalSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
+              { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 50, label: '$50+ on Side' },
+              { id: 'tev', met: totalEvEdge > 0, label: '+EV Edge' },
+              { id: 'tline', met: totalPinnMovedWith, label: 'Line Moving With' },
+              { id: 'tpinn', met: !!pinnGame?.totalCurrent, label: 'Pinnacle Has Line' },
+            ];
+            const tMetCount = tCriteria.filter(c => c.met).length;
+            return (
+              <div style={{
+                padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
+                background: isTotalLocked
+                  ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
+                  : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${isTotalLocked ? 'rgba(16,185,129,0.25)' : B.borderSubtle}`,
+              }}>
+                {isTotalLocked && totalSr ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+                    <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(totalSr.stars))}{totalSr.stars % 1 ? '½' : ''}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>TOTAL LOCK — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}</span>
+                    <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{totalUnits}u @ {fmtOdds(totalBetOdds)}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>TOTAL CRITERIA ({tMetCount}/5)</span>
+                    <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: tMetCount >= 4 ? B.green : tMetCount >= 3 ? B.gold : B.textMuted }}>{tMetCount}/5</span>
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '0.25rem' }}>
+                  {tCriteria.map(c => (
+                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.15rem 0' }}>
+                      {c.met
+                        ? <CheckCircle size={11} color={B.green} strokeWidth={2.5} />
+                        : <Circle size={11} color={B.textMuted} strokeWidth={1.5} />
+                      }
+                      <span style={{ ...T.micro, fontSize: '0.5625rem', color: c.met ? B.green : B.textMuted, fontWeight: c.met ? 700 : 400 }}>{c.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Position Battle — Totals */}
           {totalGameData && totalGameData.positions?.length > 0 && (() => {
@@ -3974,7 +4169,132 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             );
           })()}
 
+          {/* ─── Total Market Flow Bar ─── */}
+          {totalGameData && totalGameData.positions?.length > 0 && (() => {
+            const tSummary = totalGameData.summary;
+            const overInv = tSummary.overInvested || 0;
+            const underInv = tSummary.underInvested || 0;
+            const totalInvT = overInv + underInv;
+            const overPctT = totalInvT > 0 ? (overInv / totalInvT) * 100 : 50;
+            const underPctT = totalInvT > 0 ? (underInv / totalInvT) * 100 : 50;
+            const consSide = tSummary.consensus;
+            const consIsOver = consSide === 'over';
+            const accentC = '#8B5CF6';
+            const bars = [{ label: 'Sharp Money', awayVal: overPctT, homeVal: underPctT }];
+            return (
+              <div style={{
+                marginBottom: '0.625rem', borderRadius: '8px', overflow: 'hidden',
+                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+              }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
+                }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Market Flow</span>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>Over</span>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>Under</span>
+                  </div>
+                </div>
+                <div style={{ padding: '0.5rem 0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {bars.map(bar => {
+                    const overWins = bar.awayVal > bar.homeVal;
+                    const underWins = bar.homeVal > bar.awayVal;
+                    const overColor = consIsOver && overWins ? accentC : overWins ? B.textSec : B.textMuted;
+                    const underColor = !consIsOver && underWins ? accentC : underWins ? B.textSec : B.textMuted;
+                    const barOverBg = overWins
+                      ? (consIsOver ? `linear-gradient(90deg, ${accentC}44, ${accentC})` : `linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.18))`)
+                      : 'rgba(255,255,255,0.05)';
+                    const barUnderBg = underWins
+                      ? (!consIsOver ? `linear-gradient(90deg, ${accentC}, ${accentC}44)` : `linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))`)
+                      : 'rgba(255,255,255,0.05)';
+                    return (
+                      <div key={bar.label}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 36px', alignItems: 'center', gap: '0.375rem' }}>
+                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: overColor, textAlign: 'left' }}>
+                            {bar.awayVal.toFixed(0)}%
+                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <div style={{ display: 'flex', height: '5px', borderRadius: '2.5px', overflow: 'hidden', background: 'rgba(255,255,255,0.03)' }}>
+                              <div style={{ width: `${bar.awayVal}%`, background: barOverBg, borderRadius: '2.5px 0 0 2.5px', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
+                              <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                              <div style={{ width: `${bar.homeVal}%`, background: barUnderBg, borderRadius: '0 2.5px 2.5px 0', transition: 'width 0.5s cubic-bezier(.4,0,.2,1)' }} />
+                            </div>
+                            <span style={{ ...T.micro, fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.03em' }}>{bar.label}</span>
+                          </div>
+                          <span style={{ ...T.micro, fontSize: '0.625rem', fontWeight: 800, fontFeatureSettings: "'tnum'", color: underColor, textAlign: 'right' }}>
+                            {bar.homeVal.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           <TotalPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
+
+          {/* ─── Pinnacle Total Line Confirmation ─── */}
+          {pinnGame?.totalOpener && pinnGame?.totalCurrent && (() => {
+            const to = pinnGame.totalOpener;
+            const tc = pinnGame.totalCurrent;
+            return (
+              <div style={{
+                display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
+                padding: '0.375rem 0.625rem', marginTop: '0.25rem',
+                borderRadius: '6px', background: 'rgba(255,255,255,0.02)',
+                border: `1px solid ${B.borderSubtle}`,
+              }}>
+                <span style={{ ...T.micro, color: B.gold, fontWeight: 600 }}>Pinnacle</span>
+                <span style={{ ...T.micro, color: B.textSec }}>
+                  Open: {to.line}
+                </span>
+                <span style={{ ...T.micro, color: B.text, fontWeight: 600 }}>
+                  Now: {tc.line}
+                </span>
+                {totalPinnMovedWith && <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>✓ Confirms</span>}
+                {totalPinnMovedAgainst && <span style={{ ...T.micro, color: B.red, fontWeight: 700 }}>✗ Opposes</span>}
+              </div>
+            );
+          })()}
+
+          {/* ─── Total Price Movement — Polymarket ─── */}
+          {flowGame?.polyTotal?.priceHistory && flowGame.polyTotal.priceHistory.points?.length >= 2 && (() => {
+            const pH = flowGame.polyTotal.priceHistory;
+            const polyTotalPts = pH.points;
+            const consIsOver = totalGameData?.summary?.consensus === 'over';
+            const polyMoving = consIsOver ? pH.change > 0 : pH.change < 0;
+            const polyAgainst = consIsOver ? pH.change < 0 : pH.change > 0;
+            return (
+              <div style={{
+                borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem',
+                border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)',
+              }}>
+                <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Prediction Market — Total</span>
+                </div>
+                <div style={{ padding: '0.5rem 0.625rem' }}>
+                  <MiniSparkline
+                    points={polyTotalPts}
+                    color={polyMoving ? B.green : polyAgainst ? B.red : B.sky}
+                    label={`${flowGame.polyTotal.title || 'O/U'}`}
+                    startLabel={`${pH.open}¢`}
+                    endLabel={`${pH.current}¢`}
+                    width={isMobile ? 120 : 140}
+                    height={32}
+                  />
+                  <span style={{
+                    ...T.micro, fontSize: '0.5rem', fontWeight: 700, marginTop: '0.15rem', display: 'block',
+                    color: polyMoving ? B.green : polyAgainst ? B.red : B.textMuted,
+                  }}>
+                    {polyMoving ? '↑ Moving with play' : polyAgainst ? '↓ Moving against play' : '— Stable'}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Total Wallet Trades */}
           {totalGameData && totalGameData.positions?.length > 0 && (() => {
