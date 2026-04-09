@@ -444,9 +444,9 @@ const MLB = () => {
             marginLeft: 'auto',
             marginRight: 'auto',
           }}>
-            Ensemble model blending DRatings + Dimers win probabilities.
-            Fair odds compared against sharp (Pinnacle) and retail books.
-            Only positive EV plays with verified edges are surfaced as picks.
+            Proprietary ensemble model combining multiple independent probability sources.
+            Fair odds compared against sharp and retail books to identify mispriced lines.
+            Only positive expected value plays with verified edges are surfaced as picks.
           </p>
         </div>
       </div>
