@@ -338,6 +338,46 @@ function matchPositionToGame(posTitle, todaysGames, cbbMap) {
   return null;
 }
 
+// ─── Match spread-formatted titles like "Spread: Knicks (-3.5)" ─────────────
+function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
+  const m = (posTitle || '').match(/^Spread:\s+(.+?)\s*\(([+-]?\d+\.?\d*)\)/i);
+  if (!m) return null;
+  const teamRaw = m[1].trim();
+  const spreadLine = parseFloat(m[2]);
+
+  const resolvers = [
+    { sport: 'NHL', fn: resolveNHLCode },
+    { sport: 'NBA', fn: resolveNBACode },
+    { sport: 'MLB', fn: resolveMLBCode },
+  ];
+
+  for (const { sport, fn } of resolvers) {
+    const code = fn(teamRaw);
+    if (!code) continue;
+    for (const fullKey of Object.keys(todaysGames)) {
+      if (!fullKey.startsWith(sport + ':')) continue;
+      const gameKey = fullKey.slice(sport.length + 1);
+      if (gameKey.includes(code)) {
+        return { key: gameKey, sport, spreadLine };
+      }
+    }
+  }
+
+  const cbbTeam = findCBBTeam(cbbMap, teamRaw);
+  if (cbbTeam) {
+    const normTeam = normalize(cbbTeam);
+    for (const fullKey of Object.keys(todaysGames)) {
+      if (!fullKey.startsWith('CBB:')) continue;
+      const gameKey = fullKey.slice(4);
+      if (gameKey.includes(normTeam)) {
+        return { key: gameKey, sport: 'CBB', spreadLine };
+      }
+    }
+  }
+
+  return null;
+}
+
 // ─── Determine which side the outcome is on ─────────────────────────────────
 function resolveOutcomeSide(outcome, awayName, homeName, posTitle) {
   if (!outcome) return 'unknown';
@@ -496,8 +536,18 @@ async function run() {
 
     for (const pos of positions) {
       const title = pos.title || '';
-      const match = matchPositionToGame(title, todaysGames, cbbMap);
-      if (!match) continue;
+      let match = matchPositionToGame(title, todaysGames, cbbMap);
+      let forcedSpread = false;
+
+      if (!match) {
+        const spreadMatch = matchSpreadTitle(title, todaysGames, cbbMap);
+        if (spreadMatch) {
+          match = spreadMatch;
+          forcedSpread = true;
+        } else {
+          continue;
+        }
+      }
 
       const outcome = pos.outcome || '';
       const outcomeNorm = normalize(outcome);
@@ -508,7 +558,7 @@ async function run() {
       // Classify market type from outcome and title
       const titleLower = title.toLowerCase();
       const isTotal = ['over', 'under'].includes(outcomeNorm);
-      const isSpread = !isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome));
+      const isSpread = forcedSpread || (!isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome)));
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
 
       const game = todaysGames[`${match.sport}:${match.key}`];
