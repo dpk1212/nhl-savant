@@ -3264,9 +3264,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     : spreadOpenLine && spreadPinnLine ? (spreadPinnLine.homeLine > spreadOpenLine.homeLine) : false;
 
   const spreadSharpFeatures = spreadGameData ? computeSharpFeatures(spreadGameData.positions || [], spreadConsensusSide) : null;
+  const spreadPinnConfirms = !!spreadPinnLine && spreadConsensusSide === 'away'
+    ? (spreadPinnLine.awayLine < 0)
+    : !!spreadPinnLine && (spreadPinnLine.homeLine < 0);
   const spreadSr = spreadSharpFeatures ? rateSpreadTotalStars({
     evEdge: spreadEvEdge || 0,
-    pinnConfirms: spreadPinnMovedWith,
+    pinnConfirms: spreadPinnConfirms,
     pinnMovingWith: spreadPinnMovedWith,
     pinnMovingAgainst: spreadPinnMovedAgainst,
     breadth: spreadSharpFeatures.breadth,
@@ -3335,10 +3338,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     ? (totalPinnLine.line < totalOpenLine.line)
     : totalOpenLine && totalPinnLine ? (totalPinnLine.line > totalOpenLine.line) : false;
 
+  const totalPinnConfirms = !!totalPinnLine && !!totalLine;
   const totalSharpFeatures = totalGameData ? computeSharpFeatures(totalGameData.positions || [], totalConsensusSide) : null;
   const totalSr = totalSharpFeatures ? rateSpreadTotalStars({
     evEdge: totalEvEdge || 0,
-    pinnConfirms: totalPinnMovedWith,
+    pinnConfirms: totalPinnConfirms,
     pinnMovingWith: totalPinnMovedWith,
     pinnMovingAgainst: totalPinnMovedAgainst,
     breadth: totalSharpFeatures.breadth,
@@ -3727,8 +3731,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               { id: 's3', met: (spreadSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
               { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 50, label: '$50+ on Side' },
               { id: 'sev', met: spreadEvEdge > 0, label: '+EV Edge' },
+              { id: 'spinn', met: spreadPinnConfirms, label: 'Pinnacle Confirms' },
               { id: 'sline', met: spreadPinnMovedWith, label: 'Line Moving With' },
-              { id: 'spinn', met: !!pinnGame?.spreadCurrent, label: 'Pinnacle Has Line' },
             ];
             const sMetCount = sCriteria.filter(c => c.met).length;
             return (
@@ -4053,8 +4057,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               { id: 't3', met: (totalSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
               { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 50, label: '$50+ on Side' },
               { id: 'tev', met: totalEvEdge > 0, label: '+EV Edge' },
+              { id: 'tpinn', met: totalPinnConfirms, label: 'Pinnacle Confirms' },
               { id: 'tline', met: totalPinnMovedWith, label: 'Line Moving With' },
-              { id: 'tpinn', met: !!pinnGame?.totalCurrent, label: 'Pinnacle Has Line' },
             ];
             const tMetCount = tCriteria.filter(c => c.met).length;
             return (
