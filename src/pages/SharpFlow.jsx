@@ -244,6 +244,10 @@ function rateSpreadTotalStars({
     else if (pinnProb < 0.30) pts -= 0.5;
   }
 
+  // Consensus strength bonus — overwhelming sharp agreement
+  if (consensusTier === 'DOMINANT') pts += 2;
+  else if (consensusTier === 'STRONG') pts += 1;
+
   if (polyMovingWith) {
     if (consensusTier === 'LEAN' || consensusTier === 'CONTESTED') pts += 1.5;
     else if (consensusTier === 'STRONG') pts += 0.5;
@@ -2519,6 +2523,10 @@ function rateStars({
     if (pinnProb >= 0.75) pts += 0.5;
     else if (pinnProb < 0.30) pts -= 0.5;
   }
+
+  // Consensus strength bonus — overwhelming sharp agreement
+  if (consensusTier === 'DOMINANT') pts += 2;
+  else if (consensusTier === 'STRONG') pts += 1;
 
   // Prediction market — conditional on breadth tier
   if (polyMovingWith) {
