@@ -53,105 +53,57 @@
 
 # MLB Predictions
 
-MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 4/9, the Yankees have the highest win probability at 64%.
+MLB predictions for every game, built on data. See win probabilities and market insights for the moneyline, run line, and total. Strictly by the numbers—no guesswork. On 4/9, the Padres have the highest win probability at 63%.
 
 [![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-left.svg) Get 3 free days of Dimers Pro—download the app ![](https://cdn.ciphersports.io/images/free-dimers-pro-page/gradient-white-right.svg)](https://subscription.dimers.com/march/)
 
 Apr 9 2026
 
-[Apr 9, 12:10 PM ET\\
-\\
-![Reds](https://cdn.ciphersports.io/images/MLB/official/CIN.svg)\\
-\\
-Reds  R. Lowder \\
-\\
-46% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-+115\\
-\\
-![Marlins](https://cdn.ciphersports.io/images/MLB/official/MIA.svg)\\
-\\
-Marlins  M. Meyer \\
-\\
-54% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
--120\\
-\\
-MLB \\
-\\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_mia_cin) [Apr 9, 1:35 PM ET\\
-\\
-![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
-\\
-Athletics  J. Springs \\
-\\
-36% \\
-\\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
-\\
-+195\\
-\\
-![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
-\\
-Yankees  R. Weathers \\
-\\
-64% \\
-\\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
-\\
--203\\
-\\
-MLB \\
-\\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_nyy_ath) [Apr 9, 1:40 PM ET\\
+[Apr 9, 1:40 PM ET\\
 \\
 ![Tigers](https://cdn.ciphersports.io/images/MLB/official/DET.svg)\\
 \\
-Tigers  J. Flaherty \\
+Tigers \\
 \\
-54% \\
+1 \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
-\\
--127\\
+42% \\
 \\
 ![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
 \\
-Twins  M. Abel \\
+Twins \\
 \\
-46% \\
+1 \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+58% \\
 \\
-+121\\
+1 Out\\
 \\
-MLB \\
+LIVE\\
 \\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_min_det) [Apr 9, 7:10 PM ET\\
+Bot 8th\\
+\\
+In-Play Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_min_det) [Apr 9, 7:10 PM ET\\
 \\
 ![D-Backs](https://cdn.ciphersports.io/images/MLB/official/ARI.svg)\\
 \\
 D-Backs  E. Rodriguez \\
 \\
-42% \\
+40% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![FanDuel](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)\\
 \\
-+148\\
++160\\
 \\
 ![Mets](https://cdn.ciphersports.io/images/MLB/official/NYM.svg)\\
 \\
 Mets  N. McLean \\
 \\
-58% \\
+60% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--153\\
+-163\\
 \\
 MLB \\
 \\
@@ -161,25 +113,109 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_nym_ar
 \\
 White Sox  A. Kay \\
 \\
-38% \\
+39% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+166\\
++161\\
 \\
 ![Royals](https://cdn.ciphersports.io/images/MLB/official/KC.svg)\\
 \\
 Royals  S. Lugo \\
 \\
-62% \\
+61% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--170\\
+-163\\
 \\
 MLB \\
 \\
-See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_kc_cws)
+See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_kc_cws) [Apr 9, 9:40 PM ET\\
+\\
+![Rockies](https://cdn.ciphersports.io/images/MLB/official/COL.svg)\\
+\\
+Rockies  J. Herget \\
+\\
+38% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
++179\\
+\\
+![Padres](https://cdn.ciphersports.io/images/MLB/official/SD.svg)\\
+\\
+Padres  R. Vásquez \\
+\\
+62% \\
+\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+\\
+-182\\
+\\
+MLB \\
+\\
+See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_sd_col) [Apr 9, 12:10 PM ET\\
+\\
+R\\
+\\
+H\\
+\\
+E\\
+\\
+![Reds](https://cdn.ciphersports.io/images/MLB/official/CIN.svg)\\
+\\
+Reds \\
+\\
+1 \\
+\\
+7 \\
+\\
+2 \\
+\\
+![Marlins](https://cdn.ciphersports.io/images/MLB/official/MIA.svg)\\
+\\
+Marlins \\
+\\
+8 \\
+\\
+12 \\
+\\
+2 \\
+\\
+FINAL\\
+\\
+See Game Recap](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_mia_cin) [Apr 9, 1:35 PM ET\\
+\\
+R\\
+\\
+H\\
+\\
+E\\
+\\
+![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
+\\
+Athletics \\
+\\
+1 \\
+\\
+8 \\
+\\
+1 \\
+\\
+![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
+\\
+Yankees \\
+\\
+0 \\
+\\
+1 \\
+\\
+0 \\
+\\
+FINAL\\
+\\
+See Game Recap](https://www.dimers.com/bet-hub/mlb/schedule/2026_16_nyy_ath)
 
 ![FanDuel logo](https://cdn.ciphersports.io/images/bookmaker-logos/fanduel-icon.svg)
 
@@ -397,13 +433,13 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Thursday, the Yankees lead all win probabilities with a 64% chance of beating the Athletics at Yankee Stadium. The Royals and Mets also rank among the leading moneyline favorites.
+On Thursday, the Padres lead all win probabilities with a 63% chance of beating the Rockies at Petco Park. The Yankees and Royals also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
-| Yankees | 64% | vs. Athletics | 1:35pm |
-| Royals | 61% | vs. White Sox | 7:40pm |
-| Mets | 58% | vs. D-Backs | 7:10pm |
+| Padres | 63% | vs. Rockies | 9:40pm |
+| Yankees | 62% | vs. Athletics | 1:35pm |
+| Royals | 62% | vs. White Sox | 7:40pm |
 
 ## MLB predictions today: data-driven outcomes for every game
 
