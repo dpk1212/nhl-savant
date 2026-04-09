@@ -193,26 +193,22 @@ function rateSpreadTotalStars({
 } = {}) {
   let pts = 0;
 
-  // V5: Reduced breadth cap
-  if (breadth >= 0.5) pts += 2;
-  else if (breadth >= 0.35) pts += 1.5;
+  if (breadth >= 0.5) pts += 3;
+  else if (breadth >= 0.35) pts += 2;
   else if (breadth >= 0.2) pts += 1;
   else if (breadth >= 0.1) pts += 0.5;
 
-  // V5: Inverted Pinnacle alignment
-  if (!pinnConfirms && !pinnMovingWith && !pinnMovingAgainst) pts += 1.5;
-  else if (pinnConfirms && pinnMovingWith) pts += 0.5;
-  else if (pinnConfirms) pts += 0;
-  else if (pinnMovingWith) pts += 0.5;
-  if (pinnMovingAgainst) {
-    pts -= breadth >= 0.35 ? 1 : 1.5;
-  }
+  // Pinnacle alignment — softened penalty
+  if (pinnConfirms && pinnMovingWith) pts += 3;
+  else if (pinnConfirms) pts += 1.5;
+  else if (pinnMovingWith) pts += 1.5;
+  if (pinnMovingAgainst) pts -= 1.5;
 
   if (conviction >= 0.8) pts += 1.5;
   else if (conviction >= 0.5) pts += 1;
   else if (conviction >= 0.25) pts += 0.5;
 
-  // V5: Softened concentration for ELITE-led multi-wallet
+  // Concentration penalty — softened when ELITE-led with multi-wallet confirmation
   if (concentration > 0.9) {
     pts -= (dominantTier === 'ELITE' && conWalletCount >= 4) ? 0.5 : 1;
   } else if (concentration > 0.8) {
@@ -228,12 +224,10 @@ function rateSpreadTotalStars({
   else if (evEdge > 1) pts += 1.5;
   else if (evEdge > 0) pts += 0.5;
 
-  // V5: Implied probability signal
+  // Implied probability — small nudge based on Pinnacle line
   if (pinnProb != null) {
-    if (pinnProb >= 0.75) pts += 1.5;
-    else if (pinnProb >= 0.60) pts += 0.75;
-    else if (pinnProb < 0.30) pts -= 1.5;
-    else if (pinnProb < 0.45) pts -= 0.5;
+    if (pinnProb >= 0.75) pts += 0.5;
+    else if (pinnProb < 0.30) pts -= 0.5;
   }
 
   if (polyMovingWith) {
@@ -2471,36 +2465,31 @@ function rateStars({
 } = {}) {
   let pts = 0;
 
-  // V5: Sharp breadth — reduced from +3 cap; data shows weak/inverted signal
-  if (breadth >= 0.5) pts += 2;
-  else if (breadth >= 0.35) pts += 1.5;
+  // Sharp breadth — quality-weighted wallet diversity (max 3 pts)
+  if (breadth >= 0.5) pts += 3;
+  else if (breadth >= 0.35) pts += 2;
   else if (breadth >= 0.2) pts += 1;
   else if (breadth >= 0.1) pts += 0.5;
 
-  // V5: Pinnacle alignment — INVERTED per 305-pick analysis
-  // NO Pinn = 68.6% WR (+13.2% ROI) vs Pinn confirms = 56.0% (-2.9% ROI)
-  // Sharps ahead of Pinnacle = edge; Pinnacle already priced in = no edge
-  if (!pinnConfirms && !pinnMovingWith && !pinnMovingAgainst) pts += 1.5;
-  else if (pinnConfirms && pinnMovingWith) pts += 0.5;
-  else if (pinnConfirms) pts += 0;
-  else if (pinnMovingWith) pts += 0.5;
-  if (pinnMovingAgainst) {
-    pts -= breadth >= 0.35 ? 1 : 1.5;
-  }
+  // Pinnacle alignment — softened penalty (max 3 pts / -1.5 penalty)
+  if (pinnConfirms && pinnMovingWith) pts += 3;
+  else if (pinnConfirms) pts += 1.5;
+  else if (pinnMovingWith) pts += 1.5;
+  if (pinnMovingAgainst) pts -= 1.5;
 
   // Sharp conviction — log-dollar per wallet (max 1.5 pts)
   if (conviction >= 0.8) pts += 1.5;
   else if (conviction >= 0.5) pts += 1;
   else if (conviction >= 0.25) pts += 0.5;
 
-  // V5: Concentration penalty — softened when ELITE-led with 3+ confirmations
+  // Concentration penalty — softened when ELITE-led with multi-wallet confirmation
   if (concentration > 0.9) {
     pts -= (dominantTier === 'ELITE' && conWalletCount >= 4) ? 0.5 : 1;
   } else if (concentration > 0.8) {
     pts -= (dominantTier === 'ELITE' && conWalletCount >= 4) ? 0.25 : 0.5;
   }
 
-  // Counter-sharp penalty — contested games are 30.8% WR, heavily penalize opposition
+  // Counter-sharp penalty — contested games are 30.8% WR
   if (counterSharpScore >= 6) pts -= 3;
   else if (counterSharpScore >= 3) pts -= 2;
   else if (counterSharpScore >= 1) pts -= 1;
@@ -2511,13 +2500,10 @@ function rateStars({
   else if (evEdge > 1) pts += 1.5;
   else if (evEdge > 0) pts += 0.5;
 
-  // V5: Implied probability — #1 predictor in logistic regression (r=+0.36)
-  // Heavy fav 82.8% WR, big dog 21.4% WR
+  // Implied probability — small nudge based on Pinnacle line
   if (pinnProb != null) {
-    if (pinnProb >= 0.75) pts += 1.5;
-    else if (pinnProb >= 0.60) pts += 0.75;
-    else if (pinnProb < 0.30) pts -= 1.5;
-    else if (pinnProb < 0.45) pts -= 0.5;
+    if (pinnProb >= 0.75) pts += 0.5;
+    else if (pinnProb < 0.30) pts -= 0.5;
   }
 
   // Prediction market — conditional on breadth tier
@@ -2546,8 +2532,8 @@ function rateStars({
   const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
 
   const labels = {
-    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                         summary: 'Maximum conviction — all signals aligned' },
-    4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                         summary: 'Near-perfect signal alignment' },
+    5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                          summary: 'Maximum conviction — all signals aligned' },
+    4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                          summary: 'Near-perfect signal alignment' },
     4:   { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Strong conviction — dominant consensus + confirming signals' },
     3.5: { label: 'STRONG PLAY',   color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Above-average conviction across multiple signals' },
     3:   { label: 'SOLID PLAY',    color: B.green,   bg: 'rgba(16,185,129,0.08)',             summary: 'Strong consensus with confirming signals' },

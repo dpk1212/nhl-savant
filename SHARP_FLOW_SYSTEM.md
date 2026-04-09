@@ -44,13 +44,19 @@ We track the Polymarket moneyline price over 24 hours. If the price is moving in
 
 ### How Plays Get Rated & Locked In
 
-Every game with sharp positions is scored using a **weighted 11-point star rating system** that evaluates 7 signal dimensions: sharp wallet count, money deployed on side, EV edge, Pinnacle alignment, line movement, consensus strength, and prediction market direction.
+Every game with sharp positions is scored using a **weighted star rating system** that evaluates multiple signal dimensions on a 15-point scale: sharp wallet breadth, money deployed, EV edge, Pinnacle alignment, line movement, consensus strength, prediction market direction, implied probability, and sport-specialist verification.
 
-The points are converted to a 0.5–5.0 star rating. **Plays with 3+ stars are automatically LOCKED IN** — saved to our database with a unit size for performance tracking.
+The points are converted to a 0.5–5.0 star rating. **Plays with 2.5+ stars are automatically LOCKED IN** — saved to our database with a unit size for performance tracking.
 
-The star rating is the **single source of truth** — there are no separate gates or overrides. Penalties for thin volume (under $7K on side) and contested consensus (sharps split on both sides) are baked directly into the point score.
+The star rating is the **single source of truth** — there are no separate gates or overrides. Penalties for contested consensus (sharps split on both sides), single-wallet concentration, and Pinnacle opposition are baked directly into the point score.
 
-> **Full details**: See [STAR_RATING_SYSTEM.md](./STAR_RATING_SYSTEM.md) for the complete formula, point values, unit sizing table, and worked examples.
+#### Key Tuning (from 305-pick backtest)
+
+Three targeted adjustments based on `SHARP_FLOW_ANALYSIS.md`:
+
+1. **Pinnacle "moving against" penalty softened** from −2.0 to −1.5. The original −2 was too harsh and prevented otherwise strong consensus plays from locking.
+2. **Concentration penalty is context-aware**. When the dominant wallet is ELITE tier ($100K+ lifetime profit) and 3+ other independent wallets confirm, the penalty is halved (−0.5 instead of −1.0 at >90% concentration). A verified top whale with backup is different from one random wallet alone.
+3. **Implied probability added as a small tiebreaker**. Heavy favorites (Pinnacle implied ≥75%) get +0.5; big underdogs (<30%) get −0.5. This is a nudge, not a driver — the strongest predictors remain EV edge and sharp consensus breadth.
 
 ### Unit Sizing
 
@@ -306,7 +312,7 @@ Defined in `firestore.indexes.json`.
 
 **Key Functions**:
 - `useMarketData()` — loads all 5 JSON files
-- `rateStars()` — weighted 11-point scoring → 0.5–5.0 star rating (drives lock + unit decisions)
+- `rateStars()` — V5 multi-signal scoring on 15-pt scale → 0.5–5.0 star rating (drives lock + unit decisions)
 - `calculateUnits()` — maps star rating to unit size with consensus penalty
 - `SharpPositionCard` — main card component (React.memo) with both-sides battle, sparklines, criteria checklist, unit sizing
 - `MiniSparkline` — SVG sparkline for Pinnacle/prediction market price movement
