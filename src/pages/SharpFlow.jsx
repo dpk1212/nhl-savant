@@ -176,6 +176,80 @@ function profitFromOdds(odds, units) {
   return units * (100 / Math.abs(odds));
 }
 
+// ─── Spread/Total Conviction Rating ───────────────────────────────────────────
+
+function rateSpreadTotalStars({
+  evEdge = 0, pinnConfirms = false, pinnMovingWith = false, pinnMovingAgainst = false,
+  polyMovingWith = false,
+  breadth = 0, conviction = 0, concentration = 0, counterSharpScore = 0,
+  consensusTier = 'LEAN',
+  sportSharpCount = 0,
+} = {}) {
+  let pts = 0;
+
+  if (breadth >= 0.5) pts += 3;
+  else if (breadth >= 0.35) pts += 2;
+  else if (breadth >= 0.2) pts += 1;
+  else if (breadth >= 0.1) pts += 0.5;
+
+  if (pinnConfirms && pinnMovingWith) pts += 3;
+  else if (pinnConfirms) pts += 1.5;
+  else if (pinnMovingWith) pts += 1.5;
+  if (pinnMovingAgainst) pts -= 2;
+
+  if (conviction >= 0.8) pts += 1.5;
+  else if (conviction >= 0.5) pts += 1;
+  else if (conviction >= 0.25) pts += 0.5;
+
+  if (concentration > 0.9) pts -= 1;
+  else if (concentration > 0.8) pts -= 0.5;
+
+  if (counterSharpScore >= 6) pts -= 3;
+  else if (counterSharpScore >= 3) pts -= 2;
+  else if (counterSharpScore >= 1) pts -= 1;
+
+  if (evEdge > 3) pts += 3.5;
+  else if (evEdge > 2) pts += 2.5;
+  else if (evEdge > 1) pts += 1.5;
+  else if (evEdge > 0) pts += 0.5;
+
+  if (polyMovingWith) {
+    if (consensusTier === 'LEAN' || consensusTier === 'CONTESTED') pts += 1.5;
+    else if (consensusTier === 'STRONG') pts += 0.5;
+    else pts += 0.25;
+  }
+
+  if (sportSharpCount >= 3) pts += 1.5;
+  else if (sportSharpCount >= 2) pts += 1;
+  else if (sportSharpCount >= 1) pts += 0.5;
+
+  const maxPts = 14.5;
+  const raw = (pts / maxPts) * 5;
+  const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
+
+  const labels = {
+    5:   { label: 'ELITE PLAY',  color: B.green,   bg: B.greenDim },
+    4.5: { label: 'ELITE PLAY',  color: B.green,   bg: B.greenDim },
+    4:   { label: 'STRONG PLAY', color: B.green,   bg: 'rgba(16,185,129,0.08)' },
+    3.5: { label: 'STRONG PLAY', color: B.green,   bg: 'rgba(16,185,129,0.08)' },
+    3:   { label: 'SOLID PLAY',  color: B.green,   bg: 'rgba(16,185,129,0.08)' },
+    2.5: { label: 'SOLID PLAY',  color: B.gold,    bg: B.goldDim },
+    2:   { label: 'LEAN',        color: B.gold,    bg: B.goldDim },
+    1.5: { label: 'DEVELOPING',  color: B.textSec, bg: 'rgba(255,255,255,0.04)' },
+    1:   { label: 'MONITORING',  color: B.textSec, bg: 'rgba(255,255,255,0.04)' },
+    0.5: { label: 'MONITORING',  color: B.textSec, bg: 'rgba(255,255,255,0.04)' },
+  };
+  const info = labels[stars] || labels[1];
+  return { stars, pts, maxPts, ...info, isActionable: stars >= 3 };
+}
+
+function calculateSpreadTotalUnits(stars, consensusPenalty = 0) {
+  let units = stars >= 5 ? 2.0 : stars >= 4.5 ? 1.75 : stars >= 4 ? 1.5
+             : stars >= 3.5 ? 1.25 : stars >= 3 ? 1.0 : 0.5;
+  units += consensusPenalty;
+  return Math.min(Math.max(units, 0.5), 2);
+}
+
 // ─── Sharp Flow Locked Picks — Firebase ───────────────────────────────────────
 
 function todayET() {
@@ -295,20 +369,147 @@ async function syncPregameSnapshot({ docId, side, snapshot }) {
   }
 }
 
+// ─── Spread/Total Firebase Sync ───────────────────────────────────────────────
+
+function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars) {
+  const now = Date.now();
+  const tier = unitTier(units).label;
+  const snapshot = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
+  return {
+    team,
+    lock: { ...snapshot, lockedAt: now },
+    peak: { ...snapshot, updatedAt: now },
+    maxEV: evEdge || 0,
+    maxEVAt: now,
+    status: 'PENDING',
+    result: { outcome: null, profit: null, gradedAt: null },
+  };
+}
+
+async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
+  try {
+    const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    const docId = `${date}_${sport}_${gameKey}_spread`;
+    if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+      return { docId, action: 'no_change' };
+    }
+    const ref = doc(db, 'sharpFlowSpreads', docId);
+    const existing = await getDoc(ref);
+
+    if (!existing.exists()) {
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+      await setDoc(ref, {
+        date, sport, gameKey, away, home, commenceTime: commenceTime || null,
+        marketType: 'spread', lockType: 'PREGAME',
+        sides: { [side]: sideData },
+        status: 'PENDING',
+        result: { awayScore: null, homeScore: null, winner: null },
+        source: 'ui_card_sync', createdAt: Date.now(),
+      });
+      return { docId, action: 'created' };
+    }
+
+    const data = existing.data();
+    if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
+    const sides = data.sides || {};
+
+    if (sides[side]) {
+      if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
+      const currentPeak = sides[side].peak?.units || 0;
+      const currentPeakStars = sides[side].peak?.stars || 0;
+      const lockStars = sides[side].lock?.stars || stars;
+      const starDelta = stars - lockStars;
+      const topPickBonus = starDelta >= 1.5 ? 0.5 : starDelta >= 1.0 ? 0.25 : 0;
+      const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 2);
+      if (bumpedUnits > currentPeak || stars > currentPeakStars) {
+        const tier = unitTier(bumpedUnits).label;
+        const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        await setDoc(ref, { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' }, { merge: true });
+        return { docId, action: 'peak_updated' };
+      }
+      return { docId, action: 'no_change' };
+    }
+
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+    await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
+    return { docId, action: 'side_added' };
+  } catch (err) {
+    console.warn('Failed to sync spread pick:', err.message);
+    return { docId: `${date}_${sport}_${gameKey}_spread`, action: 'error' };
+  }
+}
+
+async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
+  try {
+    const PREGAME_BUFFER_MS = 5 * 60 * 1000;
+    const docId = `${date}_${sport}_${gameKey}_total`;
+    if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+      return { docId, action: 'no_change' };
+    }
+    const ref = doc(db, 'sharpFlowTotals', docId);
+    const existing = await getDoc(ref);
+
+    if (!existing.exists()) {
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+      await setDoc(ref, {
+        date, sport, gameKey, away, home, commenceTime: commenceTime || null,
+        marketType: 'total', lockType: 'PREGAME',
+        sides: { [side]: sideData },
+        status: 'PENDING',
+        result: { awayScore: null, homeScore: null, winner: null },
+        source: 'ui_card_sync', createdAt: Date.now(),
+      });
+      return { docId, action: 'created' };
+    }
+
+    const data = existing.data();
+    if (data.status === 'COMPLETED') return { docId, action: 'no_change' };
+    const sides = data.sides || {};
+
+    if (sides[side]) {
+      if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
+      const currentPeak = sides[side].peak?.units || 0;
+      const currentPeakStars = sides[side].peak?.stars || 0;
+      const lockStars = sides[side].lock?.stars || stars;
+      const starDelta = stars - lockStars;
+      const topPickBonus = starDelta >= 1.5 ? 0.5 : starDelta >= 1.0 ? 0.25 : 0;
+      const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 2);
+      if (bumpedUnits > currentPeak || stars > currentPeakStars) {
+        const tier = unitTier(bumpedUnits).label;
+        const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        await setDoc(ref, { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' }, { merge: true });
+        return { docId, action: 'peak_updated' };
+      }
+      return { docId, action: 'no_change' };
+    }
+
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+    await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
+    return { docId, action: 'side_added' };
+  } catch (err) {
+    console.warn('Failed to sync total pick:', err.message);
+    return { docId: `${date}_${sport}_${gameKey}_total`, action: 'error' };
+  }
+}
+
 async function loadLockedPicks() {
   try {
     const today = todayET();
     const yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
       .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-    const q = query(
-      collection(db, 'sharpFlowPicks'),
-      where('date', 'in', [today, yesterday]),
-    );
-    const snap = await getDocs(q);
-    const picks = {};
-    snap.forEach(d => { picks[d.id] = d.data(); });
+    const dateFilter = [today, yesterday];
 
-    // Deduplicate: if both date_sport_key and date_key exist, keep the canonical one (with sport)
+    const [mlSnap, spreadSnap, totalSnap] = await Promise.all([
+      getDocs(query(collection(db, 'sharpFlowPicks'), where('date', 'in', dateFilter))),
+      getDocs(query(collection(db, 'sharpFlowSpreads'), where('date', 'in', dateFilter))),
+      getDocs(query(collection(db, 'sharpFlowTotals'), where('date', 'in', dateFilter))),
+    ]);
+
+    const picks = {};
+    mlSnap.forEach(d => { picks[d.id] = { ...d.data(), marketType: 'ml' }; });
+    spreadSnap.forEach(d => { picks[d.id] = { ...d.data(), marketType: 'spread' }; });
+    totalSnap.forEach(d => { picks[d.id] = { ...d.data(), marketType: 'total' }; });
+
     const ids = Object.keys(picks);
     for (const id of ids) {
       const data = picks[id];
@@ -383,14 +584,20 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v9';
+    const cacheKey = 'sharpFlow_pnl_v10';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < 30 * 60 * 1000 && data.picks) return data;
     }
-    const snap = await getDocs(collection(db, 'sharpFlowPicks'));
-    const overall = tallySides(snap);
+    const [mlSnap, spreadSnap, totalSnap] = await Promise.all([
+      getDocs(collection(db, 'sharpFlowPicks')),
+      getDocs(collection(db, 'sharpFlowSpreads')),
+      getDocs(collection(db, 'sharpFlowTotals')),
+    ]);
+    const combinedDocs = { docs: [...mlSnap.docs, ...spreadSnap.docs, ...totalSnap.docs], forEach(fn) { this.docs.forEach(fn); } };
+    const overall = tallySides(combinedDocs);
+    const snap = combinedDocs;
 
     const byStars = {};
     const picks = [];
@@ -505,6 +712,8 @@ function useMarketData() {
   const [whaleProfiles, setWhaleProfiles] = useState(null);
   const [pinnacleHistory, setPinnacleHistory] = useState(null);
   const [sharpPositions, setSharpPositions] = useState(null);
+  const [spreadPositions, setSpreadPositions] = useState(null);
+  const [totalPositions, setTotalPositions] = useState(null);
   const [sportsSharps, setSportsSharps] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -516,18 +725,22 @@ function useMarketData() {
       fetch(`${import.meta.env.BASE_URL}pinnacle_history.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}sharp_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}sports_sharps.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([p, k, wp, ph, sp, ss]) => {
+      fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([p, k, wp, ph, sp, ss, sprP, totP]) => {
       setPolyData(p);
       setKalshiData(k);
       setWhaleProfiles(wp);
       setPinnacleHistory(ph);
       setSharpPositions(sp);
       setSportsSharps(ss);
+      setSpreadPositions(sprP);
+      setTotalPositions(totP);
       setLoading(false);
     });
   }, []);
 
-  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, sportsSharps, loading };
+  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, loading };
 }
 
 function buildGameData(polyData, kalshiData) {
@@ -1965,13 +2178,11 @@ function SpreadPanel({ pinnGame, game, isMobile }) {
   const sm = pinnGame?.spreadMovement;
   const bestAway = pinnGame?.bestAwaySpread;
   const bestHome = pinnGame?.bestHomeSpread;
-  const polySpread = game?.polySpread;
-  const kalshiSpreads = game?.kalshiSpreads;
   const spreadHist = pinnGame?.spreadHistory || [];
   const awayShort = game.away.split(' ').pop();
   const homeShort = game.home.split(' ').pop();
 
-  const hasAnyData = sc || bestAway || bestHome || polySpread || (kalshiSpreads && kalshiSpreads.length > 0);
+  const hasAnyData = sc || bestAway || bestHome;
   if (!hasAnyData) {
     return (
       <div style={{ padding: '0.75rem 0.625rem', textAlign: 'center' }}>
@@ -2057,69 +2268,6 @@ function SpreadPanel({ pinnGame, game, isMobile }) {
         </div>
       )}
 
-      {polySpread && polySpread.probs && (
-        <div style={{
-          borderRadius: '8px', overflow: 'hidden',
-          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
-        }}>
-          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>Polymarket Spread</span>
-          </div>
-          <div style={{ padding: '0.5rem 0.625rem' }}>
-            <div style={{ ...T.label, color: B.text, fontWeight: 600, marginBottom: '0.375rem' }}>
-              {polySpread.title}{polySpread.line != null ? ` (${polySpread.line > 0 ? '+' : ''}${polySpread.line})` : ''}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {polySpread.outcomes && polySpread.probs.map((p, i) => (
-                <div key={i} style={{
-                  flex: 1, padding: '0.3rem 0.5rem', borderRadius: '6px',
-                  background: i === 0 ? 'rgba(14,165,233,0.08)' : 'rgba(139,92,246,0.08)',
-                  border: `1px solid ${i === 0 ? 'rgba(14,165,233,0.2)' : 'rgba(139,92,246,0.2)'}`,
-                  textAlign: 'center',
-                }}>
-                  <div style={{ ...T.micro, color: B.textMuted }}>{polySpread.outcomes[i] || `Side ${i + 1}`}</div>
-                  <div style={{ ...T.label, color: i === 0 ? B.sky : B.purple, fontWeight: 700 }}>{p.toFixed(1)}%</div>
-                </div>
-              ))}
-            </div>
-            {polySpread.priceHistory && polySpread.priceHistory.points?.length >= 2 && (
-              <div style={{ marginTop: '0.375rem' }}>
-                <MiniSparkline
-                  points={polySpread.priceHistory.points}
-                  color={B.sky}
-                  label="Spread Movement"
-                  startLabel={`${polySpread.priceHistory.open}%`}
-                  endLabel={`${polySpread.priceHistory.current}%`}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {kalshiSpreads && kalshiSpreads.length > 0 && (
-        <div style={{
-          borderRadius: '8px', overflow: 'hidden',
-          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
-        }}>
-          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>Kalshi Spreads</span>
-          </div>
-          <div style={{ padding: '0.375rem 0.625rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-            {kalshiSpreads.map((s, i) => (
-              <div key={i} style={{
-                padding: '0.2rem 0.4rem', borderRadius: '5px',
-                background: 'rgba(59,130,246,0.06)', border: `1px solid rgba(59,130,246,0.15)`,
-                display: 'flex', alignItems: 'center', gap: '0.3rem',
-              }}>
-                <span style={{ ...T.micro, color: B.textSec }}>{s.label}</span>
-                <span style={{ ...T.micro, color: B.blue, fontWeight: 700 }}>{s.prob}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {spreadPoints.length >= 2 && (
         <div style={{ padding: '0.25rem 0.625rem' }}>
           <MiniSparkline
@@ -2143,11 +2291,9 @@ function TotalPanel({ pinnGame, game, isMobile }) {
   const tm = pinnGame?.totalMovement;
   const bestOver = pinnGame?.bestOver;
   const bestUnder = pinnGame?.bestUnder;
-  const polyTotal = game?.polyTotal;
-  const kalshiTotals = game?.kalshiTotals;
   const totalHist = pinnGame?.totalHistory || [];
 
-  const hasAnyData = tc || bestOver || bestUnder || polyTotal || (kalshiTotals && kalshiTotals.length > 0);
+  const hasAnyData = tc || bestOver || bestUnder;
   if (!hasAnyData) {
     return (
       <div style={{ padding: '0.75rem 0.625rem', textAlign: 'center' }}>
@@ -2225,69 +2371,6 @@ function TotalPanel({ pinnGame, game, isMobile }) {
                 <span style={{ ...T.micro, color: B.textMuted }}>{bestUnder.book}</span>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {polyTotal && polyTotal.probs && (
-        <div style={{
-          borderRadius: '8px', overflow: 'hidden',
-          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
-        }}>
-          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>Polymarket Total</span>
-          </div>
-          <div style={{ padding: '0.5rem 0.625rem' }}>
-            <div style={{ ...T.label, color: B.text, fontWeight: 600, marginBottom: '0.375rem' }}>
-              {polyTotal.title}{polyTotal.line != null ? ` (${polyTotal.line})` : ''}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {polyTotal.outcomes && polyTotal.probs.map((p, i) => (
-                <div key={i} style={{
-                  flex: 1, padding: '0.3rem 0.5rem', borderRadius: '6px',
-                  background: i === 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-                  border: `1px solid ${i === 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
-                  textAlign: 'center',
-                }}>
-                  <div style={{ ...T.micro, color: B.textMuted }}>{polyTotal.outcomes[i] || (i === 0 ? 'Over' : 'Under')}</div>
-                  <div style={{ ...T.label, color: i === 0 ? B.green : B.red, fontWeight: 700 }}>{p.toFixed(1)}%</div>
-                </div>
-              ))}
-            </div>
-            {polyTotal.priceHistory && polyTotal.priceHistory.points?.length >= 2 && (
-              <div style={{ marginTop: '0.375rem' }}>
-                <MiniSparkline
-                  points={polyTotal.priceHistory.points}
-                  color={B.green}
-                  label="O/U Movement"
-                  startLabel={`${polyTotal.priceHistory.open}%`}
-                  endLabel={`${polyTotal.priceHistory.current}%`}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {kalshiTotals && kalshiTotals.length > 0 && (
-        <div style={{
-          borderRadius: '8px', overflow: 'hidden',
-          border: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.015)',
-        }}>
-          <div style={{ padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}` }}>
-            <span style={{ ...T.micro, color: B.textMuted }}>Kalshi Totals</span>
-          </div>
-          <div style={{ padding: '0.375rem 0.625rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-            {kalshiTotals.map((t, i) => (
-              <div key={i} style={{
-                padding: '0.2rem 0.4rem', borderRadius: '5px',
-                background: 'rgba(16,185,129,0.06)', border: `1px solid rgba(16,185,129,0.15)`,
-                display: 'flex', alignItems: 'center', gap: '0.3rem',
-              }}>
-                <span style={{ ...T.micro, color: B.textSec }}>{t.label}</span>
-                <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>{t.prob}%</span>
-              </div>
-            ))}
           </div>
         </div>
       )}
@@ -2441,7 +2524,7 @@ function rateStars({
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -2522,6 +2605,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
             <Badge color={ss.color} bg={ss.bg}>{ss.icon} {sport}</Badge>
+            {marketType && marketType !== 'ml' && (
+              <Badge color={marketType === 'spread' ? '#8B5CF6' : '#F59E0B'} bg={marketType === 'spread' ? 'rgba(139,92,246,0.12)' : 'rgba(245,158,11,0.12)'}>
+                {marketType === 'spread' ? 'SPREAD' : 'TOTAL'}
+              </Badge>
+            )}
             <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
               {away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {home}
             </span>
@@ -2673,7 +2761,9 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.2rem' }}>
                   {sharpCount || '—'} sharp{sharpCount !== 1 ? 's' : ''} backing
                 </div>
-                <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>{teamShort} ML</div>
+                <div style={{ ...T.heading, fontWeight: 900, color: B.text }}>
+                  {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}
+                </div>
                 {pinnProb && (
                   <div style={{ ...T.micro, color: B.textSec, marginTop: '0.15rem' }}>
                     Fair value: {fmtO(pinnacleOdds)} ({(pinnProb * 100).toFixed(1)}%)
@@ -2836,7 +2926,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               padding: '0.375rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`,
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              <span style={{ ...T.micro, color: B.textMuted }}>Book Prices — {teamShort} ML</span>
+              <span style={{ ...T.micro, color: B.textMuted }}>Book Prices — {marketType === 'spread' ? `${teamShort} ${line > 0 ? '+' : ''}${line}` : marketType === 'total' ? teamShort : `${teamShort} ML`}</span>
               {clvPct != null && (
                 <span style={{ ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'", color: clvPositive ? B.green : liveCLV < 0 ? B.red : B.textMuted }}>
                   CLV {clvPositive ? '+' : ''}{clvPct}%
@@ -2885,11 +2975,17 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
+  const [showSpreadWallets, setShowSpreadWallets] = useState(false);
+  const [spreadWalletFilter, setSpreadWalletFilter] = useState('all');
+  const [showTotalWallets, setShowTotalWallets] = useState(false);
+  const [totalWalletFilter, setTotalWalletFilter] = useState('all');
   const [marketTab, setMarketTab] = useState('ml');
   const lastSyncedStars = useRef(null);
+  const lastSyncedSpreadStars = useRef(null);
+  const lastSyncedTotalStars = useRef(null);
   const pregameSynced = useRef(false);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
@@ -3138,6 +3234,149 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       },
     });
   });
+
+  // ─── Spread Position Lock Detection ───────────────────────────────────────
+  const spreadGameData = spreadPositions?.[gd.sport]?.[gd.key];
+  const spreadSummary = spreadGameData?.summary;
+  const spreadConsensusSide = spreadSummary?.consensus;
+  const spreadConsensuTeam = spreadConsensusSide === 'away' ? gd.away : gd.home;
+
+  const spreadPinnLine = pinnGame?.spreadCurrent;
+  const spreadPinnOdds = spreadConsensusSide === 'away'
+    ? pinnGame?.spreadCurrent?.awayOdds : pinnGame?.spreadCurrent?.homeOdds;
+  const spreadBestRetail = spreadConsensusSide === 'away'
+    ? pinnGame?.bestAwaySpread?.odds : pinnGame?.bestHomeSpread?.odds;
+  const spreadBestBook = spreadConsensusSide === 'away'
+    ? pinnGame?.bestAwaySpread?.book : pinnGame?.bestHomeSpread?.book;
+  const spreadLine = spreadConsensusSide === 'away'
+    ? pinnGame?.spreadCurrent?.awayLine : pinnGame?.spreadCurrent?.homeLine;
+
+  const spreadPinnProb = impliedProb(spreadPinnOdds);
+  const spreadRetailProb = impliedProb(spreadBestRetail);
+  const spreadEvEdge = (spreadPinnProb && spreadRetailProb) ? +((spreadPinnProb - spreadRetailProb) * 100).toFixed(1) : null;
+
+  const spreadOpenLine = pinnGame?.spreadOpener;
+  const spreadPinnMovedWith = spreadOpenLine && spreadPinnLine && spreadConsensusSide === 'away'
+    ? (spreadPinnLine.awayLine < spreadOpenLine.awayLine)
+    : spreadOpenLine && spreadPinnLine ? (spreadPinnLine.homeLine < spreadOpenLine.homeLine) : false;
+  const spreadPinnMovedAgainst = spreadOpenLine && spreadPinnLine && spreadConsensusSide === 'away'
+    ? (spreadPinnLine.awayLine > spreadOpenLine.awayLine)
+    : spreadOpenLine && spreadPinnLine ? (spreadPinnLine.homeLine > spreadOpenLine.homeLine) : false;
+
+  const spreadSharpFeatures = spreadGameData ? computeSharpFeatures(spreadGameData.positions || [], spreadConsensusSide) : null;
+  const spreadSr = spreadSharpFeatures ? rateSpreadTotalStars({
+    evEdge: spreadEvEdge || 0,
+    pinnConfirms: !!spreadPinnLine,
+    pinnMovingWith: spreadPinnMovedWith,
+    pinnMovingAgainst: spreadPinnMovedAgainst,
+    breadth: spreadSharpFeatures.breadth,
+    conviction: spreadSharpFeatures.conviction,
+    concentration: spreadSharpFeatures.concentration,
+    counterSharpScore: spreadSharpFeatures.counterSharpScore,
+    consensusTier: spreadSharpFeatures.consensusTier,
+    sportSharpCount: spreadSharpFeatures.sportSharpCount,
+  }) : null;
+
+  const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5;
+  const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars) : 0;
+  const spreadBetOdds = spreadBestRetail || spreadPinnOdds;
+
+  useEffect(() => {
+    if (!isSpreadLocked || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastSyncedSpreadStars.current !== null && spreadSr.stars <= lastSyncedSpreadStars.current) return;
+    const date = gameDate(commenceTime);
+    syncSpreadPickToFirebase({
+      date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
+      commenceTime, side: spreadConsensusSide, team: spreadConsensuTeam,
+      line: spreadLine, odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle',
+      pinnacleOdds: spreadPinnOdds, evEdge: spreadEvEdge,
+      criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0,
+      criteria: {
+        sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3,
+        plusEV: spreadEvEdge > 0,
+        lineMovingWith: spreadPinnMovedWith,
+      },
+      sharpCount: spreadSharpFeatures?.conWalletCount || 0,
+      totalInvested: spreadSharpFeatures?.conTotalInvested || 0,
+      units: spreadUnits, consensusStrength: { grade: spreadSharpFeatures?.consensusTier || 'LEAN' },
+      stars: spreadSr.stars,
+    }).then(({ action }) => {
+      if (action === 'error') return;
+      lastSyncedSpreadStars.current = spreadSr.stars;
+    });
+  }, [isSpreadLocked, spreadSr?.stars]);
+
+  // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
+  const totalGameData = totalPositions?.[gd.sport]?.[gd.key];
+  const totalSummary = totalGameData?.summary;
+  const totalConsensusSide = totalSummary?.consensus; // 'over' or 'under'
+
+  const totalPinnLine = pinnGame?.totalCurrent;
+  const totalPinnOdds = totalConsensusSide === 'over'
+    ? pinnGame?.totalCurrent?.overOdds : pinnGame?.totalCurrent?.underOdds;
+  const totalBestRetail = totalConsensusSide === 'over'
+    ? pinnGame?.bestOverTotal?.odds : pinnGame?.bestUnderTotal?.odds;
+  const totalBestBook = totalConsensusSide === 'over'
+    ? pinnGame?.bestOverTotal?.book : pinnGame?.bestUnderTotal?.book;
+  const totalLine = pinnGame?.totalCurrent?.line;
+
+  const totalPinnProb = impliedProb(totalPinnOdds);
+  const totalRetailProb = impliedProb(totalBestRetail);
+  const totalEvEdge = (totalPinnProb && totalRetailProb) ? +((totalPinnProb - totalRetailProb) * 100).toFixed(1) : null;
+
+  const totalOpenLine = pinnGame?.totalOpener;
+  const totalPinnMovedWith = totalOpenLine && totalPinnLine && totalConsensusSide === 'over'
+    ? (totalPinnLine.line > totalOpenLine.line)
+    : totalOpenLine && totalPinnLine ? (totalPinnLine.line < totalOpenLine.line) : false;
+  const totalPinnMovedAgainst = totalOpenLine && totalPinnLine && totalConsensusSide === 'over'
+    ? (totalPinnLine.line < totalOpenLine.line)
+    : totalOpenLine && totalPinnLine ? (totalPinnLine.line > totalOpenLine.line) : false;
+
+  const totalSharpFeatures = totalGameData ? computeSharpFeatures(totalGameData.positions || [], totalConsensusSide) : null;
+  const totalSr = totalSharpFeatures ? rateSpreadTotalStars({
+    evEdge: totalEvEdge || 0,
+    pinnConfirms: !!totalPinnLine,
+    pinnMovingWith: totalPinnMovedWith,
+    pinnMovingAgainst: totalPinnMovedAgainst,
+    breadth: totalSharpFeatures.breadth,
+    conviction: totalSharpFeatures.conviction,
+    concentration: totalSharpFeatures.concentration,
+    counterSharpScore: totalSharpFeatures.counterSharpScore,
+    consensusTier: totalSharpFeatures.consensusTier,
+    sportSharpCount: totalSharpFeatures.sportSharpCount,
+  }) : null;
+
+  const isTotalLocked = totalSr && totalSr.stars >= 2.5;
+  const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars) : 0;
+  const totalBetOdds = totalBestRetail || totalPinnOdds;
+
+  useEffect(() => {
+    if (!isTotalLocked || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastSyncedTotalStars.current !== null && totalSr.stars <= lastSyncedTotalStars.current) return;
+    const date = gameDate(commenceTime);
+    syncTotalPickToFirebase({
+      date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
+      commenceTime, side: totalConsensusSide,
+      team: totalConsensusSide === 'over' ? `Over ${totalLine}` : `Under ${totalLine}`,
+      line: totalLine, odds: totalBetOdds, book: totalBestBook || 'Pinnacle',
+      pinnacleOdds: totalPinnOdds, evEdge: totalEvEdge,
+      criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0,
+      criteria: {
+        sharps3Plus: totalSharpFeatures?.conWalletCount >= 3,
+        plusEV: totalEvEdge > 0,
+        lineMovingWith: totalPinnMovedWith,
+      },
+      sharpCount: totalSharpFeatures?.conWalletCount || 0,
+      totalInvested: totalSharpFeatures?.conTotalInvested || 0,
+      units: totalUnits, consensusStrength: { grade: totalSharpFeatures?.consensusTier || 'LEAN' },
+      stars: totalSr.stars,
+    }).then(({ action }) => {
+      if (action === 'error') return;
+      lastSyncedTotalStars.current = totalSr.stars;
+    });
+  }, [isTotalLocked, totalSr?.stars]);
 
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
@@ -3478,12 +3717,334 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
       {marketTab === 'spread' && (
         <div style={{ padding: '0.5rem 0.875rem' }}>
+          {isSpreadLocked && spreadSr && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.5rem 0.75rem', marginBottom: '0.5rem',
+              borderRadius: '8px', background: B.greenDim, border: `1px solid rgba(16,185,129,0.3)`,
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>{'★'.repeat(Math.floor(spreadSr.stars))}{spreadSr.stars % 1 ? '½' : ''}</span>
+              <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>SPREAD LOCK — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}</span>
+              <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</span>
+            </div>
+          )}
+
+          {/* Position Battle — Spread */}
+          {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
+            const sPos = spreadGameData.positions;
+            const sSummary = spreadGameData.summary;
+            const awayPos = sPos.filter(p => p.side === 'away');
+            const homePos = sPos.filter(p => p.side === 'home');
+            const awayW = new Set(awayPos.map(p => p.wallet)).size;
+            const homeW = new Set(homePos.map(p => p.wallet)).size;
+            const awayInv = sSummary.awayInvested || 0;
+            const homeInv = sSummary.homeInvested || 0;
+            const totalInv = awayInv + homeInv;
+            const awayPnl = awayPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
+            const homePnl = homePos.reduce((s, p) => s + (p.totalPnl || 0), 0);
+            const awayAvg = awayPos.length > 0 ? awayInv / awayPos.length : 0;
+            const homeAvg = homePos.length > 0 ? homeInv / homePos.length : 0;
+            const consSide = sSummary.consensus;
+            const consIsAway = consSide === 'away';
+            const moneyRatio = totalInv > 0 ? Math.round((Math.max(awayInv, homeInv) / totalInv) * 100) : 50;
+            const consTeamShort = (consIsAway ? gd.away : gd.home).split(' ').pop();
+            const sc = pinnGame?.spreadCurrent;
+
+            const panelStyle = (isActive) => ({
+              flex: 1, padding: '0.625rem', borderRadius: '8px',
+              background: isActive ? 'rgba(139,92,246,0.06)' : 'rgba(255,255,255,0.015)',
+              border: `1px solid ${isActive ? 'rgba(139,92,246,0.3)' : B.borderSubtle}`,
+              position: 'relative', overflow: 'hidden',
+            });
+
+            return (
+              <div style={{ marginBottom: '0.625rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Spread Money — Both Sides</span>
+                  <span style={{ ...T.micro, fontWeight: 800, color: '#8B5CF6', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(139,92,246,0.12)' }}>
+                    {moneyRatio}% {consTeamShort}
+                  </span>
+                  {sc && <span style={{ ...T.micro, color: B.textMuted }}>({sc.awayLine > 0 ? '+' : ''}{sc.awayLine})</span>}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={panelStyle(consIsAway)}>
+                    {consIsAway && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: '#8B5CF6', borderRadius: '8px 0 0 8px' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.5rem' }}>
+                      {consIsAway && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#8B5CF6' }}>SHARP SIDE</span>}
+                      <span style={{ ...T.sub, fontWeight: 900, color: consIsAway ? B.text : B.textMuted }}>{awayShort}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                      <div>
+                        <div style={{ ...T.heading, fontWeight: 900, color: consIsAway ? '#8B5CF6' : B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(awayInv)}</div>
+                        <div style={{ ...T.micro, color: B.textMuted }}>{awayW} sharp{awayW !== 1 ? 's' : ''} · avg {fmtVol(awayAvg)}</div>
+                      </div>
+                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: awayPnl >= 0 ? B.green : B.red, background: awayPnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                        {awayPnl >= 0 ? '+' : ''}{fmtVol(awayPnl)} lifetime
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 0.125rem', flexShrink: 0 }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
+                  </div>
+                  <div style={panelStyle(!consIsAway)}>
+                    {!consIsAway && <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: '#8B5CF6', borderRadius: '0 8px 8px 0' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                      <span style={{ ...T.sub, fontWeight: 900, color: !consIsAway ? B.text : B.textMuted }}>{homeShort}</span>
+                      {!consIsAway && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#8B5CF6' }}>SHARP SIDE</span>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', alignItems: 'flex-end' }}>
+                      <div>
+                        <div style={{ ...T.heading, fontWeight: 900, color: !consIsAway ? '#8B5CF6' : B.textSec, fontFeatureSettings: "'tnum'", textAlign: 'right' }}>{fmtVol(homeInv)}</div>
+                        <div style={{ ...T.micro, color: B.textMuted, textAlign: 'right' }}>{homeW} sharp{homeW !== 1 ? 's' : ''} · avg {fmtVol(homeAvg)}</div>
+                      </div>
+                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: homePnl >= 0 ? B.green : B.red, background: homePnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                        {homePnl >= 0 ? '+' : ''}{fmtVol(homePnl)} lifetime
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <SpreadPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
+
+          {/* Spread Wallet Trades */}
+          {spreadGameData && spreadGameData.positions?.length > 0 && (() => {
+            const sPos = spreadGameData.positions;
+            const uniqueSpreadWallets = new Set(sPos.map(p => p.wallet)).size;
+            const sSummary = spreadGameData.summary;
+            const consSide = sSummary.consensus;
+            const consShort = (consSide === 'away' ? gd.away : gd.home).split(' ').pop();
+            const oppShort2 = (consSide === 'away' ? gd.home : gd.away).split(' ').pop();
+            const totalPnl = sPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
+            const now = Date.now();
+            const sideOpts = [
+              { key: 'all', label: 'All Bets' },
+              { key: 'consensus', label: consShort },
+              { key: 'opposing', label: oppShort2 },
+            ];
+            const filtered = sPos.filter(p => {
+              if (spreadWalletFilter === 'consensus' && p.side !== consSide) return false;
+              if (spreadWalletFilter === 'opposing' && p.side === consSide) return false;
+              return true;
+            }).sort((a, b) => (b.sportVerified ? 1 : 0) - (a.sportVerified ? 1 : 0));
+
+            return <>
+              <button onClick={() => setShowSpreadWallets(!showSpreadWallets)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', cursor: 'pointer', padding: '0.5rem 0.625rem', borderRadius: '8px',
+                background: 'rgba(139,92,246,0.04)', border: `1px solid ${B.borderSubtle}`, marginTop: '0.5rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  {showSpreadWallets ? <ChevronUp size={12} color="#8B5CF6" /> : <ChevronDown size={12} color="#8B5CF6" />}
+                  <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>{uniqueSpreadWallets} SPREAD SHARP{uniqueSpreadWallets !== 1 ? 'S' : ''}</span>
+                </div>
+                <span style={{ ...T.micro, color: B.textSec }}>
+                  Combined P&L: <span style={{ fontWeight: 700, color: totalPnl >= 0 ? B.green : B.red }}>{totalPnl >= 0 ? '+' : ''}{fmtVol(totalPnl)}</span>
+                </span>
+              </button>
+              {showSpreadWallets && (
+                <div style={{ marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden', border: `1px solid ${B.borderSubtle}` }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center', padding: '0.5rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Side:</span>
+                    {sideOpts.map(o => (
+                      <button key={o.key} onClick={() => setSpreadWalletFilter(o.key)} style={{ ...T.micro, fontWeight: spreadWalletFilter === o.key ? 700 : 400, padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer', border: 'none', color: spreadWalletFilter === o.key ? '#8B5CF6' : B.textMuted, background: spreadWalletFilter === o.key ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.04)' }}>{o.label}</button>
+                    ))}
+                  </div>
+                  {filtered.map((p, i) => {
+                    const sideTeam = p.side === 'away' ? gd.away : gd.home;
+                    const sideShort = sideTeam.split(' ').pop();
+                    const posColor = p.pnl >= 0 ? B.green : B.red;
+                    const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
+                    const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
+                    const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
+                    return (
+                      <div key={`${p.wallet}-${i}`} style={{ padding: '0.5rem 0.625rem', borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none', background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                            <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                            <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
+                            <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime</span>
+                          </div>
+                          {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem' }}>
+                          <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>{sideShort}</span>
+                          <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
+                          <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>;
+          })()}
         </div>
       )}
       {marketTab === 'total' && (
         <div style={{ padding: '0.5rem 0.875rem' }}>
+          {isTotalLocked && totalSr && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.5rem 0.75rem', marginBottom: '0.5rem',
+              borderRadius: '8px', background: B.greenDim, border: `1px solid rgba(16,185,129,0.3)`,
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>{'★'.repeat(Math.floor(totalSr.stars))}{totalSr.stars % 1 ? '½' : ''}</span>
+              <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>TOTAL LOCK — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}</span>
+              <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{totalUnits}u @ {fmtOdds(totalBetOdds)}</span>
+            </div>
+          )}
+
+          {/* Position Battle — Totals */}
+          {totalGameData && totalGameData.positions?.length > 0 && (() => {
+            const tPos = totalGameData.positions;
+            const tSummary = totalGameData.summary;
+            const overPos = tPos.filter(p => p.side === 'over');
+            const underPos = tPos.filter(p => p.side === 'under');
+            const overW = new Set(overPos.map(p => p.wallet)).size;
+            const underW = new Set(underPos.map(p => p.wallet)).size;
+            const overInv = tSummary.overInvested || 0;
+            const underInv = tSummary.underInvested || 0;
+            const totalInv = overInv + underInv;
+            const overPnl = overPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
+            const underPnl = underPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
+            const overAvg = overPos.length > 0 ? overInv / overPos.length : 0;
+            const underAvg = underPos.length > 0 ? underInv / underPos.length : 0;
+            const consSide = tSummary.consensus;
+            const isOver = consSide === 'over';
+            const moneyRatio = totalInv > 0 ? Math.round((Math.max(overInv, underInv) / totalInv) * 100) : 50;
+            const tl = pinnGame?.totalCurrent?.line;
+
+            const panelStyle = (isActive) => ({
+              flex: 1, padding: '0.625rem', borderRadius: '8px',
+              background: isActive ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.015)',
+              border: `1px solid ${isActive ? 'rgba(245,158,11,0.3)' : B.borderSubtle}`,
+              position: 'relative', overflow: 'hidden',
+            });
+
+            return (
+              <div style={{ marginBottom: '0.625rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
+                  <span style={{ ...T.micro, color: B.textMuted }}>Total Money — Both Sides</span>
+                  <span style={{ ...T.micro, fontWeight: 800, color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.12)' }}>
+                    {moneyRatio}% {isOver ? 'Over' : 'Under'}
+                  </span>
+                  {tl && <span style={{ ...T.micro, color: B.textMuted }}>({tl})</span>}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={panelStyle(isOver)}>
+                    {isOver && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: '#F59E0B', borderRadius: '8px 0 0 8px' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.5rem' }}>
+                      {isOver && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#F59E0B' }}>SHARP SIDE</span>}
+                      <span style={{ ...T.sub, fontWeight: 900, color: isOver ? B.text : B.textMuted }}>Over{tl ? ` ${tl}` : ''}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                      <div>
+                        <div style={{ ...T.heading, fontWeight: 900, color: isOver ? '#F59E0B' : B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(overInv)}</div>
+                        <div style={{ ...T.micro, color: B.textMuted }}>{overW} sharp{overW !== 1 ? 's' : ''} · avg {fmtVol(overAvg)}</div>
+                      </div>
+                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: overPnl >= 0 ? B.green : B.red, background: overPnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                        {overPnl >= 0 ? '+' : ''}{fmtVol(overPnl)} lifetime
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 0.125rem', flexShrink: 0 }}>
+                    <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700 }}>VS</span>
+                  </div>
+                  <div style={panelStyle(!isOver)}>
+                    {!isOver && <div style={{ position: 'absolute', top: 0, right: 0, width: '3px', height: '100%', background: '#F59E0B', borderRadius: '0 8px 8px 0' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                      <span style={{ ...T.sub, fontWeight: 900, color: !isOver ? B.text : B.textMuted }}>Under{tl ? ` ${tl}` : ''}</span>
+                      {!isOver && <span style={{ ...T.micro, fontSize: '0.5rem', fontWeight: 900, padding: '0.1rem 0.3rem', borderRadius: '3px', color: '#fff', background: '#F59E0B' }}>SHARP SIDE</span>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', alignItems: 'flex-end' }}>
+                      <div>
+                        <div style={{ ...T.heading, fontWeight: 900, color: !isOver ? '#F59E0B' : B.textSec, fontFeatureSettings: "'tnum'", textAlign: 'right' }}>{fmtVol(underInv)}</div>
+                        <div style={{ ...T.micro, color: B.textMuted, textAlign: 'right' }}>{underW} sharp{underW !== 1 ? 's' : ''} · avg {fmtVol(underAvg)}</div>
+                      </div>
+                      <div style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", padding: '0.15rem 0.4rem', borderRadius: '4px', color: underPnl >= 0 ? B.green : B.red, background: underPnl >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                        {underPnl >= 0 ? '+' : ''}{fmtVol(underPnl)} lifetime
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <TotalPanel pinnGame={pinnGame} game={flowGame || { away: gd.away, home: gd.home }} isMobile={isMobile} />
+
+          {/* Total Wallet Trades */}
+          {totalGameData && totalGameData.positions?.length > 0 && (() => {
+            const tPos = totalGameData.positions;
+            const uniqueTotalWallets = new Set(tPos.map(p => p.wallet)).size;
+            const tSummary = totalGameData.summary;
+            const consSide = tSummary.consensus;
+            const totalPnl = tPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
+            const now = Date.now();
+            const sideOpts = [
+              { key: 'all', label: 'All Bets' },
+              { key: 'consensus', label: consSide === 'over' ? 'Over' : 'Under' },
+              { key: 'opposing', label: consSide === 'over' ? 'Under' : 'Over' },
+            ];
+            const filtered = tPos.filter(p => {
+              if (totalWalletFilter === 'consensus' && p.side !== consSide) return false;
+              if (totalWalletFilter === 'opposing' && p.side === consSide) return false;
+              return true;
+            }).sort((a, b) => (b.sportVerified ? 1 : 0) - (a.sportVerified ? 1 : 0));
+
+            return <>
+              <button onClick={() => setShowTotalWallets(!showTotalWallets)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', cursor: 'pointer', padding: '0.5rem 0.625rem', borderRadius: '8px',
+                background: 'rgba(245,158,11,0.04)', border: `1px solid ${B.borderSubtle}`, marginTop: '0.5rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  {showTotalWallets ? <ChevronUp size={12} color="#F59E0B" /> : <ChevronDown size={12} color="#F59E0B" />}
+                  <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>{uniqueTotalWallets} TOTAL SHARP{uniqueTotalWallets !== 1 ? 'S' : ''}</span>
+                </div>
+                <span style={{ ...T.micro, color: B.textSec }}>
+                  Combined P&L: <span style={{ fontWeight: 700, color: totalPnl >= 0 ? B.green : B.red }}>{totalPnl >= 0 ? '+' : ''}{fmtVol(totalPnl)}</span>
+                </span>
+              </button>
+              {showTotalWallets && (
+                <div style={{ marginTop: '0.375rem', borderRadius: '8px', overflow: 'hidden', border: `1px solid ${B.borderSubtle}` }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center', padding: '0.5rem 0.625rem', borderBottom: `1px solid ${B.borderSubtle}`, background: 'rgba(255,255,255,0.02)' }}>
+                    <span style={{ ...T.micro, color: B.textMuted, marginRight: '0.25rem' }}>Side:</span>
+                    {sideOpts.map(o => (
+                      <button key={o.key} onClick={() => setTotalWalletFilter(o.key)} style={{ ...T.micro, fontWeight: totalWalletFilter === o.key ? 700 : 400, padding: '0.15rem 0.45rem', borderRadius: '4px', cursor: 'pointer', border: 'none', color: totalWalletFilter === o.key ? '#F59E0B' : B.textMuted, background: totalWalletFilter === o.key ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.04)' }}>{o.label}</button>
+                    ))}
+                  </div>
+                  {filtered.map((p, i) => {
+                    const sideLabel = p.side === 'over' ? 'Over' : 'Under';
+                    const posColor = p.pnl >= 0 ? B.green : B.red;
+                    const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
+                    const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
+                    const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
+                    return (
+                      <div key={`${p.wallet}-${i}`} style={{ padding: '0.5rem 0.625rem', borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none', background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                            <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                            <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
+                            <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime</span>
+                          </div>
+                          {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem' }}>
+                          <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>{sideLabel}</span>
+                          <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
+                          <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>;
+          })()}
         </div>
       )}
 
@@ -4159,7 +4720,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SharpFlow() {
-  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, sportsSharps, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
@@ -4177,6 +4738,7 @@ export default function SharpFlow() {
   const [lockedStatusFilter, setLockedStatusFilter] = useState('all');
   const [lockedSort, setLockedSort] = useState('stars');
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
+  const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
   const [perfSport, setPerfSport] = useState('ALL');
   const [perfGrowth, setPerfGrowth] = useState('all');
   const [picksLoaded, setPicksLoaded] = useState(false);
@@ -5365,10 +5927,13 @@ export default function SharpFlow() {
                           criteria: peak.criteria || lock.criteria || null,
                           consensusStrength: peak.consensusStrength || lock.consensusStrength || null,
                           pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
+                          marketType: doc.marketType || 'ml',
+                          line: peak.line || lock.line || null,
                         });
                       }
                     }
-                    const lockedArr = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
+                    const sportFiltered = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
+                    const lockedArr = lockedMarketFilter === 'all' ? sportFiltered : sportFiltered.filter(p => (p.marketType || 'ml') === lockedMarketFilter);
                     const filteredLocked = lockedStatusFilter === 'all' ? lockedArr
                       : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !p.outcome)
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
@@ -5433,6 +5998,22 @@ export default function SharpFlow() {
                               color: lockedSportFilter === opt.id ? opt.color : B.textMuted,
                               transition: 'all 0.2s ease',
                             }}>{opt.label}{opt.id !== 'All' && sportCounts[opt.id] ? ` (${sportCounts[opt.id]})` : ''}</button>
+                          ))}
+                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                          {[
+                            { id: 'all', label: 'All Markets', color: B.gold },
+                            { id: 'ml', label: 'ML', color: B.green },
+                            { id: 'spread', label: 'Spread', color: '#8B5CF6' },
+                            { id: 'total', label: 'Total', color: '#F59E0B' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setLockedMarketFilter(opt.id)} style={{
+                              padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: lockedMarketFilter === opt.id ? `1px solid ${opt.color}44` : `1px solid ${B.border}`,
+                              background: lockedMarketFilter === opt.id ? `${opt.color}18` : 'transparent',
+                              color: lockedMarketFilter === opt.id ? opt.color : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
                           ))}
                           <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
                           {[
@@ -5533,7 +6114,7 @@ export default function SharpFlow() {
                             gap: '0.75rem',
                           }}>
                             {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => (
-                              <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} />
+                              <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} />
                             ))}
                           </div>
                           {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}

@@ -244,78 +244,68 @@ exports.updateBetResults = onSchedule({
       logger.info(`Finished: Updated ${updatedCount} bets`);
     }
 
-    // ─── Grade Sharp Flow Locked Picks (NHL, CBB, MLB) ─────────────────
+    // ─── Fetch scores for all grading (ML, spread, total) ────────────
+    // Build date string for NCAA API (today ET)
+    const nowET = new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
+    });
+    const etDate = new Date(nowET);
+
+    // Collect all PENDING docs from all three collections
+    const sfSnapshot = await admin.firestore()
+        .collection("sharpFlowPicks")
+        .where("status", "==", "PENDING")
+        .get();
+    const spreadSnapshot = await admin.firestore()
+        .collection("sharpFlowSpreads")
+        .where("status", "==", "PENDING")
+        .get();
+    const totalSnapshot = await admin.firestore()
+        .collection("sharpFlowTotals")
+        .where("status", "==", "PENDING")
+        .get();
+
+    const allDocs = [
+      ...sfSnapshot.docs,
+      ...spreadSnapshot.docs,
+      ...totalSnapshot.docs,
+    ];
+
+    const allSports = new Set();
+    const allCbbDates = new Set();
+    allDocs.forEach((d) => {
+      const p = d.data();
+      allSports.add(p.sport);
+      if (p.sport === "CBB" && p.date) allCbbDates.add(p.date);
+    });
+
+    let cbbFinalByDate = {};
+    if (allSports.has("CBB")) {
+      for (const d of allCbbDates) {
+        const games = await fetchNCAAFinalGames(d);
+        cbbFinalByDate[d] = games;
+        logger.info(`NCAA API: ${games.length} final CBB games for ${d}`);
+      }
+    }
+    const cbbFinalGames = Object.values(cbbFinalByDate).flat();
+
+    let mlbFinalGames = [];
+    if (allSports.has("MLB")) {
+      mlbFinalGames = await fetchMLBFinalGames();
+      logger.info(`ESPN MLB API: ${mlbFinalGames.length} final MLB games`);
+    }
+
+    let nbaFinalGames = [];
+    if (allSports.has("NBA")) {
+      nbaFinalGames = await fetchNBAFinalGames();
+      logger.info(`ESPN NBA API: ${nbaFinalGames.length} final NBA games`);
+    }
+
+    // ─── Grade Sharp Flow ML Picks ───────────────────────────────────
     try {
-      const sfSnapshot = await admin.firestore()
-          .collection("sharpFlowPicks")
-          .where("status", "==", "PENDING")
-          .get();
-
       if (!sfSnapshot.empty) {
-        logger.info(`Found ${sfSnapshot.size} pending Sharp Flow picks`);
+        logger.info(`Found ${sfSnapshot.size} pending Sharp Flow ML picks`);
         let sfGraded = 0;
-
-        // Build date string for NCAA API (today ET)
-        const nowET = new Date().toLocaleString("en-US", {
-          timeZone: "America/New_York",
-        });
-        const etDate = new Date(nowET);
-        const todayStr = [
-          etDate.getFullYear(),
-          String(etDate.getMonth() + 1).padStart(2, "0"),
-          String(etDate.getDate()).padStart(2, "0"),
-        ].join("-");
-
-        // Also check yesterday for late-finishing games
-        const yestDate = new Date(etDate);
-        yestDate.setDate(yestDate.getDate() - 1);
-        const yestStr = [
-          yestDate.getFullYear(),
-          String(yestDate.getMonth() + 1).padStart(2, "0"),
-          String(yestDate.getDate()).padStart(2, "0"),
-        ].join("-");
-
-        // Collect unique pick dates to fetch scores for
-        const pickDates = new Set();
-        sfSnapshot.docs.forEach((d) => {
-          const date = d.data().date;
-          if (date) pickDates.add(date);
-        });
-
-        // Determine which sport APIs we need
-        const sports = new Set();
-        sfSnapshot.docs.forEach((d) => sports.add(d.data().sport));
-
-        let cbbFinalByDate = {};
-        if (sports.has("CBB")) {
-          const cbbDates = new Set();
-          sfSnapshot.docs.forEach((d) => {
-            const p = d.data();
-            if (p.sport === "CBB" && p.date) cbbDates.add(p.date);
-          });
-          for (const d of cbbDates) {
-            const games = await fetchNCAAFinalGames(d);
-            cbbFinalByDate[d] = games;
-            logger.info(`NCAA API: ${games.length} final CBB games for ${d}`);
-          }
-        }
-        const cbbFinalGames = Object.values(cbbFinalByDate).flat();
-
-        let mlbFinalGames = [];
-        if (sports.has("MLB")) {
-          mlbFinalGames = await fetchMLBFinalGames();
-          logger.info(
-              `ESPN MLB API: ${mlbFinalGames.length} final MLB games`,
-          );
-        }
-
-        let nbaFinalGames = [];
-        if (sports.has("NBA")) {
-          nbaFinalGames = await fetchNBAFinalGames();
-          logger.info(
-              `ESPN NBA API: ${nbaFinalGames.length} final NBA games`,
-          );
-        }
 
         for (const sfDoc of sfSnapshot.docs) {
           const pick = sfDoc.data();
@@ -511,10 +501,283 @@ exports.updateBetResults = onSchedule({
           }
         }
 
-        logger.info(`Sharp Flow: Graded ${sfGraded} picks`);
+        logger.info(`Sharp Flow: Graded ${sfGraded} ML picks`);
       }
     } catch (sfError) {
-      logger.error("Error grading Sharp Flow picks:", sfError);
+      logger.error("Error grading Sharp Flow ML picks:", sfError);
+    }
+
+    // ─── Grade Sharp Flow Spread Picks ────────────────────────────────
+    try {
+      if (!spreadSnapshot.empty) {
+        logger.info(
+            `Found ${spreadSnapshot.size} pending spread picks`,
+        );
+        let spreadGraded = 0;
+
+        for (const sfDoc of spreadSnapshot.docs) {
+          const pick = sfDoc.data();
+          const sport = pick.sport;
+          if (pick.commenceTime && pick.commenceTime > Date.now()) continue;
+
+          let matchingGame = null;
+          if (sport === "NHL") {
+            const rawKey = (pick.gameKey || "").replace(/^NHL:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length !== 2) continue;
+            const awayAbbrev = ABBREV_MAP[parts[0]] || parts[0].toUpperCase();
+            const homeAbbrev = ABBREV_MAP[parts[1]] || parts[1].toUpperCase();
+            matchingGame = finalGames.find(
+                (g) => g.awayTeam === awayAbbrev && g.homeTeam === homeAbbrev,
+            );
+          } else if (sport === "CBB") {
+            for (const g of Object.values(cbbFinalByDate || {}).flat()) {
+              if (teamNamesMatch(pick.away, g.awayTeam) &&
+                  teamNamesMatch(pick.home, g.homeTeam)) {
+                matchingGame = {awayScore: g.awayScore, homeScore: g.homeScore};
+                break;
+              }
+              if (teamNamesMatch(pick.away, g.homeTeam) &&
+                  teamNamesMatch(pick.home, g.awayTeam)) {
+                matchingGame = {awayScore: g.homeScore, homeScore: g.awayScore};
+                break;
+              }
+            }
+          } else if (sport === "MLB") {
+            const rawKey = (pick.gameKey || "").replace(/^MLB:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = mlbFinalGames.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of mlbFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          } else if (sport === "NBA") {
+            const rawKey = (pick.gameKey || "").replace(/^NBA:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = nbaFinalGames.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of nbaFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (!matchingGame) continue;
+          const winner = matchingGame.awayScore > matchingGame.homeScore ?
+            "away" : "home";
+
+          if (pick.sides) {
+            const updates = {
+              "result.awayScore": matchingGame.awayScore,
+              "result.homeScore": matchingGame.homeScore,
+              "result.winner": winner,
+              "result.source": "SPREAD_GRADER",
+            };
+            let allSidesGraded = true;
+
+            for (const [side, sideData] of Object.entries(pick.sides)) {
+              if (sideData.status === "COMPLETED") continue;
+              const line = sideData.peak?.line || sideData.lock?.line || 0;
+              const sideUpper = side === "away" ? "AWAY" : "HOME";
+              const outcome = calculateOutcome(matchingGame, {
+                market: "PUCK_LINE",
+                side: sideUpper,
+                line: line,
+              });
+              const units = sideData.peak?.units || sideData.lock?.units || 1;
+              const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+              const profit = calculateProfit(outcome, odds, units);
+
+              updates[`sides.${side}.status`] = "COMPLETED";
+              updates[`sides.${side}.result.outcome`] = outcome;
+              updates[`sides.${side}.result.profit`] =
+                parseFloat(profit.toFixed(2));
+              updates[`sides.${side}.result.gradedAt`] =
+                admin.firestore.FieldValue.serverTimestamp();
+
+              const betOddsForCLV = sideData.peak?.odds || sideData.lock?.odds;
+              const closeOdds = sideData.closingOdds;
+              if (betOddsForCLV && closeOdds) {
+                const lockProb = impliedProbability(betOddsForCLV);
+                const closeProb = impliedProbability(closeOdds);
+                if (lockProb != null && closeProb != null) {
+                  updates[`sides.${side}.result.clv`] =
+                    +(closeProb - lockProb).toFixed(4);
+                }
+              }
+              spreadGraded++;
+              logger.info(
+                  `🔒 ${sport} SPREAD: ${sideData.team} ${line} ` +
+                  `${odds} (${units}u) → ${outcome}`,
+              );
+            }
+
+            for (const [side, sideData] of Object.entries(pick.sides)) {
+              if (sideData.status !== "COMPLETED" &&
+                !updates[`sides.${side}.status`]) {
+                allSidesGraded = false;
+              }
+            }
+            if (allSidesGraded) updates["status"] = "COMPLETED";
+            await sfDoc.ref.update(updates);
+          }
+        }
+        logger.info(`Sharp Flow: Graded ${spreadGraded} spread picks`);
+      }
+    } catch (spreadError) {
+      logger.error("Error grading spread picks:", spreadError);
+    }
+
+    // ─── Grade Sharp Flow Total (O/U) Picks ──────────────────────────
+    try {
+      if (!totalSnapshot.empty) {
+        logger.info(
+            `Found ${totalSnapshot.size} pending total picks`,
+        );
+        let totalGraded = 0;
+
+        for (const sfDoc of totalSnapshot.docs) {
+          const pick = sfDoc.data();
+          const sport = pick.sport;
+          if (pick.commenceTime && pick.commenceTime > Date.now()) continue;
+
+          let matchingGame = null;
+          if (sport === "NHL") {
+            const rawKey = (pick.gameKey || "").replace(/^NHL:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length !== 2) continue;
+            const awayAbbrev = ABBREV_MAP[parts[0]] || parts[0].toUpperCase();
+            const homeAbbrev = ABBREV_MAP[parts[1]] || parts[1].toUpperCase();
+            matchingGame = finalGames.find(
+                (g) => g.awayTeam === awayAbbrev && g.homeTeam === homeAbbrev,
+            );
+          } else if (sport === "CBB") {
+            for (const g of Object.values(cbbFinalByDate || {}).flat()) {
+              if (teamNamesMatch(pick.away, g.awayTeam) &&
+                  teamNamesMatch(pick.home, g.homeTeam)) {
+                matchingGame = {awayScore: g.awayScore, homeScore: g.homeScore};
+                break;
+              }
+              if (teamNamesMatch(pick.away, g.homeTeam) &&
+                  teamNamesMatch(pick.home, g.awayTeam)) {
+                matchingGame = {awayScore: g.homeScore, homeScore: g.awayScore};
+                break;
+              }
+            }
+          } else if (sport === "MLB") {
+            const rawKey = (pick.gameKey || "").replace(/^MLB:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = mlbFinalGames.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of mlbFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          } else if (sport === "NBA") {
+            const rawKey = (pick.gameKey || "").replace(/^NBA:/, "");
+            const parts = rawKey.split("_");
+            if (parts.length === 2) {
+              matchingGame = nbaFinalGames.find(
+                  (g) => g.awayCode === parts[0] && g.homeCode === parts[1],
+              );
+            }
+            if (!matchingGame) {
+              for (const g of nbaFinalGames) {
+                if (teamNamesMatch(pick.away, g.awayTeam) &&
+                    teamNamesMatch(pick.home, g.homeTeam)) {
+                  matchingGame = g;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (!matchingGame) continue;
+
+          if (pick.sides) {
+            const updates = {
+              "result.awayScore": matchingGame.awayScore,
+              "result.homeScore": matchingGame.homeScore,
+              "result.source": "TOTAL_GRADER",
+            };
+            let allSidesGraded = true;
+
+            for (const [side, sideData] of Object.entries(pick.sides)) {
+              if (sideData.status === "COMPLETED") continue;
+              const line = sideData.peak?.line || sideData.lock?.line || 0;
+              const sideUpper = side === "over" ? "OVER" : "UNDER";
+              const outcome = calculateOutcome(matchingGame, {
+                market: "TOTAL",
+                side: sideUpper,
+                line: line,
+              });
+              const units = sideData.peak?.units || sideData.lock?.units || 1;
+              const odds = sideData.peak?.odds || sideData.lock?.odds || 0;
+              const profit = calculateProfit(outcome, odds, units);
+
+              updates[`sides.${side}.status`] = "COMPLETED";
+              updates[`sides.${side}.result.outcome`] = outcome;
+              updates[`sides.${side}.result.profit`] =
+                parseFloat(profit.toFixed(2));
+              updates[`sides.${side}.result.gradedAt`] =
+                admin.firestore.FieldValue.serverTimestamp();
+
+              const betOddsForCLV = sideData.peak?.odds || sideData.lock?.odds;
+              const closeOdds = sideData.closingOdds;
+              if (betOddsForCLV && closeOdds) {
+                const lockProb = impliedProbability(betOddsForCLV);
+                const closeProb = impliedProbability(closeOdds);
+                if (lockProb != null && closeProb != null) {
+                  updates[`sides.${side}.result.clv`] =
+                    +(closeProb - lockProb).toFixed(4);
+                }
+              }
+              totalGraded++;
+              logger.info(
+                  `🔒 ${sport} TOTAL: ${side === "over" ? "Over" : "Under"} ` +
+                  `${line} ${odds} (${units}u) → ${outcome}`,
+              );
+            }
+
+            for (const [side, sideData] of Object.entries(pick.sides)) {
+              if (sideData.status !== "COMPLETED" &&
+                !updates[`sides.${side}.status`]) {
+                allSidesGraded = false;
+              }
+            }
+            if (allSidesGraded) updates["status"] = "COMPLETED";
+            await sfDoc.ref.update(updates);
+          }
+        }
+        logger.info(`Sharp Flow: Graded ${totalGraded} total picks`);
+      }
+    } catch (totalError) {
+      logger.error("Error grading total picks:", totalError);
     }
 
     return null;

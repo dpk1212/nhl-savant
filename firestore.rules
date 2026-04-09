@@ -30,6 +30,38 @@ service cloud.firestore {
       allow delete: if false;
     }
     
+    // Sharp Flow spread picks - same rules as sharpFlowPicks
+    match /sharpFlowSpreads/{document=**} {
+      allow read: if true;
+      allow create: if request.resource.data.source == 'ui_card_sync'
+                    && request.resource.data.commenceTime is number
+                    && request.resource.data.commenceTime > request.time.toMillis() + 300000;
+      allow update: if (request.resource.data.source == 'ui_card_sync'
+                    && resource.data.commenceTime is number
+                    && resource.data.commenceTime > request.time.toMillis() + 300000)
+                    || (request.resource.data.source == 'closing_odds_sync'
+                    && resource.data.status == 'PENDING'
+                    && resource.data.commenceTime is number
+                    && resource.data.commenceTime > request.time.toMillis());
+      allow delete: if false;
+    }
+    
+    // Sharp Flow total (O/U) picks - same rules as sharpFlowPicks
+    match /sharpFlowTotals/{document=**} {
+      allow read: if true;
+      allow create: if request.resource.data.source == 'ui_card_sync'
+                    && request.resource.data.commenceTime is number
+                    && request.resource.data.commenceTime > request.time.toMillis() + 300000;
+      allow update: if (request.resource.data.source == 'ui_card_sync'
+                    && resource.data.commenceTime is number
+                    && resource.data.commenceTime > request.time.toMillis() + 300000)
+                    || (request.resource.data.source == 'closing_odds_sync'
+                    && resource.data.status == 'PENDING'
+                    && resource.data.commenceTime is number
+                    && resource.data.commenceTime > request.time.toMillis());
+      allow delete: if false;
+    }
+    
     // Basketball bets - public read, temp write for testing
     match /basketball_bets/{document=**} {
       allow read: if true;  // Basketball picks are free, everyone can read

@@ -454,14 +454,16 @@ async function run() {
   console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers excluded, ${supplementalCount} added from sport sharps)...\n`);
 
   // Build lookup of previous firstSeen timestamps to preserve across rescans
-  const prevData = loadJSON('sharp_positions.json');
   const prevPositions = {};
-  if (prevData) {
+  for (const filename of ['sharp_positions.json', 'sharp_spread_positions.json', 'sharp_total_positions.json']) {
+    const prevData = loadJSON(filename);
+    if (!prevData) continue;
     for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
       for (const [gameKey, game] of Object.entries(prevData[sport] || {})) {
         for (const pos of (game.positions || [])) {
           if (pos.firstSeen) {
-            prevPositions[`${pos.wallet}_${gameKey}_${pos.side}`] = pos.firstSeen;
+            const mt = pos.marketType || 'ml';
+            prevPositions[`${pos.wallet}_${gameKey}_${pos.side}_${mt}`] = pos.firstSeen;
           }
         }
       }
@@ -469,7 +471,11 @@ async function run() {
   }
 
   const result = { NHL: {}, CBB: {}, MLB: {}, NBA: {} };
+  const spreadResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {} };
+  const totalResult = { NHL: {}, CBB: {}, MLB: {}, NBA: {} };
   let matchCount = 0;
+  let spreadMatchCount = 0;
+  let totalMatchCount = 0;
   let errorCount = 0;
 
   for (const wallet of walletsToScan) {
@@ -496,16 +502,24 @@ async function run() {
       const outcome = pos.outcome || '';
       const outcomeNorm = normalize(outcome);
 
-      // Skip totals/props — only want moneyline positions
-      if (['over', 'under'].includes(outcomeNorm)) continue;
-
       const curPrice = parseFloat(pos.curPrice || '0');
-      // Skip resolved positions (price collapsed to 0 or 1)
       if (curPrice <= 0.01 || curPrice >= 0.99) continue;
+
+      // Classify market type from outcome and title
+      const titleLower = title.toLowerCase();
+      const isTotal = ['over', 'under'].includes(outcomeNorm);
+      const isSpread = !isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome));
+      const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
 
       const game = todaysGames[`${match.sport}:${match.key}`];
       const sport = match.sport;
-      const side = resolveOutcomeSide(outcome, game.away, game.home, title);
+
+      let side;
+      if (isTotal) {
+        side = outcomeNorm === 'over' ? 'over' : 'under';
+      } else {
+        side = resolveOutcomeSide(outcome, game.away, game.home, title);
+      }
 
       const size = parseFloat(pos.size || '0');
       const avgPrice = parseFloat(pos.avgPrice || '0');
@@ -513,26 +527,31 @@ async function run() {
       const invested = Math.round(size * avgPrice);
       const currentValue = Math.round(size * curPrice);
 
-      if (!result[sport][match.key]) {
-        result[sport][match.key] = {
+      const targetResult = marketType === 'total' ? totalResult : marketType === 'spread' ? spreadResult : result;
+
+      if (!targetResult[sport][match.key]) {
+        targetResult[sport][match.key] = {
           away: game.away,
           home: game.home,
           positions: [],
-          summary: { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 },
+          summary: marketType === 'total'
+            ? { sharpOver: 0, sharpUnder: 0, overInvested: 0, underInvested: 0 }
+            : { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 },
         };
       }
 
-      const posKey = `${wallet.addr}_${match.key}_${side}`;
+      const posKey = `${wallet.addr}_${match.key}_${side}_${marketType}`;
       const prevFirstSeen = prevPositions[posKey] || null;
 
       const eff = effectiveTier(wallet.tier, wallet.addr, sport);
-      result[sport][match.key].positions.push({
+      targetResult[sport][match.key].positions.push({
         wallet: wallet.addr,
         name: wallet.name,
         tier: eff.tier,
         totalPnl: wallet.totalPnl,
         outcome,
         side,
+        marketType,
         size: Math.round(size),
         avgPrice: +avgPrice.toFixed(3),
         invested,
@@ -544,17 +563,19 @@ async function run() {
         sportVerified: eff.sportVerified,
       });
 
-      const summary = result[sport][match.key].summary;
-      if (side === 'away') {
-        summary.sharpAway++;
-        summary.awayInvested += invested;
+      const summary = targetResult[sport][match.key].summary;
+      if (marketType === 'total') {
+        if (side === 'over') { summary.sharpOver++; summary.overInvested += invested; }
+        else { summary.sharpUnder++; summary.underInvested += invested; }
       } else {
-        summary.sharpHome++;
-        summary.homeInvested += invested;
+        if (side === 'away') { summary.sharpAway++; summary.awayInvested += invested; }
+        else { summary.sharpHome++; summary.homeInvested += invested; }
       }
 
       walletMatches++;
-      matchCount++;
+      if (marketType === 'spread') spreadMatchCount++;
+      else if (marketType === 'total') totalMatchCount++;
+      else matchCount++;
     }
 
     if (walletMatches > 0) {
@@ -564,37 +585,67 @@ async function run() {
     }
   }
 
-  // Sort positions within each game by invested amount
-  for (const sport of Object.values(result)) {
-    if (typeof sport !== 'object' || sport === null) continue;
-    for (const game of Object.values(sport)) {
-      if (game.positions) {
-        game.positions.sort((a, b) => b.invested - a.invested);
-        const s = game.summary;
-        s.consensus = s.awayInvested > s.homeInvested ? 'away'
-                    : s.homeInvested > s.awayInvested ? 'home'
-                    : null;
-        s.totalInvested = s.awayInvested + s.homeInvested;
+  // Sort and finalize all three result sets
+  function finalizeResult(res, isTotalMarket = false) {
+    for (const sport of Object.values(res)) {
+      if (typeof sport !== 'object' || sport === null) continue;
+      for (const game of Object.values(sport)) {
+        if (game.positions) {
+          game.positions.sort((a, b) => b.invested - a.invested);
+          const s = game.summary;
+          if (isTotalMarket) {
+            s.consensus = s.overInvested > s.underInvested ? 'over'
+                        : s.underInvested > s.overInvested ? 'under'
+                        : null;
+            s.totalInvested = s.overInvested + s.underInvested;
+          } else {
+            s.consensus = s.awayInvested > s.homeInvested ? 'away'
+                        : s.homeInvested > s.awayInvested ? 'home'
+                        : null;
+            s.totalInvested = s.awayInvested + s.homeInvested;
+          }
+        }
       }
     }
   }
 
-  result.scannedAt = new Date().toISOString();
-  result.walletsScanned = walletsToScan.length;
-  result.mmExcluded = mmFiltered.length;
-  result.sportLosersExcluded = sportLosers.length;
-  result.totalExcluded = mmFiltered.length + sportLosers.length;
+  finalizeResult(result);
+  finalizeResult(spreadResult);
+  finalizeResult(totalResult, true);
+
+  const meta = {
+    scannedAt: new Date().toISOString(),
+    walletsScanned: walletsToScan.length,
+    mmExcluded: mmFiltered.length,
+    sportLosersExcluded: sportLosers.length,
+    totalExcluded: mmFiltered.length + sportLosers.length,
+  };
+
+  Object.assign(result, meta);
+  Object.assign(spreadResult, meta);
+  Object.assign(totalResult, meta);
 
   const outPath = join(ROOT, 'public', 'sharp_positions.json');
   writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8');
 
+  const spreadOutPath = join(ROOT, 'public', 'sharp_spread_positions.json');
+  writeFileSync(spreadOutPath, JSON.stringify(spreadResult, null, 2), 'utf8');
+
+  const totalOutPath = join(ROOT, 'public', 'sharp_total_positions.json');
+  writeFileSync(totalOutPath, JSON.stringify(totalResult, null, 2), 'utf8');
+
   let totalGamesWithPositions = 0;
+  let spreadGames = 0;
+  let totalGames = 0;
   for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
     totalGamesWithPositions += Object.keys(result[sport]).length;
+    spreadGames += Object.keys(spreadResult[sport]).length;
+    totalGames += Object.keys(totalResult[sport]).length;
   }
 
-  console.log(`\nDone — ${matchCount} sharp positions found across ${totalGamesWithPositions} games`);
-  console.log(`Wrote ${outPath}`);
+  console.log(`\nDone — ${matchCount} ML, ${spreadMatchCount} spread, ${totalMatchCount} total positions`);
+  console.log(`Games: ${totalGamesWithPositions} ML, ${spreadGames} spread, ${totalGames} total`);
+  console.log(`Wrote ${outPath}, ${spreadOutPath}, ${totalOutPath}`);
   if (errorCount > 0) console.log(`(${errorCount} wallets failed to fetch)`);
 }
 
