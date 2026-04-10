@@ -175,6 +175,7 @@ function computeSharpFeatures(positions, consensusSide) {
     breadth, conviction, concentration, counterSharpScore, consensusTier,
     conWalletCount: conWallets.length, oppWalletCount: oppWallets.length,
     conTotalInvested, oppTotalInv, avgScore, sportSharpCount, dominantTier,
+    conMoneyPct, conWalletPct,
   };
 }
 
@@ -478,6 +479,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
 
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
+      const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
       const lockStars = sides[side].lock?.stars || stars;
@@ -487,8 +489,14 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       if (bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
-        await setDoc(ref, { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' }, { merge: true });
+        const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
+        if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
+        await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: 'peak_updated' };
+      }
+      if (needsCsPatch) {
+        await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
+        return { docId, action: 'cs_patched' };
       }
       return { docId, action: 'no_change' };
     }
@@ -543,6 +551,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
 
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
+      const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
       const lockStars = sides[side].lock?.stars || stars;
@@ -552,8 +561,14 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       if (bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
-        await setDoc(ref, { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' }, { merge: true });
+        const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
+        if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
+        await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: 'peak_updated' };
+      }
+      if (needsCsPatch) {
+        await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
+        return { docId, action: 'cs_patched' };
       }
       return { docId, action: 'no_change' };
     }
@@ -1421,7 +1436,7 @@ const GameFlowCard = memo(function GameFlowCard({ game, isMobile, whaleProfiles,
         const hasSpread = !!(pinnGame?.spreadCurrent || game?.polySpread || (game?.kalshiSpreads?.length > 0));
         const hasTotal = !!(pinnGame?.totalCurrent || game?.polyTotal || (game?.kalshiTotals?.length > 0));
         if (!hasSpread && !hasTotal) return null;
-        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} />;
+        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} spreadLocked={false} totalLocked={false} />;
       })()}
 
       {marketTab === 'spread' && (
@@ -2227,7 +2242,7 @@ function fmtOdds(american) {
 
 // ─── Market Tab Strip (ML | Spread | Total) ──────────────────────────────────
 
-const MarketTabStrip = memo(function MarketTabStrip({ active, onChange, hasSpread, hasTotal }) {
+const MarketTabStrip = memo(function MarketTabStrip({ active, onChange, hasSpread, hasTotal, spreadLocked, totalLocked }) {
   const tabs = [
     { id: 'ml', label: 'ML' },
     ...(hasSpread ? [{ id: 'spread', label: 'Spread' }] : []),
@@ -2238,15 +2253,19 @@ const MarketTabStrip = memo(function MarketTabStrip({ active, onChange, hasSprea
     <div style={{ display: 'flex', gap: '0.25rem', padding: '0.375rem 0.625rem 0' }}>
       {tabs.map(t => {
         const isActive = active === t.id;
+        const isLocked = (t.id === 'spread' && spreadLocked) || (t.id === 'total' && totalLocked);
         return (
           <button key={t.id} onClick={() => onChange(t.id)} style={{
             padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
             ...T.micro, fontWeight: 700, fontSize: '0.6rem', letterSpacing: '0.04em',
-            border: isActive ? `1px solid ${B.goldBorder}` : `1px solid ${B.border}`,
-            background: isActive ? B.goldDim : 'transparent',
-            color: isActive ? B.gold : B.textMuted,
+            border: isActive ? `1px solid ${B.goldBorder}` : isLocked ? `1px solid rgba(16,185,129,0.5)` : `1px solid ${B.border}`,
+            background: isActive ? B.goldDim : isLocked ? 'rgba(16,185,129,0.08)' : 'transparent',
+            color: isActive ? B.gold : isLocked ? B.green : B.textMuted,
+            boxShadow: isLocked && !isActive ? '0 0 6px rgba(16,185,129,0.3)' : 'none',
             transition: 'all 0.15s ease',
-          }}>{t.label}</button>
+          }}>
+            {isLocked && !isActive ? '🔒 ' : ''}{t.label}
+          </button>
         );
       })}
     </div>
@@ -3310,7 +3329,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
       if (action !== 'no_change') {
-        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', criteriaMet, units, unitTier: ut.label, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
+        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
     });
   }, [isLocked, sr.stars]);
@@ -3423,11 +3442,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       },
       sharpCount: spreadSharpFeatures?.conWalletCount || 0,
       totalInvested: spreadSharpFeatures?.conTotalInvested || 0,
-      units: spreadUnits, consensusStrength: { grade: spreadSharpFeatures?.consensusTier || 'LEAN' },
+      units: spreadUnits, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' },
       stars: spreadSr.stars,
-    }).then(({ action }) => {
+    }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedSpreadStars.current = spreadSr.stars;
+      if (action !== 'no_change') {
+        onPickSynced(docId, spreadConsensusSide, { odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle', pinnacleOdds: spreadPinnOdds, line: spreadLine, criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3, plusEV: spreadEvEdge > 0, lineMovingWith: spreadPinnMovedWith }, sharpCount: spreadSharpFeatures?.conWalletCount || 0, totalInvested: spreadSharpFeatures?.conTotalInvested || 0, evEdge: spreadEvEdge, units: spreadUnits, unitTier: unitTier(spreadUnits).label, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' }, stars: spreadSr.stars, team: spreadConsensuTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'spread' }, action);
+      }
     });
   }, [isSpreadLocked, spreadSr?.stars]);
 
@@ -3499,11 +3521,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       },
       sharpCount: totalSharpFeatures?.conWalletCount || 0,
       totalInvested: totalSharpFeatures?.conTotalInvested || 0,
-      units: totalUnits, consensusStrength: { grade: totalSharpFeatures?.consensusTier || 'LEAN' },
+      units: totalUnits, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' },
       stars: totalSr.stars,
-    }).then(({ action }) => {
+    }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedTotalStars.current = totalSr.stars;
+      if (action !== 'no_change') {
+        const totalTeamLabel = totalConsensusSide === 'over' ? `Over ${totalLine}` : `Under ${totalLine}`;
+        onPickSynced(docId, totalConsensusSide, { odds: totalBetOdds, book: totalBestBook || 'Pinnacle', pinnacleOdds: totalPinnOdds, line: totalLine, criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: totalSharpFeatures?.conWalletCount >= 3, plusEV: totalEvEdge > 0, lineMovingWith: totalPinnMovedWith }, sharpCount: totalSharpFeatures?.conWalletCount || 0, totalInvested: totalSharpFeatures?.conTotalInvested || 0, evEdge: totalEvEdge, units: totalUnits, unitTier: unitTier(totalUnits).label, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' }, stars: totalSr.stars, team: totalTeamLabel }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'total' }, action);
+      }
     });
   }, [isTotalLocked, totalSr?.stars]);
 
@@ -3841,7 +3867,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const hasSpread = !!(pinnGame?.spreadCurrent || flowGame?.polySpread || (flowGame?.kalshiSpreads?.length > 0));
         const hasTotal = !!(pinnGame?.totalCurrent || flowGame?.polyTotal || (flowGame?.kalshiTotals?.length > 0));
         if (!hasSpread && !hasTotal) return null;
-        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} />;
+        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} spreadLocked={!!isSpreadLocked} totalLocked={!!isTotalLocked} />;
       })()}
 
       {marketTab === 'spread' && (
@@ -5230,7 +5256,7 @@ export default function SharpFlow() {
       }
       updatedSides[side] = { ...updatedSides[side], peak: snap, lock: updatedSides[side]?.lock || snap, team: snap.team };
       const docUpdate = { ...prevDoc, sides: updatedSides };
-      if (meta) { docUpdate.sport = meta.sport; docUpdate.away = meta.away; docUpdate.home = meta.home; docUpdate.commenceTime = meta.commenceTime; }
+      if (meta) { docUpdate.sport = meta.sport; docUpdate.away = meta.away; docUpdate.home = meta.home; docUpdate.commenceTime = meta.commenceTime; if (meta.marketType) docUpdate.marketType = meta.marketType; }
       next[docId] = docUpdate;
       return next;
     });
@@ -6381,7 +6407,17 @@ export default function SharpFlow() {
                           lockEV: lock.evEdge ?? null,
                           criteriaMet: peak.criteriaMet || lock.criteriaMet || 0,
                           criteria: peak.criteria || lock.criteria || null,
-                          consensusStrength: peak.consensusStrength || lock.consensusStrength || null,
+                          consensusStrength: (() => {
+                            const cs = peak.consensusStrength || lock.consensusStrength || null;
+                            if (cs && cs.moneyPct == null) {
+                              const g = cs.grade || '';
+                              if (g === 'DOMINANT') return { ...cs, moneyPct: 85, walletPct: 75 };
+                              if (g === 'STRONG') return { ...cs, moneyPct: 70, walletPct: 65 };
+                              if (g === 'LEAN') return { ...cs, moneyPct: 58, walletPct: 55 };
+                              return { ...cs, moneyPct: 50, walletPct: 50 };
+                            }
+                            return cs;
+                          })(),
                           pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
                           marketType: doc.marketType || 'ml',
                           line: peak.line || lock.line || null,
