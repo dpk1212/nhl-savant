@@ -625,12 +625,8 @@ async function loadAllTimePnL() {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < 30 * 60 * 1000 && data.picks) return data;
     }
-    const [mlSnap, spreadSnap, totalSnap] = await Promise.all([
-      getDocs(collection(db, 'sharpFlowPicks')),
-      getDocs(collection(db, 'sharpFlowSpreads')),
-      getDocs(collection(db, 'sharpFlowTotals')),
-    ]);
-    const combinedDocs = { docs: [...mlSnap.docs, ...spreadSnap.docs, ...totalSnap.docs], forEach(fn) { this.docs.forEach(fn); } };
+    const mlSnap = await getDocs(collection(db, 'sharpFlowPicks'));
+    const combinedDocs = { docs: mlSnap.docs, forEach(fn) { this.docs.forEach(fn); } };
     const overall = tallySides(combinedDocs);
     const snap = combinedDocs;
 
