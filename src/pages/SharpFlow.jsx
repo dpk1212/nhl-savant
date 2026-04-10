@@ -178,10 +178,14 @@ function computeSharpFeatures(positions, consensusSide) {
   };
 }
 
-function calculateUnits(stars, consensusPenalty = 0) {
+function calculateUnits(stars, consensusPenalty = 0, odds = null) {
   let units = stars >= 5 ? 3.5 : stars >= 4.5 ? 3 : stars >= 4 ? 2.5 : stars >= 3.5 ? 2 : stars >= 3 ? 1.5 : 1;
   units += consensusPenalty;
-  return Math.min(Math.max(units, 0.5), 5);
+  units = Math.min(Math.max(units, 0.5), 5);
+  if (odds != null && odds >= 200) units = Math.min(units, 0.5);
+  else if (odds != null && odds >= 151) units = Math.min(units, 1.0);
+  else if (odds != null && odds >= 100) units = Math.min(units, 2.0);
+  return units;
 }
 
 function unitTier(units) {
@@ -204,6 +208,7 @@ function rateSpreadTotalStars({
   consensusTier = 'LEAN',
   sportSharpCount = 0,
   pinnProb = null, dominantTier = null, conWalletCount = 0,
+  odds = null, sport = null,
 } = {}) {
   let pts = 0;
 
@@ -258,6 +263,13 @@ function rateSpreadTotalStars({
   else if (sportSharpCount >= 2) pts += 1;
   else if (sportSharpCount >= 1) pts += 0.5;
 
+  // Dog penalty — long dogs historically lose at high rates
+  if (odds != null && odds >= 200) pts -= 2;
+  else if (odds != null && odds >= 151) pts -= 1;
+
+  // NBA dog penalty — NBA dogs are 3-20 (13% WR)
+  if (sport === 'NBA' && odds != null && odds >= 100) pts -= 1.5;
+
   const maxPts = 15;
   const raw = (pts / maxPts) * 5;
   const stars = Math.min(5, Math.max(0.5, Math.round(raw * 2) / 2));
@@ -278,11 +290,15 @@ function rateSpreadTotalStars({
   return { stars, pts, maxPts, ...info, isActionable: stars >= 3 };
 }
 
-function calculateSpreadTotalUnits(stars, consensusPenalty = 0) {
+function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null) {
   let units = stars >= 5 ? 2.0 : stars >= 4.5 ? 1.75 : stars >= 4 ? 1.5
              : stars >= 3.5 ? 1.25 : stars >= 3 ? 1.0 : 0.5;
   units += consensusPenalty;
-  return Math.min(Math.max(units, 0.5), 2);
+  units = Math.min(Math.max(units, 0.5), 2);
+  if (odds != null && odds >= 200) units = Math.min(units, 0.5);
+  else if (odds != null && odds >= 151) units = Math.min(units, 0.75);
+  else if (odds != null && odds >= 100) units = Math.min(units, 1.0);
+  return units;
 }
 
 // ─── Sharp Flow Locked Picks — Firebase ───────────────────────────────────────
@@ -2512,6 +2528,7 @@ function rateStars({
   isRLM = false, ticketDivergence = 0,
   sportSharpCount = 0,
   pinnProb = null, dominantTier = null, conWalletCount = 0,
+  odds = null, sport = null,
 } = {}) {
   let pts = 0;
 
@@ -2580,6 +2597,13 @@ function rateStars({
   if (oppPeakStars >= 4.5) pts -= 2;
   else if (oppPeakStars >= 3.5) pts -= 1.5;
   else if (oppPeakStars >= 3) pts -= 1;
+
+  // Dog penalty — long dogs +176+ are 2-20 (9.1% WR), +251+ are 0-12
+  if (odds != null && odds >= 200) pts -= 2;
+  else if (odds != null && odds >= 151) pts -= 1;
+
+  // NBA dog penalty — NBA dogs are 3-20 (13% WR), -24.4u
+  if (sport === 'NBA' && odds != null && odds >= 100) pts -= 1.5;
 
   const maxPts = 15;
   const raw = (pts / maxPts) * 5;
@@ -3212,6 +3236,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     consensusTier: oppSharpFeatures.consensusTier,
     sportSharpCount: oppSharpFeatures.sportSharpCount,
     pinnProb: oppPinnProb, dominantTier: oppSharpFeatures.dominantTier, conWalletCount: oppSharpFeatures.conWalletCount,
+    odds: oppBestRetail || oppOdds, sport: gd.sport,
   });
   const oppPeakStars = oppSr.stars;
 
@@ -3233,6 +3258,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
   const criteriaMet = criteria.filter(c => c.met).length;
+  const betOdds = bestRetail || consensusOdds;
   const sr = rateStars({
     evEdge: evEdge || 0, pinnConfirms, pinnMovingWith, pinnMovingAgainst,
     polyMovingWith, oppPeakStars,
@@ -3242,14 +3268,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     isRLM: rlmActive, ticketDivergence: flowTicketDiv,
     sportSharpCount: sharpFeatures.sportSharpCount,
     pinnProb, dominantTier: sharpFeatures.dominantTier, conWalletCount: sharpFeatures.conWalletCount,
+    odds: betOdds, sport: gd.sport,
   });
   const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
   if (isExtremeOdds) return null;
   const isLocked = sr.stars >= 2.5;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
-  const betOdds = bestRetail || consensusOdds;
-  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty) : 0;
+  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -3358,6 +3384,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadPinnConfirms = !!spreadPinnLine && spreadConsensusSide === 'away'
     ? (spreadPinnLine.awayLine < 0)
     : !!spreadPinnLine && (spreadPinnLine.homeLine < 0);
+  const spreadBetOdds = spreadBestRetail || spreadPinnOdds;
   const spreadSr = spreadSharpFeatures ? rateSpreadTotalStars({
     evEdge: spreadEvEdge || 0,
     pinnConfirms: spreadPinnConfirms,
@@ -3370,13 +3397,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     consensusTier: spreadSharpFeatures.consensusTier,
     sportSharpCount: spreadSharpFeatures.sportSharpCount,
     pinnProb: spreadPinnProb, dominantTier: spreadSharpFeatures.dominantTier, conWalletCount: spreadSharpFeatures.conWalletCount,
+    odds: spreadBetOdds, sport: gd.sport,
   }) : null;
 
   const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
     && (spreadSharpFeatures?.conWalletCount || 0) >= 2
     && (spreadSharpFeatures?.conTotalInvested || 0) >= 50;
-  const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars) : 0;
-  const spreadBetOdds = spreadBestRetail || spreadPinnOdds;
+  const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds) : 0;
 
   useEffect(() => {
     if (!isSpreadLocked || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -3432,6 +3459,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const totalPinnConfirms = !!totalPinnLine && !!totalLine;
   const totalSharpFeatures = totalGameData ? computeSharpFeatures(totalGameData.positions || [], totalConsensusSide) : null;
+  const totalBetOdds = totalBestRetail || totalPinnOdds;
   const totalSr = totalSharpFeatures ? rateSpreadTotalStars({
     evEdge: totalEvEdge || 0,
     pinnConfirms: totalPinnConfirms,
@@ -3444,13 +3472,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     consensusTier: totalSharpFeatures.consensusTier,
     sportSharpCount: totalSharpFeatures.sportSharpCount,
     pinnProb: totalPinnProb, dominantTier: totalSharpFeatures.dominantTier, conWalletCount: totalSharpFeatures.conWalletCount,
+    odds: totalBetOdds, sport: gd.sport,
   }) : null;
 
   const isTotalLocked = totalSr && totalSr.stars >= 2.5
     && (totalSharpFeatures?.conWalletCount || 0) >= 2
     && (totalSharpFeatures?.conTotalInvested || 0) >= 50;
-  const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars) : 0;
-  const totalBetOdds = totalBestRetail || totalPinnOdds;
+  const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds) : 0;
 
   useEffect(() => {
     if (!isTotalLocked || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
@@ -6211,6 +6239,7 @@ export default function SharpFlow() {
                   const oPinnMoveAgainst = !!(oOpenP && oCurP) && oCurP < oOpenP;
                   const oPolyMoveWith = polyPts.length >= 2 && ((oSide === 'away' && polyPts[polyPts.length-1] > polyPts[0]) || (oSide === 'home' && polyPts[polyPts.length-1] < polyPts[0]));
                   const osf = computeSharpFeatures(gd.positions, oSide);
+                  const oBetOdds = oBestRetail || oOdds;
                   const oSr = rateStars({
                     evEdge: oEv || 0, pinnConfirms: oPinnConf,
                     pinnMovingWith: oPinnMoveWith, pinnMovingAgainst: oPinnMoveAgainst,
@@ -6219,6 +6248,7 @@ export default function SharpFlow() {
                     concentration: osf.concentration, counterSharpScore: osf.counterSharpScore,
                     consensusTier: osf.consensusTier,
                     sportSharpCount: osf.sportSharpCount,
+                    odds: oBetOdds, sport,
                   });
 
                   const sortFlowGame = gameFlowMap?.[`${sport}_${key}`];
@@ -6228,6 +6258,7 @@ export default function SharpFlow() {
                   const sortFlowDiv = sortFlowGame?.ticketDivergence || 0;
                   const sortRLM = sortTicketOnCon < 50 && sortFlowDiv >= 10;
 
+                  const cBetOdds = bRetail || cOdds;
                   const sr = rateStars({
                     evEdge: ev || 0, pinnConfirms: pinnConf,
                     pinnMovingWith: pinnMoveWith, pinnMovingAgainst: pinnMoveAgainst,
@@ -6237,6 +6268,7 @@ export default function SharpFlow() {
                     consensusTier: sf.consensusTier,
                     isRLM: sortRLM, ticketDivergence: sortFlowDiv,
                     sportSharpCount: sf.sportSharpCount,
+                    odds: cBetOdds, sport,
                   });
 
                   if (sortBy === 'locked') continue;
