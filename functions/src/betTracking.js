@@ -780,6 +780,106 @@ exports.updateBetResults = onSchedule({
       logger.error("Error grading total picks:", totalError);
     }
 
+    // ─── Grade MLB Model Picks (mlb_bets collection) ──────────────────
+    try {
+      const mlbBetsSnapshot = await admin.firestore()
+          .collection("mlb_bets")
+          .where("status", "==", "PENDING")
+          .get();
+
+      if (!mlbBetsSnapshot.empty) {
+        // Fetch MLB finals if not already fetched
+        let mlbFinals = mlbFinalGames;
+        if (mlbFinals.length === 0) {
+          mlbFinals = await fetchMLBFinalGames();
+          logger.info(
+              `ESPN MLB API (for mlb_bets): ${mlbFinals.length} final games`,
+          );
+        }
+
+        logger.info(
+            `Found ${mlbBetsSnapshot.size} pending MLB model picks`,
+        );
+        let mlbBetsGraded = 0;
+
+        for (const betDoc of mlbBetsSnapshot.docs) {
+          const pick = betDoc.data();
+
+          // Skip evaluations (non-bets)
+          if (pick.type === "EVALUATION" || !pick.isLocked) continue;
+
+          // Skip if game hasn't started yet
+          const ct = pick.game?.commenceTime;
+          if (ct) {
+            const gameStart = new Date(ct).getTime();
+            if (gameStart > Date.now()) continue;
+          }
+
+          const awayCode = pick.game?.awayCode ||
+            pick.bet?.pickCode; // fallback
+          const homeCode = pick.game?.homeCode;
+          if (!awayCode || !homeCode) continue;
+
+          // Match by team codes
+          let matchingGame = mlbFinals.find(
+              (g) => g.awayCode === awayCode && g.homeCode === homeCode,
+          );
+
+          // Fallback: fuzzy match on display names
+          if (!matchingGame) {
+            for (const g of mlbFinals) {
+              if (teamNamesMatch(pick.game?.awayTeam, g.awayTeam) &&
+                  teamNamesMatch(pick.game?.homeTeam, g.homeTeam)) {
+                matchingGame = g;
+                break;
+              }
+            }
+          }
+
+          if (!matchingGame) continue;
+
+          const winner = matchingGame.awayScore > matchingGame.homeScore ?
+            "away" : "home";
+          const betSide = (pick.bet?.side || "").toUpperCase();
+          const outcome = calculateOutcome(matchingGame, {
+            market: "MONEYLINE",
+            side: betSide === "AWAY" ? "AWAY" : "HOME",
+          });
+          const units = pick.bet?.units || 1;
+          const odds = pick.bet?.odds || 0;
+          const profit = calculateProfit(outcome, odds, units);
+
+          await betDoc.ref.update({
+            "result.awayScore": matchingGame.awayScore,
+            "result.homeScore": matchingGame.homeScore,
+            "result.totalScore":
+              matchingGame.awayScore + matchingGame.homeScore,
+            "result.winner": winner,
+            "result.outcome": outcome,
+            "result.profit": parseFloat(profit.toFixed(2)),
+            "result.units": units,
+            "result.fetched": true,
+            "result.fetchedAt":
+              admin.firestore.FieldValue.serverTimestamp(),
+            "result.source": "ESPN_MLB_API",
+            "status": "COMPLETED",
+          });
+
+          mlbBetsGraded++;
+          const pickTeam = pick.bet?.pick || pick.bet?.pickCode || betSide;
+          logger.info(
+              `⚾ MLB Model: ${pickTeam} ML ${odds} (${units}u) → ` +
+              `${outcome} (${profit >= 0 ? "+" : ""}` +
+              `${profit.toFixed(2)}u)`,
+          );
+        }
+
+        logger.info(`MLB Model: Graded ${mlbBetsGraded} picks`);
+      }
+    } catch (mlbBetsError) {
+      logger.error("Error grading MLB model picks:", mlbBetsError);
+    }
+
     return null;
   } catch (error) {
     logger.error("Error updating bet results:", error);

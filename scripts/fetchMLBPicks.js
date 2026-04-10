@@ -285,7 +285,23 @@ async function writePickToFirebase(pick, date) {
   const existing = await getDoc(ref);
 
   if (existing.exists()) {
-    console.log(`   ℹ️  ${betId} already exists — updating prediction`);
+    const existingData = existing.data();
+    if (existingData.status === 'COMPLETED') {
+      console.log(`   ℹ️  ${betId} already graded — skipping`);
+      return { betId, action: 'skipped' };
+    }
+
+    const ct = existingData.game?.commenceTime;
+    const gameStart = ct ? new Date(ct).getTime() : null;
+    const LOCK_BUFFER_MS = 5 * 60 * 1000;
+    const isLocked = gameStart && Date.now() >= gameStart - LOCK_BUFFER_MS;
+
+    if (isLocked) {
+      console.log(`   🔒 ${betId} odds locked (game starting) — skipping update`);
+      return { betId, action: 'locked' };
+    }
+
+    console.log(`   ℹ️  ${betId} already exists — updating odds + model data (pre-lock)`);
     await setDoc(ref, {
       prediction: betData.prediction,
       bet: betData.bet,
