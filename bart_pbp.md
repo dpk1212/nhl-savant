@@ -7,7 +7,7 @@ Click Here or Go Landscape for Full Site Layout
 
 Conf.:
 
-ALLNCAA-TAliveEastMidwestSouthWestH.Maj.Mid Maj.A10ACCAEASunAmerB10B12BEBSkyBSthBWCAACUSAHorzIvyMAACMACMEACMVCMWCNECOVCP12PatSBSCSECSWACSlndSumWACWCC
+ALLNCAA-TH.Maj.Mid Maj.A10ACCAEASunAmerB10B12BEBSkyBSthBWCAACUSAHorzIvyMAACMACMEACMVCMWCNECOVCP12PatSBSCSECSWACSlndSumWACWCC
 
 |  | Dunks | Close Twos | Farther Twos | Threes |
 | --- | --- | --- | --- | --- |
