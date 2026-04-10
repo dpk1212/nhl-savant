@@ -375,8 +375,20 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       return { docId, action: 'no_change' };
     }
 
+    const existingSides = Object.entries(sides);
+    const existingBestStars = existingSides.reduce((max, [, sd]) => {
+      const s = sd.peak?.stars || sd.lock?.stars || 0;
+      return s > max ? s : max;
+    }, 0);
+    if (stars <= existingBestStars) {
+      return { docId, action: 'no_change' };
+    }
     const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition);
-    await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
+    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    for (const [existingSide] of existingSides) {
+      mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
+    }
+    await setDoc(ref, mergePayload, { merge: true });
     return { docId, action: 'side_added' };
   } catch (err) {
     console.warn('Failed to sync pick:', err.message);
@@ -465,8 +477,20 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       return { docId, action: 'no_change' };
     }
 
+    const existingSides = Object.entries(sides);
+    const existingBestStars = existingSides.reduce((max, [, sd]) => {
+      const s = sd.peak?.stars || sd.lock?.stars || 0;
+      return s > max ? s : max;
+    }, 0);
+    if (stars <= existingBestStars) {
+      return { docId, action: 'no_change' };
+    }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
-    await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
+    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    for (const [existingSide] of existingSides) {
+      mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
+    }
+    await setDoc(ref, mergePayload, { merge: true });
     return { docId, action: 'side_added' };
   } catch (err) {
     console.warn('Failed to sync spread pick:', err.message);
@@ -518,8 +542,20 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       return { docId, action: 'no_change' };
     }
 
+    const existingSides = Object.entries(sides);
+    const existingBestStars = existingSides.reduce((max, [, sd]) => {
+      const s = sd.peak?.stars || sd.lock?.stars || 0;
+      return s > max ? s : max;
+    }, 0);
+    if (stars <= existingBestStars) {
+      return { docId, action: 'no_change' };
+    }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
-    await setDoc(ref, { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' }, { merge: true });
+    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    for (const [existingSide] of existingSides) {
+      mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
+    }
+    await setDoc(ref, mergePayload, { merge: true });
     return { docId, action: 'side_added' };
   } catch (err) {
     console.warn('Failed to sync total pick:', err.message);
@@ -2568,7 +2604,7 @@ function rateStars({
 }
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -2618,15 +2654,21 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden', position: 'relative',
-      background: isTopPick
+      opacity: superseded ? 0.55 : 1,
+      background: superseded
+        ? `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`
+        : isTopPick
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: isEVConfirmed
+      border: superseded
+        ? `1px solid rgba(239,68,68,0.3)`
+        : isEVConfirmed
         ? '1px solid rgba(212,175,55,0.6)'
         : isTopPick
         ? '1px solid rgba(212,175,55,0.45)'
         : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: isEVConfirmed
+      boxShadow: superseded ? 'none'
+        : isEVConfirmed
         ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
         : isTopPick
         ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04)'
@@ -2654,12 +2696,15 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 {marketType === 'spread' ? 'SPREAD' : 'TOTAL'}
               </Badge>
             )}
+            {superseded && (
+              <Badge color="#EF4444" bg="rgba(239,68,68,0.12)">FLIPPED</Badge>
+            )}
             <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
               {away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {home}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            {isTopPick && (
+            {isTopPick && !superseded && (
               <span style={{
                 ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
                 padding: '0.15rem 0.5rem', borderRadius: '5px',
@@ -3239,7 +3284,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
       if (action !== 'no_change') {
-        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', criteriaMet, units, unitTier: ut.label, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime });
+        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', criteriaMet, units, unitTier: ut.label, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
     });
   }, [isLocked, sr.stars]);
@@ -5144,12 +5189,19 @@ export default function SharpFlow() {
     }
   }, [showPerf, isPremium]);
 
-  const onPickSynced = useCallback((docId, side, snap, meta) => {
+  const onPickSynced = useCallback((docId, side, snap, meta, action) => {
     setLockedPicks(prev => {
       const next = { ...prev };
       const prevDoc = next[docId] || {};
       const prevSides = prevDoc.sides || {};
-      const docUpdate = { ...prevDoc, sides: { ...prevSides, [side]: { ...prevSides[side], peak: snap, lock: prevSides[side]?.lock || snap, team: snap.team } } };
+      const updatedSides = { ...prevSides };
+      if (action === 'side_added') {
+        for (const sk of Object.keys(updatedSides)) {
+          if (sk !== side) updatedSides[sk] = { ...updatedSides[sk], superseded: true, supersededAt: Date.now() };
+        }
+      }
+      updatedSides[side] = { ...updatedSides[side], peak: snap, lock: updatedSides[side]?.lock || snap, team: snap.team };
+      const docUpdate = { ...prevDoc, sides: updatedSides };
       if (meta) { docUpdate.sport = meta.sport; docUpdate.away = meta.away; docUpdate.home = meta.home; docUpdate.commenceTime = meta.commenceTime; }
       next[docId] = docUpdate;
       return next;
@@ -6301,6 +6353,7 @@ export default function SharpFlow() {
                           pinnacleOdds: peak.pinnacleOdds || lock.pinnacleOdds || null,
                           marketType: doc.marketType || 'ml',
                           line: peak.line || lock.line || null,
+                          superseded: !!sd.superseded,
                         });
                       }
                     }
@@ -6311,6 +6364,7 @@ export default function SharpFlow() {
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
                       : lockedArr.filter(p => p.outcome === 'LOSS');
                     filteredLocked.sort((a, b) => {
+                      if (a.superseded !== b.superseded) return a.superseded ? 1 : -1;
                       const aDelta = (a.lockStars != null ? a.stars - a.lockStars : 0);
                       const bDelta = (b.lockStars != null ? b.stars - b.lockStars : 0);
                       const aTop = aDelta >= 1.0 ? 1 : 0;
