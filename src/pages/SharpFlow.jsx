@@ -3272,7 +3272,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   });
   const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
   if (isExtremeOdds) return null;
-  const isLocked = sr.stars >= 2.5;
+  const isLocked = sr.stars >= 2.5 && consensusInvested >= 7000;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds) : 0;
@@ -3402,7 +3402,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
     && (spreadSharpFeatures?.conWalletCount || 0) >= 2
-    && (spreadSharpFeatures?.conTotalInvested || 0) >= 50;
+    && (spreadSharpFeatures?.conTotalInvested || 0) >= 5000;
   const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds) : 0;
 
   useEffect(() => {
@@ -3477,7 +3477,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const isTotalLocked = totalSr && totalSr.stars >= 2.5
     && (totalSharpFeatures?.conWalletCount || 0) >= 2
-    && (totalSharpFeatures?.conTotalInvested || 0) >= 50;
+    && (totalSharpFeatures?.conTotalInvested || 0) >= 5000;
   const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds) : 0;
 
   useEffect(() => {
@@ -3850,7 +3850,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           {spreadSharpFeatures && (() => {
             const sCriteria = [
               { id: 's3', met: (spreadSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
-              { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 50, label: '$50+ on Side' },
+              { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 5000, label: '$5K+ on Side' },
               { id: 'sev', met: spreadEvEdge > 0, label: '+EV Edge' },
               { id: 'spinn', met: spreadPinnConfirms, label: 'Pinnacle Confirms' },
               { id: 'sline', met: spreadPinnMovedWith, label: 'Line Moving With' },
@@ -4176,7 +4176,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           {totalSharpFeatures && (() => {
             const tCriteria = [
               { id: 't3', met: (totalSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
-              { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 50, label: '$50+ on Side' },
+              { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 5000, label: '$5K+ on Side' },
               { id: 'tev', met: totalEvEdge > 0, label: '+EV Edge' },
               { id: 'tpinn', met: totalPinnConfirms, label: 'Pinnacle Confirms' },
               { id: 'tline', met: totalPinnMovedWith, label: 'Line Moving With' },
