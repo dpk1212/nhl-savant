@@ -350,6 +350,11 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
+    // HARD GUARD: ML picks require $7K minimum invested — reject unconditionally
+    if ((totalInvested || 0) < 7000) {
+      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $7000 minimum`);
+      return { docId, action: 'no_change' };
+    }
 
     const ref = doc(db, 'sharpFlowPicks', docId);
     const existing = await getDoc(ref);
@@ -471,6 +476,11 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
+    // HARD GUARD: Spread picks require $5K minimum invested — reject unconditionally
+    if ((totalInvested || 0) < 5000) {
+      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
+      return { docId, action: 'no_change' };
+    }
     const ref = doc(db, 'sharpFlowSpreads', docId);
     const existing = await getDoc(ref);
 
@@ -541,6 +551,11 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_total`;
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
+      return { docId, action: 'no_change' };
+    }
+    // HARD GUARD: Total picks require $5K minimum invested — reject unconditionally
+    if ((totalInvested || 0) < 5000) {
+      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowTotals', docId);
