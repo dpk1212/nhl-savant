@@ -213,20 +213,29 @@ function rateSpreadTotalStars({
 } = {}) {
   let pts = 0;
 
-  if (breadth >= 0.5) pts += 3;
+  // V6: Trimmed breadth — flatten past mid-range (max 2.5, was 3)
+  if (breadth >= 0.5) pts += 2.5;
   else if (breadth >= 0.35) pts += 2;
-  else if (breadth >= 0.2) pts += 1;
+  else if (breadth >= 0.2) pts += 1.5;
   else if (breadth >= 0.1) pts += 0.5;
 
-  // Pinnacle alignment (max 3 pts / -1 penalty)
-  if (pinnConfirms && pinnMovingWith) pts += 3;
-  else if (pinnConfirms) pts += 1.5;
-  else if (pinnMovingWith) pts += 1.5;
+  // V6: Conditional Pinnacle — stronger on borderline plays only
+  if (consensusTier === 'LEAN' || consensusTier === 'CONTESTED') {
+    if (pinnConfirms && pinnMovingWith) pts += 2;
+    else if (pinnConfirms) pts += 1;
+    else if (pinnMovingWith) pts += 1;
+  } else {
+    if (pinnConfirms && pinnMovingWith) pts += 1;
+    else if (pinnConfirms) pts += 0.5;
+    else if (pinnMovingWith) pts += 0.5;
+  }
   if (pinnMovingAgainst) pts -= 1;
 
-  if (conviction >= 0.8) pts += 1.5;
-  else if (conviction >= 0.5) pts += 1;
-  else if (conviction >= 0.25) pts += 0.5;
+  // V6: Bumped conviction — max 2.5 pts (was 1.5), extra tier
+  if (conviction >= 0.8) pts += 2.5;
+  else if (conviction >= 0.6) pts += 2;
+  else if (conviction >= 0.4) pts += 1.5;
+  else if (conviction >= 0.25) pts += 0.75;
 
   // Concentration penalty — softened when ELITE-led with multi-wallet confirmation
   if (concentration > 0.9) {
@@ -244,13 +253,11 @@ function rateSpreadTotalStars({
   else if (evEdge > 1) pts += 1.5;
   else if (evEdge > 0) pts += 0.5;
 
-  // Implied probability — small nudge based on Pinnacle line
   if (pinnProb != null) {
     if (pinnProb >= 0.75) pts += 0.5;
     else if (pinnProb < 0.30) pts -= 0.5;
   }
 
-  // Consensus strength bonus — overwhelming sharp agreement
   if (consensusTier === 'DOMINANT') pts += 2;
   else if (consensusTier === 'STRONG') pts += 1;
 
@@ -260,15 +267,22 @@ function rateSpreadTotalStars({
     else pts += 0.25;
   }
 
+  // V6: Sport-specific handling
+  if (sport === 'MLB') {
+    if (conWalletCount >= 7) pts += 1;
+    else if (conWalletCount >= 5) pts += 0.5;
+  } else if (sport === 'NHL' || sport === 'CBB') {
+    if (sportSharpCount >= 2 && conWalletCount <= 5) pts += 1;
+    else if (sportSharpCount >= 1 && conWalletCount <= 4) pts += 0.5;
+  }
+
   if (sportSharpCount >= 3) pts += 1.5;
   else if (sportSharpCount >= 2) pts += 1;
   else if (sportSharpCount >= 1) pts += 0.5;
 
-  // Dog penalty — long dogs historically lose at high rates
   if (odds != null && odds >= 200) pts -= 2;
   else if (odds != null && odds >= 151) pts -= 1;
 
-  // NBA dog penalty — NBA dogs are 3-20 (13% WR)
   if (sport === 'NBA' && odds != null && odds >= 100) pts -= 1.5;
 
   const maxPts = 15;
@@ -2560,22 +2574,39 @@ function rateStars({
 } = {}) {
   let pts = 0;
 
-  // Sharp breadth — quality-weighted wallet diversity (max 3 pts)
-  if (breadth >= 0.5) pts += 3;
+  // ── V6 Tweak 1: Trimmed breadth ──
+  // Strong boost up to mid-range, then flattens. Prevents crowded boards
+  // from auto-inflating stars. Audit: 1-3 sharps + high conviction (76% WR)
+  // outperformed 7+ sharps (60%). Max 2.5 pts (was 3).
+  if (breadth >= 0.5) pts += 2.5;
   else if (breadth >= 0.35) pts += 2;
-  else if (breadth >= 0.2) pts += 1;
+  else if (breadth >= 0.2) pts += 1.5;
   else if (breadth >= 0.1) pts += 0.5;
 
-  // Pinnacle alignment (max 3 pts / -1 penalty)
-  if (pinnConfirms && pinnMovingWith) pts += 3;
-  else if (pinnConfirms) pts += 1.5;
-  else if (pinnMovingWith) pts += 1.5;
+  // ── V6 Tweak 3: Conditional Pinnacle alignment ──
+  // Audit: "No Pinn" (67% WR, +28.1u) beats "Pinn confirms" (56%, -26.3u)
+  // at every breadth level. Pinnacle now only helps borderline plays (LEAN/
+  // CONTESTED consensus) and gives a reduced flat bonus otherwise.
+  // Max 2 pts on borderline, 1 pt otherwise (was 3 pts flat).
+  if (consensusTier === 'LEAN' || consensusTier === 'CONTESTED') {
+    if (pinnConfirms && pinnMovingWith) pts += 2;
+    else if (pinnConfirms) pts += 1;
+    else if (pinnMovingWith) pts += 1;
+  } else {
+    if (pinnConfirms && pinnMovingWith) pts += 1;
+    else if (pinnConfirms) pts += 0.5;
+    else if (pinnMovingWith) pts += 0.5;
+  }
   if (pinnMovingAgainst) pts -= 1;
 
-  // Sharp conviction — log-dollar per wallet (max 1.5 pts)
-  if (conviction >= 0.8) pts += 1.5;
-  else if (conviction >= 0.5) pts += 1;
-  else if (conviction >= 0.25) pts += 0.5;
+  // ── V6 Tweak 2: Bumped conviction ──
+  // Audit: conviction is #1 independent signal (+11.1% WR lift, +0.93% CLV).
+  // Bumped from max 1.5 to max 2.5 pts. Extra tier at top end for
+  // "fewer, stronger wallets" pattern that dominates the data.
+  if (conviction >= 0.8) pts += 2.5;
+  else if (conviction >= 0.6) pts += 2;
+  else if (conviction >= 0.4) pts += 1.5;
+  else if (conviction >= 0.25) pts += 0.75;
 
   // Concentration penalty — softened when ELITE-led with multi-wallet confirmation
   if (concentration > 0.9) {
@@ -2589,7 +2620,7 @@ function rateStars({
   else if (counterSharpScore >= 3) pts -= 2;
   else if (counterSharpScore >= 1) pts -= 1;
 
-  // EV edge — strongest predictive signal, steep curve (max 3.5 pts)
+  // EV edge (max 3.5 pts)
   if (evEdge > 3) pts += 3.5;
   else if (evEdge > 2) pts += 2.5;
   else if (evEdge > 1) pts += 1.5;
@@ -2605,7 +2636,8 @@ function rateStars({
   if (consensusTier === 'DOMINANT') pts += 2;
   else if (consensusTier === 'STRONG') pts += 1;
 
-  // Prediction market — conditional on breadth tier
+  // ── V6 Tweak 3 (continued): Conditional pred-market ──
+  // Already conditional on consensus tier — no change needed here.
   if (polyMovingWith) {
     if (consensusTier === 'LEAN' || consensusTier === 'CONTESTED') pts += 1.5;
     else if (consensusTier === 'STRONG') pts += 0.5;
@@ -2616,7 +2648,21 @@ function rateStars({
   if (isRLM && pinnMovingWith && ticketDivergence >= 10) pts += 1.5;
   else if (isRLM && ticketDivergence >= 10) pts += 0.75;
 
-  // Sport specialist bonus — wallets profitable in this specific sport (max 1.5 pts)
+  // ── V6 Tweak 4: Sport-specific handling ──
+  // Audit: sharp wallet behavior differs by sport. MLB broader consensus
+  // matters more (7+ sharps: 69% WR). NHL/CBB specialist tighter groups
+  // matter more (1-3 sharps: 67%/65% WR). NBA bleeds across the board.
+  if (sport === 'MLB') {
+    // MLB: broader consensus bonus — 7+ sharps go 69% WR in MLB vs 56% avg
+    if (conWalletCount >= 7) pts += 1;
+    else if (conWalletCount >= 5) pts += 0.5;
+  } else if (sport === 'NHL' || sport === 'CBB') {
+    // NHL/CBB: specialist wallet bonus — tighter groups outperform
+    if (sportSharpCount >= 2 && conWalletCount <= 5) pts += 1;
+    else if (sportSharpCount >= 1 && conWalletCount <= 4) pts += 0.5;
+  }
+
+  // Sport specialist bonus — wallets profitable in this specific sport
   if (sportSharpCount >= 3) pts += 1.5;
   else if (sportSharpCount >= 2) pts += 1;
   else if (sportSharpCount >= 1) pts += 0.5;
@@ -6302,6 +6348,7 @@ export default function SharpFlow() {
                     concentration: osf.concentration, counterSharpScore: osf.counterSharpScore,
                     consensusTier: osf.consensusTier,
                     sportSharpCount: osf.sportSharpCount,
+                    dominantTier: osf.dominantTier, conWalletCount: osf.conWalletCount,
                     odds: oBetOdds, sport,
                   });
 
@@ -6322,6 +6369,7 @@ export default function SharpFlow() {
                     consensusTier: sf.consensusTier,
                     isRLM: sortRLM, ticketDivergence: sortFlowDiv,
                     sportSharpCount: sf.sportSharpCount,
+                    dominantTier: sf.dominantTier, conWalletCount: sf.conWalletCount,
                     odds: cBetOdds, sport,
                   });
 
