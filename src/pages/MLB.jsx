@@ -153,6 +153,49 @@ const MLB = () => {
     }
   };
 
+  const perfStats = useMemo(() => {
+    if (!perfData || perfData.length === 0) return null;
+    const now = new Date();
+    const todayET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const todayStr = `${todayET.getFullYear()}-${String(todayET.getMonth() + 1).padStart(2, '0')}-${String(todayET.getDate()).padStart(2, '0')}`;
+    const yesterdayET = new Date(todayET); yesterdayET.setDate(yesterdayET.getDate() - 1);
+    const yestStr = `${yesterdayET.getFullYear()}-${String(yesterdayET.getMonth() + 1).padStart(2, '0')}-${String(yesterdayET.getDate()).padStart(2, '0')}`;
+    const weekAgo = new Date(todayET); weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
+
+    let filtered = perfData;
+    if (perfFilter === 'today') filtered = perfData.filter(p => p.date === todayStr);
+    else if (perfFilter === 'yesterday') filtered = perfData.filter(p => p.date === yestStr);
+    else if (perfFilter === 'week') filtered = perfData.filter(p => p.date >= weekStr);
+
+    const wins = filtered.filter(p => p.outcome === 'WIN').length;
+    const losses = filtered.filter(p => p.outcome === 'LOSS').length;
+    const graded = wins + losses;
+    const winRate = graded > 0 ? (wins / graded) * 100 : 0;
+    const unitsWon = filtered.reduce((s, p) => s + (p.profit || 0), 0);
+    const totalRisked = filtered.reduce((s, p) => s + (p.units || 1), 0);
+    const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
+
+    const byGrade = {};
+    filtered.forEach(p => {
+      const g = p.grade || '?';
+      if (!byGrade[g]) byGrade[g] = { wins: 0, losses: 0, profit: 0 };
+      if (p.outcome === 'WIN') byGrade[g].wins++;
+      else byGrade[g].losses++;
+      byGrade[g].profit += p.profit || 0;
+    });
+
+    const sorted = [...perfData].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const last5 = sorted.slice(-5).reduce((s, p) => s + (p.profit || 0), 0);
+    const last10 = sorted.slice(-10).reduce((s, p) => s + (p.profit || 0), 0);
+    const last20 = sorted.slice(-20).reduce((s, p) => s + (p.profit || 0), 0);
+    let bestRecent = { period: 'L5', profit: last5 };
+    if (last10 > bestRecent.profit) bestRecent = { period: 'L10', profit: last10 };
+    if (last20 > bestRecent.profit) bestRecent = { period: 'L20', profit: last20 };
+
+    return { wins, losses, graded, winRate, unitsWon, roi, totalRisked, byGrade, bestRecent, filtered };
+  }, [perfData, perfFilter]);
+
   if (loading) {
     return (
       <div style={{
@@ -258,49 +301,6 @@ const MLB = () => {
   const aGrades = dedupedPicks.filter(p => p.grade === 'A').length;
   const dedupedPicksCount = dedupedPicks.length;
   const dedupedGamesCount = dedupedEvals.length;
-
-  const perfStats = useMemo(() => {
-    if (!perfData || perfData.length === 0) return null;
-    const now = new Date();
-    const todayET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const todayStr = `${todayET.getFullYear()}-${String(todayET.getMonth() + 1).padStart(2, '0')}-${String(todayET.getDate()).padStart(2, '0')}`;
-    const yesterdayET = new Date(todayET); yesterdayET.setDate(yesterdayET.getDate() - 1);
-    const yestStr = `${yesterdayET.getFullYear()}-${String(yesterdayET.getMonth() + 1).padStart(2, '0')}-${String(yesterdayET.getDate()).padStart(2, '0')}`;
-    const weekAgo = new Date(todayET); weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
-
-    let filtered = perfData;
-    if (perfFilter === 'today') filtered = perfData.filter(p => p.date === todayStr);
-    else if (perfFilter === 'yesterday') filtered = perfData.filter(p => p.date === yestStr);
-    else if (perfFilter === 'week') filtered = perfData.filter(p => p.date >= weekStr);
-
-    const wins = filtered.filter(p => p.outcome === 'WIN').length;
-    const losses = filtered.filter(p => p.outcome === 'LOSS').length;
-    const graded = wins + losses;
-    const winRate = graded > 0 ? (wins / graded) * 100 : 0;
-    const unitsWon = filtered.reduce((s, p) => s + (p.profit || 0), 0);
-    const totalRisked = filtered.reduce((s, p) => s + (p.units || 1), 0);
-    const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
-
-    const byGrade = {};
-    filtered.forEach(p => {
-      const g = p.grade || '?';
-      if (!byGrade[g]) byGrade[g] = { wins: 0, losses: 0, profit: 0 };
-      if (p.outcome === 'WIN') byGrade[g].wins++;
-      else byGrade[g].losses++;
-      byGrade[g].profit += p.profit || 0;
-    });
-
-    const sorted = [...perfData].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-    const last5 = sorted.slice(-5).reduce((s, p) => s + (p.profit || 0), 0);
-    const last10 = sorted.slice(-10).reduce((s, p) => s + (p.profit || 0), 0);
-    const last20 = sorted.slice(-20).reduce((s, p) => s + (p.profit || 0), 0);
-    let bestRecent = { period: 'L5', profit: last5 };
-    if (last10 > bestRecent.profit) bestRecent = { period: 'L10', profit: last10 };
-    if (last20 > bestRecent.profit) bestRecent = { period: 'L20', profit: last20 };
-
-    return { wins, losses, graded, winRate, unitsWon, roi, totalRisked, byGrade, bestRecent, filtered };
-  }, [perfData, perfFilter]);
 
   return (
     <div style={{
