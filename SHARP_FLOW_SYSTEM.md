@@ -44,23 +44,33 @@ We track the Polymarket moneyline price over 24 hours. If the price is moving in
 
 ### How Plays Get Rated & Locked In
 
-Every game with sharp positions is scored using a **weighted star rating system** that evaluates multiple signal dimensions on a 15-point scale: sharp wallet breadth, money deployed, EV edge, Pinnacle alignment, line movement, consensus strength, prediction market direction, implied probability, and sport-specialist verification.
+Every game with sharp positions is scored using a **weighted star rating system (V6)** that evaluates multiple signal dimensions on a 15-point scale: sharp wallet breadth, conviction (avg bet size), EV edge, conditional Pinnacle alignment, consensus strength, prediction market direction, sport-specific adjustments, implied probability, and sport-specialist verification.
 
-The points are converted to a 0.5–5.0 star rating. **Plays with 2.5+ stars are automatically LOCKED IN** — saved to our database with a unit size for performance tracking.
+The points are converted to a 0.5–5.0 star rating. **Plays are LOCKED IN when they meet BOTH a star threshold AND a minimum invested threshold:**
 
-The star rating is the **single source of truth** — there are no separate gates or overrides. Penalties for contested consensus (sharps split on both sides), single-wallet concentration, and Pinnacle opposition are baked directly into the point score.
+| Market | Star Threshold | Min Invested | Min Wallets |
+|--------|---------------|-------------|-------------|
+| **Moneyline** | ≥ 2.5 stars | **$7,000** | — |
+| **Spread** | ≥ 2.5 stars | **$5,000** | **2 wallets** |
+| **Total (O/U)** | ≥ 2.5 stars | **$5,000** | **2 wallets** |
 
-#### Key Tuning (from 305-pick backtest)
+**No bet is EVER written to Firebase unless these minimums are met.** This is enforced at the lock-decision level in `SharpFlow.jsx`.
 
-Three targeted adjustments based on `SHARP_FLOW_ANALYSIS.md`:
+The star rating is the **single source of truth** — there are no separate gates or overrides beyond the invested minimums. Penalties for contested consensus, concentration, Pinnacle opposition, dog odds, and flips are baked directly into the point score.
 
-1. **Pinnacle "moving against" penalty softened** from −2.0 to −1.5. The original −2 was too harsh and prevented otherwise strong consensus plays from locking.
-2. **Concentration penalty is context-aware**. When the dominant wallet is ELITE tier ($100K+ lifetime profit) and 3+ other independent wallets confirm, the penalty is halved (−0.5 instead of −1.0 at >90% concentration). A verified top whale with backup is different from one random wallet alone.
-3. **Implied probability added as a small tiebreaker**. Heavy favorites (Pinnacle implied ≥75%) get +0.5; big underdogs (<30%) get −0.5. This is a nudge, not a driver — the strongest predictors remain EV edge and sharp consensus breadth.
+#### V6 Key Changes (2026-04-11)
+
+1. **Breadth ceiling trimmed** — max 2.5pts (was 3). Mid-range bumped. Prevents crowded boards from auto-inflating stars.
+2. **Conviction bumped** — max 2.5pts (was 1.5). Added extra tier. "Fewer, stronger wallets" is the #1 independent predictive signal.
+3. **Pinnacle made conditional** — full bonus only on borderline (LEAN/CONTESTED) plays, halved on STRONG/DOMINANT. Deep audit showed "No Pinn" outperformed "Pinn confirms" at every breadth level.
+4. **Sport-specific bonuses** — MLB gets broader consensus bonus (5-7+ wallets), NHL/CBB get specialist-group bonus (sport-verified sharps in tight groups).
+5. **Minimum invested thresholds enforced** — ML requires $7K, Spread/Total requires $5K + 2 wallets. No low-conviction noise gets tracked.
 
 ### Unit Sizing
 
 Units are derived directly from the star rating:
+
+**ML Unit Sizing:**
 
 | Star Rating | Base Units | Tier |
 |-------------|-----------|------|
@@ -69,8 +79,24 @@ Units are derived directly from the star rating:
 | ★★★★ (4.0) | 2.5u | STRONG |
 | ★★★½ (3.5) | 2.0u | STRONG |
 | ★★★ (3.0) | 1.5u | STANDARD |
+| ★★½ (2.5) | 1.0u | STANDARD |
 
-A consensus penalty (−0.5u for LEAN, −1.0u for CONTESTED) is applied after the base. Final units are capped between 0.5u and 5.0u.
+Dog caps (ML): +200 → max 0.5u, +151 → max 1.0u, +100 → max 2.0u.
+
+**Spread/Total Unit Sizing:**
+
+| Star Rating | Base Units |
+|-------------|-----------|
+| ★★★★★ (5.0) | 2.0u |
+| ★★★★½ (4.5) | 1.75u |
+| ★★★★ (4.0) | 1.5u |
+| ★★★½ (3.5) | 1.25u |
+| ★★★ (3.0) | 1.0u |
+| ★★½ (2.5) | 0.5u |
+
+Dog caps (Spread/Total): +200 → max 0.5u, +151 → max 0.75u, +100 → max 1.0u.
+
+A consensus penalty (−0.5u for LEAN, −1.0u for CONTESTED) is applied after the base. Final ML units are capped between 0.5u and 5.0u. Spread/Total units are capped between 0.5u and 2.0u.
 
 ### Performance Tracking
 
@@ -173,9 +199,17 @@ Every locked play is recorded with its odds, book, unit size, star rating, and c
 
 | Collection | Purpose | Written By | Read By |
 |-----------|---------|-----------|---------|
-| **sharpFlowPicks** | Locked plays with unit size, odds, criteria | SharpFlow.jsx (client) | SharpFlow.jsx (client), updateBetResults (function) |
+| **sharpFlowPicks** | Locked ML plays with unit size, odds, criteria | SharpFlow.jsx (client) | SharpFlow.jsx (client), updateBetResults (function) |
+| **sharpFlowSpreads** | Locked spread plays | SharpFlow.jsx (client) | SharpFlow.jsx (client), updateBetResults (function) |
+| **sharpFlowTotals** | Locked total (O/U) plays | SharpFlow.jsx (client) | SharpFlow.jsx (client), updateBetResults (function) |
+| **mlb_bets** | MLB model picks (separate from Sharp Flow) | fetchMLBPicks.js | MLB.jsx (client), updateBetResults (function) |
 | **bets** | NHL model bets | betTracker.js (client) | updateBetResults (function) |
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
+
+**CRITICAL: Lock thresholds are enforced BEFORE any Firebase write:**
+- ML (`sharpFlowPicks`): stars ≥ 2.5 AND consensusInvested ≥ $7,000
+- Spread (`sharpFlowSpreads`): stars ≥ 2.5 AND conWalletCount ≥ 2 AND conTotalInvested ≥ $5,000
+- Total (`sharpFlowTotals`): stars ≥ 2.5 AND conWalletCount ≥ 2 AND conTotalInvested ≥ $5,000
 
 #### `sharpFlowPicks` Document Schema (v3 — lock + peak + pregame snapshots)
 
@@ -312,29 +346,36 @@ Defined in `firestore.indexes.json`.
 
 **Key Functions**:
 - `useMarketData()` — loads all 5 JSON files
-- `rateStars()` — V5 multi-signal scoring on 15-pt scale → 0.5–5.0 star rating (drives lock + unit decisions)
-- `calculateUnits()` — maps star rating to unit size with consensus penalty
-- `SharpPositionCard` — main card component (React.memo) with both-sides battle, sparklines, criteria checklist, unit sizing
-- `MiniSparkline` — SVG sparkline for Pinnacle/prediction market price movement
-- `syncLockedPicks()` — auto-evaluates criteria, writes qualifying picks to Firebase
-- `loadAllTimePnL()` — queries completed picks for running record
+- `computeSharpFeatures()` — decomposes positions into breadth, conviction, concentration, counterSharp, consensus tier (net-position approach for hedgers)
+- `rateStars()` — V6 multi-signal scoring on 15-pt scale → 0.5–5.0 star rating (ML picks, includes RLM + flip penalty)
+- `rateSpreadTotalStars()` — V6 scoring for spread/total picks (same weights, no RLM/flip)
+- `calculateUnits()` — maps ML star rating to unit size with consensus penalty + dog caps
+- `calculateSpreadTotalUnits()` — maps spread/total star rating to unit size with dog caps
+- `SharpPositionCard` — main card component (React.memo) with both-sides battle, sparklines, criteria checklist, unit sizing. Handles ML, Spread, and Total tabs.
+- `syncLockedPicks()` — auto-evaluates criteria, writes qualifying picks to Firebase (`sharpFlowPicks`, `sharpFlowSpreads`, or `sharpFlowTotals`)
+- `loadAllTimePnL()` — queries completed picks from all three collections for running record
 
-**Data Flow in Card**:
-1. `sharp_positions.json` → per-side wallet counts, invested amounts, P&L
-2. `pinnacle_history.json` → book prices, line movement, sparkline data
-3. `polymarket_data.json` → prediction market price history, sparkline
-4. Criteria evaluated → lock decision → Firebase write → unit sizing display
+**Lock Decision Flow** (no bet is written without meeting ALL requirements):
+1. `sharp_positions.json` → per-side wallet counts, invested amounts
+2. `pinnacle_history.json` → book prices, line movement, EV edge
+3. `computeSharpFeatures()` → breadth, conviction, concentration, counterSharp
+4. `rateStars()` / `rateSpreadTotalStars()` → star rating
+5. **Threshold check**: stars ≥ 2.5 AND invested ≥ minimum ($7K ML / $5K spread+total)
+6. Only if ALL conditions met → Firebase write → unit sizing → locked card display
 
 ### Deployment Rules
 
 **The only workflow that deploys the UI is `fetch-polymarket.yml`** (every 15 min).
 
-**Rule**: Any changes to files in `src/` MUST be committed and pushed to `main` before the next workflow run. If you deploy locally with `npm run deploy` without pushing to `main`, the next scheduled run will overwrite your changes.
+**CRITICAL RULE**: Any changes to files in `src/` MUST be committed and pushed to `main` before the next workflow run. If you deploy locally with `npm run deploy` without pushing to `main`, the next scheduled run will **OVERWRITE your changes** with stale code from the last commit on `main`.
 
-**Safe workflow**:
+**Safe workflow** (ALWAYS follow this sequence):
 1. Make code changes
-2. `git add . && git commit -m "..." && git push` (push to main)
-3. `npm run deploy` (optional — immediate deploy, workflow will also deploy within 15 min)
+2. `git add . && git commit -m "..." && git push` (push to main FIRST)
+3. `npm run deploy` (immediate deploy so changes go live right away)
+4. The workflow will also deploy within 15 min, but since `main` has your changes, it will deploy the same code.
+
+**What happens if you skip step 2**: The workflow runs `npm run build` from whatever is on `main`. If your local changes aren't pushed, the workflow builds old code and deploys it to `gh-pages`, wiping out your local deploy. This has caused issues multiple times — **NEVER skip the push to main.**
 
 ### Merge Conflict Handling
 
