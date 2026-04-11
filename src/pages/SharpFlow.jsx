@@ -686,14 +686,22 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v10';
+    const cacheKey = 'sharpFlow_pnl_v11';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < 30 * 60 * 1000 && data.picks) return data;
     }
-    const mlSnap = await getDocs(collection(db, 'sharpFlowPicks'));
-    const combinedDocs = { docs: mlSnap.docs, forEach(fn) { this.docs.forEach(fn); } };
+    const [mlSnap, spreadSnap, totalSnap] = await Promise.all([
+      getDocs(collection(db, 'sharpFlowPicks')),
+      getDocs(collection(db, 'sharpFlowSpreads')),
+      getDocs(collection(db, 'sharpFlowTotals')),
+    ]);
+    const allDocs = [];
+    mlSnap.forEach(d => allDocs.push({ ...d.data(), _marketType: 'ml' }));
+    spreadSnap.forEach(d => allDocs.push({ ...d.data(), _marketType: 'spread' }));
+    totalSnap.forEach(d => allDocs.push({ ...d.data(), _marketType: 'total' }));
+    const combinedDocs = { docs: mlSnap.docs, forEach(fn) { allDocs.forEach(item => fn({ data: () => item })); } };
     const overall = tallySides(combinedDocs);
     const snap = combinedDocs;
 
@@ -704,6 +712,7 @@ async function loadAllTimePnL() {
     const STARS_LIVE_DATE = '2026-03-26';
     snap.forEach(d => {
       const data = d.data();
+      const mt = data._marketType || data.marketType || 'ml';
       const isPostDeploy = data.date >= STARS_LIVE_DATE;
       const processSide = (sd) => {
         const bestSnap = sd.peak || sd.lock;
@@ -724,7 +733,7 @@ async function loadAllTimePnL() {
           const lkStars = lockSnap?.stars ?? 0;
           const lkEV = lockSnap?.evEdge ?? null;
           const pkEV = bestSnap?.evEdge ?? null;
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null };
+          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
@@ -750,7 +759,7 @@ async function loadAllTimePnL() {
         }
         const pickStars = isPostDeploy ? (data.stars ?? 0) : s;
         if (pickStars >= 2.5) {
-          const pick = { date: data.date, sport: data.sport || 'NHL', stars: pickStars, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
+          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, units: u, status: data.status || 'PENDING', outcome: null, profit: 0 };
           if (data.status === 'COMPLETED') {
             pick.outcome = data.result?.outcome || null;
             if (data.result?.outcome === 'WIN') { pick.profit = data.result?.profit || 0; }
@@ -5211,6 +5220,7 @@ export default function SharpFlow() {
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
   const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
   const [perfSport, setPerfSport] = useState('ALL');
+  const [perfMarket, setPerfMarket] = useState('all');
   const [perfGrowth, setPerfGrowth] = useState('all');
   const [picksLoaded, setPicksLoaded] = useState(false);
   const [userPicks, setUserPicks] = useState({});
@@ -5293,6 +5303,7 @@ export default function SharpFlow() {
     }
     const filtered = rawPicks.filter(p => {
       if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
+      if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
       if (perfGrowth === 'topPick') {
         const delta = (p.lockStars != null && p.stars != null) ? p.stars - p.lockStars : 0;
         if (delta < 1.0) return false;
@@ -5332,7 +5343,7 @@ export default function SharpFlow() {
       pregame: { wins, losses, pushes, totalProfit: +totalProfit.toFixed(2), totalUnits, record: `${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}` },
       byStars,
     };
-  }, [allTimePnL, perfDateRange, perfSport, perfGrowth]);
+  }, [allTimePnL, perfDateRange, perfSport, perfMarket, perfGrowth]);
 
   const allGames = useMemo(
     () => (polyData || kalshiData) ? buildGameData(polyData, kalshiData) : [],
@@ -5956,7 +5967,7 @@ export default function SharpFlow() {
               const winPct = totalGraded > 0 ? ((pnl.wins / totalGraded) * 100).toFixed(1) : '0.0';
               const roi = pnl.totalUnits > 0 ? ((pnl.totalProfit / pnl.totalUnits) * 100).toFixed(1) : '0.0';
               const stars = fp?.byStars || {};
-              const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL' || perfGrowth !== 'all';
+              const isFiltered = perfDateRange !== 'all' || perfSport !== 'ALL' || perfMarket !== 'all' || perfGrowth !== 'all';
               const dateLabels = { today: 'Today', yesterday: 'Yesterday', '7d': 'Last 7 Days', '30d': 'Last 30 Days', all: 'All Time' };
               const growthLabels = { all: '', topPick: ' · ▲ Top Pick' };
 
@@ -6037,6 +6048,22 @@ export default function SharpFlow() {
                               border: perfSport === opt.id ? `1px solid ${opt.color}33` : `1px solid ${B.border}`,
                               background: perfSport === opt.id ? `${opt.color}18` : 'transparent',
                               color: perfSport === opt.id ? opt.color : B.textMuted,
+                              transition: 'all 0.2s ease',
+                            }}>{opt.label}</button>
+                          ))}
+                          <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                          {[
+                            { id: 'all', label: 'All Markets' },
+                            { id: 'ml', label: 'ML' },
+                            { id: 'spread', label: 'Spread' },
+                            { id: 'total', label: 'Total' },
+                          ].map(opt => (
+                            <button key={opt.id} onClick={() => setPerfMarket(opt.id)} style={{
+                              padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                              ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                              border: perfMarket === opt.id ? `1px solid ${opt.id === 'spread' ? '#8B5CF633' : opt.id === 'total' ? '#F59E0B33' : B.goldBorder}` : `1px solid ${B.border}`,
+                              background: perfMarket === opt.id ? (opt.id === 'spread' ? 'rgba(139,92,246,0.1)' : opt.id === 'total' ? 'rgba(245,158,11,0.1)' : B.goldDim) : 'transparent',
+                              color: perfMarket === opt.id ? (opt.id === 'spread' ? '#8B5CF6' : opt.id === 'total' ? '#F59E0B' : B.gold) : B.textMuted,
                               transition: 'all 0.2s ease',
                             }}>{opt.label}</button>
                           ))}
@@ -6129,7 +6156,7 @@ export default function SharpFlow() {
                           })}
                         </div>
                         <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.5rem', fontSize: '0.55rem', opacity: 0.6 }}>
-                          {totalGraded} graded picks{isFiltered ? ` · ${dateLabels[perfDateRange]}${perfSport !== 'ALL' ? ` · ${perfSport}` : ''}${growthLabels[perfGrowth]}` : ' since Mar 16'}
+                          {totalGraded} graded picks{isFiltered ? ` · ${dateLabels[perfDateRange]}${perfSport !== 'ALL' ? ` · ${perfSport}` : ''}${perfMarket !== 'all' ? ` · ${perfMarket.toUpperCase()}` : ''}${growthLabels[perfGrowth]}` : ' since Mar 16'}
                         </div>
 
                         <SharpFlowProfitChart picks={(() => {
@@ -6155,6 +6182,7 @@ export default function SharpFlow() {
                         {(() => {
                           const rawP = fp?.pregame ? (filteredPnL ? (allTimePnL?.picks || []).filter(p => {
                             if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
+                            if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
                             if (perfGrowth === 'topPick') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); if (d < 1.0) return false; }
                             else if (perfGrowth === 'golden') { const d = (p.lockStars != null ? p.stars - p.lockStars : 0); const e = (p.peakEV != null && p.lockEV != null ? p.peakEV - p.lockEV : 0); if (d < 1.0 || e <= 0) return false; }
                             if (perfDateRange === 'all') return true;
