@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -22,6 +22,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
+  DollarSign,
+  Award,
+  Calendar,
 } from 'lucide-react';
 
 const MLB_GREEN = '#22C55E';
@@ -41,6 +44,10 @@ const MLB = () => {
   const [sortOrder, setSortOrder] = useState('ev');
   const [showAllGames, setShowAllGames] = useState(false);
   const [error, setError] = useState(null);
+  const [perfData, setPerfData] = useState(null);
+  const [showPerf, setShowPerf] = useState(false);
+  const [perfFilter, setPerfFilter] = useState('all');
+  const [showBetHistory, setShowBetHistory] = useState(false);
 
   const { user } = useAuth();
   const { isPremium } = useSubscription(user);
@@ -53,7 +60,40 @@ const MLB = () => {
 
   useEffect(() => {
     loadMLBData();
+    loadPerfData();
   }, []);
+
+  const loadPerfData = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'mlb_bets'));
+      const graded = [];
+      snap.forEach(d => {
+        const b = d.data();
+        if (b.status !== 'COMPLETED' || !b.result?.outcome) return;
+        if (b.type === 'EVALUATION' || !b.isLocked) return;
+        graded.push({
+          id: d.id,
+          pick: b.bet?.pick || b.prediction?.pick || '?',
+          odds: b.bet?.odds ?? b.prediction?.odds ?? 0,
+          units: b.result?.units || b.bet?.units || b.prediction?.unitSize || 1,
+          outcome: b.result.outcome,
+          profit: b.result?.profit ?? 0,
+          grade: b.prediction?.grade || b.bet?.grade || '?',
+          date: b.date || '',
+          ev: b.prediction?.ev ?? b.bet?.ev ?? 0,
+          away: b.game?.awayTeam || '',
+          home: b.game?.homeTeam || '',
+          awayScore: b.result?.awayScore,
+          homeScore: b.result?.homeScore,
+          timestamp: b.createdAt || b.lastUpdatedAt || 0,
+        });
+      });
+      graded.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setPerfData(graded);
+    } catch (err) {
+      console.warn('Could not load MLB performance data:', err.message);
+    }
+  };
 
   const loadMLBData = async () => {
     try {
@@ -219,6 +259,49 @@ const MLB = () => {
   const dedupedPicksCount = dedupedPicks.length;
   const dedupedGamesCount = dedupedEvals.length;
 
+  const perfStats = useMemo(() => {
+    if (!perfData || perfData.length === 0) return null;
+    const now = new Date();
+    const todayET = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const todayStr = `${todayET.getFullYear()}-${String(todayET.getMonth() + 1).padStart(2, '0')}-${String(todayET.getDate()).padStart(2, '0')}`;
+    const yesterdayET = new Date(todayET); yesterdayET.setDate(yesterdayET.getDate() - 1);
+    const yestStr = `${yesterdayET.getFullYear()}-${String(yesterdayET.getMonth() + 1).padStart(2, '0')}-${String(yesterdayET.getDate()).padStart(2, '0')}`;
+    const weekAgo = new Date(todayET); weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
+
+    let filtered = perfData;
+    if (perfFilter === 'today') filtered = perfData.filter(p => p.date === todayStr);
+    else if (perfFilter === 'yesterday') filtered = perfData.filter(p => p.date === yestStr);
+    else if (perfFilter === 'week') filtered = perfData.filter(p => p.date >= weekStr);
+
+    const wins = filtered.filter(p => p.outcome === 'WIN').length;
+    const losses = filtered.filter(p => p.outcome === 'LOSS').length;
+    const graded = wins + losses;
+    const winRate = graded > 0 ? (wins / graded) * 100 : 0;
+    const unitsWon = filtered.reduce((s, p) => s + (p.profit || 0), 0);
+    const totalRisked = filtered.reduce((s, p) => s + (p.units || 1), 0);
+    const roi = totalRisked > 0 ? (unitsWon / totalRisked) * 100 : 0;
+
+    const byGrade = {};
+    filtered.forEach(p => {
+      const g = p.grade || '?';
+      if (!byGrade[g]) byGrade[g] = { wins: 0, losses: 0, profit: 0 };
+      if (p.outcome === 'WIN') byGrade[g].wins++;
+      else byGrade[g].losses++;
+      byGrade[g].profit += p.profit || 0;
+    });
+
+    const sorted = [...perfData].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const last5 = sorted.slice(-5).reduce((s, p) => s + (p.profit || 0), 0);
+    const last10 = sorted.slice(-10).reduce((s, p) => s + (p.profit || 0), 0);
+    const last20 = sorted.slice(-20).reduce((s, p) => s + (p.profit || 0), 0);
+    let bestRecent = { period: 'L5', profit: last5 };
+    if (last10 > bestRecent.profit) bestRecent = { period: 'L10', profit: last10 };
+    if (last20 > bestRecent.profit) bestRecent = { period: 'L20', profit: last20 };
+
+    return { wins, losses, graded, winRate, unitsWon, roi, totalRisked, byGrade, bestRecent, filtered };
+  }, [perfData, perfFilter]);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -318,6 +401,234 @@ const MLB = () => {
             <StatBox label="A Grades" value={aGrades} icon={Shield} color="#3B82F6" isMobile={isMobile} />
           </div>
         </div>
+
+        {/* Performance Dashboard */}
+        {perfStats && (
+          <div style={{
+            marginBottom: '1.25rem',
+            background: 'linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.7) 50%, rgba(15,23,42,0.9) 100%)',
+            border: `1px solid ${MLB_GREEN}25`,
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 40px ${MLB_GREEN}08`,
+          }}>
+            {/* Dashboard Header - clickable toggle */}
+            <button
+              onClick={() => setShowPerf(!showPerf)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isMobile ? '1rem' : '1.25rem 1.5rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#F1F5F9',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  background: `linear-gradient(135deg, ${MLB_GREEN}25, ${MLB_GREEN}10)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <TrendingUp size={18} style={{ color: MLB_GREEN }} />
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: '800', fontSize: isMobile ? '0.938rem' : '1.063rem', letterSpacing: '-0.02em' }}>
+                    Model Performance
+                  </div>
+                  <div style={{ fontSize: '0.688rem', color: 'rgba(255,255,255,0.4)', fontWeight: '600', marginTop: '1px' }}>
+                    {perfFilter === 'all' ? 'All Time' : perfFilter === 'today' ? 'Today' : perfFilter === 'yesterday' ? 'Yesterday' : 'This Week'} &bull; {perfStats.graded} Graded Picks
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{
+                  fontSize: isMobile ? '1rem' : '1.125rem',
+                  fontWeight: '800',
+                  fontFamily: 'monospace',
+                  color: perfStats.unitsWon >= 0 ? '#10B981' : '#EF4444',
+                }}>
+                  {perfStats.unitsWon >= 0 ? '+' : ''}{perfStats.unitsWon.toFixed(2)}u
+                </span>
+                <ChevronDown
+                  size={18}
+                  style={{
+                    color: 'rgba(255,255,255,0.4)',
+                    transition: 'transform 0.3s ease',
+                    transform: showPerf ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </div>
+            </button>
+
+            {showPerf && (
+              <div style={{ padding: isMobile ? '0 1rem 1rem' : '0 1.5rem 1.5rem' }}>
+                {/* Time period filters */}
+                <div style={{
+                  display: 'flex', gap: '0.5rem', marginBottom: '1rem',
+                  flexWrap: 'wrap',
+                }}>
+                  {[
+                    { id: 'all', label: 'All Time' },
+                    { id: 'today', label: 'Today' },
+                    { id: 'yesterday', label: 'Yesterday' },
+                    { id: 'week', label: 'This Week' },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setPerfFilter(f.id)}
+                      style={{
+                        padding: '0.375rem 0.875rem',
+                        borderRadius: '8px',
+                        fontSize: '0.688rem',
+                        fontWeight: '700',
+                        border: perfFilter === f.id ? `1px solid ${MLB_GREEN}50` : '1px solid rgba(255,255,255,0.08)',
+                        background: perfFilter === f.id
+                          ? `linear-gradient(135deg, ${MLB_GREEN}20 0%, ${MLB_GREEN}08 100%)`
+                          : 'rgba(255,255,255,0.03)',
+                        color: perfFilter === f.id ? MLB_GREEN : 'rgba(255,255,255,0.5)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Stat cards grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                  gap: isMobile ? '0.75rem' : '1rem',
+                  marginBottom: '1rem',
+                }}>
+                  <PerfStatCard icon={<Target size={18} />} value={perfStats.graded} label="Graded Bets" color="rgba(255,255,255,0.9)" isMobile={isMobile} />
+                  <PerfStatCard icon={<BarChart3 size={18} />} value={`${perfStats.wins}-${perfStats.losses}`} label="Record" color="#10B981" isMobile={isMobile} />
+                  <PerfStatCard icon={<Award size={18} />} value={`${perfStats.winRate.toFixed(1)}%`} label="Win Rate" color="#10B981" highlight={perfStats.winRate >= 55} isMobile={isMobile} />
+                  <PerfStatCard icon={<DollarSign size={18} />} value={`${perfStats.unitsWon >= 0 ? '+' : ''}${perfStats.unitsWon.toFixed(2)}u`} label="Units Won" color={perfStats.unitsWon >= 0 ? '#10B981' : '#EF4444'} highlight isMobile={isMobile} />
+                  <PerfStatCard icon={<TrendingUp size={18} />} value={`${perfStats.roi >= 0 ? '+' : ''}${perfStats.roi.toFixed(1)}%`} label="ROI" color={perfStats.roi >= 0 ? '#10B981' : '#EF4444'} highlight={perfStats.roi >= 5} isMobile={isMobile} />
+                  <PerfStatCard icon={<Calendar size={18} />} value={`${perfStats.bestRecent.profit >= 0 ? '+' : ''}${perfStats.bestRecent.profit.toFixed(2)}u`} label={`${perfStats.bestRecent.period} Best`} color={perfStats.bestRecent.profit >= 0 ? '#10B981' : '#EF4444'} highlight={perfStats.bestRecent.profit >= 2} isMobile={isMobile} />
+                </div>
+
+                {/* Grade breakdown */}
+                {Object.keys(perfStats.byGrade).length > 0 && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${Math.min(Object.keys(perfStats.byGrade).length, 4)}, 1fr)`,
+                    gap: '0.75rem',
+                    marginBottom: '1rem',
+                  }}>
+                    {['A', 'B', 'C', 'D'].filter(g => perfStats.byGrade[g]).map(g => {
+                      const d = perfStats.byGrade[g];
+                      const wr = (d.wins + d.losses) > 0 ? ((d.wins / (d.wins + d.losses)) * 100).toFixed(0) : '0';
+                      const gc = g === 'A' ? '#10B981' : g === 'B' ? '#3B82F6' : g === 'C' ? '#F59E0B' : '#EF4444';
+                      return (
+                        <div key={g} style={{
+                          background: `linear-gradient(135deg, ${gc}10 0%, ${gc}05 100%)`,
+                          border: `1px solid ${gc}25`,
+                          borderRadius: '10px',
+                          padding: isMobile ? '0.625rem' : '0.75rem',
+                          textAlign: 'center',
+                        }}>
+                          <div style={{ fontSize: '0.625rem', fontWeight: '700', color: gc, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
+                            Grade {g}
+                          </div>
+                          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#F1F5F9', fontFamily: 'monospace' }}>
+                            {d.wins}-{d.losses}
+                          </div>
+                          <div style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.125rem' }}>
+                            {wr}% &bull; {d.profit >= 0 ? '+' : ''}{d.profit.toFixed(2)}u
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Bet History toggle */}
+                <button
+                  onClick={() => setShowBetHistory(!showBetHistory)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    color: '#F1F5F9',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Activity size={14} style={{ color: MLB_GREEN }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '700' }}>Bet History</span>
+                    <span style={{
+                      fontSize: '0.625rem', fontWeight: '700', color: 'rgba(255,255,255,0.4)',
+                      background: 'rgba(255,255,255,0.06)', padding: '0.125rem 0.5rem', borderRadius: '6px',
+                    }}>{perfStats.filtered.length} picks</span>
+                  </div>
+                  <ChevronDown size={14} style={{
+                    color: 'rgba(255,255,255,0.4)',
+                    transition: 'transform 0.3s ease',
+                    transform: showBetHistory ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }} />
+                </button>
+
+                {showBetHistory && (
+                  <div style={{ marginTop: '0.75rem', maxHeight: '400px', overflowY: 'auto' }}>
+                    {perfStats.filtered.map((p, i) => {
+                      const isWin = p.outcome === 'WIN';
+                      return (
+                        <div key={p.id || i} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '0.625rem 0.75rem',
+                          borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#F1F5F9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {p.pick}
+                            </div>
+                            <div style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', marginTop: '1px' }}>
+                              {p.date} &bull; {p.odds > 0 ? `+${p.odds}` : p.odds} &bull; {p.units.toFixed(1)}u
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{
+                              fontSize: '0.625rem', fontWeight: '700', padding: '0.125rem 0.375rem',
+                              borderRadius: '4px', background: `${getGradeColorScale(p.grade)}20`,
+                              color: getGradeColorScale(p.grade),
+                            }}>{p.grade}</span>
+                            <span style={{
+                              fontSize: '0.75rem', fontWeight: '800', fontFamily: 'monospace',
+                              color: isWin ? '#10B981' : '#EF4444',
+                              minWidth: '50px', textAlign: 'right',
+                            }}>
+                              {isWin ? '+' : ''}{p.profit.toFixed(2)}u
+                            </span>
+                            <span style={{
+                              fontSize: '0.563rem', fontWeight: '800', padding: '0.125rem 0.375rem',
+                              borderRadius: '4px',
+                              background: isWin ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                              color: isWin ? '#10B981' : '#EF4444',
+                            }}>
+                              {isWin ? 'W' : 'L'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Sort controls */}
         <div style={{
@@ -471,6 +782,47 @@ const MLB = () => {
 
 
 // ─── Stat Box ───────────────────────────────────────────────────────────────
+function PerfStatCard({ icon, value, label, color, highlight = false, isMobile }) {
+  return (
+    <div style={{
+      background: highlight
+        ? `linear-gradient(135deg, ${color}12 0%, ${color}06 100%)`
+        : 'linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(30,41,59,0.6) 50%, rgba(15,23,42,0.8) 100%)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      border: highlight ? `1px solid ${color}30` : '1px solid rgba(255,255,255,0.06)',
+      borderRadius: isMobile ? '10px' : '12px',
+      padding: isMobile ? '0.75rem' : '1rem',
+      textAlign: 'center',
+      boxShadow: highlight
+        ? `0 4px 16px rgba(0,0,0,0.4), 0 0 20px ${color}15`
+        : '0 2px 8px rgba(0,0,0,0.3)',
+    }}>
+      <div style={{
+        width: '28px', height: '28px', borderRadius: '8px',
+        background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 0.375rem',
+        color,
+      }}>
+        {icon}
+      </div>
+      <div style={{
+        fontSize: isMobile ? '1.125rem' : '1.25rem',
+        fontWeight: '800', color: color === 'rgba(255,255,255,0.9)' ? '#F1F5F9' : color,
+        fontFeatureSettings: "'tnum'", fontFamily: 'monospace', lineHeight: 1.2,
+      }}>
+        {value}
+      </div>
+      <div style={{
+        fontSize: '0.563rem', fontWeight: '700', color: 'rgba(255,255,255,0.35)',
+        textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '0.25rem',
+      }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
 function StatBox({ label, value, icon: Icon, color, isMobile }) {
   return (
     <div style={{
