@@ -3,7 +3,7 @@ name: Fetch MLB Picks
 on:
   workflow_dispatch: # Manual trigger
   schedule:
-    - cron: '0 19 * * *' # 3:00 PM ET (19:00 UTC) daily — after pitchers announced
+    - cron: '0 15 * * *' # 11:00 AM ET (15:00 UTC) daily
 
 jobs:
   fetch-mlb-picks:

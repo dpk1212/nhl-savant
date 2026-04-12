@@ -327,11 +327,12 @@ function gameDate(commenceTime) {
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition) {
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
   if (opposition) snapshot.opposition = opposition;
+  if (walletProfile) snapshot.walletProfile = walletProfile;
   return {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -343,7 +344,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
 }
 
-async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition }) {
+async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}`;
@@ -360,7 +361,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition);
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
@@ -394,6 +395,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (opposition) peakData.opposition = opposition;
+        if (walletProfile) peakData.walletProfile = walletProfile;
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
         await setDoc(ref, mergeData, { merge: true });
@@ -454,10 +456,11 @@ async function syncPregameSnapshot({ docId, side, snapshot }) {
 
 // ─── Spread/Total Firebase Sync ───────────────────────────────────────────────
 
-function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars) {
+function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
+  if (walletProfile) snapshot.walletProfile = walletProfile;
   return {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -469,7 +472,7 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   };
 }
 
-async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
+async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_spread`;
@@ -485,7 +488,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'spread', lockType: 'PREGAME',
@@ -513,6 +516,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       if (bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        if (walletProfile) peakData.walletProfile = walletProfile;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         await setDoc(ref, mergeObj, { merge: true });
@@ -533,7 +537,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     if (stars <= existingBestStars) {
       return { docId, action: 'no_change' };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -546,7 +550,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
   }
 }
 
-async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars }) {
+async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_total`;
@@ -562,7 +566,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'total', lockType: 'PREGAME',
@@ -590,6 +594,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       if (bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
+        if (walletProfile) peakData.walletProfile = walletProfile;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         await setDoc(ref, mergeObj, { merge: true });
@@ -610,7 +615,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     if (stars <= existingBestStars) {
       return { docId, action: 'no_change' };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -3395,6 +3400,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         counterSharpScore: sharpFeatures.counterSharpScore,
         consensusTier: oppSharpFeatures.consensusTier,
       },
+      walletProfile: {
+        breadth: +(sharpFeatures.breadth || 0).toFixed(3),
+        conviction: +(sharpFeatures.conviction || 0).toFixed(3),
+        concentration: +(sharpFeatures.concentration || 0).toFixed(3),
+        counterSharpScore: sharpFeatures.counterSharpScore || 0,
+        sportSharpCount: sharpFeatures.sportSharpCount || 0,
+        dominantTier: sharpFeatures.dominantTier || null,
+        conWalletCount: sharpFeatures.conWalletCount || 0,
+        oppWalletCount: sharpFeatures.oppWalletCount || 0,
+        consensusTier: sharpFeatures.consensusTier || 'LEAN',
+      },
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
@@ -3514,6 +3530,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       totalInvested: spreadSharpFeatures?.conTotalInvested || 0,
       units: spreadUnits, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' },
       stars: spreadSr.stars,
+      walletProfile: spreadSharpFeatures ? {
+        breadth: +(spreadSharpFeatures.breadth || 0).toFixed(3),
+        conviction: +(spreadSharpFeatures.conviction || 0).toFixed(3),
+        concentration: +(spreadSharpFeatures.concentration || 0).toFixed(3),
+        counterSharpScore: spreadSharpFeatures.counterSharpScore || 0,
+        sportSharpCount: spreadSharpFeatures.sportSharpCount || 0,
+        dominantTier: spreadSharpFeatures.dominantTier || null,
+        conWalletCount: spreadSharpFeatures.conWalletCount || 0,
+        oppWalletCount: spreadSharpFeatures.oppWalletCount || 0,
+        consensusTier: spreadSharpFeatures.consensusTier || 'LEAN',
+      } : null,
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedSpreadStars.current = spreadSr.stars;
@@ -3593,6 +3620,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       totalInvested: totalSharpFeatures?.conTotalInvested || 0,
       units: totalUnits, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' },
       stars: totalSr.stars,
+      walletProfile: totalSharpFeatures ? {
+        breadth: +(totalSharpFeatures.breadth || 0).toFixed(3),
+        conviction: +(totalSharpFeatures.conviction || 0).toFixed(3),
+        concentration: +(totalSharpFeatures.concentration || 0).toFixed(3),
+        counterSharpScore: totalSharpFeatures.counterSharpScore || 0,
+        sportSharpCount: totalSharpFeatures.sportSharpCount || 0,
+        dominantTier: totalSharpFeatures.dominantTier || null,
+        conWalletCount: totalSharpFeatures.conWalletCount || 0,
+        oppWalletCount: totalSharpFeatures.oppWalletCount || 0,
+        consensusTier: totalSharpFeatures.consensusTier || 'LEAN',
+      } : null,
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedTotalStars.current = totalSr.stars;
