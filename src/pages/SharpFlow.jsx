@@ -96,7 +96,7 @@ function tierInfo(amt) {
 
 const TIER_WEIGHT = { ELITE: 3, SHARP: 2, PROVEN: 1.5, ACTIVE: 1 };
 
-// ─── V7 Frozen Population Stats (extracted from 411-pick dataset 2026-04-06) ──
+// ─── V7 Frozen Population Stats (extracted from 411-pick dataset, two-sided overlay 2026-04-06) ──
 const V7_STATS = {
   avgBet:    { mean: 4162.2509, std: 7251.2948, lo: 216, hi: 24028.625 },
   invested:  { mean: 27502.2117, std: 57067.398, lo: 693.25, hi: 169147 },
@@ -106,7 +106,11 @@ const V7_STATS = {
   sharpCount:{ mean: 5.6375, std: 3.3849 },
   qp:        { mean: 1.8273, std: 1.9919 },
   liveCLV:   { mean: 0.0002, std: 0.0303 },
-  thresholds: { p15: -8.9556, p30: -4.0724, p50: 1.123, p75: 4.942, p87: 6.8392, p93: 8.5412, p97: 12.2468 },
+  moneyEdge: { mean: 1.6817, std: 1.3664 },
+  sharpEdge: { mean: 1.3601, std: 0.7109 },
+  mktDominance: { mean: 1.5531, std: 0.9004 },
+  againstSC: { mean: 0.9197, std: 1.6243 },
+  thresholds: { p15: -10.5783, p30: -5.6661, p50: 0.8229, p75: 7.1263, p87: 8.8538, p93: 10.36, p97: 13.1826 },
 };
 
 function v7Winsorize(val, lo, hi) { return Math.max(lo, Math.min(hi, val)); }
@@ -280,6 +284,7 @@ function rateStarsV7({
   pinnCurrentOdds = null,
   pinnMoveSize = 0,
   timeToGame = null,
+  oppSharpCount = 0,
 } = {}) {
   const avgBet = sharpCount > 0 ? totalInvested / sharpCount : 0;
   const avgBet_w = v7Winsorize(avgBet, V7_STATS.avgBet.lo, V7_STATS.avgBet.hi);
@@ -292,6 +297,19 @@ function rateStarsV7({
   const walletPct_z = v7Z(walletPct, V7_STATS.walletPct.mean, V7_STATS.walletPct.std);
   const counterSharp_z = v7Z(counterSharpScore, V7_STATS.counter.mean, V7_STATS.counter.std);
   const sharpCount_z = v7Z(sc_capped, V7_STATS.sharpCount.mean, V7_STATS.sharpCount.std);
+
+  // Two-sided features
+  const againstMoneyPct = 100 - moneyPct;
+  const moneyEdge = Math.log((moneyPct + 1) / (againstMoneyPct + 1));
+  const sharpEdgeVal = Math.log((sharpCount + 1) / (oppSharpCount + 1));
+  const mktDom = 0.6 * moneyEdge + 0.4 * sharpEdgeVal;
+
+  const moneyEdge_z = v7Z(moneyEdge, V7_STATS.moneyEdge.mean, V7_STATS.moneyEdge.std);
+  const mktDom_z = v7Z(mktDom, V7_STATS.mktDominance.mean, V7_STATS.mktDominance.std);
+  const againstSC_z = v7Z(Math.min(oppSharpCount, 6), V7_STATS.againstSC.mean, V7_STATS.againstSC.std);
+
+  const hasBothSides = oppSharpCount > 0 && sharpCount > 0;
+  const disagreement = hasBothSides && Math.sign(moneyEdge) !== Math.sign(sharpEdgeVal) ? 1 : 0;
 
   const qp = v7QualityProxy({
     moneyPct, sharpCount, avgBet, counterSharp: counterSharpScore,
@@ -338,15 +356,17 @@ function rateStarsV7({
     clvInput = liveCLV_z;
   }
 
-  // Raw score: lock formula vs update formula
+  // Raw score: lock formula vs update formula (with two-sided overlay)
   const hasLiveData = regime !== 'NO_MOVE' && liveCLV_z != null;
   const rawScore = hasLiveData
     ? 3.0 * moneyPct_z + 2.0 * clvInput + 1.5 * avgBet_z + 1.2 * invested_z
       + 0.8 * sharpCount_z + 0.6 * pinnConditional + 0.4 * evConditional
       - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions
+      + 1.00 * moneyEdge_z + 0.40 * mktDom_z - 1.00 * disagreement
     : 3.0 * moneyPct_z + 1.5 * avgBet_z + 1.2 * invested_z + 1.0 * qp_z
       + 0.8 * sharpCount_z + 0.6 * pinnConditional + 0.4 * evConditional
-      - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions;
+      - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions
+      + 1.25 * moneyEdge_z + 0.50 * mktDom_z - 1.25 * disagreement - 0.50 * againstSC_z;
 
   // Map raw score to stars using frozen thresholds (p75 = 3.5-star)
   const t = V7_STATS.thresholds;
@@ -360,6 +380,15 @@ function rateStarsV7({
   if (odds != null && odds >= 200) stars = Math.min(stars, 3);
   else if (odds != null && odds >= 151) stars = Math.min(stars, 3.5);
   if (sport === 'NBA' && odds != null && odds >= 100) stars = Math.min(stars, 3.5);
+
+  // Middle-tier two-sided gates
+  if (disagreement && stars >= 4 && qp < 2) stars = 3.5;
+  if (stars >= 2.5 && stars <= 3.5 && moneyEdge_z <= -0.50) {
+    stars = Math.max(1, stars - 0.5);
+  }
+  if (stars >= 2.5 && stars <= 3.5 && moneyEdge_z >= 0.75 && contradictions === 0) {
+    stars = Math.min(5, stars + 0.5);
+  }
 
   const labels = {
     5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Maximum conviction — all signals aligned' },
@@ -3289,6 +3318,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     moneyPct: 100 - moneyPct, walletPct: 100 - walletPct,
     sharpCount: oppSharpFeatures.conWalletCount, totalInvested: oppSharpFeatures.conTotalInvested,
     lockOdds: null, pinnCurrentOdds: null, pinnMoveSize: 0, timeToGame: null,
+    oppSharpCount: sharpFeatures.conWalletCount,
   });
   const oppPeakStars = oppSr.stars;
 
@@ -3327,6 +3357,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pinnCurrentOdds,
     pinnMoveSize: (pinnCurrentProb && pinnOpenProb) ? Math.abs(pinnCurrentProb - pinnOpenProb) : 0,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
+    oppSharpCount: oppSharpFeatures.conWalletCount,
   });
   const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
   if (isExtremeOdds) return null;
@@ -3475,6 +3506,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     moneyPct: spreadSharpFeatures.conMoneyPct ?? 50, walletPct: spreadSharpFeatures.conWalletPct ?? 50,
     sharpCount: spreadSharpFeatures.conWalletCount || 0, totalInvested: spreadSharpFeatures.conTotalInvested || 0,
     lockOdds: null, pinnCurrentOdds: spreadPinnOdds, pinnMoveSize: 0, timeToGame: null,
+    oppSharpCount: spreadSharpFeatures.oppWalletCount || 0,
   }) : null;
 
   const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
@@ -3569,6 +3601,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     moneyPct: totalSharpFeatures.conMoneyPct ?? 50, walletPct: totalSharpFeatures.conWalletPct ?? 50,
     sharpCount: totalSharpFeatures.conWalletCount || 0, totalInvested: totalSharpFeatures.conTotalInvested || 0,
     lockOdds: null, pinnCurrentOdds: totalPinnOdds, pinnMoveSize: 0, timeToGame: null,
+    oppSharpCount: totalSharpFeatures.oppWalletCount || 0,
   }) : null;
 
   const isTotalLocked = totalSr && totalSr.stars >= 2.5
@@ -6388,6 +6421,7 @@ export default function SharpFlow() {
                     moneyPct: oMoneyPct, walletPct: oWalletPct,
                     sharpCount: osf.conWalletCount, totalInvested: osf.conTotalInvested,
                     lockOdds: null, pinnCurrentOdds: null, pinnMoveSize: 0, timeToGame: null,
+                    oppSharpCount: sf.conWalletCount,
                   });
 
                   const sortFlowGame = gameFlowMap?.[`${sport}_${key}`];
@@ -6414,6 +6448,7 @@ export default function SharpFlow() {
                     moneyPct: sortMoneyPct, walletPct: sortWalletPct,
                     sharpCount: sf.conWalletCount, totalInvested: sf.conTotalInvested,
                     lockOdds: null, pinnCurrentOdds: null, pinnMoveSize: 0, timeToGame: null,
+                    oppSharpCount: osf.conWalletCount,
                   });
 
                   if (sortBy === 'locked') continue;
