@@ -1,0 +1,45 @@
+name: V7 Daily Performance Report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * *' # 8:00 AM ET (12:00 UTC) daily
+
+jobs:
+  report:
+    name: Generate V7 Daily Report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate V7 report
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  V7 DAILY PERFORMANCE REPORT"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/dailyV7Report.js
+
+      - name: Commit report
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add DAILY_V7_REPORT.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: V7 Daily Report [$(TZ='America/New_York' date +'%Y-%m-%d')]" && git pull --rebase origin main && git push)

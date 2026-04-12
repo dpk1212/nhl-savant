@@ -1,4 +1,4 @@
-# Sharp Flow — Star Rating V6, Bet Recommendation & Unit Sizing System
+# Sharp Flow — Star Rating V7 (Two-Stage + Two-Sided Overlay)
 
 ## Overview
 
@@ -11,199 +11,233 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 ---
 
-## The Star Rating Model (V6)
+## Version History
 
-Every play is scored using a **proprietary weighted signal model** that evaluates multiple dimensions of sharp activity, market pricing, and directional momentum. The model decomposes consensus into **breadth**, **conviction**, and **concentration**, and includes **counter-sharp detection**, **RLM interaction**, **CLV tracking**, **conditional context signals**, and **sport-specific adjustments**.
+| Version | Date | Key Changes |
+|---------|------|-------------|
+| **V7 + Two-Sided Overlay** | 2026-04-06 | Two-stage architecture (lock + update formulas), live CLV blending, `qualityProxy` replaces `predictedCLV`, compressed 1–3u ML scale, two-sided features (moneyEdge, marketDominance, signalDisagreement), middle-tier gates |
+| V6 | 2026-04-11 (pre-V7) | Trimmed breadth, bumped conviction, conditional Pinnacle, sport-specific bonuses |
 
-### V6 Changes (2026-04-11)
+---
 
-1. **Trimmed breadth ceiling** — max 2.5pts (was 3). Mid-range bumped. Prevents crowded boards from auto-inflating stars while keeping healthy consensus strong.
-2. **Bumped conviction** — max 2.5pts (was 1.5). Added 0.6 tier. Rewards "fewer, stronger wallets" — the #1 independent predictive signal in the deep audit.
-3. **Conditional Pinnacle** — full bonus only on borderline plays (LEAN/CONTESTED consensus), halved on STRONG/DOMINANT. Audit showed "No Pinn" outperformed "Pinn confirms" at every breadth level.
-4. **Sport-specific bonuses** — MLB gets broader consensus bonus (5-7+ wallets). NHL/CBB get specialist-group bonus (sport-verified sharps in tight groups). NBA gets no bonus (weak across the board).
+## The Star Rating Model (V7)
 
-### Signal Weights (max ~15 points, normalized to 0.5–5.0 stars)
+V7 replaces the V6 point-based system with a **weighted z-score model** using frozen population statistics. All continuous features are winsorized and standardized against a frozen 411-pick dataset. The raw score is mapped to stars using fixed percentile thresholds.
 
-| Signal | Max Points | Notes |
+### Two-Stage Architecture
+
+V7 uses two distinct scoring formulas depending on market state:
+
+1. **Lock formula** — used when no Pinnacle movement has been observed (initial rating)
+2. **Update formula** — used when live Pinnacle movement provides real market evidence
+
+The key insight: `qualityProxy` (formerly `predictedCLV`) is a decent win-rate proxy but a poor CLV predictor. Real Pinnacle movement (`liveCLV`) is a strong CLV predictor. So the system uses `qualityProxy` as a prior at lock time, then progressively replaces it with `liveCLV` as market evidence arrives.
+
+### Frozen Population Statistics (`V7_STATS`)
+
+All z-scoring uses frozen means and standard deviations extracted from the historical dataset. This prevents the scoring distribution from shifting as new picks are added.
+
+```javascript
+V7_STATS = {
+  avgBet:       { mean: 4162.25, std: 7251.29, lo: 216, hi: 24028.63 },
+  invested:     { mean: 27502.21, std: 57067.40, lo: 693.25, hi: 169147 },
+  moneyPct:     { mean: 78.17, std: 15.90 },
+  walletPct:    { mean: 62.82, std: 16.29 },
+  counter:      { mean: 21.72, std: 15.93 },
+  sharpCount:   { mean: 5.64, std: 3.38 },
+  qp:           { mean: 1.83, std: 1.99 },
+  liveCLV:      { mean: 0.0002, std: 0.0303 },
+  moneyEdge:    { mean: 1.68, std: 1.37 },
+  sharpEdge:    { mean: 1.36, std: 0.71 },
+  mktDominance: { mean: 1.55, std: 0.90 },
+  againstSC:    { mean: 0.92, std: 1.62 },
+}
+```
+
+Features are winsorized before z-scoring (`avgBet` and `invested` use `lo`/`hi` bounds; `sharpCount` is capped at 6).
+
+---
+
+## Lock Formula (No Market Movement)
+
+Used at initial lock time when no Pinnacle line movement has been observed yet.
+
+```
+rawScore =
+  + 3.00 * moneyPct_z
+  + 1.50 * avgBet_z
+  + 1.20 * invested_z
+  + 1.00 * qualityProxy_z
+  + 0.80 * sharpCount_z
+  + 0.60 * pinnacleConditional
+  + 0.40 * evConditional
+  - 2.50 * counterSharp_z
+  - 1.50 * walletPct_z
+  - 2.00 * contradictionPenalty
+  + 1.25 * moneyEdge_z          ← two-sided overlay
+  + 0.50 * marketDominance_z    ← two-sided overlay
+  - 1.25 * signalDisagreement   ← two-sided overlay
+  - 0.50 * againstSharpCount_z  ← two-sided overlay
+```
+
+### Feature Definitions
+
+| Feature | Description | Weight |
+|---------|-------------|--------|
+| `moneyPct_z` | Consensus money percentage (z-scored) | +3.00 |
+| `avgBet_z` | Average bet per wallet, winsorized + z-scored | +1.50 |
+| `invested_z` | Total invested on consensus side, winsorized + z-scored | +1.20 |
+| `qualityProxy_z` | Rule-based quality score (win-rate proxy, not CLV) | +1.00 |
+| `sharpCount_z` | Sharp count capped at 6, z-scored | +0.80 |
+| `pinnacleConditional` | 1 if Pinnacle confirms AND qualityProxy >= 0 | +0.60 |
+| `evConditional` | 1 if EV edge > 0 AND qualityProxy >= 0 | +0.40 |
+| `counterSharp_z` | Counter-sharp score (z-scored) | -2.50 |
+| `walletPct_z` | Wallet percentage (z-scored) — noisy, penalized | -1.50 |
+| `contradictionPenalty` | Sum of 3 binary flags (0–3) | -2.00 |
+| `moneyEdge_z` | Log ratio of consensus vs opposition money, z-scored | +1.25 |
+| `marketDominance_z` | Composite: 0.6 * moneyEdge + 0.4 * sharpEdge, z-scored | +0.50 |
+| `signalDisagreement` | 1 if money and sharp edge signs conflict (both sides active) | -1.25 |
+| `againstSharpCount_z` | Opposition sharp count (capped at 6), z-scored | -0.50 |
+
+---
+
+## Update Formula (With Live Market Evidence)
+
+Used when Pinnacle line movement has been detected. The CLV input is a time-aware blend of `qualityProxy` and `liveCLV` (see Regime Detection below).
+
+```
+rawScore =
+  + 3.00 * moneyPct_z
+  + 2.00 * clvInput              ← blended CLV signal (replaces qualityProxy_z)
+  + 1.50 * avgBet_z
+  + 1.20 * invested_z
+  + 0.80 * sharpCount_z
+  + 0.60 * pinnacleConditional
+  + 0.40 * evConditional
+  - 2.50 * counterSharp_z
+  - 1.50 * walletPct_z
+  - 2.00 * contradictionPenalty
+  + 1.00 * moneyEdge_z           ← two-sided (lighter)
+  + 0.40 * marketDominance_z     ← two-sided (lighter)
+  - 1.00 * signalDisagreement    ← two-sided (lighter)
+```
+
+No `againstSharpCount_z` in the update formula — liveCLV already subsumes opposition movement pressure.
+
+---
+
+## Two-Sided Features (Overlay)
+
+These features measure **relative strength** between the consensus and opposition sides, not just absolute consensus metrics.
+
+### Computed Inside `rateStarsV7`
+
+```javascript
+againstMoneyPct = 100 - moneyPct
+moneyEdge       = log((moneyPct + 1) / (againstMoneyPct + 1))
+sharpEdgeVal    = log((sharpCount + 1) / (oppSharpCount + 1))
+mktDom          = 0.6 * moneyEdge + 0.4 * sharpEdgeVal
+disagreement    = 1 if both sides have sharps AND sign(moneyEdge) != sign(sharpEdge)
+```
+
+### Why These Features Matter
+
+| Feature | Signal | Analysis Finding |
+|---------|--------|-----------------|
+| **Money Edge** | Relative money dominance | Triple-monotonic: improves WR, ROI, and CLV across quintiles |
+| **Market Dominance** | Composite money + sharp edge | Triple-monotonic, strongest composite signal |
+| **Signal Disagreement** | Money says one thing, sharp count says another | 42.3% WR when present vs 56.7% when absent — strong kill signal |
+| **Against Sharp Count** | Opposition sharp pressure | Penalizes plays facing meaningful opposition |
+
+---
+
+## Regime Detection & CLV Blending
+
+The system detects how much market movement has occurred and blends CLV signals accordingly.
+
+### Regime Rules
+
+| Regime | Conditions | Blend |
 |--------|-----------|-------|
-| **Sharp Breadth** (quality-weighted) | 2.5 pts | Tier-weighted wallet diversity. Flattens past mid-range to prevent crowd inflation. |
-| **Pinnacle Alignment** (conditional) | 2 pts / -1 penalty | Conditional on consensus tier. Full value on borderline plays, halved on strong plays. |
-| **Sharp Conviction** | 2.5 pts | log-dollar per wallet, normalized. Primary signal — 4-tier curve. |
-| **Concentration Penalty** | 0 to -1 pts | When one wallet dominates >80% of consensus money. Softened for ELITE-led with 4+ wallets. |
-| **Counter-Sharp Penalty** | 0 to -3 pts | When ELITE/SHARP-tier wallets are on the opposing side. |
-| **EV Edge** | 3.5 pts max | Steep 4-tier curve. Strongest contextual signal. |
-| **Consensus Strength Bonus** | up to 2 pts | DOMINANT (+2) or STRONG (+1) sharp agreement. |
-| **Prediction Market** (conditional) | up to 1.5 pts | Conditional on consensus tier (LEAN/CONTESTED benefit most). |
-| **RLM Interaction** (ML only) | up to 1.5 pts | Public opposes + line confirms sharps = upgrade. |
-| **Sport-Specific Bonus** | up to 1 pt | MLB broader consensus, NHL/CBB specialist group. |
-| **Sport Specialist Bonus** | up to 1.5 pts | Wallets profitable in this specific sport. |
-| **Implied Probability** | +0.5 / -0.5 pts | Small nudge based on Pinnacle line. |
-| **Flip Penalty** (ML only) | 0 to -2 pts | Opposing side already locked at peak. |
-| **Dog Penalty** | 0 to -2 pts | Long dogs +151/+200 historically lose at high rates. |
-| **NBA Dog Penalty** | -1.5 pts | NBA dogs +100 and above. |
+| `NO_MOVE` | No Pinnacle movement detected | 100% `qualityProxy_z` (lock formula used) |
+| `SMALL_MOVE` | Pinnacle moved but < 2% probability shift | 25% `qualityProxy_z` + 75% `liveCLV_z` |
+| `CLEAR_MOVE` | Pinnacle moved >= 2% probability shift | 10% `qualityProxy_z` + 90% `liveCLV_z` |
+| `NEAR_START` | <= 30 min to game AND >= 1% move | 100% `liveCLV_z` |
+
+### `liveCLV` Computation
+
+```
+liveCLV = impliedProb(pinnCurrentOdds) - impliedProb(lockOdds)
+```
+
+Positive liveCLV means the market has moved in the play's direction since lock — the play is "beating the line."
+
+### `qualityProxy` (formerly `predictedCLV`)
+
+A rule-based score computed from lock-time features only. Renamed because analysis showed it predicts win rate, not CLV. Components:
+
+- Money percentage tiers (+2 / +1 / -1)
+- Sharp count vs avg bet interaction (+1.5 / +0.5)
+- Counter-sharp level (+1 / -1.5)
+- Line movement + Pinnacle confirmation (+1 / +0.5)
+- EV edge direction (+0.5 / -0.5)
+- Sport-specific odds band adjustments (+0.5)
+- Sharp count vs money percentage contradiction (-1)
 
 ---
 
-## Phase 1: Decomposed Consensus — `computeSharpFeatures()`
+## Contradiction Flags
 
-### Net-Position Approach
+Three binary contradiction penalties, each contributing 1 point to `contradictionPenalty`:
 
-Wallets with positions on both sides are handled via net-position: if a wallet has $1K on one side and $500 on the other, the $500 difference counts on the dominant side. This prevents hedgers from being fully excluded while correctly netting out their exposure.
-
-### How it works
-
-`computeSharpFeatures(positions, consensusSide)` computes from raw position data:
-
-- **breadth**: Quality-weighted unique wallet count on consensus side. ELITE=3x, SHARP=2x, PROVEN=1.5x, ACTIVE=1x. Normalized against max possible (if all wallets were ELITE).
-- **conviction**: `log10(avgInvestedPerWallet)` normalized to 0–1. $100 avg = 0, $10K avg = 1.
-- **concentration**: `maxSingleWalletInvested / totalConsensusInvested`. Penalty triggers above 80%.
-- **counterSharpScore**: ELITE wallets opposing = 3 pts each, SHARP opposing = 2 pts each. Net of consensus side quality.
-- **consensusTier**: Blended money% (60%) + wallet% (40%). DOMINANT ≥80, STRONG ≥65, LEAN ≥55, CONTESTED <55.
-- **sportSharpCount**: Wallets with `sportVerified === true` on consensus side.
-
-### V6 Scoring
-
-**Sharp Breadth (max 2.5 pts)** — trimmed ceiling, bumped mid-range
-- breadth ≥ 0.50: +2.5 pts (was +3)
-- breadth ≥ 0.35: +2 pts (unchanged)
-- breadth ≥ 0.20: +1.5 pts (was +1)
-- breadth ≥ 0.10: +0.5 pts (unchanged)
-
-**Sharp Conviction (max 2.5 pts)** — bumped from 1.5, added tier
-- conviction ≥ 0.80: +2.5 pts (was +1.5)
-- conviction ≥ 0.60: +2 pts (new tier)
-- conviction ≥ 0.40: +1.5 pts (was +1 at 0.50)
-- conviction ≥ 0.25: +0.75 pts (was +0.5)
-
-**Concentration Penalty (0 to -1 pts)** — context-aware
-- concentration > 90%: -1 pt (or -0.5 if ELITE-led + 4+ wallets)
-- concentration > 80%: -0.5 pts (or -0.25 if ELITE-led + 4+ wallets)
+| Flag | Condition | Meaning |
+|------|-----------|---------|
+| `moneyCounter` | moneyPct >= 80 AND counterSharp >= 30 | Strong money but strong opposition |
+| `sharpsMoney` | sharpCount >= 7 AND moneyPct < 65 | Many sharps but money doesn't follow |
+| `evQP` | evEdge > 0 AND qualityProxy < 0 | EV says bet, quality says don't |
 
 ---
 
-## Phase 2: Counter-Sharp Detection
+## Star Mapping (Percentile Thresholds)
 
-When ELITE or SHARP-tier wallets are on the opposing side, consensus is less trustworthy regardless of dollar volume.
+The raw score is mapped to stars using frozen percentile thresholds computed from the historical dataset WITH the full formula (including two-sided terms):
 
-**Counter-Sharp Penalty (0 to -3 pts)**
-- counterSharpScore ≥ 6: -3 pts (multiple elite wallets disagree)
-- counterSharpScore ≥ 3: -2 pts (meaningful opposition)
-- counterSharpScore ≥ 1: -1 pt (minor opposition)
-
----
-
-## Phase 3: Conditional Pinnacle Alignment (V6)
-
-Pinnacle alignment is now **conditional on consensus tier**. The deep audit revealed "No Pinn" (67% WR, +28.1u) outperformed "Pinn confirms" (56% WR, -26.3u) at every breadth level — Pinnacle was adding noise to plays that already had strong consensus.
-
-**Borderline plays (LEAN / CONTESTED consensus):**
-- Pinnacle confirms + line moving with play: +2 pts
-- Pinnacle confirms only OR line moving with play: +1 pt
-
-**Strong plays (STRONG / DOMINANT consensus):**
-- Pinnacle confirms + line moving with play: +1 pt
-- Pinnacle confirms only OR line moving with play: +0.5 pts
-
-**All plays:**
-- Line moving against consensus: -1 pt
+| Percentile | Threshold | Stars |
+|------------|-----------|-------|
+| < p15 | < -10.58 | 1.0 |
+| p15–p30 | -10.58 to -5.67 | 2.0 |
+| p30–p50 | -5.67 to 0.82 | 2.5 |
+| p50–p75 | 0.82 to 7.13 | 3.0 |
+| p75–p87 | 7.13 to 8.85 | 3.5 |
+| p87–p93 | 8.85 to 10.36 | 4.0 |
+| p93–p97 | 10.36 to 13.18 | 4.5 |
+| >= p97 | >= 13.18 | 5.0 |
 
 ---
 
-## Phase 4: RLM (Reverse Line Movement) as Interaction Term (ML only)
+## Gates (Post-Score Adjustments)
 
-RLM is only useful WHEN it confirms the wallet signal. It's not a standalone signal.
+Gates run after star assignment and enforce structural constraints. They run in order — earlier gates can be overridden by later ones.
 
-**Conditions for RLM upgrade:**
-- Public tickets < 50% on consensus side
-- Ticket divergence ≥ 10 points
+### Core Gates
 
-**Scoring:**
-- Full RLM (public opposes + Pinnacle line moving WITH sharps + divergence ≥ 10): +1.5 pts
-- Partial RLM (public opposes + divergence ≥ 10, line not confirmed): +0.75 pts
+| Gate | Rule | Purpose |
+|------|------|---------|
+| 5-star quality | 5★ requires qualityProxy >= 1 AND contradictions < 2 | Prevent noisy elite assignments |
+| Contradiction cap | 4.5★ capped to 4★ if contradictions >= 2 | Structural disagreement limit |
+| Heavy dog cap | Odds >= +200 → max 3★ | Historical: +200 dogs underperform |
+| Moderate dog cap | Odds +151 to +199 → max 3.5★ | Moderate dog limit |
+| NBA dog cap | NBA + odds >= +100 → max 3.5★ | NBA dogs are 13% WR historically |
 
----
+### Middle-Tier Two-Sided Gates (New)
 
-## Phase 5: Sport-Specific Handling (V6 NEW)
+These target the 2.5–3.5★ range where the V7 base model had the most noise.
 
-Sharp wallet behavior differs by sport. The deep audit confirmed that different consensus patterns predict differently across sports.
-
-**MLB — Broader Consensus Bonus:**
-- 7+ consensus wallets: +1 pt
-- 5+ consensus wallets: +0.5 pts
-- Rationale: MLB 7+ sharps go 69% WR vs 56% average.
-
-**NHL / CBB — Specialist Group Bonus:**
-- 2+ sport-verified sharps in a tight group (≤5 wallets): +1 pt
-- 1+ sport-verified sharp in a tight group (≤4 wallets): +0.5 pts
-- Rationale: NHL/CBB 1-3 sharps go 67%/65% WR — specialist knowledge outperforms crowd size.
-
-**NBA — No bonus.** Performance is weak across the board. Existing dog penalties apply.
-
-This stacks on top of the general sport specialist bonus (wallets profitable in this specific sport, max 1.5 pts).
-
----
-
-## Other Scoring
-
-**EV Edge (max 3.5 pts)**
-- Above 3%: +3.5 pts
-- 2–3%: +2.5 pts
-- 1–2%: +1.5 pts
-- 0–1%: +0.5 pts
-
-**Implied Probability (±0.5 pts)**
-- Pinnacle implied ≥ 75%: +0.5 pts
-- Pinnacle implied < 30%: -0.5 pts
-
-**Consensus Strength Bonus (up to 2 pts)**
-- DOMINANT: +2 pts
-- STRONG: +1 pt
-
-**Prediction Market (conditional, up to 1.5 pts)**
-- LEAN/CONTESTED + pred aligns: +1.5 pts
-- STRONG + pred aligns: +0.5 pts
-- DOMINANT + pred aligns: +0.25 pts
-
-**Sport Specialist Bonus (max 1.5 pts)**
-- 3+ sport-verified sharps: +1.5 pts
-- 2 sport-verified sharps: +1 pt
-- 1 sport-verified sharp: +0.5 pts
-
-**Flip Penalty (ML only)**
-- Opposing side peaked at ≥4.5★: -2 pts
-- Opposing side peaked at ≥3.5★: -1.5 pts
-- Opposing side peaked at ≥3★: -1 pt
-
-**Dog Penalty**
-- Odds ≥ +200: -2 pts
-- Odds ≥ +151: -1 pt
-
-**NBA Dog Penalty**
-- NBA + odds ≥ +100: -1.5 pts
-
----
-
-## CLV (Closing Line Value) Tracking
-
-### What CLV is
-
-The difference between the Pinnacle odds when a pick was locked and the Pinnacle odds at game start (the "close"). Beating the close is the gold-standard measure of sharp betting — more predictive of long-term profitability than win rate.
-
-### How it works
-
-1. **`updateClosingOdds.js`** runs every 15 minutes alongside market data fetches. For each PENDING pick, it reads current Pinnacle odds from `pinnacle_history.json` and writes `closingOdds` / `closingPinnProb` to each side of the pick document. The last write before game start becomes the close.
-
-2. **`betTracking.js`** computes CLV at grading time:
-   ```
-   lockProb  = impliedProb(sides.<side>.lock.pinnacleOdds)
-   closeProb = impliedProb(sides.<side>.closingOdds)
-   clv       = closeProb - lockProb  // positive = beat the close
-   ```
-
-3. **Performance dashboard** displays:
-   - Average CLV per pick
-   - CLV-positive rate (% of picks that beat the close)
-   - Total CLV-tracked picks
+| Gate | Rule | Purpose |
+|------|------|---------|
+| Disagreement block | If disagreement AND stars >= 4 AND qualityProxy < 2 → 3.5★ | Money/sharp conflict prevents high ratings |
+| Weak money edge downgrade | 2.5–3.5★ AND moneyEdge_z <= -0.50 → downgrade 0.5★ | Opposition money dominance demotes |
+| Strong money edge promote | 2.5–3.5★ AND moneyEdge_z >= 0.75 AND no contradictions → promote 0.5★ | Clean money dominance promotes |
 
 ---
 
@@ -211,16 +245,16 @@ The difference between the Pinnacle odds when a pick was locked and the Pinnacle
 
 | Stars | Label | Meaning |
 |-------|-------|---------|
-| ★★★★★ (5.0) | **ELITE PLAY** | Maximum conviction — all signals aligned |
-| ★★★★½ (4.5) | **ELITE PLAY** | Near-perfect signal alignment |
-| ★★★★ (4.0) | **STRONG PLAY** | Dominant consensus + confirming signals |
-| ★★★½ (3.5) | **STRONG PLAY** | Above-average conviction across multiple signals |
-| ★★★ (3.0) | **SOLID PLAY** | Strong consensus with confirming signals |
-| ★★½ (2.5) | **SOLID PLAY** | Good consensus support — meets conviction threshold |
-| ★★ (2.0) | LEAN | Moderate sharp interest — limited confirmation |
-| ★½ (1.5) | DEVELOPING | Early sharp activity — watching for more signals |
-| ★ (1.0) | MONITORING | Low activity — not yet actionable |
-| ½ (0.5) | MONITORING | Minimal data available |
+| 5.0 | **ELITE PLAY** | Maximum conviction — all signals aligned |
+| 4.5 | **ELITE PLAY** | Near-perfect signal alignment |
+| 4.0 | **STRONG PLAY** | Dominant consensus + confirming signals |
+| 3.5 | **STRONG PLAY** | Above-average conviction across multiple signals |
+| 3.0 | **SOLID PLAY** | Strong consensus with confirming signals |
+| 2.5 | **SOLID PLAY** | Good consensus support — meets conviction threshold |
+| 2.0 | LEAN | Moderate sharp interest — limited confirmation |
+| 1.5 | DEVELOPING | Early sharp activity — watching for more signals |
+| 1.0 | MONITORING | Low activity — not yet actionable |
+| 0.5 | MONITORING | Minimal data available |
 
 ---
 
@@ -229,109 +263,126 @@ The difference between the Pinnacle odds when a pick was locked and the Pinnacle
 A play is **LOCKED IN** (auto-tracked, assigned units, tracked for performance) when it meets ALL of the following:
 
 ### Moneyline (ML) Picks
-- Star rating ≥ **2.5 stars**
-- Total consensus-side invested ≥ **$7,000**
+- Star rating >= **2.5 stars**
+- Total consensus-side invested >= **$7,000**
 
 ### Spread Picks
-- Star rating ≥ **2.5 stars**
-- Consensus-side wallet count ≥ **2 wallets**
-- Total consensus-side invested ≥ **$5,000**
+- Star rating >= **2.5 stars**
+- Consensus-side wallet count >= **2 wallets**
+- Total consensus-side invested >= **$5,000**
 
 ### Total (O/U) Picks
-- Star rating ≥ **2.5 stars**
-- Consensus-side wallet count ≥ **2 wallets**
-- Total consensus-side invested ≥ **$5,000**
+- Star rating >= **2.5 stars**
+- Consensus-side wallet count >= **2 wallets**
+- Total consensus-side invested >= **$5,000**
 
-**These thresholds are enforced in `SharpFlow.jsx` and are MANDATORY. No bet should ever be written to Firebase without meeting these minimums.** The star rating already accounts for all signal factors. The invested minimums ensure there is meaningful sharp conviction behind every tracked play.
-
-### Code References
-
-```javascript
-// ML lock (SharpFlow.jsx line ~3349)
-const isLocked = sr.stars >= 2.5 && consensusInvested >= 7000;
-
-// Spread lock (SharpFlow.jsx line ~3477-3479)
-const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
-  && (spreadSharpFeatures?.conWalletCount || 0) >= 2
-  && (spreadSharpFeatures?.conTotalInvested || 0) >= 5000;
-
-// Total lock (SharpFlow.jsx line ~3555-3557)
-const isTotalLocked = totalSr && totalSr.stars >= 2.5
-  && (totalSharpFeatures?.conWalletCount || 0) >= 2
-  && (totalSharpFeatures?.conTotalInvested || 0) >= 5000;
-```
+**These thresholds are enforced in `SharpFlow.jsx` and are MANDATORY. No bet should ever be written to Firebase without meeting these minimums.**
 
 ---
 
-## Unit Sizing
+## Unit Sizing (V7 — Compressed Scale)
 
-Units are derived directly from the star rating. Higher-conviction plays receive proportionally larger positions.
+V7 uses a compressed unit scale. Stars determine play quality; units determine risk size.
 
-### ML Unit Sizing
+### ML Unit Sizing (1–3u scale)
 
 | Star Rating | Base Units | Tier |
 |-------------|-----------|------|
-| ★★★★★ (5.0) | 3.5u | MAX |
-| ★★★★½ (4.5) | 3.0u | MAX |
-| ★★★★ (4.0) | 2.5u | STRONG |
-| ★★★½ (3.5) | 2.0u | STRONG |
-| ★★★ (3.0) | 1.5u | STANDARD |
-| ★★½ (2.5) | 1.0u | STANDARD |
+| 5.0 | 3.0u | MAX |
+| 4.5 | 2.5u | MAX |
+| 4.0 | 2.0u | STRONG |
+| 3.5 | 1.5u | STRONG |
+| 3.0 / 2.5 | 1.0u | STANDARD |
 
-Dog caps (ML): +200 → max 0.5u, +151 → max 1.0u, +100 → max 2.0u.
+Dog caps (ML): +200 -> max 0.5u, +151 -> max 1.0u, +100 -> max 2.0u. Final ML units capped at **3.0u** (down from 5.0u in V6).
 
-### Spread/Total Unit Sizing
+### Spread/Total Unit Sizing (0.5–2u scale)
 
 | Star Rating | Base Units |
 |-------------|-----------|
-| ★★★★★ (5.0) | 2.0u |
-| ★★★★½ (4.5) | 1.75u |
-| ★★★★ (4.0) | 1.5u |
-| ★★★½ (3.5) | 1.25u |
-| ★★★ (3.0) | 1.0u |
-| ★★½ (2.5) | 0.5u |
+| 5.0 | 2.0u |
+| 4.5 | 1.5u |
+| 4.0 | 1.25u |
+| 3.5 | 1.0u |
+| 3.0 | 0.75u |
+| 2.5 | 0.5u |
 
-Dog caps (Spread/Total): +200 → max 0.5u, +151 → max 0.75u, +100 → max 1.0u.
+Dog caps (Spread/Total): +200 -> max 0.5u, +151 -> max 0.75u, +100 -> max 1.0u. Final spread/total units capped at **2.0u**.
 
-### Consensus Adjustment
+### Unit Tiers
 
-After the base size is set, a consensus-quality adjustment is applied. Plays with dominant consensus keep their full size. Plays with weaker or split consensus are scaled down.
+| Tier | Threshold |
+|------|-----------|
+| MAX | >= 2.5u |
+| STRONG | >= 1.5u |
+| STANDARD | < 1.5u |
+
+### Top Pick Bonus (CLV-Gated)
+
+When a play's stars increase significantly during pregame updates, a unit bonus is applied — but **only if live market evidence confirms the improvement**:
+
+- `starDelta >= 1.5` AND regime is not `NO_MOVE` -> +0.5u bonus
+- `starDelta >= 1.0` AND regime is not `NO_MOVE` -> +0.25u bonus
+- If regime IS `NO_MOVE` (no Pinnacle movement) -> no bonus
+
+This prevents fake upgrades from inflating units when there's no market confirmation.
 
 ---
 
-## Built-In Safeguards
+## CLV (Closing Line Value) Tracking
 
-### Minimum Invested Enforcement
+### What CLV is
 
-**ML plays require $7K+ invested on the consensus side. Spread/Total plays require $5K+ invested AND 2+ wallets.** This prevents low-conviction noise from generating tracked bets. This is enforced at the lock-decision level in `SharpFlow.jsx` — no Firebase write occurs unless the threshold is met.
+The difference between the Pinnacle odds when a pick was locked and the Pinnacle odds at game start (the "close"). Beating the close is the gold-standard measure of sharp betting.
 
-### Pinnacle Opposition Protection
+### How it works
 
-When Pinnacle's line is actively moving against the sharp consensus side, the play receives a **-1 pt penalty**.
+1. **`updateClosingOdds.js`** runs every 15 minutes. For each PENDING pick, it reads current Pinnacle odds and writes `closingOdds` / `closingPinnProb` to the pick document.
 
-### Counter-Sharp Protection
+2. **`betTracking.js`** computes CLV at grading time:
+   ```
+   lockProb  = impliedProb(sides.<side>.lock.pinnacleOdds)
+   closeProb = impliedProb(sides.<side>.closingOdds)
+   clv       = closeProb - lockProb  // positive = beat the close
+   ```
 
-When ELITE or SHARP-tier wallets are on the opposing side, the play receives up to **-3 pts penalty**. High dollar consensus is less meaningful when the best wallets disagree.
+3. **Performance dashboard** displays average CLV, CLV-positive rate, and total CLV-tracked picks.
 
-### Concentration Protection
+---
 
-When a single wallet accounts for >80% of consensus-side money, the play is penalized up to **-1 pt**. Softened to -0.5 when the dominant wallet is ELITE tier and 4+ other wallets confirm.
+## Phase 1: Decomposed Consensus — `computeSharpFeatures()`
 
-### RLM Upgrade (ML only)
+### Net-Position Approach
 
-When public bettors are heavily against the sharp side but the line still moves with sharps (Reverse Line Movement), the play gets up to **+1.5 pts**.
+Wallets with positions on both sides are handled via net-position: if a wallet has $1K on one side and $500 on the other, the $500 difference counts on the dominant side.
 
-### EV Edge as Primary Contextual Signal
+### What it computes
 
-EV edge uses a steep 4-tier curve (+0.5 / +1.5 / +2.5 / +3.5). No positive EV interval is penalized.
+`computeSharpFeatures(positions, consensusSide)` returns:
 
-### Conditional Context Signals (V6)
+- **breadth**: Quality-weighted unique wallet count. ELITE=3x, SHARP=2x, PROVEN=1.5x, ACTIVE=1x.
+- **conviction**: `log10(avgInvestedPerWallet)` normalized to 0–1.
+- **concentration**: `maxSingleWalletInvested / totalConsensusInvested`. Penalty triggers above 80%.
+- **counterSharpScore**: ELITE opposing = 3 pts each, SHARP opposing = 2 pts each.
+- **consensusTier**: Blended money% (60%) + wallet% (40%). DOMINANT >= 80, STRONG >= 65, LEAN >= 55, CONTESTED < 55.
+- **sportSharpCount**: Wallets with `sportVerified === true` on consensus side.
+- **conWalletCount / oppWalletCount**: Raw wallet counts for each side.
+- **conTotalInvested / oppTotalInv**: Total invested for each side.
+- **conMoneyPct / conWalletPct**: Money and wallet percentages for consensus side.
 
-Pinnacle and prediction market signals are weighted conditionally based on consensus strength. This prevents context signals from inflating plays that already have overwhelming consensus, reducing signal clutter.
+---
 
-### Dog Penalties
+## Firebase Schema — Persisted Fields
 
-Long dogs (+151/+200) receive star penalties AND unit caps. NBA dogs (+100 and above) receive an additional -1.5 pt penalty. These are based on historical data: +176+ dogs are 2-20 (9.1% WR), +251+ dogs are 0-12, NBA dogs are 3-20 (13% WR).
+Each pick document stores `regime` and `qualityProxy` in lock/peak/pregame snapshots (added in V7). The two-sided features (`moneyEdge`, `marketDominance`, `signalDisagreement`) are **not persisted** — they are computed live from data already in scope.
+
+### Snapshot Fields Added in V7
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `regime` | string | `NO_MOVE`, `SMALL_MOVE`, `CLEAR_MOVE`, or `NEAR_START` |
+| `qualityProxy` | number | Rule-based quality score at time of snapshot |
+| `walletProfile` | object | Wallet-level metrics (breadth, conviction, etc.) |
 
 ---
 
@@ -350,26 +401,26 @@ Long dogs (+151/+200) receive star penalties AND unit caps. NBA dogs (+100 and a
 
 ### Sports Tracked
 
-NHL, CBB, MLB, NBA — all use the same base star rating model with sport-specific bonuses layered on top.
+NHL, CBB, MLB, NBA — all use the same unified `rateStarsV7` function.
 
 ---
 
 ## Design Principles
 
-1. **Conviction is king.** Average bet size per wallet is the #1 independent predictive signal. Fewer, stronger wallets outperform large crowds.
+1. **Two-stage scoring.** Lock-time features provide the initial rating. Live market evidence progressively takes over as game time approaches.
 
-2. **Breadth has diminishing returns.** Quality-weighted wallet diversity matters up to a point, then flattens. More sharps ≠ better play.
+2. **Relative strength matters.** The two-sided overlay measures consensus vs opposition, not just absolute consensus metrics. A play with 80% money is stronger when the opposition has 1 sharp than when it has 5.
 
-3. **Context is conditional.** Pinnacle alignment and prediction markets only help borderline plays. Strong consensus plays don't need external confirmation.
+3. **Stars are the single source of truth.** No hidden gates or overrides beyond minimum invested thresholds. Penalties for contradictions, opposition pressure, signal disagreement, and dog odds are baked directly into the score.
 
-4. **Stars are the single source of truth.** No hidden gates, no overrides (except minimum invested thresholds). What you see is what the system believes.
+4. **Frozen statistics prevent drift.** All z-scoring uses frozen means/stds from the historical dataset. Thresholds are fixed percentiles of the historical score distribution.
 
-5. **Penalties are baked in, not bolted on.** Counter-sharp opposition, concentration risk, Pinnacle opposition, dog penalties, and flip situations reduce the star count directly.
+5. **Compressed unit sizing.** ML uses 1–3u, spread/total uses 0.5–2u. Prevents oversized bets on marginal plays.
 
-6. **Sports are not identical.** MLB rewards broader consensus, NHL/CBB reward specialist knowledge. The model respects these differences with targeted bonuses.
+6. **CLV-gated updates.** The top pick bonus only fires when live Pinnacle movement confirms the star upgrade. No bonus when regime is `NO_MOVE`.
 
-7. **Minimum invested thresholds prevent noise.** ML requires $7K, Spread/Total requires $5K. No bet is ever written without meaningful sharp conviction behind it.
+7. **Middle-tier filtering.** The two-sided gates specifically target the 2.5–3.5 star range where historical analysis showed the most noise. Strong money edge promotes, weak money edge demotes, signal disagreement blocks.
 
-8. **CLV is the ultimate validation.** Beating the closing line consistently is the gold-standard measure of sharp betting edge.
+8. **Minimum invested thresholds prevent noise.** ML requires $7K, Spread/Total requires $5K. No bet is ever written without meaningful sharp conviction.
 
-9. **Data-driven weights.** Signal weights are validated against historical outcomes (433+ graded picks) and refined based on deep audits.
+9. **Data-driven weights.** Signal weights are validated against 411+ graded picks through ablation tests, walk-forward backtests, and monotonicity analysis.
