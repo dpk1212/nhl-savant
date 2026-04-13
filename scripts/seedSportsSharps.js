@@ -302,7 +302,7 @@ async function run() {
 
     try {
       const profile = await buildProfile(lb.wallet);
-      const pnl = lb.pnl > profile.totalPnl ? lb.pnl : profile.totalPnl;
+      const pnl = Math.round(lb.pnl || profile.totalPnl);
 
       allWallets[lb.wallet] = {
         name: lb.name || prev?.name || 'Anonymous',
