@@ -5090,7 +5090,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                             padding: '0.1rem 0.3rem', borderRadius: '3px',
                             background: 'rgba(6,182,212,0.08)',
                           }}>
-                            +{fmtVol(p.sportPnl)} {gd.sport}
+                            +{fmtVol(p.sportPnl)} sports
                           </span>
                         )}
                         {showMonthly && (

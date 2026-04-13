@@ -449,7 +449,7 @@ async function run() {
     const lookup = sportPnlLookup[walletAddr];
     const base = { sportROI: 0, avgSportBet: 0 };
     if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false, monthlyPnl: null, monthlyQualified: false, ...base };
-    const pnl = lookup.sportPnl[sport] || 0;
+    const pnl = lookup.sportPnlTotal || 0;
     const extra = { monthlyPnl: lookup.monthlyPnl, monthlyQualified: lookup.monthlyQualified, sportROI: lookup.sportROI, avgSportBet: lookup.avgSportBet };
     if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false, ...extra };
     const sportRank = pnl >= 50000 ? 4 : pnl >= 10000 ? 3 : 2;
