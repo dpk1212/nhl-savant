@@ -5526,24 +5526,28 @@ export default function SharpFlow() {
       if ((p.mmScore || 0) > 40) return false;
       const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
       if (aggSportPnl < -50000) return false;
-      return !sportSharpsAddrs.has(addr) && aggSportPnl <= 0;
+      return aggSportPnl <= 0;
     }).length;
     const totalExcluded = mmExcluded + sportLosers + noSport;
     const cleanWallets = allEliteProven.filter(([addr, p]) => {
       if ((p.mmScore || 0) > 40) return false;
       const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
       if (aggSportPnl < -50000) return false;
-      if (!sportSharpsAddrs.has(addr) && aggSportPnl <= 0) return false;
+      if (aggSportPnl <= 0) return false;
       return true;
     }).map(([, p]) => p);
     const cleanAddrs = new Set(allEliteProven.filter(([addr, p]) => {
       if ((p.mmScore || 0) > 40) return false;
       const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
       if (aggSportPnl < -50000) return false;
-      if (!sportSharpsAddrs.has(addr) && aggSportPnl <= 0) return false;
+      if (aggSportPnl <= 0) return false;
       return true;
     }).map(([addr]) => addr));
-    const supplementalCount = [...sportSharpsAddrs].filter(addr => !cleanAddrs.has(addr)).length;
+    const supplementalCount = [...sportSharpsAddrs].filter(addr => {
+      if (cleanAddrs.has(addr)) return false;
+      const w = sportsSharps[addr];
+      return (w?.sportPnlTotal || 0) > 0 || w?.monthlyQualified;
+    }).length;
     let totalSharpInvested = 0;
     for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
       const sg = sharpPositions?.[sport] || {};
@@ -5553,7 +5557,11 @@ export default function SharpFlow() {
       trackedCount: cleanAddrs.size + supplementalCount,
       totalExcluded, mmExcluded, sportLosers, noSport, supplementalCount,
       gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length + Object.values(sharpPositions.NBA || {}).length : 0,
-      totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0) + [...sportSharpsAddrs].filter(addr => !cleanAddrs.has(addr)).reduce((s, addr) => s + (sportsSharps[addr]?.totalPnl || 0), 0),
+      totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0) + [...sportSharpsAddrs].filter(addr => {
+        if (cleanAddrs.has(addr)) return false;
+        const w = sportsSharps[addr];
+        return (w?.sportPnlTotal || 0) > 0 || w?.monthlyQualified;
+      }).reduce((s, addr) => s + (sportsSharps[addr]?.totalPnl || 0), 0),
       totalSharpInvested,
     };
   }, [whaleProfiles, sharpPositions, sportsSharps]);

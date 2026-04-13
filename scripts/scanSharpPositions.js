@@ -477,8 +477,7 @@ async function run() {
     if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
     const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
     if (aggSportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
-    const inSportSharps = !!sportsSharps[addr];
-    if (!inSportSharps && aggSportPnl <= 0) return 'no_sport';
+    if (aggSportPnl <= 0) return 'no_sport';
     return false;
   };
 
@@ -490,13 +489,15 @@ async function run() {
     .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }));
 
   // Merge in sport sharps that aren't already in the base list
+  // Must have positive sport PnL OR be monthly-qualified to count
   const baseAddrs = new Set(baseWallets.map(w => w.addr));
   let supplementalCount = 0;
   for (const [addr, p] of Object.entries(sportsSharps)) {
-    if (!baseAddrs.has(addr)) {
-      baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0 });
-      supplementalCount++;
-    }
+    if (addr === '_meta') continue;
+    if (baseAddrs.has(addr)) continue;
+    if ((p.sportPnlTotal || 0) <= 0 && !p.monthlyQualified) continue;
+    baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0, monthlyQualified: p.monthlyQualified, monthlyPnl: p.monthlyPnl });
+    supplementalCount++;
   }
 
   const walletsToScan = baseWallets.sort((a, b) => b.totalPnl - a.totalPnl);
