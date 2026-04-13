@@ -4292,13 +4292,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
                     const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
                     const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
+                    const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (!p.sportVerified || (p.sportPnl || 0) <= 0);
                     return (
                       <div key={`${p.wallet}-${i}`} style={{ padding: '0.5rem 0.625rem', borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none', background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
                             <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
                             <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
                             <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime</span>
+                            {showMonthly && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>+{fmtVol(p.monthlyPnl)} this month</span>}
                           </div>
                           {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
                         </div>
@@ -4614,13 +4616,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
                     const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
                     const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
+                    const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (!p.sportVerified || (p.sportPnl || 0) <= 0);
                     return (
                       <div key={`${p.wallet}-${i}`} style={{ padding: '0.5rem 0.625rem', borderBottom: i < filtered.length - 1 ? `1px solid ${B.borderSubtle}` : 'none', background: i % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
                             <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
                             <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
                             <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} lifetime</span>
+                            {showMonthly && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>+{fmtVol(p.monthlyPnl)} this month</span>}
                           </div>
                           {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
                         </div>
@@ -5050,6 +5054,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                   if (hrs < 24) return `${hrs}h ago`;
                   return `${Math.round(hrs / 24)}d ago`;
                 })() : null;
+                const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (!p.sportVerified || (p.sportPnl || 0) <= 0);
 
                 return (
                   <div key={`${p.wallet}-${i}`} style={{
@@ -5061,7 +5066,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       gap: '0.5rem', marginBottom: '0.25rem',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
                         <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
                         <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                           ...{p.wallet.slice(-4)}
@@ -5082,6 +5087,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                             background: 'rgba(6,182,212,0.08)',
                           }}>
                             +{fmtVol(p.sportPnl)} {gd.sport}
+                          </span>
+                        )}
+                        {showMonthly && (
+                          <span style={{
+                            ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
+                            color: '#F59E0B',
+                            padding: '0.1rem 0.3rem', borderRadius: '3px',
+                            background: 'rgba(245,158,11,0.10)',
+                          }}>
+                            +{fmtVol(p.monthlyPnl)} this month
                           </span>
                         )}
                       </div>

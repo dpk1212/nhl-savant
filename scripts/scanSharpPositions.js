@@ -429,7 +429,12 @@ async function run() {
       const { _meta, ...wallets } = raw;
       sportsSharps = wallets;
       for (const [addr, w] of Object.entries(wallets)) {
-        sportPnlLookup[addr] = { sportPnl: w.sportPnl || {}, sportPnlTotal: w.sportPnlTotal || 0 };
+        sportPnlLookup[addr] = {
+          sportPnl: w.sportPnl || {},
+          sportPnlTotal: w.sportPnlTotal || 0,
+          monthlyPnl: w.monthlyPnl || null,
+          monthlyQualified: w.monthlyQualified || false,
+        };
       }
       console.log(`Loaded ${Object.keys(sportsSharps).length} supplementary sport sharps (${Object.keys(sportPnlLookup).length} with sport PnL data)`);
     } catch (e) {
@@ -440,12 +445,13 @@ async function run() {
   function effectiveTier(baseTier, walletAddr, sport) {
     const baseRank = TIER_RANK[baseTier] || 1;
     const lookup = sportPnlLookup[walletAddr];
-    if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false };
+    if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false, monthlyPnl: null, monthlyQualified: false };
     const pnl = lookup.sportPnl[sport] || 0;
-    if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false };
+    const monthly = { monthlyPnl: lookup.monthlyPnl, monthlyQualified: lookup.monthlyQualified };
+    if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false, ...monthly };
     const sportRank = pnl >= 50000 ? 4 : pnl >= 10000 ? 3 : 2;
     const finalRank = Math.max(baseRank, sportRank);
-    return { tier: RANK_TO_TIER[finalRank] || baseTier, sportPnl: pnl, sportVerified: true };
+    return { tier: RANK_TO_TIER[finalRank] || baseTier, sportPnl: pnl, sportVerified: true, ...monthly };
   }
 
   const cbbMap = loadCBBTeamMap();
@@ -614,6 +620,7 @@ async function run() {
         firstSeen: prevFirstSeen || new Date().toISOString(),
         sportPnl: eff.sportPnl,
         sportVerified: eff.sportVerified,
+        ...(eff.monthlyQualified && { monthlyPnl: eff.monthlyPnl, monthlyQualified: true }),
       });
 
       const summary = targetResult[sport][match.key].summary;
