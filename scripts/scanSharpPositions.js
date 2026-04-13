@@ -432,6 +432,8 @@ async function run() {
         sportPnlLookup[addr] = {
           sportPnl: w.sportPnl || {},
           sportPnlTotal: w.sportPnlTotal || 0,
+          sportROI: w.sportROI || 0,
+          avgSportBet: w.avgSportBet || 0,
           monthlyPnl: w.monthlyPnl || null,
           monthlyQualified: w.monthlyQualified || false,
         };
@@ -445,13 +447,14 @@ async function run() {
   function effectiveTier(baseTier, walletAddr, sport) {
     const baseRank = TIER_RANK[baseTier] || 1;
     const lookup = sportPnlLookup[walletAddr];
-    if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false, monthlyPnl: null, monthlyQualified: false };
+    const base = { sportROI: 0, avgSportBet: 0 };
+    if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false, monthlyPnl: null, monthlyQualified: false, ...base };
     const pnl = lookup.sportPnl[sport] || 0;
-    const monthly = { monthlyPnl: lookup.monthlyPnl, monthlyQualified: lookup.monthlyQualified };
-    if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false, ...monthly };
+    const extra = { monthlyPnl: lookup.monthlyPnl, monthlyQualified: lookup.monthlyQualified, sportROI: lookup.sportROI, avgSportBet: lookup.avgSportBet };
+    if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false, ...extra };
     const sportRank = pnl >= 50000 ? 4 : pnl >= 10000 ? 3 : 2;
     const finalRank = Math.max(baseRank, sportRank);
-    return { tier: RANK_TO_TIER[finalRank] || baseTier, sportPnl: pnl, sportVerified: true, ...monthly };
+    return { tier: RANK_TO_TIER[finalRank] || baseTier, sportPnl: pnl, sportVerified: true, ...extra };
   }
 
   const cbbMap = loadCBBTeamMap();
@@ -621,6 +624,8 @@ async function run() {
         firstSeen: prevFirstSeen || new Date().toISOString(),
         sportPnl: eff.sportPnl,
         sportVerified: eff.sportVerified,
+        sportROI: eff.sportROI,
+        avgSportBet: eff.avgSportBet,
         ...(eff.monthlyQualified && { monthlyPnl: eff.monthlyPnl, monthlyQualified: true }),
       });
 

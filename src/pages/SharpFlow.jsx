@@ -4304,10 +4304,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                           </div>
                           {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem', flexWrap: 'wrap' }}>
                           <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>{sideShort}</span>
                           <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
                           <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
+                          {p.sportROI !== undefined && p.sportROI !== 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI</span>}
+                          {p.avgSportBet > 0 && p.invested > 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: (p.invested / p.avgSportBet) >= 2 ? '#F59E0B' : '#94A3B8', padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.invested / p.avgSportBet) >= 2 ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.08)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
                         </div>
                       </div>
                     );
@@ -4628,10 +4630,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                           </div>
                           {seenAgo && <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>{seenAgo}</span>}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.25rem', flexWrap: 'wrap' }}>
                           <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>{sideLabel}</span>
                           <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
                           <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
+                          {p.sportROI !== undefined && p.sportROI !== 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI</span>}
+                          {p.avgSportBet > 0 && p.invested > 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: (p.invested / p.avgSportBet) >= 2 ? '#F59E0B' : '#94A3B8', padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.invested / p.avgSportBet) >= 2 ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.08)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
                         </div>
                       </div>
                     );
@@ -5108,7 +5112,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     </div>
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      paddingLeft: '0.25rem',
+                      paddingLeft: '0.25rem', flexWrap: 'wrap',
                     }}>
                       <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
                         {sideShort}
@@ -5121,6 +5125,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                       }}>
                         {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
                       </span>
+                      {p.sportROI !== undefined && p.sportROI !== 0 && (
+                        <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                          {p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI
+                        </span>
+                      )}
+                      {p.avgSportBet > 0 && p.invested > 0 && (
+                        <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: (p.invested / p.avgSportBet) >= 2 ? '#F59E0B' : '#94A3B8', padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.invested / p.avgSportBet) >= 2 ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.08)' }}>
+                          {(p.invested / p.avgSportBet).toFixed(1)}x avg
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
