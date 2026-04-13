@@ -156,8 +156,13 @@ async function buildProfile(wallet) {
     const sport = classifySport(p.title || '');
     if (!sport) continue;
 
-    sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
+    const isResolved = p.curPrice === 0 || p.curPrice === 1;
+
     sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+
+    if (!isResolved) continue;
+
+    sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
 
     if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
     perSport[sport].bets++;
@@ -168,9 +173,8 @@ async function buildProfile(wallet) {
     sportInvested += invested;
     sportTotalPnl += pnl;
 
-    const isResolved = p.curPrice === 0 || p.curPrice === 1;
-    if (isResolved && pnl > 0) { sportWon++; perSport[sport].won++; }
-    if (isResolved && pnl < 0) { sportLost++; perSport[sport].lost++; }
+    if (pnl > 0) { sportWon++; perSport[sport].won++; }
+    if (pnl < 0) { sportLost++; perSport[sport].lost++; }
   }
 
   const roundedSportPnl = Object.fromEntries(
