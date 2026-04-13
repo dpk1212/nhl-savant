@@ -5504,12 +5504,12 @@ export default function SharpFlow() {
     const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 40).length;
     const sportLosers = allEliteProven.filter(p => {
       if ((p.mmScore || 0) > 40) return false;
-      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) < -100000;
+      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) < -50000;
     }).length;
     const totalExcluded = mmExcluded + sportLosers;
     const cleanWallets = allEliteProven.filter(p => {
       if ((p.mmScore || 0) > 40) return false;
-      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -100000;
+      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -50000;
     });
     let totalSharpInvested = 0;
     for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {

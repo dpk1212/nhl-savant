@@ -462,7 +462,7 @@ async function run() {
 
   // Existing pipeline: tier + mmScore + sport PnL floor
   const MM_THRESHOLD = 40;
-  const SPORT_PNL_FLOOR = -100000;
+  const SPORT_PNL_FLOOR = -50000;
 
   const allEligible = Object.entries(profiles)
     .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
