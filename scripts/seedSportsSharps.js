@@ -118,15 +118,27 @@ async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH) {
 }
 
 async function buildProfile(wallet) {
-  // Paginate through all positions (API caps at 500 per page)
-  let allPositions = [];
+  // Fetch current positions (open + resolved-but-unredeemed)
+  let currentPositions = [];
   for (let offset = 0; offset < 10000; offset += 500) {
     const page = await fetchWithRetry(
       `${DATA_API}/positions?user=${wallet}&sortBy=CASHPNL&limit=500&offset=${offset}`
     );
     await sleep(DELAY_MS);
     if (!page || !Array.isArray(page) || page.length === 0) break;
-    allPositions.push(...page);
+    currentPositions.push(...page);
+    if (page.length < 500) break;
+  }
+
+  // Fetch closed/redeemed positions (contains the wins we'd otherwise miss)
+  let closedPositions = [];
+  for (let offset = 0; offset < 10000; offset += 500) {
+    const page = await fetchWithRetry(
+      `${DATA_API}/closed-positions?user=${wallet}&limit=500&offset=${offset}`
+    );
+    await sleep(DELAY_MS);
+    if (!page || !Array.isArray(page) || page.length === 0) break;
+    closedPositions.push(...page);
     if (page.length < 500) break;
   }
 
@@ -135,7 +147,7 @@ async function buildProfile(wallet) {
   );
   await sleep(DELAY_MS);
 
-  if (allPositions.length === 0) {
+  if (currentPositions.length === 0 && closedPositions.length === 0) {
     return { totalPnl: 0, sportPnl: {}, sportPnlTotal: 0, marketsTraded: traded?.traded || 0, sportMarkets: {},
       sportBets: 0, sportInvested: 0, sportROI: 0, avgSportBet: 0,
       sportRecord: { won: 0, lost: 0 }, sportWinRate: 0, perSport: {} };
@@ -148,7 +160,33 @@ async function buildProfile(wallet) {
   let sportBets = 0, sportInvested = 0, sportTotalPnl = 0;
   let sportWon = 0, sportLost = 0;
 
-  for (const p of allPositions) {
+  // Process closed/redeemed positions — these are settled bets with realizedPnl
+  for (const p of closedPositions) {
+    const pnl = parseFloat(p.realizedPnl || '0');
+    const bought = parseFloat(p.totalBought || '0');
+    totalPnl += pnl;
+
+    const sport = classifySport(p.title || '');
+    if (!sport) continue;
+
+    sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+    sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
+
+    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
+    perSport[sport].bets++;
+    perSport[sport].invested += bought;
+    perSport[sport].pnl += pnl;
+
+    sportBets++;
+    sportInvested += bought;
+    sportTotalPnl += pnl;
+
+    if (pnl > 0) { sportWon++; perSport[sport].won++; }
+    if (pnl < 0) { sportLost++; perSport[sport].lost++; }
+  }
+
+  // Process current positions — only count resolved (unredeemed) ones for PnL/ROI
+  for (const p of currentPositions) {
     const pnl = parseFloat(p.cashPnl || '0');
     const invested = parseFloat(p.initialValue || '0');
     totalPnl += pnl;
@@ -156,10 +194,9 @@ async function buildProfile(wallet) {
     const sport = classifySport(p.title || '');
     if (!sport) continue;
 
-    const isResolved = p.curPrice === 0 || p.curPrice === 1;
-
     sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
 
+    const isResolved = p.curPrice === 0 || p.curPrice === 1;
     if (!isResolved) continue;
 
     sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
@@ -198,7 +235,7 @@ async function buildProfile(wallet) {
     totalPnl: Math.round(totalPnl),
     sportPnl: roundedSportPnl,
     sportPnlTotal,
-    marketsTraded: traded?.traded || allPositions.length,
+    marketsTraded: traded?.traded || (currentPositions.length + closedPositions.length),
     sportMarkets,
     sportBets,
     sportInvested: Math.round(sportInvested),
