@@ -4309,7 +4309,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                           <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
                           <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
                           {p.sportROI !== undefined && p.sportROI !== 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI</span>}
-                          {p.avgSportBet > 0 && p.invested > 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: (p.invested / p.avgSportBet) >= 2 ? '#F59E0B' : '#94A3B8', padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.invested / p.avgSportBet) >= 2 ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.08)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
+                          {p.avgSportBet > 0 && p.invested > 0 && (p.invested / p.avgSportBet) >= 1.5 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
                         </div>
                       </div>
                     );
@@ -4635,7 +4635,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                           <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>{fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢</span>
                           <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: posColor }}>{p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}</span>
                           {p.sportROI !== undefined && p.sportROI !== 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: p.sportROI > 0 ? '#10B981' : '#EF4444', padding: '0.1rem 0.3rem', borderRadius: '3px', background: p.sportROI > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI</span>}
-                          {p.avgSportBet > 0 && p.invested > 0 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: (p.invested / p.avgSportBet) >= 2 ? '#F59E0B' : '#94A3B8', padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.invested / p.avgSportBet) >= 2 ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.08)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
+                          {p.avgSportBet > 0 && p.invested > 0 && (p.invested / p.avgSportBet) >= 1.5 && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>{(p.invested / p.avgSportBet).toFixed(1)}x avg</span>}
                         </div>
                       </div>
                     );
@@ -5130,8 +5130,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                           {p.sportROI > 0 ? '+' : ''}{p.sportROI}% ROI
                         </span>
                       )}
-                      {p.avgSportBet > 0 && p.invested > 0 && (
-                        <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: (p.invested / p.avgSportBet) >= 2 ? '#F59E0B' : '#94A3B8', padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.invested / p.avgSportBet) >= 2 ? 'rgba(245,158,11,0.10)' : 'rgba(148,163,184,0.08)' }}>
+                      {p.avgSportBet > 0 && p.invested > 0 && (p.invested / p.avgSportBet) >= 1.5 && (
+                        <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>
                           {(p.invested / p.avgSportBet).toFixed(1)}x avg
                         </span>
                       )}
