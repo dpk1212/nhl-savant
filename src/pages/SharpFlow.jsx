@@ -5536,16 +5536,24 @@ export default function SharpFlow() {
       if (!sportSharpsAddrs.has(addr) && aggSportPnl <= 0) return false;
       return true;
     }).map(([, p]) => p);
+    const cleanAddrs = new Set(allEliteProven.filter(([addr, p]) => {
+      if ((p.mmScore || 0) > 40) return false;
+      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+      if (aggSportPnl < -50000) return false;
+      if (!sportSharpsAddrs.has(addr) && aggSportPnl <= 0) return false;
+      return true;
+    }).map(([addr]) => addr));
+    const supplementalCount = [...sportSharpsAddrs].filter(addr => !cleanAddrs.has(addr)).length;
     let totalSharpInvested = 0;
     for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
     return {
-      trackedCount: allEliteProven.length - totalExcluded,
-      totalExcluded, mmExcluded, sportLosers, noSport,
+      trackedCount: cleanAddrs.size + supplementalCount,
+      totalExcluded, mmExcluded, sportLosers, noSport, supplementalCount,
       gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length + Object.values(sharpPositions.NBA || {}).length : 0,
-      totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
+      totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0) + [...sportSharpsAddrs].filter(addr => !cleanAddrs.has(addr)).reduce((s, addr) => s + (sportsSharps[addr]?.totalPnl || 0), 0),
       totalSharpInvested,
     };
   }, [whaleProfiles, sharpPositions, sportsSharps]);
@@ -6087,7 +6095,7 @@ export default function SharpFlow() {
               gap: '0.625rem', marginBottom: '1.5rem',
             }}>
               <FlowStatCard icon={Eye} label="Sharp Bettors" value={sharpStats.trackedCount} accent={B.gold}
-                hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'ELITE + PROVEN directional bettors'} />
+                hint={sharpStats.totalExcluded > 0 ? `${sharpStats.totalExcluded} non-sharp bettors filtered` : 'Verified sport bettors tracked'} />
               <FlowStatCard icon={DollarSign} label="Sharp Money Today" value={fmtVol(sharpStats.totalSharpInvested)} accent={B.green}
                 hint="Total verified sharp $ on today's games" />
               <FlowStatCard icon={TrendingUp} label="Combined Lifetime P&L" value={`+${fmtVol(sharpStats.totalSharpPnl)}`} accent={B.green}

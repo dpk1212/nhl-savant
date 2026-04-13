@@ -290,12 +290,10 @@ async function run() {
 
       const qualifiesLifetime = profile.sportPnlTotal >= MIN_SPORT_PNL;
       const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
-      const hasPosROI = profile.sportBets > 0 && profile.sportROI > 0;
-      const qualifiesMonthly = isMonthlyHot && sportMarketCount > 0 && hasPosROI;
+      const qualifiesMonthly = isMonthlyHot && sportMarketCount > 0;
       const record = profile.sportBets > 0 ? `${profile.sportRecord.won}W-${profile.sportRecord.lost}L, ${profile.sportROI}% ROI` : 'no resolved bets';
       const label = qualifiesLifetime ? 'QUALIFIES (lifetime)' :
         qualifiesMonthly ? `QUALIFIES (monthly hot, ${sportMarketCount} markets, ${record})` :
-        isMonthlyHot && sportMarketCount > 0 ? `SKIP (monthly hot, ${sportMarketCount} markets but ${record})` :
         isMonthlyHot ? 'SKIP (monthly hot but no tracked sports)' : 'below floor';
       const statsLabel = profile.sportBets > 0 ? ` | ${profile.sportBets} bets, ${profile.sportROI}% ROI, $${profile.avgSportBet} avg` : '';
       console.log(`$${pnl.toLocaleString()} total, $${profile.sportPnlTotal.toLocaleString()} sport PnL → ${label}${statsLabel}`);
@@ -320,13 +318,12 @@ async function run() {
     }
   }
 
-  // Qualify: lifetime sport PnL >= $5K OR (monthly hot AND has sport activity AND positive resolved ROI)
+  // Qualify: lifetime sport PnL >= $5K OR (monthly hot AND has positions in our tracked sports)
   const hasSportActivity = (p) => Object.values(p.sportMarkets || {}).reduce((s, v) => s + v, 0) > 0;
-  const hasPosResolvedROI = (p) => (p.sportBets || 0) > 0 && (p.sportROI || 0) > 0;
   const qualified = Object.entries(allWallets)
     .filter(([addr, p]) =>
       (p.sportPnlTotal || 0) >= MIN_SPORT_PNL ||
-      (p.monthlyQualified === true && hasSportActivity(p) && hasPosResolvedROI(p))
+      (p.monthlyQualified === true && hasSportActivity(p))
     )
     .sort((a, b) => (b[1].sportPnlTotal || 0) - (a[1].sportPnlTotal || 0))
     .slice(0, MAX_SHARPS);
