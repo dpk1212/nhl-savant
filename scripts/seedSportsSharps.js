@@ -118,7 +118,8 @@ async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH) {
 }
 
 async function buildProfile(wallet) {
-  // Fetch current positions (open + resolved-but-unredeemed)
+  // Only count sport markets — ALL financial data comes from the leaderboard API.
+  // Position-derived PnL (cashPnl, realizedPnl) is unreliable and must not be used.
   let currentPositions = [];
   for (let offset = 0; offset < 10000; offset += 500) {
     const page = await fetchWithRetry(
@@ -130,7 +131,6 @@ async function buildProfile(wallet) {
     if (page.length < 500) break;
   }
 
-  // Fetch closed/redeemed positions (contains the wins we'd otherwise miss)
   let closedPositions = [];
   for (let offset = 0; offset < 10000; offset += 500) {
     const page = await fetchWithRetry(
@@ -147,103 +147,21 @@ async function buildProfile(wallet) {
   );
   await sleep(DELAY_MS);
 
-  if (currentPositions.length === 0 && closedPositions.length === 0) {
-    return { totalPnl: 0, sportPnl: {}, sportPnlTotal: 0, marketsTraded: traded?.traded || 0, sportMarkets: {},
-      sportBets: 0, sportInvested: 0, sportROI: 0, avgSportBet: 0,
-      sportRecord: { won: 0, lost: 0 }, sportWinRate: 0, perSport: {} };
-  }
-
-  let totalPnl = 0;
-  const sportPnl = {};
   const sportMarkets = {};
-  const perSport = {};
-  let sportBets = 0, sportInvested = 0, sportTotalPnl = 0;
-  let sportWon = 0, sportLost = 0;
 
-  // Process closed/redeemed positions — these are settled bets with realizedPnl
   for (const p of closedPositions) {
-    const pnl = parseFloat(p.realizedPnl || '0');
-    const bought = parseFloat(p.totalBought || '0');
-    totalPnl += pnl;
-
     const sport = classifySport(p.title || '');
-    if (!sport) continue;
-
-    sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
-    sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
-
-    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
-    perSport[sport].bets++;
-    perSport[sport].invested += bought;
-    perSport[sport].pnl += pnl;
-
-    sportBets++;
-    sportInvested += bought;
-    sportTotalPnl += pnl;
-
-    if (pnl > 0) { sportWon++; perSport[sport].won++; }
-    if (pnl < 0) { sportLost++; perSport[sport].lost++; }
+    if (sport) sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
   }
 
-  // Process current positions — only count resolved (unredeemed) ones for PnL/ROI
   for (const p of currentPositions) {
-    const pnl = parseFloat(p.cashPnl || '0');
-    const invested = parseFloat(p.initialValue || '0');
-    totalPnl += pnl;
-
     const sport = classifySport(p.title || '');
-    if (!sport) continue;
-
-    sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
-
-    const isResolved = p.curPrice === 0 || p.curPrice === 1;
-    if (!isResolved) continue;
-
-    sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
-
-    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
-    perSport[sport].bets++;
-    perSport[sport].invested += invested;
-    perSport[sport].pnl += pnl;
-
-    sportBets++;
-    sportInvested += invested;
-    sportTotalPnl += pnl;
-
-    if (pnl > 0) { sportWon++; perSport[sport].won++; }
-    if (pnl < 0) { sportLost++; perSport[sport].lost++; }
+    if (sport) sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
   }
-
-  const roundedSportPnl = Object.fromEntries(
-    Object.entries(sportPnl).map(([k, v]) => [k, Math.round(v)])
-  );
-  const sportPnlTotal = Object.values(roundedSportPnl).reduce((s, v) => s + v, 0);
-
-  // Round per-sport stats
-  for (const s of Object.values(perSport)) {
-    s.invested = Math.round(s.invested);
-    s.pnl = Math.round(s.pnl);
-    s.roi = s.invested > 0 ? +((s.pnl / s.invested) * 100).toFixed(1) : 0;
-    s.avgBet = s.bets > 0 ? Math.round(s.invested / s.bets) : 0;
-  }
-
-  const sportROI = sportInvested > 0 ? +((sportTotalPnl / sportInvested) * 100).toFixed(1) : 0;
-  const avgSportBet = sportBets > 0 ? Math.round(sportInvested / sportBets) : 0;
-  const sportWinRate = (sportWon + sportLost) > 0 ? +((sportWon / (sportWon + sportLost)) * 100).toFixed(1) : 0;
 
   return {
-    totalPnl: Math.round(totalPnl),
-    sportPnl: roundedSportPnl,
-    sportPnlTotal,
-    marketsTraded: traded?.traded || (currentPositions.length + closedPositions.length),
     sportMarkets,
-    sportBets,
-    sportInvested: Math.round(sportInvested),
-    sportROI,
-    avgSportBet,
-    sportRecord: { won: sportWon, lost: sportLost },
-    sportWinRate,
-    perSport,
+    marketsTraded: traded?.traded || (currentPositions.length + closedPositions.length),
   };
 }
 
@@ -311,17 +229,12 @@ async function run() {
       allWallets[lb.wallet] = {
         name: lb.name || prev?.name || 'Anonymous',
         totalPnl: pnl,
-        sportPnl: profile.sportPnl,
-        sportPnlTotal: Math.round(lb.pnl || 0),
+        sportPnlTotal: pnl,
         sportMarkets: profile.sportMarkets,
         marketsTraded: profile.marketsTraded,
         sportBets: sportMarketCount,
-        sportInvested: Math.round(lbVol),
         sportROI: lbSportROI,
         avgSportBet: lbAvgBet,
-        sportRecord: profile.sportRecord,
-        sportWinRate: profile.sportWinRate,
-        perSport: profile.perSport,
         lastSeen: now,
         builtAt: now,
         source: isMonthlyHot && !seen.has(lb.wallet) ? 'monthly_leaderboard' : 'leaderboard',
@@ -331,21 +244,19 @@ async function run() {
 
       const qualifiesLifetime = lb.pnl >= MIN_SPORT_PNL;
       const qualifiesMonthly = isMonthlyHot && sportMarketCount > 0;
-      const record = profile.sportBets > 0 ? `${profile.sportRecord.won}W-${profile.sportRecord.lost}L` : 'no resolved bets';
       const label = qualifiesLifetime ? 'QUALIFIES (lifetime)' :
-        qualifiesMonthly ? `QUALIFIES (monthly hot, ${sportMarketCount} markets, ${record})` :
+        qualifiesMonthly ? `QUALIFIES (monthly hot, ${sportMarketCount} markets)` :
         isMonthlyHot ? 'SKIP (monthly hot but no tracked sports)' : 'below floor';
       const statsLabel = sportMarketCount > 0 ? ` | ${sportMarketCount} mkts, ${lbSportROI}% ROI, $${lbAvgBet.toLocaleString()} avg` : '';
-      console.log(`$${pnl.toLocaleString()} total, $${Math.round(lb.pnl).toLocaleString()} sport PnL → ${label}${statsLabel}`);
+      console.log(`$${pnl.toLocaleString()} sport PnL → ${label}${statsLabel}`);
     } catch (e) {
       errors++;
       console.log(`error — ${e.message}`);
       if (!allWallets[lb.wallet]) {
         allWallets[lb.wallet] = {
           name: lb.name || 'Anonymous',
-          totalPnl: lb.pnl || 0,
-          sportPnl: {},
-          sportPnlTotal: 0,
+          totalPnl: Math.round(lb.pnl || 0),
+          sportPnlTotal: Math.round(lb.pnl || 0),
           sportMarkets: {},
           marketsTraded: 0,
           lastSeen: now,

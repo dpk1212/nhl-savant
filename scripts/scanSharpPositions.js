@@ -430,8 +430,8 @@ async function run() {
       sportsSharps = wallets;
       for (const [addr, w] of Object.entries(wallets)) {
         sportPnlLookup[addr] = {
-          sportPnl: w.sportPnl || {},
           sportPnlTotal: w.sportPnlTotal || 0,
+          sportMarkets: w.sportMarkets || {},
           sportROI: w.sportROI || 0,
           avgSportBet: w.avgSportBet || 0,
           monthlyPnl: w.monthlyPnl || null,
@@ -478,14 +478,20 @@ async function run() {
 
   const isExcluded = (p, addr) => {
     if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
+    const lookup = sportPnlLookup[addr];
+    if (lookup) {
+      if (lookup.sportPnlTotal > 0) return false;
+      if (lookup.monthlyQualified) return false;
+      return 'no_sport';
+    }
     const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
     if (aggSportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
     if (aggSportPnl <= 0) return 'no_sport';
     return false;
   };
 
-  const mmFiltered = allEligible.filter(([, p]) => isExcluded(p) === 'mm');
-  const sportLosers = allEligible.filter(([, p]) => isExcluded(p) === 'sport_loser');
+  const mmFiltered = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'mm');
+  const sportLosers = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'sport_loser');
   const noSport = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'no_sport');
   const baseWallets = allEligible
     .filter(([addr, p]) => !isExcluded(p, addr))
@@ -499,7 +505,7 @@ async function run() {
     if (addr === '_meta') continue;
     if (baseAddrs.has(addr)) continue;
     if ((p.sportPnlTotal || 0) <= 0 && !p.monthlyQualified) continue;
-    baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0, monthlyQualified: p.monthlyQualified, monthlyPnl: p.monthlyPnl });
+    baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0, monthlyQualified: p.monthlyQualified, monthlyPnl: p.monthlyPnl });
     supplementalCount++;
   }
 
@@ -607,11 +613,12 @@ async function run() {
       const prevFirstSeen = prevPositions[posKey] || null;
 
       const eff = effectiveTier(wallet.tier, wallet.addr, sport);
+      const displayPnl = Math.max(wallet.totalPnl || 0, eff.sportPnl || 0);
       targetResult[sport][match.key].positions.push({
         wallet: wallet.addr,
         name: wallet.name,
         tier: eff.tier,
-        totalPnl: wallet.totalPnl,
+        totalPnl: displayPnl,
         outcome,
         side,
         marketType,

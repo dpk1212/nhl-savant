@@ -296,7 +296,7 @@ async function run() {
 
     try {
       const profile = await buildProfile(w.wallet);
-      const pnl = isLB && w.pnl > profile.totalPnl ? w.pnl : profile.totalPnl;
+      const pnl = isLB ? Math.round(w.pnl) : profile.totalPnl;
       const tier = tierFromStats(pnl, profile.marketsTraded);
 
       const prev = existing[w.wallet];

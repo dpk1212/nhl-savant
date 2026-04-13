@@ -5531,51 +5531,50 @@ export default function SharpFlow() {
   const sharpStats = useMemo(() => {
     const allEliteProven = whaleProfiles ? Object.entries(whaleProfiles).filter(([, p]) => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
     const sportSharpsAddrs = sportsSharps ? new Set(Object.keys(sportsSharps).filter(k => k !== '_meta')) : new Set();
+
+    const isClean = (addr, p) => {
+      if ((p.mmScore || 0) > 40) return false;
+      const lookup = sportsSharps?.[addr];
+      if (lookup) return (lookup.sportPnlTotal || 0) > 0 || lookup.monthlyQualified;
+      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+      return aggSportPnl > 0;
+    };
+
     const mmExcluded = allEliteProven.filter(([, p]) => (p.mmScore || 0) > 40).length;
-    const sportLosers = allEliteProven.filter(([, p]) => {
-      if ((p.mmScore || 0) > 40) return false;
-      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) < -50000;
-    }).length;
-    const noSport = allEliteProven.filter(([addr, p]) => {
-      if ((p.mmScore || 0) > 40) return false;
-      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-      if (aggSportPnl < -50000) return false;
-      return aggSportPnl <= 0;
-    }).length;
-    const totalExcluded = mmExcluded + sportLosers + noSport;
-    const cleanWallets = allEliteProven.filter(([addr, p]) => {
-      if ((p.mmScore || 0) > 40) return false;
-      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-      if (aggSportPnl < -50000) return false;
-      if (aggSportPnl <= 0) return false;
-      return true;
-    }).map(([, p]) => p);
-    const cleanAddrs = new Set(allEliteProven.filter(([addr, p]) => {
-      if ((p.mmScore || 0) > 40) return false;
-      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-      if (aggSportPnl < -50000) return false;
-      if (aggSportPnl <= 0) return false;
-      return true;
-    }).map(([addr]) => addr));
+    const nonMM = allEliteProven.filter(([, p]) => (p.mmScore || 0) <= 40);
+    const noSport = nonMM.filter(([addr, p]) => !isClean(addr, p)).length;
+    const totalExcluded = mmExcluded + noSport;
+
+    const cleanEntries = allEliteProven.filter(([addr, p]) => isClean(addr, p));
+    const cleanAddrs = new Set(cleanEntries.map(([addr]) => addr));
+
     const supplementalCount = [...sportSharpsAddrs].filter(addr => {
       if (cleanAddrs.has(addr)) return false;
       const w = sportsSharps[addr];
       return (w?.sportPnlTotal || 0) > 0 || w?.monthlyQualified;
     }).length;
+
     let totalSharpInvested = 0;
     for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
       const sg = sharpPositions?.[sport] || {};
       for (const gd of Object.values(sg)) totalSharpInvested += gd.summary?.totalInvested || 0;
     }
+
+    const cleanPnl = cleanEntries.reduce((s, [addr, p]) => {
+      const lookup = sportsSharps?.[addr];
+      return s + (lookup ? (lookup.sportPnlTotal || 0) : (p.totalPnl || 0));
+    }, 0);
+    const supplementalPnl = [...sportSharpsAddrs].filter(addr => {
+      if (cleanAddrs.has(addr)) return false;
+      const w = sportsSharps[addr];
+      return (w?.sportPnlTotal || 0) > 0 || w?.monthlyQualified;
+    }).reduce((s, addr) => s + (sportsSharps[addr]?.sportPnlTotal || 0), 0);
+
     return {
       trackedCount: cleanAddrs.size + supplementalCount,
-      totalExcluded, mmExcluded, sportLosers, noSport, supplementalCount,
+      totalExcluded, mmExcluded, sportLosers: 0, noSport, supplementalCount,
       gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length + Object.values(sharpPositions.NBA || {}).length : 0,
-      totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0) + [...sportSharpsAddrs].filter(addr => {
-        if (cleanAddrs.has(addr)) return false;
-        const w = sportsSharps[addr];
-        return (w?.sportPnlTotal || 0) > 0 || w?.monthlyQualified;
-      }).reduce((s, addr) => s + (sportsSharps[addr]?.totalPnl || 0), 0),
+      totalSharpPnl: cleanPnl + supplementalPnl,
       totalSharpInvested,
     };
   }, [whaleProfiles, sharpPositions, sportsSharps]);
@@ -5590,15 +5589,14 @@ export default function SharpFlow() {
         wallet: addr,
         name: '***' + addr.slice(-4),
         totalPnl: w.totalPnl || 0,
-        sportPnl: w.sportPnl || {},
         sportPnlTotal: w.sportPnlTotal || 0,
         sportMarkets: w.sportMarkets || {},
         marketsTraded: w.marketsTraded || 0,
         vol: w.vol || 0,
-        roi: w.vol > 0 ? (w.totalPnl / w.vol) * 100 : 0,
-        avgBet: w.marketsTraded > 0 ? w.vol / w.marketsTraded : 0,
+        roi: w.sportROI || (w.vol > 0 ? (w.totalPnl / w.vol) * 100 : 0),
+        avgBet: w.avgSportBet || (w.marketsTraded > 0 ? w.vol / w.marketsTraded : 0),
         sportBets: Object.values(w.sportMarkets || {}).reduce((s, v) => s + v, 0),
-        sportsProfitable: Object.values(w.sportPnl || {}).filter(v => v > 0).length,
+        sportsActive: Object.keys(w.sportMarkets || {}).length,
       }))
       .sort((a, b) => b.sportPnlTotal - a.sportPnlTotal)
       .slice(0, VAULT_SIZE);
@@ -5623,7 +5621,7 @@ export default function SharpFlow() {
           };
           const entry = entries.find(e => e.wallet.toLowerCase() === wLower);
           convergenceMap[convKey].sharps.push({
-            name: entry?.name || pos.name, sportPnl: entry?.sportPnl?.[sport] || 0,
+            name: entry?.name || pos.name, sportPnl: entry?.sportPnlTotal || 0,
             invested: pos.invested || 0, wallet: wLower,
           });
         }
@@ -5688,8 +5686,8 @@ export default function SharpFlow() {
         const filteredEntries = vaultSportFilter === 'ALL'
           ? entries
           : [...entries]
-              .filter(e => (e.sportPnl[vaultSportFilter] || 0) > 0)
-              .sort((a, b) => (b.sportPnl[vaultSportFilter] || 0) - (a.sportPnl[vaultSportFilter] || 0));
+              .filter(e => (e.sportMarkets[vaultSportFilter] || 0) > 0)
+              .sort((a, b) => (b.sportMarkets[vaultSportFilter] || 0) - (a.sportMarkets[vaultSportFilter] || 0));
 
         const avgRoi = entries.length > 0 ? entries.reduce((s, e) => s + e.roi, 0) / entries.length : 0;
 
@@ -5795,7 +5793,7 @@ export default function SharpFlow() {
                               <span style={{ ...T.label, color: B.textSec, fontWeight: 600 }}>{sh.name}</span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                                 <span style={{ ...T.micro, color: B.green, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
-                                  +{fmtVol(sh.sportPnl)} {c.sport}
+                                  +{fmtVol(sh.sportPnl)} sports
                                 </span>
                                 <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                                   {fmtVol(sh.invested)}
@@ -5851,7 +5849,7 @@ export default function SharpFlow() {
                 const isExpanded = expandedVaultRow === e.wallet;
                 const positions = todayPositions[e.wallet.toLowerCase()] || [];
                 const isActive = positions.length > 0;
-                const displayPnl = vaultSportFilter === 'ALL' ? e.sportPnlTotal : (e.sportPnl[vaultSportFilter] || 0);
+                const displayPnl = e.sportPnlTotal;
                 const isTop3 = idx < 3;
                 const medalColors = ['#D4AF37', '#C0C0C0', '#CD7F32'];
                 const rowAccent = isTop3 ? medalColors[idx] : isActive ? '#22D3EE' : B.border;
@@ -6000,14 +5998,12 @@ export default function SharpFlow() {
                           display: 'flex', flexDirection: 'column', gap: '0.5rem',
                           marginBottom: positions.length > 0 ? '1rem' : 0,
                         }}>
-                          <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em' }}>SPORT BREAKDOWN</div>
+                          <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em' }}>SPORT ACTIVITY</div>
                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {Object.entries(e.sportPnl)
+                            {Object.entries(e.sportMarkets)
                               .filter(([, v]) => v > 0)
                               .sort(([, a], [, b]) => b - a)
-                              .map(([sport, pnl]) => {
-                                const bets = e.sportMarkets[sport] || 0;
-                                return (
+                              .map(([sport, bets]) => (
                                   <div key={sport} style={{
                                     padding: '0.4rem 0.6rem', borderRadius: '8px',
                                     background: (SPORT_COLORS[sport] || B.gold) + '0A',
@@ -6019,14 +6015,13 @@ export default function SharpFlow() {
                                       ...T.label, fontWeight: 800, fontFeatureSettings: "'tnum'",
                                       color: SPORT_COLORS[sport] || B.gold,
                                     }}>
-                                      +{fmtVol(pnl)}
+                                      {bets}
                                     </span>
                                     <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.525rem' }}>
-                                      {sport} · {bets} bet{bets !== 1 ? 's' : ''}
+                                      {sport} market{bets !== 1 ? 's' : ''}
                                     </span>
                                   </div>
-                                );
-                              })
+                                ))
                             }
                           </div>
                         </div>
@@ -6776,7 +6771,7 @@ export default function SharpFlow() {
                         </span>
                         {sharpStats.totalExcluded > 0 && (
                           <span style={{ ...T.micro, color: B.textSec }}>
-                            <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {sharpStats.mmExcluded} MMs + {sharpStats.sportLosers} sport losers removed
+                            <span style={{ fontWeight: 700, color: B.red }}>FILTERED</span> = {sharpStats.mmExcluded} MMs + {sharpStats.noSport} non-sport removed
                           </span>
                         )}
                       </div>
