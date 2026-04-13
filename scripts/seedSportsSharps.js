@@ -302,38 +302,41 @@ async function run() {
 
     try {
       const profile = await buildProfile(lb.wallet);
-      const pnl = Math.round(lb.pnl || profile.totalPnl);
+      const pnl = Math.round(lb.pnl || 0);
+      const lbVol = lb.vol || 0;
+      const lbSportROI = lbVol > 0 ? +((lb.pnl / lbVol) * 100).toFixed(1) : 0;
+      const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
+      const lbAvgBet = sportMarketCount > 0 ? Math.round(lbVol / sportMarketCount) : 0;
 
       allWallets[lb.wallet] = {
         name: lb.name || prev?.name || 'Anonymous',
         totalPnl: pnl,
         sportPnl: profile.sportPnl,
-        sportPnlTotal: profile.sportPnlTotal,
+        sportPnlTotal: Math.round(lb.pnl || 0),
         sportMarkets: profile.sportMarkets,
         marketsTraded: profile.marketsTraded,
-        sportBets: profile.sportBets,
-        sportInvested: profile.sportInvested,
-        sportROI: profile.sportROI,
-        avgSportBet: profile.avgSportBet,
+        sportBets: sportMarketCount,
+        sportInvested: Math.round(lbVol),
+        sportROI: lbSportROI,
+        avgSportBet: lbAvgBet,
         sportRecord: profile.sportRecord,
         sportWinRate: profile.sportWinRate,
         perSport: profile.perSport,
         lastSeen: now,
         builtAt: now,
         source: isMonthlyHot && !seen.has(lb.wallet) ? 'monthly_leaderboard' : 'leaderboard',
-        vol: lb.vol || 0,
+        vol: lbVol,
         ...(isMonthlyHot && { monthlyPnl: monthlyPnlMap[lb.wallet], monthlyQualified: true }),
       };
 
-      const qualifiesLifetime = profile.sportPnlTotal >= MIN_SPORT_PNL;
-      const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
+      const qualifiesLifetime = lb.pnl >= MIN_SPORT_PNL;
       const qualifiesMonthly = isMonthlyHot && sportMarketCount > 0;
-      const record = profile.sportBets > 0 ? `${profile.sportRecord.won}W-${profile.sportRecord.lost}L, ${profile.sportROI}% ROI` : 'no resolved bets';
+      const record = profile.sportBets > 0 ? `${profile.sportRecord.won}W-${profile.sportRecord.lost}L` : 'no resolved bets';
       const label = qualifiesLifetime ? 'QUALIFIES (lifetime)' :
         qualifiesMonthly ? `QUALIFIES (monthly hot, ${sportMarketCount} markets, ${record})` :
         isMonthlyHot ? 'SKIP (monthly hot but no tracked sports)' : 'below floor';
-      const statsLabel = profile.sportBets > 0 ? ` | ${profile.sportBets} bets, ${profile.sportROI}% ROI, $${profile.avgSportBet} avg` : '';
-      console.log(`$${pnl.toLocaleString()} total, $${profile.sportPnlTotal.toLocaleString()} sport PnL → ${label}${statsLabel}`);
+      const statsLabel = sportMarketCount > 0 ? ` | ${sportMarketCount} mkts, ${lbSportROI}% ROI, $${lbAvgBet.toLocaleString()} avg` : '';
+      console.log(`$${pnl.toLocaleString()} total, $${Math.round(lb.pnl).toLocaleString()} sport PnL → ${label}${statsLabel}`);
     } catch (e) {
       errors++;
       console.log(`error — ${e.message}`);
