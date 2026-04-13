@@ -118,33 +118,59 @@ async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH) {
 }
 
 async function buildProfile(wallet) {
-  const positions = await fetchWithRetry(
-    `${DATA_API}/positions?user=${wallet}&sortBy=CASHPNL&limit=500`
-  );
-  await sleep(DELAY_MS);
+  // Paginate through all positions (API caps at 500 per page)
+  let allPositions = [];
+  for (let offset = 0; offset < 10000; offset += 500) {
+    const page = await fetchWithRetry(
+      `${DATA_API}/positions?user=${wallet}&sortBy=CASHPNL&limit=500&offset=${offset}`
+    );
+    await sleep(DELAY_MS);
+    if (!page || !Array.isArray(page) || page.length === 0) break;
+    allPositions.push(...page);
+    if (page.length < 500) break;
+  }
 
   const traded = await fetchWithRetry(
     `${DATA_API}/traded?user=${wallet}`
   );
   await sleep(DELAY_MS);
 
-  if (!positions || !Array.isArray(positions)) {
-    return { totalPnl: 0, sportPnl: {}, sportPnlTotal: 0, marketsTraded: traded?.traded || 0, sportMarkets: {} };
+  if (allPositions.length === 0) {
+    return { totalPnl: 0, sportPnl: {}, sportPnlTotal: 0, marketsTraded: traded?.traded || 0, sportMarkets: {},
+      sportBets: 0, sportInvested: 0, sportROI: 0, avgSportBet: 0,
+      sportRecord: { won: 0, lost: 0 }, sportWinRate: 0, perSport: {} };
   }
 
   let totalPnl = 0;
   const sportPnl = {};
   const sportMarkets = {};
+  const perSport = {};
+  let sportBets = 0, sportInvested = 0, sportTotalPnl = 0;
+  let sportWon = 0, sportLost = 0;
 
-  for (const p of positions) {
+  for (const p of allPositions) {
     const pnl = parseFloat(p.cashPnl || '0');
+    const invested = parseFloat(p.initialValue || '0');
     totalPnl += pnl;
 
     const sport = classifySport(p.title || '');
-    if (sport) {
-      sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
-      sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
-    }
+    if (!sport) continue;
+
+    sportPnl[sport] = (sportPnl[sport] || 0) + pnl;
+    sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+
+    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
+    perSport[sport].bets++;
+    perSport[sport].invested += invested;
+    perSport[sport].pnl += pnl;
+
+    sportBets++;
+    sportInvested += invested;
+    sportTotalPnl += pnl;
+
+    const isResolved = p.curPrice === 0 || p.curPrice === 1;
+    if (isResolved && pnl > 0) { sportWon++; perSport[sport].won++; }
+    if (isResolved && pnl < 0) { sportLost++; perSport[sport].lost++; }
   }
 
   const roundedSportPnl = Object.fromEntries(
@@ -152,12 +178,31 @@ async function buildProfile(wallet) {
   );
   const sportPnlTotal = Object.values(roundedSportPnl).reduce((s, v) => s + v, 0);
 
+  // Round per-sport stats
+  for (const s of Object.values(perSport)) {
+    s.invested = Math.round(s.invested);
+    s.pnl = Math.round(s.pnl);
+    s.roi = s.invested > 0 ? +((s.pnl / s.invested) * 100).toFixed(1) : 0;
+    s.avgBet = s.bets > 0 ? Math.round(s.invested / s.bets) : 0;
+  }
+
+  const sportROI = sportInvested > 0 ? +((sportTotalPnl / sportInvested) * 100).toFixed(1) : 0;
+  const avgSportBet = sportBets > 0 ? Math.round(sportInvested / sportBets) : 0;
+  const sportWinRate = (sportWon + sportLost) > 0 ? +((sportWon / (sportWon + sportLost)) * 100).toFixed(1) : 0;
+
   return {
     totalPnl: Math.round(totalPnl),
     sportPnl: roundedSportPnl,
     sportPnlTotal,
-    marketsTraded: traded?.traded || positions.length,
+    marketsTraded: traded?.traded || allPositions.length,
     sportMarkets,
+    sportBets,
+    sportInvested: Math.round(sportInvested),
+    sportROI,
+    avgSportBet,
+    sportRecord: { won: sportWon, lost: sportLost },
+    sportWinRate,
+    perSport,
   };
 }
 
@@ -225,6 +270,13 @@ async function run() {
         sportPnlTotal: profile.sportPnlTotal,
         sportMarkets: profile.sportMarkets,
         marketsTraded: profile.marketsTraded,
+        sportBets: profile.sportBets,
+        sportInvested: profile.sportInvested,
+        sportROI: profile.sportROI,
+        avgSportBet: profile.avgSportBet,
+        sportRecord: profile.sportRecord,
+        sportWinRate: profile.sportWinRate,
+        perSport: profile.perSport,
         lastSeen: now,
         builtAt: now,
         source: isMonthlyHot && !seen.has(lb.wallet) ? 'monthly_leaderboard' : 'leaderboard',
@@ -236,7 +288,8 @@ async function run() {
       const qualifiesMonthly = isMonthlyHot;
       const label = qualifiesLifetime ? 'QUALIFIES (lifetime)' :
         qualifiesMonthly ? 'QUALIFIES (monthly hot)' : 'below floor';
-      console.log(`$${pnl.toLocaleString()} total, $${profile.sportPnlTotal.toLocaleString()} sport PnL → ${label}`);
+      const statsLabel = profile.sportBets > 0 ? ` | ${profile.sportBets} bets, ${profile.sportROI}% ROI, $${profile.avgSportBet} avg` : '';
+      console.log(`$${pnl.toLocaleString()} total, $${profile.sportPnlTotal.toLocaleString()} sport PnL → ${label}${statsLabel}`);
     } catch (e) {
       errors++;
       console.log(`error — ${e.message}`);
