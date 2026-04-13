@@ -5500,17 +5500,27 @@ export default function SharpFlow() {
   }, [filteredGames]);
 
   const sharpStats = useMemo(() => {
-    const allEliteProven = whaleProfiles ? Object.values(whaleProfiles).filter(p => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
-    const mmExcluded = allEliteProven.filter(p => (p.mmScore || 0) > 40).length;
-    const sportLosers = allEliteProven.filter(p => {
+    const allEliteProven = whaleProfiles ? Object.entries(whaleProfiles).filter(([, p]) => ['ELITE', 'PROVEN'].includes(p.tier)) : [];
+    const sportSharpsAddrs = sportsSharps ? new Set(Object.keys(sportsSharps).filter(k => k !== '_meta')) : new Set();
+    const mmExcluded = allEliteProven.filter(([, p]) => (p.mmScore || 0) > 40).length;
+    const sportLosers = allEliteProven.filter(([, p]) => {
       if ((p.mmScore || 0) > 40) return false;
       return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) < -50000;
     }).length;
-    const totalExcluded = mmExcluded + sportLosers;
-    const cleanWallets = allEliteProven.filter(p => {
+    const noSport = allEliteProven.filter(([addr, p]) => {
       if ((p.mmScore || 0) > 40) return false;
-      return Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0) >= -50000;
-    });
+      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+      if (aggSportPnl < -50000) return false;
+      return !sportSharpsAddrs.has(addr) && aggSportPnl <= 0;
+    }).length;
+    const totalExcluded = mmExcluded + sportLosers + noSport;
+    const cleanWallets = allEliteProven.filter(([addr, p]) => {
+      if ((p.mmScore || 0) > 40) return false;
+      const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+      if (aggSportPnl < -50000) return false;
+      if (!sportSharpsAddrs.has(addr) && aggSportPnl <= 0) return false;
+      return true;
+    }).map(([, p]) => p);
     let totalSharpInvested = 0;
     for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
       const sg = sharpPositions?.[sport] || {};
@@ -5518,12 +5528,12 @@ export default function SharpFlow() {
     }
     return {
       trackedCount: allEliteProven.length - totalExcluded,
-      totalExcluded, mmExcluded, sportLosers,
+      totalExcluded, mmExcluded, sportLosers, noSport,
       gamesWithPos: sharpPositions ? Object.values(sharpPositions.NHL || {}).length + Object.values(sharpPositions.CBB || {}).length + Object.values(sharpPositions.NBA || {}).length : 0,
       totalSharpPnl: cleanWallets.reduce((s, p) => s + (p.totalPnl || 0), 0),
       totalSharpInvested,
     };
-  }, [whaleProfiles, sharpPositions]);
+  }, [whaleProfiles, sharpPositions, sportsSharps]);
 
   const VAULT_SIZE = 10;
 

@@ -467,17 +467,20 @@ async function run() {
   const allEligible = Object.entries(profiles)
     .filter(([, p]) => TIERS_TO_SCAN.includes(p.tier));
 
-  const isExcluded = (p) => {
+  const isExcluded = (p, addr) => {
     if ((p.mmScore || 0) > MM_THRESHOLD) return 'mm';
-    const sportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-    if (sportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
+    const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
+    if (aggSportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
+    const inSportSharps = !!sportsSharps[addr];
+    if (!inSportSharps && aggSportPnl <= 0) return 'no_sport';
     return false;
   };
 
   const mmFiltered = allEligible.filter(([, p]) => isExcluded(p) === 'mm');
   const sportLosers = allEligible.filter(([, p]) => isExcluded(p) === 'sport_loser');
+  const noSport = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'no_sport');
   const baseWallets = allEligible
-    .filter(([, p]) => !isExcluded(p))
+    .filter(([addr, p]) => !isExcluded(p, addr))
     .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }));
 
   // Merge in sport sharps that aren't already in the base list
@@ -491,7 +494,7 @@ async function run() {
   }
 
   const walletsToScan = baseWallets.sort((a, b) => b.totalPnl - a.totalPnl);
-  console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers excluded, ${supplementalCount} added from sport sharps)...\n`);
+  console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers + ${noSport.length} non-sport excluded, ${supplementalCount} added from sport sharps)...\n`);
 
   // Build lookup of previous firstSeen timestamps to preserve across rescans
   const prevPositions = {};
@@ -668,7 +671,8 @@ async function run() {
     walletsScanned: walletsToScan.length,
     mmExcluded: mmFiltered.length,
     sportLosersExcluded: sportLosers.length,
-    totalExcluded: mmFiltered.length + sportLosers.length,
+    noSportExcluded: noSport.length,
+    totalExcluded: mmFiltered.length + sportLosers.length + noSport.length,
   };
 
   Object.assign(result, meta);
