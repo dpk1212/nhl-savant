@@ -613,12 +613,12 @@ async function run() {
       const prevFirstSeen = prevPositions[posKey] || null;
 
       const eff = effectiveTier(wallet.tier, wallet.addr, sport);
-      const displayPnl = Math.max(wallet.totalPnl || 0, eff.sportPnl || 0);
       targetResult[sport][match.key].positions.push({
         wallet: wallet.addr,
         name: wallet.name,
         tier: eff.tier,
-        totalPnl: displayPnl,
+        totalPnl: eff.sportPnl || wallet.totalPnl || 0,
+        sportPnlTotal: eff.sportPnl || 0,
         outcome,
         side,
         marketType,
