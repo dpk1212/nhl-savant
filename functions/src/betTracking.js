@@ -930,19 +930,20 @@ function calculateOutcome(game, bet) {
       }
 
     case "PUCK_LINE":
-    case "PUCKLINE":
+    case "PUCKLINE": {
       const spread = bet.line || 1.5;
       if (bet.side === "HOME") {
-        const homeSpread = game.homeScore - game.awayScore;
-        if (homeSpread > spread) return "WIN";
-        if (homeSpread < spread) return "LOSS";
+        const adjusted = (game.homeScore - game.awayScore) + spread;
+        if (adjusted > 0) return "WIN";
+        if (adjusted < 0) return "LOSS";
         return "PUSH";
       } else {
-        const awaySpread = game.awayScore - game.homeScore;
-        if (awaySpread > spread) return "WIN";
-        if (awaySpread < spread) return "LOSS";
+        const adjusted = (game.awayScore - game.homeScore) + spread;
+        if (adjusted > 0) return "WIN";
+        if (adjusted < 0) return "LOSS";
         return "PUSH";
       }
+    }
 
     default:
       logger.warn(`Unknown market type: ${bet.market}`);

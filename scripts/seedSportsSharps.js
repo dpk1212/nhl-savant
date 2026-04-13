@@ -1,9 +1,12 @@
 /**
- * Seed Sports Sharps — builds a curated list of the top 250 most
- * profitable sports bettors on Polymarket, ranked purely by sport PnL.
+ * Seed Sports Sharps — builds a curated list of the top sports bettors
+ * on Polymarket by pulling both ALL-TIME and MONTHLY sports leaderboards.
  *
- * Separate from buildWhaleProfiles.js so the existing pipeline is untouched.
- * scanSharpPositions.js prefers this file when it exists and is ready.
+ * Qualification: lifetime sport PnL >= $5K OR monthly sport PnL >= $20K.
+ * Monthly-hot wallets are always re-profiled (bypass stale check) so
+ * currently-winning bettors are captured even if their all-time is negative.
+ *
+ * scanSharpPositions.js uses this file to build the sharp wallet universe.
  *
  * Usage: node scripts/seedSportsSharps.js
  */
@@ -23,8 +26,9 @@ const httpFetch = typeof globalThis.fetch === 'function'
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const LB_DEPTH = 1500;
-const MAX_SHARPS = 250;
+const MAX_SHARPS = 500;
 const MIN_SPORT_PNL = 5000;
+const MIN_MONTHLY_PNL = 20000;
 const REFRESH_HOURS = 48;
 const DELAY_MS = 800;
 const RETRY_LIMIT = 3;
@@ -88,11 +92,11 @@ async function fetchWithRetry(url, retries = RETRY_LIMIT) {
   return null;
 }
 
-async function fetchLeaderboard() {
-  console.log(`Fetching sports leaderboard (top ${LB_DEPTH})...`);
+async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH) {
+  console.log(`Fetching sports leaderboard (${timePeriod}, top ${depth})...`);
   const all = [];
-  for (let offset = 0; offset < LB_DEPTH; offset += 50) {
-    const url = `${DATA_API}/v1/leaderboard?timePeriod=ALL&category=SPORTS&orderBy=PNL&limit=50&offset=${offset}`;
+  for (let offset = 0; offset < depth; offset += 50) {
+    const url = `${DATA_API}/v1/leaderboard?timePeriod=${timePeriod}&category=SPORTS&orderBy=PNL&limit=50&offset=${offset}`;
     const data = await fetchWithRetry(url);
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.log(`  Leaderboard exhausted at offset ${offset} (${all.length} entries)`);
@@ -104,7 +108,7 @@ async function fetchLeaderboard() {
     }
     await sleep(500);
   }
-  console.log(`  Total leaderboard entries: ${all.length}`);
+  console.log(`  Total ${timePeriod} entries: ${all.length}`);
   return all.map(t => ({
     wallet: (t.proxyWallet || '').toLowerCase(),
     name: t.userName || null,
@@ -169,26 +173,46 @@ async function run() {
   const now = Date.now();
   const refreshCutoff = now - REFRESH_HOURS * 60 * 60 * 1000;
 
-  const leaderboard = await fetchLeaderboard();
-  console.log(`\nProfiling ${leaderboard.length} leaderboard wallets...\n`);
+  // Fetch both all-time and monthly sports leaderboards
+  const allTimeLB = await fetchLeaderboard('ALL', LB_DEPTH);
+  const monthlyLB = await fetchLeaderboard('MONTH', 1000);
+
+  // Monthly hot wallets: $20K+ monthly sports profit
+  const monthlyHot = monthlyLB.filter(w => w.pnl >= MIN_MONTHLY_PNL);
+  console.log(`\nMonthly hot bettors ($${(MIN_MONTHLY_PNL / 1000).toFixed(0)}K+): ${monthlyHot.length}`);
+
+  // Merge: all-time first, then monthly-only wallets that aren't already in the list
+  const seen = new Set(allTimeLB.map(w => w.wallet));
+  const monthlyOnly = monthlyHot.filter(w => !seen.has(w.wallet));
+  console.log(`Monthly-only wallets (not on all-time LB): ${monthlyOnly.length}`);
+
+  const combined = [...allTimeLB, ...monthlyOnly];
+  console.log(`\nProfiling ${combined.length} total wallets...\n`);
+
+  // Track which wallets qualified via monthly
+  const monthlyQualified = new Set(monthlyHot.map(w => w.wallet));
+  const monthlyPnlMap = Object.fromEntries(monthlyHot.map(w => [w.wallet, w.pnl]));
 
   const allWallets = { ...prevWallets };
   let profiled = 0;
   let skipped = 0;
   let errors = 0;
 
-  for (const lb of leaderboard) {
+  for (const lb of combined) {
     const prev = allWallets[lb.wallet];
+    // Monthly-hot wallets always get refreshed regardless of staleness
+    const isMonthlyHot = monthlyQualified.has(lb.wallet);
     const isFresh = prev?.builtAt && prev.builtAt > refreshCutoff;
 
-    if (isFresh) {
+    if (isFresh && !isMonthlyHot) {
       skipped++;
       continue;
     }
 
     profiled++;
     const displayName = lb.name || lb.wallet.slice(0, 10) + '...';
-    process.stdout.write(`  [${profiled}] ${displayName}: `);
+    const monthlyTag = isMonthlyHot ? ` [MONTHLY +$${(monthlyPnlMap[lb.wallet] / 1000).toFixed(0)}K]` : '';
+    process.stdout.write(`  [${profiled}] ${displayName}${monthlyTag}: `);
 
     try {
       const profile = await buildProfile(lb.wallet);
@@ -203,12 +227,16 @@ async function run() {
         marketsTraded: profile.marketsTraded,
         lastSeen: now,
         builtAt: now,
-        source: 'leaderboard',
+        source: isMonthlyHot && !seen.has(lb.wallet) ? 'monthly_leaderboard' : 'leaderboard',
         vol: lb.vol || 0,
+        ...(isMonthlyHot && { monthlyPnl: monthlyPnlMap[lb.wallet], monthlyQualified: true }),
       };
 
-      const sportLabel = profile.sportPnlTotal >= MIN_SPORT_PNL ? 'QUALIFIES' : 'below floor';
-      console.log(`$${pnl.toLocaleString()} total, $${profile.sportPnlTotal.toLocaleString()} sport PnL → ${sportLabel}`);
+      const qualifiesLifetime = profile.sportPnlTotal >= MIN_SPORT_PNL;
+      const qualifiesMonthly = isMonthlyHot;
+      const label = qualifiesLifetime ? 'QUALIFIES (lifetime)' :
+        qualifiesMonthly ? 'QUALIFIES (monthly hot)' : 'below floor';
+      console.log(`$${pnl.toLocaleString()} total, $${profile.sportPnlTotal.toLocaleString()} sport PnL → ${label}`);
     } catch (e) {
       errors++;
       console.log(`error — ${e.message}`);
@@ -222,15 +250,20 @@ async function run() {
           marketsTraded: 0,
           lastSeen: now,
           builtAt: now,
-          source: 'leaderboard',
+          source: isMonthlyHot ? 'monthly_leaderboard' : 'leaderboard',
           vol: lb.vol || 0,
+          ...(isMonthlyHot && { monthlyPnl: monthlyPnlMap[lb.wallet], monthlyQualified: true }),
         };
       }
     }
   }
 
+  // Qualify: lifetime sport PnL >= $5K OR monthly sports PnL >= $20K
   const qualified = Object.entries(allWallets)
-    .filter(([, p]) => (p.sportPnlTotal || 0) >= MIN_SPORT_PNL)
+    .filter(([addr, p]) =>
+      (p.sportPnlTotal || 0) >= MIN_SPORT_PNL ||
+      (p.monthlyQualified === true)
+    )
     .sort((a, b) => (b[1].sportPnlTotal || 0) - (a[1].sportPnlTotal || 0))
     .slice(0, MAX_SHARPS);
 
@@ -239,6 +272,8 @@ async function run() {
     output[addr] = profile;
   }
 
+  const lifetimeCount = qualified.filter(([, p]) => (p.sportPnlTotal || 0) >= MIN_SPORT_PNL).length;
+  const monthlyOnlyCount = qualified.filter(([, p]) => (p.sportPnlTotal || 0) < MIN_SPORT_PNL && p.monthlyQualified).length;
   const minPnl = qualified.length > 0
     ? qualified[qualified.length - 1][1].sportPnlTotal
     : 0;
@@ -247,8 +282,12 @@ async function run() {
     ready: qualified.length > 0,
     seededAt: now,
     walletCount: qualified.length,
+    lifetimeQualified: lifetimeCount,
+    monthlyHotQualified: monthlyOnlyCount,
     minSportPnl: minPnl,
-    leaderboardDepth: leaderboard.length,
+    minMonthlyPnl: MIN_MONTHLY_PNL,
+    leaderboardDepth: allTimeLB.length,
+    monthlyLeaderboardDepth: monthlyLB.length,
     profiledThisRun: profiled,
     skippedFresh: skipped,
     errors,
@@ -257,9 +296,11 @@ async function run() {
   writeFileSync(outPath, JSON.stringify(output, null, 2), 'utf8');
 
   console.log(`\n=== Results ===`);
-  console.log(`Leaderboard depth: ${leaderboard.length}`);
+  console.log(`All-time LB: ${allTimeLB.length} | Monthly LB: ${monthlyLB.length} (${monthlyHot.length} with $${(MIN_MONTHLY_PNL / 1000).toFixed(0)}K+)`);
   console.log(`Profiled this run: ${profiled} (${skipped} skipped as fresh, ${errors} errors)`);
-  console.log(`Qualified sharps: ${qualified.length} (sport PnL >= $${MIN_SPORT_PNL.toLocaleString()})`);
+  console.log(`Qualified sharps: ${qualified.length} total`);
+  console.log(`  Lifetime ($${MIN_SPORT_PNL.toLocaleString()}+ sport PnL): ${lifetimeCount}`);
+  console.log(`  Monthly-only ($${MIN_MONTHLY_PNL.toLocaleString()}+ this month): ${monthlyOnlyCount}`);
   if (qualified.length > 0) {
     console.log(`Sport PnL range: $${qualified[0][1].sportPnlTotal.toLocaleString()} → $${minPnl.toLocaleString()}`);
   }
