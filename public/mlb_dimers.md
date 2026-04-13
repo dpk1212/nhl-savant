@@ -65,21 +65,21 @@ Apr 13 2026
 \\
 Astros  M. Burrows \\
 \\
-40% \\
+41% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+153\\
++151\\
 \\
 ![Mariners](https://cdn.ciphersports.io/images/MLB/official/SEA.svg)\\
 \\
 Mariners  G. Kirby \\
 \\
-60% \\
+59% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--157\\
+-153\\
 \\
 MLB \\
 \\
@@ -91,9 +91,9 @@ D-Backs  R. Nelson \\
 \\
 47% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+122\\
++118\\
 \\
 ![Orioles](https://cdn.ciphersports.io/images/MLB/official/BAL.svg)\\
 \\
@@ -103,7 +103,7 @@ Orioles  T. Rogers \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--123\\
+-120\\
 \\
 MLB \\
 \\
@@ -115,9 +115,9 @@ Nationals  C. Cavalli \\
 \\
 34% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+195\\
++194\\
 \\
 ![Pirates](https://cdn.ciphersports.io/images/MLB/official/PIT.svg)\\
 \\
@@ -127,7 +127,7 @@ Pirates  P. Skenes \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--198\\
+-200\\
 \\
 MLB \\
 \\
@@ -139,9 +139,9 @@ Cubs  J. Assad \\
 \\
 39% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+170\\
++163\\
 \\
 ![Phillies](https://cdn.ciphersports.io/images/MLB/official/PHI.svg)\\
 \\
@@ -151,7 +151,7 @@ Phillies  C. Sánchez \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--174\\
+-162\\
 \\
 MLB \\
 \\
@@ -163,9 +163,9 @@ Angels  Y. Kikuchi \\
 \\
 38% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
-+170\\
++166\\
 \\
 ![Yankees](https://cdn.ciphersports.io/images/MLB/official/NYY.svg)\\
 \\
@@ -175,7 +175,7 @@ Yankees  W. Warren \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--173\\
+-170\\
 \\
 MLB \\
 \\
@@ -185,21 +185,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_20_nyy_la
 \\
 Marlins  E. Pérez \\
 \\
-43% \\
+42% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+130\\
++138\\
 \\
 ![Braves](https://cdn.ciphersports.io/images/MLB/official/ATL.svg)\\
 \\
 Braves  G. Holmes \\
 \\
-57% \\
+58% \\
 \\
-![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
+![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--138\\
+-140\\
 \\
 MLB \\
 \\
@@ -211,9 +211,9 @@ Red Sox  G. Crochet \\
 \\
 59% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
--155\\
+-150\\
 \\
 ![Twins](https://cdn.ciphersports.io/images/MLB/official/MIN.svg)\\
 \\
@@ -221,9 +221,9 @@ Twins  B. Ober \\
 \\
 41% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+153\\
++150\\
 \\
 MLB \\
 \\
@@ -257,21 +257,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_20_stl_cl
 \\
 Rangers  N. Eovaldi \\
 \\
-54% \\
+52% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--122\\
+-111\\
 \\
 ![Athletics](https://cdn.ciphersports.io/images/MLB/official/ATH.svg)\\
 \\
 Athletics  L. Severino \\
 \\
-46% \\
+48% \\
 \\
 ![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+117\\
++113\\
 \\
 MLB \\
 \\
@@ -281,21 +281,21 @@ See Game Predictions](https://www.dimers.com/bet-hub/mlb/schedule/2026_20_ath_te
 \\
 Mets  D. Peterson \\
 \\
-40% \\
+41% \\
 \\
-![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
+![Kalshi](https://cdn.ciphersports.io/images/bookmaker-images/kalshi-logo.svg)\\
 \\
-+153\\
++150\\
 \\
 ![Dodgers](https://cdn.ciphersports.io/images/MLB/official/LAD.svg)\\
 \\
 Dodgers  J. Wrobleski \\
 \\
-60% \\
+59% \\
 \\
 ![Novig](https://cdn.ciphersports.io/images/novig-small.png)\\
 \\
--160\\
+-149\\
 \\
 MLB \\
 \\
@@ -395,18 +395,6 @@ Claim Now
 
 How to claim
 
-![logo](https://imgix.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
-
-TRENDING
-
-T&Cs apply.
-
-Claim Now
-
-[Read review](https://www.dimers.com/betting/bet365-sportsbook)
-
-How to claim
-
 ![logo](https://imgix.cosmicjs.com/0d0de820-132c-11f1-9e28-d5fea3b8af7e-Betmgm-Light.png?auto=format,compress&h=200)
 
 RECOMMENDED
@@ -440,6 +428,18 @@ T&Cs apply.
 Claim now
 
 [Read review](https://www.dimers.com/betting/hardrock-sportsbook)
+
+How to claim
+
+![logo](https://imgix.cosmicjs.com/3c1eebc0-401e-11ee-bfc4-cb12724541fa-Bet365-Primary-Logo.svg?auto=format,compress&h=200)
+
+TRENDING
+
+T&Cs apply.
+
+Claim Now
+
+[Read review](https://www.dimers.com/betting/bet365-sportsbook)
 
 How to claim
 
@@ -517,13 +517,13 @@ How to claim
 
 Dimers’ MLB predictions are powered by a simulation-based model that plays out each game thousands of times, inning by inning. From those simulations, we estimate each team’s chances of winning.
 
-On Monday, the Pirates lead all win probabilities with a 66% chance of beating the Nationals at PNC Park. The Yankees and Phillies also rank among the leading moneyline favorites.
+On Monday, the Pirates lead all win probabilities with a 66% chance of beating the Nationals at PNC Park. The Yankees and Dodgers also rank among the leading moneyline favorites.
 
 | Team | Prob. | Opponent | First pitch (ET) |
 | --- | --- | --- | --- |
 | Pirates | 66% | vs. Nationals | 6:40pm |
-| Yankees | 61% | vs. Angels | 7:05pm |
-| Phillies | 61% | vs. Cubs | 6:40pm |
+| Yankees | 62% | vs. Angels | 7:05pm |
+| Dodgers | 61% | vs. Mets | 10:10pm |
 
 ## MLB predictions today: data-driven outcomes for every game
 
