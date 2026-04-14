@@ -1,7 +1,7 @@
 /**
  * V7 Daily Performance Report
  *
- * 10-tab comprehensive analysis:
+ * 11-tab comprehensive analysis:
  *  1. Executive Summary
  *  2. Star Ladder Health
  *  3. Lock vs Update Audit
@@ -12,6 +12,7 @@
  *  8. LiveCLV Regime Audit
  *  9. Board Composition Audit
  * 10. Drift & Calibration Audit
+ * 11. Pick Health (Mute/Cancel) Audit
  *
  * Usage: node scripts/dailyV7Report.js
  */
@@ -165,6 +166,10 @@ async function exportPicks() {
 
         const ob = oddsBand(lockOdds);
 
+        const health = sd.health || null;
+        const healthStatus = health?.status || 'ACTIVE';
+        const healthReasons = health?.reasons || [];
+
         rows.push({
           date: data.date, sport: data.sport || 'NHL', marketType: mktType,
           won, profit, lockOdds, peakOdds, ob,
@@ -178,6 +183,7 @@ async function exportPicks() {
           moneyEdge, sharpEdge, mktDom, disagreement,
           moneyEdge_z, mktDom_z,
           clv, closingProb, lockPinnProb,
+          healthStatus, healthReasons,
         });
       }
     });
@@ -686,6 +692,69 @@ function tab10_drift(rows) {
   return out.join('\n');
 }
 
+function tab11_pickHealth(rows) {
+  const out = ['## 11. Pick Health (Mute/Cancel) Audit\n'];
+  out.push('Performance breakdown by health status at resolution time.\n');
+
+  for (const w of ['7-Day', 'V7 Era', 'All Time']) {
+    const sub = windowFilter(rows, w);
+    if (sub.length < 3) continue;
+    out.push(`### ${w} (n=${sub.length})\n`);
+
+    const statuses = ['ACTIVE', 'MUTED', 'CANCELLED'];
+    const headers = ['Health', 'N', '%', 'WR', 'Flat ROI', 'Model ROI', 'Avg CLV', 'Avg★'];
+    const data = statuses.map(s => {
+      const ss = sub.filter(r => (r.healthStatus || 'ACTIVE') === s);
+      if (ss.length === 0) return null;
+      const a = agg(ss);
+      return [s, ss.length, pct(ss.length, sub.length), a.wr, a.flatROI, a.modelROI, a.avgCLV, a.avgStars];
+    }).filter(Boolean);
+    out.push(mdTable(headers, data));
+    out.push('');
+
+    // Mute accuracy: if muted picks lose more often, system is working
+    const active = sub.filter(r => (r.healthStatus || 'ACTIVE') === 'ACTIVE');
+    const muted = sub.filter(r => (r.healthStatus || 'ACTIVE') === 'MUTED');
+    const cancelled = sub.filter(r => (r.healthStatus || 'ACTIVE') === 'CANCELLED');
+    if (muted.length >= 3 && active.length >= 3) {
+      const mutedWR = muted.filter(r => r.won).length / muted.length;
+      const activeWR = active.filter(r => r.won).length / active.length;
+      if (mutedWR < activeWR) {
+        out.push(`✅ Mute system is working: MUTED WR (${(mutedWR*100).toFixed(0)}%) < ACTIVE WR (${(activeWR*100).toFixed(0)}%)`);
+      } else {
+        out.push(`⚠️ MUTED picks outperforming ACTIVE — mute thresholds may be too aggressive`);
+      }
+    }
+    if (cancelled.length >= 2) {
+      const cancelWR = cancelled.filter(r => r.won).length / cancelled.length;
+      out.push(`CANCELLED picks WR: ${(cancelWR*100).toFixed(0)}% (n=${cancelled.length}) — should be lowest`);
+    }
+    out.push('');
+
+    // Mute reason frequency
+    const reasonCounts = {};
+    sub.forEach(r => {
+      (r.healthReasons || []).forEach(reason => {
+        if (!reasonCounts[reason]) reasonCounts[reason] = { total: 0, wins: 0, losses: 0 };
+        reasonCounts[reason].total++;
+        if (r.won) reasonCounts[reason].wins++;
+        else reasonCounts[reason].losses++;
+      });
+    });
+    const reasonEntries = Object.entries(reasonCounts).sort((a, b) => b[1].total - a[1].total);
+    if (reasonEntries.length > 0) {
+      out.push('**Health Trigger Frequency**\n');
+      const rHeaders = ['Reason', 'N', 'WR', 'Loss Rate'];
+      const rData = reasonEntries.map(([reason, c]) => [
+        reason, c.total, pct(c.wins, c.total), pct(c.losses, c.total),
+      ]);
+      out.push(mdTable(rHeaders, rData));
+      out.push('');
+    }
+  }
+  return out.join('\n');
+}
+
 // ── Triggers Summary ─────────────────────────────────────────────────────────
 
 function triggersSection(rows) {
@@ -754,6 +823,19 @@ function triggersSection(rows) {
     }
   }
 
+  // 6. Muted picks outperforming active — mute thresholds too aggressive
+  if (d7.length >= 10) {
+    const d7Active = d7.filter(r => (r.healthStatus || 'ACTIVE') === 'ACTIVE');
+    const d7Muted = d7.filter(r => (r.healthStatus || 'ACTIVE') === 'MUTED');
+    if (d7Active.length >= 3 && d7Muted.length >= 3) {
+      const activeWR = d7Active.filter(r => r.won).length / d7Active.length;
+      const mutedWR = d7Muted.filter(r => r.won).length / d7Muted.length;
+      if (mutedWR > activeWR + 0.05) {
+        triggers.push(`MUTED picks WR (${(mutedWR*100).toFixed(0)}%) exceeds ACTIVE (${(activeWR*100).toFixed(0)}%) — review mute thresholds`);
+      }
+    }
+  }
+
   if (triggers.length === 0) {
     out.push('✅ **No intervention triggers fired.** System is operating within normal parameters.');
   } else {
@@ -802,6 +884,8 @@ async function run() {
     tab9_boardComposition(rows),
     '\n---\n',
     tab10_drift(rows),
+    '\n---\n',
+    tab11_pickHealth(rows),
   ];
 
   const outPath = join(__dirname, '../DAILY_V7_REPORT.md');

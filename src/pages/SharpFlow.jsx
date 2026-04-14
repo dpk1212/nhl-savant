@@ -404,7 +404,43 @@ function rateStarsV7({
   };
   const info = labels[stars] || labels[1];
 
-  return { stars, rawScore, ...info, isActionable: stars >= 3, regime, qualityProxy: qp };
+  return { stars, rawScore, ...info, isActionable: stars >= 3, regime, qualityProxy: qp, moneyEdge_z, mktDom_z, againstSC_z, disagreement, contradictions, liveCLV_z };
+}
+
+// ─── Pick Health Evaluation (Mute / Cancel overlay) ──────────────────────────
+
+function evaluatePickHealth({ currentStars, lockStars, moneyEdge_z, mktDom_z, againstSC_z, disagreement, contradictions, regime, liveCLV_z, oppSharpCount, timeToGame }) {
+  if (lockStars == null || currentStars == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, starDelta: 0 };
+
+  const starDelta = currentStars - lockStars;
+  const muteReasons = [];
+  const cancelFlags = [];
+
+  // Mute rules — any ONE triggers MUTED
+  if (starDelta <= -1.0) muteReasons.push('star_drop');
+  if (moneyEdge_z <= -0.43) muteReasons.push('money_edge_bottom');
+  if (mktDom_z <= -0.43) muteReasons.push('mkt_dom_bottom');
+  if (lockStars >= 2.5 && lockStars <= 3.5 && (moneyEdge_z < 0 || contradictions >= 1)) muteReasons.push('mid_tier_factor_loss');
+  if (regime === 'NO_MOVE' && lockStars <= 3.0 && contradictions >= 1) muteReasons.push('no_clv_borderline');
+
+  // Cancel flags — 2+ must stack for CANCELLED
+  if (starDelta <= -1.5) cancelFlags.push('major_star_drop');
+  if (moneyEdge_z <= -0.43 && mktDom_z <= -0.43) cancelFlags.push('double_bottom_factors');
+  if ((oppSharpCount || 0) >= 3 || againstSC_z >= 0.43) cancelFlags.push('opposition_building');
+  if (lockStars <= 3.5) cancelFlags.push('mid_tier_or_lower');
+  if (liveCLV_z != null && liveCLV_z < -0.5 && timeToGame != null && timeToGame < 60) cancelFlags.push('late_adverse_move');
+
+  let status = 'ACTIVE';
+  let reasons = [];
+  if (cancelFlags.length >= 2) {
+    status = 'CANCELLED';
+    reasons = cancelFlags;
+  } else if (muteReasons.length > 0) {
+    status = 'MUTED';
+    reasons = muteReasons;
+  }
+
+  return { status, reasons, currentStars, starDelta };
 }
 
 function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null) {
@@ -557,6 +593,25 @@ async function syncPregameSnapshot({ docId, side, snapshot }) {
   } catch (err) {
     console.warn('Failed to sync pregame snapshot:', err.message);
     return { action: 'error' };
+  }
+}
+
+// ─── Pick Health Sync (independent of peak sync) ──────────────────────────────
+
+async function syncPickHealth({ docId, collection: colName, side, health }) {
+  try {
+    const ref = doc(db, colName, docId);
+    const existing = await getDoc(ref);
+    if (!existing.exists()) return;
+    const data = existing.data();
+    if (data.status === 'COMPLETED') return;
+    if (!data.sides?.[side]?.lock) return;
+    await setDoc(ref, {
+      sides: { [side]: { health: { ...health, evaluatedAt: Date.now() } } },
+      lastWriteAt: Date.now(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[syncPickHealth] error:', err.message);
   }
 }
 
@@ -2704,8 +2759,21 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 
 // V6 rateStars removed — replaced by rateStarsV7 defined above (unified for ML + spread/total)
 
+const HEALTH_REASON_LABELS = {
+  star_drop: 'Star rating dropped 1.0+',
+  money_edge_bottom: 'Money edge bottom tercile',
+  mkt_dom_bottom: 'Market dominance bottom tercile',
+  mid_tier_factor_loss: 'Middle-tier factor degraded',
+  no_clv_borderline: 'No CLV on borderline play',
+  major_star_drop: 'Major star drop 1.5+',
+  double_bottom_factors: 'Money edge + mkt dom both bottom',
+  opposition_building: 'Opposition sharps building',
+  mid_tier_or_lower: 'Middle tier or lower play',
+  late_adverse_move: 'Late adverse line movement',
+};
+
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -2718,7 +2786,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const isGraded = status === 'COMPLETED' && outcome;
   const isWin = outcome === 'WIN';
   const isLoss = outcome === 'LOSS';
-  const accentColor = isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
+
+  const healthStatus = health?.status || 'ACTIVE';
+  const isMuted = healthStatus === 'MUTED' && !isGraded;
+  const isCancelled = healthStatus === 'CANCELLED' && !isGraded;
+  const healthReasons = health?.reasons || [];
+
+  const accentColor = isCancelled ? B.red : isMuted ? '#F59E0B' : isGraded ? (isWin ? B.green : isLoss ? B.red : B.gold) : B.green;
   const teamShort = team?.split(' ').pop() || team;
   const awayShort = away?.split(' ').pop() || away;
   const homeShort = home?.split(' ').pop() || home;
@@ -2755,20 +2829,24 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   return (
     <div style={{
       borderRadius: '12px', overflow: 'hidden', position: 'relative',
-      opacity: superseded ? 0.55 : 1,
+      opacity: isCancelled ? 0.4 : isMuted ? 0.6 : superseded ? 0.55 : 1,
       background: superseded
         ? `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`
-        : isTopPick
+        : isTopPick && !isMuted && !isCancelled
         ? `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, ${B.cardAlt} 100%)`
         : `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-      border: superseded
+      border: isCancelled
+        ? '1px solid rgba(239,68,68,0.4)'
+        : isMuted
+        ? '1px solid rgba(245,158,11,0.35)'
+        : superseded
         ? `1px solid rgba(239,68,68,0.3)`
         : isEVConfirmed
         ? '1px solid rgba(212,175,55,0.6)'
         : isTopPick
         ? '1px solid rgba(212,175,55,0.45)'
         : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
-      boxShadow: superseded ? 'none'
+      boxShadow: isCancelled || isMuted || superseded ? 'none'
         : isEVConfirmed
         ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
         : isTopPick
@@ -2776,7 +2854,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         : isWin ? '0 0 16px rgba(16,185,129,0.04)' : isLoss ? '0 0 16px rgba(239,68,68,0.04)' : 'none',
     }}>
       {/* Top accent */}
-      <div style={{ height: isTopPick ? '3px' : '3px', background: isTopPick
+      <div style={{ height: '3px', background: isCancelled
+        ? 'linear-gradient(90deg, transparent, #EF4444, #F87171, #EF4444, transparent)'
+        : isMuted
+        ? 'linear-gradient(90deg, transparent, #F59E0B, #FBBF24, #F59E0B, transparent)'
+        : isTopPick
         ? 'linear-gradient(90deg, transparent, #D4AF37, #F5D060, #D4AF37, transparent)'
         : `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
 
@@ -2800,12 +2882,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             {superseded && (
               <Badge color="#EF4444" bg="rgba(239,68,68,0.12)">FLIPPED</Badge>
             )}
-            <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
+            {isCancelled && (
+              <Badge color="#EF4444" bg="rgba(239,68,68,0.12)">CANCELLED</Badge>
+            )}
+            {isMuted && !isCancelled && (
+              <Badge color="#F59E0B" bg="rgba(245,158,11,0.12)">WEAKENING</Badge>
+            )}
+            <span style={{ ...T.body, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>
               {away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {home}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            {isTopPick && !superseded && (
+            {isTopPick && !superseded && !isMuted && !isCancelled && (
               <span style={{
                 ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
                 padding: '0.15rem 0.5rem', borderRadius: '5px',
@@ -2849,12 +2937,18 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Lock size={10} color={accentColor} />
-            <span style={{ ...T.label, fontWeight: 700, color: B.text }}>{team}</span>
+            <span style={{ ...T.label, fontWeight: 700, color: isCancelled ? B.textMuted : B.text, textDecoration: isCancelled ? 'line-through' : 'none' }}>{team}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-              {units}u @ {fmtO(odds)} · {book}
-            </span>
+            {isCancelled ? (
+              <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                <span style={{ textDecoration: 'line-through' }}>{units}u</span> 0u @ {fmtO(odds)} · {book}
+              </span>
+            ) : (
+              <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                {units}u @ {fmtO(odds)} · {book}
+              </span>
+            )}
             {isGraded ? (
               <span style={{
                 ...T.micro, fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '4px',
@@ -2900,6 +2994,23 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             <ChevronDown size={12} color={B.textMuted} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
           </div>
         </div>
+
+        {/* Health status reasons */}
+        {(isMuted || isCancelled) && healthReasons.length > 0 && (
+          <div style={{ padding: '0 0.875rem 0.375rem', display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+            {healthReasons.map(r => (
+              <span key={r} style={{
+                ...T.micro, fontSize: '0.5rem', fontWeight: 600,
+                padding: '0.1rem 0.35rem', borderRadius: '3px',
+                color: isCancelled ? '#FCA5A5' : '#FCD34D',
+                background: isCancelled ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+                border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`,
+              }}>
+                {HEALTH_REASON_LABELS[r] || r}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ─── Expanded: full premium detail ─── */}
@@ -2910,28 +3021,37 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
           <div style={{
             margin: '0.75rem 0.875rem 0', padding: '0.75rem',
             borderRadius: '10px',
-            background: isGraded
+            background: isCancelled
+              ? 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)'
+              : isMuted
+              ? 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)'
+              : isGraded
               ? (isWin ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)' : isLoss ? 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)' : 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)')
               : 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)',
-            border: `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder) : 'rgba(16,185,129,0.25)'}`,
+            border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.25)' : isMuted ? 'rgba(245,158,11,0.25)' : isGraded ? (isWin ? 'rgba(16,185,129,0.25)' : isLoss ? 'rgba(239,68,68,0.25)' : B.goldBorder) : 'rgba(16,185,129,0.25)'}`,
           }}>
             {/* Narrative + unit badge */}
             <div style={{ marginBottom: '0.625rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                 <span style={{ ...T.label, fontWeight: 800, color: accentColor }}>
-                  {isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
+                  {isCancelled ? 'CANCELLED' : isMuted ? 'WEAKENING' : isGraded ? (isWin ? 'WINNING BET' : isLoss ? 'LOSING BET' : 'PUSH') : 'LOCKED BET'}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{
-                    ...T.body, fontWeight: 900, color: '#fff',
+                    ...T.body, fontWeight: 900, color: isCancelled ? B.textMuted : '#fff',
                     padding: '0.2rem 0.6rem', borderRadius: '5px',
-                    background: isGraded
+                    background: isCancelled
+                      ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08))'
+                      : isMuted
+                      ? 'linear-gradient(135deg, #F59E0B, #D97706)'
+                      : isGraded
                       ? (isWin ? 'linear-gradient(135deg, #10B981, #059669)' : isLoss ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #64748B, #475569)')
                       : 'linear-gradient(135deg, #10B981, #059669)',
-                    border: `1px solid ${isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                    border: `1px solid ${isCancelled ? 'rgba(239,68,68,0.3)' : isMuted ? 'rgba(245,158,11,0.4)' : isWin ? 'rgba(16,185,129,0.4)' : isLoss ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}`,
                     fontFeatureSettings: "'tnum'",
+                    textDecoration: isCancelled ? 'line-through' : 'none',
                   }}>
-                    {ut.icon} {units}u
+                    {isCancelled ? `${ut.icon} ${units}u → 0u` : `${ut.icon} ${units}u`}
                   </span>
                   {evEdge > 0 && (
                     <span style={{ ...T.body, fontWeight: 900, color: B.green, padding: '0.2rem 0.6rem', borderRadius: '5px', background: B.greenDim }}>
@@ -3178,6 +3298,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lastSyncedTotalStars = useRef(null);
   const pregameSynced = useRef(false);
   const lockOddsRef = useRef(null);
+  const lockStarsRef = useRef(null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -3412,6 +3533,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
       if (!lockOddsRef.current) lockOddsRef.current = betOdds;
+      if (lockStarsRef.current == null) lockStarsRef.current = sr.stars;
       if (action !== 'no_change') {
         onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
@@ -3456,6 +3578,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       },
     });
   });
+
+  // ─── ML Pick Health Evaluation ──────────────────────────────────────────────
+  const mlHealth = isLocked ? evaluatePickHealth({
+    currentStars: sr.stars,
+    lockStars: lockStarsRef.current ?? sr.stars,
+    moneyEdge_z: sr.moneyEdge_z, mktDom_z: sr.mktDom_z, againstSC_z: sr.againstSC_z,
+    disagreement: sr.disagreement, contradictions: sr.contradictions,
+    regime: sr.regime, liveCLV_z: sr.liveCLV_z,
+    oppSharpCount: oppSharpFeatures.conWalletCount,
+    timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
+  }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, starDelta: 0 };
+
+  const lastHealthRef = useRef(null);
+  useEffect(() => {
+    if (!isLocked || isGameLive || !commenceTime) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastHealthRef.current === mlHealth.status) return;
+    const date = gameDate(commenceTime);
+    const docId = `${date}_${gd.sport}_${gd.key}`;
+    lastHealthRef.current = mlHealth.status;
+    syncPickHealth({ docId, collection: 'sharpFlowPicks', side: consensusSide, health: mlHealth });
+  }, [isLocked, mlHealth.status, sr.stars]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
   const spreadGameData = spreadPositions?.[gd.sport]?.[gd.key];
@@ -3556,6 +3700,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     });
   }, [isSpreadLocked, spreadSr?.stars]);
 
+  // ─── Spread Pick Health Evaluation ────────────────────────────────────────
+  const spreadHealth = isSpreadLocked && spreadSr ? evaluatePickHealth({
+    currentStars: spreadSr.stars,
+    lockStars: lastSyncedSpreadStars.current ?? spreadSr.stars,
+    moneyEdge_z: spreadSr.moneyEdge_z, mktDom_z: spreadSr.mktDom_z, againstSC_z: spreadSr.againstSC_z,
+    disagreement: spreadSr.disagreement, contradictions: spreadSr.contradictions,
+    regime: spreadSr.regime, liveCLV_z: spreadSr.liveCLV_z,
+    oppSharpCount: spreadSharpFeatures?.oppWalletCount || 0,
+    timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
+  }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, starDelta: 0 };
+
+  const lastSpreadHealthRef = useRef(null);
+  useEffect(() => {
+    if (!isSpreadLocked || isGameLive || !commenceTime || !spreadConsensusSide) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastSpreadHealthRef.current === spreadHealth.status) return;
+    const date = gameDate(commenceTime);
+    const docId = `${date}_${gd.sport}_${gd.key}`;
+    lastSpreadHealthRef.current = spreadHealth.status;
+    syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
+  }, [isSpreadLocked, spreadHealth.status, spreadSr?.stars]);
+
   // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
   const totalGameData = totalPositions?.[gd.sport]?.[gd.key];
   const totalSummary = totalGameData?.summary;
@@ -3652,6 +3818,28 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       }
     });
   }, [isTotalLocked, totalSr?.stars]);
+
+  // ─── Total Pick Health Evaluation ─────────────────────────────────────────
+  const totalHealth = isTotalLocked && totalSr ? evaluatePickHealth({
+    currentStars: totalSr.stars,
+    lockStars: lastSyncedTotalStars.current ?? totalSr.stars,
+    moneyEdge_z: totalSr.moneyEdge_z, mktDom_z: totalSr.mktDom_z, againstSC_z: totalSr.againstSC_z,
+    disagreement: totalSr.disagreement, contradictions: totalSr.contradictions,
+    regime: totalSr.regime, liveCLV_z: totalSr.liveCLV_z,
+    oppSharpCount: totalSharpFeatures?.oppWalletCount || 0,
+    timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
+  }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, starDelta: 0 };
+
+  const lastTotalHealthRef = useRef(null);
+  useEffect(() => {
+    if (!isTotalLocked || isGameLive || !commenceTime || !totalConsensusSide) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastTotalHealthRef.current === totalHealth.status) return;
+    const date = gameDate(commenceTime);
+    const docId = `${date}_${gd.sport}_${gd.key}`;
+    lastTotalHealthRef.current = totalHealth.status;
+    syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
+  }, [isTotalLocked, totalHealth.status, totalSr?.stars]);
 
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
@@ -5349,6 +5537,7 @@ export default function SharpFlow() {
   const [lockedSort, setLockedSort] = useState('stars');
   const [lockedSportFilter, setLockedSportFilter] = useState('All');
   const [lockedMarketFilter, setLockedMarketFilter] = useState('all');
+  const [showCancelled, setShowCancelled] = useState(false);
   const [perfSport, setPerfSport] = useState('ALL');
   const [perfMarket, setPerfMarket] = useState('all');
   const [perfGrowth, setPerfGrowth] = useState('all');
@@ -6616,17 +6805,25 @@ export default function SharpFlow() {
                           marketType: doc.marketType || 'ml',
                           line: peak.line || lock.line || null,
                           superseded: !!sd.superseded,
+                          health: sd.health || { status: 'ACTIVE', reasons: [] },
                         });
                       }
                     }
                     const sportFiltered = lockedSportFilter === 'All' ? allLockedArr : allLockedArr.filter(p => p.sport === lockedSportFilter);
                     const lockedArr = lockedMarketFilter === 'all' ? sportFiltered : sportFiltered.filter(p => (p.marketType || 'ml') === lockedMarketFilter);
-                    const filteredLocked = lockedStatusFilter === 'all' ? lockedArr
+                    const statusFiltered = lockedStatusFilter === 'all' ? lockedArr
                       : lockedStatusFilter === 'pending' ? lockedArr.filter(p => !p.outcome)
                       : lockedStatusFilter === 'won' ? lockedArr.filter(p => p.outcome === 'WIN')
                       : lockedArr.filter(p => p.outcome === 'LOSS');
+                    const cancelledCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'CANCELLED' && !p.outcome).length;
+                    const mutedCount = statusFiltered.filter(p => (p.health?.status || 'ACTIVE') === 'MUTED' && !p.outcome).length;
+                    const filteredLocked = showCancelled ? statusFiltered : statusFiltered.filter(p => (p.health?.status || 'ACTIVE') !== 'CANCELLED' || !!p.outcome);
+                    const healthOrder = { ACTIVE: 0, MUTED: 1, CANCELLED: 2 };
                     filteredLocked.sort((a, b) => {
                       if (a.superseded !== b.superseded) return a.superseded ? 1 : -1;
+                      const aH = healthOrder[a.health?.status || 'ACTIVE'] || 0;
+                      const bH = healthOrder[b.health?.status || 'ACTIVE'] || 0;
+                      if (aH !== bH) return aH - bH;
                       const aDelta = (a.lockStars != null ? a.stars - a.lockStars : 0);
                       const bDelta = (b.lockStars != null ? b.stars - b.lockStars : 0);
                       const aTop = aDelta >= 1.0 ? 1 : 0;
@@ -6717,6 +6914,26 @@ export default function SharpFlow() {
                               transition: 'all 0.2s ease',
                             }}>{opt.label}</button>
                           ))}
+                          {(cancelledCount > 0 || mutedCount > 0) && (
+                            <>
+                              <span style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.125rem' }} />
+                              {mutedCount > 0 && (
+                                <span style={{ ...T.micro, fontSize: '0.55rem', fontWeight: 600, color: '#F59E0B' }}>
+                                  {mutedCount} weakening
+                                </span>
+                              )}
+                              {cancelledCount > 0 && (
+                                <button onClick={() => setShowCancelled(v => !v)} style={{
+                                  padding: '0.2rem 0.6rem', borderRadius: '5px', cursor: 'pointer',
+                                  ...T.micro, fontWeight: 700, fontSize: '0.6rem',
+                                  border: showCancelled ? '1px solid rgba(239,68,68,0.4)' : `1px solid ${B.border}`,
+                                  background: showCancelled ? 'rgba(239,68,68,0.12)' : 'transparent',
+                                  color: showCancelled ? '#EF4444' : B.textMuted,
+                                  transition: 'all 0.2s ease',
+                                }}>{showCancelled ? 'Hide' : 'Show'} cancelled ({cancelledCount})</button>
+                              )}
+                            </>
+                          )}
                         </div>
                         {filteredLocked.length === 0 ? (
                           <div style={{ textAlign: 'center', padding: '2rem', color: B.textMuted, ...T.label }}>
