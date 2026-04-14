@@ -2761,6 +2761,7 @@ const HEALTH_REASON_LABELS = {
   opposition_building: 'Opposition sharps building',
   contradictions: 'Factor contradictions',
   late_adverse_move: 'Late adverse line movement',
+  side_flipped: 'Sharps flipped to other side',
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
@@ -3571,7 +3572,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   });
 
   // ─── ML Pick Health Evaluation ──────────────────────────────────────────────
-  const mlHealth = isLocked ? evaluatePickHealth({
+  // Evaluate health if currently locked OR if it was previously locked (lockStarsRef set)
+  const wasEverLocked = isLocked || lockStarsRef.current != null;
+  const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentStars: sr.stars,
     lockStars: lockStarsRef.current ?? sr.stars,
     moneyEdge_z: sr.moneyEdge_z, mktDom_z: sr.mktDom_z, againstSC_z: sr.againstSC_z,
@@ -3583,14 +3586,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const lastHealthRef = useRef(null);
   useEffect(() => {
-    if (!isLocked || isGameLive || !commenceTime) return;
+    if (!wasEverLocked || isGameLive || !commenceTime) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastHealthRef.current === mlHealth.status) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastHealthRef.current = mlHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowPicks', side: consensusSide, health: mlHealth });
-  }, [isLocked, mlHealth.status, sr.stars]);
+  }, [wasEverLocked, mlHealth.status, sr.stars]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
   const spreadGameData = spreadPositions?.[gd.sport]?.[gd.key];
@@ -3692,7 +3695,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   }, [isSpreadLocked, spreadSr?.stars]);
 
   // ─── Spread Pick Health Evaluation ────────────────────────────────────────
-  const spreadHealth = isSpreadLocked && spreadSr ? evaluatePickHealth({
+  const spreadWasEverLocked = isSpreadLocked || lastSyncedSpreadStars.current != null;
+  const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
     currentStars: spreadSr.stars,
     lockStars: lastSyncedSpreadStars.current ?? spreadSr.stars,
     moneyEdge_z: spreadSr.moneyEdge_z, mktDom_z: spreadSr.mktDom_z, againstSC_z: spreadSr.againstSC_z,
@@ -3704,14 +3708,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const lastSpreadHealthRef = useRef(null);
   useEffect(() => {
-    if (!isSpreadLocked || isGameLive || !commenceTime || !spreadConsensusSide) return;
+    if (!spreadWasEverLocked || isGameLive || !commenceTime || !spreadConsensusSide) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSpreadHealthRef.current === spreadHealth.status) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastSpreadHealthRef.current = spreadHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
-  }, [isSpreadLocked, spreadHealth.status, spreadSr?.stars]);
+  }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.stars]);
 
   // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
   const totalGameData = totalPositions?.[gd.sport]?.[gd.key];
@@ -3811,7 +3815,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   }, [isTotalLocked, totalSr?.stars]);
 
   // ─── Total Pick Health Evaluation ─────────────────────────────────────────
-  const totalHealth = isTotalLocked && totalSr ? evaluatePickHealth({
+  const totalWasEverLocked = isTotalLocked || lastSyncedTotalStars.current != null;
+  const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
     currentStars: totalSr.stars,
     lockStars: lastSyncedTotalStars.current ?? totalSr.stars,
     moneyEdge_z: totalSr.moneyEdge_z, mktDom_z: totalSr.mktDom_z, againstSC_z: totalSr.againstSC_z,
@@ -3823,14 +3828,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const lastTotalHealthRef = useRef(null);
   useEffect(() => {
-    if (!isTotalLocked || isGameLive || !commenceTime || !totalConsensusSide) return;
+    if (!totalWasEverLocked || isGameLive || !commenceTime || !totalConsensusSide) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastTotalHealthRef.current === totalHealth.status) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastTotalHealthRef.current = totalHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
-  }, [isTotalLocked, totalHealth.status, totalSr?.stars]);
+  }, [totalWasEverLocked, totalHealth.status, totalSr?.stars]);
 
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
@@ -6796,7 +6801,9 @@ export default function SharpFlow() {
                           marketType: doc.marketType || 'ml',
                           line: peak.line || lock.line || null,
                           superseded: !!sd.superseded,
-                          health: sd.health || { status: 'ACTIVE', reasons: [] },
+                          health: sd.superseded
+                            ? { status: 'CANCELLED', reasons: ['side_flipped'] }
+                            : (sd.health || { status: 'ACTIVE', reasons: [] }),
                         });
                       }
                     }
