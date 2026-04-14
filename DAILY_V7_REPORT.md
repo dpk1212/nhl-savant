@@ -705,3 +705,31 @@ Comparing live distributions to frozen V7 calibration stats.
 | mktDominance | 1.55 | 0.90 | 1.55 | 1.08 | -0.01 | 0.01 |
 | againstSC | 0.92 | 1.62 | 1.99 | 2.59 | +1.07 | 0.66 |
 
+
+
+---
+
+## 11. Pick Health (Mute/Cancel) Audit
+
+Performance breakdown by health status at resolution time.
+
+### 7-Day (n=218)
+
+| Health | N | % | WR | Flat ROI | Model ROI | Avg CLV | Avg★ |
+|---|---|---|---|---|---|---|---|
+| ACTIVE | 218 | 100.0% | 52.8% | -6.5% | -10.2% | -0.54% | 3.3 |
+
+
+### V7 Era (n=234)
+
+| Health | N | % | WR | Flat ROI | Model ROI | Avg CLV | Avg★ |
+|---|---|---|---|---|---|---|---|
+| ACTIVE | 234 | 100.0% | 52.1% | -7.4% | -11.4% | -0.54% | 3.2 |
+
+
+### All Time (n=495)
+
+| Health | N | % | WR | Flat ROI | Model ROI | Avg CLV | Avg★ |
+|---|---|---|---|---|---|---|---|
+| ACTIVE | 495 | 100.0% | 55.4% | -2.9% | -3.2% | -0.62% | 3.2 |
+
