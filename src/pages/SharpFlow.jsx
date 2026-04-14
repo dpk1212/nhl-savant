@@ -426,7 +426,9 @@ function evaluatePickHealth({ currentStars, lockStars, moneyEdge_z, mktDom_z, ag
 
   let status = 'ACTIVE';
   let reasons = [];
-  if (starDelta <= -1.5 && !hasPositiveCLV) {
+  const tooCloseToStart = timeToGame != null && timeToGame <= 20;
+
+  if (starDelta <= -1.5 && !hasPositiveCLV && !tooCloseToStart) {
     status = 'CANCELLED';
     reasons = ['major_star_drop', ...context];
   } else if (starDelta <= -1.0) {
