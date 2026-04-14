@@ -430,9 +430,12 @@ function evaluatePickHealth({ currentStars, lockStars, moneyEdge_z, mktDom_z, ag
   if (lockStars <= 3.5) cancelFlags.push('mid_tier_or_lower');
   if (liveCLV_z != null && liveCLV_z < -0.5 && timeToGame != null && timeToGame < 60) cancelFlags.push('late_adverse_move');
 
+  // Positive CLV = line moved in our favor — never cancel a play the market is confirming
+  const hasPositiveCLV = liveCLV_z != null && liveCLV_z > 0;
+
   let status = 'ACTIVE';
   let reasons = [];
-  if (cancelFlags.length >= 2) {
+  if (cancelFlags.length >= 2 && !hasPositiveCLV) {
     status = 'CANCELLED';
     reasons = cancelFlags;
   } else if (muteReasons.length > 0) {
