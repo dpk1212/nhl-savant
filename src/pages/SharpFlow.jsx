@@ -409,34 +409,23 @@ function rateStarsV7({
 
 // ─── Pick Health Evaluation (Mute / Cancel overlay) ──────────────────────────
 
-function evaluatePickHealth({ currentStars, lockStars, moneyEdge_z, mktDom_z, againstSC_z, contradictions, liveCLV_z, oppSharpCount, timeToGame }) {
+function evaluatePickHealth({ currentStars, lockStars, sideFlipped, liveCLV_z, timeToGame }) {
   if (lockStars == null || currentStars == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, starDelta: 0 };
 
   const starDelta = currentStars - lockStars;
-  const hasPositiveCLV = liveCLV_z != null && liveCLV_z > 0;
-
-  // Star delta is the sole gate — the model already folds all z-scores into stars.
-  // Factor details are tracked as informational context, not independent triggers.
-  const context = [];
-  if (moneyEdge_z <= -0.43) context.push('money_edge_bottom');
-  if (mktDom_z <= -0.43) context.push('mkt_dom_bottom');
-  if ((oppSharpCount || 0) >= 3 || againstSC_z >= 0.43) context.push('opposition_building');
-  if (contradictions >= 1) context.push('contradictions');
-  if (liveCLV_z != null && liveCLV_z < -0.5 && timeToGame != null && timeToGame < 60) context.push('late_adverse_move');
-
-  let status = 'ACTIVE';
-  let reasons = [];
+  const hasPositiveCLV = !sideFlipped && liveCLV_z != null && liveCLV_z > 0;
   const tooCloseToStart = timeToGame != null && timeToGame <= 20;
 
-  if (starDelta <= -1.5 && !hasPositiveCLV && !tooCloseToStart) {
-    status = 'CANCELLED';
-    reasons = ['major_star_drop', ...context];
-  } else if (starDelta <= -1.0) {
-    status = 'MUTED';
-    reasons = ['star_drop', ...context];
+  if (sideFlipped && !tooCloseToStart) {
+    return { status: 'CANCELLED', reasons: ['side_flipped'], currentStars, starDelta };
   }
-
-  return { status, reasons, currentStars, starDelta };
+  if (starDelta <= -1.5 && !hasPositiveCLV && !tooCloseToStart) {
+    return { status: 'CANCELLED', reasons: ['major_star_drop'], currentStars, starDelta };
+  }
+  if (starDelta <= -1.0) {
+    return { status: 'MUTED', reasons: ['star_drop'], currentStars, starDelta };
+  }
+  return { status: 'ACTIVE', reasons: [], currentStars, starDelta };
 }
 
 function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null) {
@@ -2758,11 +2747,6 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 const HEALTH_REASON_LABELS = {
   star_drop: 'Star rating dropped 1.0+',
   major_star_drop: 'Star rating dropped 1.5+',
-  money_edge_bottom: 'Weak money edge',
-  mkt_dom_bottom: 'Weak market dominance',
-  opposition_building: 'Opposition sharps building',
-  contradictions: 'Factor contradictions',
-  late_adverse_move: 'Late adverse line movement',
   side_flipped: 'Sharps flipped to other side',
 };
 
@@ -3293,6 +3277,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const pregameSynced = useRef(false);
   const lockOddsRef = useRef(null);
   const lockStarsRef = useRef(null);
+  const lockedSideRef = useRef(null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -3528,6 +3513,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       lastSyncedStars.current = sr.stars;
       if (!lockOddsRef.current) lockOddsRef.current = betOdds;
       if (lockStarsRef.current == null) lockStarsRef.current = sr.stars;
+      if (!lockedSideRef.current) lockedSideRef.current = consensusSide;
       if (action !== 'no_change') {
         onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
@@ -3574,15 +3560,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   });
 
   // ─── ML Pick Health Evaluation ──────────────────────────────────────────────
-  // Evaluate health if currently locked OR if it was previously locked (lockStarsRef set)
   const wasEverLocked = isLocked || lockStarsRef.current != null;
+  const sideFlipped = lockedSideRef.current != null && consensusSide !== lockedSideRef.current;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentStars: sr.stars,
     lockStars: lockStarsRef.current ?? sr.stars,
-    moneyEdge_z: sr.moneyEdge_z, mktDom_z: sr.mktDom_z, againstSC_z: sr.againstSC_z,
-    disagreement: sr.disagreement, contradictions: sr.contradictions,
-    regime: sr.regime, liveCLV_z: sr.liveCLV_z,
-    oppSharpCount: oppSharpFeatures.conWalletCount,
+    sideFlipped,
+    liveCLV_z: sideFlipped ? null : sr.liveCLV_z,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
   }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, starDelta: 0 };
 
@@ -3701,10 +3685,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
     currentStars: spreadSr.stars,
     lockStars: lastSyncedSpreadStars.current ?? spreadSr.stars,
-    moneyEdge_z: spreadSr.moneyEdge_z, mktDom_z: spreadSr.mktDom_z, againstSC_z: spreadSr.againstSC_z,
-    disagreement: spreadSr.disagreement, contradictions: spreadSr.contradictions,
-    regime: spreadSr.regime, liveCLV_z: spreadSr.liveCLV_z,
-    oppSharpCount: spreadSharpFeatures?.oppWalletCount || 0,
+    sideFlipped: false,
+    liveCLV_z: spreadSr.liveCLV_z,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
   }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, starDelta: 0 };
 
@@ -3821,10 +3803,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
     currentStars: totalSr.stars,
     lockStars: lastSyncedTotalStars.current ?? totalSr.stars,
-    moneyEdge_z: totalSr.moneyEdge_z, mktDom_z: totalSr.mktDom_z, againstSC_z: totalSr.againstSC_z,
-    disagreement: totalSr.disagreement, contradictions: totalSr.contradictions,
-    regime: totalSr.regime, liveCLV_z: totalSr.liveCLV_z,
-    oppSharpCount: totalSharpFeatures?.oppWalletCount || 0,
+    sideFlipped: false,
+    liveCLV_z: totalSr.liveCLV_z,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
   }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, starDelta: 0 };
 
