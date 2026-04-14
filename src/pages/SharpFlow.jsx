@@ -409,38 +409,29 @@ function rateStarsV7({
 
 // ─── Pick Health Evaluation (Mute / Cancel overlay) ──────────────────────────
 
-function evaluatePickHealth({ currentStars, lockStars, moneyEdge_z, mktDom_z, againstSC_z, disagreement, contradictions, regime, liveCLV_z, oppSharpCount, timeToGame }) {
+function evaluatePickHealth({ currentStars, lockStars, moneyEdge_z, mktDom_z, againstSC_z, contradictions, liveCLV_z, oppSharpCount, timeToGame }) {
   if (lockStars == null || currentStars == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, starDelta: 0 };
 
   const starDelta = currentStars - lockStars;
-  const muteReasons = [];
-  const cancelFlags = [];
-
-  // Mute rules — any ONE triggers MUTED
-  if (starDelta <= -1.0) muteReasons.push('star_drop');
-  if (moneyEdge_z <= -0.43) muteReasons.push('money_edge_bottom');
-  if (mktDom_z <= -0.43) muteReasons.push('mkt_dom_bottom');
-  if (lockStars >= 2.5 && lockStars <= 3.5 && (moneyEdge_z < 0 || contradictions >= 1)) muteReasons.push('mid_tier_factor_loss');
-  if (regime === 'NO_MOVE' && lockStars <= 3.0 && contradictions >= 1) muteReasons.push('no_clv_borderline');
-
-  // Cancel flags — 2+ must stack for CANCELLED
-  if (starDelta <= -1.5) cancelFlags.push('major_star_drop');
-  if (moneyEdge_z <= -0.43 && mktDom_z <= -0.43) cancelFlags.push('double_bottom_factors');
-  if ((oppSharpCount || 0) >= 3 || againstSC_z >= 0.43) cancelFlags.push('opposition_building');
-  if (lockStars <= 3.5) cancelFlags.push('mid_tier_or_lower');
-  if (liveCLV_z != null && liveCLV_z < -0.5 && timeToGame != null && timeToGame < 60) cancelFlags.push('late_adverse_move');
-
-  // Positive CLV = line moved in our favor — never cancel a play the market is confirming
   const hasPositiveCLV = liveCLV_z != null && liveCLV_z > 0;
+
+  // Star delta is the sole gate — the model already folds all z-scores into stars.
+  // Factor details are tracked as informational context, not independent triggers.
+  const context = [];
+  if (moneyEdge_z <= -0.43) context.push('money_edge_bottom');
+  if (mktDom_z <= -0.43) context.push('mkt_dom_bottom');
+  if ((oppSharpCount || 0) >= 3 || againstSC_z >= 0.43) context.push('opposition_building');
+  if (contradictions >= 1) context.push('contradictions');
+  if (liveCLV_z != null && liveCLV_z < -0.5 && timeToGame != null && timeToGame < 60) context.push('late_adverse_move');
 
   let status = 'ACTIVE';
   let reasons = [];
-  if (cancelFlags.length >= 2 && !hasPositiveCLV) {
+  if (starDelta <= -1.5 && !hasPositiveCLV) {
     status = 'CANCELLED';
-    reasons = cancelFlags;
-  } else if (muteReasons.length > 0) {
+    reasons = ['major_star_drop', ...context];
+  } else if (starDelta <= -1.0) {
     status = 'MUTED';
-    reasons = muteReasons;
+    reasons = ['star_drop', ...context];
   }
 
   return { status, reasons, currentStars, starDelta };
@@ -2764,14 +2755,11 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 
 const HEALTH_REASON_LABELS = {
   star_drop: 'Star rating dropped 1.0+',
-  money_edge_bottom: 'Money edge bottom tercile',
-  mkt_dom_bottom: 'Market dominance bottom tercile',
-  mid_tier_factor_loss: 'Middle-tier factor degraded',
-  no_clv_borderline: 'No CLV on borderline play',
-  major_star_drop: 'Major star drop 1.5+',
-  double_bottom_factors: 'Money edge + mkt dom both bottom',
+  major_star_drop: 'Star rating dropped 1.5+',
+  money_edge_bottom: 'Weak money edge',
+  mkt_dom_bottom: 'Weak market dominance',
   opposition_building: 'Opposition sharps building',
-  mid_tier_or_lower: 'Middle tier or lower play',
+  contradictions: 'Factor contradictions',
   late_adverse_move: 'Late adverse line movement',
 };
 
