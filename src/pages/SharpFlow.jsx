@@ -370,11 +370,12 @@ function rateStarsV7({
       - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions
       + 1.25 * moneyEdge_z + 0.50 * mktDom_z - 1.25 * disagreement - 0.50 * againstSC_z;
 
-  // Regime-aware update dampening (V7.1): dampen score delta from lock based on regime quality
+  // Regime-aware update dampening (V7.1): dampen UPGRADES only, let downgrades pass through fully.
+  // Downgrades are warning signals — dampening them would mask real deterioration from the health system.
   const REGIME_UPDATE_MULT = { NO_MOVE: 0.45, SMALL_MOVE: 0.65, CLEAR_MOVE: 1.00, NEAR_START: 1.10 };
   const isUpdateContext = lockRawScore != null;
   let effectiveScore = rawScore;
-  if (isUpdateContext) {
+  if (isUpdateContext && rawScore > lockRawScore) {
     const mult = REGIME_UPDATE_MULT[regime] ?? 0.45;
     effectiveScore = lockRawScore + mult * (rawScore - lockRawScore);
   }
@@ -3594,7 +3595,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const sideFlipped = lockedSideRef.current != null && consensusSide !== lockedSideRef.current;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentStars: sr.stars,
-    lockStars: lockStarsRef.current ?? sr.stars,
+    lockStars: lastSyncedStars.current ?? lockStarsRef.current ?? sr.stars,
     sideFlipped,
     liveCLV_z: sideFlipped ? null : sr.liveCLV_z,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
@@ -3718,7 +3719,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadWasEverLocked = isSpreadLocked || lastSyncedSpreadStars.current != null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
     currentStars: spreadSr.stars,
-    lockStars: lastSyncedSpreadStars.current ?? spreadSr.stars,
+    lockStars: lastSyncedSpreadStars.current ?? lockSpreadStarsRef.current ?? spreadSr.stars,
     sideFlipped: false,
     liveCLV_z: spreadSr.liveCLV_z,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
@@ -3840,7 +3841,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalWasEverLocked = isTotalLocked || lastSyncedTotalStars.current != null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
     currentStars: totalSr.stars,
-    lockStars: lastSyncedTotalStars.current ?? totalSr.stars,
+    lockStars: lastSyncedTotalStars.current ?? lockTotalStarsRef.current ?? totalSr.stars,
     sideFlipped: false,
     liveCLV_z: totalSr.liveCLV_z,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
