@@ -569,7 +569,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       return s > max ? s : max;
     }, 0);
     if (stars <= existingBestStars) {
-      return { docId, action: 'no_change' };
+      const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
+      return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
@@ -613,9 +614,15 @@ async function syncPickHealth({ docId, collection: colName, side, health }) {
     if (!existing.exists()) return;
     const data = existing.data();
     if (data.status === 'COMPLETED') return;
-    if (!data.sides?.[side]?.lock) return;
+    let targetSide = side;
+    if (!data.sides?.[side]?.lock) {
+      const original = Object.entries(data.sides || {})
+        .find(([, sd]) => sd.lock && !sd.superseded);
+      if (!original) return;
+      targetSide = original[0];
+    }
     await setDoc(ref, {
-      sides: { [side]: { health: { ...health, evaluatedAt: Date.now() } } },
+      sides: { [targetSide]: { health: { ...health, evaluatedAt: Date.now() } } },
       lastWriteAt: Date.now(),
     }, { merge: true });
   } catch (err) {
@@ -708,7 +715,8 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       return s > max ? s : max;
     }, 0);
     if (stars <= existingBestStars) {
-      return { docId, action: 'no_change' };
+      const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
+      return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
@@ -788,7 +796,8 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       return s > max ? s : max;
     }, 0);
     if (stars <= existingBestStars) {
-      return { docId, action: 'no_change' };
+      const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
+      return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
@@ -3286,7 +3295,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const [showSpreadWallets, setShowSpreadWallets] = useState(false);
@@ -3305,7 +3314,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lockOddsRef = useRef(null);
   const lockStarsRef = useRef(null);
   const lockRawScoreRef = useRef(null);
-  const lockedSideRef = useRef(null);
+  const lockedSideRef = useRef(originalLockedSide || null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
   const consensusSide = s.consensus;
@@ -3538,13 +3547,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       },
       regime: sr.regime,
       qualityProxy: sr.qualityProxy,
-    }).then(({ docId, action }) => {
+    }).then(({ docId, action, originalSide }) => {
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
       if (!lockOddsRef.current) lockOddsRef.current = betOdds;
       if (lockStarsRef.current == null) lockStarsRef.current = sr.stars;
       if (lockRawScoreRef.current == null) lockRawScoreRef.current = sr.rawScore;
-      if (!lockedSideRef.current) lockedSideRef.current = consensusSide;
+      if (!lockedSideRef.current) lockedSideRef.current = originalSide || consensusSide;
       if (action !== 'no_change') {
         onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
@@ -3591,7 +3600,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   });
 
   // ─── ML Pick Health Evaluation ──────────────────────────────────────────────
-  const wasEverLocked = isLocked || lockStarsRef.current != null;
+  const wasEverLocked = isLocked || lockStarsRef.current != null || originalLockedSide != null;
   const sideFlipped = lockedSideRef.current != null && consensusSide !== lockedSideRef.current;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentStars: sr.stars,
@@ -3609,7 +3618,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastHealthRef.current = mlHealth.status;
-    syncPickHealth({ docId, collection: 'sharpFlowPicks', side: consensusSide, health: mlHealth });
+    syncPickHealth({ docId, collection: 'sharpFlowPicks', side: lockedSideRef.current || consensusSide, health: mlHealth });
   }, [wasEverLocked, mlHealth.status, sr.stars]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
@@ -7039,9 +7048,12 @@ export default function SharpFlow() {
                             gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
                             gap: '0.75rem',
                           }}>
-                            {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => (
-                              <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} />
-                            ))}
+                            {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => {
+                              const gdDocId = `${today}_${gd.sport}_${gd.key}`;
+                              const gdLock = lockedPicks[gdDocId];
+                              const gdOriginalSide = gdLock ? Object.entries(gdLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded)?.[0] : null;
+                              return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} />;
+                            })}
                           </div>
                           {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
                         </>
