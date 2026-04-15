@@ -7049,7 +7049,7 @@ export default function SharpFlow() {
                             gap: '0.75rem',
                           }}>
                             {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => {
-                              const gdDocId = `${today}_${gd.sport}_${gd.key}`;
+                              const gdDocId = `${todayET()}_${gd.sport}_${gd.key}`;
                               const gdLock = lockedPicks[gdDocId];
                               const gdOriginalSide = gdLock ? Object.entries(gdLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded)?.[0] : null;
                               return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} />;
