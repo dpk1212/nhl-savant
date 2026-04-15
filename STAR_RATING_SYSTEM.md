@@ -15,6 +15,7 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| **V7.1 + Regime Dampening** | 2026-04-15 | Regime-aware update dampening (0.45/0.65/1.00/1.10 multipliers on score delta from lock), NO_MOVE star cap (lockStars + 0.5), NEAR_START negative-CLV cap, lock baseline tracking for all markets |
 | **V7 + Two-Sided Overlay** | 2026-04-06 | Two-stage architecture (lock + update formulas), live CLV blending, `qualityProxy` replaces `predictedCLV`, compressed 1–3u ML scale, two-sided features (moneyEdge, marketDominance, signalDisagreement), middle-tier gates |
 | V6 | 2026-04-11 (pre-V7) | Trimmed breadth, bumped conviction, conditional Pinnacle, sport-specific bonuses |
 
@@ -172,6 +173,27 @@ liveCLV = impliedProb(pinnCurrentOdds) - impliedProb(lockOdds)
 
 Positive liveCLV means the market has moved in the play's direction since lock — the play is "beating the line."
 
+### Regime-Aware Update Dampening (V7.1)
+
+When re-evaluating a locked play, the raw score delta from lock is multiplied by a regime-dependent factor before star mapping. This prevents noisy upgrades in dead markets while giving full credit to changes backed by real market evidence.
+
+```
+effectiveScore = lockRawScore + REGIME_MULT[regime] * (rawScore - lockRawScore)
+```
+
+| Regime | Multiplier | Rationale |
+|--------|-----------|-----------|
+| `NO_MOVE` | 0.45x | Market is dead — most score changes are noise, not signal |
+| `SMALL_MOVE` | 0.65x | Some evidence, partial credit |
+| `CLEAR_MOVE` | 1.00x | Real movement — full delta applies |
+| `NEAR_START` | 1.10x | Late convergence is high-signal — slight amplification |
+
+**Regime-specific star caps** (applied after dampening):
+- `NO_MOVE`: Cap at `lockStars + 0.5` unless elite factor profile (qp >= 2 AND moneyEdge_z >= 0.5 AND no contradictions)
+- `NEAR_START` with `liveCLV < 0`: Cap at `lockStars` — market moved against the play, don't upgrade
+
+The dampening is only active when `lockRawScore` is provided (update context). Initial lock evaluations are unaffected.
+
 ### `qualityProxy` (formerly `predictedCLV`)
 
 A rule-based score computed from lock-time features only. Renamed because analysis showed it predicts win rate, not CLV. Components:
@@ -264,17 +286,17 @@ A play is **LOCKED IN** (auto-tracked, assigned units, tracked for performance) 
 
 ### Moneyline (ML) Picks
 - Star rating >= **2.5 stars**
-- Total consensus-side invested >= **$7,000**
+- Total consensus-side invested >= **$10,000**
 
 ### Spread Picks
 - Star rating >= **2.5 stars**
 - Consensus-side wallet count >= **2 wallets**
-- Total consensus-side invested >= **$5,000**
+- Total consensus-side invested >= **$10,000**
 
 ### Total (O/U) Picks
 - Star rating >= **2.5 stars**
 - Consensus-side wallet count >= **2 wallets**
-- Total consensus-side invested >= **$5,000**
+- Total consensus-side invested >= **$10,000**
 
 **These thresholds are enforced in `SharpFlow.jsx` and are MANDATORY. No bet should ever be written to Firebase without meeting these minimums.**
 
@@ -419,8 +441,10 @@ NHL, CBB, MLB, NBA — all use the same unified `rateStarsV7` function.
 
 6. **CLV-gated updates.** The top pick bonus only fires when live Pinnacle movement confirms the star upgrade. No bonus when regime is `NO_MOVE`.
 
-7. **Middle-tier filtering.** The two-sided gates specifically target the 2.5–3.5 star range where historical analysis showed the most noise. Strong money edge promotes, weak money edge demotes, signal disagreement blocks.
+7. **Regime-aware update dampening.** Not all updates are equally valuable. Score changes in dead markets (NO_MOVE) are dampened to 45% of their raw delta; changes during real movement (CLEAR_MOVE) get full credit. This prevents manufacturing conviction without fresh market evidence.
 
-8. **Minimum invested thresholds prevent noise.** ML requires $7K, Spread/Total requires $5K. No bet is ever written without meaningful sharp conviction.
+8. **Middle-tier filtering.** The two-sided gates specifically target the 2.5–3.5 star range where historical analysis showed the most noise. Strong money edge promotes, weak money edge demotes, signal disagreement blocks.
 
-9. **Data-driven weights.** Signal weights are validated against 411+ graded picks through ablation tests, walk-forward backtests, and monotonicity analysis.
+9. **Minimum invested thresholds prevent noise.** All markets (ML, Spread, Total) require $10K. No bet is ever written without meaningful sharp conviction.
+
+10. **Data-driven weights.** Signal weights are validated against 411+ graded picks through ablation tests, walk-forward backtests, and monotonicity analysis.

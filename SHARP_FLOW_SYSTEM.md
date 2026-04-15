@@ -54,9 +54,9 @@ The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile th
 
 | Market | Star Threshold | Min Invested | Min Wallets |
 |--------|---------------|-------------|-------------|
-| **Moneyline** | >= 2.5 stars | **$7,000** | — |
-| **Spread** | >= 2.5 stars | **$5,000** | **2 wallets** |
-| **Total (O/U)** | >= 2.5 stars | **$5,000** | **2 wallets** |
+| **Moneyline** | >= 2.5 stars | **$10,000** | — |
+| **Spread** | >= 2.5 stars | **$10,000** | **2 wallets** |
+| **Total (O/U)** | >= 2.5 stars | **$10,000** | **2 wallets** |
 
 **No bet is EVER written to Firebase unless these minimums are met.** This is enforced at the lock-decision level in `SharpFlow.jsx`.
 
@@ -70,6 +70,23 @@ The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile th
 6. **Two-sided feature overlay** — `moneyEdge` (log ratio of consensus vs opposition money), `marketDominance` (composite), and `signalDisagreement` (money/sharp edge sign conflict) are added to both formulas.
 7. **Middle-tier gates** — Signal disagreement blocks 4+ stars, weak money edge downgrades 2.5–3.5 star plays, strong money edge promotes clean 2.5–3.5 star plays.
 8. **Frozen population statistics** — All z-scoring uses frozen means/stds/thresholds from the historical dataset.
+
+### V7.1 Key Changes (2026-04-15)
+
+1. **Regime-aware update dampening** — Score changes from lock are multiplied by a regime-dependent factor before star mapping. Upgrades in dead markets are muted; upgrades during real movement get full or amplified credit.
+
+| Regime | Multiplier | Effect |
+|--------|-----------|--------|
+| `NO_MOVE` | 0.45x | Score delta heavily dampened — prevents noisy upgrades |
+| `SMALL_MOVE` | 0.65x | Partial credit — some evidence but not enough for full trust |
+| `CLEAR_MOVE` | 1.00x | Full credit — real market movement validates the change |
+| `NEAR_START` | 1.10x | Slight amplification — late convergence is high-signal |
+
+2. **Regime-specific star caps** — After dampening, additional hard limits in update context:
+   - `NO_MOVE`: Stars capped at `lockStars + 0.5` unless elite factor profile (qualityProxy >= 2, moneyEdge_z >= 0.5, no contradictions)
+   - `NEAR_START` with negative liveCLV: Stars capped at `lockStars` (market moved against play — don't upgrade)
+
+3. **Lock baseline tracking** — `lockRawScore` and `lockStars` are captured at first lock and passed to subsequent `rateStarsV7()` calls for all market types (ML, spread, total). The dampening layer is inactive for the initial evaluation (no `lockRawScore`) and activates on all re-evaluations.
 
 ### Unit Sizing
 
@@ -223,9 +240,9 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
 
 **CRITICAL: Lock thresholds are enforced BEFORE any Firebase write:**
-- ML (`sharpFlowPicks`): stars >= 2.5 AND consensusInvested >= $7,000
-- Spread (`sharpFlowSpreads`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= $5,000
-- Total (`sharpFlowTotals`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= $5,000
+- ML (`sharpFlowPicks`): stars >= 2.5 AND consensusInvested >= $10,000
+- Spread (`sharpFlowSpreads`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= $10,000
+- Total (`sharpFlowTotals`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= $10,000
 
 #### `sharpFlowPicks` Document Schema (v3 — lock + peak + pregame snapshots)
 
@@ -367,7 +384,7 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 **Key Functions**:
 - `useMarketData()` — loads all 5 JSON files
 - `computeSharpFeatures()` — decomposes positions into breadth, conviction, concentration, counterSharp, consensus tier, wallet counts, money percentages (net-position approach for hedgers)
-- `rateStarsV7()` — V7 unified two-stage scoring (lock + update formulas, two-sided overlay, regime detection, CLV blending)
+- `rateStarsV7()` — V7 unified two-stage scoring (lock + update formulas, two-sided overlay, regime detection, CLV blending, V7.1 regime-aware update dampening)
 - `v7QualityProxy()` — rule-based quality score (win-rate proxy, not CLV)
 - `v7Contradictions()` — computes 3-flag contradiction penalty
 - `calculateUnits()` — maps ML star rating to 1–3u scale with consensus penalty + dog caps
@@ -384,8 +401,8 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 1. `sharp_positions.json` -> per-side wallet counts, invested amounts
 2. `pinnacle_history.json` -> book prices, line movement, EV edge
 3. `computeSharpFeatures()` -> breadth, conviction, concentration, counterSharp, consensus/opposition wallet counts
-4. `rateStarsV7()` -> star rating (with two-sided features computed internally from moneyPct, sharpCount, oppSharpCount)
-5. **Threshold check**: stars >= 2.5 AND invested >= minimum ($7K ML / $5K spread+total)
+4. `rateStarsV7()` -> star rating (with two-sided features computed internally from moneyPct, sharpCount, oppSharpCount). On re-evaluations: regime-aware dampening applied to score delta from lock.
+5. **Threshold check**: stars >= 2.5 AND invested >= minimum ($10K for ML, spread, and total)
 6. Only if ALL conditions met -> Firebase write -> unit sizing -> locked card display
 
 ### Firestore Indexes Required

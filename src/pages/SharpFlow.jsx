@@ -285,6 +285,8 @@ function rateStarsV7({
   pinnMoveSize = 0,
   timeToGame = null,
   oppSharpCount = 0,
+  lockRawScore = null,
+  lockStars = null,
 } = {}) {
   const avgBet = sharpCount > 0 ? totalInvested / sharpCount : 0;
   const avgBet_w = v7Winsorize(avgBet, V7_STATS.avgBet.lo, V7_STATS.avgBet.hi);
@@ -368,11 +370,20 @@ function rateStarsV7({
       - 2.5 * counterSharp_z - 1.5 * walletPct_z - 2.0 * contradictions
       + 1.25 * moneyEdge_z + 0.50 * mktDom_z - 1.25 * disagreement - 0.50 * againstSC_z;
 
-  // Map raw score to stars using frozen thresholds (p75 = 3.5-star)
+  // Regime-aware update dampening (V7.1): dampen score delta from lock based on regime quality
+  const REGIME_UPDATE_MULT = { NO_MOVE: 0.45, SMALL_MOVE: 0.65, CLEAR_MOVE: 1.00, NEAR_START: 1.10 };
+  const isUpdateContext = lockRawScore != null;
+  let effectiveScore = rawScore;
+  if (isUpdateContext) {
+    const mult = REGIME_UPDATE_MULT[regime] ?? 0.45;
+    effectiveScore = lockRawScore + mult * (rawScore - lockRawScore);
+  }
+
+  // Map effective score to stars using frozen thresholds (p75 = 3.5-star)
   const t = V7_STATS.thresholds;
-  let stars = rawScore < t.p15 ? 1 : rawScore < t.p30 ? 2 : rawScore < t.p50 ? 2.5
-            : rawScore < t.p75 ? 3 : rawScore < t.p87 ? 3.5 : rawScore < t.p93 ? 4
-            : rawScore < t.p97 ? 4.5 : 5;
+  let stars = effectiveScore < t.p15 ? 1 : effectiveScore < t.p30 ? 2 : effectiveScore < t.p50 ? 2.5
+            : effectiveScore < t.p75 ? 3 : effectiveScore < t.p87 ? 3.5 : effectiveScore < t.p93 ? 4
+            : effectiveScore < t.p97 ? 4.5 : 5;
 
   // Gates
   if (stars >= 5 && (qp < 1 || contradictions >= 2)) stars = 4.5;
@@ -390,6 +401,17 @@ function rateStarsV7({
     stars = Math.min(5, stars + 0.5);
   }
 
+  // Regime-aware update caps (V7.1): prevent over-promotion in low-evidence regimes
+  if (isUpdateContext && lockStars != null) {
+    const eliteProfile = qp >= 2 && moneyEdge_z >= 0.5 && contradictions === 0;
+    if (regime === 'NO_MOVE' && !eliteProfile) {
+      stars = Math.min(stars, lockStars + 0.5);
+    }
+    if (regime === 'NEAR_START' && liveCLV != null && liveCLV < 0) {
+      stars = Math.min(stars, lockStars);
+    }
+  }
+
   const labels = {
     5:   { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Maximum conviction — all signals aligned' },
     4.5: { label: 'ELITE PLAY',    color: B.green,   bg: B.greenDim,                summary: 'Near-perfect signal alignment' },
@@ -404,7 +426,7 @@ function rateStarsV7({
   };
   const info = labels[stars] || labels[1];
 
-  return { stars, rawScore, ...info, isActionable: stars >= 3, regime, qualityProxy: qp, moneyEdge_z, mktDom_z, againstSC_z, disagreement, contradictions, liveCLV_z };
+  return { stars, rawScore, effectiveScore, ...info, isActionable: stars >= 3, regime, qualityProxy: qp, moneyEdge_z, mktDom_z, againstSC_z, disagreement, contradictions, liveCLV_z, regimeMultiplier: isUpdateContext ? (REGIME_UPDATE_MULT[regime] ?? 0.45) : null };
 }
 
 // ─── Pick Health Evaluation (Mute / Cancel overlay) ──────────────────────────
@@ -476,8 +498,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 7000) {
-      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $7000 minimum`);
+    if ((totalInvested || 0) < 10000) {
+      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $10000 minimum`);
       return { docId, action: 'no_change' };
     }
 
@@ -627,8 +649,8 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 5000) {
-      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
+    if ((totalInvested || 0) < 10000) {
+      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $10000 minimum`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowSpreads', docId);
@@ -707,8 +729,8 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 5000) {
-      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
+    if ((totalInvested || 0) < 10000) {
+      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $10000 minimum`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowTotals', docId);
@@ -2797,7 +2819,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
     { key: 'sharps3Plus', label: '3+ Sharp Bettors', met: criteria.sharps3Plus },
     { key: 'plusEV', label: '+EV Edge', met: criteria.plusEV },
     { key: 'pinnacleConfirms', label: 'Pinnacle Confirms', met: criteria.pinnacleConfirms },
-    { key: 'invested7kPlus', label: '$7K+ on Side', met: criteria.invested7kPlus },
+    { key: 'invested10kPlus', label: '$10K+ on Side', met: criteria.invested10kPlus },
     { key: 'lineMovingWith', label: 'Line Moving With Play', met: criteria.lineMovingWith },
     { key: 'predMarketAligns', label: 'Pred. Market Aligns', met: criteria.predMarketAligns },
   ] : [];
@@ -3273,10 +3295,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const [marketTab, setMarketTab] = useState('ml');
   const lastSyncedStars = useRef(null);
   const lastSyncedSpreadStars = useRef(null);
+  const lockSpreadStarsRef = useRef(null);
+  const lockSpreadRawScoreRef = useRef(null);
   const lastSyncedTotalStars = useRef(null);
+  const lockTotalStarsRef = useRef(null);
+  const lockTotalRawScoreRef = useRef(null);
   const pregameSynced = useRef(false);
   const lockOddsRef = useRef(null);
   const lockStarsRef = useRef(null);
+  const lockRawScoreRef = useRef(null);
   const lockedSideRef = useRef(null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
@@ -3435,7 +3462,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     { id: 'sharps', label: '3+ Sharp Bettors', met: consensusWallets >= 3 },
     { id: 'ev', label: '+EV Edge', met: hasEV },
     { id: 'pinnacle', label: 'Pinnacle Confirms', met: pinnConfirms },
-    { id: 'invested', label: '$7K+ on Side', met: consensusInvested >= 7000 },
+    { id: 'invested', label: '$10K+ on Side', met: consensusInvested >= 10000 },
     { id: 'pinnMove', label: 'Line Moving With Play', met: pinnMovingWith },
     { id: 'predMarket', label: 'Pred. Market Aligns', met: polyMovingWith },
   ];
@@ -3458,10 +3485,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     pinnMoveSize: (pinnCurrentProb && pinnOpenProb) ? Math.abs(pinnCurrentProb - pinnOpenProb) : 0,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     oppSharpCount: oppSharpFeatures.conWalletCount,
+    lockRawScore: lockRawScoreRef.current,
+    lockStars: lockStarsRef.current,
   });
   const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
   if (isExtremeOdds) return null;
-  const isLocked = sr.stars >= 2.5 && consensusInvested >= 7000;
+  const isLocked = sr.stars >= 2.5 && consensusInvested >= 10000;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds) : 0;
@@ -3481,7 +3510,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       criteriaMet,
       criteria: {
         sharps3Plus: consensusWallets >= 3, plusEV: hasEV,
-        pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000,
+        pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000,
         lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith,
       },
       sharpCount: consensusWallets, totalInvested: consensusInvested,
@@ -3513,9 +3542,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       lastSyncedStars.current = sr.stars;
       if (!lockOddsRef.current) lockOddsRef.current = betOdds;
       if (lockStarsRef.current == null) lockStarsRef.current = sr.stars;
+      if (lockRawScoreRef.current == null) lockRawScoreRef.current = sr.rawScore;
       if (!lockedSideRef.current) lockedSideRef.current = consensusSide;
       if (action !== 'no_change') {
-        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
+        onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
     });
   }, [isLocked, sr.stars]);
@@ -3539,7 +3569,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         criteriaMet,
         criteria: {
           sharps3Plus: consensusWallets >= 3, plusEV: hasEV,
-          pinnacleConfirms: pinnConfirms, invested7kPlus: consensusInvested >= 7000,
+          pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000,
           lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith,
         },
         sharpCount: consensusWallets, totalInvested: consensusInvested,
@@ -3631,11 +3661,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sharpCount: spreadSharpFeatures.conWalletCount || 0, totalInvested: spreadSharpFeatures.conTotalInvested || 0,
     lockOdds: null, pinnCurrentOdds: spreadPinnOdds, pinnMoveSize: 0, timeToGame: null,
     oppSharpCount: spreadSharpFeatures.oppWalletCount || 0,
+    lockRawScore: lockSpreadRawScoreRef.current,
+    lockStars: lockSpreadStarsRef.current,
   }) : null;
 
   const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
     && (spreadSharpFeatures?.conWalletCount || 0) >= 2
-    && (spreadSharpFeatures?.conTotalInvested || 0) >= 5000;
+    && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
   const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds) : 0;
 
   useEffect(() => {
@@ -3674,6 +3706,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedSpreadStars.current = spreadSr.stars;
+      if (lockSpreadStarsRef.current == null) lockSpreadStarsRef.current = spreadSr.stars;
+      if (lockSpreadRawScoreRef.current == null) lockSpreadRawScoreRef.current = spreadSr.rawScore;
       if (action !== 'no_change') {
         onPickSynced(docId, spreadConsensusSide, { odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle', pinnacleOdds: spreadPinnOdds, line: spreadLine, criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3, plusEV: spreadEvEdge > 0, lineMovingWith: spreadPinnMovedWith }, sharpCount: spreadSharpFeatures?.conWalletCount || 0, totalInvested: spreadSharpFeatures?.conTotalInvested || 0, evEdge: spreadEvEdge, units: spreadUnits, unitTier: unitTier(spreadUnits).label, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' }, stars: spreadSr.stars, team: spreadConsensuTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'spread' }, action);
       }
@@ -3747,11 +3781,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sharpCount: totalSharpFeatures.conWalletCount || 0, totalInvested: totalSharpFeatures.conTotalInvested || 0,
     lockOdds: null, pinnCurrentOdds: totalPinnOdds, pinnMoveSize: 0, timeToGame: null,
     oppSharpCount: totalSharpFeatures.oppWalletCount || 0,
+    lockRawScore: lockTotalRawScoreRef.current,
+    lockStars: lockTotalStarsRef.current,
   }) : null;
 
   const isTotalLocked = totalSr && totalSr.stars >= 2.5
     && (totalSharpFeatures?.conWalletCount || 0) >= 2
-    && (totalSharpFeatures?.conTotalInvested || 0) >= 5000;
+    && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
   const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds) : 0;
 
   useEffect(() => {
@@ -3791,6 +3827,8 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedTotalStars.current = totalSr.stars;
+      if (lockTotalStarsRef.current == null) lockTotalStarsRef.current = totalSr.stars;
+      if (lockTotalRawScoreRef.current == null) lockTotalRawScoreRef.current = totalSr.rawScore;
       if (action !== 'no_change') {
         const totalTeamLabel = totalConsensusSide === 'over' ? `Over ${totalLine}` : `Under ${totalLine}`;
         onPickSynced(docId, totalConsensusSide, { odds: totalBetOdds, book: totalBestBook || 'Pinnacle', pinnacleOdds: totalPinnOdds, line: totalLine, criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: totalSharpFeatures?.conWalletCount >= 3, plusEV: totalEvEdge > 0, lineMovingWith: totalPinnMovedWith }, sharpCount: totalSharpFeatures?.conWalletCount || 0, totalInvested: totalSharpFeatures?.conTotalInvested || 0, evEdge: totalEvEdge, units: totalUnits, unitTier: unitTier(totalUnits).label, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' }, stars: totalSr.stars, team: totalTeamLabel }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'total' }, action);
@@ -4162,7 +4200,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           {spreadSharpFeatures && (() => {
             const sCriteria = [
               { id: 's3', met: (spreadSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
-              { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 5000, label: '$5K+ on Side' },
+              { id: 'sinv', met: (spreadSharpFeatures.conTotalInvested || 0) >= 10000, label: '$10K+ on Side' },
               { id: 'sev', met: spreadEvEdge > 0, label: '+EV Edge' },
               { id: 'spinn', met: spreadPinnConfirms, label: 'Pinnacle Confirms' },
               { id: 'sline', met: spreadPinnMovedWith, label: 'Line Moving With' },
@@ -4492,7 +4530,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
           {totalSharpFeatures && (() => {
             const tCriteria = [
               { id: 't3', met: (totalSharpFeatures.conWalletCount || 0) >= 2, label: '2+ Sharp Bettors' },
-              { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 5000, label: '$5K+ on Side' },
+              { id: 'tinv', met: (totalSharpFeatures.conTotalInvested || 0) >= 10000, label: '$10K+ on Side' },
               { id: 'tev', met: totalEvEdge > 0, label: '+EV Edge' },
               { id: 'tpinn', met: totalPinnConfirms, label: 'Pinnacle Confirms' },
               { id: 'tline', met: totalPinnMovedWith, label: 'Line Moving With' },
