@@ -854,6 +854,7 @@ function tallySides(snap) {
     if (data.sides) {
       for (const sideData of Object.values(data.sides)) {
         if (sideData.status !== 'COMPLETED') continue;
+        if (sideData.superseded || sideData.health?.status === 'CANCELLED') continue;
         const u = sideData.peak?.units || sideData.lock?.units || 1;
         totalUnits += u;
         const profit = sideData.result?.profit ?? 0;
@@ -912,7 +913,7 @@ function estimateStarsFromSnap(snap) {
 
 async function loadAllTimePnL() {
   try {
-    const cacheKey = 'sharpFlow_pnl_v11';
+    const cacheKey = 'sharpFlow_pnl_v12';
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const { data, ts } = JSON.parse(cached);
@@ -941,14 +942,15 @@ async function loadAllTimePnL() {
       const mt = data._marketType || data.marketType || 'ml';
       const isPostDeploy = data.date >= STARS_LIVE_DATE;
       const processSide = (sd) => {
+        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED');
         const bestSnap = sd.peak || sd.lock;
         const lockSnap = sd.lock || bestSnap;
         const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
         const key = starBucket(s);
         if (!byStars[key]) byStars[key] = emptyBucket();
-        byStars[key].totalPicks++;
+        if (!isCancelled) byStars[key].totalPicks++;
         const u = bestSnap?.units || 1;
-        if (sd.status === 'COMPLETED') {
+        if (sd.status === 'COMPLETED' && !isCancelled) {
           byStars[key].totalUnits += u;
           if (sd.result?.outcome === 'WIN') { byStars[key].wins++; byStars[key].totalProfit += (sd.result?.profit || 0); }
           else if (sd.result?.outcome === 'LOSS') { byStars[key].losses++; byStars[key].totalProfit -= u; }
@@ -959,7 +961,7 @@ async function loadAllTimePnL() {
           const lkStars = lockSnap?.stars ?? 0;
           const lkEV = lockSnap?.evEdge ?? null;
           const pkEV = bestSnap?.evEdge ?? null;
-          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null };
+          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null, cancelled: isCancelled };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
@@ -5647,6 +5649,7 @@ export default function SharpFlow() {
       cutoff = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     }
     const filtered = rawPicks.filter(p => {
+      if (p.cancelled) return false;
       if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
       if (perfMarket !== 'all' && (p.marketType || 'ml') !== perfMarket) return false;
       if (perfGrowth === 'topPick') {
@@ -6528,7 +6531,7 @@ export default function SharpFlow() {
                         </div>
 
                         <SharpFlowProfitChart picks={(() => {
-                          const raw = allTimePnL?.picks || [];
+                          const raw = (allTimePnL?.picks || []).filter(p => !p.cancelled);
                           if (!isFiltered) return raw;
                           return raw.filter(p => {
                             if (perfSport !== 'ALL' && p.sport !== perfSport) return false;
