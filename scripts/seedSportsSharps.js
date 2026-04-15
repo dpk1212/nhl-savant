@@ -92,11 +92,11 @@ async function fetchWithRetry(url, retries = RETRY_LIMIT) {
   return null;
 }
 
-async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH) {
-  console.log(`Fetching sports leaderboard (${timePeriod}, top ${depth})...`);
+async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH, category = 'SPORTS') {
+  console.log(`Fetching ${category} leaderboard (${timePeriod}, top ${depth})...`);
   const all = [];
   for (let offset = 0; offset < depth; offset += 50) {
-    const url = `${DATA_API}/v1/leaderboard?timePeriod=${timePeriod}&category=SPORTS&orderBy=PNL&limit=50&offset=${offset}`;
+    const url = `${DATA_API}/v1/leaderboard?timePeriod=${timePeriod}&category=${category}&orderBy=PNL&limit=50&offset=${offset}`;
     const data = await fetchWithRetry(url);
     if (!data || !Array.isArray(data) || data.length === 0) {
       console.log(`  Leaderboard exhausted at offset ${offset} (${all.length} entries)`);
@@ -148,20 +148,36 @@ async function buildProfile(wallet) {
   await sleep(DELAY_MS);
 
   const sportMarkets = {};
+  let sportInvested = 0;
+  let sportPositionCount = 0;
 
   for (const p of closedPositions) {
     const sport = classifySport(p.title || '');
-    if (sport) sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+    if (sport) {
+      sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+      sportPositionCount++;
+      const bought = parseFloat(p.totalBought || '0');
+      const price = parseFloat(p.avgPrice || '0');
+      if (bought > 0 && price > 0) sportInvested += bought * price;
+    }
   }
 
   for (const p of currentPositions) {
     const sport = classifySport(p.title || '');
-    if (sport) sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+    if (sport) {
+      sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+      sportPositionCount++;
+      const size = parseFloat(p.size || '0');
+      const price = parseFloat(p.avgPrice || '0');
+      if (size > 0 && price > 0) sportInvested += size * price;
+    }
   }
 
   return {
     sportMarkets,
     marketsTraded: traded?.traded || (currentPositions.length + closedPositions.length),
+    sportPositionCount,
+    sportInvested: Math.round(sportInvested),
   };
 }
 
@@ -184,6 +200,10 @@ async function run() {
   // Monthly hot wallets: $20K+ monthly sports profit
   const monthlyHot = monthlyLB.filter(w => w.pnl >= MIN_MONTHLY_PNL);
   console.log(`\nMonthly hot bettors ($${(MIN_MONTHLY_PNL / 1000).toFixed(0)}K+): ${monthlyHot.length}`);
+
+  const overallLB = await fetchLeaderboard('ALL', LB_DEPTH, 'OVERALL');
+  const overallLookup = Object.fromEntries(overallLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol }]));
+  console.log(`Overall leaderboard: ${overallLB.length} entries loaded for cross-reference`);
 
   // Merge: all-time first, then monthly-only wallets that aren't already in the list
   const seen = new Set(allTimeLB.map(w => w.wallet));
@@ -224,17 +244,23 @@ async function run() {
       const lbVol = lb.vol || 0;
       const lbSportROI = lbVol > 0 ? +((lb.pnl / lbVol) * 100).toFixed(1) : 0;
       const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
-      const lbAvgBet = sportMarketCount > 0 ? Math.round(lbVol / sportMarketCount) : 0;
+      const posAvgBet = profile.sportPositionCount > 0
+        ? Math.round(profile.sportInvested / profile.sportPositionCount)
+        : (sportMarketCount > 0 ? Math.round(lbVol / sportMarketCount) : 0);
+      const overall = overallLookup[lb.wallet];
 
       allWallets[lb.wallet] = {
         name: lb.name || prev?.name || 'Anonymous',
         totalPnl: pnl,
         sportPnlTotal: pnl,
+        overallPnl: overall ? Math.round(overall.pnl) : null,
+        overallVol: overall ? Math.round(overall.vol) : null,
         sportMarkets: profile.sportMarkets,
         marketsTraded: profile.marketsTraded,
         sportBets: sportMarketCount,
+        sportBetCount: profile.sportPositionCount || sportMarketCount,
         sportROI: lbSportROI,
-        avgSportBet: lbAvgBet,
+        avgSportBet: posAvgBet,
         lastSeen: now,
         builtAt: now,
         source: isMonthlyHot && !seen.has(lb.wallet) ? 'monthly_leaderboard' : 'leaderboard',
@@ -252,13 +278,17 @@ async function run() {
     } catch (e) {
       errors++;
       console.log(`error — ${e.message}`);
+      const overallFallback = overallLookup[lb.wallet];
       if (!allWallets[lb.wallet]) {
         allWallets[lb.wallet] = {
           name: lb.name || 'Anonymous',
           totalPnl: Math.round(lb.pnl || 0),
           sportPnlTotal: Math.round(lb.pnl || 0),
+          overallPnl: overallFallback ? Math.round(overallFallback.pnl) : null,
+          overallVol: overallFallback ? Math.round(overallFallback.vol) : null,
           sportMarkets: {},
           marketsTraded: 0,
+          sportBetCount: 0,
           lastSeen: now,
           builtAt: now,
           source: isMonthlyHot ? 'monthly_leaderboard' : 'leaderboard',

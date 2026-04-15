@@ -418,17 +418,59 @@ Defined in `firestore.indexes.json`.
 
 ### Deployment Rules
 
-**The only workflow that deploys the UI is `fetch-polymarket.yml`** (every 15 min).
+**The only workflow that deploys the UI is `fetch-polymarket.yml`** (every 15 min). It runs `npm run build` from whatever is on `main`, then pushes to `gh-pages`. If your local changes aren't on `main`, they WILL be overwritten within 15 minutes.
 
-**CRITICAL RULE**: Any changes to files in `src/` MUST be committed and pushed to `main` before the next workflow run. If you deploy locally with `npm run deploy` without pushing to `main`, the next scheduled run will **OVERWRITE your changes** with stale code from the last commit on `main`.
+#### Step-by-Step Deploy Procedure (ALWAYS follow this exact sequence)
 
-**Safe workflow** (ALWAYS follow this sequence):
-1. Make code changes
-2. `git add . && git commit -m "..." && git push` (push to main FIRST)
-3. `npm run deploy` (immediate deploy so changes go live right away)
-4. The workflow will also deploy within 15 min, but since `main` has your changes, it will deploy the same code.
+```bash
+# 1. Stage ONLY the files you changed (never git add . blindly)
+git add src/pages/SharpFlow.jsx SHARP_FLOW_SYSTEM.md STAR_RATING_SYSTEM.md
 
-**What happens if you skip step 2**: The workflow runs `npm run build` from whatever is on `main`. If your local changes aren't pushed, the workflow builds old code and deploys it to `gh-pages`, wiping out your local deploy. This has caused issues multiple times — **NEVER skip the push to main.**
+# 2. Verify staged files are correct
+git diff --cached --stat
+
+# 3. Commit with a descriptive message
+git commit -m "V7.1: Description of changes"
+
+# 4. Push to main — this WILL fail if workflows pushed data since your last pull
+git push origin main
+
+# 5. If push is rejected (workflows pushed while you were working):
+#    Stash any unstaged changes (deleted files, local experiments, etc.)
+git stash --include-untracked
+#    Rebase your commit on top of the latest workflow data commits
+git pull --rebase origin main
+#    Push again (should succeed now)
+git push origin main
+#    Restore your stashed changes
+git stash pop
+#    If stash pop has conflicts (e.g. workflow updated a file you deleted):
+#      git reset HEAD <conflicted-file>
+#      git checkout -- <conflicted-file>    # or just delete it again
+#      git restore --staged .               # unstage everything from the stash
+
+# 6. Deploy immediately so changes are live NOW (don't wait 15 min for workflow)
+npm run deploy
+
+# 7. Verify: the next workflow run will build from main (which has your code)
+#    and deploy the same result. No conflict, no overwrite.
+```
+
+#### Why Each Step Matters
+
+| Step | What happens if you skip it |
+|------|----------------------------|
+| Push to main FIRST | Workflow builds old code from main, deploys to gh-pages, **overwrites your local deploy** within 15 minutes |
+| `npm run deploy` after push | Changes don't go live until the next workflow run (~15 min). Not catastrophic but unnecessary delay |
+| Stash before rebase | `git pull --rebase` fails with "You have unstaged changes" if there are local deletions or modifications |
+| Rebase (not merge) | Keeps commit history clean; your commit sits on top of the auto-update data commits |
+
+#### Common Gotchas
+
+- **Unstaged deletions block rebase**: If you've deleted local temp files, `git pull --rebase` will refuse. Always stash first.
+- **Stash pop conflicts**: Workflows may have updated a file you deleted locally. Resolve by resetting the conflicted file, then re-delete if needed.
+- **Never force push**: The workflows push every 15 min. Force pushing will lose data commits. Always rebase.
+- **Build warnings are normal**: The Vite build will show warnings about chunk size, PostCSS gradients, and externalized modules. These do not affect the deploy.
 
 ### Merge Conflict Handling
 

@@ -5786,12 +5786,14 @@ export default function SharpFlow() {
         name: '***' + addr.slice(-4),
         totalPnl: w.totalPnl || 0,
         sportPnlTotal: w.sportPnlTotal || 0,
+        overallPnl: w.overallPnl ?? w.totalPnl ?? 0,
+        overallVol: w.overallVol ?? w.vol ?? 0,
         sportMarkets: w.sportMarkets || {},
         marketsTraded: w.marketsTraded || 0,
         vol: w.vol || 0,
         roi: w.sportROI || (w.vol > 0 ? (w.totalPnl / w.vol) * 100 : 0),
         avgBet: w.avgSportBet || (w.marketsTraded > 0 ? w.vol / w.marketsTraded : 0),
-        sportBets: Object.values(w.sportMarkets || {}).reduce((s, v) => s + v, 0),
+        sportBets: w.sportBetCount || Object.values(w.sportMarkets || {}).reduce((s, v) => s + v, 0),
         sportsActive: Object.keys(w.sportMarkets || {}).length,
       }))
       .sort((a, b) => b.sportPnlTotal - a.sportPnlTotal)
@@ -6142,9 +6144,9 @@ export default function SharpFlow() {
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <span style={{ ...T.label, color: B.textMuted, fontWeight: 600, fontFeatureSettings: "'tnum'" }}>
-                            {e.marketsTraded.toLocaleString()}
+                            {e.sportBets.toLocaleString()}
                           </span>
-                          <div style={{ ...T.micro, color: B.textSubtle, fontSize: '0.5rem' }}>BETS</div>
+                          <div style={{ ...T.micro, color: B.textSubtle, fontSize: '0.5rem' }}>SPORT BETS</div>
                         </div>
                       </>}
 
@@ -6168,11 +6170,11 @@ export default function SharpFlow() {
                         }}>
                           {[
                             { label: 'SPORT P&L', value: `+${fmtVol(e.sportPnlTotal)}`, color: B.green },
-                            { label: 'OVERALL P&L', value: `${e.totalPnl >= 0 ? '+' : ''}${fmtVol(e.totalPnl)}`, color: e.totalPnl >= 0 ? B.green : B.red },
+                            { label: 'OVERALL P&L', value: `${e.overallPnl >= 0 ? '+' : ''}${fmtVol(e.overallPnl)}`, color: e.overallPnl >= 0 ? B.green : B.red },
                             { label: 'VOLUME', value: fmtVol(e.vol), color: B.textSec },
                             { label: 'ROI', value: `${e.roi >= 0 ? '+' : ''}${e.roi.toFixed(1)}%`, color: e.roi >= 5 ? B.green : e.roi >= 1 ? '#22D3EE' : B.textSec },
                             { label: 'AVG BET', value: fmtVol(e.avgBet), color: B.textSec },
-                            { label: 'TOTAL BETS', value: e.marketsTraded.toLocaleString(), color: B.textSec },
+                            { label: 'SPORT BETS', value: e.sportBets.toLocaleString(), color: B.textSec },
                           ].map((stat, si) => (
                             <div key={si} style={{
                               textAlign: 'center', padding: '0.5rem 0.375rem',
