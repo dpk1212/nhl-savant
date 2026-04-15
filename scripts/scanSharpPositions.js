@@ -658,6 +658,115 @@ async function run() {
     }
   }
 
+  // ─── Clear-trader filter (post-scan) ────────────────────────────────────────
+  // Removes positions from wallets that are clearly non-directional actors
+  // (bots, arb traders, market makers with no real sport conviction).
+  // Protects profitable sharps (sportPnl > $10K AND sportROI > 10%) even if
+  // they trip other signals, since those wallets are genuinely picking sides.
+  let tradersRemoved = 0;
+  {
+    const bothSidesCount = {};
+    for (const resSet of [result, spreadResult, totalResult]) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+        for (const gd of Object.values(resSet[sport] || {})) {
+          const walletSides = {};
+          for (const pos of gd.positions || []) {
+            if (!walletSides[pos.wallet]) walletSides[pos.wallet] = new Set();
+            walletSides[pos.wallet].add(pos.side);
+          }
+          for (const [w, sides] of Object.entries(walletSides)) {
+            if (sides.size > 1) bothSidesCount[w] = (bothSidesCount[w] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    function traderScore(addr) {
+      const w = sportsSharps[addr] || {};
+      const wp = profiles[addr] || {};
+      let score = 0;
+      const vol = w.vol || 0;
+      const sportPnl = w.sportPnlTotal || 0;
+      const sportBets = w.sportBets || 0;
+      const marketsTraded = w.marketsTraded || 0;
+      const sportROI = w.sportROI || 0;
+      const sportWinRate = w.sportWinRate;
+      const bs = bothSidesCount[addr] || 0;
+
+      const ratio = vol > 0 && sportPnl > 0 ? vol / sportPnl : 0;
+      if (ratio > 200) score += 30; else if (ratio > 100) score += 20;
+      if (sportBets > 1000) score += 25; else if (sportBets > 500) score += 15;
+      if (marketsTraded > 100 && sportBets > 0) {
+        const pct = sportBets / marketsTraded;
+        if (pct < 0.02) score += 20; else if (pct < 0.05) score += 10;
+      }
+      if (sportROI < 1 && vol > 10e6) score += 15;
+      if (bs >= 3) score += 20; else if (bs >= 2) score += 15;
+      if (sportWinRate != null && sportWinRate < 5 && sportBets > 50) score += 15;
+
+      const isProfitableSharp = sportPnl > 10000 && sportROI > 10 && bs < 2;
+      return score >= 40 && !isProfitableSharp;
+    }
+
+    const allWalletsInResults = new Set();
+    for (const resSet of [result, spreadResult, totalResult]) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+        for (const gd of Object.values(resSet[sport] || {})) {
+          for (const pos of gd.positions || []) allWalletsInResults.add(pos.wallet);
+        }
+      }
+    }
+
+    const traderSet = new Set();
+    for (const addr of allWalletsInResults) {
+      if (traderScore(addr)) traderSet.add(addr);
+    }
+
+    let traderPosRemoved = 0;
+    let traderDollarsRemoved = 0;
+
+    function stripTraders(resSet, isTotalMarket = false) {
+      for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+        for (const [gameKey, gd] of Object.entries(resSet[sport] || {})) {
+          const removed = gd.positions.filter(p => traderSet.has(p.wallet));
+          gd.positions = gd.positions.filter(p => !traderSet.has(p.wallet));
+          traderPosRemoved += removed.length;
+          traderDollarsRemoved += removed.reduce((s, p) => s + (p.invested || 0), 0);
+
+          if (gd.positions.length === 0) {
+            delete resSet[sport][gameKey];
+            continue;
+          }
+
+          if (removed.length > 0) {
+            if (isTotalMarket) {
+              gd.summary = { sharpOver: 0, sharpUnder: 0, overInvested: 0, underInvested: 0 };
+              for (const p of gd.positions) {
+                if (p.side === 'over') { gd.summary.sharpOver++; gd.summary.overInvested += p.invested; }
+                else { gd.summary.sharpUnder++; gd.summary.underInvested += p.invested; }
+              }
+            } else {
+              gd.summary = { sharpAway: 0, sharpHome: 0, awayInvested: 0, homeInvested: 0 };
+              for (const p of gd.positions) {
+                if (p.side === 'away') { gd.summary.sharpAway++; gd.summary.awayInvested += p.invested; }
+                else { gd.summary.sharpHome++; gd.summary.homeInvested += p.invested; }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stripTraders(result);
+    stripTraders(spreadResult);
+    stripTraders(totalResult, true);
+    tradersRemoved = traderSet.size;
+
+    if (tradersRemoved > 0) {
+      console.log(`\nTrader filter: excluded ${tradersRemoved} clear-trader wallets (${traderPosRemoved} positions, $${Math.round(traderDollarsRemoved / 1000)}K removed)`);
+    }
+  }
+
   // Sort and finalize all three result sets
   function finalizeResult(res, isTotalMarket = false) {
     for (const sport of Object.values(res)) {
@@ -692,7 +801,8 @@ async function run() {
     mmExcluded: mmFiltered.length,
     sportLosersExcluded: sportLosers.length,
     noSportExcluded: noSport.length,
-    totalExcluded: mmFiltered.length + sportLosers.length + noSport.length,
+    tradersExcluded: tradersRemoved,
+    totalExcluded: mmFiltered.length + sportLosers.length + noSport.length + tradersRemoved,
   };
 
   Object.assign(result, meta);
