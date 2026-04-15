@@ -273,7 +273,7 @@ async function run() {
       const label = qualifiesLifetime ? 'QUALIFIES (lifetime)' :
         qualifiesMonthly ? `QUALIFIES (monthly hot, ${sportMarketCount} markets)` :
         isMonthlyHot ? 'SKIP (monthly hot but no tracked sports)' : 'below floor';
-      const statsLabel = sportMarketCount > 0 ? ` | ${sportMarketCount} mkts, ${lbSportROI}% ROI, $${lbAvgBet.toLocaleString()} avg` : '';
+      const statsLabel = sportMarketCount > 0 ? ` | ${sportMarketCount} mkts, ${lbSportROI}% ROI, $${posAvgBet.toLocaleString()} avg` : '';
       console.log(`$${pnl.toLocaleString()} sport PnL → ${label}${statsLabel}`);
     } catch (e) {
       errors++;
