@@ -222,6 +222,7 @@ Per game, consensus side is determined by **total dollars invested** (not wallet
 | `sharp_positions.json` | ML positions only |
 | `sharp_spread_positions.json` | Spread positions only |
 | `sharp_total_positions.json` | Total (O/U) positions only |
+| `sharp_intel_excluded_wallets.json` | Written each scan: `mmExcluded` + `tradersExcluded` (same heuristics as post-scan strip); merged `excluded` list for **Sharp Vault** roster filtering in the UI |
 
 Each file has the same structure: `{ NHL: { gameKey: { away, home, positions: [], summary: {...} } }, CBB: {...}, MLB: {...}, NBA: {...}, meta: {...} }`
 
@@ -250,6 +251,10 @@ Wings  $35.1K @ 56¢  +$960  +1.5% ROI
 | **ROI** (+1.5%) | `position.sportROI` | `(leaderboard pnl / leaderboard vol) * 100` from SPORTS leaderboard |
 | **Conviction badge** (1.5x avg) | `position.avgSportBet` | Shows when `invested / avgSportBet >= 1.5` — bettor risking 1.5x+ their typical bet |
 | **Time** (8h ago) | `position.firstSeen` | Computed from firstSeen timestamp vs now |
+
+### Sharp Vault roster
+
+The Vault takes the top wallets by `sportPnlTotal` from `sports_sharps.json` but **drops any address in `sharp_intel_excluded_wallets.json` → `excluded`** (MM `mmScore > 40` on the base tier list + clear-trader / arb-style flags evaluated over `sports_sharps` ∪ scanned wallets, including `bothSidesCount` from the same scan). Then it keeps the top 25 of what remains.
 
 ### Sharp Vault Expanded Card
 

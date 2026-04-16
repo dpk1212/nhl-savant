@@ -271,6 +271,24 @@ function loadJSON(filename) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
 }
 
+/** MM + clear-trader addresses for Sharp Vault (same rules as scan / strip). */
+function writeIntelExcludedWallets(mmAddrs, traderAddrs) {
+  const norm = (a) => (a || '').toLowerCase();
+  const mm = [...new Set((mmAddrs || []).map(norm))].filter(Boolean);
+  const tr = [...new Set((traderAddrs || []).map(norm))].filter(Boolean);
+  const excluded = [...new Set([...mm, ...tr])];
+  const outPath = join(ROOT, 'public', 'sharp_intel_excluded_wallets.json');
+  writeFileSync(
+    outPath,
+    JSON.stringify(
+      { updatedAt: new Date().toISOString(), mmExcluded: mm, tradersExcluded: tr, excluded },
+      null,
+      2,
+    ),
+    'utf8',
+  );
+}
+
 // ─── Build today's game lookup ──────────────────────────────────────────────
 // Keys are sport-prefixed ("NHL:bos_tor") to prevent collisions when
 // NHL and MLB share 3-letter city codes (bos, tor, min, col, etc.)
@@ -448,6 +466,11 @@ async function run() {
     }
   }
 
+  const sportsSharpsLower = {};
+  for (const [k, v] of Object.entries(sportsSharps)) {
+    sportsSharpsLower[k.toLowerCase()] = v;
+  }
+
   function lbExtras(lookup) {
     if (!lookup) {
       return {
@@ -484,14 +507,7 @@ async function run() {
   const gameKeys = Object.keys(todaysGames);
   console.log(`Today's games: ${gameKeys.length} (${gameKeys.filter(k => todaysGames[k].sport === 'NHL').length} NHL, ${gameKeys.filter(k => todaysGames[k].sport === 'CBB').length} CBB, ${gameKeys.filter(k => todaysGames[k].sport === 'MLB').length} MLB, ${gameKeys.filter(k => todaysGames[k].sport === 'NBA').length} NBA)\n`);
 
-  if (gameKeys.length === 0) {
-    console.log('No games today — skipping scan');
-    const outPath = join(ROOT, 'public', 'sharp_positions.json');
-    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
-    return;
-  }
-
-  // Existing pipeline: tier + mmScore + sport PnL floor
+  // Existing pipeline: tier + mmScore + sport PnL floor (needed before no-games exit for Vault exclusions)
   const MM_THRESHOLD = 40;
   const SPORT_PNL_FLOOR = -50000;
 
@@ -532,6 +548,56 @@ async function run() {
   }
 
   const walletsToScan = baseWallets.sort((a, b) => b.totalPnl - a.totalPnl);
+
+  /** Clear-trader / arb-style heuristic (must match strip logic below). */
+  const buildTraderVerdict = (addr, bothSidesMap) => {
+    const w = sportsSharpsLower[(addr || '').toLowerCase()] || {};
+    let score = 0;
+    const vol = w.vol || 0;
+    const sportPnl = w.sportPnlTotal || 0;
+    const sportBets = w.sportBets || w.sportBetCount || 0;
+    const marketsTraded = w.marketsTraded || 0;
+    const sportROI = w.sportROI || 0;
+    const sportWinRate = w.sportWinRate;
+    const bs = bothSidesMap[addr] || 0;
+
+    const ratio = vol > 0 && sportPnl > 0 ? vol / sportPnl : 0;
+    if (ratio > 200) score += 30; else if (ratio > 100) score += 20;
+    if (sportBets > 1000) score += 25; else if (sportBets > 500) score += 15;
+    if (marketsTraded > 100 && sportBets > 0) {
+      const pct = sportBets / marketsTraded;
+      if (pct < 0.02) score += 20; else if (pct < 0.05) score += 10;
+    }
+    if (sportROI < 1 && vol > 10e6) score += 15;
+    if (bs >= 3) score += 20; else if (bs >= 2) score += 15;
+    if (sportWinRate != null && sportWinRate < 5 && sportBets > 50) score += 15;
+
+    const isProfitableSharp = sportPnl > 10000 && sportROI > 10 && bs < 2;
+    return score >= 40 && !isProfitableSharp;
+  };
+
+  const writeVaultExclusionFile = (bothSidesMap) => {
+    const mmAddresses = mmFiltered.map(([a]) => (a || '').toLowerCase());
+    const vaultTraderSet = new Set();
+    const elig = new Set([
+      ...Object.keys(sportsSharps).filter((k) => k !== '_meta').map((k) => k.toLowerCase()),
+      ...walletsToScan.map((w) => (w.addr || '').toLowerCase()),
+    ]);
+    for (const addr of elig) {
+      if (buildTraderVerdict(addr, bothSidesMap || {})) vaultTraderSet.add(addr);
+    }
+    writeIntelExcludedWallets(mmAddresses, [...vaultTraderSet]);
+    return vaultTraderSet;
+  };
+
+  if (gameKeys.length === 0) {
+    console.log('No games today — skipping scan');
+    const outPath = join(ROOT, 'public', 'sharp_positions.json');
+    writeFileSync(outPath, JSON.stringify({ NHL: {}, CBB: {}, MLB: {}, NBA: {}, scannedAt: new Date().toISOString(), walletsScanned: 0 }, null, 2), 'utf8');
+    writeVaultExclusionFile({});
+    return;
+  }
+
   console.log(`Scanning ${walletsToScan.length} sharp wallets (${mmFiltered.length} MMs + ${sportLosers.length} sport losers + ${noSport.length} non-sport excluded, ${supplementalCount} added from sport sharps)...\n`);
 
   // Build lookup of previous firstSeen timestamps to preserve across rescans
@@ -700,37 +766,11 @@ async function run() {
             walletSides[pos.wallet].add(pos.side);
           }
           for (const [w, sides] of Object.entries(walletSides)) {
-            if (sides.size > 1) bothSidesCount[w] = (bothSidesCount[w] || 0) + 1;
+            const wl = (w || '').toLowerCase();
+            if (sides.size > 1) bothSidesCount[wl] = (bothSidesCount[wl] || 0) + 1;
           }
         }
       }
-    }
-
-    function traderScore(addr) {
-      const w = sportsSharps[addr] || {};
-      const wp = profiles[addr] || {};
-      let score = 0;
-      const vol = w.vol || 0;
-      const sportPnl = w.sportPnlTotal || 0;
-      const sportBets = w.sportBets || 0;
-      const marketsTraded = w.marketsTraded || 0;
-      const sportROI = w.sportROI || 0;
-      const sportWinRate = w.sportWinRate;
-      const bs = bothSidesCount[addr] || 0;
-
-      const ratio = vol > 0 && sportPnl > 0 ? vol / sportPnl : 0;
-      if (ratio > 200) score += 30; else if (ratio > 100) score += 20;
-      if (sportBets > 1000) score += 25; else if (sportBets > 500) score += 15;
-      if (marketsTraded > 100 && sportBets > 0) {
-        const pct = sportBets / marketsTraded;
-        if (pct < 0.02) score += 20; else if (pct < 0.05) score += 10;
-      }
-      if (sportROI < 1 && vol > 10e6) score += 15;
-      if (bs >= 3) score += 20; else if (bs >= 2) score += 15;
-      if (sportWinRate != null && sportWinRate < 5 && sportBets > 50) score += 15;
-
-      const isProfitableSharp = sportPnl > 10000 && sportROI > 10 && bs < 2;
-      return score >= 40 && !isProfitableSharp;
     }
 
     const allWalletsInResults = new Set();
@@ -742,10 +782,12 @@ async function run() {
       }
     }
 
-    const traderSet = new Set();
-    for (const addr of allWalletsInResults) {
-      if (traderScore(addr)) traderSet.add(addr);
-    }
+    const vaultTraderSet = writeVaultExclusionFile(bothSidesCount);
+    const traderSet = new Set(
+      [...allWalletsInResults]
+        .filter((a) => vaultTraderSet.has((a || '').toLowerCase()))
+        .map((a) => (a || '').toLowerCase()),
+    );
 
     let traderPosRemoved = 0;
     let traderDollarsRemoved = 0;
@@ -753,8 +795,8 @@ async function run() {
     function stripTraders(resSet, isTotalMarket = false) {
       for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
         for (const [gameKey, gd] of Object.entries(resSet[sport] || {})) {
-          const removed = gd.positions.filter(p => traderSet.has(p.wallet));
-          gd.positions = gd.positions.filter(p => !traderSet.has(p.wallet));
+          const removed = gd.positions.filter(p => traderSet.has((p.wallet || '').toLowerCase()));
+          gd.positions = gd.positions.filter(p => !traderSet.has((p.wallet || '').toLowerCase()));
           traderPosRemoved += removed.length;
           traderDollarsRemoved += removed.reduce((s, p) => s + (p.invested || 0), 0);
 

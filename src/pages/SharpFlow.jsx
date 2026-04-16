@@ -1137,6 +1137,7 @@ function useMarketData() {
   const [spreadPositions, setSpreadPositions] = useState(null);
   const [totalPositions, setTotalPositions] = useState(null);
   const [sportsSharps, setSportsSharps] = useState(null);
+  const [intelExcludedWallets, setIntelExcludedWallets] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -1149,7 +1150,8 @@ function useMarketData() {
       fetch(`${import.meta.env.BASE_URL}sports_sharps.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([p, k, wp, ph, sp, ss, sprP, totP]) => {
+      fetch(`${import.meta.env.BASE_URL}sharp_intel_excluded_wallets.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([p, k, wp, ph, sp, ss, sprP, totP, excl]) => {
       setPolyData(p);
       setKalshiData(k);
       setWhaleProfiles(wp);
@@ -1158,11 +1160,12 @@ function useMarketData() {
       setSportsSharps(ss);
       setSpreadPositions(sprP);
       setTotalPositions(totP);
+      setIntelExcludedWallets(excl);
       setLoading(false);
     });
   }, []);
 
-  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, loading };
+  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, loading };
 }
 
 function buildGameData(polyData, kalshiData) {
@@ -5654,7 +5657,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SharpFlow() {
-  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');
@@ -5898,10 +5901,17 @@ export default function SharpFlow() {
 
   const VAULT_SIZE = 25;
 
+  const intelExcludedSet = useMemo(() => {
+    const xs = intelExcludedWallets?.excluded;
+    if (!Array.isArray(xs) || xs.length === 0) return null;
+    return new Set(xs.map((a) => (a || '').toLowerCase()));
+  }, [intelExcludedWallets]);
+
   const vaultData = useMemo(() => {
     if (!sportsSharps) return null;
     const entries = Object.entries(sportsSharps)
       .filter(([k]) => k !== '_meta')
+      .filter(([addr]) => !intelExcludedSet?.has(addr.toLowerCase()))
       .map(([addr, w]) => ({
         wallet: addr,
         name: '***' + addr.slice(-4),
@@ -5963,7 +5973,7 @@ export default function SharpFlow() {
     const combinedPnl = entries.reduce((s, e) => s + e.sportPnlTotal, 0);
 
     return { entries, todayPositions, convergences, activeCount, combinedPnl };
-  }, [sportsSharps, sharpPositions]);
+  }, [sportsSharps, sharpPositions, intelExcludedSet]);
 
   if (loading || authLoading || subLoading) {
     return (
