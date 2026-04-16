@@ -1,0 +1,40 @@
+name: Enrich Gap Wallets
+
+on:
+  schedule:
+    # Every 6 hours: 6 AM, 12 PM, 6 PM, 12 AM ET (10, 16, 22, 04 UTC)
+    - cron: '30 4,10,16,22 * * *'
+  workflow_dispatch:
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Enrich gap wallets
+        run: node scripts/enrichGapWallets.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/sports_sharps.json
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-enrich: Gap wallets [$(date +'%Y-%m-%d %H:%M')]" &&
+            git stash --include-untracked &&
+            git pull --rebase -X theirs &&
+            git stash pop || true &&
+            git push
+          )

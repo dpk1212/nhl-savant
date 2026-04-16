@@ -537,11 +537,14 @@ async function run() {
 
   // Merge in sport sharps that aren't already in the base list
   // Must have positive sport PnL OR be monthly-qualified to count
+  // NEVER re-introduce wallets that were excluded as MMs
   const baseAddrs = new Set(baseWallets.map(w => w.addr));
+  const mmAddressSet = new Set(mmFiltered.map(([a]) => (a || '').toLowerCase()));
   let supplementalCount = 0;
   for (const [addr, p] of Object.entries(sportsSharps)) {
     if (addr === '_meta') continue;
     if (baseAddrs.has(addr)) continue;
+    if (mmAddressSet.has((addr || '').toLowerCase())) continue;
     if ((p.sportPnlTotal || 0) <= 0 && !p.monthlyQualified) continue;
     baseWallets.push({ addr, name: p.name, tier: 'SHARP', totalPnl: p.totalPnl, sportPnl: {}, sportPnlTotal: p.sportPnlTotal || 0, mmScore: 0, monthlyQualified: p.monthlyQualified, monthlyPnl: p.monthlyPnl });
     supplementalCount++;
@@ -785,7 +788,10 @@ async function run() {
     const vaultTraderSet = writeVaultExclusionFile(bothSidesCount);
     const traderSet = new Set(
       [...allWalletsInResults]
-        .filter((a) => vaultTraderSet.has((a || '').toLowerCase()))
+        .filter((a) => {
+          const al = (a || '').toLowerCase();
+          return vaultTraderSet.has(al) || mmAddressSet.has(al);
+        })
         .map((a) => (a || '').toLowerCase()),
     );
 
