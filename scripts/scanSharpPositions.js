@@ -436,6 +436,10 @@ async function run() {
           avgSportBet: w.avgSportBet || 0,
           monthlyPnl: w.monthlyPnl || null,
           monthlyQualified: w.monthlyQualified || false,
+          leaderboardRank: w.leaderboardRank ?? null,
+          sportsLbPercentileTop: w.sportsLbPercentileTop ?? null,
+          sportVol: w.vol || 0,
+          leaderboardScope: w.leaderboardScope || null,
         };
       }
       console.log(`Loaded ${Object.keys(sportsSharps).length} supplementary sport sharps (${Object.keys(sportPnlLookup).length} with sport PnL data)`);
@@ -444,13 +448,31 @@ async function run() {
     }
   }
 
+  function lbExtras(lookup) {
+    if (!lookup) {
+      return {
+        leaderboardRank: null, sportsLbPercentileTop: null, sportVol: 0, leaderboardScope: null,
+      };
+    }
+    return {
+      leaderboardRank: lookup.leaderboardRank ?? null,
+      sportsLbPercentileTop: lookup.sportsLbPercentileTop ?? null,
+      sportVol: lookup.sportVol || 0,
+      leaderboardScope: lookup.leaderboardScope || null,
+    };
+  }
+
   function effectiveTier(baseTier, walletAddr, sport) {
     const baseRank = TIER_RANK[baseTier] || 1;
     const lookup = sportPnlLookup[walletAddr];
-    const base = { sportROI: 0, avgSportBet: 0 };
+    const base = { sportROI: 0, avgSportBet: 0, ...lbExtras(null) };
     if (!lookup) return { tier: baseTier, sportPnl: null, sportVerified: false, monthlyPnl: null, monthlyQualified: false, ...base };
     const pnl = lookup.sportPnlTotal || 0;
-    const extra = { monthlyPnl: lookup.monthlyPnl, monthlyQualified: lookup.monthlyQualified, sportROI: lookup.sportROI, avgSportBet: lookup.avgSportBet };
+    const extra = {
+      monthlyPnl: lookup.monthlyPnl, monthlyQualified: lookup.monthlyQualified,
+      sportROI: lookup.sportROI, avgSportBet: lookup.avgSportBet,
+      ...lbExtras(lookup),
+    };
     if (pnl <= 0) return { tier: baseTier, sportPnl: pnl, sportVerified: false, ...extra };
     const sportRank = pnl >= 50000 ? 4 : pnl >= 10000 ? 3 : 2;
     const finalRank = Math.max(baseRank, sportRank);
@@ -633,6 +655,9 @@ async function run() {
         sportVerified: eff.sportVerified,
         sportROI: eff.sportROI,
         avgSportBet: eff.avgSportBet,
+        leaderboardRank: eff.leaderboardRank ?? null,
+        sportsLbPercentileTop: eff.sportsLbPercentileTop ?? null,
+        sportVol: eff.sportVol || 0,
         ...(eff.monthlyQualified && { monthlyPnl: eff.monthlyPnl, monthlyQualified: true }),
       });
 

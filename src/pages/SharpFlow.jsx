@@ -96,6 +96,42 @@ function tierInfo(amt) {
 
 const TIER_WEIGHT = { ELITE: 3, SHARP: 2, PROVEN: 1.5, ACTIVE: 1 };
 
+/** UI: grouped sports leaderboard rank (no raw # or percentile shown). */
+function groupedSportsRankLabel(rank) {
+  if (rank == null || rank <= 0) return null;
+  if (rank <= 10) return 'TOP 10';
+  if (rank <= 20) return 'TOP 20';
+  if (rank <= 50) return 'TOP 50';
+  if (rank <= 100) return 'TOP 100';
+  if (rank <= 500) return 'TOP 500';
+  return null;
+}
+
+/** Internal: rank tier multiplier for money / quality weighting (not shown in UI). */
+function leaderboardRankMultiplier(rank) {
+  if (rank == null || rank <= 0) return 1;
+  if (rank <= 10) return 2.5;
+  if (rank <= 20) return 2.1;
+  if (rank <= 50) return 1.85;
+  if (rank <= 100) return 1.55;
+  if (rank <= 500) return 1.25;
+  return 1.05;
+}
+
+/**
+ * Internal scalar: percentile × sports volume × tier profile × rank tier, per wallet row.
+ * Used only inside computeSharpFeatures (not displayed).
+ */
+function sharpRowProfileMoneyWeight(p) {
+  const tierW = TIER_WEIGHT[p.tier] || 1;
+  const pct = p.sportsLbPercentileTop;
+  const pctNorm = pct != null ? Math.max(0.12, Math.min(1, pct / 100)) : 0.4;
+  const vol = p.sportVol || 0;
+  const moneyNorm = Math.min(2.8, 0.3 + Math.log10(1 + vol / 1e6) * 1.2);
+  const rankM = leaderboardRankMultiplier(p.leaderboardRank);
+  return rankM * pctNorm * moneyNorm * (tierW / 3);
+}
+
 // ─── V7 Frozen Population Stats (extracted from 411-pick dataset, two-sided overlay 2026-04-06) ──
 const V7_STATS = {
   avgBet:    { mean: 4162.2509, std: 7251.2948, lo: 216, hi: 24028.625 },
@@ -237,11 +273,29 @@ function computeSharpFeatures(positions, consensusSide) {
     : null;
   const dominantTier = dominantWallet?.tier || null;
 
+  const rankWeightedConInvested = conWallets.reduce(
+    (s, p) => s + (p.invested || 0) * leaderboardRankMultiplier(p.leaderboardRank), 0,
+  );
+  const rankWeightedOppInvested = oppWallets.reduce(
+    (s, p) => s + (p.invested || 0) * leaderboardRankMultiplier(p.leaderboardRank), 0,
+  );
+  const conProfileMoneyRaw = conWallets.reduce(
+    (s, p) => s + sharpRowProfileMoneyWeight(p) * (p.invested || 0), 0,
+  );
+  const oppProfileMoneyRaw = oppWallets.reduce(
+    (s, p) => s + sharpRowProfileMoneyWeight(p) * (p.invested || 0), 0,
+  );
+  const profileMoneyDenom = conProfileMoneyRaw + oppProfileMoneyRaw + 1e-9;
+  const consensusProfileMoneyIndex = 100 * (conProfileMoneyRaw / profileMoneyDenom);
+
   return {
     breadth, conviction, concentration, counterSharpScore, consensusTier,
     conWalletCount: conWallets.length, oppWalletCount: oppWallets.length,
     conTotalInvested, oppTotalInv, avgScore, sportSharpCount, dominantTier,
     conMoneyPct, conWalletPct,
+    rankWeightedConInvested,
+    rankWeightedOppInvested,
+    consensusProfileMoneyIndex,
   };
 }
 
@@ -4540,6 +4594,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     const posColor = p.pnl >= 0 ? B.green : B.red;
                     const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
                     const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
+                    const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
                     const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
                     const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (p.totalPnl || 0) <= 0;
                     return (
@@ -4547,6 +4602,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
                             <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                            {rankGroup && (
+                              <span style={{
+                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
+                                color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
+                              }}>{rankGroup}</span>
+                            )}
                             <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
                             <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L</span>
                             {showMonthly && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>+{fmtVol(p.monthlyPnl)} this month</span>}
@@ -4866,6 +4927,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     const posColor = p.pnl >= 0 ? B.green : B.red;
                     const lifeColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
                     const tc = p.tier === 'ELITE' ? { color: B.gold, bg: B.goldDim } : { color: B.green, bg: B.greenDim };
+                    const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
                     const seenAgo = p.firstSeen ? (() => { const mins = Math.round((now - new Date(p.firstSeen).getTime()) / 60000); return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`; })() : null;
                     const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (p.totalPnl || 0) <= 0;
                     return (
@@ -4873,6 +4935,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
                             <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                            {rankGroup && (
+                              <span style={{
+                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
+                                color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
+                              }}>{rankGroup}</span>
+                            )}
                             <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
                             <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L</span>
                             {showMonthly && <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: '#F59E0B', padding: '0.1rem 0.3rem', borderRadius: '3px', background: 'rgba(245,158,11,0.10)' }}>+{fmtVol(p.monthlyPnl)} this month</span>}
@@ -5308,6 +5376,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                   return `${Math.round(hrs / 24)}d ago`;
                 })() : null;
                 const showMonthly = p.monthlyQualified && p.monthlyPnl > 0 && (p.totalPnl || 0) <= 0;
+                const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
 
                 return (
                   <div key={`${p.wallet}-${i}`} style={{
@@ -5321,6 +5390,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flexWrap: 'wrap' }}>
                         <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                        {rankGroup && (
+                          <span style={{
+                            ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
+                            color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
+                          }}>{rankGroup}</span>
+                        )}
                         <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                           ...{p.wallet.slice(-4)}
                         </span>

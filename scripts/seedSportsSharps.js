@@ -271,6 +271,13 @@ async function run() {
   const combined = [...allTimeLB, ...monthlyOnly];
   console.log(`\nProfiling ${combined.length} total wallets...\n`);
 
+  const depthAllSports = allTimeLB.length;
+  const depthMonthSports = monthlyLB.length;
+  const percentileTop = (rank, depth) => {
+    if (rank == null || rank <= 0 || !depth) return null;
+    return +((100 * (depth - rank + 1) / depth)).toFixed(2);
+  };
+
   // Track which wallets qualified via monthly
   const monthlyQualified = new Set(monthlyHot.map(w => w.wallet));
   const monthlyPnlMap = Object.fromEntries(monthlyHot.map(w => [w.wallet, w.pnl]));
@@ -309,6 +316,9 @@ async function run() {
 
       const weekly = weeklyLookup[lb.wallet];
       const daily = dailyLookup[lb.wallet];
+      const onAllTimeLb = seen.has(lb.wallet);
+      const lbDepth = onAllTimeLb ? depthAllSports : depthMonthSports;
+      const sportsLbPercentileTop = percentileTop(lb.rank, lbDepth);
 
       allWallets[lb.wallet] = {
         name: lb.name || prev?.name || 'Anonymous',
@@ -323,6 +333,9 @@ async function run() {
         sportROI: lbSportROI,
         avgSportBet: posAvgBet,
         leaderboardRank: lb.rank,
+        leaderboardScope: onAllTimeLb ? 'ALL' : 'MONTH',
+        leaderboardDepth: lbDepth,
+        sportsLbPercentileTop,
         sportRecord: profile.sportRecord,
         sportWinRate: profile.sportWinRate,
         perSport: profile.perSport,
@@ -403,6 +416,8 @@ async function run() {
     minSportPnl: minPnl,
     minMonthlyPnl: MIN_MONTHLY_PNL,
     leaderboardDepth: allTimeLB.length,
+    leaderboardDepthSportsAll: depthAllSports,
+    leaderboardDepthSportsMonth: depthMonthSports,
     monthlyLeaderboardDepth: monthlyLB.length,
     profiledThisRun: profiled,
     skippedFresh: skipped,
