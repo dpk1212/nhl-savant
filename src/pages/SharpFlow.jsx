@@ -481,12 +481,14 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   if (walletProfile) snapshot.walletProfile = walletProfile;
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
+  const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
   return {
     team,
     lock: { ...snapshot, lockedAt: now },
     peak: { ...snapshot, updatedAt: now },
     maxEV: evEdge || 0,
     maxEVAt: now,
+    lockStage,
     status: 'PENDING',
     result: { outcome: null, profit: null, gradedAt: null },
   };
@@ -548,8 +550,18 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
+        const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
+        if (shouldPromote) { mergeData.sides[side].lockStage = 'LOCKED'; mergeData.sides[side].promotedAt = Date.now(); }
         await setDoc(ref, mergeData, { merge: true });
-        return { docId, action: 'peak_updated' };
+        return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
+      }
+
+      if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
+        await setDoc(ref, {
+          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now() } },
+          lastWriteAt: Date.now(), lastAction: 'promoted',
+        }, { merge: true });
+        return { docId, action: 'promoted' };
       }
 
       if (evIsNewMax) {
@@ -639,12 +651,14 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   if (walletProfile) snapshot.walletProfile = walletProfile;
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
+  const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
   return {
     team,
     lock: { ...snapshot, lockedAt: now },
     peak: { ...snapshot, updatedAt: now },
     maxEV: evEdge || 0,
     maxEVAt: now,
+    lockStage,
     status: 'PENDING',
     result: { outcome: null, profit: null, gradedAt: null },
   };
@@ -699,8 +713,17 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
+        const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
+        if (shouldPromote) { mergeObj.sides[side].lockStage = 'LOCKED'; mergeObj.sides[side].promotedAt = Date.now(); }
         await setDoc(ref, mergeObj, { merge: true });
-        return { docId, action: 'peak_updated' };
+        return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
+      }
+      if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
+        await setDoc(ref, {
+          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now() } },
+          lastWriteAt: Date.now(), lastAction: 'promoted',
+        }, { merge: true });
+        return { docId, action: 'promoted' };
       }
       if (needsCsPatch) {
         await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
@@ -780,8 +803,17 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
+        const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
+        if (shouldPromote) { mergeObj.sides[side].lockStage = 'LOCKED'; mergeObj.sides[side].promotedAt = Date.now(); }
         await setDoc(ref, mergeObj, { merge: true });
-        return { docId, action: 'peak_updated' };
+        return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
+      }
+      if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
+        await setDoc(ref, {
+          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now() } },
+          lastWriteAt: Date.now(), lastAction: 'promoted',
+        }, { merge: true });
+        return { docId, action: 'promoted' };
       }
       if (needsCsPatch) {
         await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
@@ -854,7 +886,7 @@ function tallySides(snap) {
     if (data.sides) {
       for (const sideData of Object.values(data.sides)) {
         if (sideData.status !== 'COMPLETED') continue;
-        if (sideData.superseded || sideData.health?.status === 'CANCELLED') continue;
+        if (sideData.superseded || sideData.health?.status === 'CANCELLED' || sideData.lockStage === 'SHADOW') continue;
         const u = sideData.peak?.units || sideData.lock?.units || 1;
         totalUnits += u;
         const profit = sideData.result?.profit ?? 0;
@@ -942,7 +974,7 @@ async function loadAllTimePnL() {
       const mt = data._marketType || data.marketType || 'ml';
       const isPostDeploy = data.date >= STARS_LIVE_DATE;
       const processSide = (sd) => {
-        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED');
+        const isCancelled = !!(sd.superseded || sd.health?.status === 'CANCELLED' || sd.lockStage === 'SHADOW');
         const bestSnap = sd.peak || sd.lock;
         const lockSnap = sd.lock || bestSnap;
         const s = bestSnap?.stars ?? estimateStarsFromSnap(bestSnap);
@@ -961,7 +993,8 @@ async function loadAllTimePnL() {
           const lkStars = lockSnap?.stars ?? 0;
           const lkEV = lockSnap?.evEdge ?? null;
           const pkEV = bestSnap?.evEdge ?? null;
-          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null, cancelled: isCancelled };
+          const regime = bestSnap?.regime || lockSnap?.regime || null;
+          const pick = { date: data.date, sport: data.sport || 'NHL', marketType: mt, stars: pickStars, lockStars: lkStars, lockEV: lkEV, peakEV: pkEV, units: u, status: sd.status || 'PENDING', outcome: null, profit: 0, clv: null, cancelled: isCancelled, regime };
           if (sd.status === 'COMPLETED') {
             pick.outcome = sd.result?.outcome || null;
             if (sd.result?.outcome === 'WIN') { pick.profit = sd.result?.profit || 0; }
@@ -6791,6 +6824,7 @@ export default function SharpFlow() {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
+                        if (sd.lockStage === 'SHADOW' && !sd.result?.outcome) continue;
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
