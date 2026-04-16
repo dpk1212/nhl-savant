@@ -42,4 +42,10 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add DAILY_V7_REPORT.md
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: V7 Daily Report [$(TZ='America/New_York' date +'%Y-%m-%d')]" && git pull --rebase origin main && git push)
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: V7 Daily Report [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git stash --include-untracked &&
+            git pull --rebase origin main &&
+            git stash pop || true &&
+            git push
+          )

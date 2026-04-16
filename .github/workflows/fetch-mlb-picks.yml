@@ -41,7 +41,13 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add public/mlb_dratings.md public/mlb_dimers.md public/mlb_model_picks.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: MLB Model Picks [$(date +'%Y-%m-%d %H:%M')]" && git pull --rebase origin main && git push)
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: MLB Model Picks [$(date +'%Y-%m-%d %H:%M')]" &&
+            git stash --include-untracked &&
+            git pull --rebase origin main &&
+            git stash pop || true &&
+            git push
+          )
 
       - name: Build site
         env:
