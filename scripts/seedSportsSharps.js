@@ -172,12 +172,16 @@ async function buildProfile(wallet) {
     perSport[sport].invested += invested;
     perSport[sport].pnl += realizedPnl;
 
-    if (Math.abs(realizedPnl) > 0) {
+    const curPrice = parseFloat(p.curPrice || '0.5');
+    const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
+    if (isSettled) {
       recentSportBets.push({
         title: p.title || '',
         sport,
         outcome: p.outcome || '',
+        won: curPrice >= 0.95,
         entryPrice: Math.round(price * 100) / 100,
+        size: Math.round(bought),
         invested: Math.round(invested),
         realizedPnl: Math.round(realizedPnl),
         timestamp: p.timestamp || 0,

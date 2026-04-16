@@ -6462,10 +6462,10 @@ export default function SharpFlow() {
                               marginBottom: '0.5rem',
                             }}>
                               <span style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em' }}>
-                                RECENT SPORT BETS
+                                RESOLVED BETS
                               </span>
                               <span style={{ ...T.micro, color: B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
-                                Last {e.recentResults.length}: {e.recentResults.filter(r => r.realizedPnl > 0).length}W-{e.recentResults.filter(r => r.realizedPnl < 0).length}L
+                                Last {e.recentResults.length}: {e.recentResults.filter(r => r.won).length}W-{e.recentResults.filter(r => !r.won).length}L
                               </span>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -6475,17 +6475,18 @@ export default function SharpFlow() {
                                   const diff = Math.floor((Date.now() / 1000 - r.timestamp) / 3600);
                                   return diff < 24 ? `${diff}h ago` : `${Math.floor(diff / 24)}d ago`;
                                 })() : '';
+                                const isWin = r.won != null ? r.won : r.realizedPnl >= 0;
                                 return (
                                   <div key={ri} style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                     padding: '0.35rem 0.5rem', borderRadius: '6px',
-                                    background: r.realizedPnl >= 0 ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
+                                    background: isWin ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
                                   }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flex: 1 }}>
                                       <span style={{
                                         ...T.micro, fontWeight: 900, fontSize: '0.6rem',
-                                        color: r.realizedPnl >= 0 ? B.green : B.red,
-                                      }}>{r.realizedPnl >= 0 ? 'W' : 'L'}</span>
+                                        color: isWin ? B.green : B.red,
+                                      }}>{isWin ? 'W' : 'L'}</span>
                                       <span style={{
                                         ...T.micro, padding: '0.1rem 0.3rem', borderRadius: '3px',
                                         background: sportColor + '15', color: sportColor,
@@ -6498,9 +6499,15 @@ export default function SharpFlow() {
                                       }}>{r.title}</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                                      {r.size > 0 && <span style={{
+                                        ...T.micro, fontWeight: 600, fontFeatureSettings: "'tnum'",
+                                        color: B.textMuted, fontSize: '0.5rem',
+                                      }}>
+                                        {fmtVol(r.size)}
+                                      </span>}
                                       <span style={{
                                         ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                                        color: r.realizedPnl >= 0 ? B.green : B.red, fontSize: '0.6rem',
+                                        color: isWin ? B.green : B.red, fontSize: '0.6rem',
                                       }}>
                                         {r.realizedPnl >= 0 ? '+' : ''}{fmtVol(r.realizedPnl)}
                                       </span>
