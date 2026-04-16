@@ -3612,7 +3612,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   });
   const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
   if (isExtremeOdds) return null;
-  const isLocked = sr.stars >= 2.5 && consensusInvested >= 10000;
+  const meetsThreshold = sr.stars >= 2.5 && consensusInvested >= 10000;
+  const hasRegimeMove = sr.regime === 'CLEAR_MOVE' || sr.regime === 'NEAR_START';
+  const isLocked = meetsThreshold && hasRegimeMove;
+  const isShadow = meetsThreshold && !hasRegimeMove;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
   const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds) : 0;
@@ -3620,7 +3623,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
   useEffect(() => {
-    if (!isLocked || isGameLive || !commenceTime || !onPickSynced) return;
+    if ((!isLocked && !isShadow) || isGameLive || !commenceTime || !onPickSynced) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current) return;
     const date = gameDate(commenceTime);
@@ -3670,11 +3673,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
     });
-  }, [isLocked, sr.stars]);
+  }, [isLocked, isShadow, sr.stars]);
 
   // Pregame snapshot — capture full state ~30 min before game for lock→pregame analysis
   useEffect(() => {
-    if (!isLocked || isGameLive || !commenceTime || pregameSynced.current) return;
+    if ((!isLocked && !isShadow) || isGameLive || !commenceTime || pregameSynced.current) return;
     const now = Date.now();
     const msUntilGame = commenceTime - now;
     const PREGAME_WINDOW = 35 * 60 * 1000;
@@ -3787,13 +3790,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     lockStars: lockSpreadStarsRef.current,
   }) : null;
 
-  const isSpreadLocked = spreadSr && spreadSr.stars >= 2.5
+  const spreadMeetsThreshold = spreadSr && spreadSr.stars >= 2.5
     && (spreadSharpFeatures?.conWalletCount || 0) >= 2
     && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
-  const spreadUnits = isSpreadLocked ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds) : 0;
+  const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
+  const isSpreadLocked = spreadMeetsThreshold && spreadHasRegime;
+  const isSpreadShadow = spreadMeetsThreshold && !spreadHasRegime;
+  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds) : 0;
 
   useEffect(() => {
-    if (!isSpreadLocked || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
+    if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSyncedSpreadStars.current !== null && spreadSr.stars <= lastSyncedSpreadStars.current) return;
     const date = gameDate(commenceTime);
@@ -3834,7 +3840,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         onPickSynced(docId, spreadConsensusSide, { odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle', pinnacleOdds: spreadPinnOdds, line: spreadLine, criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3, plusEV: spreadEvEdge > 0, lineMovingWith: spreadPinnMovedWith }, sharpCount: spreadSharpFeatures?.conWalletCount || 0, totalInvested: spreadSharpFeatures?.conTotalInvested || 0, evEdge: spreadEvEdge, units: spreadUnits, unitTier: unitTier(spreadUnits).label, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' }, stars: spreadSr.stars, team: spreadConsensuTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'spread' }, action);
       }
     });
-  }, [isSpreadLocked, spreadSr?.stars]);
+  }, [isSpreadLocked, isSpreadShadow, spreadSr?.stars]);
 
   // ─── Spread Pick Health Evaluation ────────────────────────────────────────
   const spreadWasEverLocked = isSpreadLocked || lastSyncedSpreadStars.current != null;
@@ -3907,13 +3913,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     lockStars: lockTotalStarsRef.current,
   }) : null;
 
-  const isTotalLocked = totalSr && totalSr.stars >= 2.5
+  const totalMeetsThreshold = totalSr && totalSr.stars >= 2.5
     && (totalSharpFeatures?.conWalletCount || 0) >= 2
     && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
-  const totalUnits = isTotalLocked ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds) : 0;
+  const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
+  const isTotalLocked = totalMeetsThreshold && totalHasRegime;
+  const isTotalShadow = totalMeetsThreshold && !totalHasRegime;
+  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds) : 0;
 
   useEffect(() => {
-    if (!isTotalLocked || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
+    if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSyncedTotalStars.current !== null && totalSr.stars <= lastSyncedTotalStars.current) return;
     const date = gameDate(commenceTime);
@@ -3956,7 +3965,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         onPickSynced(docId, totalConsensusSide, { odds: totalBetOdds, book: totalBestBook || 'Pinnacle', pinnacleOdds: totalPinnOdds, line: totalLine, criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: totalSharpFeatures?.conWalletCount >= 3, plusEV: totalEvEdge > 0, lineMovingWith: totalPinnMovedWith }, sharpCount: totalSharpFeatures?.conWalletCount || 0, totalInvested: totalSharpFeatures?.conTotalInvested || 0, evEdge: totalEvEdge, units: totalUnits, unitTier: unitTier(totalUnits).label, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' }, stars: totalSr.stars, team: totalTeamLabel }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'total' }, action);
       }
     });
-  }, [isTotalLocked, totalSr?.stars]);
+  }, [isTotalLocked, isTotalShadow, totalSr?.stars]);
 
   // ─── Total Pick Health Evaluation ─────────────────────────────────────────
   const totalWasEverLocked = isTotalLocked || lastSyncedTotalStars.current != null;
@@ -4265,15 +4274,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         borderRadius: '8px',
         background: isLocked
           ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
+          : isShadow
+          ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
           : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${isLocked ? 'rgba(16,185,129,0.25)' : B.borderSubtle}`,
+        border: `1px solid ${isLocked ? 'rgba(16,185,129,0.25)' : isShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
       }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: '0.375rem',
         }}>
-          <span style={{ ...T.micro, color: isLocked ? B.green : B.textMuted, fontWeight: 700 }}>
-            {isLocked ? `PLAY LOCKED — ${sr.stars >= 4.5 ? '★★★★★ ELITE' : sr.stars >= 3.5 ? '★★★★ STRONG' : sr.stars >= 3 ? '★★★ SOLID' : '★★½ SOLID'}` : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
+          <span style={{ ...T.micro, color: isLocked ? B.green : isShadow ? B.gold : B.textMuted, fontWeight: 700 }}>
+            {isLocked ? `PLAY LOCKED — ${sr.stars >= 4.5 ? '★★★★★ ELITE' : sr.stars >= 3.5 ? '★★★★ STRONG' : sr.stars >= 3 ? '★★★ SOLID' : '★★½ SOLID'}` : isShadow ? `TRACKING — Awaiting Line Move` : `LOCK-IN CRITERIA (${criteriaMet}/6)`}
           </span>
           <span style={{
             ...T.micro, fontWeight: 800, fontFeatureSettings: "'tnum'",
@@ -4313,7 +4324,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         const hasSpread = !!(pinnGame?.spreadCurrent || flowGame?.polySpread || (flowGame?.kalshiSpreads?.length > 0));
         const hasTotal = !!(pinnGame?.totalCurrent || flowGame?.polyTotal || (flowGame?.kalshiTotals?.length > 0));
         if (!hasSpread && !hasTotal) return null;
-        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} spreadLocked={!!isSpreadLocked} totalLocked={!!isTotalLocked} />;
+        return <MarketTabStrip active={marketTab} onChange={setMarketTab} hasSpread={hasSpread} hasTotal={hasTotal} spreadLocked={!!(isSpreadLocked || isSpreadShadow)} totalLocked={!!(isTotalLocked || isTotalShadow)} />;
       })()}
 
       {marketTab === 'spread' && (
@@ -4333,13 +4344,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
                 background: isSpreadLocked
                   ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
+                  : isSpreadShadow
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
                   : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isSpreadLocked ? 'rgba(16,185,129,0.25)' : B.borderSubtle}`,
+                border: `1px solid ${isSpreadLocked ? 'rgba(16,185,129,0.25)' : isSpreadShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
               }}>
-                {isSpreadLocked && spreadSr ? (
+                {(isSpreadLocked || isSpreadShadow) && spreadSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
                     <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(spreadSr.stars))}{spreadSr.stars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>SPREAD LOCK — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color: isSpreadLocked ? B.green : B.gold }}>{isSpreadLocked ? 'SPREAD LOCK' : 'SPREAD TRACKING'} — {spreadConsensuTeam} {spreadLine > 0 ? '+' : ''}{spreadLine}</span>
                     <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{spreadUnits}u @ {fmtOdds(spreadBetOdds)}</span>
                   </div>
                 ) : (
@@ -4670,13 +4683,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                 padding: '0.5rem 0.625rem', borderRadius: '8px', marginBottom: '0.5rem',
                 background: isTotalLocked
                   ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%)'
+                  : isTotalShadow
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)'
                   : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isTotalLocked ? 'rgba(16,185,129,0.25)' : B.borderSubtle}`,
+                border: `1px solid ${isTotalLocked ? 'rgba(16,185,129,0.25)' : isTotalShadow ? 'rgba(212,175,55,0.25)' : B.borderSubtle}`,
               }}>
-                {isTotalLocked && totalSr ? (
+                {(isTotalLocked || isTotalShadow) && totalSr ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
                     <span style={{ fontSize: '1rem' }}>{'★'.repeat(Math.floor(totalSr.stars))}{totalSr.stars % 1 ? '½' : ''}</span>
-                    <span style={{ ...T.micro, fontWeight: 700, color: B.green }}>TOTAL LOCK — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}</span>
+                    <span style={{ ...T.micro, fontWeight: 700, color: isTotalLocked ? B.green : B.gold }}>{isTotalLocked ? 'TOTAL LOCK' : 'TOTAL TRACKING'} — {totalConsensusSide === 'over' ? 'Over' : 'Under'} {totalLine}</span>
                     <span style={{ ...T.micro, color: B.textSec, marginLeft: 'auto' }}>{totalUnits}u @ {fmtOdds(totalBetOdds)}</span>
                   </div>
                 ) : (
@@ -7075,7 +7090,7 @@ export default function SharpFlow() {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
-                        if (sd.lockStage === 'SHADOW' && !sd.result?.outcome) continue;
+                        if (sd.lockStage === 'SHADOW') continue;
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
