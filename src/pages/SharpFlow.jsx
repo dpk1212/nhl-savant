@@ -396,7 +396,7 @@ function rateStarsV7({
 
   // Regime detection
   let regime = 'NO_MOVE';
-  if (timeToGame != null && timeToGame <= 30 && pinnMoveSize >= 0.01) {
+  if (timeToGame != null && timeToGame <= 60 && pinnMoveSize >= 0.01) {
     regime = 'NEAR_START';
   } else if (pinnMoveSize >= 0.02) {
     regime = 'CLEAR_MOVE';
