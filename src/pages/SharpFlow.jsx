@@ -555,8 +555,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 10000) {
-      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $10000 minimum`);
+    if ((totalInvested || 0) < 5000) {
+      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
       return { docId, action: 'no_change' };
     }
 
@@ -725,8 +725,8 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 10000) {
-      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $10000 minimum`);
+    if ((totalInvested || 0) < 5000) {
+      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowSpreads', docId);
@@ -815,8 +815,8 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 10000) {
-      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $10000 minimum`);
+    if ((totalInvested || 0) < 5000) {
+      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowTotals', docId);
