@@ -153,7 +153,6 @@ async function buildProfile(wallet) {
   const perSport = {};
   let sportInvested = 0;
   let sportPositionCount = 0;
-  const sportRecord = { won: 0, lost: 0 };
   const recentSportBets = [];
 
   for (const p of closedPositions) {
@@ -167,26 +166,13 @@ async function buildProfile(wallet) {
     const invested = (bought > 0 && price > 0) ? bought * price : 0;
     if (invested > 0) sportInvested += invested;
     const realizedPnl = parseFloat(p.realizedPnl || '0');
-    const curPrice = parseFloat(p.curPrice || '0.5');
 
-    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
+    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0 };
     perSport[sport].bets++;
     perSport[sport].invested += invested;
     perSport[sport].pnl += realizedPnl;
 
-    const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
-    const won = isSettled ? curPrice >= 0.95 : realizedPnl > 0;
-    const lost = isSettled ? curPrice <= 0.05 : realizedPnl < 0;
-
-    if (won) {
-      sportRecord.won++;
-      perSport[sport].won++;
-    } else if (lost) {
-      sportRecord.lost++;
-      perSport[sport].lost++;
-    }
-
-    if (isSettled || Math.abs(realizedPnl) > 0) {
+    if (Math.abs(realizedPnl) > 0) {
       recentSportBets.push({
         title: p.title || '',
         sport,
@@ -194,7 +180,6 @@ async function buildProfile(wallet) {
         entryPrice: Math.round(price * 100) / 100,
         invested: Math.round(invested),
         realizedPnl: Math.round(realizedPnl),
-        won,
         timestamp: p.timestamp || 0,
       });
     }
@@ -216,12 +201,8 @@ async function buildProfile(wallet) {
     s.invested = Math.round(s.invested);
     s.pnl = Math.round(s.pnl);
     s.avgBet = s.bets > 0 ? Math.round(s.invested / s.bets) : 0;
-    s.winRate = (s.won + s.lost) > 0 ? +((s.won / (s.won + s.lost)) * 100).toFixed(1) : null;
     s.roi = s.invested > 0 ? +((s.pnl / s.invested) * 100).toFixed(1) : 0;
   }
-
-  const totalGraded = sportRecord.won + sportRecord.lost;
-  const sportWinRate = totalGraded > 0 ? +((sportRecord.won / totalGraded) * 100).toFixed(1) : null;
 
   recentSportBets.sort((a, b) => b.timestamp - a.timestamp);
   const recentResults = recentSportBets.slice(0, 20);
@@ -231,8 +212,6 @@ async function buildProfile(wallet) {
     marketsTraded: traded?.traded || (currentPositions.length + closedPositions.length),
     sportPositionCount,
     sportInvested: Math.round(sportInvested),
-    sportRecord,
-    sportWinRate,
     perSport,
     recentResults,
     closedCapped,
@@ -348,8 +327,6 @@ async function run() {
         leaderboardScope: onAllTimeLb ? 'ALL' : 'MONTH',
         leaderboardDepth: lbDepth,
         sportsLbPercentileTop,
-        sportRecord: profile.sportRecord,
-        sportWinRate: profile.sportWinRate,
         perSport: profile.perSport,
         recentResults: profile.recentResults,
         weeklyPnl: weekly ? Math.round(weekly.pnl) : null,

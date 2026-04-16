@@ -5947,8 +5947,6 @@ export default function SharpFlow() {
         sportBets: w.sportBetCount || Object.values(w.sportMarkets || {}).reduce((s, v) => s + v, 0),
         sportsActive: Object.keys(w.sportMarkets || {}).length,
         leaderboardRank: w.leaderboardRank || null,
-        sportRecord: w.sportRecord || { won: 0, lost: 0 },
-        sportWinRate: w.sportWinRate ?? null,
         perSport: w.perSport || {},
         recentResults: w.recentResults || [],
         weeklyPnl: w.weeklyPnl ?? null,
@@ -6047,18 +6045,14 @@ export default function SharpFlow() {
         const sortFns = {
           pnl: (a, b) => b.sportPnlTotal - a.sportPnlTotal,
           roi: (a, b) => (b.sportBets >= 20 ? b.roi : -999) - (a.sportBets >= 20 ? a.roi : -999),
-          winrate: (a, b) => ((b.sportWinRate != null && (b.sportRecord.won + b.sportRecord.lost) >= 30) ? b.sportWinRate : -1) - ((a.sportWinRate != null && (a.sportRecord.won + a.sportRecord.lost) >= 30) ? a.sportWinRate : -1),
           weekly: (a, b) => (b.weeklyPnl ?? -Infinity) - (a.weeklyPnl ?? -Infinity),
           avgbet: (a, b) => b.avgBet - a.avgBet,
+          volume: (a, b) => b.vol - a.vol,
         };
         filteredEntries.sort(sortFns[vaultSortMode] || sortFns.pnl);
 
         const avgRoi = entries.length > 0 ? entries.reduce((s, e) => s + e.roi, 0) / entries.length : 0;
-        const combinedWR = (() => {
-          const totW = entries.reduce((s, e) => s + (e.sportRecord?.won || 0), 0);
-          const totL = entries.reduce((s, e) => s + (e.sportRecord?.lost || 0), 0);
-          return (totW + totL) > 0 ? ((totW / (totW + totL)) * 100).toFixed(1) : null;
-        })();
+        const combinedVol = entries.reduce((s, e) => s + e.vol, 0);
         const weeklyTotal = entries.reduce((s, e) => s + (e.weeklyPnl || 0), 0);
 
         return (
@@ -6092,7 +6086,7 @@ export default function SharpFlow() {
                   {[
                     { label: 'ELITE SHARPS', value: String(entries.length), color: B.gold },
                     { label: 'COMBINED P&L', value: `+${fmtVol(combinedPnl)}`, color: B.green },
-                    { label: 'COMBINED WR', value: combinedWR ? `${combinedWR}%` : '—', color: combinedWR && parseFloat(combinedWR) >= 55 ? B.green : combinedWR ? '#22D3EE' : B.textMuted },
+                    { label: 'AVG ROI', value: `+${avgRoi.toFixed(1)}%`, color: avgRoi >= 5 ? B.green : '#22D3EE' },
                     { label: 'THIS WEEK', value: weeklyTotal !== 0 ? `${weeklyTotal >= 0 ? '+' : ''}${fmtVol(weeklyTotal)}` : '—', color: weeklyTotal > 0 ? B.green : weeklyTotal < 0 ? B.red : B.textMuted },
                   ].map((s, i) => (
                     <div key={i} style={{ textAlign: isMobile && i > 1 ? 'center' : undefined }}>
@@ -6219,8 +6213,8 @@ export default function SharpFlow() {
                 {[
                   { id: 'pnl', label: 'All-Time P&L' },
                   { id: 'roi', label: 'Best ROI' },
-                  { id: 'winrate', label: 'Win Rate' },
                   { id: 'weekly', label: 'Hot This Week' },
+                  { id: 'volume', label: 'Most Volume' },
                   { id: 'avgbet', label: 'Biggest Bets' },
                 ].map(sm => (
                   <button key={sm.id} onClick={() => setVaultSortMode(sm.id)} style={{
@@ -6339,17 +6333,6 @@ export default function SharpFlow() {
                         <div style={{ textAlign: 'center' }}>
                           <span style={{
                             ...T.label, fontWeight: 700, fontFeatureSettings: "'tnum'",
-                            color: e.sportWinRate != null ? (e.sportWinRate >= 55 ? B.green : e.sportWinRate >= 50 ? '#22D3EE' : B.textSec) : B.textMuted,
-                          }}>
-                            {e.sportWinRate != null ? `${e.sportRecord.won}-${e.sportRecord.lost}` : '—'}
-                          </span>
-                          <div style={{ ...T.micro, color: B.textSubtle, fontSize: '0.5rem' }}>
-                            {e.sportWinRate != null ? `${e.sportWinRate}% WR` : 'RECORD'}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <span style={{
-                            ...T.label, fontWeight: 700, fontFeatureSettings: "'tnum'",
                             color: e.roi >= 5 ? B.green : e.roi >= 1 ? '#22D3EE' : B.textSec,
                           }}>
                             {e.roi >= 0 ? '+' : ''}{e.roi.toFixed(1)}%
@@ -6389,8 +6372,6 @@ export default function SharpFlow() {
                             { label: 'SPORT P&L', value: `+${fmtVol(e.sportPnlTotal)}`, color: B.green },
                             { label: 'OVERALL P&L', value: `${e.overallPnl >= 0 ? '+' : ''}${fmtVol(e.overallPnl)}`, color: e.overallPnl >= 0 ? B.green : B.red },
                             { label: 'VOLUME', value: fmtVol(e.vol), color: B.textSec },
-                            { label: 'RECORD', value: e.sportWinRate != null ? `${e.sportRecord.won}-${e.sportRecord.lost}` : '—', color: B.textSec },
-                            { label: 'WIN RATE', value: e.sportWinRate != null ? `${e.sportWinRate}%` : '—', color: e.sportWinRate != null ? (e.sportWinRate >= 55 ? B.green : e.sportWinRate >= 50 ? '#22D3EE' : B.red) : B.textMuted },
                             { label: 'ROI', value: `${e.roi >= 0 ? '+' : ''}${e.roi.toFixed(1)}%`, color: e.roi >= 5 ? B.green : e.roi >= 1 ? '#22D3EE' : B.textSec },
                             { label: 'THIS WEEK', value: e.weeklyPnl != null ? `${e.weeklyPnl >= 0 ? '+' : ''}${fmtVol(e.weeklyPnl)}` : '—', color: e.weeklyPnl > 0 ? B.green : e.weeklyPnl < 0 ? B.red : B.textMuted },
                             { label: 'AVG BET', value: fmtVol(e.avgBet), color: B.textSec },
@@ -6439,7 +6420,7 @@ export default function SharpFlow() {
                                       {sport}
                                     </span>
                                     <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>
-                                      {s.bets} bets{s.winRate != null ? ` · ${s.winRate}%` : ''}
+                                      {s.bets} bets{s.roi != null ? ` · ${s.roi >= 0 ? '+' : ''}${s.roi}%` : ''}
                                     </span>
                                   </div>
                                 ))
@@ -6484,7 +6465,7 @@ export default function SharpFlow() {
                                 RECENT SPORT BETS
                               </span>
                               <span style={{ ...T.micro, color: B.textSec, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
-                                Last {e.recentResults.length}: {e.recentResults.filter(r => r.won).length}W-{e.recentResults.filter(r => !r.won).length}L
+                                Last {e.recentResults.length}: {e.recentResults.filter(r => r.realizedPnl > 0).length}W-{e.recentResults.filter(r => r.realizedPnl < 0).length}L
                               </span>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -6498,13 +6479,13 @@ export default function SharpFlow() {
                                   <div key={ri} style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                     padding: '0.35rem 0.5rem', borderRadius: '6px',
-                                    background: r.won ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
+                                    background: r.realizedPnl >= 0 ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
                                   }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0, flex: 1 }}>
                                       <span style={{
                                         ...T.micro, fontWeight: 900, fontSize: '0.6rem',
-                                        color: r.won ? B.green : B.red,
-                                      }}>{r.won ? 'W' : 'L'}</span>
+                                        color: r.realizedPnl >= 0 ? B.green : B.red,
+                                      }}>{r.realizedPnl >= 0 ? 'W' : 'L'}</span>
                                       <span style={{
                                         ...T.micro, padding: '0.1rem 0.3rem', borderRadius: '3px',
                                         background: sportColor + '15', color: sportColor,
