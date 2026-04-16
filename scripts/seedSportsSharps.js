@@ -31,6 +31,8 @@ const MIN_SPORT_PNL = 5000;
 const MIN_MONTHLY_PNL = 20000;
 const REFRESH_HOURS = 48;
 const DELAY_MS = 800;
+const PAGE_DELAY_MS = 350;
+const MAX_CLOSED_POSITIONS = 2000;
 const RETRY_LIMIT = 3;
 
 const SPORT_KEYWORDS = {
@@ -124,27 +126,28 @@ async function buildProfile(wallet) {
     const page = await fetchWithRetry(
       `${DATA_API}/positions?user=${wallet}&sortBy=CASHPNL&limit=500&offset=${offset}`
     );
-    await sleep(DELAY_MS);
+    await sleep(PAGE_DELAY_MS);
     if (!page || !Array.isArray(page) || page.length === 0) break;
     currentPositions.push(...page);
     if (page.length < 500) break;
   }
 
   let closedPositions = [];
-  for (let offset = 0; offset < 100000; offset += 50) {
+  for (let offset = 0; offset < MAX_CLOSED_POSITIONS; offset += 50) {
     const page = await fetchWithRetry(
       `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}`
     );
-    await sleep(DELAY_MS);
+    await sleep(PAGE_DELAY_MS);
     if (!page || !Array.isArray(page) || page.length === 0) break;
     closedPositions.push(...page);
     if (page.length < 50) break;
   }
+  const closedCapped = closedPositions.length >= MAX_CLOSED_POSITIONS;
 
   const traded = await fetchWithRetry(
     `${DATA_API}/traded?user=${wallet}`
   );
-  await sleep(DELAY_MS);
+  await sleep(PAGE_DELAY_MS);
 
   const sportMarkets = {};
   const perSport = {};
@@ -228,6 +231,9 @@ async function buildProfile(wallet) {
     sportWinRate,
     perSport,
     recentResults,
+    closedCapped,
+    closedCount: closedPositions.length,
+    openCount: currentPositions.length,
   };
 }
 
@@ -243,23 +249,25 @@ async function run() {
   const now = Date.now();
   const refreshCutoff = now - REFRESH_HOURS * 60 * 60 * 1000;
 
-  // Fetch both all-time and monthly sports leaderboards
-  const allTimeLB = await fetchLeaderboard('ALL', LB_DEPTH);
-  const monthlyLB = await fetchLeaderboard('MONTH', 1000);
+  // Fetch all 5 leaderboards in parallel
+  console.log('Fetching all leaderboards in parallel...\n');
+  const [allTimeLB, monthlyLB, overallLB, weeklyLB, dailyLB] = await Promise.all([
+    fetchLeaderboard('ALL', LB_DEPTH),
+    fetchLeaderboard('MONTH', 1000),
+    fetchLeaderboard('ALL', LB_DEPTH, 'OVERALL'),
+    fetchLeaderboard('WEEK', LB_DEPTH),
+    fetchLeaderboard('DAY', LB_DEPTH),
+  ]);
 
-  // Monthly hot wallets: $20K+ monthly sports profit
   const monthlyHot = monthlyLB.filter(w => w.pnl >= MIN_MONTHLY_PNL);
   console.log(`\nMonthly hot bettors ($${(MIN_MONTHLY_PNL / 1000).toFixed(0)}K+): ${monthlyHot.length}`);
 
-  const overallLB = await fetchLeaderboard('ALL', LB_DEPTH, 'OVERALL');
   const overallLookup = Object.fromEntries(overallLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol }]));
   console.log(`Overall leaderboard: ${overallLB.length} entries loaded for cross-reference`);
 
-  const weeklyLB = await fetchLeaderboard('WEEK', LB_DEPTH);
   const weeklyLookup = Object.fromEntries(weeklyLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol, rank: w.rank }]));
   console.log(`Weekly leaderboard: ${weeklyLB.length} entries loaded`);
 
-  const dailyLB = await fetchLeaderboard('DAY', LB_DEPTH);
   const dailyLookup = Object.fromEntries(dailyLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol, rank: w.rank }]));
   console.log(`Daily leaderboard: ${dailyLB.length} entries loaded`);
 
@@ -361,7 +369,8 @@ async function run() {
         qualifiesMonthly ? `QUALIFIES (monthly hot, ${sportMarketCount} markets)` :
         isMonthlyHot ? 'SKIP (monthly hot but no tracked sports)' : 'below floor';
       const statsLabel = sportMarketCount > 0 ? ` | ${sportMarketCount} mkts, ${lbSportROI}% ROI, $${posAvgBet.toLocaleString()} avg` : '';
-      console.log(`$${pnl.toLocaleString()} sport PnL → ${label}${statsLabel}`);
+      const cappedTag = profile.closedCapped ? ` [closed capped @ ${profile.closedCount}]` : '';
+      console.log(`$${pnl.toLocaleString()} sport PnL → ${label}${statsLabel}${cappedTag}`);
     } catch (e) {
       errors++;
       console.log(`error — ${e.message}`);
