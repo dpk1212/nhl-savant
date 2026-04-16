@@ -174,15 +174,19 @@ async function buildProfile(wallet) {
     perSport[sport].invested += invested;
     perSport[sport].pnl += realizedPnl;
 
-    if (curPrice >= 0.95) {
+    const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
+    const won = isSettled ? curPrice >= 0.95 : realizedPnl > 0;
+    const lost = isSettled ? curPrice <= 0.05 : realizedPnl < 0;
+
+    if (won) {
       sportRecord.won++;
       perSport[sport].won++;
-    } else if (curPrice <= 0.05) {
+    } else if (lost) {
       sportRecord.lost++;
       perSport[sport].lost++;
     }
 
-    if (curPrice >= 0.95 || curPrice <= 0.05) {
+    if (isSettled || Math.abs(realizedPnl) > 0) {
       recentSportBets.push({
         title: p.title || '',
         sport,
@@ -190,7 +194,7 @@ async function buildProfile(wallet) {
         entryPrice: Math.round(price * 100) / 100,
         invested: Math.round(invested),
         realizedPnl: Math.round(realizedPnl),
-        won: curPrice >= 0.95,
+        won,
         timestamp: p.timestamp || 0,
       });
     }
