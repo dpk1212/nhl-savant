@@ -110,6 +110,12 @@ A heuristic score (0–100) that flags likely market makers — wallets that tra
 
 **Exclusion threshold:** `mmScore > 40` → wallet excluded from scanning in `scanSharpPositions.js`.
 
+### How this differs from the clear-trader filter (Part 4)
+
+`mmScore` is computed in **`buildWhaleProfiles.js`** and only applies to wallets that come from **whale_profiles** (base set). It targets **classic market-maker / liquidity** patterns using profile history and breadth.
+
+The **clear-trader filter** runs later in **`scanSharpPositions.js`** on **every wallet that actually appeared** in the scan output (base + supplementary). It targets **obvious bots, arb-style volume, and two-sided game churn** using `sports_sharps.json` fields plus **same-day both-sides** counts across ML, spread, and total. A wallet can pass `mmScore` and still be stripped if it is a clear trader; conversely, supplementary `sports_sharps` wallets are not scored with `mmScore` at merge time but **can** be removed by the clear-trader pass.
+
 ---
 
 ## Part 4: Scanning Positions (What Are They Betting On?)
@@ -129,9 +135,41 @@ This is the script that answers "what are the sharps betting on right now?" It t
 **Supplementary wallets** (from `sports_sharps.json`, not already in base):
 - Added if `sportPnlTotal > 0` OR `monthlyQualified`
 - Default tier: `SHARP`
-- No mmScore filtering needed (pre-qualified by sport profit)
+- Not filtered by **`mmScore`** at wallet-list build time (they are not in `whale_profiles` with that score)
+- **Can still be dropped** after positions are built if they match the **clear-trader heuristic** below (same as base wallets)
 
 **Scan order:** All wallets sorted by `totalPnl` descending (biggest bettors first).
+
+### Post-scan: clear-trader / arb exclusion (`scanSharpPositions.js`)
+
+After all positions for today are collected (ML, spread, total), a **second pass** removes wallets that look like **non-directional** actors: bots, heavy arbers, and churny two-sided traders — **in addition to** the pre-scan `mmScore > 40` exclusion on the base list.
+
+**How it works**
+
+1. **Both-sides count** — For each wallet, count how many **distinct games** (across all three outputs) have positions on **more than one side** (e.g. away and home, or over and under). Stored per wallet as `bothSidesCount`.
+
+2. **`traderScore(addr)`** — Points are accumulated from `sports_sharps` + `whale_profiles` + `bothSidesCount` (not from `mmScore` directly):
+
+| Signal | Condition | Points (approx.) |
+|--------|-----------|-------------------|
+| Volume vs sport P&L | `vol / sportPnl` very high (e.g. > 200, > 100) | up to +30 |
+| Sport bet count | `sportBets` very high (e.g. > 1000, > 500) | up to +25 |
+| Low sport share | `sportBets / marketsTraded` tiny (e.g. < 2%, < 5%) | up to +20 |
+| Huge vol, weak ROI | `sportROI < 1%` and `vol > $10M` | +15 |
+| Two-sided games today | `bothSidesCount` ≥ 3 or ≥ 2 | up to +20 |
+| Absurd win rate | `sportWinRate < 5%` with `sportBets > 50` | +15 |
+
+3. **Removal rule** — If `traderScore >= 40` **and** the wallet is **not** in the **profitable-sharp safe harbor**:  
+   `sportPnlTotal > $10K` **AND** `sportROI > 10%` **AND** `bothSidesCount < 2`  
+   then the wallet is added to **`traderSet`**.
+
+4. **Strip** — All positions whose `wallet` is in `traderSet` are removed from ML, spread, and total JSON. Per-game **`summary`** (invested counts, sharp counts, consensus inputs) is **recomputed** from remaining positions. Games with **no positions left** are **deleted** from the output.
+
+5. **Telemetry** — Each output file’s top-level **`meta`** includes **`tradersExcluded`** (count of distinct wallets removed) alongside existing `mmExcluded`, `sportLosersExcluded`, `noSportExcluded`. Logs: `Trader filter: excluded N clear-trader wallets (...)`.
+
+**Intent:** Keep **directional sport bettors** on the board for Sharp Flow and star math; strip wallets that are **obviously** running volume, arb, or both-sides noise **even when** they are not caught by `mmScore` alone.
+
+---
 
 ### Position Scanning
 
@@ -166,6 +204,9 @@ Each position that matches a today's game gets this data written to the output:
 | `pnl` | `round(cashPnl)` | Profit/loss on this position |
 | `firstSeen` | Preserved across runs | When position first appeared |
 | `marketType` | ml / spread / total | Market classification |
+| `leaderboardRank` | `sports_sharps.json` (via `effectiveTier` lookup) | Sports P&L leaderboard rank when present |
+| `sportsLbPercentileTop` | Derived at seed | Percentile within fetched leaderboard slice (internal / features) |
+| `sportVol` | `sports_sharps` `vol` | Sports leaderboard volume (internal / features) |
 
 ### Consensus Determination
 
@@ -191,13 +232,14 @@ Each file has the same structure: `{ NHL: { gameKey: { away, home, positions: []
 ### Per-Wallet Card (within a game)
 
 ```
-[ELITE]  ...1697  +$1.6M sports P&L                    8h ago
+[ELITE] [TOP 25]  ...1697  +$1.6M sports P&L                    8h ago
 Wings  $35.1K @ 56¢  +$960  +1.5% ROI
 ```
 
 | UI Element | Data Source | Computation |
 |-----------|-------------|-------------|
 | **Tier badge** (ELITE) | `position.tier` | From `effectiveTier()` in scanSharpPositions |
+| **Rank chip** (TOP 10 / TOP 20 / …) | `position.leaderboardRank` | Grouped label from sports leaderboard rank only (no percentile on card) |
 | **Wallet address** (...1697) | `position.wallet` | Last 4 chars of hex address |
 | **Sports P&L** (+$1.6M) | `position.totalPnl` | Sport P&L from leaderboard `category=SPORTS`, via effectiveTier |
 | **Monthly P&L** (when shown) | `position.monthlyPnl` | Only shown when `monthlyQualified && monthlyPnl > 0 && totalPnl <= 0` |
@@ -248,6 +290,8 @@ The per-wallet position data flows into `computeSharpFeatures()` which produces 
 | **conMoneyPct / conWalletPct** | Percentage of money and wallets on consensus side |
 | **sportSharpCount** | Count of consensus wallets with `sportVerified === true` |
 | **dominantTier** | Tier of the largest consensus wallet |
+| **rankWeightedConInvested** / **rankWeightedOppInvested** | Positions + ranks | Dollars on each side multiplied by a **rank-tier multiplier** (better leaderboard rank → higher weight). Internal only today. |
+| **consensusProfileMoneyIndex** | Same + `sportVol`, `sportsLbPercentileTop`, tier | **0–100**: consensus share of **rank × percentile × log-scaled sport volume × tier**-weighted invested dollars vs both sides. Internal signal for future lock/star tuning; not shown on cards. |
 
 ### Net-Position Handling
 
@@ -261,7 +305,7 @@ Wallets betting both sides of a game are handled via net-position: if a wallet h
 |------|--------|----------|-----------|
 | Sharp wallet list | `seedSportsSharps.js` | 10 AM & 10 PM ET | 48h incremental refresh; monthly-hot always refreshed |
 | Whale profiles (legacy) | `buildWhaleProfiles.js` | 8 AM, 12 PM, 4 PM, 8 PM ET | 12h refresh (24h in seed mode); 30-day stale prune |
-| Today's positions | `scanSharpPositions.js` | Every 15 min (via fetch-polymarket workflow) | Rewritten from scratch each run |
+| Today's positions | `scanSharpPositions.js` | Every 15 min (via fetch-polymarket workflow) | Rewritten from scratch each run; **clear-trader strip** applied every run |
 | Position firstSeen | Preserved across runs | Carried forward from previous output files | Stable until position disappears |
 
 ### Data Flow Summary
@@ -273,18 +317,19 @@ Polymarket Leaderboard API
 ├── timePeriod=MONTH ──→ Monthly hot detection
         │
         ▼
-  seedSportsSharps.js ──→ sports_sharps.json (500 wallets, sport P&L, overall P&L, ROI)
+  seedSportsSharps.js ──→ sports_sharps.json (500 wallets, sport P&L, overall P&L, ROI, rank/percentile fields)
         │
         │   buildWhaleProfiles.js ──→ whale_profiles.json (1000 wallets, tiers, mmScore)
         │           │
         ▼           ▼
-    scanSharpPositions.js ──→ sharp_positions.json (today's bets per game)
+    scanSharpPositions.js ──→ match positions → then mmScore pre-filter on base list
+                          → then clear-trader / arb post-filter → sharp_*.json
                                     │
                                     ▼
                           SharpFlow.jsx UI
-                          ├── computeSharpFeatures() → breadth, conviction, etc.
+                          ├── computeSharpFeatures() → breadth, conviction, rank-weighted internals, …
                           ├── rateStarsV7() → star rating
-                          ├── Wallet position cards (tier, P&L, ROI, size)
+                          ├── Wallet position cards (tier, optional rank chip, P&L, ROI, size)
                           └── syncPickToFirebase() → locked picks
 ```
 
