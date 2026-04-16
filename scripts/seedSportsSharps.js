@@ -114,12 +114,11 @@ async function fetchLeaderboard(timePeriod = 'ALL', depth = LB_DEPTH, category =
     name: t.userName || null,
     pnl: t.pnl || 0,
     vol: t.vol || 0,
+    rank: parseInt(t.rank, 10) || null,
   })).filter(w => w.wallet.length > 0);
 }
 
 async function buildProfile(wallet) {
-  // Only count sport markets — ALL financial data comes from the leaderboard API.
-  // Position-derived PnL (cashPnl, realizedPnl) is unreliable and must not be used.
   let currentPositions = [];
   for (let offset = 0; offset < 10000; offset += 500) {
     const page = await fetchWithRetry(
@@ -132,14 +131,14 @@ async function buildProfile(wallet) {
   }
 
   let closedPositions = [];
-  for (let offset = 0; offset < 10000; offset += 500) {
+  for (let offset = 0; offset < 100000; offset += 50) {
     const page = await fetchWithRetry(
-      `${DATA_API}/closed-positions?user=${wallet}&limit=500&offset=${offset}`
+      `${DATA_API}/closed-positions?user=${wallet}&limit=50&offset=${offset}`
     );
     await sleep(DELAY_MS);
     if (!page || !Array.isArray(page) || page.length === 0) break;
     closedPositions.push(...page);
-    if (page.length < 500) break;
+    if (page.length < 50) break;
   }
 
   const traded = await fetchWithRetry(
@@ -148,17 +147,49 @@ async function buildProfile(wallet) {
   await sleep(DELAY_MS);
 
   const sportMarkets = {};
+  const perSport = {};
   let sportInvested = 0;
   let sportPositionCount = 0;
+  const sportRecord = { won: 0, lost: 0 };
+  const recentSportBets = [];
 
   for (const p of closedPositions) {
     const sport = classifySport(p.title || '');
-    if (sport) {
-      sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
-      sportPositionCount++;
-      const bought = parseFloat(p.totalBought || '0');
-      const price = parseFloat(p.avgPrice || '0');
-      if (bought > 0 && price > 0) sportInvested += bought * price;
+    if (!sport) continue;
+
+    sportMarkets[sport] = (sportMarkets[sport] || 0) + 1;
+    sportPositionCount++;
+    const bought = parseFloat(p.totalBought || '0');
+    const price = parseFloat(p.avgPrice || '0');
+    const invested = (bought > 0 && price > 0) ? bought * price : 0;
+    if (invested > 0) sportInvested += invested;
+    const realizedPnl = parseFloat(p.realizedPnl || '0');
+    const curPrice = parseFloat(p.curPrice || '0.5');
+
+    if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0, won: 0, lost: 0 };
+    perSport[sport].bets++;
+    perSport[sport].invested += invested;
+    perSport[sport].pnl += realizedPnl;
+
+    if (curPrice >= 0.95) {
+      sportRecord.won++;
+      perSport[sport].won++;
+    } else if (curPrice <= 0.05) {
+      sportRecord.lost++;
+      perSport[sport].lost++;
+    }
+
+    if (curPrice >= 0.95 || curPrice <= 0.05) {
+      recentSportBets.push({
+        title: p.title || '',
+        sport,
+        outcome: p.outcome || '',
+        entryPrice: Math.round(price * 100) / 100,
+        invested: Math.round(invested),
+        realizedPnl: Math.round(realizedPnl),
+        won: curPrice >= 0.95,
+        timestamp: p.timestamp || 0,
+      });
     }
   }
 
@@ -173,11 +204,30 @@ async function buildProfile(wallet) {
     }
   }
 
+  for (const sp of Object.keys(perSport)) {
+    const s = perSport[sp];
+    s.invested = Math.round(s.invested);
+    s.pnl = Math.round(s.pnl);
+    s.avgBet = s.bets > 0 ? Math.round(s.invested / s.bets) : 0;
+    s.winRate = (s.won + s.lost) > 0 ? +((s.won / (s.won + s.lost)) * 100).toFixed(1) : null;
+    s.roi = s.invested > 0 ? +((s.pnl / s.invested) * 100).toFixed(1) : 0;
+  }
+
+  const totalGraded = sportRecord.won + sportRecord.lost;
+  const sportWinRate = totalGraded > 0 ? +((sportRecord.won / totalGraded) * 100).toFixed(1) : null;
+
+  recentSportBets.sort((a, b) => b.timestamp - a.timestamp);
+  const recentResults = recentSportBets.slice(0, 20);
+
   return {
     sportMarkets,
     marketsTraded: traded?.traded || (currentPositions.length + closedPositions.length),
     sportPositionCount,
     sportInvested: Math.round(sportInvested),
+    sportRecord,
+    sportWinRate,
+    perSport,
+    recentResults,
   };
 }
 
@@ -204,6 +254,14 @@ async function run() {
   const overallLB = await fetchLeaderboard('ALL', LB_DEPTH, 'OVERALL');
   const overallLookup = Object.fromEntries(overallLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol }]));
   console.log(`Overall leaderboard: ${overallLB.length} entries loaded for cross-reference`);
+
+  const weeklyLB = await fetchLeaderboard('WEEK', LB_DEPTH);
+  const weeklyLookup = Object.fromEntries(weeklyLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol, rank: w.rank }]));
+  console.log(`Weekly leaderboard: ${weeklyLB.length} entries loaded`);
+
+  const dailyLB = await fetchLeaderboard('DAY', LB_DEPTH);
+  const dailyLookup = Object.fromEntries(dailyLB.map(w => [w.wallet, { pnl: w.pnl, vol: w.vol, rank: w.rank }]));
+  console.log(`Daily leaderboard: ${dailyLB.length} entries loaded`);
 
   // Merge: all-time first, then monthly-only wallets that aren't already in the list
   const seen = new Set(allTimeLB.map(w => w.wallet));
@@ -249,6 +307,9 @@ async function run() {
         : (sportMarketCount > 0 ? Math.round(lbVol / sportMarketCount) : 0);
       const overall = overallLookup[lb.wallet];
 
+      const weekly = weeklyLookup[lb.wallet];
+      const daily = dailyLookup[lb.wallet];
+
       allWallets[lb.wallet] = {
         name: lb.name || prev?.name || 'Anonymous',
         totalPnl: pnl,
@@ -261,6 +322,19 @@ async function run() {
         sportBetCount: profile.sportPositionCount || sportMarketCount,
         sportROI: lbSportROI,
         avgSportBet: posAvgBet,
+        leaderboardRank: lb.rank,
+        sportRecord: profile.sportRecord,
+        sportWinRate: profile.sportWinRate,
+        perSport: profile.perSport,
+        recentResults: profile.recentResults,
+        weeklyPnl: weekly ? Math.round(weekly.pnl) : null,
+        weeklyVol: weekly ? Math.round(weekly.vol) : null,
+        weeklyROI: weekly && weekly.vol > 0 ? +((weekly.pnl / weekly.vol) * 100).toFixed(1) : null,
+        weeklyRank: weekly?.rank || null,
+        dailyPnl: daily ? Math.round(daily.pnl) : null,
+        dailyVol: daily ? Math.round(daily.vol) : null,
+        dailyROI: daily && daily.vol > 0 ? +((daily.pnl / daily.vol) * 100).toFixed(1) : null,
+        dailyRank: daily?.rank || null,
         lastSeen: now,
         builtAt: now,
         source: isMonthlyHot && !seen.has(lb.wallet) ? 'monthly_leaderboard' : 'leaderboard',
