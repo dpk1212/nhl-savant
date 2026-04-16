@@ -56,6 +56,16 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add public/nhl_confidence_weights.json
-          git diff --staged --quiet || git commit -m "🏒 Update NHL confidence weights $(date +%Y-%m-%d)"
-          git push
+          git diff --staged --quiet || (
+            git commit -m "Update NHL confidence weights $(date +%Y-%m-%d)" &&
+            git stash --include-untracked &&
+            git pull --rebase -X theirs &&
+            git stash pop || true &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase -X theirs
+            done
+          )
 

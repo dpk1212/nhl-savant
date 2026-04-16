@@ -36,5 +36,10 @@ jobs:
             git stash --include-untracked &&
             git pull --rebase -X theirs &&
             git stash pop || true &&
-            git push
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase -X theirs
+            done
           )

@@ -47,7 +47,18 @@ jobs:
           git config user.email "actions@github.com"
           git add public/nhl_odds.json public/odds_money.md public/starting_goalies.json public/moneypuck_predictions.json public/dratings_predictions.json public/player_props.json public/player_props_raw.md
           # CRITICAL: ONLY commit NHL files - NO wildcards, NO basketball data!
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: NHL odds and goalies [$(date +'%Y-%m-%d %H:%M')]" && git push)
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: NHL odds and goalies [$(date +'%Y-%m-%d %H:%M')]" &&
+            git stash --include-untracked &&
+            git pull --rebase -X theirs &&
+            git stash pop || true &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase -X theirs
+            done
+          )
       
       # Build and deploy to ensure site stays updated with fresh data
       - name: Build site
