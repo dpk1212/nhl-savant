@@ -607,14 +607,20 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
-        if (shouldPromote) { mergeData.sides[side].lockStage = 'LOCKED'; mergeData.sides[side].promotedAt = Date.now(); }
+        if (shouldPromote) {
+          mergeData.sides[side].lockStage = 'LOCKED';
+          mergeData.sides[side].promotedAt = Date.now();
+          mergeData.sides[side].promotedRegime = regime;
+          if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
+          mergeData.sides[side].lock.regime = regime;
+        }
         await setDoc(ref, mergeData, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
 
       if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
         await setDoc(ref, {
-          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now() } },
+          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, lock: { regime } } },
           lastWriteAt: Date.now(), lastAction: 'promoted',
         }, { merge: true });
         return { docId, action: 'promoted' };
@@ -770,13 +776,19 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
-        if (shouldPromote) { mergeObj.sides[side].lockStage = 'LOCKED'; mergeObj.sides[side].promotedAt = Date.now(); }
+        if (shouldPromote) {
+          mergeObj.sides[side].lockStage = 'LOCKED';
+          mergeObj.sides[side].promotedAt = Date.now();
+          mergeObj.sides[side].promotedRegime = regime;
+          if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
+          mergeObj.sides[side].lock.regime = regime;
+        }
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
       if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
         await setDoc(ref, {
-          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now() } },
+          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, lock: { regime } } },
           lastWriteAt: Date.now(), lastAction: 'promoted',
         }, { merge: true });
         return { docId, action: 'promoted' };
@@ -860,13 +872,19 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
-        if (shouldPromote) { mergeObj.sides[side].lockStage = 'LOCKED'; mergeObj.sides[side].promotedAt = Date.now(); }
+        if (shouldPromote) {
+          mergeObj.sides[side].lockStage = 'LOCKED';
+          mergeObj.sides[side].promotedAt = Date.now();
+          mergeObj.sides[side].promotedRegime = regime;
+          if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
+          mergeObj.sides[side].lock.regime = regime;
+        }
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
       if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
         await setDoc(ref, {
-          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now() } },
+          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, lock: { regime } } },
           lastWriteAt: Date.now(), lastAction: 'promoted',
         }, { merge: true });
         return { docId, action: 'promoted' };
