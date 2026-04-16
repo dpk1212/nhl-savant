@@ -586,6 +586,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (sides[side]) {
       if (sides[side].status === 'COMPLETED') return { docId, action: 'no_change' };
 
+      const isReflip = !!sides[side].superseded;
+
       const currentMaxEV = sides[side].maxEV ?? 0;
       const currentEV = evEdge || 0;
       const evIsNewMax = currentEV > currentMaxEV;
@@ -597,14 +599,14 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       const topPickBonus = (starDelta >= 1.0 && regime !== 'NO_MOVE')
         ? (starDelta >= 1.5 ? 0.5 : 0.25) : 0;
       const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 3);
-      if (bumpedUnits > currentPeak || stars > currentPeakStars) {
+      if (isReflip || bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
         if (opposition) peakData.opposition = opposition;
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
-        const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
+        const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: isReflip ? 'side_reflipped' : 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
         if (shouldPromote) {
@@ -614,8 +616,26 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
           if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
           mergeData.sides[side].lock.regime = regime;
         }
+        if (isReflip) {
+          mergeData.sides[side].superseded = false;
+          mergeData.sides[side].supersededAt = null;
+          const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
+          mergeData.sides[side].lockStage = lockStage;
+          if (lockStage === 'LOCKED') {
+            mergeData.sides[side].promotedAt = Date.now();
+            mergeData.sides[side].promotedRegime = regime;
+            if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
+            mergeData.sides[side].lock.regime = regime;
+          }
+          for (const [otherSide] of Object.entries(sides)) {
+            if (otherSide === side) continue;
+            if (!mergeData.sides[otherSide]) mergeData.sides[otherSide] = {};
+            mergeData.sides[otherSide].superseded = true;
+            mergeData.sides[otherSide].supersededAt = Date.now();
+          }
+        }
         await setDoc(ref, mergeData, { merge: true });
-        return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
+        return { docId, action: isReflip ? 'side_reflipped' : shouldPromote ? 'promoted' : 'peak_updated' };
       }
 
       if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
@@ -3416,6 +3436,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const [totalWalletFilter, setTotalWalletFilter] = useState('all');
   const [marketTab, setMarketTab] = useState('ml');
   const lastSyncedStars = useRef(null);
+  const lastSyncedSide = useRef(null);
   const lastSyncedSpreadStars = useRef(null);
   const lockSpreadStarsRef = useRef(null);
   const lockSpreadRawScoreRef = useRef(null);
@@ -3625,6 +3646,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   useEffect(() => {
     if ((!isLocked && !isShadow) || isGameLive || !commenceTime || !onPickSynced) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastSyncedSide.current && consensusSide !== lastSyncedSide.current) {
+      lastSyncedStars.current = null;
+      lockStarsRef.current = null;
+      lockRawScoreRef.current = null;
+    }
     if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current) return;
     const date = gameDate(commenceTime);
     syncPickToFirebase({
@@ -3665,6 +3691,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     }).then(({ docId, action, originalSide }) => {
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
+      lastSyncedSide.current = consensusSide;
       if (!lockOddsRef.current) lockOddsRef.current = betOdds;
       if (lockStarsRef.current == null) lockStarsRef.current = sr.stars;
       if (lockRawScoreRef.current == null) lockRawScoreRef.current = sr.rawScore;
@@ -3673,7 +3700,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
         onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
       }
     });
-  }, [isLocked, isShadow, sr.stars]);
+  }, [isLocked, isShadow, sr.stars, consensusSide]);
 
   // Pregame snapshot — capture full state ~30 min before game for lock→pregame analysis
   useEffect(() => {
