@@ -7117,7 +7117,7 @@ export default function SharpFlow() {
                       if (!docId.startsWith(targetDate)) continue;
                       const docSport = doc.sport || 'NHL';
                       for (const [sideKey, sd] of Object.entries(doc.sides || {})) {
-                        if (sd.lockStage === 'SHADOW') continue;
+                        if (sd.lockStage === 'SHADOW' || sd.superseded) continue;
                         const peak = sd.peak || sd.lock || {};
                         const lock = sd.lock || {};
                         const stars = peak.stars || lock.stars || 0;
