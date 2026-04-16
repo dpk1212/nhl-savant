@@ -573,7 +573,7 @@ async function run() {
     if (sportWinRate != null && sportWinRate < 5 && sportBets > 50) score += 15;
 
     const isProfitableSharp = sportPnl > 10000 && sportROI > 10 && bs < 2;
-    return score >= 40 && !isProfitableSharp;
+    return score >= 35 && !isProfitableSharp;
   };
 
   const writeVaultExclusionFile = (bothSidesMap) => {
