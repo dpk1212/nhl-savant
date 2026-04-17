@@ -6451,6 +6451,17 @@ export default function SharpFlow() {
                         const boxBorder = hasEV ? 'rgba(16,185,129,0.25)' : isHighConviction ? 'rgba(212,175,55,0.2)' : B.borderSubtle;
                         const boxLabel = hasEV ? 'EV OPPORTUNITY' : isHighConviction ? 'HIGH CONVICTION' : 'SHARP POSITION';
 
+                        const pinnConfirmsPlay = (() => {
+                          if (!pinnGame) return false;
+                          const hist = p.marketType === 'ML' ? (pinnGame.history || []) : p.marketType === 'SPREAD' ? (pinnGame.spreadHistory || []) : (pinnGame.totalHistory || []);
+                          if (hist.length < 2) return false;
+                          const getOdds = (h) => p.marketType === 'ML' ? (p.side === 'away' ? h.away : h.home) : p.marketType === 'SPREAD' ? (p.side === 'away' ? h.awayOdds : h.homeOdds) : (p.side === 'over' ? h.overOdds : h.underOdds);
+                          const openOdds = getOdds(hist[0]);
+                          const curOdds = getOdds(hist[hist.length - 1]);
+                          if (!openOdds || !curOdds) return false;
+                          return impliedProb(curOdds) > impliedProb(openOdds);
+                        })();
+
                         return (
                           <div key={`${cardKey}_${idx}`} style={{
                             borderRadius: '14px', overflow: 'hidden',
@@ -6462,167 +6473,134 @@ export default function SharpFlow() {
                               background: `linear-gradient(90deg, transparent 0%, ${boxAccentColor}88 30%, ${boxAccentColor} 50%, ${boxAccentColor}88 70%, transparent 100%)`,
                             }} />
 
-                            {/* Header: Sport + Tier + Rank + Wallet + Time */}
+                            {/* ── Header: Matchup + Sport + Badges ── */}
                             <div style={{
                               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              padding: '0.625rem 0.875rem 0', flexWrap: 'wrap', gap: '0.3rem',
+                              padding: '0.75rem 1rem 0.5rem', flexWrap: 'wrap', gap: '0.35rem',
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
                                 <Badge color={ss.color} bg={ss.bg}>{ss.icon} {p.sport}</Badge>
+                                <span style={{ ...T.body, fontWeight: 700, color: B.text }}>
+                                  {p.away} <span style={{ color: B.textMuted, fontWeight: 400 }}>vs</span> {p.home}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                 <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
                                 {rankGroup && (
                                   <span style={{
-                                    ...T.tiny, padding: '0.1rem 0.4rem', borderRadius: '4px',
+                                    ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '5px',
                                     background: 'rgba(34,211,238,0.08)', color: '#22D3EE',
                                     border: '1px solid rgba(34,211,238,0.2)', fontWeight: 700,
                                   }}>{rankGroup}</span>
                                 )}
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                 <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", opacity: 0.6 }}>
                                   ...{p.wallet.slice(-4)}
                                 </span>
                                 {timeLabel && (
-                                  <span style={{ ...T.micro, color: B.textSubtle, fontFeatureSettings: "'tnum'" }}>{timeLabel}</span>
+                                  <span style={{
+                                    ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px',
+                                    fontFeatureSettings: "'tnum'", color: B.textSec, background: 'rgba(255,255,255,0.04)',
+                                  }}>{timeLabel}</span>
                                 )}
                               </div>
                             </div>
 
-                            {/* ─── Story Box ─── */}
-                            <div style={{ padding: '0.5rem 0.875rem 0' }}>
-                              <div style={{
-                                padding: '0.625rem 0.75rem', borderRadius: '10px',
-                                background: boxBg,
-                                border: `1px solid ${boxBorder}`,
-                              }}>
-                                {/* Story header: label + badges */}
-                                <div style={{
-                                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                  marginBottom: '0.35rem',
-                                }}>
-                                  <span style={{ ...T.label, fontWeight: 800, color: boxAccentColor, letterSpacing: '0.03em' }}>
-                                    {boxLabel}
-                                  </span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                    {hasEV && (
-                                      <span style={{
-                                        ...T.body, fontWeight: 900, color: B.green,
-                                        padding: '0.15rem 0.5rem', borderRadius: '5px',
-                                        background: B.greenDim, fontFeatureSettings: "'tnum'",
-                                      }}>+{evEdge}% EV</span>
-                                    )}
-                                    {p.betMultiplier >= 1.5 && (
-                                      <span style={{
-                                        ...T.micro, fontWeight: 800, color: B.gold,
-                                        padding: '0.15rem 0.45rem', borderRadius: '5px',
-                                        background: B.goldDim, fontFeatureSettings: "'tnum'",
-                                      }}>{p.betMultiplier.toFixed(1)}x avg</span>
-                                    )}
-                                  </div>
+                            {/* ── Sharp Stats: The Hero ── */}
+                            <div style={{
+                              margin: '0 0.75rem', padding: '0.75rem 0',
+                              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                              gap: '0.25rem',
+                            }}>
+                              {/* Invested */}
+                              <div style={{ textAlign: 'center', padding: '0.5rem 0.25rem', borderRadius: '8px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                                <div style={{ fontWeight: 900, fontSize: '1.15rem', color: B.gold, fontFeatureSettings: "'tnum'", lineHeight: 1.2 }}>
+                                  {fmtVol(p.invested)}
                                 </div>
-                                {/* Narrative */}
-                                <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.55 }}>
-                                  {p.tier} bettor{rankGroup ? ` (${rankGroup})` : ''} invested <span style={{ color: B.gold, fontWeight: 700 }}>{fmtVol(p.invested)}</span> on {teamDisplay} {mktLabel}{p.betMultiplier >= 1.5 ? ` — ${p.betMultiplier.toFixed(1)}x their average bet size` : ''}.{hasEV ? <> Best price <span style={{ color: B.green, fontWeight: 700 }}>{fmtOdds(bestRetail)}</span> at {bestBook} vs Pinnacle fair value {fmtOdds(pinnOdds)}.</> : ''}{(p.totalPnl || 0) > 0 ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(p.totalPnl)}</span> sports P&L.</> : ''}
+                                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.5rem' }}>INVESTED</div>
+                              </div>
+                              {/* ROI */}
+                              <div style={{ textAlign: 'center', padding: '0.5rem 0.25rem', borderRadius: '8px', background: p.displayRoi > 0 ? 'rgba(16,185,129,0.06)' : p.displayRoi < 0 ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${p.displayRoi > 0 ? 'rgba(16,185,129,0.12)' : p.displayRoi < 0 ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.06)'}` }}>
+                                <div style={{ fontWeight: 900, fontSize: '1.15rem', color: p.displayRoi > 0 ? B.green : p.displayRoi < 0 ? B.red : B.text, fontFeatureSettings: "'tnum'", lineHeight: 1.2 }}>
+                                  {p.displayRoi > 0 ? '+' : ''}{p.displayRoi.toFixed(1)}%
                                 </div>
-
-                                {/* Structured Bet Block: Team on left, Price on right */}
-                                <div
-                                  onClick={(e) => { e.stopPropagation(); setExpandedActionCard(isExpanded ? null : cardKey); }}
-                                  style={{
-                                    display: 'grid', gridTemplateColumns: pinnOdds ? '1fr auto 1fr' : '1fr',
-                                    gap: '0.5rem', alignItems: 'center',
-                                    marginTop: '0.5rem', paddingTop: '0.5rem',
-                                    borderTop: `1px solid ${boxBorder}`,
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  <div>
-                                    <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>
-                                      Betting on
-                                    </div>
-                                    <div style={{ ...T.heading, fontWeight: 900, color: B.text, fontSize: '1rem' }}>
-                                      {teamDisplay} {mktLabel}
-                                    </div>
-                                    <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>
-                                      {p.away} vs {p.home}
-                                    </div>
-                                  </div>
-                                  {pinnOdds && (
-                                    <>
-                                      <div style={{ width: '1px', height: '36px', background: boxBorder }} />
-                                      <div style={{ textAlign: 'right' }}>
-                                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>
-                                          {hasEV ? 'BEST PRICE' : 'FAIR VALUE'}
-                                        </div>
-                                        <div style={{
-                                          ...T.heading, fontWeight: 900, fontSize: '1rem',
-                                          color: hasEV ? B.green : B.text,
-                                          fontFeatureSettings: "'tnum'",
-                                        }}>
-                                          {fmtOdds(hasEV && bestRetail ? bestRetail : pinnOdds)}
-                                        </div>
-                                        <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem' }}>
-                                          {hasEV ? (bestBook || 'Best Retail') : 'Pinnacle'}
-                                        </div>
-                                      </div>
-                                    </>
-                                  )}
+                                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.5rem' }}>ROI</div>
+                              </div>
+                              {/* Conviction / Lifetime */}
+                              <div style={{ textAlign: 'center', padding: '0.5rem 0.25rem', borderRadius: '8px', background: p.betMultiplier >= 2 ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${p.betMultiplier >= 2 ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.06)'}` }}>
+                                <div style={{ fontWeight: 900, fontSize: '1.15rem', color: p.betMultiplier >= 2 ? '#F59E0B' : B.text, fontFeatureSettings: "'tnum'", lineHeight: 1.2 }}>
+                                  {p.betMultiplier >= 1.5 ? `${p.betMultiplier.toFixed(1)}x` : fmtVol(p.totalPnl || 0)}
+                                </div>
+                                <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.2rem', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.5rem' }}>
+                                  {p.betMultiplier >= 1.5 ? 'AVG BET' : 'LIFETIME'}
                                 </div>
                               </div>
                             </div>
 
-                            {/* Signal chips row */}
-                            <div style={{
-                              display: 'flex', gap: '0.35rem', flexWrap: 'wrap',
-                              padding: '0.5rem 0.875rem 0',
-                            }}>
-                              <span style={{
-                                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                background: B.goldDim, color: B.gold, fontWeight: 600,
-                              }}>
-                                {fmtVol(p.invested)} invested
-                              </span>
-                              <span style={{
-                                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                fontWeight: 600,
-                                background: p.displayRoi > 0 ? B.greenDim : p.displayRoi < 0 ? B.redDim : 'rgba(255,255,255,0.04)',
-                                color: p.displayRoi > 0 ? B.green : p.displayRoi < 0 ? B.red : B.textSec,
-                              }}>
-                                {p.displayRoi > 0 ? '+' : ''}{p.displayRoi.toFixed(1)}% ROI
-                              </span>
-                              <span style={{
-                                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                fontWeight: 600,
-                                background: 'rgba(255,255,255,0.04)', color: B.textSec,
-                              }}>
-                                @ {Math.round(p.avgPrice * 100)}¢
-                              </span>
-                              {(p.pnl || 0) !== 0 && (
-                                <span style={{
-                                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                  fontWeight: 700, fontFeatureSettings: "'tnum'",
-                                  background: posColor === B.green ? B.greenDim : B.redDim,
-                                  color: posColor,
-                                }}>
-                                  P&L: {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                            {/* ── The Play ── */}
+                            <div
+                              onClick={(e) => { e.stopPropagation(); setExpandedActionCard(isExpanded ? null : cardKey); }}
+                              style={{
+                                margin: '0 0.75rem', padding: '0.625rem 0.75rem',
+                                borderRadius: '10px', cursor: 'pointer',
+                                background: boxBg,
+                                border: `1px solid ${boxBorder}`,
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                  <div style={{ fontWeight: 900, color: B.text, fontSize: '1.05rem', lineHeight: 1.2 }}>
+                                    {teamDisplay} {mktLabel}
+                                  </div>
+                                  {pinnOdds && (
+                                    <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.15rem', fontFeatureSettings: "'tnum'" }}>
+                                      Fair value: {fmtOdds(pinnOdds)} ({(impliedProb(pinnOdds) * 100).toFixed(1)}%)
+                                    </div>
+                                  )}
+                                </div>
+                                {pinnOdds && (
+                                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                    <div style={{
+                                      fontWeight: 900, fontSize: '1.2rem', lineHeight: 1.2,
+                                      color: hasEV ? B.green : B.text,
+                                      fontFeatureSettings: "'tnum'",
+                                    }}>
+                                      {fmtOdds(hasEV && bestRetail ? bestRetail : pinnOdds)}
+                                    </div>
+                                    <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem', fontWeight: 600 }}>
+                                      {hasEV ? (bestBook || 'Best Retail') : 'Pinnacle'}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Signal row inside the play box */}
+                              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: `1px solid ${boxBorder}` }}>
+                                {hasEV && (
+                                  <span style={{ ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 800, color: B.green, background: B.greenDim, fontFeatureSettings: "'tnum'" }}>
+                                    +{evEdge}% EV
+                                  </span>
+                                )}
+                                {pinnConfirmsPlay && (
+                                  <span style={{ ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 700, color: B.green, background: B.greenDim }}>
+                                    ✓ Line Moving
+                                  </span>
+                                )}
+                                {(p.pnl || 0) !== 0 && (
+                                  <span style={{ ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 700, fontFeatureSettings: "'tnum'", background: posColor === B.green ? B.greenDim : B.redDim, color: posColor }}>
+                                    P&L: {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                                  </span>
+                                )}
+                                <span style={{ ...T.micro, padding: '0.2rem 0.5rem', borderRadius: '5px', fontWeight: 600, background: 'rgba(255,255,255,0.04)', color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                                  @ {Math.round(p.avgPrice * 100)}¢
                                 </span>
-                              )}
-                              {hasEV && (
-                                <span style={{
-                                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
-                                  background: B.greenDim, color: B.green, fontWeight: 700,
-                                }}>
-                                  +{evEdge}% edge
-                                </span>
-                              )}
+                              </div>
                             </div>
 
-                            {/* Footer: Lifetime + expand toggle */}
+                            {/* ── Footer: Lifetime P&L + expand ── */}
                             <div
                               onClick={() => setExpandedActionCard(isExpanded ? null : cardKey)}
                               style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '0.45rem 0.875rem 0.625rem',
+                                padding: '0.5rem 0.75rem 0.75rem',
                                 marginTop: '0.35rem',
                                 cursor: 'pointer',
                               }}
@@ -6638,9 +6616,9 @@ export default function SharpFlow() {
                               </div>
                               <div style={{
                                 display: 'flex', alignItems: 'center', gap: '0.25rem',
-                                ...T.micro, color: B.textMuted, fontSize: '0.575rem',
+                                ...T.micro, color: B.textMuted, fontSize: '0.6rem',
                               }}>
-                                <span>{isExpanded ? 'Less' : 'Book Prices'}</span>
+                                <span>{isExpanded ? 'Less' : 'Details'}</span>
                                 <ChevronDown size={11} color={B.textMuted} style={{
                                   transform: isExpanded ? 'rotate(180deg)' : 'none',
                                   transition: 'transform 0.2s ease',
