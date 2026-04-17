@@ -398,6 +398,8 @@ function rateStarsV7({
   let regime = 'NO_MOVE';
   if (timeToGame != null && timeToGame <= 60 && pinnMoveSize >= 0.01) {
     regime = 'NEAR_START';
+  } else if (timeToGame != null && timeToGame <= 120 && pinnMoveSize >= 0.015) {
+    regime = 'NEAR_START';
   } else if (pinnMoveSize >= 0.02) {
     regime = 'CLEAR_MOVE';
   } else if (pinnMoveSize > 0 && liveCLV_z != null) {
