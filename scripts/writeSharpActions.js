@@ -98,7 +98,8 @@ async function main() {
           if (excludedSet.has(wLower)) continue;
 
           const avgBet = pos.avgSportBet || 0;
-          if (avgBet > 0 && pos.invested < avgBet * MIN_BET_MULTIPLIER) continue;
+          if (avgBet <= 0) continue;
+          if (pos.invested < avgBet * MIN_BET_MULTIPLIER) continue;
 
           const teamName = pos.side === 'home' || pos.side === 'over'
             ? (pos.side === 'over' ? 'Over' : gd.home)
