@@ -6414,30 +6414,47 @@ export default function SharpFlow() {
                           : '';
 
                         const pinnGame = pinnacleHistory?.[p.sport]?.[p.gameKey];
+                        const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+                        const isLocked = commenceTime && now >= commenceTime;
 
                         let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null, allBooks = {}, spreadLine = null, totalLine = null;
                         if (pinnGame) {
-                          if (p.marketType === 'ML') {
-                            pinnOdds = p.side === 'away' ? pinnGame.current?.away : pinnGame.current?.home;
-                            bestRetail = p.side === 'away' ? pinnGame.bestAway : pinnGame.bestHome;
-                            bestBook = p.side === 'away' ? pinnGame.bestAwayBook : pinnGame.bestHomeBook;
-                            allBooks = pinnGame.allBooks || {};
-                          } else if (p.marketType === 'SPREAD') {
-                            pinnOdds = p.side === 'away' ? pinnGame.spreadCurrent?.awayOdds : pinnGame.spreadCurrent?.homeOdds;
-                            spreadLine = p.side === 'away' ? pinnGame.spreadCurrent?.awayLine : pinnGame.spreadCurrent?.homeLine;
-                            bestRetail = p.side === 'away' ? pinnGame.bestAwaySpread?.odds : pinnGame.bestHomeSpread?.odds;
-                            bestBook = p.side === 'away' ? pinnGame.bestAwaySpread?.book : pinnGame.bestHomeSpread?.book;
+                          if (isLocked) {
+                            // Game in progress: show pre-game opening odds, not live lines
+                            if (p.marketType === 'ML') {
+                              pinnOdds = p.side === 'away' ? pinnGame.opener?.away : pinnGame.opener?.home;
+                            } else if (p.marketType === 'SPREAD') {
+                              pinnOdds = p.side === 'away' ? pinnGame.spreadOpener?.awayOdds : pinnGame.spreadOpener?.homeOdds;
+                              spreadLine = p.side === 'away' ? pinnGame.spreadOpener?.awayLine : pinnGame.spreadOpener?.homeLine;
+                            } else {
+                              pinnOdds = p.side === 'over' ? pinnGame.totalOpener?.overOdds : pinnGame.totalOpener?.underOdds;
+                              totalLine = pinnGame.totalOpener?.line;
+                            }
                           } else {
-                            pinnOdds = p.side === 'over' ? pinnGame.totalCurrent?.overOdds : pinnGame.totalCurrent?.underOdds;
-                            totalLine = pinnGame.totalCurrent?.line;
-                            bestRetail = p.side === 'over' ? pinnGame.bestOverTotal?.odds : pinnGame.bestUnderTotal?.odds;
-                            bestBook = p.side === 'over' ? pinnGame.bestOverTotal?.book : pinnGame.bestUnderTotal?.book;
+                            if (p.marketType === 'ML') {
+                              pinnOdds = p.side === 'away' ? pinnGame.current?.away : pinnGame.current?.home;
+                              bestRetail = p.side === 'away' ? pinnGame.bestAway : pinnGame.bestHome;
+                              bestBook = p.side === 'away' ? pinnGame.bestAwayBook : pinnGame.bestHomeBook;
+                              allBooks = pinnGame.allBooks || {};
+                            } else if (p.marketType === 'SPREAD') {
+                              pinnOdds = p.side === 'away' ? pinnGame.spreadCurrent?.awayOdds : pinnGame.spreadCurrent?.homeOdds;
+                              spreadLine = p.side === 'away' ? pinnGame.spreadCurrent?.awayLine : pinnGame.spreadCurrent?.homeLine;
+                              bestRetail = p.side === 'away' ? pinnGame.bestAwaySpread?.odds : pinnGame.bestHomeSpread?.odds;
+                              bestBook = p.side === 'away' ? pinnGame.bestAwaySpread?.book : pinnGame.bestHomeSpread?.book;
+                            } else {
+                              pinnOdds = p.side === 'over' ? pinnGame.totalCurrent?.overOdds : pinnGame.totalCurrent?.underOdds;
+                              totalLine = pinnGame.totalCurrent?.line;
+                              bestRetail = p.side === 'over' ? pinnGame.bestOverTotal?.odds : pinnGame.bestUnderTotal?.odds;
+                              bestBook = p.side === 'over' ? pinnGame.bestOverTotal?.book : pinnGame.bestUnderTotal?.book;
+                            }
                           }
-                          const pinnProb = impliedProb(pinnOdds);
-                          const retailProb = impliedProb(bestRetail);
-                          evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
+                          if (!isLocked) {
+                            const pinnProb = impliedProb(pinnOdds);
+                            const retailProb = impliedProb(bestRetail);
+                            evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
+                          }
                         }
-                        const hasEV = evEdge != null && evEdge > 0;
+                        const hasEV = !isLocked && evEdge != null && evEdge > 0;
 
                         const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
                         const teamDisplay = `${p.teamName}${spreadLine != null ? ` ${spreadLine > 0 ? '+' : ''}${spreadLine}` : ''}`;
@@ -6461,9 +6478,6 @@ export default function SharpFlow() {
                           if (!openOdds || !curOdds) return false;
                           return impliedProb(curOdds) > impliedProb(openOdds);
                         })();
-
-                        const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
-                        const isLocked = commenceTime && now >= commenceTime;
 
                         return (
                           <div key={`${cardKey}_${idx}`} style={{
@@ -6563,17 +6577,17 @@ export default function SharpFlow() {
                                 {pinnOdds && (
                                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                     <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.1rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.5rem', fontWeight: 600 }}>
-                                      {hasEV ? 'BET AT' : 'FAIR VALUE'}
+                                      {isLocked ? 'OPENING LINE' : hasEV ? 'BET AT' : 'FAIR VALUE'}
                                     </div>
                                     <div style={{
                                       fontWeight: 900, fontSize: '1.35rem', lineHeight: 1.1,
-                                      color: hasEV ? B.green : B.text,
+                                      color: isLocked ? '#818CF8' : hasEV ? B.green : B.text,
                                       fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
                                     }}>
                                       {fmtOdds(hasEV && bestRetail ? bestRetail : pinnOdds)}
                                     </div>
                                     <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem', fontWeight: 600 }}>
-                                      {hasEV ? (bestBook || '') : 'Pinnacle'}
+                                      {isLocked ? 'Pinnacle Open' : hasEV ? (bestBook || '') : 'Pinnacle'}
                                     </div>
                                   </div>
                                 )}
