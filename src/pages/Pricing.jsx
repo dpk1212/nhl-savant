@@ -24,7 +24,9 @@ const logEvent = (eventName, params) => {
   }
 };
 
-const PROMO_CODES = {};
+const PROMO_CODES = {
+  PLAYOFFS: { code: 'PLAYOFFS', discount: 37, label: 'NBA & NHL Playoff Launch', forLife: true, expires: new Date('2026-04-21T04:00:00Z') },
+};
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -46,7 +48,8 @@ const Pricing = () => {
     const promo = params.get('promo')?.toUpperCase();
     if (promo && PROMO_CODES[promo]) {
       const p = PROMO_CODES[promo];
-      setActiveDiscount({ code: p.code, discount: p.discount, timeLeft: null });
+      if (p.expires && new Date() > p.expires) return;
+      setActiveDiscount({ code: p.code, discount: p.discount, timeLeft: null, label: p.label, forLife: p.forLife });
       setPromoApplied(true);
     }
   }, [location.search]);
@@ -236,6 +239,45 @@ const Pricing = () => {
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
+        {/* Playoff Promo Banner */}
+        {activeDiscount?.forLife && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(16,185,129,0.1) 100%)',
+            border: '1px solid rgba(212,175,55,0.4)',
+            borderRadius: '14px',
+            padding: window.innerWidth < 640 ? '1.25rem' : '1.5rem 2rem',
+            marginBottom: '2rem',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: window.innerWidth < 640 ? '1.5rem' : '1.75rem',
+              marginBottom: '0.4rem',
+            }}>🏒🏀</div>
+            <div style={{
+              fontSize: window.innerWidth < 640 ? '1.1rem' : '1.3rem',
+              fontWeight: 900,
+              color: '#D4AF37',
+              letterSpacing: '-0.01em',
+              marginBottom: '0.35rem',
+            }}>
+              {activeDiscount.label || `${activeDiscount.discount}% OFF`}
+            </div>
+            <div style={{
+              fontSize: window.innerWidth < 640 ? '0.85rem' : '0.95rem',
+              color: 'rgba(241,245,249,0.8)',
+              lineHeight: 1.5,
+            }}>
+              <strong style={{ color: '#10B981' }}>{activeDiscount.discount}% off for life</strong> — locked in forever for being here for our first set of playoffs.
+              <br />Use code <strong style={{
+                color: '#D4AF37',
+                padding: '0.1rem 0.4rem',
+                borderRadius: '4px',
+                background: 'rgba(212,175,55,0.15)',
+              }}>{activeDiscount.code}</strong> at Stripe checkout.
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: window.innerWidth < 640 ? '3rem' : '4rem' }}>
           <h1 style={{
@@ -711,7 +753,9 @@ const Pricing = () => {
             margin: '0 auto 0.5rem auto',
             lineHeight: '1.6'
           }}>
-            Every plan includes everything. Save more with longer commitments.
+            {activeDiscount?.forLife
+              ? `Every plan includes everything. ${activeDiscount.discount}% off is locked forever with code ${activeDiscount.code}.`
+              : 'Every plan includes everything. Save more with longer commitments.'}
           </p>
           <div style={{
             display: 'inline-flex',
@@ -926,7 +970,7 @@ const Pricing = () => {
                       fontWeight: '700',
                       color: '#10B981'
                     }}>
-                      {activeDiscount.discount}% OFF
+                      {activeDiscount.discount}% OFF{activeDiscount.forLife ? ' FOR LIFE' : ''}
                     </div>
                   )}
                 </div>

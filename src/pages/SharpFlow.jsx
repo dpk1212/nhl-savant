@@ -8595,7 +8595,9 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
                   background: 'rgba(212,175,55,0.15)', letterSpacing: '0.06em',
                 }}>PLAYOFFS</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: B.textSec }}>
-                  {' '}at checkout for 37% off
+                  {' '}— </span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: B.green }}>
+                  37% off for life
                 </span>
               </div>
             </>
@@ -8620,7 +8622,7 @@ function SharpFlowPaywall({ isMobile, lockedCount }) {
           </div>
 
           {/* CTA */}
-          <a href="#/pricing" style={{
+          <a href={promoActive ? '#/pricing?promo=PLAYOFFS' : '#/pricing'} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
             padding: '0.85rem 1.5rem', borderRadius: '10px',
             background: `linear-gradient(135deg, ${B.green}, #059669)`,
