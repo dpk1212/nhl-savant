@@ -8432,17 +8432,26 @@ function SportTabs({ active, onChange }) {
   );
 }
 
-function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
-  const picks = (pnlData?.picks || []).filter(p => p.outcome);
-  const wins = picks.filter(p => p.outcome === 'WIN').length;
-  const losses = picks.filter(p => p.outcome === 'LOSS').length;
-  const pushes = picks.filter(p => p.outcome === 'PUSH').length;
-  const graded = wins + losses + pushes;
-  const totalProfit = picks.reduce((s, p) => s + (p.profit || 0), 0);
-  const totalUnits = picks.reduce((s, p) => s + (p.units || 1), 0);
-  const winPct = graded > 0 ? ((wins / graded) * 100).toFixed(1) : null;
-  const roi = totalUnits > 0 ? ((totalProfit / totalUnits) * 100).toFixed(1) : null;
-  const profitStr = graded > 0 ? (totalProfit >= 0 ? `+${totalProfit.toFixed(1)}u` : `${totalProfit.toFixed(1)}u`) : null;
+function SharpFlowPaywall({ isMobile, lockedCount }) {
+  const [now, setNow] = useState(Date.now());
+
+  // Countdown to Sunday April 20 at midnight ET
+  const promoEnd = new Date('2026-04-21T04:00:00Z').getTime(); // midnight ET = 4AM UTC
+  const fullPrice = 25.99;
+  const discount = 0.37;
+  const promoPrice = (fullPrice * (1 - discount)).toFixed(2);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const remaining = Math.max(0, promoEnd - now);
+  const days = Math.floor(remaining / 86400000);
+  const hours = Math.floor((remaining % 86400000) / 3600000);
+  const minutes = Math.floor((remaining % 3600000) / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+  const promoActive = remaining > 0;
 
   const features = [
     'Verified sharp bettor tracking in real time',
@@ -8456,77 +8465,151 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
   return (
     <div style={{
       marginTop: '2rem', borderRadius: '16px', overflow: 'hidden',
-      background: `linear-gradient(135deg, rgba(212,175,55,0.06) 0%, ${B.card} 30%, rgba(16,185,129,0.04) 100%)`,
-      border: `1px solid rgba(212,175,55,0.25)`,
-      boxShadow: '0 4px 30px rgba(0,0,0,0.4)',
+      background: `linear-gradient(145deg, rgba(212,175,55,0.08) 0%, ${B.card} 35%, rgba(16,185,129,0.05) 100%)`,
+      border: `1px solid rgba(212,175,55,0.3)`,
+      boxShadow: '0 4px 40px rgba(0,0,0,0.5)',
     }}>
+      {/* Promo banner strip */}
+      {promoActive && (
+        <div style={{
+          background: 'linear-gradient(90deg, #D4AF37 0%, #F5D060 50%, #D4AF37 100%)',
+          padding: '0.5rem 1rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+        }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0B1120', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            🏆 NBA & NHL PLAYOFF LAUNCH — 37% OFF
+          </span>
+        </div>
+      )}
+
       <div style={{ padding: isMobile ? '2rem 1.25rem' : '2.5rem 2rem' }}>
 
-        {graded > 0 && (
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem',
-            marginBottom: '1.5rem', maxWidth: '440px', margin: '0 auto 1.5rem',
-          }}>
-            {[
-              { label: 'WIN RATE', value: `${winPct}%`, color: parseFloat(winPct) >= 55 ? B.green : B.text },
-              { label: 'PROFIT', value: profitStr, color: totalProfit >= 0 ? B.green : B.red },
-              { label: 'ROI', value: `${roi > 0 ? '+' : ''}${roi}%`, color: parseFloat(roi) >= 0 ? B.green : B.red },
-            ].map(s => (
-              <div key={s.label} style={{
-                textAlign: 'center', padding: '0.75rem 0.5rem', borderRadius: '10px',
-                background: 'rgba(0,0,0,0.3)', border: `1px solid ${B.border}`,
-              }}>
-                <div style={{ fontSize: isMobile ? '1.25rem' : '1.4rem', fontWeight: 900, color: s.color, fontFeatureSettings: "'tnum'" }}>
-                  {s.value}
-                </div>
-                <div style={{ ...T.micro, color: B.textMuted, fontWeight: 700, letterSpacing: '0.06em', marginTop: '0.2rem' }}>
-                  {s.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
+        {/* Headline */}
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <Lock size={36} color={B.gold} style={{ marginBottom: '0.75rem', opacity: 0.85 }} />
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏒🏀</div>
           <h2 style={{
-            fontSize: isMobile ? '1.5rem' : '1.75rem', fontWeight: 900,
-            color: B.text, margin: '0 0 0.5rem 0', letterSpacing: '-0.02em',
-          }}>
-            {lockedCount ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked</> : <>Sharp Flow is <span style={{ color: B.gold }}>Pro Only</span></>}
-          </h2>
-          <p style={{
-            ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '520px', lineHeight: 1.65,
+            fontSize: isMobile ? '1.5rem' : '1.85rem', fontWeight: 900,
+            color: B.text, margin: '0 0 0.5rem 0', letterSpacing: '-0.02em', lineHeight: 1.2,
           }}>
             {lockedCount
-              ? <>Upgrade to unlock all sharp intel cards, auto-locked plays, the Sharp Vault, and full performance tracking.</>
-              : <>We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> across
+              ? <><span style={{ color: B.gold }}>{lockedCount} more game{lockedCount !== 1 ? 's' : ''}</span> locked</>
+              : <>Unlock <span style={{ color: B.gold }}>Sharp Flow</span></>}
+          </h2>
+          <p style={{
+            ...T.body, color: B.textSec, margin: '0 auto', maxWidth: '540px', lineHeight: 1.7,
+          }}>
+            We track <span style={{ color: B.text, fontWeight: 700 }}>200+ verified sharp bettors</span> across
             prediction markets, surface their real positions on today's games, and combine it with Pinnacle
-            fair odds, EV edges, and full market flow — so you bet with an edge, not a hunch.</>}
+            fair odds, EV edges, and full market flow — so you bet with an edge, not a hunch.
           </p>
         </div>
 
+        {/* Features grid */}
         <div style={{
           display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: '0.5rem 1.5rem', marginBottom: '1.75rem', maxWidth: '540px', margin: '0 auto 1.75rem',
+          gap: '0.6rem 1.5rem', marginBottom: '1.75rem', maxWidth: '540px', margin: '0 auto 1.75rem',
         }}>
           {features.map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <CheckCircle size={13} color={B.green} />
-              <span style={{ ...T.label, color: B.textSec }}>{f}</span>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CheckCircle size={14} color={B.green} style={{ flexShrink: 0 }} />
+              <span style={{ ...T.label, color: B.textSec, lineHeight: 1.4 }}>{f}</span>
             </div>
           ))}
         </div>
 
+        {/* Pricing + promo card */}
         <div style={{
-          background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: isMobile ? '1.25rem' : '1.5rem',
-          border: `1px solid ${B.border}`, maxWidth: '480px', margin: '0 auto',
+          background: 'linear-gradient(145deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.2) 100%)',
+          borderRadius: '14px', padding: isMobile ? '1.5rem 1.25rem' : '1.75rem 2rem',
+          border: `1px solid rgba(212,175,55,0.2)`, maxWidth: '480px', margin: '0 auto',
         }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: isMobile ? '2rem' : '2.25rem', fontWeight: 900, color: B.green }}>$25.99</span>
-            <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
-          </div>
+          {/* Countdown timer */}
+          {promoActive && (
+            <>
+              <div style={{
+                textAlign: 'center', marginBottom: '1rem',
+              }}>
+                <div style={{ ...T.micro, color: B.gold, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem', fontSize: '0.65rem' }}>
+                  PLAYOFF LAUNCH OFFER ENDS IN
+                </div>
+                <div style={{
+                  display: 'flex', justifyContent: 'center', gap: '0.5rem',
+                }}>
+                  {[
+                    { val: days, label: 'DAYS' },
+                    { val: hours, label: 'HRS' },
+                    { val: minutes, label: 'MIN' },
+                    { val: seconds, label: 'SEC' },
+                  ].map(t => (
+                    <div key={t.label} style={{
+                      background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.25)',
+                      borderRadius: '8px', padding: '0.5rem 0.6rem', minWidth: isMobile ? '50px' : '58px',
+                      textAlign: 'center',
+                    }}>
+                      <div style={{
+                        fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 900, color: B.gold,
+                        fontFeatureSettings: "'tnum'", lineHeight: 1, letterSpacing: '-0.02em',
+                      }}>
+                        {String(t.val).padStart(2, '0')}
+                      </div>
+                      <div style={{ fontSize: '0.5rem', fontWeight: 700, color: B.textMuted, letterSpacing: '0.08em', marginTop: '0.2rem' }}>
+                        {t.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
+              {/* Price display with discount */}
+              <div style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem',
+                marginBottom: '0.5rem',
+              }}>
+                <span style={{
+                  fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 900, color: B.green,
+                  fontFeatureSettings: "'tnum'",
+                }}>
+                  ${promoPrice}
+                </span>
+                <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
+                <span style={{
+                  fontSize: '1.1rem', color: B.textMuted, textDecoration: 'line-through', fontWeight: 600,
+                  opacity: 0.6, fontFeatureSettings: "'tnum'",
+                }}>
+                  ${fullPrice}
+                </span>
+              </div>
+
+              {/* Promo code callout */}
+              <div style={{
+                textAlign: 'center', marginBottom: '1rem',
+                padding: '0.6rem 0.75rem', borderRadius: '8px',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)',
+                border: '1px solid rgba(212,175,55,0.3)',
+              }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: B.textSec }}>
+                  Use code </span>
+                <span style={{
+                  fontSize: '0.9rem', fontWeight: 900, color: B.gold,
+                  padding: '0.15rem 0.5rem', borderRadius: '4px',
+                  background: 'rgba(212,175,55,0.15)', letterSpacing: '0.06em',
+                }}>PLAYOFFS</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: B.textSec }}>
+                  {' '}at checkout for 37% off
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Non-promo pricing */}
+          {!promoActive && (
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: isMobile ? '2rem' : '2.25rem', fontWeight: 900, color: B.green }}>$25.99</span>
+              <span style={{ ...T.body, color: B.textSec, fontWeight: 600 }}>/mo</span>
+            </div>
+          )}
+
+          {/* Free trial badge */}
           <div style={{
             textAlign: 'center', marginBottom: '0.75rem',
             padding: '0.5rem 0.75rem', borderRadius: '8px',
@@ -8536,17 +8619,20 @@ function SharpFlowPaywall({ isMobile, lockedCount, pnlData }) {
             <span style={{ ...T.micro, color: B.textSec, marginLeft: '0.4rem' }}>— full access, cancel anytime</span>
           </div>
 
+          {/* CTA */}
           <a href="#/pricing" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-            padding: '0.75rem 1.5rem', borderRadius: '8px',
+            padding: '0.85rem 1.5rem', borderRadius: '10px',
             background: `linear-gradient(135deg, ${B.green}, #059669)`,
-            color: '#fff', fontWeight: 800, fontSize: isMobile ? '1rem' : '0.95rem',
+            color: '#fff', fontWeight: 900, fontSize: isMobile ? '1.05rem' : '1rem',
             textDecoration: 'none', letterSpacing: '0.01em',
-            boxShadow: '0 2px 12px rgba(16,185,129,0.3)',
+            boxShadow: '0 4px 20px rgba(16,185,129,0.35)',
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
           }}>
-            Start Free Trial →
+            {promoActive ? 'Claim Playoff Offer →' : 'Start Free Trial →'}
           </a>
 
+          {/* Trust badges */}
           <div style={{
             display: 'flex', justifyContent: 'center', gap: '1rem',
             marginTop: '0.75rem',
