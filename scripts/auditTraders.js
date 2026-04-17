@@ -183,20 +183,157 @@ console.log(`  Clean volume:    $${(cleanVol / 1_000_000).toFixed(0)}M\n`);
 let flaggedPositionsToday = 0;
 let totalPositionsToday = 0;
 const flaggedAddrs = new Set(flagged.map(r => r.addr));
+const suspectAddrs = new Set(suspect.map(r => r.addr));
+let suspectPositionsToday = 0;
+const suspectGameImpact = {};
+const suspectWalletPositions = {};
 for (const posFile of [sharpPos, spreadPos, totalPos]) {
   if (!posFile) continue;
   for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
-    for (const gd of Object.values(posFile[sport] || {})) {
+    for (const [gameKey, gd] of Object.entries(posFile[sport] || {})) {
       for (const pos of gd.positions || []) {
         totalPositionsToday++;
         if (flaggedAddrs.has(pos.wallet)) flaggedPositionsToday++;
+        if (suspectAddrs.has(pos.wallet)) {
+          suspectPositionsToday++;
+          const gk = `${sport}: ${gd.away} vs ${gd.home}`;
+          if (!suspectGameImpact[gk]) suspectGameImpact[gk] = { positions: [], totalInGame: 0 };
+          suspectGameImpact[gk].positions.push(pos);
+          if (!suspectWalletPositions[pos.wallet]) suspectWalletPositions[pos.wallet] = [];
+          suspectWalletPositions[pos.wallet].push({ ...pos, game: gk, sport });
+        }
+        if (suspectGameImpact[`${sport}: ${gd.away} vs ${gd.home}`]) {
+          suspectGameImpact[`${sport}: ${gd.away} vs ${gd.home}`].totalInGame++;
+        }
       }
     }
   }
 }
 
 console.log(`  Today's positions from flagged wallets: ${flaggedPositionsToday} / ${totalPositionsToday} (${(flaggedPositionsToday / Math.max(totalPositionsToday, 1) * 100).toFixed(1)}%)`);
-console.log(`  These positions are currently influencing consensus + star ratings.\n`);
+console.log(`  Today's positions from suspect wallets: ${suspectPositionsToday} / ${totalPositionsToday} (${(suspectPositionsToday / Math.max(totalPositionsToday, 1) * 100).toFixed(1)}%)`);
+console.log(`  Combined dirty positions: ${flaggedPositionsToday + suspectPositionsToday} / ${totalPositionsToday}\n`);
+
+// ─── Score distribution analysis ───────────────────────────────────────────
+
+console.log('═══════════════════════════════════════════════════════════');
+console.log('  SCORE DISTRIBUTION — Where should the cutoff be?');
+console.log('═══════════════════════════════════════════════════════════\n');
+
+const buckets = [
+  { label: '70+  (obvious bots)', min: 70, max: Infinity },
+  { label: '60-69 (heavy traders)', min: 60, max: 69 },
+  { label: '50-59 (likely traders)', min: 50, max: 59 },
+  { label: '45-49 (probable traders)', min: 45, max: 49 },
+  { label: '40-44 (borderline)', min: 40, max: 44 },
+  { label: '35-39 (suspect)', min: 35, max: 39 },
+  { label: '30-34 (watch)', min: 30, max: 34 },
+  { label: '25-29 (mild)', min: 25, max: 29 },
+  { label: '20-24', min: 20, max: 24 },
+  { label: '15-19', min: 15, max: 19 },
+  { label: '0-14  (clean)', min: 0, max: 14 },
+];
+
+for (const b of buckets) {
+  const inBucket = results.filter(r => r.score >= b.min && r.score <= b.max);
+  if (inBucket.length === 0) continue;
+  const avgPnl = inBucket.reduce((s, r) => s + r.pnl, 0) / inBucket.length;
+  const avgROI = inBucket.reduce((s, r) => s + (r.roi || 0), 0) / inBucket.length;
+  const avgRatio = inBucket.filter(r => r.ratio > 0).reduce((s, r) => s + r.ratio, 0) / Math.max(inBucket.filter(r => r.ratio > 0).length, 1);
+  const avgBets = inBucket.reduce((s, r) => s + r.bets, 0) / inBucket.length;
+
+  let posToday = 0;
+  const bucketAddrs = new Set(inBucket.map(r => r.addr));
+  for (const posFile of [sharpPos, spreadPos, totalPos]) {
+    if (!posFile) continue;
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+      for (const gd of Object.values(posFile[sport] || {})) {
+        for (const pos of gd.positions || []) {
+          if (bucketAddrs.has(pos.wallet)) posToday++;
+        }
+      }
+    }
+  }
+
+  const bar = '█'.repeat(Math.min(inBucket.length, 40));
+  console.log(`  ${b.label.padEnd(25)} ${String(inBucket.length).padStart(4)} wallets  avgPnl:$${(avgPnl / 1000).toFixed(0)}K  avgROI:${avgROI.toFixed(1)}%  avgVol/Pnl:${avgRatio.toFixed(0)}x  avgBets:${Math.round(avgBets)}  posToday:${posToday}`);
+  console.log(`  ${''.padEnd(25)} ${bar}`);
+}
+
+// ─── Suspect wallets with positions today ─────────────────────────────────
+
+if (suspectPositionsToday > 0) {
+  console.log('\n═══════════════════════════════════════════════════════════');
+  console.log('  SUSPECT WALLETS WITH POSITIONS TODAY (score 25-39)');
+  console.log('═══════════════════════════════════════════════════════════\n');
+
+  const suspectWithPos = suspect.filter(r => suspectWalletPositions[r.addr]);
+  for (const r of suspectWithPos.sort((a, b) => b.score - a.score)) {
+    const positions = suspectWalletPositions[r.addr] || [];
+    const totalInv = positions.reduce((s, p) => s + (p.invested || 0), 0);
+    console.log(
+      `  ***${r.addr.slice(-4)}  score:${r.score}  ` +
+      `pnl:$${(r.pnl / 1000).toFixed(0)}K  roi:${r.roi}%  bets:${r.bets}  ` +
+      `vol/pnl:${r.ratio > 0 ? r.ratio.toFixed(0) + 'x' : '?'}`
+    );
+    console.log(`    → Flags: ${r.flags.join(' | ')}`);
+    console.log(`    → ${positions.length} position(s) today, $${(totalInv / 1000).toFixed(1)}K invested:`);
+    for (const p of positions) {
+      console.log(`      ${p.game}  ${p.side}  $${(p.invested / 1000).toFixed(1)}K  tier:${p.tier}  sportPnl:$${((p.sportPnlTotal || 0) / 1000).toFixed(0)}K`);
+    }
+    console.log('');
+  }
+}
+
+// ─── Game-level impact from suspects ──────────────────────────────────────
+
+if (Object.keys(suspectGameImpact).length > 0) {
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('  GAMES AFFECTED BY SUSPECT WALLETS');
+  console.log('═══════════════════════════════════════════════════════════\n');
+
+  for (const [game, data] of Object.entries(suspectGameImpact).sort((a, b) => b[1].positions.length - a[1].positions.length)) {
+    const suspInv = data.positions.reduce((s, p) => s + (p.invested || 0), 0);
+    const sides = {};
+    data.positions.forEach(p => { sides[p.side] = (sides[p.side] || 0) + (p.invested || 0); });
+    const sideStr = Object.entries(sides).map(([s, v]) => `${s}: $${(v / 1000).toFixed(1)}K`).join(', ');
+    console.log(`  ${game}`);
+    console.log(`    ${data.positions.length} suspect positions / ~${data.totalInGame} total in game | $${(suspInv / 1000).toFixed(1)}K suspect $ | ${sideStr}`);
+  }
+}
+
+// ─── Tightening analysis ────────────────────────────────────────────────────
+
+console.log('\n═══════════════════════════════════════════════════════════');
+console.log('  TIGHTENING ANALYSIS — What happens if we lower the cutoff?');
+console.log('═══════════════════════════════════════════════════════════\n');
+
+for (const cutoff of [40, 35, 30, 25]) {
+  const would = results.filter(r => r.score >= cutoff);
+  const kept = results.filter(r => r.score < cutoff);
+  const wouldPnl = would.reduce((s, r) => s + r.pnl, 0);
+  const keptPnl = kept.reduce((s, r) => s + r.pnl, 0);
+
+  let wouldPos = 0, keptPos = 0;
+  const wouldSet = new Set(would.map(r => r.addr));
+  for (const posFile of [sharpPos, spreadPos, totalPos]) {
+    if (!posFile) continue;
+    for (const sport of ['NHL', 'CBB', 'MLB', 'NBA']) {
+      for (const gd of Object.values(posFile[sport] || {})) {
+        for (const pos of gd.positions || []) {
+          if (wouldSet.has(pos.wallet)) wouldPos++;
+          else keptPos++;
+        }
+      }
+    }
+  }
+
+  const safeHarborCount = would.filter(r => r.pnl > 10000 && r.roi > 10).length;
+  console.log(`  Cutoff >= ${cutoff}: strip ${would.length} wallets (${wouldPos} positions today), keep ${kept.length} (${keptPos} positions)`);
+  console.log(`    Strip $${(wouldPnl / 1e6).toFixed(1)}M P&L | Keep $${(keptPnl / 1e6).toFixed(1)}M P&L | ${safeHarborCount} would be saved by safe harbor`);
+}
+
+console.log('');
 
 // Show the cleanest bettors for comparison
 console.log('─── CLEANEST BETTORS (score 0, top 15 by P&L) ───\n');
