@@ -3819,8 +3819,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     lockStars: lockSpreadStarsRef.current,
   }) : null;
 
+  const spreadWhaleOverride = spreadSharpFeatures
+    && (spreadSharpFeatures.conWalletCount || 0) === 1
+    && (spreadSharpFeatures.conTotalInvested || 0) >= 25000
+    && spreadGameData?.positions?.some(p => p.side === spreadConsensusSide && (p.sportPnl || 0) >= 500000);
   const spreadMeetsThreshold = spreadSr && spreadSr.stars >= 2.5
-    && (spreadSharpFeatures?.conWalletCount || 0) >= 2
+    && ((spreadSharpFeatures?.conWalletCount || 0) >= 2 || spreadWhaleOverride)
     && (spreadSharpFeatures?.conTotalInvested || 0) >= 10000;
   const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
   const isSpreadLocked = spreadMeetsThreshold && spreadHasRegime;
@@ -3942,8 +3946,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     lockStars: lockTotalStarsRef.current,
   }) : null;
 
+  const totalWhaleOverride = totalSharpFeatures
+    && (totalSharpFeatures.conWalletCount || 0) === 1
+    && (totalSharpFeatures.conTotalInvested || 0) >= 25000
+    && totalGameData?.positions?.some(p => p.side === totalConsensusSide && (p.sportPnl || 0) >= 500000);
   const totalMeetsThreshold = totalSr && totalSr.stars >= 2.5
-    && (totalSharpFeatures?.conWalletCount || 0) >= 2
+    && ((totalSharpFeatures?.conWalletCount || 0) >= 2 || totalWhaleOverride)
     && (totalSharpFeatures?.conTotalInvested || 0) >= 10000;
   const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
   const isTotalLocked = totalMeetsThreshold && totalHasRegime;
