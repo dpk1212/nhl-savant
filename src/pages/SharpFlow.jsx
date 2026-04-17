@@ -3627,7 +3627,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     sharpCount: consensusWallets, totalInvested: consensusInvested,
     lockOdds: lockOddsRef.current,
     pinnCurrentOdds,
-    pinnMoveSize: (pinnCurrentProb && pinnOpenProb) ? Math.abs(pinnCurrentProb - pinnOpenProb) : 0,
+    pinnMoveSize: pinnMovingWith ? Math.max((pinnCurrentProb && pinnOpenProb) ? Math.abs(pinnCurrentProb - pinnOpenProb) : 0, 0.02) : (pinnCurrentProb && pinnOpenProb) ? Math.abs(pinnCurrentProb - pinnOpenProb) : 0,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     oppSharpCount: oppSharpFeatures.conWalletCount,
     lockRawScore: lockRawScoreRef.current,
@@ -3836,7 +3836,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
-    if (lastSyncedSpreadStars.current !== null && spreadSr.stars <= lastSyncedSpreadStars.current) return;
+    if (lastSyncedSpreadStars.current !== null && spreadSr.stars <= lastSyncedSpreadStars.current && !isSpreadLocked) return;
     const date = gameDate(commenceTime);
     syncSpreadPickToFirebase({
       date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
@@ -3965,7 +3965,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
-    if (lastSyncedTotalStars.current !== null && totalSr.stars <= lastSyncedTotalStars.current) return;
+    if (lastSyncedTotalStars.current !== null && totalSr.stars <= lastSyncedTotalStars.current && !isTotalLocked) return;
     const date = gameDate(commenceTime);
     syncTotalPickToFirebase({
       date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
