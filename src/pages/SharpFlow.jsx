@@ -3653,7 +3653,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       lockStarsRef.current = null;
       lockRawScoreRef.current = null;
     }
-    if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current) return;
+    if (lastSyncedStars.current !== null && sr.stars <= lastSyncedStars.current && !isLocked) return;
     const date = gameDate(commenceTime);
     syncPickToFirebase({
       date, sport: gd.sport, gameKey: gd.key, away: gd.away, home: gd.home,
