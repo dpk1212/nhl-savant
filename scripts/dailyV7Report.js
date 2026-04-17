@@ -49,7 +49,7 @@ function initFirebase() {
 const db = initFirebase();
 
 const V7_LIVE_DATE = '2026-04-06';
-const V7_REGIME_DATE = '2026-04-15';
+const V7_REGIME_DATE = '2026-04-16';
 
 const V7_STATS = {
   avgBet:       { mean: 4162.2509, std: 7251.2948, lo: 216, hi: 24028.625 },
