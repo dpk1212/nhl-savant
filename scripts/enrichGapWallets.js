@@ -207,8 +207,9 @@ async function run() {
     try {
       const profile = await buildProfile(gw.addr);
       const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
-      const totalPnl = gw.aggSportPnl;
       const vol = profile.sportInvested || 0;
+      const realizedPnl = Object.values(profile.perSport || {}).reduce((s, ps) => s + (ps.pnl || 0), 0);
+      const totalPnl = realizedPnl || 0;
       const roi = vol > 0 ? +((totalPnl / vol) * 100).toFixed(1) : 0;
 
       existingWallets[gw.addr] = {

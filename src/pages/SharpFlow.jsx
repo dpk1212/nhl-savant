@@ -5727,6 +5727,8 @@ export default function SharpFlow() {
   const [vaultSportFilter, setVaultSportFilter] = useState('ALL');
   const [vaultSortMode, setVaultSortMode] = useState('pnl');
   const [expandedVaultRow, setExpandedVaultRow] = useState(null);
+  const [showConvergence, setShowConvergence] = useState(true);
+  const [actionSortMode, setActionSortMode] = useState('size');
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
   const [sortBy, setSortBy] = useState('stars');
@@ -6032,8 +6034,47 @@ export default function SharpFlow() {
     const activeCount = entries.filter(e => todayPositions[e.wallet.toLowerCase()]?.length > 0).length;
     const combinedPnl = entries.reduce((s, e) => s + e.sportPnlTotal, 0);
 
-    return { entries, todayPositions, convergences, activeCount, combinedPnl };
-  }, [sportsSharps, sharpPositions, intelExcludedSet]);
+    const actionPositions = [];
+    const posFiles = [
+      { data: sharpPositions, mkt: 'ML' },
+      { data: spreadPositions, mkt: 'SPREAD' },
+      { data: totalPositions, mkt: 'TOTAL' },
+    ];
+    for (const { data: posData, mkt } of posFiles) {
+      if (!posData) continue;
+      for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+        const sportGames = posData[sport] || {};
+        for (const [gameKey, gd] of Object.entries(sportGames)) {
+          if (!gd.positions) continue;
+          for (const pos of gd.positions) {
+            const wLower = pos.wallet?.toLowerCase();
+            if (!wLower) continue;
+            if (intelExcludedSet?.has(wLower)) continue;
+            const avgBet = pos.avgSportBet || 0;
+            if (avgBet > 0 && pos.invested < avgBet * 0.75) continue;
+            const teamName = pos.side === 'home' || pos.side === 'over'
+              ? (pos.side === 'over' ? 'Over' : gd.home)
+              : (pos.side === 'under' ? 'Under' : gd.away);
+            const mult = avgBet > 0 ? pos.invested / avgBet : 0;
+            const displayRoi = Math.min(pos.sportROI || 0, 999.9);
+            actionPositions.push({
+              ...pos,
+              sport,
+              gameKey,
+              away: gd.away,
+              home: gd.home,
+              marketType: mkt,
+              teamName,
+              betMultiplier: mult,
+              displayRoi,
+            });
+          }
+        }
+      }
+    }
+
+    return { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions };
+  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet]);
 
   if (loading || authLoading || subLoading) {
     return (
@@ -6076,7 +6117,7 @@ export default function SharpFlow() {
         <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
       )}
       {viewMode === 'sharpVault' && !isFreeUser && vaultData && (() => {
-        const { entries, todayPositions, convergences, activeCount, combinedPnl } = vaultData;
+        const { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions } = vaultData;
         const SPORT_COLORS = { NBA: '#FF8C00', NHL: '#D4AF37', MLB: '#E31837', CBB: '#FF6B35', NFL: '#4CAF50' };
         const sportIcons = { NBA: '\u{1F3C0}', NHL: '\u{1F3D2}', MLB: '\u26BE', CBB: '\u{1F3C0}', NFL: '\u{1F3C8}' };
 
@@ -6142,18 +6183,37 @@ export default function SharpFlow() {
               </div>
             </div>
 
-            {/* Today's Convergence */}
-            {convergences.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem',
-                }}>
+            {/* Today's Convergence — Collapsible */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <button onClick={() => setShowConvergence(!showConvergence)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.625rem 0.875rem', borderRadius: '10px', cursor: 'pointer',
+                background: convergences.length > 0 ? 'rgba(212,175,55,0.04)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${convergences.length > 0 ? B.goldBorder : B.borderSubtle}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.gold }} />
                   <span style={{ ...T.label, color: B.gold, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Today's Convergence
                   </span>
+                  {convergences.length > 0 && (
+                    <span style={{
+                      ...T.micro, padding: '0.1rem 0.4rem', borderRadius: '4px',
+                      background: B.goldDim, color: B.gold, fontWeight: 800,
+                    }}>{convergences.length}</span>
+                  )}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {convergences.length === 0 && (
+                    <span style={{ ...T.micro, color: B.textMuted }}>No convergence detected</span>
+                  )}
+                  {showConvergence
+                    ? <ChevronUp size={14} color={B.gold} />
+                    : <ChevronDown size={14} color={B.gold} />}
+                </div>
+              </button>
+              {showConvergence && convergences.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.625rem' }}>
                   {convergences.map((c, ci) => (
                     <div key={ci} style={{
                       background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
@@ -6212,19 +6272,186 @@ export default function SharpFlow() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-            {convergences.length === 0 && (
-              <div style={{
-                textAlign: 'center', padding: '1.5rem', borderRadius: '12px',
-                background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-                border: `1px solid ${B.border}`, marginBottom: '1.5rem',
-              }}>
-                <Activity size={16} color={B.textMuted} style={{ marginBottom: '0.375rem', opacity: 0.5 }} />
-                <div style={{ ...T.label, color: B.textMuted }}>No elite convergence detected today</div>
-                <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.25rem' }}>Convergence fires when 2+ specialists align on the same side</div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* ─── Today's Action Feed ─── */}
+            {(() => {
+              const actionSortFns = {
+                size: (a, b) => (b.invested || 0) - (a.invested || 0),
+                roi: (a, b) => (b.displayRoi || 0) - (a.displayRoi || 0),
+                conviction: (a, b) => (b.betMultiplier || 0) - (a.betMultiplier || 0),
+              };
+              const sorted = [...(actionPositions || [])].sort(actionSortFns[actionSortMode] || actionSortFns.size);
+              const now = Date.now();
+
+              return (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.green }} />
+                      <span style={{ ...T.label, color: B.green, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        Today's Action
+                      </span>
+                      {sorted.length > 0 && (
+                        <span style={{
+                          ...T.micro, padding: '0.1rem 0.4rem', borderRadius: '4px',
+                          background: B.greenDim, color: B.green, fontWeight: 800,
+                        }}>{sorted.length}</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      {[
+                        { id: 'size', label: 'Size' },
+                        { id: 'roi', label: 'ROI' },
+                        { id: 'conviction', label: 'Conviction' },
+                      ].map(sm => (
+                        <button key={sm.id} onClick={() => setActionSortMode(sm.id)} style={{
+                          padding: '0.25rem 0.55rem', borderRadius: '5px', cursor: 'pointer',
+                          ...T.micro, fontWeight: 700, fontSize: '0.55rem',
+                          border: actionSortMode === sm.id ? `1px solid ${B.green}44` : `1px solid ${B.border}`,
+                          background: actionSortMode === sm.id ? `${B.green}18` : 'transparent',
+                          color: actionSortMode === sm.id ? B.green : B.textMuted,
+                          transition: 'all 0.2s ease',
+                        }}>{sm.label}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {sorted.length === 0 ? (
+                    <div style={{
+                      textAlign: 'center', padding: '1.5rem', borderRadius: '12px',
+                      background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                      border: `1px solid ${B.border}`,
+                    }}>
+                      <Activity size={16} color={B.textMuted} style={{ marginBottom: '0.375rem', opacity: 0.5 }} />
+                      <div style={{ ...T.label, color: B.textMuted }}>No meaningful sharp action detected today</div>
+                      <div style={{ ...T.micro, color: B.textSubtle, marginTop: '0.25rem' }}>Showing positions at 0.75x average bet size or higher</div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : sorted.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                      gap: '0.75rem',
+                    }}>
+                      {sorted.map((p, idx) => {
+                        const tc = p.tier === 'ELITE'
+                          ? { color: B.gold, bg: B.goldDim, accent: B.gold }
+                          : { color: B.green, bg: B.greenDim, accent: B.green };
+                        const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
+                        const ss = sportStyle(p.sport);
+                        const posColor = (p.pnl || 0) >= 0 ? B.green : B.red;
+                        const pnlColor = (p.totalPnl || 0) >= 0 ? B.green : B.red;
+                        const timeDiff = p.firstSeen ? now - new Date(p.firstSeen).getTime() : 0;
+                        const timeLabel = timeDiff > 0
+                          ? timeDiff < 3600000 ? `${Math.round(timeDiff / 60000)}m ago`
+                            : timeDiff < 86400000 ? `${Math.round(timeDiff / 3600000)}h ago`
+                            : `${Math.round(timeDiff / 86400000)}d ago`
+                          : '';
+
+                        return (
+                          <div key={`${p.wallet}_${p.gameKey}_${p.marketType}_${p.side}_${idx}`} style={{
+                            borderRadius: '12px', overflow: 'hidden',
+                            background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                            border: `1px solid ${B.borderSubtle}`,
+                          }}>
+                            <div style={{
+                              height: '3px',
+                              background: `linear-gradient(90deg, transparent, ${tc.accent}, transparent)`,
+                            }} />
+                            <div style={{ padding: '0.75rem 0.875rem' }}>
+                              {/* Row 1: Header — Sport, Tier, Rank, Wallet, Market, Time */}
+                              <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.25rem',
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                  <Badge color={ss.color} bg={ss.bg}>{ss.icon} {p.sport}</Badge>
+                                  <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                                  {rankGroup && (
+                                    <span style={{
+                                      ...T.tiny, padding: '0.1rem 0.35rem', borderRadius: '4px',
+                                      background: 'rgba(34,211,238,0.08)', color: '#22D3EE',
+                                      border: '1px solid rgba(34,211,238,0.2)',
+                                    }}>{rankGroup}</span>
+                                  )}
+                                  <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                                    ...{p.wallet.slice(-4)}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                  {p.marketType !== 'ML' && (
+                                    <span style={{
+                                      ...T.tiny, padding: '0.1rem 0.35rem', borderRadius: '4px',
+                                      background: p.marketType === 'SPREAD' ? 'rgba(139,92,246,0.1)' : 'rgba(245,158,11,0.1)',
+                                      color: p.marketType === 'SPREAD' ? '#8B5CF6' : '#F59E0B',
+                                      border: `1px solid ${p.marketType === 'SPREAD' ? 'rgba(139,92,246,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                                    }}>{p.marketType}</span>
+                                  )}
+                                  {timeLabel && (
+                                    <span style={{ ...T.micro, color: B.textSubtle, fontFeatureSettings: "'tnum'" }}>{timeLabel}</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Row 2: Bet details — Team, Size, Price, P&L, ROI, Multiplier */}
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+                                padding: '0.375rem 0.5rem', borderRadius: '6px',
+                                background: 'rgba(255,255,255,0.02)',
+                              }}>
+                                <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
+                                  {p.teamName}
+                                </span>
+                                <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                                  {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
+                                </span>
+                                <span style={{ ...T.micro, fontWeight: 700, color: posColor, fontFeatureSettings: "'tnum'" }}>
+                                  {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                                </span>
+                                {p.displayRoi > 0 && (
+                                  <span style={{
+                                    ...T.micro, padding: '0.05rem 0.3rem', borderRadius: '3px',
+                                    background: 'rgba(16,185,129,0.08)', color: B.green,
+                                    fontWeight: 700, fontFeatureSettings: "'tnum'",
+                                  }}>+{p.displayRoi.toFixed(1)}% ROI</span>
+                                )}
+                                {p.betMultiplier >= 1.5 && (
+                                  <span style={{
+                                    ...T.micro, padding: '0.05rem 0.3rem', borderRadius: '3px',
+                                    background: B.goldDim, color: B.gold,
+                                    fontWeight: 700, fontFeatureSettings: "'tnum'",
+                                  }}>{p.betMultiplier.toFixed(1)}x avg</span>
+                                )}
+                              </div>
+
+                              {/* Row 3: Profile — Matchup + Lifetime P&L */}
+                              <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                marginTop: '0.375rem', paddingTop: '0.375rem',
+                                borderTop: `1px solid ${B.borderSubtle}`,
+                              }}>
+                                <span style={{ ...T.micro, color: B.textMuted }}>
+                                  {p.away} <span style={{ opacity: 0.5 }}>vs</span> {p.home}
+                                </span>
+                                {p.totalPnl != null && p.totalPnl !== 0 && (
+                                  <span style={{ ...T.micro, fontWeight: 700, color: pnlColor, fontFeatureSettings: "'tnum'" }}>
+                                    {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)} sports P&L
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Sort Mode + Sport Filter + Leaderboard Header */}
             <div style={{ marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
