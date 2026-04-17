@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -5729,6 +5729,9 @@ export default function SharpFlow() {
   const [expandedVaultRow, setExpandedVaultRow] = useState(null);
   const [showConvergence, setShowConvergence] = useState(true);
   const [actionSortMode, setActionSortMode] = useState('size');
+  const [actionSportFilter, setActionSportFilter] = useState('ALL');
+  const [actionMarketFilter, setActionMarketFilter] = useState('ALL');
+  const [expandedActionCard, setExpandedActionCard] = useState(null);
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
   const [sortBy, setSortBy] = useState('stars');
@@ -6282,14 +6285,31 @@ export default function SharpFlow() {
                 roi: (a, b) => (b.displayRoi || 0) - (a.displayRoi || 0),
                 conviction: (a, b) => (b.betMultiplier || 0) - (a.betMultiplier || 0),
               };
-              const sorted = [...(actionPositions || [])].sort(actionSortFns[actionSortMode] || actionSortFns.size);
+              let filtered = [...(actionPositions || [])];
+              if (actionSportFilter !== 'ALL') filtered = filtered.filter(p => p.sport === actionSportFilter);
+              if (actionMarketFilter !== 'ALL') filtered = filtered.filter(p => p.marketType === actionMarketFilter);
+              const sorted = filtered.sort(actionSortFns[actionSortMode] || actionSortFns.size);
               const now = Date.now();
+
+              const sportCounts = {};
+              const mktCounts = {};
+              for (const ap of (actionPositions || [])) {
+                sportCounts[ap.sport] = (sportCounts[ap.sport] || 0) + 1;
+                mktCounts[ap.marketType] = (mktCounts[ap.marketType] || 0) + 1;
+              }
+
+              const MKT_STYLE = {
+                ML: { color: B.green, bg: B.greenDim, border: `${B.green}44` },
+                SPREAD: { color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.44)' },
+                TOTAL: { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.44)' },
+              };
 
               return (
                 <div style={{ marginBottom: '1.5rem' }}>
+                  {/* Header + Sort */}
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem',
+                    marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '3px', height: '14px', borderRadius: '2px', background: B.green }} />
@@ -6321,6 +6341,43 @@ export default function SharpFlow() {
                     </div>
                   </div>
 
+                  {/* Sport + Market Filters */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.75rem', alignItems: 'center' }}>
+                    {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => {
+                      const cnt = sp === 'ALL' ? (actionPositions || []).length : (sportCounts[sp] || 0);
+                      if (sp !== 'ALL' && cnt === 0) return null;
+                      const sc = SPORT_COLORS[sp] || B.green;
+                      const isActive = actionSportFilter === sp;
+                      return (
+                        <button key={sp} onClick={() => setActionSportFilter(sp)} style={{
+                          padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                          ...T.micro, fontWeight: 700, fontSize: '0.55rem',
+                          border: isActive ? `1px solid ${sc}44` : `1px solid ${B.border}`,
+                          background: isActive ? `${sc}18` : 'transparent',
+                          color: isActive ? sc : B.textMuted,
+                          transition: 'all 0.2s ease',
+                        }}>{sp} <span style={{ opacity: 0.6 }}>({cnt})</span></button>
+                      );
+                    })}
+                    <div style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.15rem' }} />
+                    {['ALL', 'ML', 'SPREAD', 'TOTAL'].map(mk => {
+                      const cnt = mk === 'ALL' ? (actionPositions || []).length : (mktCounts[mk] || 0);
+                      if (mk !== 'ALL' && cnt === 0) return null;
+                      const ms = MKT_STYLE[mk] || { color: B.green, bg: B.greenDim, border: `${B.green}44` };
+                      const isActive = actionMarketFilter === mk;
+                      return (
+                        <button key={mk} onClick={() => setActionMarketFilter(mk)} style={{
+                          padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                          ...T.micro, fontWeight: 700, fontSize: '0.55rem',
+                          border: isActive ? `1px solid ${ms.border}` : `1px solid ${B.border}`,
+                          background: isActive ? ms.bg : 'transparent',
+                          color: isActive ? ms.color : B.textMuted,
+                          transition: 'all 0.2s ease',
+                        }}>{mk} <span style={{ opacity: 0.6 }}>({cnt})</span></button>
+                      );
+                    })}
+                  </div>
+
                   {sorted.length === 0 ? (
                     <div style={{
                       textAlign: 'center', padding: '1.5rem', borderRadius: '12px',
@@ -6338,9 +6395,13 @@ export default function SharpFlow() {
                       gap: '0.75rem',
                     }}>
                       {sorted.map((p, idx) => {
+                        const cardKey = `${p.wallet}_${p.gameKey}_${p.marketType}_${p.side}`;
+                        const isExpanded = expandedActionCard === cardKey;
                         const tc = p.tier === 'ELITE'
                           ? { color: B.gold, bg: B.goldDim, accent: B.gold }
-                          : { color: B.green, bg: B.greenDim, accent: B.green };
+                          : p.tier === 'PROVEN'
+                            ? { color: B.green, bg: B.greenDim, accent: B.green }
+                            : { color: B.green, bg: B.greenDim, accent: B.green };
                         const rankGroup = groupedSportsRankLabel(p.leaderboardRank);
                         const ss = sportStyle(p.sport);
                         const posColor = (p.pnl || 0) >= 0 ? B.green : B.red;
@@ -6352,98 +6413,656 @@ export default function SharpFlow() {
                             : `${Math.round(timeDiff / 86400000)}d ago`
                           : '';
 
+                        const pinnGame = pinnacleHistory?.[p.sport]?.[p.gameKey];
+
+                        let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null, allBooks = {}, spreadLine = null, totalLine = null;
+                        if (pinnGame) {
+                          if (p.marketType === 'ML') {
+                            pinnOdds = p.side === 'away' ? pinnGame.current?.away : pinnGame.current?.home;
+                            bestRetail = p.side === 'away' ? pinnGame.bestAway : pinnGame.bestHome;
+                            bestBook = p.side === 'away' ? pinnGame.bestAwayBook : pinnGame.bestHomeBook;
+                            allBooks = pinnGame.allBooks || {};
+                          } else if (p.marketType === 'SPREAD') {
+                            pinnOdds = p.side === 'away' ? pinnGame.spreadCurrent?.awayOdds : pinnGame.spreadCurrent?.homeOdds;
+                            spreadLine = p.side === 'away' ? pinnGame.spreadCurrent?.awayLine : pinnGame.spreadCurrent?.homeLine;
+                            bestRetail = p.side === 'away' ? pinnGame.bestAwaySpread?.odds : pinnGame.bestHomeSpread?.odds;
+                            bestBook = p.side === 'away' ? pinnGame.bestAwaySpread?.book : pinnGame.bestHomeSpread?.book;
+                          } else {
+                            pinnOdds = p.side === 'over' ? pinnGame.totalCurrent?.overOdds : pinnGame.totalCurrent?.underOdds;
+                            totalLine = pinnGame.totalCurrent?.line;
+                            bestRetail = p.side === 'over' ? pinnGame.bestOverTotal?.odds : pinnGame.bestUnderTotal?.odds;
+                            bestBook = p.side === 'over' ? pinnGame.bestOverTotal?.book : pinnGame.bestUnderTotal?.book;
+                          }
+                          const pinnProb = impliedProb(pinnOdds);
+                          const retailProb = impliedProb(bestRetail);
+                          evEdge = (pinnProb && retailProb) ? +((pinnProb - retailProb) * 100).toFixed(1) : null;
+                        }
+                        const hasEV = evEdge != null && evEdge > 0;
+
+                        const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
+                        const teamDisplay = `${p.teamName}${spreadLine != null ? ` ${spreadLine > 0 ? '+' : ''}${spreadLine}` : ''}`;
+                        const isHighConviction = p.betMultiplier >= 3;
+                        const boxAccentColor = hasEV ? B.green : isHighConviction ? B.gold : tc.accent;
+                        const boxBg = hasEV
+                          ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.02) 100%)'
+                          : isHighConviction
+                            ? 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)'
+                            : `linear-gradient(135deg, ${tc.bg} 0%, rgba(255,255,255,0.01) 100%)`;
+                        const boxBorder = hasEV ? 'rgba(16,185,129,0.25)' : isHighConviction ? 'rgba(212,175,55,0.2)' : B.borderSubtle;
+                        const boxLabel = hasEV ? 'EV OPPORTUNITY' : isHighConviction ? 'HIGH CONVICTION' : 'SHARP POSITION';
+
                         return (
-                          <div key={`${p.wallet}_${p.gameKey}_${p.marketType}_${p.side}_${idx}`} style={{
-                            borderRadius: '12px', overflow: 'hidden',
-                            background: `linear-gradient(135deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-                            border: `1px solid ${B.borderSubtle}`,
+                          <div key={`${cardKey}_${idx}`} style={{
+                            borderRadius: '14px', overflow: 'hidden',
+                            background: `linear-gradient(145deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
+                            border: `1px solid ${hasEV ? `${B.green}35` : B.borderSubtle}`,
                           }}>
                             <div style={{
                               height: '3px',
-                              background: `linear-gradient(90deg, transparent, ${tc.accent}, transparent)`,
+                              background: `linear-gradient(90deg, transparent 0%, ${boxAccentColor}88 30%, ${boxAccentColor} 50%, ${boxAccentColor}88 70%, transparent 100%)`,
                             }} />
-                            <div style={{ padding: '0.75rem 0.875rem' }}>
-                              {/* Row 1: Header — Sport, Tier, Rank, Wallet, Market, Time */}
-                              <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.25rem',
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                                  <Badge color={ss.color} bg={ss.bg}>{ss.icon} {p.sport}</Badge>
-                                  <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
-                                  {rankGroup && (
-                                    <span style={{
-                                      ...T.tiny, padding: '0.1rem 0.35rem', borderRadius: '4px',
-                                      background: 'rgba(34,211,238,0.08)', color: '#22D3EE',
-                                      border: '1px solid rgba(34,211,238,0.2)',
-                                    }}>{rankGroup}</span>
-                                  )}
-                                  <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
-                                    ...{p.wallet.slice(-4)}
-                                  </span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                  {p.marketType !== 'ML' && (
-                                    <span style={{
-                                      ...T.tiny, padding: '0.1rem 0.35rem', borderRadius: '4px',
-                                      background: p.marketType === 'SPREAD' ? 'rgba(139,92,246,0.1)' : 'rgba(245,158,11,0.1)',
-                                      color: p.marketType === 'SPREAD' ? '#8B5CF6' : '#F59E0B',
-                                      border: `1px solid ${p.marketType === 'SPREAD' ? 'rgba(139,92,246,0.25)' : 'rgba(245,158,11,0.25)'}`,
-                                    }}>{p.marketType}</span>
-                                  )}
-                                  {timeLabel && (
-                                    <span style={{ ...T.micro, color: B.textSubtle, fontFeatureSettings: "'tnum'" }}>{timeLabel}</span>
-                                  )}
-                                </div>
-                              </div>
 
-                              {/* Row 2: Bet details — Team, Size, Price, P&L, ROI, Multiplier */}
-                              <div style={{
-                                display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
-                                padding: '0.375rem 0.5rem', borderRadius: '6px',
-                                background: 'rgba(255,255,255,0.02)',
-                              }}>
-                                <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
-                                  {p.teamName}
-                                </span>
-                                <span style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
-                                  {fmtVol(p.invested)} @ {Math.round(p.avgPrice * 100)}¢
-                                </span>
-                                <span style={{ ...T.micro, fontWeight: 700, color: posColor, fontFeatureSettings: "'tnum'" }}>
-                                  {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
-                                </span>
-                                {p.displayRoi > 0 && (
+                            {/* Header: Sport + Tier + Rank + Wallet + Time */}
+                            <div style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              padding: '0.625rem 0.875rem 0', flexWrap: 'wrap', gap: '0.3rem',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+                                <Badge color={ss.color} bg={ss.bg}>{ss.icon} {p.sport}</Badge>
+                                <Badge color={tc.color} bg={tc.bg}>{p.tier}</Badge>
+                                {rankGroup && (
                                   <span style={{
-                                    ...T.micro, padding: '0.05rem 0.3rem', borderRadius: '3px',
-                                    background: 'rgba(16,185,129,0.08)', color: B.green,
-                                    fontWeight: 700, fontFeatureSettings: "'tnum'",
-                                  }}>+{p.displayRoi.toFixed(1)}% ROI</span>
-                                )}
-                                {p.betMultiplier >= 1.5 && (
-                                  <span style={{
-                                    ...T.micro, padding: '0.05rem 0.3rem', borderRadius: '3px',
-                                    background: B.goldDim, color: B.gold,
-                                    fontWeight: 700, fontFeatureSettings: "'tnum'",
-                                  }}>{p.betMultiplier.toFixed(1)}x avg</span>
+                                    ...T.tiny, padding: '0.1rem 0.4rem', borderRadius: '4px',
+                                    background: 'rgba(34,211,238,0.08)', color: '#22D3EE',
+                                    border: '1px solid rgba(34,211,238,0.2)', fontWeight: 700,
+                                  }}>{rankGroup}</span>
                                 )}
                               </div>
-
-                              {/* Row 3: Profile — Matchup + Lifetime P&L */}
-                              <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                marginTop: '0.375rem', paddingTop: '0.375rem',
-                                borderTop: `1px solid ${B.borderSubtle}`,
-                              }}>
-                                <span style={{ ...T.micro, color: B.textMuted }}>
-                                  {p.away} <span style={{ opacity: 0.5 }}>vs</span> {p.home}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", opacity: 0.6 }}>
+                                  ...{p.wallet.slice(-4)}
                                 </span>
-                                {p.totalPnl != null && p.totalPnl !== 0 && (
-                                  <span style={{ ...T.micro, fontWeight: 700, color: pnlColor, fontFeatureSettings: "'tnum'" }}>
-                                    {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)} sports P&L
-                                  </span>
+                                {timeLabel && (
+                                  <span style={{ ...T.micro, color: B.textSubtle, fontFeatureSettings: "'tnum'" }}>{timeLabel}</span>
                                 )}
                               </div>
                             </div>
+
+                            {/* ─── Story Box ─── */}
+                            <div style={{ padding: '0.5rem 0.875rem 0' }}>
+                              <div style={{
+                                padding: '0.625rem 0.75rem', borderRadius: '10px',
+                                background: boxBg,
+                                border: `1px solid ${boxBorder}`,
+                              }}>
+                                {/* Story header: label + badges */}
+                                <div style={{
+                                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                  marginBottom: '0.35rem',
+                                }}>
+                                  <span style={{ ...T.label, fontWeight: 800, color: boxAccentColor, letterSpacing: '0.03em' }}>
+                                    {boxLabel}
+                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    {hasEV && (
+                                      <span style={{
+                                        ...T.body, fontWeight: 900, color: B.green,
+                                        padding: '0.15rem 0.5rem', borderRadius: '5px',
+                                        background: B.greenDim, fontFeatureSettings: "'tnum'",
+                                      }}>+{evEdge}% EV</span>
+                                    )}
+                                    {p.betMultiplier >= 1.5 && (
+                                      <span style={{
+                                        ...T.micro, fontWeight: 800, color: B.gold,
+                                        padding: '0.15rem 0.45rem', borderRadius: '5px',
+                                        background: B.goldDim, fontFeatureSettings: "'tnum'",
+                                      }}>{p.betMultiplier.toFixed(1)}x avg</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Narrative */}
+                                <div style={{ ...T.micro, color: B.textSec, lineHeight: 1.55 }}>
+                                  {p.tier} bettor{rankGroup ? ` (${rankGroup})` : ''} invested <span style={{ color: B.gold, fontWeight: 700 }}>{fmtVol(p.invested)}</span> on {teamDisplay} {mktLabel}{p.betMultiplier >= 1.5 ? ` — ${p.betMultiplier.toFixed(1)}x their average bet size` : ''}.{hasEV ? <> Best price <span style={{ color: B.green, fontWeight: 700 }}>{fmtOdds(bestRetail)}</span> at {bestBook} vs Pinnacle fair value {fmtOdds(pinnOdds)}.</> : ''}{(p.totalPnl || 0) > 0 ? <> Combined <span style={{ color: B.green, fontWeight: 700 }}>+{fmtVol(p.totalPnl)}</span> sports P&L.</> : ''}
+                                </div>
+
+                                {/* Structured Bet Block: Team on left, Price on right */}
+                                <div
+                                  onClick={(e) => { e.stopPropagation(); setExpandedActionCard(isExpanded ? null : cardKey); }}
+                                  style={{
+                                    display: 'grid', gridTemplateColumns: pinnOdds ? '1fr auto 1fr' : '1fr',
+                                    gap: '0.5rem', alignItems: 'center',
+                                    marginTop: '0.5rem', paddingTop: '0.5rem',
+                                    borderTop: `1px solid ${boxBorder}`,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>
+                                      Betting on
+                                    </div>
+                                    <div style={{ ...T.heading, fontWeight: 900, color: B.text, fontSize: '1rem' }}>
+                                      {teamDisplay} {mktLabel}
+                                    </div>
+                                    <div style={{ ...T.micro, color: B.textMuted, marginTop: '0.1rem' }}>
+                                      {p.away} vs {p.home}
+                                    </div>
+                                  </div>
+                                  {pinnOdds && (
+                                    <>
+                                      <div style={{ width: '1px', height: '36px', background: boxBorder }} />
+                                      <div style={{ textAlign: 'right' }}>
+                                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>
+                                          {hasEV ? 'BEST PRICE' : 'FAIR VALUE'}
+                                        </div>
+                                        <div style={{
+                                          ...T.heading, fontWeight: 900, fontSize: '1rem',
+                                          color: hasEV ? B.green : B.text,
+                                          fontFeatureSettings: "'tnum'",
+                                        }}>
+                                          {fmtOdds(hasEV && bestRetail ? bestRetail : pinnOdds)}
+                                        </div>
+                                        <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem' }}>
+                                          {hasEV ? (bestBook || 'Best Retail') : 'Pinnacle'}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Signal chips row */}
+                            <div style={{
+                              display: 'flex', gap: '0.35rem', flexWrap: 'wrap',
+                              padding: '0.5rem 0.875rem 0',
+                            }}>
+                              <span style={{
+                                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                background: B.goldDim, color: B.gold, fontWeight: 600,
+                              }}>
+                                {fmtVol(p.invested)} invested
+                              </span>
+                              <span style={{
+                                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                fontWeight: 600,
+                                background: p.displayRoi > 0 ? B.greenDim : p.displayRoi < 0 ? B.redDim : 'rgba(255,255,255,0.04)',
+                                color: p.displayRoi > 0 ? B.green : p.displayRoi < 0 ? B.red : B.textSec,
+                              }}>
+                                {p.displayRoi > 0 ? '+' : ''}{p.displayRoi.toFixed(1)}% ROI
+                              </span>
+                              <span style={{
+                                ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                fontWeight: 600,
+                                background: 'rgba(255,255,255,0.04)', color: B.textSec,
+                              }}>
+                                @ {Math.round(p.avgPrice * 100)}¢
+                              </span>
+                              {(p.pnl || 0) !== 0 && (
+                                <span style={{
+                                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                  fontWeight: 700, fontFeatureSettings: "'tnum'",
+                                  background: posColor === B.green ? B.greenDim : B.redDim,
+                                  color: posColor,
+                                }}>
+                                  P&L: {p.pnl >= 0 ? '+' : ''}{fmtVol(p.pnl)}
+                                </span>
+                              )}
+                              {hasEV && (
+                                <span style={{
+                                  ...T.micro, padding: '0.15rem 0.45rem', borderRadius: '4px',
+                                  background: B.greenDim, color: B.green, fontWeight: 700,
+                                }}>
+                                  +{evEdge}% edge
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Footer: Lifetime + expand toggle */}
+                            <div
+                              onClick={() => setExpandedActionCard(isExpanded ? null : cardKey)}
+                              style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '0.45rem 0.875rem 0.625rem',
+                                marginTop: '0.35rem',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                {p.totalPnl != null && p.totalPnl !== 0 && (
+                                  <span style={{
+                                    ...T.micro, fontWeight: 700, color: pnlColor, fontFeatureSettings: "'tnum'",
+                                  }}>
+                                    {p.totalPnl >= 0 ? '+' : ''}{fmtVol(p.totalPnl)} lifetime sports P&L
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: '0.25rem',
+                                ...T.micro, color: B.textMuted, fontSize: '0.575rem',
+                              }}>
+                                <span>{isExpanded ? 'Less' : 'Book Prices'}</span>
+                                <ChevronDown size={11} color={B.textMuted} style={{
+                                  transform: isExpanded ? 'rotate(180deg)' : 'none',
+                                  transition: 'transform 0.2s ease',
+                                }} />
+                              </div>
+                            </div>
+
+                            {/* ─── Expanded: Chart + Book Prices + Pinnacle + EV ─── */}
+                            {isExpanded && pinnGame && (
+                              <div style={{
+                                padding: '0 0.875rem 0.75rem',
+                                borderTop: `1px solid ${B.borderSubtle}`,
+                              }}>
+                                {/* ─── Pinnacle Timeline Chart ─── */}
+                                {(() => {
+                                  const hist = p.marketType === 'ML'
+                                    ? (pinnGame.history || [])
+                                    : p.marketType === 'SPREAD'
+                                      ? (pinnGame.spreadHistory || [])
+                                      : (pinnGame.totalHistory || []);
+                                  if (hist.length < 2) return null;
+
+                                  const getOdds = (h) => {
+                                    if (p.marketType === 'ML') return p.side === 'away' ? h.away : h.home;
+                                    if (p.marketType === 'SPREAD') return p.side === 'away' ? h.awayOdds : h.homeOdds;
+                                    return p.side === 'over' ? h.overOdds : h.underOdds;
+                                  };
+                                  const getLine = (h) => {
+                                    if (p.marketType === 'SPREAD') return p.side === 'away' ? h.awayLine : h.homeLine;
+                                    if (p.marketType === 'TOTAL') return h.line;
+                                    return null;
+                                  };
+
+                                  const polyGame = polyData?.[p.sport]?.[p.gameKey];
+                                  const allWhaleTrades = polyGame?.whales?.topTrades || [];
+                                  const whaleTrades = allWhaleTrades.filter(w => {
+                                    const tradeSide = resolveOutcomeSide(w.outcome, p.away, p.home);
+                                    const sharpSide = p.side;
+                                    if (w.side === 'BUY') return tradeSide === sharpSide;
+                                    return tradeSide !== sharpSide;
+                                  });
+
+                                  const allGamePositions = [];
+                                  const posSource = p.marketType === 'ML' ? sharpPositions : p.marketType === 'SPREAD' ? spreadPositions : totalPositions;
+                                  const gameData = posSource?.[p.sport]?.[p.gameKey];
+                                  if (gameData?.positions) {
+                                    for (const pos of gameData.positions) {
+                                      if (pos.firstSeen && pos.wallet?.toLowerCase() === p.wallet?.toLowerCase()) {
+                                        allGamePositions.push({
+                                          ts: new Date(pos.firstSeen).getTime(),
+                                          invested: pos.invested || 0,
+                                          wallet: pos.wallet,
+                                          side: pos.side,
+                                          isCurrentWallet: true,
+                                        });
+                                      }
+                                    }
+                                  }
+
+                                  const pinnTMin = hist[0].t * 1000;
+                                  const pinnTMax = hist[hist.length - 1].t * 1000;
+
+                                  const allTimestamps = [pinnTMin, pinnTMax];
+                                  for (const w of whaleTrades) { if (w.ts) allTimestamps.push(w.ts); }
+                                  for (const sp of allGamePositions) { if (sp.ts) allTimestamps.push(sp.ts); }
+                                  const tMin = Math.min(...allTimestamps);
+                                  const tMax = Math.max(...allTimestamps);
+
+                                  const openOdds = getOdds(hist[0]);
+                                  const openProb = impliedProb(openOdds);
+                                  const openProbPct = openProb ? +(openProb * 100).toFixed(1) : null;
+
+                                  const prePinnTrades = whaleTrades.filter(w => (w.ts || 0) < pinnTMin);
+                                  const prePoints = [];
+                                  if (tMin < pinnTMin) {
+                                    const preBucketSize = Math.max((pinnTMin - tMin) / Math.max(prePinnTrades.length, 3), 600000);
+                                    const preBuckets = {};
+                                    for (const w of prePinnTrades) {
+                                      const bi = Math.floor((w.ts - tMin) / preBucketSize);
+                                      preBuckets[bi] = (preBuckets[bi] || 0) + (w.amount || 0);
+                                    }
+                                    const preSlots = new Set([0, ...Object.keys(preBuckets).map(Number)]);
+                                    for (const bi of [...preSlots].sort((a, b) => a - b)) {
+                                      const ts = tMin + bi * preBucketSize;
+                                      prePoints.push({
+                                        ts, odds: openOdds, prob: openProbPct,
+                                        line: getLine(hist[0]),
+                                        vol: preBuckets[bi] || 0,
+                                        label: new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                                      });
+                                    }
+                                  }
+
+                                  const pinnPoints = hist.map((h) => {
+                                    const ts = h.t * 1000;
+                                    const odds = getOdds(h);
+                                    const prob = impliedProb(odds);
+                                    return {
+                                      ts, odds,
+                                      prob: prob ? +(prob * 100).toFixed(1) : null,
+                                      line: getLine(h),
+                                      vol: 0,
+                                      label: new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                                    };
+                                  });
+
+                                  for (const w of whaleTrades) {
+                                    const wTs = w.ts || 0;
+                                    if (wTs >= pinnTMin) {
+                                      let closest = 0;
+                                      let closestDist = Infinity;
+                                      for (let i = 0; i < pinnPoints.length; i++) {
+                                        const dist = Math.abs(pinnPoints[i].ts - wTs);
+                                        if (dist < closestDist) { closestDist = dist; closest = i; }
+                                      }
+                                      pinnPoints[closest].vol += w.amount || 0;
+                                    }
+                                  }
+
+                                  const chartData = [...prePoints, ...pinnPoints];
+                                  const maxVol = Math.max(...chartData.map(d => d.vol), 1);
+
+                                  const sharpMarkers = allGamePositions;
+
+                                  const probMin = Math.min(...chartData.filter(d => d.prob != null).map(d => d.prob));
+                                  const probMax = Math.max(...chartData.filter(d => d.prob != null).map(d => d.prob));
+                                  const probPad = Math.max((probMax - probMin) * 0.15, 2);
+
+                                  const CustomTooltip = ({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const d = payload[0]?.payload;
+                                    if (!d) return null;
+                                    return (
+                                      <div style={{
+                                        background: B.card, border: `1px solid ${B.border}`, borderRadius: '8px',
+                                        padding: '0.4rem 0.6rem', boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                                      }}>
+                                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>{d.label}</div>
+                                        <div style={{ ...T.micro, fontWeight: 800, color: B.gold, fontFeatureSettings: "'tnum'" }}>
+                                          {fmtOdds(d.odds)} ({d.prob}%)
+                                        </div>
+                                        {d.line != null && (
+                                          <div style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                                            Line: {d.line > 0 ? '+' : ''}{d.line}
+                                          </div>
+                                        )}
+                                        {d.vol > 0 && (
+                                          <div style={{ ...T.micro, color: '#22D3EE', fontFeatureSettings: "'tnum'" }}>
+                                            Vol: {fmtVol(d.vol)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  };
+
+                                  return (
+                                    <div style={{
+                                      marginTop: '0.625rem', borderRadius: '8px',
+                                      background: 'rgba(255,255,255,0.02)',
+                                      border: `1px solid ${B.borderSubtle}`,
+                                      overflow: 'hidden',
+                                    }}>
+                                      <div style={{
+                                        padding: '0.4rem 0.625rem',
+                                        borderBottom: `1px solid ${B.borderSubtle}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                      }}>
+                                        <span style={{ ...T.micro, color: B.gold, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                          Price Movement — {p.teamName} {mktLabel}
+                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                            <div style={{ width: 8, height: 2, background: B.gold, borderRadius: 1 }} />
+                                            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Pinnacle</span>
+                                          </div>
+                                          {whaleTrades.length > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                              <div style={{ width: 6, height: 6, background: 'rgba(34,211,238,0.35)', borderRadius: 1 }} />
+                                              <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Volume</span>
+                                            </div>
+                                          )}
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                            <div style={{ width: 6, height: 6, background: B.green, borderRadius: '50%' }} />
+                                            <span style={{ ...T.micro, color: B.textMuted, fontSize: '0.5rem' }}>Sharp Entry</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div style={{ padding: '0.25rem 0.25rem 0 0.25rem' }}>
+                                        <ResponsiveContainer width="100%" height={150}>
+                                          <ComposedChart data={chartData} margin={{ top: 12, right: 8, bottom: 0, left: 4 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke={B.borderSubtle} vertical={false} />
+                                            <XAxis
+                                              dataKey="label" tick={{ fill: B.textMuted, fontSize: 9 }}
+                                              axisLine={{ stroke: B.borderSubtle }} tickLine={false}
+                                              interval={Math.max(0, Math.floor(chartData.length / 5) - 1)}
+                                            />
+                                            <YAxis
+                                              yAxisId="prob" domain={[Math.floor(probMin - probPad), Math.ceil(probMax + probPad)]}
+                                              tick={{ fill: B.gold, fontSize: 9, fontWeight: 700 }}
+                                              axisLine={false} tickLine={false} width={32}
+                                              tickFormatter={v => `${v}%`}
+                                            />
+                                            <YAxis
+                                              yAxisId="vol" orientation="right" hide
+                                              domain={[0, maxVol * 3]}
+                                            />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Bar yAxisId="vol" dataKey="vol" radius={[2, 2, 0, 0]} maxBarSize={12}>
+                                              {chartData.map((d, i) => (
+                                                <Cell key={i} fill={d.vol > 0 ? 'rgba(34,211,238,0.25)' : 'transparent'} />
+                                              ))}
+                                            </Bar>
+                                            <Line
+                                              yAxisId="prob" type="monotone" dataKey="prob"
+                                              stroke={B.gold} strokeWidth={2} dot={false}
+                                              activeDot={{ r: 3, fill: B.gold, stroke: B.card, strokeWidth: 2 }}
+                                            />
+                                            {sharpMarkers.map((sm, si) => {
+                                              const closest = chartData.reduce((best, d) =>
+                                                Math.abs(d.ts - sm.ts) < Math.abs(best.ts - sm.ts) ? d : best
+                                              , chartData[0]);
+                                              if (!closest || closest.prob == null) return null;
+                                              const dotSize = Math.max(4, Math.min(10, Math.sqrt(sm.invested / 1000) * 2));
+                                              return (
+                                                <ReferenceDot
+                                                  key={si} yAxisId="prob"
+                                                  x={closest.label} y={closest.prob}
+                                                  r={dotSize}
+                                                  fill={sm.isCurrentWallet ? B.green : 'rgba(16,185,129,0.5)'}
+                                                  stroke={sm.isCurrentWallet ? '#fff' : B.green}
+                                                  strokeWidth={sm.isCurrentWallet ? 2 : 1}
+                                                  isFront
+                                                />
+                                              );
+                                            })}
+                                          </ComposedChart>
+                                        </ResponsiveContainer>
+                                      </div>
+                                      {/* Open → Now + sharp entries labels */}
+                                      <div style={{
+                                        padding: '0.25rem 0.625rem 0.5rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        flexWrap: 'wrap', gap: '0.3rem',
+                                      }}>
+                                        <div style={{ ...T.micro, color: B.textSec, fontFeatureSettings: "'tnum'" }}>
+                                          <span style={{ color: B.gold, fontWeight: 700 }}>Pinnacle</span>{' '}
+                                          Open: {fmtOdds(getOdds(hist[0]))} → Now: {fmtOdds(getOdds(hist[hist.length - 1]))}
+                                          {pinnGame.movement?.direction && (
+                                            <span style={{
+                                              marginLeft: '0.4rem',
+                                              color: pinnGame.movement.direction === p.side ? B.green : B.red,
+                                              fontWeight: 700,
+                                            }}>
+                                              {pinnGame.movement.direction === p.side ? '✓ Moving with play' : '✗ Moving against'}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div style={{ ...T.micro, color: B.textMuted, display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                          {sharpMarkers.length > 0 && (
+                                            <span>{sharpMarkers.length} sharp entr{sharpMarkers.length === 1 ? 'y' : 'ies'} · {fmtVol(sharpMarkers.reduce((s, m) => s + m.invested, 0))}</span>
+                                          )}
+                                          {whaleTrades.length > 0 && (
+                                            <span style={{ color: '#22D3EE' }}>{whaleTrades.length} supporting whale trades · {fmtVol(whaleTrades.reduce((s, t) => s + (t.amount || 0), 0))}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* Pinnacle Fair Value */}
+                                <div style={{
+                                  marginTop: '0.625rem', borderRadius: '8px',
+                                  background: 'rgba(212,175,55,0.04)',
+                                  border: `1px solid ${B.gold}22`,
+                                  overflow: 'hidden',
+                                }}>
+                                  <div style={{
+                                    padding: '0.35rem 0.625rem',
+                                    borderBottom: `1px solid ${B.gold}18`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  }}>
+                                    <span style={{ ...T.micro, color: B.gold, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                      Pinnacle Fair Value
+                                    </span>
+                                    {hasEV && (
+                                      <span style={{
+                                        ...T.micro, padding: '0.1rem 0.4rem', borderRadius: '4px',
+                                        background: evEdge >= 3 ? B.greenDim : 'rgba(163,230,53,0.1)',
+                                        color: evEdge >= 3 ? B.green : '#A3E635',
+                                        fontWeight: 800, fontFeatureSettings: "'tnum'",
+                                      }}>+{evEdge}% EV Edge</span>
+                                    )}
+                                  </div>
+                                  <div style={{ padding: '0.5rem 0.625rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <div>
+                                      <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>Pinnacle</div>
+                                      <div style={{ ...T.sub, fontWeight: 900, color: B.gold, fontFeatureSettings: "'tnum'" }}>
+                                        {fmtOdds(pinnOdds)}
+                                      </div>
+                                      {pinnOdds && (
+                                        <div style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                                          {(impliedProb(pinnOdds) * 100).toFixed(1)}% implied
+                                        </div>
+                                      )}
+                                    </div>
+                                    {bestRetail && bestRetail !== pinnOdds && (
+                                      <div>
+                                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>Best Retail</div>
+                                        <div style={{ ...T.sub, fontWeight: 900, color: hasEV ? B.green : B.text, fontFeatureSettings: "'tnum'" }}>
+                                          {fmtOdds(bestRetail)}
+                                        </div>
+                                        <div style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
+                                          {bestBook || '—'}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {(spreadLine != null || totalLine != null) && (
+                                      <div>
+                                        <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>Line</div>
+                                        <div style={{ ...T.sub, fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'" }}>
+                                          {spreadLine != null ? `${spreadLine > 0 ? '+' : ''}${spreadLine}` : totalLine}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* All Book Prices (ML only — full allBooks grid) */}
+                                {p.marketType === 'ML' && Object.keys(allBooks).length > 1 && (
+                                  <div style={{
+                                    marginTop: '0.5rem', borderRadius: '8px',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                    overflow: 'hidden',
+                                  }}>
+                                    <div style={{
+                                      padding: '0.35rem 0.625rem',
+                                      borderBottom: `1px solid ${B.borderSubtle}`,
+                                    }}>
+                                      <span style={{ ...T.micro, color: B.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                        Book Prices — {p.teamName} ML
+                                      </span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                                      {Object.entries(allBooks)
+                                        .sort(([, a], [, b]) => {
+                                          const aO = p.side === 'away' ? a.away : a.home;
+                                          const bO = p.side === 'away' ? b.away : b.home;
+                                          return bO - aO;
+                                        })
+                                        .map(([key, book]) => {
+                                          const odds = p.side === 'away' ? book.away : book.home;
+                                          const isBest = odds === bestRetail && hasEV;
+                                          const isPinn = key === 'pinnacle';
+                                          return (
+                                            <div key={key} style={{
+                                              flex: '1 1 auto', minWidth: '70px',
+                                              padding: '0.4rem 0.5rem',
+                                              borderRight: `1px solid ${B.borderSubtle}`,
+                                              background: isBest ? B.greenDim : 'transparent',
+                                            }}>
+                                              <div style={{ ...T.micro, color: isPinn ? B.gold : B.textMuted, fontWeight: isPinn ? 700 : 400 }}>
+                                                {book.name}
+                                              </div>
+                                              <div style={{
+                                                ...T.caption, fontWeight: 700,
+                                                color: isBest ? B.green : isPinn ? B.gold : B.text,
+                                                fontFeatureSettings: "'tnum'",
+                                              }}>
+                                                {fmtOdds(odds)}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* EV Opportunity Summary */}
+                                {hasEV && (
+                                  <div style={{
+                                    marginTop: '0.5rem', padding: '0.45rem 0.625rem',
+                                    borderRadius: '8px',
+                                    background: `linear-gradient(135deg, ${B.greenDim} 0%, rgba(16,185,129,0.04) 100%)`,
+                                    border: `1px solid ${B.green}30`,
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                  }}>
+                                    <span style={{ fontSize: '0.75rem' }}>⚡</span>
+                                    <span style={{ ...T.micro, color: B.green, fontWeight: 700 }}>
+                                      +{evEdge}% EV opportunity at {bestBook || 'Best Retail'}
+                                    </span>
+                                    <span style={{ ...T.micro, color: B.textMuted }}>
+                                      — Pinnacle {fmtOdds(pinnOdds)} vs {bestBook || 'retail'} {fmtOdds(bestRetail)}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {!hasEV && !Object.keys(allBooks).length && (
+                                  <div style={{
+                                    marginTop: '0.5rem', padding: '0.4rem 0.625rem',
+                                    borderRadius: '8px', background: 'rgba(255,255,255,0.02)',
+                                    border: `1px solid ${B.borderSubtle}`,
+                                  }}>
+                                    <span style={{ ...T.micro, color: B.textMuted }}>
+                                      No retail book data available for this market
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {isExpanded && !pinnGame && (
+                              <div style={{
+                                padding: '0.5rem 0.875rem 0.75rem',
+                                borderTop: `1px solid ${B.borderSubtle}`,
+                              }}>
+                                <span style={{ ...T.micro, color: B.textMuted }}>
+                                  No Pinnacle data available for this game
+                                </span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
