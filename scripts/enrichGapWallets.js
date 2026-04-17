@@ -121,10 +121,12 @@ async function buildProfile(wallet) {
     if (invested > 0) sportInvested += invested;
     const realizedPnl = parseFloat(p.realizedPnl || '0');
 
+    const netPnl = realizedPnl - invested;
+
     if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0 };
     perSport[sport].bets++;
     perSport[sport].invested += invested;
-    perSport[sport].pnl += realizedPnl;
+    perSport[sport].pnl += netPnl;
 
     const curPrice = parseFloat(p.curPrice || '0.5');
     const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
@@ -208,9 +210,18 @@ async function run() {
       const profile = await buildProfile(gw.addr);
       const sportMarketCount = Object.values(profile.sportMarkets || {}).reduce((s, v) => s + v, 0);
       const vol = profile.sportInvested || 0;
-      const realizedPnl = Object.values(profile.perSport || {}).reduce((s, ps) => s + (ps.pnl || 0), 0);
-      const totalPnl = realizedPnl || 0;
+      const netPnlTotal = Object.values(profile.perSport || {}).reduce((s, ps) => s + (ps.pnl || 0), 0);
+      const totalPnl = netPnlTotal || 0;
       const roi = vol > 0 ? +((totalPnl / vol) * 100).toFixed(1) : 0;
+
+      if (roi <= 0) {
+        console.log(`SKIP — negative ROI (${roi}%) after enrichment`);
+        continue;
+      }
+      if (roi > 50) {
+        console.log(`SKIP — unrealistic ROI (${roi}%), likely bad data or tiny sample`);
+        continue;
+      }
 
       existingWallets[gw.addr] = {
         name: gw.name,
