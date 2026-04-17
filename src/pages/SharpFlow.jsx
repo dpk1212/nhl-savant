@@ -6462,15 +6462,20 @@ export default function SharpFlow() {
                           return impliedProb(curOdds) > impliedProb(openOdds);
                         })();
 
+                        const commenceTime = pinnGame?.commence ? new Date(pinnGame.commence).getTime() : null;
+                        const isLocked = commenceTime && now >= commenceTime;
+
                         return (
                           <div key={`${cardKey}_${idx}`} style={{
                             borderRadius: '14px', overflow: 'hidden',
                             background: `linear-gradient(145deg, ${B.card} 0%, ${B.cardAlt} 100%)`,
-                            border: `1px solid ${hasEV ? `${B.green}35` : B.borderSubtle}`,
+                            border: `1px solid ${isLocked ? 'rgba(99,102,241,0.35)' : hasEV ? `${B.green}35` : B.borderSubtle}`,
                           }}>
                             <div style={{
                               height: '3px',
-                              background: `linear-gradient(90deg, transparent 0%, ${boxAccentColor}88 30%, ${boxAccentColor} 50%, ${boxAccentColor}88 70%, transparent 100%)`,
+                              background: isLocked
+                                ? 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 30%, rgba(99,102,241,0.9) 50%, rgba(99,102,241,0.5) 70%, transparent 100%)'
+                                : `linear-gradient(90deg, transparent 0%, ${boxAccentColor}88 30%, ${boxAccentColor} 50%, ${boxAccentColor}88 70%, transparent 100%)`,
                             }} />
 
                             {/* ── Header: Matchup + Sport + Badges ── */}
@@ -6496,7 +6501,14 @@ export default function SharpFlow() {
                                 <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'", opacity: 0.6 }}>
                                   ...{p.wallet.slice(-4)}
                                 </span>
-                                {timeLabel && (
+                                {isLocked && (
+                                  <span style={{
+                                    ...T.micro, fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '5px',
+                                    color: '#818CF8', background: 'rgba(99,102,241,0.12)',
+                                    border: '1px solid rgba(99,102,241,0.25)', letterSpacing: '0.04em',
+                                  }}>🔒 LOCKED</span>
+                                )}
+                                {timeLabel && !isLocked && (
                                   <span style={{
                                     ...T.micro, fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px',
                                     fontFeatureSettings: "'tnum'", color: B.textSec, background: 'rgba(255,255,255,0.04)',
