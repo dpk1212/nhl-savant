@@ -6063,10 +6063,16 @@ export default function SharpFlow() {
         const sportGames = posData[sport] || {};
         for (const [gameKey, gd] of Object.entries(sportGames)) {
           if (!gd.positions) continue;
+          const gameCommence = polyData?.[sport]?.[gameKey]?.commence
+            ? new Date(polyData[sport][gameKey].commence).getTime()
+            : pinnacleHistory?.[sport]?.[gameKey]?.commence
+              ? new Date(pinnacleHistory[sport][gameKey].commence).getTime()
+              : null;
           for (const pos of gd.positions) {
             const wLower = pos.wallet?.toLowerCase();
             if (!wLower) continue;
             if (intelExcludedSet?.has(wLower)) continue;
+            if (gameCommence && pos.firstSeen && new Date(pos.firstSeen).getTime() >= gameCommence) continue;
             const avgBet = pos.avgSportBet || 0;
             if (avgBet <= 0) continue;
             if (pos.invested < avgBet * 0.75) continue;
@@ -6093,7 +6099,7 @@ export default function SharpFlow() {
     }
 
     return { entries, todayPositions, convergences, activeCount, combinedPnl, actionPositions };
-  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet]);
+  }, [sportsSharps, sharpPositions, spreadPositions, totalPositions, intelExcludedSet, polyData, pinnacleHistory]);
 
   if (loading || authLoading || subLoading) {
     return (

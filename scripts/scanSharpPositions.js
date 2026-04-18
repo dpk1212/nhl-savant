@@ -299,7 +299,7 @@ function buildTodaysGames(polyData) {
     for (const [key, g] of Object.entries(sportGames)) {
       const away = g.awayTeam || '';
       const home = g.homeTeam || '';
-      games[`${sport}:${key}`] = { sport, away, home, key, title: g.title || '' };
+      games[`${sport}:${key}`] = { sport, away, home, key, title: g.title || '', commence: g.commence || null };
     }
   }
   return games;
@@ -702,6 +702,9 @@ async function run() {
 
       const posKey = `${wallet.addr}_${match.key}_${side}_${marketType}`;
       const prevFirstSeen = prevPositions[posKey] || null;
+
+      const posFirstSeen = prevFirstSeen ? new Date(prevFirstSeen).getTime() : Date.now();
+      if (game.commence && posFirstSeen >= new Date(game.commence).getTime()) continue;
 
       const eff = effectiveTier(wallet.tier, wallet.addr, sport);
       targetResult[sport][match.key].positions.push({
