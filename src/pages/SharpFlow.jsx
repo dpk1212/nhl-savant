@@ -4017,15 +4017,16 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const lastHealthRef = useRef(null);
   useEffect(() => {
-    if (!wasEverLocked || isGameLive || !commenceTime) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
-    if (lastHealthRef.current === mlHealth.status) return;
+    if (!wasEverLocked || !commenceTime) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}`;
     const healthSide = lockedSideRef.current || consensusSide;
+    if (onHealthSynced) onHealthSynced(docId, healthSide, mlHealth);
+    if (isGameLive) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastHealthRef.current === mlHealth.status) return;
     lastHealthRef.current = mlHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
-    if (onHealthSynced) onHealthSynced(docId, healthSide, mlHealth);
   }, [wasEverLocked, mlHealth.status, sr.walletPlayScore]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
@@ -4153,14 +4154,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const lastSpreadHealthRef = useRef(null);
   useEffect(() => {
-    if (!spreadWasEverLocked || isGameLive || !commenceTime || !spreadConsensusSide) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
-    if (lastSpreadHealthRef.current === spreadHealth.status) return;
+    if (!spreadWasEverLocked || !commenceTime || !spreadConsensusSide) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}_spread`;
+    if (onHealthSynced) onHealthSynced(docId, spreadConsensusSide, spreadHealth);
+    if (isGameLive) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastSpreadHealthRef.current === spreadHealth.status) return;
     lastSpreadHealthRef.current = spreadHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
-    if (onHealthSynced) onHealthSynced(docId, spreadConsensusSide, spreadHealth);
   }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.walletPlayScore]);
 
   // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
@@ -4286,14 +4288,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   const lastTotalHealthRef = useRef(null);
   useEffect(() => {
-    if (!totalWasEverLocked || isGameLive || !commenceTime || !totalConsensusSide) return;
-    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
-    if (lastTotalHealthRef.current === totalHealth.status) return;
+    if (!totalWasEverLocked || !commenceTime || !totalConsensusSide) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}_total`;
+    if (onHealthSynced) onHealthSynced(docId, totalConsensusSide, totalHealth);
+    if (isGameLive) return;
+    if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
+    if (lastTotalHealthRef.current === totalHealth.status) return;
     lastTotalHealthRef.current = totalHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
-    if (onHealthSynced) onHealthSynced(docId, totalConsensusSide, totalHealth);
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
   const isActionable = sr.isActionable;
@@ -8268,6 +8271,35 @@ export default function SharpFlow() {
                     })}
                   </div>
 
+                  {/* Always render SharpPositionCards so health effects stay alive */}
+                  <div style={sortBy === 'locked' ? { display: 'none' } : undefined}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                      gap: '0.75rem',
+                    }}>
+                      {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => {
+                        const gdDocId = `${todayET()}_${gd.sport}_${gd.key}`;
+                        const gdLock = lockedPicks[gdDocId];
+                        const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
+                        const gdOriginalSide = gdActiveSideEntry?.[0] || null;
+                        const gdLockStars = gdActiveSideEntry?.[1]?.lock?.stars ?? null;
+                        const gdLockWPS = gdActiveSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
+                        const gdFlipBeatThreshold = gdLock?.flipBeatThreshold ?? null;
+                        const gdSpreadLock = lockedPicks[`${gdDocId}_spread`];
+                        const gdSpreadSideEntry = gdSpreadLock ? Object.entries(gdSpreadLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
+                        const gdSpreadLockStars = gdSpreadSideEntry?.[1]?.lock?.stars ?? null;
+                        const gdSpreadLockWPS = gdSpreadSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
+                        const gdTotalLock = lockedPicks[`${gdDocId}_total`];
+                        const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
+                        const gdTotalLockStars = gdTotalSideEntry?.[1]?.lock?.stars ?? null;
+                        const gdTotalLockWPS = gdTotalSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
+                        return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} />;
+                      })}
+                    </div>
+                    {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
+                  </div>
+
                   {sortBy === 'locked' && isFreeUser ? (
                     <SharpFlowPaywall isMobile={isMobile} pnlData={allTimePnL} />
                   ) : sortBy === 'locked' ? (() => {
@@ -8534,35 +8566,7 @@ export default function SharpFlow() {
                             </>
                           )}
                         </div>
-                      ) : (
-                        <>
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : allPosGames.length === 1 ? '1fr' : 'repeat(2, 1fr)',
-                            gap: '0.75rem',
-                          }}>
-                            {(isFreeUser ? allPosGames.slice(0, 1) : allPosGames).map(gd => {
-                              const gdDocId = `${todayET()}_${gd.sport}_${gd.key}`;
-                              const gdLock = lockedPicks[gdDocId];
-                              const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
-                              const gdOriginalSide = gdActiveSideEntry?.[0] || null;
-                              const gdLockStars = gdActiveSideEntry?.[1]?.lock?.stars ?? null;
-                              const gdLockWPS = gdActiveSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
-                              const gdFlipBeatThreshold = gdLock?.flipBeatThreshold ?? null;
-                              const gdSpreadLock = lockedPicks[`${gdDocId}_spread`];
-                              const gdSpreadSideEntry = gdSpreadLock ? Object.entries(gdSpreadLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
-                              const gdSpreadLockStars = gdSpreadSideEntry?.[1]?.lock?.stars ?? null;
-                              const gdSpreadLockWPS = gdSpreadSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
-                              const gdTotalLock = lockedPicks[`${gdDocId}_total`];
-                              const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
-                              const gdTotalLockStars = gdTotalSideEntry?.[1]?.lock?.stars ?? null;
-                              const gdTotalLockWPS = gdTotalSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
-                              return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} />;
-                            })}
-                          </div>
-                          {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
-                        </>
-                      )}
+                      ) : null}
                     </>
                   )}
                 </div>
