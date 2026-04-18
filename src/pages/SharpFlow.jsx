@@ -740,9 +740,9 @@ function evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flip
   if (currentWPS == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, wpsDelta: 0 };
 
   const wpsDelta = lockWPS != null ? currentWPS - lockWPS : 0;
-  const tooCloseToStart = timeToGame != null && timeToGame <= 20;
+  const tooCloseForFlip = timeToGame != null && timeToGame <= 20;
 
-  if (sideFlipped && !tooCloseToStart) {
+  if (sideFlipped && !tooCloseForFlip) {
     const threshold = flipBeatThreshold ?? lockWPS ?? currentWPS;
     if (newSideWPS != null && newSideWPS > threshold) {
       return { status: 'CANCELLED', reasons: ['side_flipped'], currentStars, wpsDelta, newSideWPS, flipBeatThreshold: threshold };
@@ -752,10 +752,6 @@ function evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flip
 
   if (currentWPS >= LOCK_RANGE_WPS) {
     return { status: 'ACTIVE', reasons: [], currentStars, wpsDelta };
-  }
-
-  if (tooCloseToStart) {
-    return { status: 'ACTIVE', reasons: ['near_start'], currentStars, wpsDelta };
   }
 
   return { status: 'MUTED', reasons: ['below_lock_range'], currentStars, wpsDelta };
