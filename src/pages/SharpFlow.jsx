@@ -5751,6 +5751,7 @@ export default function SharpFlow() {
   const [actionSortMode, setActionSortMode] = useState('size');
   const [actionSportFilter, setActionSportFilter] = useState('ALL');
   const [actionMarketFilter, setActionMarketFilter] = useState('ALL');
+  const [actionStatusFilter, setActionStatusFilter] = useState('PREGAME');
   const [expandedActionCard, setExpandedActionCard] = useState(null);
   const [gameSort, setGameSort] = useState('time');
   const [signalType, setSignalType] = useState('upcoming');
@@ -6313,15 +6314,33 @@ export default function SharpFlow() {
                 roi: (a, b) => (b.displayRoi || 0) - (a.displayRoi || 0),
                 conviction: (a, b) => (b.betMultiplier || 0) - (a.betMultiplier || 0),
               };
-              let filtered = [...(actionPositions || [])];
+              const now = Date.now();
+              const MAX_GAME_MS = 6 * 60 * 60 * 1000;
+              const enriched = (actionPositions || []).map(p => {
+                const ct = polyData?.[p.sport]?.[p.gameKey]?.commence
+                  ? new Date(polyData[p.sport][p.gameKey].commence).getTime()
+                  : pinnacleHistory?.[p.sport]?.[p.gameKey]?.commence
+                    ? new Date(pinnacleHistory[p.sport][p.gameKey].commence).getTime()
+                    : null;
+                const isLive = ct && now >= ct && (now - ct) < MAX_GAME_MS;
+                return { ...p, _commenceTime: ct, _isLive: !!isLive };
+              });
+
+              const pregameCount = enriched.filter(p => !p._isLive).length;
+              const liveCount = enriched.filter(p => p._isLive).length;
+
+              let filtered = [...enriched];
+              if (actionStatusFilter === 'PREGAME') filtered = filtered.filter(p => !p._isLive);
+              else if (actionStatusFilter === 'LIVE') filtered = filtered.filter(p => p._isLive);
               if (actionSportFilter !== 'ALL') filtered = filtered.filter(p => p.sport === actionSportFilter);
               if (actionMarketFilter !== 'ALL') filtered = filtered.filter(p => p.marketType === actionMarketFilter);
               const sorted = filtered.sort(actionSortFns[actionSortMode] || actionSortFns.size);
-              const now = Date.now();
 
               const sportCounts = {};
               const mktCounts = {};
-              for (const ap of (actionPositions || [])) {
+              for (const ap of enriched) {
+                if (actionStatusFilter === 'PREGAME' && ap._isLive) continue;
+                if (actionStatusFilter === 'LIVE' && !ap._isLive) continue;
                 sportCounts[ap.sport] = (sportCounts[ap.sport] || 0) + 1;
                 mktCounts[ap.marketType] = (mktCounts[ap.marketType] || 0) + 1;
               }
@@ -6369,10 +6388,26 @@ export default function SharpFlow() {
                     </div>
                   </div>
 
-                  {/* Sport + Market Filters */}
+                  {/* Status + Sport + Market Filters */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.75rem', alignItems: 'center' }}>
+                    {[
+                      { id: 'PREGAME', label: 'Pregame', cnt: pregameCount, color: B.green },
+                      { id: 'LIVE', label: 'Live', cnt: liveCount, color: '#EF4444' },
+                      { id: 'ALL', label: 'All', cnt: enriched.length, color: B.textSec },
+                    ].map(sf => (
+                      <button key={sf.id} onClick={() => setActionStatusFilter(sf.id)} style={{
+                        padding: '0.2rem 0.5rem', borderRadius: '5px', cursor: 'pointer',
+                        ...T.micro, fontWeight: 700, fontSize: '0.55rem',
+                        border: actionStatusFilter === sf.id ? `1px solid ${sf.color}44` : `1px solid ${B.border}`,
+                        background: actionStatusFilter === sf.id ? `${sf.color}18` : 'transparent',
+                        color: actionStatusFilter === sf.id ? sf.color : B.textMuted,
+                        transition: 'all 0.2s ease',
+                      }}>{sf.label} <span style={{ opacity: 0.6 }}>({sf.cnt})</span></button>
+                    ))}
+                    <div style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.15rem' }} />
                     {['ALL', 'NBA', 'NHL', 'MLB', 'CBB', 'NFL'].map(sp => {
-                      const cnt = sp === 'ALL' ? (actionPositions || []).length : (sportCounts[sp] || 0);
+                      const statusFiltered = enriched.filter(p => actionStatusFilter === 'PREGAME' ? !p._isLive : actionStatusFilter === 'LIVE' ? p._isLive : true);
+                      const cnt = sp === 'ALL' ? statusFiltered.length : (sportCounts[sp] || 0);
                       if (sp !== 'ALL' && cnt === 0) return null;
                       const sc = SPORT_COLORS[sp] || B.green;
                       const isActive = actionSportFilter === sp;
@@ -6389,7 +6424,8 @@ export default function SharpFlow() {
                     })}
                     <div style={{ width: '1px', height: '14px', background: B.border, margin: '0 0.15rem' }} />
                     {['ALL', 'ML', 'SPREAD', 'TOTAL'].map(mk => {
-                      const cnt = mk === 'ALL' ? (actionPositions || []).length : (mktCounts[mk] || 0);
+                      const statusFiltered = enriched.filter(p => actionStatusFilter === 'PREGAME' ? !p._isLive : actionStatusFilter === 'LIVE' ? p._isLive : true);
+                      const cnt = mk === 'ALL' ? statusFiltered.length : (mktCounts[mk] || 0);
                       if (mk !== 'ALL' && cnt === 0) return null;
                       const ms = MKT_STYLE[mk] || { color: B.green, bg: B.greenDim, border: `${B.green}44` };
                       const isActive = actionMarketFilter === mk;
