@@ -626,7 +626,7 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   const topShare = forSide > 0 ? maxContrib / forSide : 1;
   const netEdge = (forSide - 0.85 * againstSide) / 100;
   const breadthBonus = 2 * Math.log(1 + walletCountFor);
-  const concPenalty = 8 * topShare;
+  const concPenalty = 6 * topShare;
   const walletPlayScore = netEdge + breadthBonus - concPenalty;
 
   // Regime detection (kept for lock/shadow determination, does NOT affect stars)
@@ -4045,12 +4045,25 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadEvEdge = (spreadPinnProb && spreadRetailProb) ? +((spreadPinnProb - spreadRetailProb) * 100).toFixed(1) : null;
 
   const spreadOpenLine = pinnGame?.spreadOpener;
-  const spreadPinnMovedWith = spreadOpenLine && spreadPinnLine && spreadConsensusSide === 'away'
+  const spreadLineMovedWith = spreadOpenLine && spreadPinnLine && spreadConsensusSide === 'away'
     ? (spreadPinnLine.awayLine < spreadOpenLine.awayLine)
     : spreadOpenLine && spreadPinnLine ? (spreadPinnLine.homeLine < spreadOpenLine.homeLine) : false;
-  const spreadPinnMovedAgainst = spreadOpenLine && spreadPinnLine && spreadConsensusSide === 'away'
+  const spreadLineMovedAgainst = spreadOpenLine && spreadPinnLine && spreadConsensusSide === 'away'
     ? (spreadPinnLine.awayLine > spreadOpenLine.awayLine)
     : spreadOpenLine && spreadPinnLine ? (spreadPinnLine.homeLine > spreadOpenLine.homeLine) : false;
+  const spreadOpenOdds = spreadConsensusSide === 'away'
+    ? pinnGame?.spreadOpener?.awayOdds : pinnGame?.spreadOpener?.homeOdds;
+  const spreadOpenProb = impliedProb(spreadOpenOdds);
+  const spreadCurrentProb = impliedProb(spreadPinnOdds);
+  const spreadOddsMovedWith = !!(spreadOpenProb && spreadCurrentProb) && spreadCurrentProb > spreadOpenProb;
+  const spreadOddsMovedAgainst = !!(spreadOpenProb && spreadCurrentProb) && spreadCurrentProb < spreadOpenProb;
+  const spreadPinnMovedWith = spreadLineMovedWith || spreadOddsMovedWith;
+  const spreadPinnMovedAgainst = spreadLineMovedAgainst || spreadOddsMovedAgainst;
+  const spreadPinnMoveSize = (() => {
+    const probDelta = (spreadOpenProb && spreadCurrentProb) ? Math.abs(spreadCurrentProb - spreadOpenProb) : 0;
+    if (spreadLineMovedWith || spreadLineMovedAgainst) return Math.max(probDelta, 0.02);
+    return probDelta;
+  })();
 
   const spreadSharpFeatures = spreadGameData ? computeSharpFeatures(spreadGameData.positions || [], spreadConsensusSide) : null;
   const spreadPinnConfirms = !!spreadPinnLine && spreadConsensusSide === 'away'
@@ -4059,7 +4072,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadBetOdds = spreadBestRetail || spreadPinnOdds;
   const spreadSr = spreadGameData ? rateStarsV8({
     positions: spreadGameData.positions || [], consensusSide: spreadConsensusSide, v8Norm,
-    pinnMoveSize: spreadPinnMovedWith || spreadPinnMovedAgainst ? 0.02 : 0,
+    pinnMoveSize: spreadPinnMoveSize,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: null, pinnCurrentOdds: spreadPinnOdds,
   }) : null;
@@ -4164,19 +4177,32 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalEvEdge = (totalPinnProb && totalRetailProb) ? +((totalPinnProb - totalRetailProb) * 100).toFixed(1) : null;
 
   const totalOpenLine = pinnGame?.totalOpener;
-  const totalPinnMovedWith = totalOpenLine && totalPinnLine && totalConsensusSide === 'over'
+  const totalLineMovedWith = totalOpenLine && totalPinnLine && totalConsensusSide === 'over'
     ? (totalPinnLine.line > totalOpenLine.line)
     : totalOpenLine && totalPinnLine ? (totalPinnLine.line < totalOpenLine.line) : false;
-  const totalPinnMovedAgainst = totalOpenLine && totalPinnLine && totalConsensusSide === 'over'
+  const totalLineMovedAgainst = totalOpenLine && totalPinnLine && totalConsensusSide === 'over'
     ? (totalPinnLine.line < totalOpenLine.line)
     : totalOpenLine && totalPinnLine ? (totalPinnLine.line > totalOpenLine.line) : false;
+  const totalOpenOdds = totalConsensusSide === 'over'
+    ? pinnGame?.totalOpener?.overOdds : pinnGame?.totalOpener?.underOdds;
+  const totalOpenProb = impliedProb(totalOpenOdds);
+  const totalCurrentProb = impliedProb(totalPinnOdds);
+  const totalOddsMovedWith = !!(totalOpenProb && totalCurrentProb) && totalCurrentProb > totalOpenProb;
+  const totalOddsMovedAgainst = !!(totalOpenProb && totalCurrentProb) && totalCurrentProb < totalOpenProb;
+  const totalPinnMovedWith = totalLineMovedWith || totalOddsMovedWith;
+  const totalPinnMovedAgainst = totalLineMovedAgainst || totalOddsMovedAgainst;
+  const totalPinnMoveSize = (() => {
+    const probDelta = (totalOpenProb && totalCurrentProb) ? Math.abs(totalCurrentProb - totalOpenProb) : 0;
+    if (totalLineMovedWith || totalLineMovedAgainst) return Math.max(probDelta, 0.02);
+    return probDelta;
+  })();
 
   const totalPinnConfirms = !!totalPinnLine && !!totalLine;
   const totalSharpFeatures = totalGameData ? computeSharpFeatures(totalGameData.positions || [], totalConsensusSide) : null;
   const totalBetOdds = totalBestRetail || totalPinnOdds;
   const totalSr = totalGameData ? rateStarsV8({
     positions: totalGameData.positions || [], consensusSide: totalConsensusSide, v8Norm,
-    pinnMoveSize: totalPinnMovedWith || totalPinnMovedAgainst ? 0.02 : 0,
+    pinnMoveSize: totalPinnMoveSize,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     lockOdds: null, pinnCurrentOdds: totalPinnOdds,
   }) : null;

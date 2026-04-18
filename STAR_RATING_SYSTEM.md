@@ -104,7 +104,7 @@ AgainstSide = Σ WalletContribution_j  (wallets on opposing side)
 
 NetEdge = (ForSide - 0.85 × AgainstSide) / 100
 BreadthBonus = 2 × ln(1 + WalletCountFor)
-ConcPenalty = 8 × TopShare
+ConcPenalty = 6 × TopShare
 
 WalletPlayScore = NetEdge + BreadthBonus - ConcPenalty
 ```
@@ -114,12 +114,12 @@ Where:
 - **0.85 penalty**: opposition wallets are discounted slightly since consensus-side selection already filters
 - **NetEdge / 100**: scales net wallet quality to be comparable with breadth and concentration terms
 - **BreadthBonus = 2×ln**: reduced from 4× so net wallet quality remains the primary differentiator
-- **ConcPenalty = 8×TopShare**: penalizes single-wallet dependency
+- **ConcPenalty = 6×TopShare**: penalizes single-wallet dependency (reduced from 8× on 2026-04-18 to avoid over-penalizing 2-wallet plays)
 
 ### Validated Component Ranges (2026-04-16)
 - NetEdge/100: [-0.2, 3.1]
 - BreadthBonus: [1.39, 5.42]
-- ConcPenalty: [0.00, 8.00]
+- ConcPenalty: [0.00, 6.00]
 
 ---
 
