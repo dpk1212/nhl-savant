@@ -121,12 +121,10 @@ async function buildProfile(wallet) {
     if (invested > 0) sportInvested += invested;
     const realizedPnl = parseFloat(p.realizedPnl || '0');
 
-    const netPnl = realizedPnl - invested;
-
     if (!perSport[sport]) perSport[sport] = { bets: 0, invested: 0, pnl: 0 };
     perSport[sport].bets++;
     perSport[sport].invested += invested;
-    perSport[sport].pnl += netPnl;
+    perSport[sport].pnl += realizedPnl;
 
     const curPrice = parseFloat(p.curPrice || '0.5');
     const isSettled = curPrice >= 0.95 || curPrice <= 0.05;
