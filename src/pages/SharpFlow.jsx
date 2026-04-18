@@ -728,24 +728,35 @@ const V8_STAR_THRESHOLDS = {
 };
 
 // ─── Pick Health Evaluation (Mute / Cancel overlay) ──────────────────────────
+// V8-native: uses WalletPlayScore instead of star deltas.
+// Lock range = WPS >= 0.0 (maps to >= 2.5 stars).
+// Side flip only accepted if the new side's WPS exceeds the ratcheting threshold.
 
-function evaluatePickHealth({ currentStars, lockStars, sideFlipped, liveCLV_z, timeToGame }) {
-  if (lockStars == null || currentStars == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, starDelta: 0 };
+const LOCK_RANGE_WPS = 0.0; // V8_STAR_THRESHOLDS.p50
 
-  const starDelta = currentStars - lockStars;
-  const hasPositiveCLV = !sideFlipped && liveCLV_z != null && liveCLV_z > 0;
+function evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flipBeatThreshold, timeToGame, currentStars }) {
+  if (currentWPS == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, wpsDelta: 0 };
+
+  const wpsDelta = lockWPS != null ? currentWPS - lockWPS : 0;
   const tooCloseToStart = timeToGame != null && timeToGame <= 20;
 
   if (sideFlipped && !tooCloseToStart) {
-    return { status: 'CANCELLED', reasons: ['side_flipped'], currentStars, starDelta };
+    const threshold = flipBeatThreshold ?? lockWPS ?? currentWPS;
+    if (newSideWPS != null && newSideWPS > threshold) {
+      return { status: 'CANCELLED', reasons: ['side_flipped'], currentStars, wpsDelta, newSideWPS, flipBeatThreshold: threshold };
+    }
+    return { status: 'ACTIVE', reasons: ['flip_rejected'], currentStars, wpsDelta };
   }
-  if (starDelta <= -1.5 && !hasPositiveCLV && !tooCloseToStart) {
-    return { status: 'CANCELLED', reasons: ['major_star_drop'], currentStars, starDelta };
+
+  if (currentWPS >= LOCK_RANGE_WPS) {
+    return { status: 'ACTIVE', reasons: [], currentStars, wpsDelta };
   }
-  if (starDelta <= -1.0) {
-    return { status: 'MUTED', reasons: ['star_drop'], currentStars, starDelta };
+
+  if (tooCloseToStart) {
+    return { status: 'ACTIVE', reasons: ['near_start'], currentStars, wpsDelta };
   }
-  return { status: 'ACTIVE', reasons: [], currentStars, starDelta };
+
+  return { status: 'MUTED', reasons: ['below_lock_range'], currentStars, wpsDelta };
 }
 
 function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null) {
@@ -813,6 +824,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
         sides: { [side]: sideData },
+        flipBeatThreshold: v8Scoring?.walletPlayScore ?? null,
         status: 'PENDING',
         result: { awayScore: null, homeScore: null, winner: null },
         source: 'ui_card_sync',
@@ -862,6 +874,8 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         if (isReflip) {
           mergeData.sides[side].superseded = false;
           mergeData.sides[side].supersededAt = null;
+          const reflipWPS = v8Scoring?.walletPlayScore ?? null;
+          if (reflipWPS != null) mergeData.flipBeatThreshold = reflipWPS;
           const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
           mergeData.sides[side].lockStage = lockStage;
           if (lockStage === 'LOCKED') {
@@ -910,7 +924,9 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring);
+    const newWPS = v8Scoring?.walletPlayScore ?? null;
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    if (newWPS != null) mergePayload.flipBeatThreshold = newWPS;
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
     }
@@ -3161,9 +3177,10 @@ const MiniSparkline = memo(function MiniSparkline({ points, width = 140, height 
 // V6 rateStars removed — replaced by rateStarsV7 defined above (unified for ML + spread/total)
 
 const HEALTH_REASON_LABELS = {
-  star_drop: 'Star rating dropped 1.0+',
-  major_star_drop: 'Star rating dropped 1.5+',
+  below_lock_range: 'Score dropped below lock range',
   side_flipped: 'Sharps flipped to other side',
+  flip_rejected: 'Flip rejected — threshold not met',
+  near_start: 'Near game start — holding active',
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
@@ -3679,7 +3696,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalSpreadLockStars, originalTotalLockStars, v8Norm }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const [showSpreadWallets, setShowSpreadWallets] = useState(false);
@@ -3692,13 +3709,17 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lastSyncedSpreadStars = useRef(null);
   const lockSpreadStarsRef = useRef(originalSpreadLockStars ?? null);
   const lockSpreadRawScoreRef = useRef(null);
+  const lockSpreadWPSRef = useRef(originalSpreadLockWPS ?? null);
   const lastSyncedTotalStars = useRef(null);
   const lockTotalStarsRef = useRef(originalTotalLockStars ?? null);
   const lockTotalRawScoreRef = useRef(null);
+  const lockTotalWPSRef = useRef(originalTotalLockWPS ?? null);
   const pregameSynced = useRef(false);
   const lockOddsRef = useRef(null);
   const lockStarsRef = useRef(originalLockStars ?? null);
   const lockRawScoreRef = useRef(null);
+  const lockWPSRef = useRef(originalLockWPS ?? null);
+  const flipBeatThresholdRef = useRef(originalFlipBeatThreshold ?? null);
   const lockedSideRef = useRef(originalLockedSide || null);
   const ss = sportStyle(gd.sport);
   const s = gd.summary;
@@ -3925,6 +3946,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       if (!lockOddsRef.current) lockOddsRef.current = betOdds;
       if (lockStarsRef.current == null) lockStarsRef.current = sr.stars;
       if (lockRawScoreRef.current == null) lockRawScoreRef.current = sr.rawScore;
+      if (lockWPSRef.current == null) lockWPSRef.current = sr.walletPlayScore;
+      if (flipBeatThresholdRef.current == null) flipBeatThresholdRef.current = sr.walletPlayScore;
+      if (action === 'side_added') {
+        flipBeatThresholdRef.current = sr.walletPlayScore;
+        lockWPSRef.current = sr.walletPlayScore;
+        lockedSideRef.current = consensusSide;
+      }
       if (!lockedSideRef.current) lockedSideRef.current = originalSide || consensusSide;
       if (action !== 'no_change') {
         onPickSynced(docId, consensusSide, { odds: betOdds, book: bestBook || 'Pinnacle', pinnacleOdds: pinnOdds, criteriaMet, criteria: { sharps3Plus: consensusWallets >= 3, plusEV: hasEV, pinnacleConfirms: pinnConfirms, invested10kPlus: consensusInvested >= 10000, lineMovingWith: pinnMovingWith, predMarketAligns: polyMovingWith }, sharpCount: consensusWallets, totalInvested: consensusInvested, evEdge: bestEV, units, unitTier: ut.label, consensusStrength: { moneyPct: Math.round(moneyPct), walletPct: Math.round(walletPct), grade: cGrade.label }, stars: sr.stars, team: consensusTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime }, action);
@@ -3975,12 +4003,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const wasEverLocked = isLocked || lockStarsRef.current != null || originalLockedSide != null;
   const sideFlipped = lockedSideRef.current != null && consensusSide !== lockedSideRef.current;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
-    currentStars: sr.stars,
-    lockStars: lastSyncedStars.current ?? lockStarsRef.current ?? sr.stars,
+    currentWPS: sr.walletPlayScore,
+    lockWPS: lockWPSRef.current,
     sideFlipped,
-    liveCLV_z: sideFlipped ? null : sr.liveCLV_z,
+    newSideWPS: sideFlipped ? oppSr.walletPlayScore : null,
+    flipBeatThreshold: flipBeatThresholdRef.current,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
-  }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, starDelta: 0 };
+    currentStars: sr.stars,
+  }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, wpsDelta: 0 };
 
   const lastHealthRef = useRef(null);
   useEffect(() => {
@@ -3991,7 +4021,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastHealthRef.current = mlHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowPicks', side: lockedSideRef.current || consensusSide, health: mlHealth });
-  }, [wasEverLocked, mlHealth.status, sr.stars]);
+  }, [wasEverLocked, mlHealth.status, sr.walletPlayScore]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
   const spreadGameData = spreadPositions?.[gd.sport]?.[gd.key];
@@ -4084,6 +4114,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       lastSyncedSpreadStars.current = spreadSr.stars;
       if (lockSpreadStarsRef.current == null) lockSpreadStarsRef.current = spreadSr.stars;
       if (lockSpreadRawScoreRef.current == null) lockSpreadRawScoreRef.current = spreadSr.rawScore;
+      if (lockSpreadWPSRef.current == null) lockSpreadWPSRef.current = spreadSr.walletPlayScore;
       if (action !== 'no_change') {
         onPickSynced(docId, spreadConsensusSide, { odds: spreadBetOdds, book: spreadBestBook || 'Pinnacle', pinnacleOdds: spreadPinnOdds, line: spreadLine, criteriaMet: spreadSharpFeatures ? (spreadSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (spreadEvEdge > 0 ? 1 : 0) + (spreadPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: spreadSharpFeatures?.conWalletCount >= 3, plusEV: spreadEvEdge > 0, lineMovingWith: spreadPinnMovedWith }, sharpCount: spreadSharpFeatures?.conWalletCount || 0, totalInvested: spreadSharpFeatures?.conTotalInvested || 0, evEdge: spreadEvEdge, units: spreadUnits, unitTier: unitTier(spreadUnits).label, consensusStrength: { moneyPct: Math.round(spreadSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(spreadSharpFeatures?.conWalletPct ?? 50), grade: spreadSharpFeatures?.consensusTier || 'LEAN' }, stars: spreadSr.stars, team: spreadConsensuTeam }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'spread' }, action);
       }
@@ -4093,12 +4124,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // ─── Spread Pick Health Evaluation ────────────────────────────────────────
   const spreadWasEverLocked = isSpreadLocked || lastSyncedSpreadStars.current != null || lockSpreadStarsRef.current != null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
-    currentStars: spreadSr.stars,
-    lockStars: lastSyncedSpreadStars.current ?? lockSpreadStarsRef.current ?? spreadSr.stars,
+    currentWPS: spreadSr.walletPlayScore,
+    lockWPS: lockSpreadWPSRef.current,
     sideFlipped: false,
-    liveCLV_z: spreadSr.liveCLV_z,
+    newSideWPS: null,
+    flipBeatThreshold: null,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
-  }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, starDelta: 0 };
+    currentStars: spreadSr.stars,
+  }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, wpsDelta: 0 };
 
   const lastSpreadHealthRef = useRef(null);
   useEffect(() => {
@@ -4109,7 +4142,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastSpreadHealthRef.current = spreadHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
-  }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.stars]);
+  }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.walletPlayScore]);
 
   // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
   const totalGameData = totalPositions?.[gd.sport]?.[gd.key];
@@ -4199,6 +4232,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       lastSyncedTotalStars.current = totalSr.stars;
       if (lockTotalStarsRef.current == null) lockTotalStarsRef.current = totalSr.stars;
       if (lockTotalRawScoreRef.current == null) lockTotalRawScoreRef.current = totalSr.rawScore;
+      if (lockTotalWPSRef.current == null) lockTotalWPSRef.current = totalSr.walletPlayScore;
       if (action !== 'no_change') {
         const totalTeamLabel = totalConsensusSide === 'over' ? `Over ${totalLine}` : `Under ${totalLine}`;
         onPickSynced(docId, totalConsensusSide, { odds: totalBetOdds, book: totalBestBook || 'Pinnacle', pinnacleOdds: totalPinnOdds, line: totalLine, criteriaMet: totalSharpFeatures ? (totalSharpFeatures.conWalletCount >= 3 ? 1 : 0) + (totalEvEdge > 0 ? 1 : 0) + (totalPinnMovedWith ? 1 : 0) : 0, criteria: { sharps3Plus: totalSharpFeatures?.conWalletCount >= 3, plusEV: totalEvEdge > 0, lineMovingWith: totalPinnMovedWith }, sharpCount: totalSharpFeatures?.conWalletCount || 0, totalInvested: totalSharpFeatures?.conTotalInvested || 0, evEdge: totalEvEdge, units: totalUnits, unitTier: unitTier(totalUnits).label, consensusStrength: { moneyPct: Math.round(totalSharpFeatures?.conMoneyPct ?? 50), walletPct: Math.round(totalSharpFeatures?.conWalletPct ?? 50), grade: totalSharpFeatures?.consensusTier || 'LEAN' }, stars: totalSr.stars, team: totalTeamLabel }, { sport: gd.sport, away: gd.away, home: gd.home, commenceTime, marketType: 'total' }, action);
@@ -4209,12 +4243,14 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // ─── Total Pick Health Evaluation ─────────────────────────────────────────
   const totalWasEverLocked = isTotalLocked || lastSyncedTotalStars.current != null || lockTotalStarsRef.current != null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
-    currentStars: totalSr.stars,
-    lockStars: lastSyncedTotalStars.current ?? lockTotalStarsRef.current ?? totalSr.stars,
+    currentWPS: totalSr.walletPlayScore,
+    lockWPS: lockTotalWPSRef.current,
     sideFlipped: false,
-    liveCLV_z: totalSr.liveCLV_z,
+    newSideWPS: null,
+    flipBeatThreshold: null,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
-  }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, starDelta: 0 };
+    currentStars: totalSr.stars,
+  }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, wpsDelta: 0 };
 
   const lastTotalHealthRef = useRef(null);
   useEffect(() => {
@@ -4225,7 +4261,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     const docId = `${date}_${gd.sport}_${gd.key}`;
     lastTotalHealthRef.current = totalHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
-  }, [totalWasEverLocked, totalHealth.status, totalSr?.stars]);
+  }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
   const isActionable = sr.isActionable;
   const accentColor = isLocked ? B.green : isActionable ? B.green : B.gold;
@@ -8464,13 +8500,17 @@ export default function SharpFlow() {
                               const gdActiveSideEntry = gdLock ? Object.entries(gdLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
                               const gdOriginalSide = gdActiveSideEntry?.[0] || null;
                               const gdLockStars = gdActiveSideEntry?.[1]?.lock?.stars ?? null;
+                              const gdLockWPS = gdActiveSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
+                              const gdFlipBeatThreshold = gdLock?.flipBeatThreshold ?? null;
                               const gdSpreadLock = lockedPicks[`${gdDocId}_spread`];
                               const gdSpreadSideEntry = gdSpreadLock ? Object.entries(gdSpreadLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
                               const gdSpreadLockStars = gdSpreadSideEntry?.[1]?.lock?.stars ?? null;
+                              const gdSpreadLockWPS = gdSpreadSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
                               const gdTotalLock = lockedPicks[`${gdDocId}_total`];
                               const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
                               const gdTotalLockStars = gdTotalSideEntry?.[1]?.lock?.stars ?? null;
-                              return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalSpreadLockStars={gdSpreadLockStars} originalTotalLockStars={gdTotalLockStars} v8Norm={v8Norm} />;
+                              const gdTotalLockWPS = gdTotalSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
+                              return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} />;
                             })}
                           </div>
                           {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
