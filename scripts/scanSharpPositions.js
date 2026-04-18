@@ -673,11 +673,23 @@ async function run() {
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
 
       let entryLine = null;
-      if (isSpread && match.spreadLine != null) {
-        entryLine = match.spreadLine;
-      } else if (isTotal) {
-        const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-        if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+      if (isSpread || isTotal) {
+        const polyGame = polyData?.[match.sport]?.[match.key];
+        if (isSpread && polyGame?.polySpread) {
+          const ps = polyGame.polySpread;
+          const outcomeIdx = (ps.outcomes || []).findIndex(o => normalize(o) === outcomeNorm);
+          if (outcomeIdx === 0) entryLine = ps.line;
+          else if (outcomeIdx === 1) entryLine = -ps.line;
+          else if (match.spreadLine != null) entryLine = match.spreadLine;
+        } else if (isSpread && match.spreadLine != null) {
+          entryLine = match.spreadLine;
+        }
+        if (isTotal && polyGame?.polyTotal) {
+          entryLine = polyGame.polyTotal.line;
+        } else if (isTotal) {
+          const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
+          if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+        }
       }
 
       const game = todaysGames[`${match.sport}:${match.key}`];
