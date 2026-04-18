@@ -3699,7 +3699,7 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   );
 });
 
-const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm }) {
+const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory, polyData, isMobile, onPickSynced, onHealthSynced, isMyPick, onToggleMyPick, canPickGames, gameFlowMap, spreadPositions, totalPositions, originalLockedSide, originalLockStars, originalLockWPS, originalFlipBeatThreshold, originalSpreadLockStars, originalSpreadLockWPS, originalTotalLockStars, originalTotalLockWPS, v8Norm }) {
   const [showWallets, setShowWallets] = useState(false);
   const [walletSideFilter, setWalletSideFilter] = useState('all');
   const [showSpreadWallets, setShowSpreadWallets] = useState(false);
@@ -4022,8 +4022,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (lastHealthRef.current === mlHealth.status) return;
     const date = gameDate(commenceTime);
     const docId = `${date}_${gd.sport}_${gd.key}`;
+    const healthSide = lockedSideRef.current || consensusSide;
     lastHealthRef.current = mlHealth.status;
-    syncPickHealth({ docId, collection: 'sharpFlowPicks', side: lockedSideRef.current || consensusSide, health: mlHealth });
+    syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
+    if (onHealthSynced) onHealthSynced(docId, healthSide, mlHealth);
   }, [wasEverLocked, mlHealth.status, sr.walletPlayScore]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
@@ -4155,9 +4157,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastSpreadHealthRef.current === spreadHealth.status) return;
     const date = gameDate(commenceTime);
-    const docId = `${date}_${gd.sport}_${gd.key}`;
+    const docId = `${date}_${gd.sport}_${gd.key}_spread`;
     lastSpreadHealthRef.current = spreadHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowSpreads', side: spreadConsensusSide, health: spreadHealth });
+    if (onHealthSynced) onHealthSynced(docId, spreadConsensusSide, spreadHealth);
   }, [spreadWasEverLocked, spreadHealth.status, spreadSr?.walletPlayScore]);
 
   // ─── Total (O/U) Position Lock Detection ───────────────────────────────────
@@ -4287,9 +4290,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (Date.now() >= commenceTime - 5 * 60 * 1000) return;
     if (lastTotalHealthRef.current === totalHealth.status) return;
     const date = gameDate(commenceTime);
-    const docId = `${date}_${gd.sport}_${gd.key}`;
+    const docId = `${date}_${gd.sport}_${gd.key}_total`;
     lastTotalHealthRef.current = totalHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowTotals', side: totalConsensusSide, health: totalHealth });
+    if (onHealthSynced) onHealthSynced(docId, totalConsensusSide, totalHealth);
   }, [totalWasEverLocked, totalHealth.status, totalSr?.walletPlayScore]);
 
   const isActionable = sr.isActionable;
@@ -6073,6 +6077,20 @@ export default function SharpFlow() {
       if (meta) { docUpdate.sport = meta.sport; docUpdate.away = meta.away; docUpdate.home = meta.home; docUpdate.commenceTime = meta.commenceTime; if (meta.marketType) docUpdate.marketType = meta.marketType; }
       next[docId] = docUpdate;
       return next;
+    });
+  }, []);
+
+  const onHealthSynced = useCallback((docId, side, health) => {
+    setLockedPicks(prev => {
+      const doc = prev[docId];
+      if (!doc?.sides?.[side]) return prev;
+      return {
+        ...prev,
+        [docId]: {
+          ...doc,
+          sides: { ...doc.sides, [side]: { ...doc.sides[side], health } },
+        },
+      };
     });
   }, []);
 
@@ -8539,7 +8557,7 @@ export default function SharpFlow() {
                               const gdTotalSideEntry = gdTotalLock ? Object.entries(gdTotalLock.sides || {}).find(([, sd]) => sd.lock && !sd.superseded) : null;
                               const gdTotalLockStars = gdTotalSideEntry?.[1]?.lock?.stars ?? null;
                               const gdTotalLockWPS = gdTotalSideEntry?.[1]?.lock?.v8Scoring?.walletPlayScore ?? null;
-                              return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} />;
+                              return <SharpPositionCard key={gd.key} gd={gd} pinnacleHistory={pinnacleHistory} polyData={polyData} isMobile={isMobile} onPickSynced={onPickSynced} onHealthSynced={onHealthSynced} isMyPick={!!userPicks[gd.key]} onToggleMyPick={onToggleMyPick} canPickGames={!!(user && isPremium)} gameFlowMap={gameFlowMap} spreadPositions={spreadPositions} totalPositions={totalPositions} originalLockedSide={gdOriginalSide} originalLockStars={gdLockStars} originalLockWPS={gdLockWPS} originalFlipBeatThreshold={gdFlipBeatThreshold} originalSpreadLockStars={gdSpreadLockStars} originalSpreadLockWPS={gdSpreadLockWPS} originalTotalLockStars={gdTotalLockStars} originalTotalLockWPS={gdTotalLockWPS} v8Norm={v8Norm} />;
                             })}
                           </div>
                           {isFreeUser && <SharpFlowPaywall isMobile={isMobile} lockedCount={allPosGames.length > 1 ? allPosGames.length - 1 : 0} pnlData={allTimePnL} />}
