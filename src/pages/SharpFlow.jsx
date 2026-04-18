@@ -2602,6 +2602,12 @@ function impliedProb(american) {
   return Math.abs(american) / (Math.abs(american) + 100);
 }
 
+function probToAmerican(prob) {
+  if (prob == null || prob <= 0 || prob >= 1) return null;
+  if (prob >= 0.5) return Math.round(-100 * prob / (1 - prob));
+  return Math.round(100 * (1 - prob) / prob);
+}
+
 function fmtOdds(american) {
   if (american == null) return '—';
   return american > 0 ? `+${american}` : `${american}`;
@@ -6464,6 +6470,7 @@ export default function SharpFlow() {
                           }
                         }
                         const hasEV = !isLocked && evEdge != null && evEdge > 0;
+                        const sharpEntryOdds = probToAmerican(p.avgPrice);
 
                         const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
                         const teamDisplay = `${p.teamName}${spreadLine != null ? ` ${spreadLine > 0 ? '+' : ''}${spreadLine}` : ''}`;
@@ -6583,20 +6590,20 @@ export default function SharpFlow() {
                                     {teamDisplay} {mktLabel}
                                   </div>
                                 </div>
-                                {pinnOdds && (
+                                {(sharpEntryOdds || pinnOdds) && (
                                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                     <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.1rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.5rem', fontWeight: 600 }}>
-                                      {hasEV ? 'BET AT' : bestRetail ? 'BET AT' : 'FAIR VALUE'}
+                                      {sharpEntryOdds ? 'BET AT' : 'FAIR VALUE'}
                                     </div>
                                     <div style={{
                                       fontWeight: 900, fontSize: '1.35rem', lineHeight: 1.1,
-                                      color: hasEV ? B.green : bestRetail ? B.green : B.text,
+                                      color: sharpEntryOdds ? B.green : B.text,
                                       fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
                                     }}>
-                                      {fmtOdds(bestRetail || pinnOdds)}
+                                      {fmtOdds(sharpEntryOdds || pinnOdds)}
                                     </div>
                                     <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem', fontWeight: 600 }}>
-                                      {bestRetail ? (bestBook || 'Best Book') : 'Pinnacle'}
+                                      {sharpEntryOdds ? 'Sharp Entry' : 'Pinnacle'}
                                     </div>
                                   </div>
                                 )}
