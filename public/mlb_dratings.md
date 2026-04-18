@@ -34,20 +34,20 @@ Close
 
 # MLB Baseball Predictions
 
-Updated 37 sec ago
+Updated 38 sec ago
 
 All ConferencesALNL
 
-- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#scroll-upcoming)
-- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#scroll-completed)
-- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#scroll-season)
-- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#scroll-simulation)
-- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#scroll-methodology)
-- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#scroll-related)
+- [Upcoming](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#scroll-upcoming)
+- [Completed](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#scroll-completed)
+- [Season](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#scroll-season)
+- [Simulation](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#scroll-simulation)
+- [Methodology](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#scroll-methodology)
+- [Related](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#scroll-related)
 
 ## Upcoming Games for April 18, 2026
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#)
 
 | Time | Teams | Pitchers | Win | Best<br>ML | Best<br>Spread | Runs | Total<br>Runs | Best<br>O/U | Bet<br>Value<br>#### Bet Value<br>We use three different graphics to describe Bet Value within a matchup.<br>[More on Bet Value](https://www.dratings.com/a-quick-primer-on-bet-value/) Close | More Details |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Games for Apr 17, 2026
 
 ## Completed Games
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#)
 
 | Time | Teams | Win | Best<br>ML | Best<br>Spread | Final<br>Runs | Sportsbook<br>Log Loss | DRatings<br>Log Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -100,7 +100,7 @@ Games for Apr 17, 2026
 
 Time PeriodLast 24 HoursLast WeekLast MonthThis SeasonAll Time
 
-[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776519837712#)
+[Previous column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#) [Next column](https://www.dratings.com/predictor/mlb-baseball-predictions/?_=1776520078329#)
 
 |  | Games | Record (Pct) | No Pick | Log Loss<br>#### Log Loss<br>Log loss is used to determine the accuracy of a model.<br>[More on Log Loss](https://www.dratings.com/explaining-log-loss/) Close | +/- |
 | --- | --- | --- | --- | --- | --- |
