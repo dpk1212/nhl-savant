@@ -6660,7 +6660,9 @@ export default function SharpFlow() {
                         const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
                         const displayLine = p.entryLine != null ? p.entryLine : spreadLine;
                         const lineStr = p.marketType === 'SPREAD' && displayLine != null ? ` ${displayLine > 0 ? '+' : ''}${displayLine}` : '';
-                        const teamDisplay = `${p.teamName}${lineStr}`;
+                        const totalDisplayLine = p.entryLine != null ? p.entryLine : totalLine;
+                        const totalStr = p.marketType === 'TOTAL' && totalDisplayLine != null ? ` ${totalDisplayLine}` : '';
+                        const teamDisplay = `${p.teamName}${lineStr}${totalStr}`;
                         const isHighConviction = p.betMultiplier >= 3;
                         const boxAccentColor = hasEV ? B.green : isHighConviction ? B.gold : tc.accent;
                         const boxBg = hasEV
