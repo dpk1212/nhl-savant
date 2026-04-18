@@ -684,8 +684,10 @@ async function run() {
         } else if (isSpread && match.spreadLine != null) {
           entryLine = match.spreadLine;
         }
-        if (isTotal && polyGame?.polyTotal) {
-          entryLine = polyGame.polyTotal.line;
+        const pt = polyGame?.polyTotal;
+        const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
+        if (isTotal && isGameTotal) {
+          entryLine = pt.line;
         } else if (isTotal) {
           const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
           if (totalMatch) entryLine = parseFloat(totalMatch[1]);

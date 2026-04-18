@@ -664,7 +664,7 @@ async function run() {
 
         if (git.includes('spread') || q.includes('spread:')) {
           if (!spreadMarket) spreadMarket = m;
-        } else if (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u') || hasOverUnder) {
+        } else if (hasOverUnder && (git.includes('o/u') || git.includes('over') || git.includes('under') || q.includes('o/u'))) {
           if (!totalMarket) totalMarket = m;
         } else {
           if (!mlMarket) mlMarket = m;
