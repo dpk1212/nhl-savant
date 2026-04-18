@@ -671,6 +671,14 @@ async function run() {
       const isSpread = forcedSpread || (!isTotal && (titleLower.includes('spread') || /[+-]\d+\.?\d*/.test(outcome)));
       const marketType = isTotal ? 'total' : isSpread ? 'spread' : 'ml';
 
+      let entryLine = null;
+      if (isSpread && match.spreadLine != null) {
+        entryLine = match.spreadLine;
+      } else if (isTotal) {
+        const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
+        if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+      }
+
       const game = todaysGames[`${match.sport}:${match.key}`];
       const sport = match.sport;
 
@@ -723,6 +731,7 @@ async function run() {
         currentValue,
         pnl: Math.round(cashPnl),
         firstSeen: prevFirstSeen || new Date().toISOString(),
+        ...(entryLine != null && { entryLine }),
         sportPnl: eff.sportPnl,
         sportVerified: eff.sportVerified,
         sportROI: eff.sportROI,

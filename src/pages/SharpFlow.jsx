@@ -6473,7 +6473,9 @@ export default function SharpFlow() {
                         const sharpEntryOdds = probToAmerican(p.avgPrice);
 
                         const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
-                        const teamDisplay = `${p.teamName}${spreadLine != null ? ` ${spreadLine > 0 ? '+' : ''}${spreadLine}` : ''}`;
+                        const displayLine = p.entryLine != null ? p.entryLine : spreadLine;
+                        const lineStr = p.marketType === 'SPREAD' && displayLine != null ? ` ${displayLine > 0 ? '+' : ''}${displayLine}` : '';
+                        const teamDisplay = `${p.teamName}${lineStr}`;
                         const isHighConviction = p.betMultiplier >= 3;
                         const boxAccentColor = hasEV ? B.green : isHighConviction ? B.gold : tc.accent;
                         const boxBg = hasEV
@@ -6981,11 +6983,11 @@ export default function SharpFlow() {
                                         </div>
                                       </div>
                                     )}
-                                    {(spreadLine != null || totalLine != null) && (
+                                    {(displayLine != null || totalLine != null) && (
                                       <div>
                                         <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>Line</div>
                                         <div style={{ ...T.sub, fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'" }}>
-                                          {spreadLine != null ? `${spreadLine > 0 ? '+' : ''}${spreadLine}` : totalLine}
+                                          {p.marketType === 'SPREAD' && displayLine != null ? `${displayLine > 0 ? '+' : ''}${displayLine}` : (p.entryLine != null ? p.entryLine : totalLine)}
                                         </div>
                                       </div>
                                     )}
