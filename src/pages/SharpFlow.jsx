@@ -6070,6 +6070,7 @@ export default function SharpFlow() {
             const avgBet = pos.avgSportBet || 0;
             if (avgBet <= 0) continue;
             if (pos.invested < avgBet * 0.75) continue;
+            if (pos.invested < 5000) continue;
             const teamName = pos.side === 'home' || pos.side === 'over'
               ? (pos.side === 'over' ? 'Over' : gd.home)
               : (pos.side === 'under' ? 'Under' : gd.away);
