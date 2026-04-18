@@ -626,7 +626,8 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   const topShare = forSide > 0 ? maxContrib / forSide : 1;
   const netEdge = (forSide - 0.85 * againstSide) / 100;
   const breadthBonus = 2 * Math.log(1 + walletCountFor);
-  const concPenalty = 6 * topShare;
+  const concCoeff = walletCountFor <= 2 ? 4 : 5;
+  const concPenalty = concCoeff * topShare;
   const walletPlayScore = netEdge + breadthBonus - concPenalty;
 
   // Regime detection (kept for lock/shadow determination, does NOT affect stars)
@@ -653,7 +654,7 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   }
 
   // Star conversion from WalletPlayScore using percentile-based thresholds
-  // Single-wallet structural cap: max 2.0 stars unless whale-override
+  // Single-wallet structural cap: max 2.5 stars unless whale-override (max 3.5)
   let stars;
   if (walletCountFor <= 1) {
     const isWhaleOverride = conWallets.length === 1 && conWallets[0] &&
@@ -665,7 +666,8 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
         : walletPlayScore >= V8_STAR_THRESHOLDS.p88 ? 3
         : walletPlayScore >= V8_STAR_THRESHOLDS.p78 ? 2.5 : 2);
     } else {
-      stars = Math.min(2, walletPlayScore >= V8_STAR_THRESHOLDS.p65 ? 2
+      stars = Math.min(2.5, walletPlayScore >= V8_STAR_THRESHOLDS.p78 ? 2.5
+        : walletPlayScore >= V8_STAR_THRESHOLDS.p65 ? 2
         : walletPlayScore >= V8_STAR_THRESHOLDS.p50 ? 1.5 : 1);
     }
   } else {

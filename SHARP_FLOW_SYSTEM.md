@@ -49,7 +49,7 @@ Every game with sharp positions is scored using the **V8 wallet-contribution sta
 **Core architecture:**
 - **Per-wallet scoring**: WalletBase (60% ROI + 25% Rank + 15% PnL) × ConvictionMultiplier (log bet-size ratio)
 - **Side netting**: ForSide − 0.85 × AgainstSide, divided by 100 for scale parity
-- **Breadth + Concentration**: 2×ln(1+count) bonus, 6×TopShare penalty
+- **Breadth + Concentration**: 2×ln(1+count) bonus, concentration penalty (4×TopShare for ≤2 wallets, 5× for 3+)
 - **During pregame updates**: Progressively replaces the quality proxy with actual Pinnacle line movement (`liveCLV`) as market evidence becomes available
 
 The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile thresholds. **Plays are LOCKED IN when they meet BOTH a star threshold AND a minimum invested threshold:**
@@ -67,9 +67,9 @@ The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile th
 1. **Wallet-contribution architecture** — Replaces V7 z-score model. Each wallet is scored individually (WalletBase × ConvictionMultiplier), then sides are netted.
 2. **ROI-driven skill scoring** — WalletBase weights: 60% ROI, 25% Rank, 15% PnL (with rank) or 65% ROI, 35% PnL (fallback). Reduces PnL/Rank overlap (93% Spearman correlation).
 3. **Multiplicative conviction** — Bet size vs average is a multiplier (log transform, clipped 0.70–1.60), not an additive feature. A great bettor betting big amplifies the signal.
-4. **Side-vs-side scoring** — WalletPlayScore = NetEdge/100 + 2×ln(1+count) − 6×TopShare. All components on comparable scales.
+4. **Side-vs-side scoring** — WalletPlayScore = NetEdge/100 + 2×ln(1+count) − concCoeff×TopShare (4 for ≤2 wallets, 5 for 3+). All components on comparable scales.
 5. **Regime decoupled** — Regime detection still gates lock/shadow but no longer affects star numbers. No dampening, no caps based on market movement.
-6. **Single-wallet cap** — Hard cap at 2.0 stars for single-wallet plays. Whale override (invested ≥ $25K AND sportPnl ≥ $500K) raises cap to 3.5.
+6. **Single-wallet cap** — Hard cap at 2.5 stars for single-wallet plays (requires WPS ≥ p78). Whale override (invested ≥ $25K AND sportPnl ≥ $500K) raises cap to 3.5.
 7. **Forward-only rollout** — All existing Firebase picks retain V7 ratings. V8 applies only to new picks.
 
 See `STAR_RATING_SYSTEM.md` for the full mathematical specification.

@@ -104,7 +104,7 @@ AgainstSide = Σ WalletContribution_j  (wallets on opposing side)
 
 NetEdge = (ForSide - 0.85 × AgainstSide) / 100
 BreadthBonus = 2 × ln(1 + WalletCountFor)
-ConcPenalty = 6 × TopShare
+ConcPenalty = concCoeff × TopShare    (concCoeff = 4 if walletCount ≤ 2, else 5)
 
 WalletPlayScore = NetEdge + BreadthBonus - ConcPenalty
 ```
@@ -114,12 +114,12 @@ Where:
 - **0.85 penalty**: opposition wallets are discounted slightly since consensus-side selection already filters
 - **NetEdge / 100**: scales net wallet quality to be comparable with breadth and concentration terms
 - **BreadthBonus = 2×ln**: reduced from 4× so net wallet quality remains the primary differentiator
-- **ConcPenalty = 6×TopShare**: penalizes single-wallet dependency (reduced from 8× on 2026-04-18 to avoid over-penalizing 2-wallet plays)
+- **ConcPenalty = concCoeff × TopShare**: penalizes single-wallet dependency. Coefficient is **4** for ≤2-wallet plays (reduced to avoid structural over-penalizing) and **5** for 3+ wallets
 
 ### Validated Component Ranges (2026-04-16)
 - NetEdge/100: [-0.2, 3.1]
 - BreadthBonus: [1.39, 5.42]
-- ConcPenalty: [0.00, 6.00]
+- ConcPenalty: [0.00, 5.00] (4.00 max for ≤2 wallets)
 
 ---
 
@@ -144,7 +144,7 @@ Thresholds bootstrapped from 58 live plays (2026-04-16). Will be refined as samp
 
 ## Step 6: Single-Wallet Rule
 
-**Structural cap**: If `WalletCountFor = 1`, hard cap at 2.0 stars maximum regardless of WPS.
+**Structural cap**: If `WalletCountFor = 1`, hard cap at 2.5 stars maximum regardless of WPS. Requires WPS ≥ p78 to reach 2.5.
 
 **Whale override exception**: If a single wallet has:
 - `invested >= $25,000` AND
