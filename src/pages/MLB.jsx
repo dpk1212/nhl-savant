@@ -99,12 +99,13 @@ const MLB = () => {
     try {
       setLoading(true);
       const base = import.meta.env.BASE_URL;
+      const cb = `?t=${Date.now()}`;
 
       const [picksRes, pinnRes, polyRes, kalshiRes] = await Promise.allSettled([
-        fetch(`${base}mlb_model_picks.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${base}pinnacle_history.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${base}polymarket_data.json`).then(r => r.ok ? r.json() : null),
-        fetch(`${base}kalshi_data.json`).then(r => r.ok ? r.json() : null),
+        fetch(`${base}mlb_model_picks.json${cb}`).then(r => r.ok ? r.json() : null),
+        fetch(`${base}pinnacle_history.json${cb}`).then(r => r.ok ? r.json() : null),
+        fetch(`${base}polymarket_data.json${cb}`).then(r => r.ok ? r.json() : null),
+        fetch(`${base}kalshi_data.json${cb}`).then(r => r.ok ? r.json() : null),
       ]);
 
       const picks = picksRes.status === 'fulfilled' ? picksRes.value : null;

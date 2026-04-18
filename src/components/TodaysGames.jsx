@@ -2693,11 +2693,12 @@ const TodaysGames = ({ dataProcessor, oddsData, startingGoalies, goalieData, sta
   
   // Fetch Polymarket & Kalshi data for NHL games
   useEffect(() => {
-    fetch('/polymarket_data.json')
+    const cb = `?t=${Date.now()}`;
+    fetch(`/polymarket_data.json${cb}`)
       .then((r) => r.ok ? r.json() : { CBB: {}, NHL: {} })
       .then((data) => setPolymarketData(data || { CBB: {}, NHL: {} }))
       .catch(() => {});
-    fetch('/kalshi_data.json')
+    fetch(`/kalshi_data.json${cb}`)
       .then((r) => r.ok ? r.json() : { CBB: {}, NHL: {} })
       .then((data) => setKalshiData(data || { CBB: {}, NHL: {} }))
       .catch(() => {});

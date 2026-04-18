@@ -1443,16 +1443,17 @@ function useMarketData() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const cb = `?t=${Date.now()}`;
     Promise.all([
-      fetch(`${import.meta.env.BASE_URL}polymarket_data.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}kalshi_data.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}whale_profiles.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}pinnacle_history.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sports_sharps.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${import.meta.env.BASE_URL}sharp_intel_excluded_wallets.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}polymarket_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}kalshi_data.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}whale_profiles.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}pinnacle_history.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}sharp_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}sports_sharps.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}sharp_spread_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}sharp_total_positions.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${import.meta.env.BASE_URL}sharp_intel_excluded_wallets.json${cb}`).then(r => r.ok ? r.json() : null).catch(() => null),
     ]).then(([p, k, wp, ph, sp, ss, sprP, totP, excl]) => {
       setPolyData(p);
       setKalshiData(k);
