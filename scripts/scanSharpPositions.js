@@ -522,15 +522,16 @@ async function run() {
       if (lookup.monthlyQualified) return false;
       return 'no_sport';
     }
-    const aggSportPnl = Object.values(p.sportPnl || {}).reduce((s, v) => s + v, 0);
-    if (aggSportPnl < SPORT_PNL_FLOOR) return 'sport_loser';
-    if (aggSportPnl <= 0) return 'no_sport';
-    return false;
+    // Wallet not in sports_sharps.json — unverified.
+    // whale_profiles sportPnl is raw payout (not net profit) and can't be trusted.
+    // Only allow wallets that have been profiled by seed or enrichment.
+    return 'unverified';
   };
 
   const mmFiltered = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'mm');
   const sportLosers = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'sport_loser');
   const noSport = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'no_sport');
+  const unverified = allEligible.filter(([addr, p]) => isExcluded(p, addr) === 'unverified');
   const baseWallets = allEligible
     .filter(([addr, p]) => !isExcluded(p, addr))
     .map(([addr, p]) => ({ addr, name: p.name, tier: p.tier, totalPnl: p.totalPnl, sportPnl: p.sportPnl || {}, mmScore: p.mmScore || 0 }));
