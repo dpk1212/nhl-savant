@@ -289,6 +289,20 @@ async function run() {
     const isFresh = prev?.builtAt && prev.builtAt > refreshCutoff;
 
     if (isFresh && !isMonthlyHot) {
+      if (prev && lb.rank != null) {
+        prev.leaderboardRank = lb.rank;
+        prev.leaderboardScope = seen.has(lb.wallet) ? 'ALL' : 'MONTH';
+      }
+      const weekly = weeklyLookup[lb.wallet];
+      const daily = dailyLookup[lb.wallet];
+      if (prev && weekly) {
+        prev.weeklyPnl = Math.round(weekly.pnl);
+        prev.weeklyRank = weekly.rank || null;
+      }
+      if (prev && daily) {
+        prev.dailyPnl = Math.round(daily.pnl);
+        prev.dailyRank = daily.rank || null;
+      }
       skipped++;
       continue;
     }

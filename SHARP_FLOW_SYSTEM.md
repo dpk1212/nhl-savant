@@ -44,10 +44,12 @@ We track the Polymarket moneyline price over 24 hours. If the price is moving in
 
 ### How Plays Get Rated & Locked In
 
-Every game with sharp positions is scored using the **V7 two-stage star rating system** — a weighted z-score model that evaluates consensus strength, market pricing, opposition activity, and live market movement. The model uses frozen population statistics from 411+ historical picks to standardize all features.
+Every game with sharp positions is scored using the **V8 wallet-contribution star rating system** — a wallet-first model that scores each bettor's quality (ROI, rank, P&L), scales it by bet-size conviction, and computes a side-vs-side WalletPlayScore. See `STAR_RATING_SYSTEM.md` for the full specification.
 
-**Two-stage architecture:**
-- **At lock time**: Scores using sharp consensus features, a rule-based quality proxy, and two-sided relative strength metrics (moneyEdge, marketDominance, signalDisagreement)
+**Core architecture:**
+- **Per-wallet scoring**: WalletBase (60% ROI + 25% Rank + 15% PnL) × ConvictionMultiplier (log bet-size ratio)
+- **Side netting**: ForSide − 0.85 × AgainstSide, divided by 100 for scale parity
+- **Breadth + Concentration**: 2×ln(1+count) bonus, 8×TopShare penalty
 - **During pregame updates**: Progressively replaces the quality proxy with actual Pinnacle line movement (`liveCLV`) as market evidence becomes available
 
 The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile thresholds. **Plays are LOCKED IN when they meet BOTH a star threshold AND a minimum invested threshold:**
@@ -60,33 +62,17 @@ The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile th
 
 **No bet is EVER written to Firebase unless these minimums are met.** This is enforced at the lock-decision level in `SharpFlow.jsx`.
 
-### V7 Key Changes (2026-04-06)
+### V8 Key Changes (2026-04-16)
 
-1. **Two-stage scoring architecture** — Lock formula (quality proxy) vs update formula (live CLV blend). The system adapts as market evidence arrives.
-2. **`qualityProxy` replaces `predictedCLV`** — Renamed because analysis proved the feature predicts win rate, not CLV. Weighted accordingly.
-3. **Live CLV blending** — Pinnacle movement (`liveCLV`) progressively replaces `qualityProxy` based on movement regime (NO_MOVE -> SMALL_MOVE -> CLEAR_MOVE -> NEAR_START).
-4. **Compressed unit scale** — ML uses 1–3u (down from 1–5u). Spread/total uses 0.5–2u. Prevents oversized bets on marginal plays.
-5. **CLV-gated top pick bonus** — Unit bumps on star upgrades only apply when live Pinnacle movement confirms the improvement (regime != NO_MOVE).
-6. **Two-sided feature overlay** — `moneyEdge` (log ratio of consensus vs opposition money), `marketDominance` (composite), and `signalDisagreement` (money/sharp edge sign conflict) are added to both formulas.
-7. **Middle-tier gates** — Signal disagreement blocks 4+ stars, weak money edge downgrades 2.5–3.5 star plays, strong money edge promotes clean 2.5–3.5 star plays.
-8. **Frozen population statistics** — All z-scoring uses frozen means/stds/thresholds from the historical dataset.
+1. **Wallet-contribution architecture** — Replaces V7 z-score model. Each wallet is scored individually (WalletBase × ConvictionMultiplier), then sides are netted.
+2. **ROI-driven skill scoring** — WalletBase weights: 60% ROI, 25% Rank, 15% PnL (with rank) or 65% ROI, 35% PnL (fallback). Reduces PnL/Rank overlap (93% Spearman correlation).
+3. **Multiplicative conviction** — Bet size vs average is a multiplier (log transform, clipped 0.70–1.60), not an additive feature. A great bettor betting big amplifies the signal.
+4. **Side-vs-side scoring** — WalletPlayScore = NetEdge/100 + 2×ln(1+count) − 8×TopShare. All components on comparable scales.
+5. **Regime decoupled** — Regime detection still gates lock/shadow but no longer affects star numbers. No dampening, no caps based on market movement.
+6. **Single-wallet cap** — Hard cap at 2.0 stars for single-wallet plays. Whale override (invested ≥ $25K AND sportPnl ≥ $500K) raises cap to 3.5.
+7. **Forward-only rollout** — All existing Firebase picks retain V7 ratings. V8 applies only to new picks.
 
-### V7.1 Key Changes (2026-04-15)
-
-1. **Regime-aware update dampening** — Score changes from lock are multiplied by a regime-dependent factor before star mapping. Upgrades in dead markets are muted; upgrades during real movement get full or amplified credit.
-
-| Regime | Multiplier | Effect |
-|--------|-----------|--------|
-| `NO_MOVE` | 0.45x | Score delta heavily dampened — prevents noisy upgrades |
-| `SMALL_MOVE` | 0.65x | Partial credit — some evidence but not enough for full trust |
-| `CLEAR_MOVE` | 1.00x | Full credit — real market movement validates the change |
-| `NEAR_START` | 1.10x | Slight amplification — late convergence is high-signal |
-
-2. **Regime-specific star caps** — After dampening, additional hard limits in update context:
-   - `NO_MOVE`: Stars capped at `lockStars + 0.5` unless elite factor profile (qualityProxy >= 2, moneyEdge_z >= 0.5, no contradictions)
-   - `NEAR_START` with negative liveCLV: Stars capped at `lockStars` (market moved against play — don't upgrade)
-
-3. **Lock baseline tracking** — `lockRawScore` and `lockStars` are captured at first lock and passed to subsequent `rateStarsV7()` calls for all market types (ML, spread, total). The dampening layer is inactive for the initial evaluation (no `lockRawScore`) and activates on all re-evaluations.
+See `STAR_RATING_SYSTEM.md` for the full mathematical specification.
 
 ### Unit Sizing
 
@@ -151,8 +137,8 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 │                    UI (SharpFlow.jsx)                         │
 │                                                              │
 │  Reads all 5 JSON files from public/                        │
-│  V7 two-stage scoring: lock formula + update formula        │
-│  Two-sided overlay: moneyEdge, mktDom, disagreement         │
+│  V8 wallet-contribution scoring: WalletBase × Conviction    │
+│  Side-vs-side: NetEdge/100 + breadth − concentration        │
 │  Regime detection: NO_MOVE / SMALL / CLEAR / NEAR_START     │
 │  Writes locked picks to Firebase (3 collections)            │
 │                                                              │
@@ -221,12 +207,9 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 - **Series collision guard**: Stores the Odds API unique `game.id` as `apiId` per game key. When a new game arrives for an existing key but with a different `apiId` (different game in a series), compares `commence_time` distances to `Date.now()`. Keeps whichever game is closer; if swapping, resets `opener`/`history`/`movement` so the new game starts fresh.
 - **Output**: `public/pinnacle_history.json` keyed by sport -> game_key. Each entry includes `commence` (ISO game time) and `apiId` (Odds API UUID).
 
-#### `extract_v7_stats.cjs`
-- **Purpose**: Extracts frozen population statistics for V7 from the Firebase dataset
-- **Computes**: Means, standard deviations, winsorization bounds for all V7 features including two-sided features (moneyEdge, sharpEdge, mktDominance, againstSC)
-- **Computes lock scores**: Using the full V7 formula (with two-sided terms) to produce percentile thresholds
-- **Output**: `V7_STATS` constant for hardcoding into `SharpFlow.jsx`
-- **Run manually**: Only re-run when recalibrating thresholds after significant dataset growth
+#### `extract_v7_stats.cjs` (legacy)
+- **Purpose**: Was used to extract frozen population statistics for V7. Retained for historical reference.
+- **V8 uses**: `V8_STAR_THRESHOLDS` hardcoded in `SharpFlow.jsx`, calibrated from live position data
 
 ### Firebase Collections
 
@@ -383,10 +366,9 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 
 **Key Functions**:
 - `useMarketData()` — loads all 5 JSON files
-- `computeSharpFeatures()` — decomposes positions into breadth, conviction, concentration, counterSharp, consensus tier, wallet counts, money percentages (net-position approach for hedgers)
-- `rateStarsV7()` — V7 unified two-stage scoring (lock + update formulas, two-sided overlay, regime detection, CLV blending, V7.1 regime-aware update dampening)
-- `v7QualityProxy()` — rule-based quality score (win-rate proxy, not CLV)
-- `v7Contradictions()` — computes 3-flag contradiction penalty
+- `buildV8Normalization()` — precomputes percentile arrays, internal rank map from `sportsSharps`
+- `rateStarsV8()` — V8 wallet-contribution scoring (per-wallet WalletBase × ConvictionMultiplier, side netting, regime detection)
+- `computeSharpFeatures()` — legacy feature decomposition (still used for some display elements)
 - `calculateUnits()` — maps ML star rating to 1–3u scale with consensus penalty + dog caps
 - `calculateSpreadTotalUnits()` — maps spread/total star rating to 0.5–2u scale with dog caps
 - `unitTier()` — MAX (>= 2.5u), STRONG (>= 1.5u), STANDARD (< 1.5u)
@@ -400,8 +382,7 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 **Lock Decision Flow** (no bet is written without meeting ALL requirements):
 1. `sharp_positions.json` -> per-side wallet counts, invested amounts
 2. `pinnacle_history.json` -> book prices, line movement, EV edge
-3. `computeSharpFeatures()` -> breadth, conviction, concentration, counterSharp, consensus/opposition wallet counts
-4. `rateStarsV7()` -> star rating (with two-sided features computed internally from moneyPct, sharpCount, oppSharpCount). On re-evaluations: regime-aware dampening applied to score delta from lock.
+3. `rateStarsV8()` -> star rating from wallet contributions (WalletBase × ConvictionMultiplier per wallet, side netting, percentile-based star conversion)
 5. **Threshold check**: stars >= 2.5 AND invested >= minimum ($10K for ML, spread, and total)
 6. Only if ALL conditions met -> Firebase write -> unit sizing -> locked card display
 
@@ -430,7 +411,7 @@ git add src/pages/SharpFlow.jsx SHARP_FLOW_SYSTEM.md STAR_RATING_SYSTEM.md
 git diff --cached --stat
 
 # 3. Commit with a descriptive message
-git commit -m "V7.1: Description of changes"
+git commit -m "V8: Description of changes"
 
 # 4. Push to main — this WILL fail if workflows pushed data since your last pull
 git push origin main
@@ -498,9 +479,9 @@ This accepts the remote version on conflict (safe because each workflow regenera
 | Firebase `sharpFlowPicks` | No cleanup — documents accumulate indefinitely | **Low** — ~500 docs/season |
 | Git commit history | ~96 auto-commits/day from data file updates across workflows | **Medium** — repo clone size grows over months |
 
-### V7_STATS Recalibration
+### V8 Threshold Recalibration
 
-The frozen population statistics (`V7_STATS`) should be re-extracted periodically as the dataset grows significantly (e.g., every 200-300 new picks). Use `extract_v7_stats.cjs` to recompute means, stds, winsorization bounds, and percentile thresholds with the full formula including two-sided terms.
+The `V8_STAR_THRESHOLDS` should be recalibrated periodically as the dataset grows. Compute WalletPlayScore across accumulated picks and extract new percentile breakpoints. The current thresholds were bootstrapped from 58 live plays (2026-04-16).
 
 ### TODO: Long-Term Git Repository Size Plan
 

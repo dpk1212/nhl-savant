@@ -2,8 +2,8 @@ name: Enrich Gap Wallets
 
 on:
   schedule:
-    # Every 6 hours: 6 AM, 12 PM, 6 PM, 12 AM ET (10, 16, 22, 04 UTC)
-    - cron: '30 4,10,16,22 * * *'
+    # Every 2 hours (on the hour, offset by 45 min to avoid colliding with other workflows)
+    - cron: '45 */2 * * *'
   workflow_dispatch:
 
 jobs:
