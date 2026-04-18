@@ -6434,34 +6434,21 @@ export default function SharpFlow() {
 
                         let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null, allBooks = {}, spreadLine = null, totalLine = null;
                         if (pinnGame) {
-                          if (isLocked) {
-                            // Game in progress: show pre-game opening odds, not live lines
-                            if (p.marketType === 'ML') {
-                              pinnOdds = p.side === 'away' ? pinnGame.opener?.away : pinnGame.opener?.home;
-                            } else if (p.marketType === 'SPREAD') {
-                              pinnOdds = p.side === 'away' ? pinnGame.spreadOpener?.awayOdds : pinnGame.spreadOpener?.homeOdds;
-                              spreadLine = p.side === 'away' ? pinnGame.spreadOpener?.awayLine : pinnGame.spreadOpener?.homeLine;
-                            } else {
-                              pinnOdds = p.side === 'over' ? pinnGame.totalOpener?.overOdds : pinnGame.totalOpener?.underOdds;
-                              totalLine = pinnGame.totalOpener?.line;
-                            }
+                          if (p.marketType === 'ML') {
+                            pinnOdds = p.side === 'away' ? pinnGame.current?.away : pinnGame.current?.home;
+                            bestRetail = p.side === 'away' ? pinnGame.bestAway : pinnGame.bestHome;
+                            bestBook = p.side === 'away' ? pinnGame.bestAwayBook : pinnGame.bestHomeBook;
+                            allBooks = pinnGame.allBooks || {};
+                          } else if (p.marketType === 'SPREAD') {
+                            pinnOdds = p.side === 'away' ? pinnGame.spreadCurrent?.awayOdds : pinnGame.spreadCurrent?.homeOdds;
+                            spreadLine = p.side === 'away' ? pinnGame.spreadCurrent?.awayLine : pinnGame.spreadCurrent?.homeLine;
+                            bestRetail = p.side === 'away' ? pinnGame.bestAwaySpread?.odds : pinnGame.bestHomeSpread?.odds;
+                            bestBook = p.side === 'away' ? pinnGame.bestAwaySpread?.book : pinnGame.bestHomeSpread?.book;
                           } else {
-                            if (p.marketType === 'ML') {
-                              pinnOdds = p.side === 'away' ? pinnGame.current?.away : pinnGame.current?.home;
-                              bestRetail = p.side === 'away' ? pinnGame.bestAway : pinnGame.bestHome;
-                              bestBook = p.side === 'away' ? pinnGame.bestAwayBook : pinnGame.bestHomeBook;
-                              allBooks = pinnGame.allBooks || {};
-                            } else if (p.marketType === 'SPREAD') {
-                              pinnOdds = p.side === 'away' ? pinnGame.spreadCurrent?.awayOdds : pinnGame.spreadCurrent?.homeOdds;
-                              spreadLine = p.side === 'away' ? pinnGame.spreadCurrent?.awayLine : pinnGame.spreadCurrent?.homeLine;
-                              bestRetail = p.side === 'away' ? pinnGame.bestAwaySpread?.odds : pinnGame.bestHomeSpread?.odds;
-                              bestBook = p.side === 'away' ? pinnGame.bestAwaySpread?.book : pinnGame.bestHomeSpread?.book;
-                            } else {
-                              pinnOdds = p.side === 'over' ? pinnGame.totalCurrent?.overOdds : pinnGame.totalCurrent?.underOdds;
-                              totalLine = pinnGame.totalCurrent?.line;
-                              bestRetail = p.side === 'over' ? pinnGame.bestOverTotal?.odds : pinnGame.bestUnderTotal?.odds;
-                              bestBook = p.side === 'over' ? pinnGame.bestOverTotal?.book : pinnGame.bestUnderTotal?.book;
-                            }
+                            pinnOdds = p.side === 'over' ? pinnGame.totalCurrent?.overOdds : pinnGame.totalCurrent?.underOdds;
+                            totalLine = pinnGame.totalCurrent?.line;
+                            bestRetail = p.side === 'over' ? pinnGame.bestOverTotal?.odds : pinnGame.bestUnderTotal?.odds;
+                            bestBook = p.side === 'over' ? pinnGame.bestOverTotal?.book : pinnGame.bestUnderTotal?.book;
                           }
                           if (!isLocked) {
                             const pinnProb = impliedProb(pinnOdds);
@@ -6592,17 +6579,17 @@ export default function SharpFlow() {
                                 {pinnOdds && (
                                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                     <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.1rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.5rem', fontWeight: 600 }}>
-                                      {isLocked ? 'OPENING LINE' : hasEV ? 'BET AT' : 'FAIR VALUE'}
+                                      {hasEV ? 'BET AT' : bestRetail ? 'BET AT' : 'FAIR VALUE'}
                                     </div>
                                     <div style={{
                                       fontWeight: 900, fontSize: '1.35rem', lineHeight: 1.1,
-                                      color: isLocked ? '#818CF8' : hasEV ? B.green : B.text,
+                                      color: hasEV ? B.green : bestRetail ? B.green : B.text,
                                       fontFeatureSettings: "'tnum'", letterSpacing: '-0.02em',
                                     }}>
-                                      {fmtOdds(hasEV && bestRetail ? bestRetail : pinnOdds)}
+                                      {fmtOdds(bestRetail || pinnOdds)}
                                     </div>
                                     <div style={{ ...T.micro, color: B.textSec, marginTop: '0.1rem', fontWeight: 600 }}>
-                                      {isLocked ? 'Pinnacle Open' : hasEV ? (bestBook || '') : 'Pinnacle'}
+                                      {bestRetail ? (bestBook || 'Best Book') : 'Pinnacle'}
                                     </div>
                                   </div>
                                 )}
