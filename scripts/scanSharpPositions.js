@@ -221,8 +221,13 @@ const SPORT_KEYWORDS = {
     'islanders', 'penguins', 'capitals', 'lightning', 'flames', 'senators',
     'predators', 'blues', 'wild', 'kraken', 'ducks', 'sharks', 'blackhawks',
     'sabres', 'flyers', 'kings', 'red wings', 'blue jackets'],
+  MLB: ['mlb', 'baseball', 'yankees', 'mets', 'dodgers', 'angels', 'astros',
+    'braves', 'orioles', 'red sox', 'cubs', 'white sox', 'reds', 'guardians',
+    'rockies', 'tigers', 'marlins', 'brewers', 'twins', 'phillies', 'pirates',
+    'padres', 'giants', 'mariners', 'cardinals', 'rays', 'rangers', 'blue jays',
+    'nationals', 'royals', 'athletics', 'diamondbacks'],
   CBB: ['ncaa', 'march madness', 'college basketball', 'bulldogs',
-    'wildcats', 'tigers', 'eagles', 'bears', 'blue devils', 'tar heels',
+    'wildcats', 'eagles', 'bears', 'blue devils', 'tar heels',
     'jayhawks', 'spartans', 'wolverines', 'buckeyes', 'crimson tide'],
   NBA: ['nba', 'lakers', 'celtics', 'warriors', 'bucks', 'nuggets', 'heat',
     'suns', '76ers', 'sixers', 'nets', 'knicks', 'clippers', 'mavericks',
@@ -363,20 +368,48 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
   const teamRaw = m[1].trim();
   const spreadLine = parseFloat(m[2]);
 
-  const resolvers = [
-    { sport: 'NHL', fn: resolveNHLCode },
-    { sport: 'NBA', fn: resolveNBACode },
-    { sport: 'MLB', fn: resolveMLBCode },
-  ];
+  const SPORT_MAPS = {
+    NHL: NHL_MAP,
+    NBA: NBA_MAP,
+    MLB: MLB_MAP,
+  };
 
-  for (const { sport, fn } of resolvers) {
-    const code = fn(teamRaw);
+  // Score each candidate: full-name match = 3, mascot word = 2, city word = 1
+  const candidates = [];
+  const teamNorm = normalize(teamRaw);
+  const words = teamRaw.split(/\s+/).map(w => normalize(w)).filter(w => w.length >= 3);
+
+  for (const [sport, map] of Object.entries(SPORT_MAPS)) {
+    let code = null;
+    let score = 0;
+
+    if (map[teamNorm]) {
+      code = map[teamNorm];
+      score = 3;
+    } else {
+      for (const w of words) {
+        if (!map[w]) continue;
+        const isCity = ['pittsburgh', 'detroit', 'chicago', 'boston', 'toronto',
+          'minnesota', 'colorado', 'philadelphia', 'washington', 'seattle',
+          'cleveland', 'houston', 'dallas', 'denver', 'atlanta', 'miami',
+          'milwaukee', 'cincinnati', 'oakland', 'newyork', 'losangeles',
+          'sanfrancisco', 'sandiego', 'stlouis', 'tampabay', 'kansascity',
+          'columbus', 'nashville', 'winnipeg', 'anaheim', 'calgary',
+          'edmonton', 'vancouver', 'charlotte', 'brooklyn', 'sacramento',
+          'portland', 'memphis', 'neworleans', 'sanantonio', 'oklahomacity',
+          'indiana', 'orlando', 'utah', 'florida', 'carolina', 'buffalo',
+          'ottawa', 'montreal', 'texas'].includes(w);
+        const newScore = isCity ? 1 : 2;
+        if (newScore > score) { code = map[w]; score = newScore; }
+      }
+    }
+
     if (!code) continue;
     for (const fullKey of Object.keys(todaysGames)) {
       if (!fullKey.startsWith(sport + ':')) continue;
       const gameKey = fullKey.slice(sport.length + 1);
       if (gameKey.includes(code)) {
-        return { key: gameKey, sport, spreadLine };
+        candidates.push({ key: gameKey, sport, spreadLine, score });
       }
     }
   }
@@ -388,12 +421,14 @@ function matchSpreadTitle(posTitle, todaysGames, cbbMap) {
       if (!fullKey.startsWith('CBB:')) continue;
       const gameKey = fullKey.slice(4);
       if (gameKey.includes(normTeam)) {
-        return { key: gameKey, sport: 'CBB', spreadLine };
+        candidates.push({ key: gameKey, sport: 'CBB', spreadLine, score: 2 });
       }
     }
   }
 
-  return null;
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0];
 }
 
 // ─── Determine which side the outcome is on ─────────────────────────────────
@@ -680,7 +715,22 @@ async function run() {
           const outcomeIdx = (ps.outcomes || []).findIndex(o => normalize(o) === outcomeNorm);
           if (outcomeIdx === 0) entryLine = ps.line;
           else if (outcomeIdx === 1) entryLine = -ps.line;
-          else if (match.spreadLine != null) entryLine = match.spreadLine;
+          else {
+            // Outcome name didn't match polySpread outcomes (e.g. Polymarket data issue)
+            // Determine correct sign by matching game teams to polySpread outcomes
+            const sideForLine = resolveOutcomeSide(outcome, game.away, game.home, title);
+            const awayIdx = (ps.outcomes || []).findIndex(o => {
+              const n = normalize(o);
+              const nAway = normalize(game.away);
+              return n === nAway || n.includes(nAway) || nAway.includes(n);
+            });
+            if (awayIdx >= 0) {
+              const awayLine = awayIdx === 0 ? ps.line : -ps.line;
+              entryLine = sideForLine === 'away' ? awayLine : -awayLine;
+            } else if (match.spreadLine != null) {
+              entryLine = match.spreadLine;
+            }
+          }
         } else if (isSpread && match.spreadLine != null) {
           entryLine = match.spreadLine;
         }

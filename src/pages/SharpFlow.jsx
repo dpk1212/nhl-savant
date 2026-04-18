@@ -7301,7 +7301,7 @@ export default function SharpFlow() {
                                       <div>
                                         <div style={{ ...T.micro, color: B.textMuted, marginBottom: '0.15rem' }}>Line</div>
                                         <div style={{ ...T.sub, fontWeight: 900, color: B.text, fontFeatureSettings: "'tnum'" }}>
-                                          {p.marketType === 'SPREAD' && displayLine != null ? `${displayLine > 0 ? '+' : ''}${displayLine}` : (p.entryLine != null ? p.entryLine : totalLine)}
+                                          {p.marketType === 'SPREAD' && displayLine != null ? `${displayLine > 0 ? '+' : ''}${displayLine}` : (totalDisplayLine != null ? totalDisplayLine : totalLine)}
                                         </div>
                                       </div>
                                     )}
