@@ -154,6 +154,24 @@ Then the cap is raised to 3.5 stars. This override is logged when it fires.
 
 ---
 
+## Pick Health Evaluation (WPS-Driven)
+
+The WalletPlayScore is not only used for star assignment — it also drives the **pick health system** that determines whether a locked pick should be muted or cancelled during the pregame window.
+
+**Key rule: WPS >= 0.0 = in lock range = ACTIVE.** A pick's score can drop significantly from its peak, but as long as it remains at or above 0.0 (the 2.5-star threshold), the pick stays active. This prevents false mutes from normal market fluctuation within the lock range.
+
+| Health Status | Trigger |
+|---------------|---------|
+| **ACTIVE** | WPS >= 0.0 (in lock range), or flip rejected, or near game start |
+| **MUTED** | WPS < 0.0 (below lock range) and > 20 min to game |
+| **CANCELLED** | Side flipped and new side's WPS exceeds the ratcheting flip threshold |
+
+**Ratcheting flip threshold:** On initial lock, `flipBeatThreshold` = `lockWPS`. Each successful side flip ratchets this threshold up to the new side's WPS, requiring progressively higher scores for subsequent flips. This prevents flip-flop chaos.
+
+See `SHARP_FLOW_SYSTEM.md` for full implementation details, Firebase schema, and decision flow.
+
+---
+
 ## Regime Detection (decoupled from stars)
 
 Regime detection still determines whether a play is **locked** vs **shadow**, but it no longer affects the star number itself.

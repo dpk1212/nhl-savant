@@ -107,9 +107,38 @@ A consensus penalty (up to -1.0u for CONTESTED) is applied after the base.
 
 **Top Pick Bonus (CLV-Gated):** When star delta >= 1.0 during pregame updates, a unit bump (+0.25u or +0.5u) is applied — but ONLY if the regime is not NO_MOVE (Pinnacle has actually moved). This prevents fake upgrades from inflating unit size.
 
+### Pick Health Evaluation (Mute / Cancel System)
+
+Once a pick is locked, the **V8-native health system** continuously evaluates whether the pick should remain active. Health evaluation uses the **WalletPlayScore (WPS)** — the same continuous score that drives star ratings — rather than comparing discrete star buckets.
+
+**Design Principles:**
+
+1. **No mute while in lock range** — if `currentWPS >= 0.0` (the 2.5-star / lock threshold), the pick stays ACTIVE regardless of how far it dropped from its peak WPS.
+2. **Mute only when below lock range** — if WPS drops below 0.0 but no side flip has occurred, the pick is MUTED (flagged, kept visible, user decides).
+3. **Side flip requires beating the ratcheting threshold** — a flip is only confirmed if the new side's WPS exceeds the `flipBeatThreshold`. Each accepted flip ratchets the threshold higher, preventing flip-flop noise.
+4. **Stars remain the UI display** — health logic uses WPS internally, users still see star ratings.
+
+**Decision flow:**
+
+| Condition | Status | Reason |
+|-----------|--------|--------|
+| Side flipped + `newSideWPS > flipBeatThreshold` | **CANCELLED** | `side_flipped` — other side is now stronger |
+| Side flipped + does NOT beat threshold | **ACTIVE** | `flip_rejected` — original side holds |
+| `currentWPS >= 0.0` (still in lock range) | **ACTIVE** | No mute regardless of drop from peak |
+| `currentWPS < 0.0` + ≤ 20 min to game | **ACTIVE** | `near_start` — don't override near game time |
+| `currentWPS < 0.0` + > 20 min to game | **MUTED** | `below_lock_range` — score degraded |
+
+**Ratcheting flip mechanism:**
+
+- **Initial lock**: `flipBeatThreshold` = the WPS at lock time
+- Each accepted flip ratchets the threshold up to the new side's WPS
+- Example: Side A locks at WPS 2.5 (threshold = 2.5) → Side B flips at 3.0 (> 2.5, accepted, threshold = 3.0) → Side A tries 2.8 (< 3.0, rejected) → Side A returns at 3.5 (> 3.0, accepted, threshold = 3.5)
+
+**Firebase:** `flipBeatThreshold` is stored at the document level. Health status (`ACTIVE`, `MUTED`, `CANCELLED`) with reason and `wpsDelta` is written to each side's `health` sub-document via `syncPickHealth()`.
+
 ### Performance Tracking
 
-Every locked play is recorded with its odds, book, unit size, star rating, regime, qualityProxy, and wallet profile at time of lock. After games finish, results are automatically graded and profit/loss tracked. Performance is broken down by star tier to validate whether higher-conviction plays outperform.
+Every locked play is recorded with its odds, book, unit size, star rating, regime, qualityProxy, wallet profile, and **V8 scoring breakdown** (`v8Scoring`) at time of lock. After games finish, results are automatically graded and profit/loss tracked. Performance is broken down by star tier to validate whether higher-conviction plays outperform.
 
 ---
 
@@ -248,6 +277,7 @@ This enables **lock -> peak -> pregame** transformation analysis: did sharps pil
   commenceTime: 1711300000000,  // epoch ms
   lockType: "PREGAME",          // always PREGAME (live games are skipped)
   status: "PENDING",            // PENDING → COMPLETED (when all sides graded)
+  flipBeatThreshold: 2.5,      // V8: WPS the opposing side must exceed to flip (ratchets up)
 
   sides: {
     home: {                     // one entry per side that reached 2.5+ stars
@@ -286,6 +316,18 @@ This enables **lock -> peak -> pregame** transformation analysis: did sharps pil
           oppWalletCount: 2,
           consensusTier: "DOMINANT",
         },
+        v8Scoring: {             // V8: full scoring breakdown for analysis
+          walletPlayScore: 2.5,  // WPS used for health evaluation
+          forSide: 180.5,
+          againstSide: 42.3,
+          netEdge: 1.44,
+          breadthBonus: 3.58,
+          topShare: 0.28,
+          concPenalty: 2.24,
+          walletCountFor: 6,
+          walletCountAgainst: 2,
+          walletDetails: [/* per-wallet contribution breakdown */],
+        },
       },
       peak: {                   // high-water mark (updated pregame when units grow)
         odds: -210,
@@ -320,6 +362,13 @@ This enables **lock -> peak -> pregame** transformation analysis: did sharps pil
         walletProfile: { ... },
         minutesBeforeGame: 32,
         capturedAt: 1711310000000,
+      },
+      health: {                  // V8: pick health evaluation (written by syncPickHealth)
+        status: "ACTIVE",       // ACTIVE / MUTED / CANCELLED
+        reasons: [],            // e.g. ['below_lock_range'], ['side_flipped'], ['flip_rejected']
+        currentStars: 4.5,
+        wpsDelta: -1.2,         // current WPS minus lock WPS
+        evaluatedAt: 1711310000000,
       },
       status: "PENDING",        // PENDING → COMPLETED
       result: {
@@ -373,9 +422,11 @@ Located in `functions/src/betTracking.js`. Runs every 10 minutes.
 - `calculateSpreadTotalUnits()` — maps spread/total star rating to 0.5–2u scale with dog caps
 - `unitTier()` — MAX (>= 2.5u), STRONG (>= 1.5u), STANDARD (< 1.5u)
 - `SharpPositionCard` — main card component (React.memo) with both-sides battle, sparklines, criteria checklist, unit sizing. Handles ML, Spread, and Total tabs.
-- `syncPickToFirebase()` / `syncSpreadPickToFirebase()` / `syncTotalPickToFirebase()` — writes qualifying picks to Firebase with lock/peak/pregame snapshots, CLV-gated top pick bonus
+- `evaluatePickHealth()` — V8-native health evaluation using WalletPlayScore (lock range check, ratcheting flip threshold)
+- `syncPickHealth()` — writes health status (ACTIVE/MUTED/CANCELLED) with reason and wpsDelta to Firebase
+- `syncPickToFirebase()` / `syncSpreadPickToFirebase()` / `syncTotalPickToFirebase()` — writes qualifying picks to Firebase with lock/peak/pregame snapshots, CLV-gated top pick bonus, `flipBeatThreshold` at document level
 - `syncPregameSnapshot()` — captures final state ~30 min before game
-- `buildSideData()` / `buildSpreadTotalSideData()` — constructs lock snapshot objects with regime, qualityProxy, walletProfile
+- `buildSideData()` / `buildSpreadTotalSideData()` — constructs lock snapshot objects with regime, qualityProxy, walletProfile, v8Scoring
 - `estimateStarsFromSnap()` — approximates V7 scoring for historical picks (before STARS_LIVE_DATE)
 - `loadAllTimePnL()` — queries completed picks from all three collections for running record
 
