@@ -563,7 +563,7 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     else oppWallets.push({ ...o, invested: net });
   }
 
-  function walletContribution(p) {
+  function walletContributionDetail(p) {
     const w = ss[p.wallet] || {};
     const roi = p.sportROI ?? w.sportROI ?? 0;
     const pnl = p.sportPnl ?? w.sportPnlTotal ?? p.totalPnl ?? w.totalPnl ?? 0;
@@ -571,10 +571,10 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     const pnlNorm = percentileOf(pnlArr, pnl);
 
     const hasRank = (w.leaderboardRank != null) && internalRankMap[p.wallet];
-    let walletBase;
+    let walletBase, rankNorm = null;
     if (hasRank) {
       const ir = internalRankMap[p.wallet];
-      const rankNorm = K > 1 ? 100 * (1 - (ir - 1) / (K - 1)) : 50;
+      rankNorm = K > 1 ? 100 * (1 - (ir - 1) / (K - 1)) : 50;
       walletBase = 0.60 * roiNorm + 0.25 * rankNorm + 0.15 * pnlNorm;
     } else {
       walletBase = 0.65 * roiNorm + 0.35 * pnlNorm;
@@ -583,20 +583,43 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
     const avgBet = p.avgSportBet || w.avgSportBet || 0;
     const sizeRatio = avgBet > 0 ? (p.invested || 0) / avgBet : 1;
     const convictionMult = Math.max(0.70, Math.min(1.60, 1 + 0.30 * Math.log(sizeRatio)));
+    const contribution = walletBase * convictionMult;
 
-    return walletBase * convictionMult;
+    return {
+      contribution,
+      detail: {
+        wallet: p.wallet?.slice(-6) || '???',
+        side: p.side,
+        invested: Math.round(p.invested || 0),
+        roi: +roi.toFixed(1),
+        pnl: Math.round(pnl),
+        rank: w.leaderboardRank || null,
+        source: w.source || null,
+        roiNorm: +roiNorm.toFixed(1),
+        pnlNorm: +pnlNorm.toFixed(1),
+        rankNorm: rankNorm != null ? +rankNorm.toFixed(1) : null,
+        walletBase: +walletBase.toFixed(1),
+        sizeRatio: +sizeRatio.toFixed(2),
+        convictionMult: +convictionMult.toFixed(3),
+        contribution: +contribution.toFixed(1),
+      },
+    };
   }
 
   let forSide = 0, maxContrib = 0;
+  const walletDetails = [];
   for (const p of conWallets) {
-    const c = walletContribution(p);
-    forSide += c;
-    maxContrib = Math.max(maxContrib, c);
+    const { contribution, detail } = walletContributionDetail(p);
+    forSide += contribution;
+    maxContrib = Math.max(maxContrib, contribution);
+    walletDetails.push(detail);
   }
 
   let againstSide = 0;
   for (const p of oppWallets) {
-    againstSide += walletContribution(p);
+    const { contribution, detail } = walletContributionDetail(p);
+    againstSide += contribution;
+    walletDetails.push(detail);
   }
 
   const walletCountFor = conWallets.length;
@@ -668,12 +691,26 @@ function rateStarsV8({ positions, consensusSide, v8Norm, pinnMoveSize = 0, timeT
   };
   const info = labels[stars] || labels[1];
 
+  const v8Scoring = {
+    walletPlayScore: +walletPlayScore.toFixed(4),
+    forSide: +forSide.toFixed(1),
+    againstSide: +againstSide.toFixed(1),
+    netEdge: +netEdge.toFixed(4),
+    breadthBonus: +breadthBonus.toFixed(4),
+    topShare: +topShare.toFixed(4),
+    concPenalty: +concPenalty.toFixed(4),
+    walletCountFor,
+    walletCountAgainst: oppWallets.length,
+    walletDetails,
+  };
+
   return {
     stars, rawScore: walletPlayScore, effectiveScore: walletPlayScore,
     ...info, isActionable: stars >= 2.5, regime, walletPlayScore,
     forSide, againstSide, conWalletCount: walletCountFor,
     qualityProxy: 0, moneyEdge_z: 0, mktDom_z: 0, againstSC_z: 0,
     disagreement: 0, contradictions: 0, liveCLV_z, regimeMultiplier: null,
+    v8Scoring,
   };
 }
 
@@ -733,7 +770,7 @@ function gameDate(commenceTime) {
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy) {
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
@@ -741,6 +778,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   if (walletProfile) snapshot.walletProfile = walletProfile;
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
+  if (v8Scoring) snapshot.v8Scoring = v8Scoring;
   const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
   return {
     team,
@@ -754,7 +792,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
 }
 
-async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy }) {
+async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}`;
@@ -770,7 +808,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy);
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
@@ -810,6 +848,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
+        if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: isReflip ? 'side_reflipped' : 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
@@ -870,7 +909,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy);
+    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -930,13 +969,14 @@ async function syncPickHealth({ docId, collection: colName, side, health }) {
 
 // ─── Spread/Total Firebase Sync ───────────────────────────────────────────────
 
-function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy) {
+function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
   if (walletProfile) snapshot.walletProfile = walletProfile;
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
+  if (v8Scoring) snapshot.v8Scoring = v8Scoring;
   const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
   return {
     team,
@@ -950,7 +990,7 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   };
 }
 
-async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy }) {
+async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_spread`;
@@ -965,7 +1005,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'spread', lockType: 'PREGAME',
@@ -997,6 +1037,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
+        if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
@@ -1033,7 +1074,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -1046,7 +1087,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
   }
 }
 
-async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy }) {
+async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring }) {
   try {
     const PREGAME_BUFFER_MS = 5 * 60 * 1000;
     const docId = `${date}_${sport}_${gameKey}_total`;
@@ -1061,7 +1102,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'total', lockType: 'PREGAME',
@@ -1093,6 +1134,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         if (walletProfile) peakData.walletProfile = walletProfile;
         if (regime) peakData.regime = regime;
         if (qualityProxy != null) peakData.qualityProxy = qualityProxy;
+        if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
         const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
@@ -1129,7 +1171,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -3875,6 +3917,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       },
       regime: sr.regime,
       qualityProxy: sr.qualityProxy,
+      v8Scoring: sr.v8Scoring,
     }).then(({ docId, action, originalSide }) => {
       if (action === 'error') return;
       lastSyncedStars.current = sr.stars;
@@ -4035,6 +4078,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       } : null,
       regime: spreadSr.regime,
       qualityProxy: spreadSr.qualityProxy,
+      v8Scoring: spreadSr.v8Scoring,
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedSpreadStars.current = spreadSr.stars;
@@ -4149,6 +4193,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
       } : null,
       regime: totalSr.regime,
       qualityProxy: totalSr.qualityProxy,
+      v8Scoring: totalSr.v8Scoring,
     }).then(({ docId, action }) => {
       if (action === 'error') return;
       lastSyncedTotalStars.current = totalSr.stars;
