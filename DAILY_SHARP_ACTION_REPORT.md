@@ -286,7 +286,103 @@ _Insufficient CLV data (closing odds not captured for most positions)._
 
 ---
 
-## 17. Dashboard KPIs
+## 17. V8 Star Calibration
+
+182 of 182 graded positions have V8 scoring.
+
+| Stars | Label | N | % | WR | P&L | ROI | Avg WPS | Avg Inv |
+|---|---|---|---|---|---|---|---|---|
+| 1★ | MONITORING | 32 | 17.6% | 43.8% | +$64.8K | 15.2% | -2.32 | +$13.3K |
+| 2★ | LEAN | 31 | 17.0% | 54.8% | +$287.7K | 34.8% | -1.67 | +$26.7K |
+| 2.5★ | SOLID PLAY | 63 | 34.6% | 36.5% | -$535.0K | -28.5% | 0.72 | +$29.8K |
+| 3★ | SOLID PLAY | 12 | 6.6% | 66.7% | +$54.4K | 10.8% | 2.55 | +$42.1K |
+| 3.5★ | STRONG PLAY | 14 | 7.7% | 64.3% | +$20.9K | 15.7% | 3.61 | +$9.5K |
+| 4★ | STRONG PLAY | 22 | 12.1% | 22.7% | -$491.1K | -41.3% | 5.19 | +$54.1K |
+| 4.5★ | ELITE PLAY | 8 | 4.4% | 75.0% | +$50.3K | 36.6% | 7.21 | +$17.2K |
+
+**Spearman: V8 Stars vs WR**: 0.165
+→ Higher stars predict better outcomes
+
+**≥3★ positions**: 56 picks, 50.0% WR, -18.6% ROI, -$365.5K P&L
+**<3★ positions**: 126 picks, 42.9% WR, -5.8% ROI, -$182.6K P&L
+
+---
+
+## 18. V8 Core Variable Audit
+
+Distribution of V8 scoring variables across all graded positions.
+
+| Variable | Mean | Median | Std | Min | Max |
+|---|---|---|---|---|---|
+| WPS | 0.946 | 0.589 | 2.807 | -2.614 | 7.213 |
+| For Side | 165.890 | 134.850 | 133.817 | 0.000 | 517.700 |
+| Against Side | 73.466 | 55.600 | 84.747 | 0.000 | 310.100 |
+| Net Edge | 1.034 | 0.744 | 1.152 | -1.197 | 4.660 |
+| Breadth Bonus | 2.626 | 2.485 | 0.941 | 1.386 | 4.605 |
+| Conc Penalty | 2.714 | 2.531 | 1.015 | 1.109 | 4.000 |
+| Top Share | 0.628 | 0.601 | 0.281 | 0.222 | 1.000 |
+| Wallet Count For | 3.176 | 2.500 | 2.193 | 1.000 | 9.000 |
+| Wallet Count Against | 1.401 | 1.000 | 1.382 | 0.000 | 5.000 |
+
+### Per-Wallet Contribution Variables
+
+| Variable | Mean | Median | Std | Min | Max |
+|---|---|---|---|---|---|
+| Contribution | 47.84 | 47.80 | 32.15 | 0.00 | 156.10 |
+| ROI Norm %ile | 40.62 | 38.50 | 27.98 | 0.00 | 99.80 |
+| P&L Norm %ile | 39.07 | 30.20 | 35.61 | 0.00 | 99.80 |
+| Wallet Base | 40.21 | 41.70 | 25.27 | 0.00 | 97.50 |
+| Conviction Mult | 1.15 | 1.10 | 0.21 | 0.70 | 1.60 |
+| Size Ratio | 2.81 | 1.40 | 4.91 | 0.01 | 49.31 |
+
+---
+
+## 19. WPS Performance Buckets
+
+How does WPS (Wallet Play Score) predict outcomes across ranges?
+
+| WPS Range | N | % | WR | P&L | ROI | Avg WPS |
+|---|---|---|---|---|---|---|
+| < -2 (very weak) | 33 | 18.1% | 48.5% | +$265.2K | 42.5% | -2.39 |
+| -2 to 0 (weak) | 30 | 16.5% | 50.0% | +$87.2K | 13.9% | -1.58 |
+| 0 to 2 (moderate) | 66 | 36.3% | 39.4% | -$520.8K | -27.5% | 0.78 |
+| 2 to 4 (solid) | 23 | 12.6% | 60.9% | +$61.0K | 9.9% | 3.27 |
+| 4 to 6 (strong) | 22 | 12.1% | 22.7% | -$491.1K | -41.3% | 5.19 |
+| 6+ (elite) | 8 | 4.4% | 75.0% | +$50.3K | 36.6% | 7.21 |
+
+**Spearman: WPS vs WR**: 0.069
+
+---
+
+## 20. Per-Wallet Contribution Calibration
+
+Does a wallet's V8 contribution score predict its individual position outcome?
+
+| Contribution | N | WR | P&L | ROI | Avg Base | Avg Conv Mult |
+|---|---|---|---|---|---|---|
+| < 20 (low) | 37 | 40.5% | -$31.0K | -32.9% | 2.9 | 1.014 |
+| 20-40 (moderate) | 31 | 45.2% | +$75.4K | 26.2% | 28.7 | 1.105 |
+| 40-60 (solid) | 47 | 44.7% | +$195.8K | 14.1% | 44.5 | 1.157 |
+| 60-80 (strong) | 33 | 45.5% | -$113.2K | -13.2% | 59.7 | 1.205 |
+| 80+ (elite) | 27 | 55.6% | -$696.4K | -28.9% | 73.2 | 1.337 |
+
+**Spearman: Wallet Contribution vs WR**: 0.225
+**Spearman: ROI Norm vs WR**: 0.263
+
+---
+
+## 21. Consensus Side vs Contrarian
+
+Positions on the V8 consensus side vs contrarian side.
+
+| Side | N | % | WR | P&L | ROI | Avg WPS | Avg Inv |
+|---|---|---|---|---|---|---|---|
+| Consensus | 137 | 75.3% | 40.1% | -$1.3M | -32.3% | 0.98 | +$28.4K |
+| Contrarian | 45 | 24.7% | 60.0% | +$709.0K | 59.3% | 0.85 | +$26.6K |
+
+---
+
+## 22. Dashboard KPIs
 
 | KPI | Value |
 |---|---|
@@ -305,3 +401,10 @@ _Insufficient CLV data (closing odds not captured for most positions)._
 | Big losses (>$10K) | 36 |
 | Positive CLV rate | — |
 | Avg bet multiplier | 2.66x |
+| V8 coverage | 182/182 (100.0%) |
+| Avg V8 Stars | 2.5★ |
+| Avg WPS | 0.95 |
+| ≥3★ WR | 50.0% |
+| ≥3★ ROI | -18.6% |
+| <3★ WR | 42.9% |
+| <3★ ROI | -5.8% |

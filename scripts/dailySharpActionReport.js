@@ -163,6 +163,26 @@ async function exportGradedPositions(db) {
       clv: data.clv ?? null,
       spreadLine: data.spreadLine ?? data.entryLine ?? null,
       totalLine: data.totalLine ?? data.entryLine ?? null,
+      // V8 scoring fields
+      v8_walletPlayScore: data.v8_walletPlayScore ?? null,
+      v8_stars: data.v8_stars ?? null,
+      v8_starLabel: data.v8_starLabel ?? null,
+      v8_forSide: data.v8_forSide ?? null,
+      v8_againstSide: data.v8_againstSide ?? null,
+      v8_netEdge: data.v8_netEdge ?? null,
+      v8_breadthBonus: data.v8_breadthBonus ?? null,
+      v8_concPenalty: data.v8_concPenalty ?? null,
+      v8_topShare: data.v8_topShare ?? null,
+      v8_walletCountFor: data.v8_walletCountFor ?? null,
+      v8_walletCountAgainst: data.v8_walletCountAgainst ?? null,
+      v8_consensusSide: data.v8_consensusSide ?? null,
+      v8_walletContribution: data.v8_walletContribution ?? null,
+      v8_walletRoiNorm: data.v8_walletRoiNorm ?? null,
+      v8_walletPnlNorm: data.v8_walletPnlNorm ?? null,
+      v8_walletRankNorm: data.v8_walletRankNorm ?? null,
+      v8_walletBase: data.v8_walletBase ?? null,
+      v8_convictionMult: data.v8_convictionMult ?? null,
+      v8_sizeRatio: data.v8_sizeRatio ?? null,
     });
   });
   return rows;
@@ -885,8 +905,206 @@ function sec16_failureDiagnostics(rows) {
   return out.join('\n');
 }
 
-function sec17_kpis(rows) {
-  const out = ['\n---\n\n## 17. Dashboard KPIs\n'];
+function sec17_v8StarCalibration(rows) {
+  const out = ['\n---\n\n## 17. V8 Star Calibration\n'];
+  const v8Rows = rows.filter(r => r.v8_stars != null);
+  if (v8Rows.length < 5) {
+    out.push('_V8 scoring data not yet available on graded positions. Run write script to backfill._');
+    return out.join('\n');
+  }
+
+  out.push(`${v8Rows.length} of ${rows.length} graded positions have V8 scoring.\n`);
+
+  const starBuckets = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+  const headers = ['Stars', 'Label', 'N', '%', 'WR', 'P&L', 'ROI', 'Avg WPS', 'Avg Inv'];
+  const data = starBuckets.map(s => {
+    const sub = v8Rows.filter(r => r.v8_stars === s);
+    if (sub.length === 0) return null;
+    const a = agg(sub);
+    const avgWPS = avg(sub.map(r => r.v8_walletPlayScore)).toFixed(2);
+    const lbl = sub[0]?.v8_starLabel || '—';
+    return [s + '★', lbl, a.n, pct(sub.length, v8Rows.length), a.wr, a.pnl, a.roi, avgWPS, a.avgInv];
+  }).filter(Boolean);
+  out.push(mdTable(headers, data));
+
+  // Are higher stars actually predicting better outcomes?
+  if (v8Rows.length >= 10) {
+    const rho = spearman(v8Rows.map(r => r.v8_stars), v8Rows.map(r => r.won));
+    out.push(`\n**Spearman: V8 Stars vs WR**: ${rho != null ? rho.toFixed(3) : '—'}`);
+    if (rho != null) {
+      out.push(rho > 0.1 ? '→ Higher stars predict better outcomes'
+        : rho < -0.1 ? '→ WARNING: Higher stars predict WORSE outcomes'
+        : '→ Stars are neutral — no predictive edge detected');
+    }
+  }
+
+  // 3+ star vs sub-3 star
+  const high = v8Rows.filter(r => r.v8_stars >= 3);
+  const low = v8Rows.filter(r => r.v8_stars < 3);
+  if (high.length >= 3 && low.length >= 3) {
+    const hA = agg(high);
+    const lA = agg(low);
+    out.push(`\n**≥3★ positions**: ${hA.n} picks, ${hA.wr} WR, ${hA.roi} ROI, ${hA.pnl} P&L`);
+    out.push(`**<3★ positions**: ${lA.n} picks, ${lA.wr} WR, ${lA.roi} ROI, ${lA.pnl} P&L`);
+  }
+
+  return out.join('\n');
+}
+
+function sec18_v8CoreVariables(rows) {
+  const out = ['\n---\n\n## 18. V8 Core Variable Audit\n'];
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  if (v8Rows.length < 5) {
+    out.push('_Insufficient V8 data._');
+    return out.join('\n');
+  }
+
+  out.push('Distribution of V8 scoring variables across all graded positions.\n');
+
+  const vars = [
+    { key: 'v8_walletPlayScore', label: 'WPS' },
+    { key: 'v8_forSide', label: 'For Side' },
+    { key: 'v8_againstSide', label: 'Against Side' },
+    { key: 'v8_netEdge', label: 'Net Edge' },
+    { key: 'v8_breadthBonus', label: 'Breadth Bonus' },
+    { key: 'v8_concPenalty', label: 'Conc Penalty' },
+    { key: 'v8_topShare', label: 'Top Share' },
+    { key: 'v8_walletCountFor', label: 'Wallet Count For' },
+    { key: 'v8_walletCountAgainst', label: 'Wallet Count Against' },
+  ];
+
+  const headers = ['Variable', 'Mean', 'Median', 'Std', 'Min', 'Max'];
+  const data = vars.map(v => {
+    const vals = v8Rows.map(r => r[v.key]).filter(x => x != null && isFinite(x));
+    if (vals.length === 0) return null;
+    return [v.label, avg(vals).toFixed(3), median(vals).toFixed(3), std(vals).toFixed(3), Math.min(...vals).toFixed(3), Math.max(...vals).toFixed(3)];
+  }).filter(Boolean);
+  out.push(mdTable(headers, data));
+
+  // Per-wallet contribution variables
+  const contribRows = v8Rows.filter(r => r.v8_walletContribution != null);
+  if (contribRows.length >= 5) {
+    out.push('\n### Per-Wallet Contribution Variables\n');
+    const wVars = [
+      { key: 'v8_walletContribution', label: 'Contribution' },
+      { key: 'v8_walletRoiNorm', label: 'ROI Norm %ile' },
+      { key: 'v8_walletPnlNorm', label: 'P&L Norm %ile' },
+      { key: 'v8_walletBase', label: 'Wallet Base' },
+      { key: 'v8_convictionMult', label: 'Conviction Mult' },
+      { key: 'v8_sizeRatio', label: 'Size Ratio' },
+    ];
+    const wData = wVars.map(v => {
+      const vals = contribRows.map(r => r[v.key]).filter(x => x != null && isFinite(x));
+      if (vals.length === 0) return null;
+      return [v.label, avg(vals).toFixed(2), median(vals).toFixed(2), std(vals).toFixed(2), Math.min(...vals).toFixed(2), Math.max(...vals).toFixed(2)];
+    }).filter(Boolean);
+    out.push(mdTable(headers, wData));
+  }
+
+  return out.join('\n');
+}
+
+function sec19_wpsBuckets(rows) {
+  const out = ['\n---\n\n## 19. WPS Performance Buckets\n'];
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  if (v8Rows.length < 5) {
+    out.push('_Insufficient V8 data._');
+    return out.join('\n');
+  }
+
+  out.push('How does WPS (Wallet Play Score) predict outcomes across ranges?\n');
+
+  const ranges = [
+    { label: '< -2 (very weak)', lo: -Infinity, hi: -2 },
+    { label: '-2 to 0 (weak)', lo: -2, hi: 0 },
+    { label: '0 to 2 (moderate)', lo: 0, hi: 2 },
+    { label: '2 to 4 (solid)', lo: 2, hi: 4 },
+    { label: '4 to 6 (strong)', lo: 4, hi: 6 },
+    { label: '6+ (elite)', lo: 6, hi: Infinity },
+  ];
+
+  const buckets = ranges.map(({ label, lo, hi }) => {
+    const sub = v8Rows.filter(r => r.v8_walletPlayScore >= lo && r.v8_walletPlayScore < hi);
+    if (sub.length === 0) return null;
+    const a = agg(sub);
+    return [label, a.n, pct(sub.length, v8Rows.length), a.wr, a.pnl, a.roi, avg(sub.map(r => r.v8_walletPlayScore)).toFixed(2)];
+  }).filter(Boolean);
+  out.push(mdTable(['WPS Range', 'N', '%', 'WR', 'P&L', 'ROI', 'Avg WPS'], buckets));
+
+  if (v8Rows.length >= 10) {
+    const rho = spearman(v8Rows.map(r => r.v8_walletPlayScore), v8Rows.map(r => r.won));
+    out.push(`\n**Spearman: WPS vs WR**: ${rho != null ? rho.toFixed(3) : '—'}`);
+  }
+
+  return out.join('\n');
+}
+
+function sec20_walletContribCalibration(rows) {
+  const out = ['\n---\n\n## 20. Per-Wallet Contribution Calibration\n'];
+  const v8Rows = rows.filter(r => r.v8_walletContribution != null);
+  if (v8Rows.length < 5) {
+    out.push('_Insufficient contribution data._');
+    return out.join('\n');
+  }
+
+  out.push('Does a wallet\'s V8 contribution score predict its individual position outcome?\n');
+
+  const ranges = [
+    { label: '< 20 (low)', lo: 0, hi: 20 },
+    { label: '20-40 (moderate)', lo: 20, hi: 40 },
+    { label: '40-60 (solid)', lo: 40, hi: 60 },
+    { label: '60-80 (strong)', lo: 60, hi: 80 },
+    { label: '80+ (elite)', lo: 80, hi: Infinity },
+  ];
+
+  const buckets = ranges.map(({ label, lo, hi }) => {
+    const sub = v8Rows.filter(r => r.v8_walletContribution >= lo && r.v8_walletContribution < hi);
+    if (sub.length === 0) return null;
+    const a = agg(sub);
+    return [label, a.n, a.wr, a.pnl, a.roi, avg(sub.map(r => r.v8_walletBase)).toFixed(1), avg(sub.map(r => r.v8_convictionMult)).toFixed(3)];
+  }).filter(Boolean);
+  out.push(mdTable(['Contribution', 'N', 'WR', 'P&L', 'ROI', 'Avg Base', 'Avg Conv Mult'], buckets));
+
+  if (v8Rows.length >= 10) {
+    const rho = spearman(v8Rows.map(r => r.v8_walletContribution), v8Rows.map(r => r.won));
+    out.push(`\n**Spearman: Wallet Contribution vs WR**: ${rho != null ? rho.toFixed(3) : '—'}`);
+  }
+
+  // ROI norm vs outcome
+  const roiValid = v8Rows.filter(r => r.v8_walletRoiNorm != null);
+  if (roiValid.length >= 10) {
+    const rho = spearman(roiValid.map(r => r.v8_walletRoiNorm), roiValid.map(r => r.won));
+    out.push(`**Spearman: ROI Norm vs WR**: ${rho != null ? rho.toFixed(3) : '—'}`);
+  }
+
+  return out.join('\n');
+}
+
+function sec21_consensusVsContra(rows) {
+  const out = ['\n---\n\n## 21. Consensus Side vs Contrarian\n'];
+  const v8Rows = rows.filter(r => r.v8_consensusSide != null);
+  if (v8Rows.length < 5) {
+    out.push('_Insufficient V8 data._');
+    return out.join('\n');
+  }
+
+  const onConsensus = v8Rows.filter(r => r.side === r.v8_consensusSide);
+  const contrarian = v8Rows.filter(r => r.side !== r.v8_consensusSide);
+
+  out.push('Positions on the V8 consensus side vs contrarian side.\n');
+  out.push(mdTable(
+    ['Side', 'N', '%', 'WR', 'P&L', 'ROI', 'Avg WPS', 'Avg Inv'],
+    [
+      onConsensus.length > 0 ? ['Consensus', onConsensus.length, pct(onConsensus.length, v8Rows.length), agg(onConsensus).wr, agg(onConsensus).pnl, agg(onConsensus).roi, avg(onConsensus.map(r => r.v8_walletPlayScore)).toFixed(2), agg(onConsensus).avgInv] : null,
+      contrarian.length > 0 ? ['Contrarian', contrarian.length, pct(contrarian.length, v8Rows.length), agg(contrarian).wr, agg(contrarian).pnl, agg(contrarian).roi, avg(contrarian.map(r => r.v8_walletPlayScore)).toFixed(2), agg(contrarian).avgInv] : null,
+    ].filter(Boolean)
+  ));
+
+  return out.join('\n');
+}
+
+function sec22_kpis(rows) {
+  const out = ['\n---\n\n## 22. Dashboard KPIs\n'];
 
   const a = agg(rows);
   const uniqueWallets = new Set(rows.map(r => r.wallet)).size;
@@ -900,26 +1118,40 @@ function sec17_kpis(rows) {
   const clvRows = rows.filter(r => r.clv != null);
   const posClvRate = clvRows.length > 0 ? pct(clvRows.filter(r => r.clv > 0).length, clvRows.length) : '—';
 
-  out.push(mdTable(
-    ['KPI', 'Value'],
-    [
-      ['Total Positions Graded', rows.length],
-      ['Overall WR', a.wr],
-      ['Overall ROI', a.roi],
-      ['Total P&L', a.pnl],
-      ['Total Invested', a.totalInvested],
-      ['Unique Wallets', uniqueWallets],
-      ['Unique Games', uniqueGames],
-      ['HIGH_CONVICTION WR', hcA.wr],
-      ['HIGH_CONVICTION ROI', hcA.roi],
-      ['ELITE tier WR', eliteA.wr],
-      ['ELITE tier ROI', eliteA.roi],
-      ['Big wins (>$10K)', bigWins.length],
-      ['Big losses (>$10K)', bigLosses.length],
-      ['Positive CLV rate', posClvRate],
-      ['Avg bet multiplier', a.avgMult],
-    ]
-  ));
+  const kpiData = [
+    ['Total Positions Graded', rows.length],
+    ['Overall WR', a.wr],
+    ['Overall ROI', a.roi],
+    ['Total P&L', a.pnl],
+    ['Total Invested', a.totalInvested],
+    ['Unique Wallets', uniqueWallets],
+    ['Unique Games', uniqueGames],
+    ['HIGH_CONVICTION WR', hcA.wr],
+    ['HIGH_CONVICTION ROI', hcA.roi],
+    ['ELITE tier WR', eliteA.wr],
+    ['ELITE tier ROI', eliteA.roi],
+    ['Big wins (>$10K)', bigWins.length],
+    ['Big losses (>$10K)', bigLosses.length],
+    ['Positive CLV rate', posClvRate],
+    ['Avg bet multiplier', a.avgMult],
+  ];
+
+  const v8Rows = rows.filter(r => r.v8_stars != null);
+  if (v8Rows.length > 0) {
+    const highStars = v8Rows.filter(r => r.v8_stars >= 3);
+    const lowStars = v8Rows.filter(r => r.v8_stars < 3);
+    kpiData.push(
+      ['V8 coverage', `${v8Rows.length}/${rows.length} (${pct(v8Rows.length, rows.length)})`],
+      ['Avg V8 Stars', avg(v8Rows.map(r => r.v8_stars)).toFixed(1) + '★'],
+      ['Avg WPS', avg(v8Rows.map(r => r.v8_walletPlayScore)).toFixed(2)],
+      ['≥3★ WR', highStars.length > 0 ? agg(highStars).wr : '—'],
+      ['≥3★ ROI', highStars.length > 0 ? agg(highStars).roi : '—'],
+      ['<3★ WR', lowStars.length > 0 ? agg(lowStars).wr : '—'],
+      ['<3★ ROI', lowStars.length > 0 ? agg(lowStars).roi : '—'],
+    );
+  }
+
+  out.push(mdTable(['KPI', 'Value'], kpiData));
 
   return out.join('\n');
 }
@@ -955,7 +1187,12 @@ async function run() {
     sec14_clvAnalysis(rows),
     sec15_timing(rows),
     sec16_failureDiagnostics(rows),
-    sec17_kpis(rows),
+    sec17_v8StarCalibration(rows),
+    sec18_v8CoreVariables(rows),
+    sec19_wpsBuckets(rows),
+    sec20_walletContribCalibration(rows),
+    sec21_consensusVsContra(rows),
+    sec22_kpis(rows),
   ].join('\n');
 
   const outPath = join(__dirname, '../DAILY_SHARP_ACTION_REPORT.md');
