@@ -710,37 +710,46 @@ async function run() {
       let entryLine = null;
       if (isSpread || isTotal) {
         const polyGame = polyData?.[match.sport]?.[match.key];
-        if (isSpread && polyGame?.polySpread) {
-          const ps = polyGame.polySpread;
-          const outcomeIdx = (ps.outcomes || []).findIndex(o => normalize(o) === outcomeNorm);
-          if (outcomeIdx === 0) entryLine = ps.line;
-          else if (outcomeIdx === 1) entryLine = -ps.line;
-          else {
-            // Outcome name didn't match polySpread outcomes (e.g. Polymarket data issue)
-            // Determine correct sign by matching game teams to polySpread outcomes
-            const sideForLine = resolveOutcomeSide(outcome, game.away, game.home, title);
-            const awayIdx = (ps.outcomes || []).findIndex(o => {
-              const n = normalize(o);
-              const nAway = normalize(game.away);
-              return n === nAway || n.includes(nAway) || nAway.includes(n);
-            });
-            if (awayIdx >= 0) {
-              const awayLine = awayIdx === 0 ? ps.line : -ps.line;
-              entryLine = sideForLine === 'away' ? awayLine : -awayLine;
-            } else if (match.spreadLine != null) {
-              entryLine = match.spreadLine;
+
+        if (isSpread) {
+          // PRIMARY: parse the line from the position's own title
+          // e.g. "Spread: Celtics (-12.5)" → line = -12.5
+          const titleLineMatch = title.match(/\(([+-]?\d+\.?\d*)\)/);
+          if (titleLineMatch) {
+            const titleLine = parseFloat(titleLineMatch[1]);
+            // The title line is FROM the team's perspective named in the title.
+            // If outcome matches that team, use as-is; if outcome is the other side, negate.
+            const titleTeamMatch = title.match(/^Spread:\s+(.+?)\s*\(/i);
+            if (titleTeamMatch) {
+              const titleTeamNorm = normalize(titleTeamMatch[1]);
+              entryLine = normalize(outcome).includes(titleTeamNorm) || titleTeamNorm.includes(normalize(outcome))
+                ? titleLine : -titleLine;
+            } else {
+              entryLine = titleLine;
             }
           }
-        } else if (isSpread && match.spreadLine != null) {
-          entryLine = match.spreadLine;
+
+          // FALLBACK: polySpread data (can be wrong market type like 1H)
+          if (entryLine == null && polyGame?.polySpread) {
+            const ps = polyGame.polySpread;
+            const outcomeIdx = (ps.outcomes || []).findIndex(o => normalize(o) === outcomeNorm);
+            if (outcomeIdx === 0) entryLine = ps.line;
+            else if (outcomeIdx === 1) entryLine = -ps.line;
+            else if (match.spreadLine != null) entryLine = match.spreadLine;
+          } else if (entryLine == null && match.spreadLine != null) {
+            entryLine = match.spreadLine;
+          }
         }
-        const pt = polyGame?.polyTotal;
-        const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
-        if (isTotal && isGameTotal) {
-          entryLine = pt.line;
-        } else if (isTotal) {
-          const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
-          if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+
+        if (isTotal) {
+          const pt = polyGame?.polyTotal;
+          const isGameTotal = pt && (pt.outcomes || []).some(o => /^over$/i.test(o));
+          if (isGameTotal) {
+            entryLine = pt.line;
+          } else {
+            const totalMatch = title.match(/(?:O\/U|Over|Under|Total)[^\d]*(\d+\.?\d*)/i);
+            if (totalMatch) entryLine = parseFloat(totalMatch[1]);
+          }
         }
       }
 

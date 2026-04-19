@@ -6785,9 +6785,9 @@ export default function SharpFlow() {
                         const sharpEntryOdds = probToAmerican(p.avgPrice);
 
                         const mktLabel = p.marketType === 'SPREAD' ? 'Spread' : p.marketType === 'TOTAL' ? 'Total' : 'ML';
-                        const displayLine = p.entryLine != null ? p.entryLine : spreadLine;
+                        const displayLine = spreadLine != null ? spreadLine : p.entryLine;
                         const lineStr = p.marketType === 'SPREAD' && displayLine != null ? ` ${displayLine > 0 ? '+' : ''}${displayLine}` : '';
-                        const totalDisplayLine = p.entryLine != null ? p.entryLine : totalLine;
+                        const totalDisplayLine = totalLine != null ? totalLine : p.entryLine;
                         const totalStr = p.marketType === 'TOTAL' && totalDisplayLine != null ? ` ${totalDisplayLine}` : '';
                         const teamDisplay = `${p.teamName}${lineStr}${totalStr}`;
                         const isHighConviction = p.betMultiplier >= 3;
