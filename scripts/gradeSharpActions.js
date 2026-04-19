@@ -381,14 +381,32 @@ async function main() {
         continue;
       }
 
-      const line = pos.marketType === 'SPREAD' ? pos.spreadLine
-        : pos.marketType === 'TOTAL' ? pos.totalLine
+      let line = pos.marketType === 'SPREAD' ? (pos.spreadLine ?? pos.entryLine ?? null)
+        : pos.marketType === 'TOTAL' ? (pos.totalLine ?? pos.entryLine ?? null)
         : null;
+
+      // Fallback: look up line from pinnacle_history when stored line is null
+      if (line == null && (pos.marketType === 'SPREAD' || pos.marketType === 'TOTAL')) {
+        const pinnFallback = pinnacleHistory?.[pos.sport]?.[pos.gameKey];
+        if (pinnFallback) {
+          if (pos.marketType === 'SPREAD') {
+            const sc = pinnFallback.spreadCurrent || pinnFallback.spreadOpener;
+            line = pos.side === 'away' ? sc?.awayLine : sc?.homeLine;
+            if (line == null) line = pos.side === 'away' ? pinnFallback.awaySpread : pinnFallback.homeSpread;
+          } else {
+            const tc = pinnFallback.totalCurrent || pinnFallback.totalOpener;
+            line = tc?.line ?? pinnFallback.totalLine ?? null;
+          }
+          if (line != null) {
+            console.log(`  [fallback] Using pinnacle line ${line} for ${doc.id}`);
+          }
+        }
+      }
 
       const outcome = calculateOutcome(game, pos.marketType, pos.side, line);
       if (!outcome) {
         errors++;
-        console.warn(`  Could not calculate outcome for ${doc.id}`);
+        console.warn(`  Could not calculate outcome for ${doc.id} (line=${line})`);
         continue;
       }
 
@@ -397,11 +415,19 @@ async function main() {
       const pinnGame = pinnacleHistory?.[pos.sport]?.[pos.gameKey];
       if (pinnGame) {
         if (pos.marketType === 'ML') {
-          closingPinnacleOdds = pos.side === 'away' ? pinnGame.awayOdds : pinnGame.homeOdds;
+          closingPinnacleOdds = pos.side === 'away'
+            ? (pinnGame.current?.away ?? pinnGame.awayOdds)
+            : (pinnGame.current?.home ?? pinnGame.homeOdds);
         } else if (pos.marketType === 'SPREAD') {
-          closingPinnacleOdds = pos.side === 'away' ? pinnGame.awaySpreadOdds : pinnGame.homeSpreadOdds;
+          const sc = pinnGame.spreadCurrent;
+          closingPinnacleOdds = pos.side === 'away'
+            ? (sc?.awayOdds ?? pinnGame.awaySpreadOdds)
+            : (sc?.homeOdds ?? pinnGame.homeSpreadOdds);
         } else {
-          closingPinnacleOdds = pos.side === 'over' ? pinnGame.overOdds : pinnGame.underOdds;
+          const tc = pinnGame.totalCurrent;
+          closingPinnacleOdds = pos.side === 'over'
+            ? (tc?.overOdds ?? pinnGame.overOdds)
+            : (tc?.underOdds ?? pinnGame.underOdds);
         }
 
         if (closingPinnacleOdds && pos.pinnacleOdds) {

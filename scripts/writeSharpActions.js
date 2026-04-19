@@ -110,7 +110,8 @@ async function main() {
           // Pinnacle odds + retail EV
           const pinnGame = pinnacleHistory?.[sport]?.[gameKey];
           let pinnOdds = null, bestRetail = null, bestBook = null, evEdge = null;
-          let spreadLine = null, totalLine = null;
+          let spreadLine = mkt === 'SPREAD' ? (pos.entryLine ?? null) : null;
+          let totalLine = mkt === 'TOTAL' ? (pos.entryLine ?? null) : null;
           if (pinnGame) {
             if (mkt === 'ML') {
               pinnOdds = pos.side === 'away' ? pinnGame.awayOdds : pinnGame.homeOdds;
@@ -128,7 +129,10 @@ async function main() {
               }
             } else if (mkt === 'SPREAD') {
               pinnOdds = pos.side === 'away' ? pinnGame.awaySpreadOdds : pinnGame.homeSpreadOdds;
-              spreadLine = pos.side === 'away' ? pinnGame.awaySpread : pinnGame.homeSpread;
+              if (spreadLine == null) {
+                const sc = pinnGame.spreadCurrent || pinnGame.spreadOpener;
+                spreadLine = pos.side === 'away' ? (sc?.awayLine ?? pinnGame.awaySpread) : (sc?.homeLine ?? pinnGame.homeSpread);
+              }
               const books = pinnGame.spreadBooks || {};
               for (const [bk, bkData] of Object.entries(books)) {
                 const o = pos.side === 'away' ? bkData.awayOdds : bkData.homeOdds;
@@ -143,7 +147,10 @@ async function main() {
               }
             } else {
               pinnOdds = pos.side === 'over' ? pinnGame.overOdds : pinnGame.underOdds;
-              totalLine = pinnGame.totalLine || null;
+              if (totalLine == null) {
+                const tc = pinnGame.totalCurrent || pinnGame.totalOpener;
+                totalLine = tc?.line ?? pinnGame.totalLine ?? null;
+              }
               const books = pinnGame.totalBooks || {};
               for (const [bk, bkData] of Object.entries(books)) {
                 const o = pos.side === 'over' ? bkData.overOdds : bkData.underOdds;
@@ -198,6 +205,7 @@ async function main() {
             bestRetailOdds: bestRetail,
             bestBook: bestBook,
             evEdge: evEdge,
+            entryLine: pos.entryLine ?? null,
             spreadLine: spreadLine,
             totalLine: totalLine,
             label,
@@ -237,8 +245,8 @@ async function main() {
           skipped++;
           continue;
         }
-        // Update live fields (price movement, position PnL) but don't overwrite core data
-        batch.update(ref, {
+        // Update live fields (price movement, position PnL) and patch missing lines
+        const updatePayload = {
           curPrice: pos.curPrice,
           currentValue: pos.currentValue,
           positionPnl: pos.positionPnl,
@@ -249,7 +257,11 @@ async function main() {
           evEdge: pos.evEdge,
           label: pos.label,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        };
+        if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
+        if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;
+        if (pos.totalLine != null && !data.totalLine) updatePayload.totalLine = pos.totalLine;
+        batch.update(ref, updatePayload);
         updated++;
       } else {
         batch.set(ref, pos);
