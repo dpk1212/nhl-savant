@@ -747,6 +747,11 @@ function evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flip
     if (newSideWPS != null && newSideWPS > threshold) {
       return { status: 'CANCELLED', reasons: ['side_flipped'], currentStars, wpsDelta, newSideWPS, flipBeatThreshold: threshold };
     }
+    // Flip rejected — new side not strong enough to cancel, but still check
+    // if the original side has deteriorated below lock range
+    if (currentWPS < LOCK_RANGE_WPS) {
+      return { status: 'MUTED', reasons: ['flip_rejected', 'below_lock_range'], currentStars, wpsDelta };
+    }
     return { status: 'ACTIVE', reasons: ['flip_rejected'], currentStars, wpsDelta };
   }
 
