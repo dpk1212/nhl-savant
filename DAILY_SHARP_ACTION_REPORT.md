@@ -292,15 +292,15 @@ _Insufficient CLV data (closing odds not captured for most positions)._
 
 | Stars | Label | N | % | WR | P&L | ROI | Avg WPS | Avg Inv |
 |---|---|---|---|---|---|---|---|---|
-| 1★ | MONITORING | 32 | 17.6% | 43.8% | +$64.8K | 15.2% | -2.32 | +$13.3K |
+| 1★ | MONITORING | 31 | 17.0% | 41.9% | +$60.7K | 14.5% | -2.33 | +$13.5K |
 | 2★ | LEAN | 31 | 17.0% | 54.8% | +$287.7K | 34.8% | -1.67 | +$26.7K |
-| 2.5★ | SOLID PLAY | 63 | 34.6% | 36.5% | -$535.0K | -28.5% | 0.72 | +$29.8K |
+| 2.5★ | SOLID PLAY | 64 | 35.2% | 37.5% | -$530.9K | -28.2% | 0.73 | +$29.4K |
 | 3★ | SOLID PLAY | 12 | 6.6% | 66.7% | +$54.4K | 10.8% | 2.55 | +$42.1K |
 | 3.5★ | STRONG PLAY | 14 | 7.7% | 64.3% | +$20.9K | 15.7% | 3.61 | +$9.5K |
 | 4★ | STRONG PLAY | 22 | 12.1% | 22.7% | -$491.1K | -41.3% | 5.19 | +$54.1K |
 | 4.5★ | ELITE PLAY | 8 | 4.4% | 75.0% | +$50.3K | 36.6% | 7.21 | +$17.2K |
 
-**Spearman: V8 Stars vs WR**: 0.165
+**Spearman: V8 Stars vs WR**: 0.180
 → Higher stars predict better outcomes
 
 **≥3★ positions**: 56 picks, 50.0% WR, -18.6% ROI, -$365.5K P&L
@@ -314,14 +314,14 @@ Distribution of V8 scoring variables across all graded positions.
 
 | Variable | Mean | Median | Std | Min | Max |
 |---|---|---|---|---|---|
-| WPS | 0.946 | 0.589 | 2.807 | -2.614 | 7.213 |
-| For Side | 165.890 | 134.850 | 133.817 | 0.000 | 517.700 |
+| WPS | 0.965 | 0.589 | 2.799 | -2.614 | 7.213 |
+| For Side | 166.212 | 134.850 | 133.632 | 0.000 | 517.700 |
 | Against Side | 73.466 | 55.600 | 84.747 | 0.000 | 310.100 |
-| Net Edge | 1.034 | 0.744 | 1.152 | -1.197 | 4.660 |
-| Breadth Bonus | 2.626 | 2.485 | 0.941 | 1.386 | 4.605 |
-| Conc Penalty | 2.714 | 2.531 | 1.015 | 1.109 | 4.000 |
-| Top Share | 0.628 | 0.601 | 0.281 | 0.222 | 1.000 |
-| Wallet Count For | 3.176 | 2.500 | 2.193 | 1.000 | 9.000 |
+| Net Edge | 1.038 | 0.744 | 1.152 | -1.197 | 4.660 |
+| Breadth Bonus | 2.630 | 2.485 | 0.937 | 1.386 | 4.605 |
+| Conc Penalty | 2.703 | 2.529 | 1.011 | 1.109 | 4.000 |
+| Top Share | 0.625 | 0.598 | 0.280 | 0.222 | 1.000 |
+| Wallet Count For | 3.181 | 2.500 | 2.189 | 1.000 | 9.000 |
 | Wallet Count Against | 1.401 | 1.000 | 1.382 | 0.000 | 5.000 |
 
 ### Per-Wallet Contribution Variables
@@ -343,14 +343,14 @@ How does WPS (Wallet Play Score) predict outcomes across ranges?
 
 | WPS Range | N | % | WR | P&L | ROI | Avg WPS |
 |---|---|---|---|---|---|---|
-| < -2 (very weak) | 33 | 18.1% | 48.5% | +$265.2K | 42.5% | -2.39 |
+| < -2 (very weak) | 32 | 17.6% | 46.9% | +$261.1K | 42.3% | -2.40 |
 | -2 to 0 (weak) | 30 | 16.5% | 50.0% | +$87.2K | 13.9% | -1.58 |
-| 0 to 2 (moderate) | 66 | 36.3% | 39.4% | -$520.8K | -27.5% | 0.78 |
+| 0 to 2 (moderate) | 67 | 36.8% | 40.3% | -$516.7K | -27.2% | 0.79 |
 | 2 to 4 (solid) | 23 | 12.6% | 60.9% | +$61.0K | 9.9% | 3.27 |
 | 4 to 6 (strong) | 22 | 12.1% | 22.7% | -$491.1K | -41.3% | 5.19 |
 | 6+ (elite) | 8 | 4.4% | 75.0% | +$50.3K | 36.6% | 7.21 |
 
-**Spearman: WPS vs WR**: 0.069
+**Spearman: WPS vs WR**: 0.084
 
 ---
 
@@ -377,7 +377,7 @@ Positions on the V8 consensus side vs contrarian side.
 
 | Side | N | % | WR | P&L | ROI | Avg WPS | Avg Inv |
 |---|---|---|---|---|---|---|---|
-| Consensus | 137 | 75.3% | 40.1% | -$1.3M | -32.3% | 0.98 | +$28.4K |
+| Consensus | 137 | 75.3% | 40.1% | -$1.3M | -32.3% | 1.00 | +$28.4K |
 | Contrarian | 45 | 24.7% | 60.0% | +$709.0K | 59.3% | 0.85 | +$26.6K |
 
 ---
@@ -403,7 +403,7 @@ Positions on the V8 consensus side vs contrarian side.
 | Avg bet multiplier | 2.66x |
 | V8 coverage | 182/182 (100.0%) |
 | Avg V8 Stars | 2.5★ |
-| Avg WPS | 0.95 |
+| Avg WPS | 0.96 |
 | ≥3★ WR | 50.0% |
 | ≥3★ ROI | -18.6% |
 | <3★ WR | 42.9% |

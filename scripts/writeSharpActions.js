@@ -277,9 +277,41 @@ async function main() {
   // Build V8 normalization from sports_sharps (same as UI)
   const v8Norm = buildV8Normalization(sportsSharps);
 
-  // Phase 1: collect qualifying positions and group by game+market for WPS
+  // ── Phase 1a: collect ALL positions per game+market for game-level V8 scoring
+  // This mirrors Sharp Intel — every position contributes to the game score,
+  // not just vault-qualifying ones.
+  const allGamePositions = {}; // gmKey → raw position array (for WPS input)
+
+  for (const { data: posData, mkt } of posFiles) {
+    if (!posData) continue;
+    for (const sport of ['NHL', 'NBA', 'MLB', 'CBB', 'NFL']) {
+      const sportGames = posData[sport] || {};
+      for (const [gameKey, gd] of Object.entries(sportGames)) {
+        if (!gd.positions) continue;
+        for (const pos of gd.positions) {
+          if (!pos.wallet) continue;
+          if (excludedSet.has(pos.wallet.toLowerCase())) continue;
+          const gmKey = `${sport}_${gameKey}_${mkt}`;
+          if (!allGamePositions[gmKey]) allGamePositions[gmKey] = [];
+          allGamePositions[gmKey].push(pos);
+        }
+      }
+    }
+  }
+
+  // Compute game-level WPS from the FULL position set (same as Sharp Intel)
+  const gameWPSCache = {}; // gmKey → computeGameWPS result
+  if (v8Norm) {
+    for (const [gmKey, rawPositions] of Object.entries(allGamePositions)) {
+      gameWPSCache[gmKey] = computeGameWPS(rawPositions, v8Norm);
+    }
+    console.log(`Game-level V8 scoring computed for ${Object.keys(gameWPSCache).length} game-market groups (using all ${Object.values(allGamePositions).reduce((s, a) => s + a.length, 0)} positions)`);
+  } else {
+    console.log('WARNING: Could not build V8 normalization (sports_sharps.json may be empty)');
+  }
+
+  // ── Phase 1b: collect qualifying positions for Firebase write
   const positions = [];
-  const gameMarketGroups = {}; // key → [index into positions]
 
   for (const { data: posData, mkt } of posFiles) {
     if (!posData) continue;
@@ -368,7 +400,11 @@ async function main() {
           // Wallet profile data
           const walletProfile = sportsSharps[pos.wallet] || sportsSharps[wLower] || {};
 
-          const idx = positions.length;
+          // Look up game-level V8 score (computed from ALL positions, same as Sharp Intel)
+          const gmKey = `${sport}_${gameKey}_${mkt}`;
+          const wps = gameWPSCache[gmKey] || {};
+          const myDetail = wps.walletDetails?.find(d => d.wallet === pos.wallet.slice(-6) && d.side === pos.side);
+
           positions.push({
             date,
             sport,
@@ -406,26 +442,27 @@ async function main() {
             totalLine: totalLine,
             label,
             firstSeen: pos.firstSeen || null,
-            // V8 fields — populated in phase 2
-            v8_walletPlayScore: null,
-            v8_stars: null,
-            v8_starLabel: null,
-            v8_forSide: null,
-            v8_againstSide: null,
-            v8_netEdge: null,
-            v8_breadthBonus: null,
-            v8_concPenalty: null,
-            v8_topShare: null,
-            v8_walletCountFor: null,
-            v8_walletCountAgainst: null,
-            v8_consensusSide: null,
-            v8_walletContribution: null,
-            v8_walletRoiNorm: null,
-            v8_walletPnlNorm: null,
-            v8_walletRankNorm: null,
-            v8_walletBase: null,
-            v8_convictionMult: null,
-            v8_sizeRatio: null,
+            // Game-level V8 scoring (same score Sharp Intel uses)
+            v8_walletPlayScore: wps.walletPlayScore ?? null,
+            v8_stars: wps.stars ?? null,
+            v8_starLabel: wps.label ?? null,
+            v8_forSide: wps.forSide ?? null,
+            v8_againstSide: wps.againstSide ?? null,
+            v8_netEdge: wps.netEdge ?? null,
+            v8_breadthBonus: wps.breadthBonus ?? null,
+            v8_concPenalty: wps.concPenalty ?? null,
+            v8_topShare: wps.topShare ?? null,
+            v8_walletCountFor: wps.walletCountFor ?? null,
+            v8_walletCountAgainst: wps.walletCountAgainst ?? null,
+            v8_consensusSide: wps.consensusSide ?? null,
+            // Per-wallet contribution detail
+            v8_walletContribution: myDetail ? +myDetail.contribution.toFixed(1) : null,
+            v8_walletRoiNorm: myDetail?.roiNorm ?? null,
+            v8_walletPnlNorm: myDetail?.pnlNorm ?? null,
+            v8_walletRankNorm: myDetail?.rankNorm ?? null,
+            v8_walletBase: myDetail?.walletBase ?? null,
+            v8_convictionMult: myDetail?.convictionMult ?? null,
+            v8_sizeRatio: myDetail?.sizeRatio ?? null,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -434,51 +471,9 @@ async function main() {
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
-
-          const gmKey = `${sport}_${gameKey}_${mkt}`;
-          if (!gameMarketGroups[gmKey]) gameMarketGroups[gmKey] = [];
-          gameMarketGroups[gmKey].push(idx);
         }
       }
     }
-  }
-
-  // Phase 2: compute WPS per game+market and stamp each position
-  if (v8Norm) {
-    for (const [, indices] of Object.entries(gameMarketGroups)) {
-      const groupPositions = indices.map(i => positions[i]);
-      const wps = computeGameWPS(groupPositions, v8Norm);
-
-      for (const idx of indices) {
-        const pos = positions[idx];
-        pos.v8_walletPlayScore = wps.walletPlayScore;
-        pos.v8_stars = wps.stars;
-        pos.v8_starLabel = wps.label;
-        pos.v8_forSide = wps.forSide;
-        pos.v8_againstSide = wps.againstSide;
-        pos.v8_netEdge = wps.netEdge;
-        pos.v8_breadthBonus = wps.breadthBonus;
-        pos.v8_concPenalty = wps.concPenalty;
-        pos.v8_topShare = wps.topShare;
-        pos.v8_walletCountFor = wps.walletCountFor;
-        pos.v8_walletCountAgainst = wps.walletCountAgainst;
-        pos.v8_consensusSide = wps.consensusSide;
-
-        const myDetail = wps.walletDetails.find(d => d.wallet === pos.walletShort && d.side === pos.side);
-        if (myDetail) {
-          pos.v8_walletContribution = myDetail.contribution;
-          pos.v8_walletRoiNorm = myDetail.roiNorm;
-          pos.v8_walletPnlNorm = myDetail.pnlNorm;
-          pos.v8_walletRankNorm = myDetail.rankNorm;
-          pos.v8_walletBase = myDetail.walletBase;
-          pos.v8_convictionMult = myDetail.convictionMult;
-          pos.v8_sizeRatio = myDetail.sizeRatio;
-        }
-      }
-    }
-    console.log(`V8 scoring computed for ${Object.keys(gameMarketGroups).length} game-market groups`);
-  } else {
-    console.log('WARNING: Could not build V8 normalization (sports_sharps.json may be empty)');
   }
 
   console.log(`Found ${positions.length} qualifying positions for Today's Action`);
@@ -500,6 +495,30 @@ async function main() {
       if (existing.exists) {
         const data = existing.data();
         if (data.status === 'GRADED') {
+          // Still update V8 scoring on graded positions (analysis data)
+          const v8Patch = {
+            v8_walletPlayScore: pos.v8_walletPlayScore,
+            v8_stars: pos.v8_stars,
+            v8_starLabel: pos.v8_starLabel,
+            v8_forSide: pos.v8_forSide,
+            v8_againstSide: pos.v8_againstSide,
+            v8_netEdge: pos.v8_netEdge,
+            v8_breadthBonus: pos.v8_breadthBonus,
+            v8_concPenalty: pos.v8_concPenalty,
+            v8_topShare: pos.v8_topShare,
+            v8_walletCountFor: pos.v8_walletCountFor,
+            v8_walletCountAgainst: pos.v8_walletCountAgainst,
+            v8_consensusSide: pos.v8_consensusSide,
+            v8_walletContribution: pos.v8_walletContribution,
+            v8_walletRoiNorm: pos.v8_walletRoiNorm,
+            v8_walletPnlNorm: pos.v8_walletPnlNorm,
+            v8_walletRankNorm: pos.v8_walletRankNorm,
+            v8_walletBase: pos.v8_walletBase,
+            v8_convictionMult: pos.v8_convictionMult,
+            v8_sizeRatio: pos.v8_sizeRatio,
+          };
+          batch.update(ref, v8Patch);
+          batchOps++;
           skipped++;
           continue;
         }
