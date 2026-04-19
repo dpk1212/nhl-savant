@@ -460,13 +460,13 @@ _Regime system live since 2026-04-16_
 
 | Category | Count | % |
 |---|---|---|
-| Total Written | 50 | 100% |
-| LOCKED (direct) | 22 | 44.0% |
-| Promoted (SHADOW→LOCKED) | 11 | 22.0% |
-| Rejected (stayed SHADOW) | 12 | 24.0% |
-| Superseded (side flipped) | 5 | 10.0% |
-| Muted | 1 | 2.0% |
-| Cancelled | 1 | 2.0% |
+| Total Written | 52 | 100% |
+| LOCKED (direct) | 24 | 46.2% |
+| Promoted (SHADOW→LOCKED) | 11 | 21.2% |
+| Rejected (stayed SHADOW) | 12 | 23.1% |
+| Superseded (side flipped) | 5 | 9.6% |
+| Muted | 1 | 1.9% |
+| Cancelled | 1 | 1.9% |
 
 ### Promotion Rate by Regime
 
@@ -474,7 +474,7 @@ _Regime system live since 2026-04-16_
 |---|---|---|---|
 | NO_MOVE | 21 | 7 | 33.3% |
 | SMALL_MOVE | 1 | 0 | 0.0% |
-| CLEAR_MOVE | 9 | 1 | 11.1% |
+| CLEAR_MOVE | 11 | 1 | 9.1% |
 | NEAR_START | 14 | 3 | 21.4% |
 
 ### Promoted vs Rejected — Graded Results
