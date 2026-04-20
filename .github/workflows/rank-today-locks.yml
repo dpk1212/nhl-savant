@@ -1,0 +1,51 @@
+name: Rank Today's Locked Picks
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rank:
+    name: Rank today's locked picks by V8.1 confidence
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rank today's locked picks
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  TODAY'S LOCKED PICKS — V8.1 CONFIDENCE RANKING"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/rankTodayLocks.js | tee today-locks-ranked.txt
+
+      - name: Upload ranking artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: today-locks-ranked
+          path: today-locks-ranked.txt
+          retention-days: 14
+
+      - name: Write to job summary
+        run: |
+          {
+            echo "## Today's Locked Picks — V8.1 Ranking"
+            echo ""
+            echo '```'
+            cat today-locks-ranked.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
