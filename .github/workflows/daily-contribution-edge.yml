@@ -1,0 +1,68 @@
+name: V8 Contribution-Edge Reports
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 08:30 ET daily (30 min after the V8 daily report so picks are graded first)
+    - cron: '30 12 * * *'
+
+jobs:
+  report:
+    name: Generate V8 Contribution-Edge Reports
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate contribution-edge report
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  V8 CONTRIBUTION-EDGE MAP"
+          echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/contributionEdgeMap.js
+
+      - name: Generate goldilocks deep-dive report
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  V8 GOLDILOCKS DEEP DIVE"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/qualifiedSharpDeepDive.js
+
+      - name: Commit reports
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git stash --include-untracked &&
+            git pull --rebase origin main &&
+            git stash pop || true &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+              git pull --rebase origin main
+            done
+          )
