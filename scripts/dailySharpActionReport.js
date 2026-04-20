@@ -1487,8 +1487,487 @@ function sec28_topShareAnalysis(rows) {
   return out.join('\n');
 }
 
-function sec29_kpis(rows) {
-  const out = ['\n---\n\n## 29. Dashboard KPIs\n'];
+function sec29_optimalThresholds(rows) {
+  const out = ['\n---\n\n## 29. Optimal Threshold Discovery\n'];
+  out.push('For each variable, scan thresholds to find the cutoff that maximizes WR lift over baseline.\n');
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  const baseWR = rows.filter(r => r.won).length / rows.length;
+  if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  const scanVar = (key, label, values, direction) => {
+    const sorted = [...new Set(values)].sort((a, b) => a - b);
+    let bestThresh = null, bestWR = baseWR, bestN = 0, bestLift = 0;
+    for (let i = Math.floor(sorted.length * 0.1); i < Math.floor(sorted.length * 0.9); i++) {
+      const thresh = sorted[i];
+      const sub = direction === '≥'
+        ? v8Rows.filter(r => r[key] != null && r[key] >= thresh)
+        : v8Rows.filter(r => r[key] != null && r[key] <= thresh);
+      if (sub.length < 5 || sub.length > v8Rows.length * 0.9) continue;
+      const wr = sub.filter(r => r.won).length / sub.length;
+      const lift = wr - baseWR;
+      if (lift > bestLift) { bestLift = lift; bestWR = wr; bestThresh = thresh; bestN = sub.length; }
+    }
+    return bestThresh != null
+      ? { label, direction, threshold: bestThresh, wr: bestWR, n: bestN, lift: bestLift }
+      : null;
+  };
+
+  const candidates = [
+    { key: 'v8_walletPlayScore', label: 'WPS', dir: '≥' },
+    { key: 'v8_stars', label: 'V8 Stars', dir: '≥' },
+    { key: 'v8_netEdge', label: 'Net Edge', dir: '≥' },
+    { key: 'v8_forSide', label: 'For Side', dir: '≥' },
+    { key: 'v8_againstSide', label: 'Against Side', dir: '≤' },
+    { key: 'v8_walletCountFor', label: 'Wallet Count For', dir: '≥' },
+    { key: 'v8_walletCountAgainst', label: 'Wallet Count Agst', dir: '≤' },
+    { key: 'v8_concPenalty', label: 'Conc Penalty', dir: '≤' },
+    { key: 'v8_topShare', label: 'Top Share', dir: '≤' },
+    { key: 'v8_walletContribution', label: 'Wallet Contribution', dir: '≥' },
+    { key: 'v8_walletBase', label: 'Wallet Base', dir: '≥' },
+    { key: 'v8_walletRoiNorm', label: 'ROI Norm', dir: '≥' },
+    { key: 'v8_convictionMult', label: 'Conviction Mult', dir: '≥' },
+    { key: 'avgPrice', label: 'Entry Price', dir: '≥' },
+    { key: 'invested', label: 'Position Size', dir: '≥' },
+    { key: 'betMultiplier', label: 'Bet Multiplier', dir: '≥' },
+    { key: 'sportROI', label: 'Wallet Sport ROI', dir: '≥' },
+  ];
+
+  const results = candidates.map(c => {
+    const vals = v8Rows.map(r => r[c.key]).filter(x => x != null && isFinite(x));
+    if (vals.length < 20) return null;
+    return scanVar(c.key, c.label, vals, c.dir);
+  }).filter(Boolean).sort((a, b) => b.lift - a.lift);
+
+  out.push(`**Baseline WR**: ${(baseWR * 100).toFixed(1)}%\n`);
+  out.push(mdTable(
+    ['Variable', 'Direction', 'Optimal Threshold', 'WR at Threshold', 'N', 'WR Lift'],
+    results.map(r => [r.label, r.direction, typeof r.threshold === 'number' ? r.threshold.toFixed(2) : r.threshold, (r.wr * 100).toFixed(1) + '%', r.n, '+' + (r.lift * 100).toFixed(1) + '%'])
+  ));
+
+  if (results.length >= 3) {
+    out.push(`\n**Top 3 single-variable filters for WR lift**:`);
+    for (const r of results.slice(0, 3)) {
+      out.push(`- **${r.label} ${r.direction} ${typeof r.threshold === 'number' ? r.threshold.toFixed(2) : r.threshold}**: ${(r.wr * 100).toFixed(1)}% WR (+${(r.lift * 100).toFixed(1)}% lift, N=${r.n})`);
+    }
+  }
+
+  return out.join('\n');
+}
+
+function sec30_featureImportance(rows) {
+  const out = ['\n---\n\n## 30. Feature Importance (Information Gain)\n'];
+  out.push('Which variables reduce outcome uncertainty the most when you split on their median?\n');
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  const entropy = (arr) => {
+    if (arr.length === 0) return 0;
+    const p = arr.filter(r => r.won).length / arr.length;
+    if (p === 0 || p === 1) return 0;
+    return -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p));
+  };
+
+  const baseEntropy = entropy(v8Rows);
+  const features = [
+    'v8_walletPlayScore', 'v8_stars', 'v8_netEdge', 'v8_forSide', 'v8_againstSide',
+    'v8_breadthBonus', 'v8_concPenalty', 'v8_topShare', 'v8_walletCountFor',
+    'v8_walletCountAgainst', 'v8_walletContribution', 'v8_walletRoiNorm',
+    'v8_walletPnlNorm', 'v8_walletBase', 'v8_convictionMult', 'v8_sizeRatio',
+    'avgPrice', 'invested', 'betMultiplier', 'sportROI',
+  ];
+  const labels = {
+    v8_walletPlayScore: 'WPS', v8_stars: 'Stars', v8_netEdge: 'Net Edge',
+    v8_forSide: 'For Side', v8_againstSide: 'Against Side', v8_breadthBonus: 'Breadth',
+    v8_concPenalty: 'Conc Penalty', v8_topShare: 'Top Share', v8_walletCountFor: 'Wallets For',
+    v8_walletCountAgainst: 'Wallets Agst', v8_walletContribution: 'Contribution',
+    v8_walletRoiNorm: 'ROI Norm', v8_walletPnlNorm: 'PnL Norm', v8_walletBase: 'Wallet Base',
+    v8_convictionMult: 'Conv Mult', v8_sizeRatio: 'Size Ratio',
+    avgPrice: 'Entry Price', invested: 'Position Size', betMultiplier: 'Bet Mult', sportROI: 'Sport ROI',
+  };
+
+  const gains = features.map(f => {
+    const valid = v8Rows.filter(r => r[f] != null && isFinite(r[f]));
+    if (valid.length < 20) return null;
+    const med = median(valid.map(r => r[f]));
+    const lo = valid.filter(r => r[f] < med);
+    const hi = valid.filter(r => r[f] >= med);
+    if (lo.length < 5 || hi.length < 5) return null;
+    const weightedEntropy = (lo.length / valid.length) * entropy(lo) + (hi.length / valid.length) * entropy(hi);
+    const gain = baseEntropy - weightedEntropy;
+    const loWR = lo.filter(r => r.won).length / lo.length;
+    const hiWR = hi.filter(r => r.won).length / hi.length;
+    return { feature: labels[f] || f, gain, median: med, loWR, hiWR, loN: lo.length, hiN: hi.length };
+  }).filter(Boolean).sort((a, b) => b.gain - a.gain);
+
+  out.push(`**Base entropy**: ${baseEntropy.toFixed(4)}\n`);
+  out.push(mdTable(
+    ['Rank', 'Feature', 'Info Gain', 'Median Split', 'Below WR', 'Above WR', 'WR Spread'],
+    gains.map((g, i) => [
+      i + 1, g.feature, g.gain.toFixed(4), typeof g.median === 'number' ? g.median.toFixed(2) : g.median,
+      (g.loWR * 100).toFixed(1) + '% (N=' + g.loN + ')',
+      (g.hiWR * 100).toFixed(1) + '% (N=' + g.hiN + ')',
+      (g.hiWR > g.loWR ? '+' : '') + ((g.hiWR - g.loWR) * 100).toFixed(1) + '%',
+    ])
+  ));
+
+  return out.join('\n');
+}
+
+function sec31_decisionRules(rows) {
+  const out = ['\n---\n\n## 31. Decision Rules (Best Filters for V8)\n'];
+  out.push('Systematic scan of 2-variable AND conditions. Minimum 5 positions per rule.\n');
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null && r.v8_walletContribution != null);
+  if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  const baseWR = rows.filter(r => r.won).length / rows.length;
+
+  const filters = [
+    { label: 'WPS ≥ 3', f: r => r.v8_walletPlayScore >= 3 },
+    { label: 'WPS ≥ 5', f: r => r.v8_walletPlayScore >= 5 },
+    { label: 'Stars ≥ 3', f: r => r.v8_stars >= 3 },
+    { label: 'Stars ≥ 4', f: r => r.v8_stars >= 4 },
+    { label: 'Net Edge > 1', f: r => r.v8_netEdge > 1 },
+    { label: 'Net Edge > 2', f: r => r.v8_netEdge > 2 },
+    { label: 'No opposition', f: r => r.v8_walletCountAgainst === 0 },
+    { label: '3+ wallets for', f: r => r.v8_walletCountFor >= 3 },
+    { label: '5+ wallets for', f: r => r.v8_walletCountFor >= 5 },
+    { label: 'Consensus side', f: r => r.side === r.v8_consensusSide },
+    { label: 'Conc penalty < 2.5', f: r => r.v8_concPenalty < 2.5 },
+    { label: 'TopShare < 0.5', f: r => r.v8_topShare < 0.5 },
+    { label: 'WalletBase ≥ 50', f: r => r.v8_walletBase >= 50 },
+    { label: 'WalletBase ≥ 40', f: r => r.v8_walletBase >= 40 },
+    { label: 'Entry price ≥ 50¢', f: r => r.avgPrice >= 0.50 },
+    { label: 'Entry price ≥ 60¢', f: r => r.avgPrice >= 0.60 },
+    { label: 'ELITE tier', f: r => r.tier === 'ELITE' },
+    { label: 'Bet mult ≥ 2', f: r => r.betMultiplier >= 2 },
+    { label: 'ForSide > 100', f: r => r.v8_forSide > 100 },
+    { label: 'AgainstSide < 50', f: r => r.v8_againstSide < 50 },
+    { label: 'Sport ROI ≥ 5%', f: r => r.sportROI >= 5 },
+  ];
+
+  const rules = [];
+  for (let i = 0; i < filters.length; i++) {
+    for (let j = i + 1; j < filters.length; j++) {
+      const sub = v8Rows.filter(r => filters[i].f(r) && filters[j].f(r));
+      if (sub.length < 5) continue;
+      const wr = sub.filter(r => r.won).length / sub.length;
+      const lift = wr - baseWR;
+      const a = agg(sub);
+      rules.push({ rule: `${filters[i].label} + ${filters[j].label}`, n: sub.length, wr, lift, roi: a.roi, pnl: a.pnl });
+    }
+  }
+
+  rules.sort((a, b) => b.lift - a.lift);
+  const top = rules.slice(0, 20);
+
+  out.push(mdTable(
+    ['Rule (A + B)', 'N', 'WR', 'WR Lift', 'ROI', 'P&L'],
+    top.map(r => [r.rule, r.n, (r.wr * 100).toFixed(1) + '%', '+' + (r.lift * 100).toFixed(1) + '%', r.roi, r.pnl])
+  ));
+
+  // Bottom 10 (worst filters)
+  out.push('\n### Worst 2-Variable Conditions (avoid these)\n');
+  const bottom = rules.filter(r => r.n >= 5).sort((a, b) => a.wr - b.wr).slice(0, 10);
+  out.push(mdTable(
+    ['Rule (A + B)', 'N', 'WR', 'WR vs Base', 'ROI'],
+    bottom.map(r => [r.rule, r.n, (r.wr * 100).toFixed(1) + '%', (r.lift > 0 ? '+' : '') + (r.lift * 100).toFixed(1) + '%', r.roi])
+  ));
+
+  return out.join('\n');
+}
+
+function sec32_wpsFormulaAudit(rows) {
+  const out = ['\n---\n\n## 32. WPS Formula Audit\n'];
+  out.push('Testing whether the current V8 formula weights are optimal.\n');
+  out.push('Current: WPS = netEdge + breadthBonus - concPenalty\n');
+  out.push('Current walletBase: 0.60×roiNorm + 0.25×rankNorm + 0.15×pnlNorm (ranked) or 0.65×roiNorm + 0.35×pnlNorm (unranked)\n');
+
+  const v8Rows = rows.filter(r => r.v8_netEdge != null && r.v8_breadthBonus != null && r.v8_concPenalty != null);
+  if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  // Test: what if we change the against-side discount?
+  out.push('\n### Against-Side Discount Sensitivity\n');
+  out.push('Current discount = 0.85. What if we used different values?\n');
+  const discounts = [0.50, 0.65, 0.75, 0.85, 1.00, 1.25, 1.50];
+  const discData = discounts.map(d => {
+    const adjusted = v8Rows.map(r => {
+      const adjEdge = (r.v8_forSide - d * r.v8_againstSide) / 100;
+      const adjWPS = adjEdge + r.v8_breadthBonus - r.v8_concPenalty;
+      return { ...r, adjWPS };
+    });
+    const aboveMedian = adjusted.filter(r => r.adjWPS >= median(adjusted.map(x => x.adjWPS)));
+    const wr = aboveMedian.filter(r => r.won).length / aboveMedian.length;
+    const rho = spearman(adjusted.map(r => r.adjWPS), adjusted.map(r => r.won));
+    return [d.toFixed(2) + (d === 0.85 ? ' ★current' : ''), (wr * 100).toFixed(1) + '%', rho != null ? rho.toFixed(3) : '—', aboveMedian.length];
+  });
+  out.push(mdTable(['Discount', 'Above-Median WR', 'ρ vs WR', 'N'], discData));
+
+  // Test: what if we change the concPenalty coefficient?
+  out.push('\n### Concentration Penalty Coefficient Sensitivity\n');
+  out.push('Current: 4× (≤2 wallets) or 5× (3+ wallets). Test alternatives.\n');
+  const concCoeffs = [2, 3, 4, 5, 6, 7, 8];
+  const concData = concCoeffs.map(c => {
+    const adjusted = v8Rows.map(r => {
+      const adjConc = c * r.v8_topShare;
+      const adjWPS = r.v8_netEdge + r.v8_breadthBonus - adjConc;
+      return { ...r, adjWPS };
+    });
+    const rho = spearman(adjusted.map(r => r.adjWPS), adjusted.map(r => r.won));
+    return [c + 'x' + (c === 4 || c === 5 ? ' ★current' : ''), rho != null ? rho.toFixed(3) : '—'];
+  });
+  out.push(mdTable(['Coeff', 'ρ vs WR'], concData));
+
+  // Test: what if we change breadthBonus multiplier?
+  out.push('\n### Breadth Bonus Multiplier Sensitivity\n');
+  out.push('Current: 2 × ln(1 + walletCountFor). Test alternatives.\n');
+  const breadthMults = [1, 1.5, 2, 2.5, 3, 4];
+  const breadthData = breadthMults.map(m => {
+    const adjusted = v8Rows.map(r => {
+      const adjBreadth = m * Math.log(1 + r.v8_walletCountFor);
+      const adjWPS = r.v8_netEdge + adjBreadth - r.v8_concPenalty;
+      return { ...r, adjWPS };
+    });
+    const rho = spearman(adjusted.map(r => r.adjWPS), adjusted.map(r => r.won));
+    return [m + 'x' + (m === 2 ? ' ★current' : ''), rho != null ? rho.toFixed(3) : '—'];
+  });
+  out.push(mdTable(['Multiplier', 'ρ vs WR'], breadthData));
+
+  // walletBase weight sensitivity
+  out.push('\n### Wallet Base Weight Sensitivity (ROI vs PnL)\n');
+  out.push('Current unranked: 0.65×roiNorm + 0.35×pnlNorm. What if we shifted weight?\n');
+  const wbValid = v8Rows.filter(r => r.v8_walletRoiNorm != null && r.v8_walletPnlNorm != null);
+  if (wbValid.length >= 20) {
+    const wbWeights = [[0.50, 0.50], [0.60, 0.40], [0.65, 0.35], [0.70, 0.30], [0.80, 0.20], [0.90, 0.10], [1.00, 0.00]];
+    const wbData = wbWeights.map(([rW, pW]) => {
+      const adjusted = wbValid.map(r => {
+        const adjBase = rW * r.v8_walletRoiNorm + pW * r.v8_walletPnlNorm;
+        return { ...r, adjBase };
+      });
+      const rho = spearman(adjusted.map(r => r.adjBase), adjusted.map(r => r.won));
+      return [`${(rW * 100).toFixed(0)}% ROI / ${(pW * 100).toFixed(0)}% PnL` + (rW === 0.65 ? ' ★current' : ''), rho != null ? rho.toFixed(3) : '—'];
+    });
+    out.push(mdTable(['Weight Split', 'ρ vs WR'], wbData));
+  }
+
+  return out.join('\n');
+}
+
+function sec33_backtestSimulations(rows) {
+  const out = ['\n---\n\n## 33. Backtest Simulations\n'];
+  out.push('If we only bet positions matching a filter, what would our track record look like?\n');
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  const baseA = agg(rows);
+
+  const strategies = [
+    { label: 'ALL positions (no filter)', filter: () => true },
+    { label: '≥3★ only', filter: r => r.v8_stars >= 3 },
+    { label: '≥4★ only', filter: r => r.v8_stars >= 4 },
+    { label: 'WPS > 0 only', filter: r => r.v8_walletPlayScore > 0 },
+    { label: 'WPS > 2 only', filter: r => r.v8_walletPlayScore > 2 },
+    { label: 'No opposition only', filter: r => r.v8_walletCountAgainst === 0 },
+    { label: 'Consensus + no opposition', filter: r => r.side === r.v8_consensusSide && r.v8_walletCountAgainst === 0 },
+    { label: 'Entry ≥ 50¢ (favorites)', filter: r => r.avgPrice >= 0.50 },
+    { label: 'Entry ≥ 60¢ (strong favs)', filter: r => r.avgPrice >= 0.60 },
+    { label: 'WalletBase ≥ 50', filter: r => r.v8_walletBase >= 50 },
+    { label: 'ELITE + ≥3★', filter: r => r.tier === 'ELITE' && r.v8_stars >= 3 },
+    { label: 'Net Edge > 1 + No opp', filter: r => r.v8_netEdge > 1 && r.v8_walletCountAgainst === 0 },
+    { label: 'Contrarian positions only', filter: r => r.side !== r.v8_consensusSide },
+    { label: 'HIGH_CONVICTION only', filter: r => r.label === 'HIGH_CONVICTION' },
+    { label: 'MLB only', filter: r => r.sport === 'MLB' },
+    { label: 'NHL only', filter: r => r.sport === 'NHL' },
+    { label: 'Bet mult ≥ 3', filter: r => r.betMultiplier >= 3 },
+    { label: '1-wallet games only', filter: r => r.v8_walletCountFor <= 1 },
+  ];
+
+  const headers = ['Strategy', 'N', '%Pool', 'WR', 'P&L', 'ROI', 'Avg Inv', 'WR Lift', 'Sharpe'];
+  const data = strategies.map(s => {
+    const sub = v8Rows.filter(s.filter);
+    if (sub.length < 3) return null;
+    const a = agg(sub);
+    const wrNum = sub.filter(r => r.won).length / sub.length;
+    const lift = wrNum - (rows.filter(r => r.won).length / rows.length);
+    const pnls = sub.map(r => r.settledPnl);
+    const meanPnl = avg(pnls);
+    const stdPnl = std(pnls);
+    const sharpe = stdPnl > 0 ? (meanPnl / stdPnl).toFixed(3) : '—';
+    return [s.label, a.n, pct(sub.length, v8Rows.length), a.wr, a.pnl, a.roi, a.avgInv,
+      (lift > 0 ? '+' : '') + (lift * 100).toFixed(1) + '%', sharpe];
+  }).filter(Boolean);
+
+  out.push(mdTable(headers, data));
+
+  // Best risk-adjusted strategy
+  const withSharpe = data.filter(d => d[8] !== '—').sort((a, b) => parseFloat(b[8]) - parseFloat(a[8]));
+  if (withSharpe.length > 0) {
+    out.push(`\n**Best risk-adjusted strategy**: ${withSharpe[0][0]} — Sharpe ${withSharpe[0][8]}, ${withSharpe[0][3]} WR, ${withSharpe[0][5]} ROI`);
+  }
+  const bestWR = [...data].sort((a, b) => parseFloat(b[3]) - parseFloat(a[3]));
+  if (bestWR.length > 0) {
+    out.push(`**Highest WR strategy**: ${bestWR[0][0]} — ${bestWR[0][3]} WR, ${bestWR[0][5]} ROI (N=${bestWR[0][1]})`);
+  }
+
+  return out.join('\n');
+}
+
+function sec34_edgeMatrix(rows) {
+  const out = ['\n---\n\n## 34. Edge Concentration Matrix\n'];
+  out.push('Where in the parameter space does actual edge exist? Green = profitable, Red = losing.\n');
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  if (v8Rows.length < 30) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  // WPS × Entry Price matrix
+  out.push('### WPS × Entry Price\n');
+  const wpsGroups = [{ label: 'WPS < 0', lo: -Infinity, hi: 0 }, { label: 'WPS 0-3', lo: 0, hi: 3 }, { label: 'WPS 3+', lo: 3, hi: Infinity }];
+  const priceGroups = [{ label: '< 40¢', lo: 0, hi: 0.40 }, { label: '40-55¢', lo: 0.40, hi: 0.55 }, { label: '55¢+', lo: 0.55, hi: 1.01 }];
+  const matHeaders = ['', ...priceGroups.map(p => p.label)];
+  const matData = wpsGroups.map(w => {
+    const cells = priceGroups.map(p => {
+      const sub = v8Rows.filter(r => r.v8_walletPlayScore >= w.lo && r.v8_walletPlayScore < w.hi && r.avgPrice >= p.lo && r.avgPrice < p.hi);
+      if (sub.length < 3) return '—';
+      const a = agg(sub);
+      return `${a.n}/${a.wr}/${a.roi}`;
+    });
+    return [w.label, ...cells];
+  });
+  out.push(mdTable(matHeaders, matData));
+  out.push('_Format: N / WR / ROI_\n');
+
+  // Wallet Count For × Against matrix
+  out.push('### Wallets For × Wallets Against\n');
+  const forGroups = [{ label: '1 wallet', lo: 1, hi: 2 }, { label: '2-3 wallets', lo: 2, hi: 4 }, { label: '4+ wallets', lo: 4, hi: Infinity }];
+  const agstGroups = [{ label: '0 against', lo: 0, hi: 1 }, { label: '1-2 against', lo: 1, hi: 3 }, { label: '3+ against', lo: 3, hi: Infinity }];
+  const mat2Headers = ['', ...agstGroups.map(a => a.label)];
+  const mat2Data = forGroups.map(f => {
+    const cells = agstGroups.map(a => {
+      const sub = v8Rows.filter(r => r.v8_walletCountFor >= f.lo && r.v8_walletCountFor < f.hi && r.v8_walletCountAgainst >= a.lo && r.v8_walletCountAgainst < a.hi);
+      if (sub.length < 3) return '—';
+      const aa = agg(sub);
+      return `${aa.n}/${aa.wr}/${aa.roi}`;
+    });
+    return [f.label, ...cells];
+  });
+  out.push(mdTable(mat2Headers, mat2Data));
+  out.push('_Format: N / WR / ROI_\n');
+
+  // Wallet Base × Conviction Mult matrix
+  out.push('### Wallet Base × Conviction Mult\n');
+  const baseGroups = [{ label: 'Base < 30', lo: 0, hi: 30 }, { label: 'Base 30-60', lo: 30, hi: 60 }, { label: 'Base 60+', lo: 60, hi: Infinity }];
+  const convGroups = [{ label: 'Conv < 1.0', lo: 0, hi: 1.0 }, { label: 'Conv 1.0-1.2', lo: 1.0, hi: 1.2 }, { label: 'Conv 1.2+', lo: 1.2, hi: Infinity }];
+  const mat3Headers = ['', ...convGroups.map(c => c.label)];
+  const mat3Data = baseGroups.map(b => {
+    const cells = convGroups.map(c => {
+      const sub = v8Rows.filter(r => r.v8_walletBase != null && r.v8_walletBase >= b.lo && r.v8_walletBase < b.hi && r.v8_convictionMult != null && r.v8_convictionMult >= c.lo && r.v8_convictionMult < c.hi);
+      if (sub.length < 3) return '—';
+      const aa = agg(sub);
+      return `${aa.n}/${aa.wr}/${aa.roi}`;
+    });
+    return [b.label, ...cells];
+  });
+  out.push(mdTable(mat3Headers, mat3Data));
+  out.push('_Format: N / WR / ROI_');
+
+  return out.join('\n');
+}
+
+function sec35_actionableInsights(rows) {
+  const out = ['\n---\n\n## 35. Actionable Insights for V8 Tuning\n'];
+  const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
+  if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
+
+  const baseWR = rows.filter(r => r.won).length / rows.length;
+  const findings = [];
+
+  // 1. Entry price
+  const favs = v8Rows.filter(r => r.avgPrice >= 0.50);
+  const dogs = v8Rows.filter(r => r.avgPrice < 0.50);
+  if (favs.length >= 5 && dogs.length >= 5) {
+    const favWR = favs.filter(r => r.won).length / favs.length;
+    const dogWR = dogs.filter(r => r.won).length / dogs.length;
+    if (favWR > dogWR + 0.10) {
+      findings.push({ priority: 'HIGH', area: 'Entry Price', finding: `Favorites (≥50¢) hit at ${(favWR*100).toFixed(0)}% vs underdogs at ${(dogWR*100).toFixed(0)}%. Consider penalizing underdog plays or requiring higher WPS for <50¢ entries.` });
+    }
+  }
+
+  // 2. Opposition
+  const noOpp = v8Rows.filter(r => r.v8_walletCountAgainst === 0 && r.side === r.v8_consensusSide);
+  const hasOpp = v8Rows.filter(r => r.v8_walletCountAgainst > 0 && r.side === r.v8_consensusSide);
+  if (noOpp.length >= 5 && hasOpp.length >= 5) {
+    const noOppWR = noOpp.filter(r => r.won).length / noOpp.length;
+    const hasOppWR = hasOpp.filter(r => r.won).length / hasOpp.length;
+    if (noOppWR > hasOppWR + 0.10) {
+      findings.push({ priority: 'HIGH', area: 'Opposition Gate', finding: `No-opposition consensus WR: ${(noOppWR*100).toFixed(0)}% vs with-opposition: ${(hasOppWR*100).toFixed(0)}%. The 0.85 against-discount may be too lenient — opposing sharps destroy edge.` });
+    }
+  }
+
+  // 3. Against-side strength
+  const strongAgst = v8Rows.filter(r => r.v8_againstSide >= 100 && r.side === r.v8_consensusSide);
+  if (strongAgst.length >= 5) {
+    const saWR = strongAgst.filter(r => r.won).length / strongAgst.length;
+    if (saWR < baseWR - 0.10) {
+      findings.push({ priority: 'CRITICAL', area: 'Against Side Filter', finding: `When againstSide ≥ 100: ${(saWR*100).toFixed(0)}% WR (${strongAgst.length} positions). These are money pits — consider adding a hard gate.` });
+    }
+  }
+
+  // 4. Single wallet vs multi
+  const single = v8Rows.filter(r => r.v8_walletCountFor <= 1);
+  const multi = v8Rows.filter(r => r.v8_walletCountFor >= 3);
+  if (single.length >= 5 && multi.length >= 5) {
+    const sWR = single.filter(r => r.won).length / single.length;
+    const mWR = multi.filter(r => r.won).length / multi.length;
+    findings.push({ priority: sWR > mWR + 0.05 ? 'MEDIUM' : 'INFO', area: 'Wallet Count', finding: `1-wallet WR: ${(sWR*100).toFixed(0)}% (N=${single.length}) vs 3+ wallet WR: ${(mWR*100).toFixed(0)}% (N=${multi.length}). ${sWR > mWR ? 'Single-wallet plays are outperforming consensus — breadth bonus may be over-weighted.' : 'Multi-wallet consensus is outperforming — breadth bonus is working.'}` });
+  }
+
+  // 5. Contrarian signal
+  const contra = v8Rows.filter(r => r.side !== r.v8_consensusSide);
+  if (contra.length >= 5) {
+    const cWR = contra.filter(r => r.won).length / contra.length;
+    if (cWR > baseWR + 0.10) {
+      findings.push({ priority: 'HIGH', area: 'Contrarian Edge', finding: `Contrarian positions: ${(cWR*100).toFixed(0)}% WR (N=${contra.length}). These wallets are betting AGAINST the consensus and winning. Consider tracking contrarian signals separately.` });
+    }
+  }
+
+  // 6. Concentration paradox
+  const lowConc = v8Rows.filter(r => r.v8_topShare < 0.4);
+  const highConc = v8Rows.filter(r => r.v8_topShare >= 0.8);
+  if (lowConc.length >= 5 && highConc.length >= 5) {
+    const lcWR = lowConc.filter(r => r.won).length / lowConc.length;
+    const hcWR = highConc.filter(r => r.won).length / highConc.length;
+    if (hcWR > lcWR + 0.10) {
+      findings.push({ priority: 'HIGH', area: 'Concentration Penalty', finding: `High concentration (topShare ≥ 80%): ${(hcWR*100).toFixed(0)}% WR vs diversified (<40%): ${(lcWR*100).toFixed(0)}% WR. The concentration penalty may be BACKWARDS — conviction concentration is actually a positive signal.` });
+    }
+  }
+
+  // 7. Sport-specific
+  const sports = [...new Set(v8Rows.map(r => r.sport))];
+  for (const s of sports) {
+    const sub = v8Rows.filter(r => r.sport === s);
+    if (sub.length >= 10) {
+      const sWR = sub.filter(r => r.won).length / sub.length;
+      const sA = agg(sub);
+      if (sWR > baseWR + 0.10) findings.push({ priority: 'INFO', area: 'Sport Edge', finding: `${s}: ${(sWR*100).toFixed(0)}% WR, ${sA.roi} ROI (N=${sub.length}). Outperforming overall.` });
+      if (sWR < baseWR - 0.10) findings.push({ priority: 'MEDIUM', area: 'Sport Weakness', finding: `${s}: ${(sWR*100).toFixed(0)}% WR, ${sA.roi} ROI (N=${sub.length}). Underperforming overall.` });
+    }
+  }
+
+  if (findings.length === 0) {
+    out.push('No significant insights detected at current sample size.');
+  } else {
+    findings.sort((a, b) => {
+      const prio = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, INFO: 3 };
+      return (prio[a.priority] || 4) - (prio[b.priority] || 4);
+    });
+    for (const f of findings) {
+      out.push(`### ${f.priority}: ${f.area}\n${f.finding}\n`);
+    }
+  }
+
+  return out.join('\n');
+}
+
+function sec36_kpis(rows) {
+  const out = ['\n---\n\n## 36. Dashboard KPIs\n'];
 
   const a = agg(rows);
   const uniqueWallets = new Set(rows.map(r => r.wallet)).size;
@@ -1583,7 +2062,14 @@ async function run() {
     sec26_multiFactorConditions(rows),
     sec27_oppositionAnalysis(rows),
     sec28_topShareAnalysis(rows),
-    sec29_kpis(rows),
+    sec29_optimalThresholds(rows),
+    sec30_featureImportance(rows),
+    sec31_decisionRules(rows),
+    sec32_wpsFormulaAudit(rows),
+    sec33_backtestSimulations(rows),
+    sec34_edgeMatrix(rows),
+    sec35_actionableInsights(rows),
+    sec36_kpis(rows),
   ].join('\n');
 
   const outPath = join(__dirname, '../DAILY_SHARP_ACTION_REPORT.md');
