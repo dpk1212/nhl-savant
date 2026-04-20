@@ -237,6 +237,20 @@ function computeGameWPS(gamePositions, v8Norm) {
 
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY', 2: 'LEAN', 1.5: 'DEVELOPING', 1: 'MONITORING' };
 
+  // V8.1 contribution-tier classification (mirrors SharpFlow.jsx)
+  // See V8_CONTRIBUTION_EDGE.md + scripts/contributionEdgeMap.js for derivation.
+  const forDetails = walletDetails.filter(d => d.side === consensusSide);
+  const agDetails = walletDetails.filter(d => d.side && d.side !== consensusSide);
+  const qFor50 = forDetails.filter(d => (d.contribution ?? 0) >= 50).length;
+  const qAg50 = agDetails.filter(d => (d.contribution ?? 0) >= 50).length;
+  const contribMargin = qFor50 - qAg50;
+  const maxContribFor = forDetails.reduce((m, d) => Math.max(m, d.contribution ?? 0), 0);
+  let contribTier;
+  if (contribMargin < 0) contribTier = 'MUTE';
+  else if ((qFor50 >= 3 && qAg50 === 0) || (qFor50 >= 2 && contribMargin >= 1)) contribTier = 'STRONG';
+  else if (qFor50 >= 1 && contribMargin >= 1 && maxContribFor >= 50) contribTier = 'STANDARD';
+  else contribTier = 'LEAN';
+
   return {
     walletPlayScore: +walletPlayScore.toFixed(4),
     stars,
@@ -251,6 +265,11 @@ function computeGameWPS(gamePositions, v8Norm) {
     walletCountAgainst: oppWallets.length,
     consensusSide,
     walletDetails,
+    contribTier,
+    qFor50,
+    qAg50,
+    contribMargin,
+    maxContribFor: +maxContribFor.toFixed(1),
   };
 }
 
@@ -463,6 +482,15 @@ async function main() {
             v8_walletBase: myDetail?.walletBase ?? null,
             v8_convictionMult: myDetail?.convictionMult ?? null,
             v8_sizeRatio: myDetail?.sizeRatio ?? null,
+            // V8.1 contribution-tier signals (game-level, broadcast to every position on this game+market)
+            v8_contribTier: wps.contribTier ?? null,
+            v8_qFor50: wps.qFor50 ?? null,
+            v8_qAgainst50: wps.qAg50 ?? null,
+            v8_contribMargin: wps.contribMargin ?? null,
+            v8_maxContribFor: wps.maxContribFor ?? null,
+            // Per-position convenience flags for easy filtering
+            v8_onConsensusSide: wps.consensusSide ? pos.side === wps.consensusSide : null,
+            v8_qualifiedContribution: myDetail ? (myDetail.contribution ?? 0) >= 50 : null,
             status: 'PENDING',
             result: null,
             gradedAt: null,
@@ -516,6 +544,13 @@ async function main() {
             v8_walletBase: pos.v8_walletBase,
             v8_convictionMult: pos.v8_convictionMult,
             v8_sizeRatio: pos.v8_sizeRatio,
+            v8_contribTier: pos.v8_contribTier,
+            v8_qFor50: pos.v8_qFor50,
+            v8_qAgainst50: pos.v8_qAgainst50,
+            v8_contribMargin: pos.v8_contribMargin,
+            v8_maxContribFor: pos.v8_maxContribFor,
+            v8_onConsensusSide: pos.v8_onConsensusSide,
+            v8_qualifiedContribution: pos.v8_qualifiedContribution,
           };
           batch.update(ref, v8Patch);
           batchOps++;
@@ -553,6 +588,13 @@ async function main() {
           v8_walletBase: pos.v8_walletBase,
           v8_convictionMult: pos.v8_convictionMult,
           v8_sizeRatio: pos.v8_sizeRatio,
+          v8_contribTier: pos.v8_contribTier,
+          v8_qFor50: pos.v8_qFor50,
+          v8_qAgainst50: pos.v8_qAgainst50,
+          v8_contribMargin: pos.v8_contribMargin,
+          v8_maxContribFor: pos.v8_maxContribFor,
+          v8_onConsensusSide: pos.v8_onConsensusSide,
+          v8_qualifiedContribution: pos.v8_qualifiedContribution,
         };
         if (pos.entryLine != null) updatePayload.entryLine = pos.entryLine;
         if (pos.spreadLine != null && !data.spreadLine) updatePayload.spreadLine = pos.spreadLine;
