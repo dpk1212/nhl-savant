@@ -15,6 +15,7 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| **V8.1 Contribution-Tier Promotion** | 2026-04-20 | Additive LOCKED path via `contribTier='STRONG'`; `minInvestedFloor` relaxed to $2.5K for STRONG/STANDARD; per-pick `contribTier` + `promotedBy` written to Firebase; daily `contributionEdgeMap` + `qualifiedSharpDeepDive` workflow |
 | **V8 Wallet-Contribution** | 2026-04-16 | Complete overhaul: wallet-first architecture (WalletBase × ConvictionMultiplier), percentile normalization, internal re-ranking, NetEdge/100 side scoring, breadth=2×ln, single-wallet cap, regime decoupled from stars |
 | V7.1 + Regime Dampening | 2026-04-15 | Regime-aware update dampening, NO_MOVE star cap, lock baseline tracking |
 | V7 + Two-Sided Overlay | 2026-04-06 | Two-stage architecture, live CLV blending, z-score model, two-sided features |
@@ -172,24 +173,74 @@ See `SHARP_FLOW_SYSTEM.md` for full implementation details, Firebase schema, and
 
 ---
 
-## Regime Detection (decoupled from stars)
+## Lock Promotion (V8.1 — two additive paths)
 
-Regime detection still determines whether a play is **locked** vs **shadow**, but it no longer affects the star number itself.
+As of 2026-04-20, a play becomes **LOCKED** via either of two independent paths:
 
-| Regime | Condition | Effect |
-|--------|-----------|--------|
-| NO_MOVE | No Pinnacle movement | Play stays as shadow |
-| SMALL_MOVE | pinnMoveSize > 0 | Play stays as shadow |
-| CLEAR_MOVE | pinnMoveSize ≥ 0.02 | Play can be locked |
-| NEAR_START | ≤60 min to game + move ≥ 0.01 | Play can be locked |
+1. **Regime path (original V8):** market movement confirms the sharp side.
+2. **Contribution path (new):** qualified-sharp contribution signal is strong enough on its own.
 
-A play is **locked** when: `stars ≥ 2.5 AND consensusInvested ≥ $10K AND regime ∈ {CLEAR_MOVE, NEAR_START}`
+### Regime Detection
+
+| Regime | Condition | Locks via regime? |
+|--------|-----------|-------------------|
+| NO_MOVE | No Pinnacle movement | No |
+| SMALL_MOVE | `pinnMoveSize > 0` | No |
+| CLEAR_MOVE | `pinnMoveSize ≥ 0.02` | Yes |
+| NEAR_START | ≤ 60 min to game + move ≥ 0.01 | Yes |
+
+### Contribution Tier
+
+Per-wallet **contribution** = `walletBase × convictionMult` (the quantity already computed inside WPS). For each pick, we count wallets with `contribution ≥ 50` on each side:
+
+- `qFor` = # for-side wallets with contribution ≥ 50
+- `qAg` = # against-side wallets with contribution ≥ 50
+- `margin = qFor − qAg`
+- `maxContrib_F` = highest contribution on the for-side
+
+```
+contribTier =
+  'MUTE'     if margin < 0
+  'STRONG'   if (qFor ≥ 3 AND qAg = 0) OR (qFor ≥ 2 AND margin ≥ +1)
+  'STANDARD' if qFor ≥ 1 AND margin ≥ +1 AND maxContrib_F ≥ 50
+  'LEAN'     otherwise
+```
+
+### Final Lock Decision
+
+```
+decideLockStage(regime, v8Scoring, side):
+  if regime ∈ {CLEAR_MOVE, NEAR_START}:  return { stage: 'LOCKED', promotedBy: 'regime' }
+  if contribTier === 'STRONG':           return { stage: 'LOCKED', promotedBy: 'contribution' }
+  return { stage: 'SHADOW', promotedBy: null }
+```
+
+### SHADOW Gate
+
+A pick must first pass the SHADOW gate to be written to Firebase at all:
+
+```
+stars ≥ 2.5
+  AND (Spread/Total only) walletCountFor ≥ 2
+  AND consensusInvested ≥ minInvestedFloor(contribTier)
+
+minInvestedFloor('STRONG') = minInvestedFloor('STANDARD') = 2500
+minInvestedFloor(_) = 5000
+```
+
+The relaxed $2.5K floor for STRONG/STANDARD tiers intentionally promotes more low-dollar, high-quality-sharp picks to SHADOW so they can be monitored and graded.
+
+### MUTE is Data-Only
+
+`contribTier = 'MUTE'` (qualified counter-sharps strictly outnumber qualified backers) is recorded on the pick but **does not automatically suppress display or writing**. The live sample is too small to act on MUTE yet; once the daily `contributionEdgeMap.js` report confirms the edge on more picks, MUTE may graduate to an auto-suppress rule.
 
 ---
 
 ## Rollout
 
 V8 applies to **new picks only**. All existing Firebase `sharp_action_positions` retain their V7 star ratings, lock stages, and promoted regimes. No backfill.
+
+V8.1 (contribution-tier promotion) also rolls forward only: pre-V8.1 picks keep their existing `lockStage` and do not have `contribTier` or `promotedBy` fields. Analysis scripts tolerate this with `?.` access.
 
 ---
 

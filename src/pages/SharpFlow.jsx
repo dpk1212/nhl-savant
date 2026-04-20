@@ -784,6 +784,46 @@ function gameDate(commenceTime) {
   return new Date(commenceTime).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+// Contribution-tier classifier (see scripts/contributionEdgeMap.js + V8_CONTRIBUTION_EDGE.md).
+// Rules derived from 18-pick V8 sample, T=50:
+//   STRONG:   qFor≥3 AND qAgainst=0   OR   qFor≥2 AND margin≥+1
+//   STANDARD: qFor≥1 AND margin≥+1 AND maxContrib_F≥50
+//   MUTE:     margin<0                     (stored only — not acted on yet)
+//   LEAN:     anything else (includes qFor=0 signal-less picks)
+// We use STRONG as an additional path to LOCKED alongside regime.
+function classifyContributionTier(v8Scoring, sideKey) {
+  const wd = v8Scoring?.walletDetails;
+  if (!Array.isArray(wd) || !sideKey) return null;
+  const forW = wd.filter(w => w.side === sideKey);
+  const agW = wd.filter(w => w.side !== sideKey);
+  const qFor50 = forW.filter(w => (w?.contribution ?? 0) >= 50).length;
+  const qAg50 = agW.filter(w => (w?.contribution ?? 0) >= 50).length;
+  const margin50 = qFor50 - qAg50;
+  const maxContribF = forW.reduce((m, w) => Math.max(m, w?.contribution ?? 0), 0);
+  if (margin50 < 0) return 'MUTE';
+  if ((qFor50 >= 3 && qAg50 === 0) || (qFor50 >= 2 && margin50 >= 1)) return 'STRONG';
+  if (qFor50 >= 1 && margin50 >= 1 && maxContribF >= 50) return 'STANDARD';
+  return 'LEAN';
+}
+
+// Single source of truth for lockStage + who promoted it.
+// Regime-based LOCK remains; contribution-STRONG adds a second path.
+function decideLockStage(regime, v8Scoring, sideKey) {
+  const hasRegime = regime === 'CLEAR_MOVE' || regime === 'NEAR_START';
+  const contribTier = classifyContributionTier(v8Scoring, sideKey);
+  if (hasRegime) return { stage: 'LOCKED', contribTier, promotedBy: 'regime' };
+  if (contribTier === 'STRONG') return { stage: 'LOCKED', contribTier, promotedBy: 'contribution' };
+  return { stage: 'SHADOW', contribTier, promotedBy: null };
+}
+
+// Minimum dollars behind a side to even consider writing the pick.
+// Baseline $5k; relaxed to $2.5k when contribution tier is STRONG/STANDARD
+// (we trust the qualified-sharp signal even at lower aggregate volume).
+function minInvestedFloor(contribTier) {
+  if (contribTier === 'STRONG' || contribTier === 'STANDARD') return 2500;
+  return 5000;
+}
+
 function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring) {
   const now = Date.now();
   const tier = unitTier(units).label;
@@ -793,17 +833,26 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
   if (v8Scoring) snapshot.v8Scoring = v8Scoring;
-  const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
-  return {
+  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side);
+  const base = {
     team,
     lock: { ...snapshot, lockedAt: now },
     peak: { ...snapshot, updatedAt: now },
     maxEV: evEdge || 0,
     maxEVAt: now,
     lockStage,
+    contribTier: contribTier || null,
     status: 'PENDING',
     result: { outcome: null, profit: null, gradedAt: null },
   };
+  if (lockStage === 'LOCKED') {
+    base.promotedBy = promotedBy;
+    if (promotedBy === 'contribution') {
+      base.promotedAt = now;
+      base.promotedRegime = regime || null;
+    }
+  }
+  return base;
 }
 
 async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring }) {
@@ -813,8 +862,10 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 5000) {
-      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
+    const contribTier = classifyContributionTier(v8Scoring, side);
+    const minInv = minInvestedFloor(contribTier);
+    if ((totalInvested || 0) < minInv) {
+      console.warn(`[syncPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} minimum (contribTier=${contribTier})`);
       return { docId, action: 'no_change' };
     }
 
@@ -866,11 +917,14 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: isReflip ? 'side_reflipped' : 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
-        const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
+        const decision = decideLockStage(regime, v8Scoring, side);
+        mergeData.sides[side].contribTier = decision.contribTier || null;
+        const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
           mergeData.sides[side].lockStage = 'LOCKED';
           mergeData.sides[side].promotedAt = Date.now();
           mergeData.sides[side].promotedRegime = regime;
+          mergeData.sides[side].promotedBy = decision.promotedBy;
           if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
           mergeData.sides[side].lock.regime = regime;
         }
@@ -879,11 +933,11 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
           mergeData.sides[side].supersededAt = null;
           const reflipWPS = v8Scoring?.walletPlayScore ?? null;
           if (reflipWPS != null) mergeData.flipBeatThreshold = reflipWPS;
-          const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
-          mergeData.sides[side].lockStage = lockStage;
-          if (lockStage === 'LOCKED') {
+          mergeData.sides[side].lockStage = decision.stage;
+          if (decision.stage === 'LOCKED') {
             mergeData.sides[side].promotedAt = Date.now();
             mergeData.sides[side].promotedRegime = regime;
+            mergeData.sides[side].promotedBy = decision.promotedBy;
             if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
             mergeData.sides[side].lock.regime = regime;
           }
@@ -898,12 +952,15 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         return { docId, action: isReflip ? 'side_reflipped' : shouldPromote ? 'promoted' : 'peak_updated' };
       }
 
-      if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
-        await setDoc(ref, {
-          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, lock: { regime } } },
-          lastWriteAt: Date.now(), lastAction: 'promoted',
-        }, { merge: true });
-        return { docId, action: 'promoted' };
+      {
+        const decision = decideLockStage(regime, v8Scoring, side);
+        if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
+          await setDoc(ref, {
+            sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } } },
+            lastWriteAt: Date.now(), lastAction: 'promoted',
+          }, { merge: true });
+          return { docId, action: 'promoted' };
+        }
       }
 
       if (evIsNewMax) {
@@ -996,17 +1053,26 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
   if (v8Scoring) snapshot.v8Scoring = v8Scoring;
-  const lockStage = (regime === 'CLEAR_MOVE' || regime === 'NEAR_START') ? 'LOCKED' : 'SHADOW';
-  return {
+  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side);
+  const base = {
     team,
     lock: { ...snapshot, lockedAt: now },
     peak: { ...snapshot, updatedAt: now },
     maxEV: evEdge || 0,
     maxEVAt: now,
     lockStage,
+    contribTier: contribTier || null,
     status: 'PENDING',
     result: { outcome: null, profit: null, gradedAt: null },
   };
+  if (lockStage === 'LOCKED') {
+    base.promotedBy = promotedBy;
+    if (promotedBy === 'contribution') {
+      base.promotedAt = now;
+      base.promotedRegime = regime || null;
+    }
+  }
+  return base;
 }
 
 async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, commenceTime, side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring }) {
@@ -1016,8 +1082,10 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 5000) {
-      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
+    const contribTier = classifyContributionTier(v8Scoring, side);
+    const minInv = minInvestedFloor(contribTier);
+    if ((totalInvested || 0) < minInv) {
+      console.warn(`[syncSpreadPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} minimum (contribTier=${contribTier})`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowSpreads', docId);
@@ -1059,23 +1127,29 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
-        const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
+        const decision = decideLockStage(regime, v8Scoring, side);
+        mergeObj.sides[side].contribTier = decision.contribTier || null;
+        const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
           mergeObj.sides[side].lockStage = 'LOCKED';
           mergeObj.sides[side].promotedAt = Date.now();
           mergeObj.sides[side].promotedRegime = regime;
+          mergeObj.sides[side].promotedBy = decision.promotedBy;
           if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
           mergeObj.sides[side].lock.regime = regime;
         }
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
-      if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
-        await setDoc(ref, {
-          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, lock: { regime } } },
-          lastWriteAt: Date.now(), lastAction: 'promoted',
-        }, { merge: true });
-        return { docId, action: 'promoted' };
+      {
+        const decision = decideLockStage(regime, v8Scoring, side);
+        if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
+          await setDoc(ref, {
+            sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } } },
+            lastWriteAt: Date.now(), lastAction: 'promoted',
+          }, { merge: true });
+          return { docId, action: 'promoted' };
+        }
       }
       if (needsCsPatch) {
         await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
@@ -1113,8 +1187,10 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     if (!commenceTime || Date.now() >= commenceTime - PREGAME_BUFFER_MS) {
       return { docId, action: 'no_change' };
     }
-    if ((totalInvested || 0) < 5000) {
-      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $5000 minimum`);
+    const contribTier = classifyContributionTier(v8Scoring, side);
+    const minInv = minInvestedFloor(contribTier);
+    if ((totalInvested || 0) < minInv) {
+      console.warn(`[syncTotalPickToFirebase] REJECTED ${docId}: totalInvested $${totalInvested} < $${minInv} minimum (contribTier=${contribTier})`);
       return { docId, action: 'no_change' };
     }
     const ref = doc(db, 'sharpFlowTotals', docId);
@@ -1156,23 +1232,29 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
-        const shouldPromote = sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START');
+        const decision = decideLockStage(regime, v8Scoring, side);
+        mergeObj.sides[side].contribTier = decision.contribTier || null;
+        const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
           mergeObj.sides[side].lockStage = 'LOCKED';
           mergeObj.sides[side].promotedAt = Date.now();
           mergeObj.sides[side].promotedRegime = regime;
+          mergeObj.sides[side].promotedBy = decision.promotedBy;
           if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
           mergeObj.sides[side].lock.regime = regime;
         }
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
-      if (sides[side].lockStage === 'SHADOW' && (regime === 'CLEAR_MOVE' || regime === 'NEAR_START')) {
-        await setDoc(ref, {
-          sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, lock: { regime } } },
-          lastWriteAt: Date.now(), lastAction: 'promoted',
-        }, { merge: true });
-        return { docId, action: 'promoted' };
+      {
+        const decision = decideLockStage(regime, v8Scoring, side);
+        if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
+          await setDoc(ref, {
+            sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } } },
+            lastWriteAt: Date.now(), lastAction: 'promoted',
+          }, { merge: true });
+          return { docId, action: 'promoted' };
+        }
       }
       if (needsCsPatch) {
         await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });

@@ -52,15 +52,24 @@ Every game with sharp positions is scored using the **V8 wallet-contribution sta
 - **Breadth + Concentration**: 2×ln(1+count) bonus, concentration penalty (4×TopShare for ≤2 wallets, 5× for 3+)
 - **During pregame updates**: Progressively replaces the quality proxy with actual Pinnacle line movement (`liveCLV`) as market evidence becomes available
 
-The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile thresholds. **Plays are LOCKED IN when they meet BOTH a star threshold AND a minimum invested threshold:**
+The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile thresholds. A play becomes visible (SHADOW) when it meets the star + invested gates, and is **LOCKED IN** when either the market regime confirms OR a **STRONG contribution tier** fires (see "Contribution-Tier Promotion" below).
 
-| Market | Star Threshold | Min Invested | Min Wallets |
-|--------|---------------|-------------|-------------|
-| **Moneyline** | >= 2.5 stars | **$10,000** | — |
-| **Spread** | >= 2.5 stars | **$10,000** | **2 wallets** |
-| **Total (O/U)** | >= 2.5 stars | **$10,000** | **2 wallets** |
+**SHADOW gate (minimum to write to Firebase at all):**
 
-**No bet is EVER written to Firebase unless these minimums are met.** This is enforced at the lock-decision level in `SharpFlow.jsx`.
+| Market | Star Threshold | Min Invested (baseline) | Min Invested (STRONG/STANDARD contribTier) | Min Wallets |
+|--------|---------------|--------------------------|---------------------------------------------|-------------|
+| **Moneyline** | >= 2.5 stars | **$5,000** | **$2,500** | — |
+| **Spread** | >= 2.5 stars | **$5,000** | **$2,500** | **2 wallets** |
+| **Total (O/U)** | >= 2.5 stars | **$5,000** | **$2,500** | **2 wallets** |
+
+The $2,500 relaxed floor is enabled by `minInvestedFloor(contribTier)` so picks with a strong qualified-sharp signal aren't rejected for modest aggregate dollars. **No bet is EVER written to Firebase unless these minimums are met.** This is enforced at the lock-decision level in `SharpFlow.jsx`.
+
+**LOCKED promotion (two paths, additive):**
+
+1. **Regime path (unchanged):** `regime ∈ {CLEAR_MOVE, NEAR_START}` — Pinnacle has moved in our direction.
+2. **Contribution path (new, 2026-04-20):** `contribTier === 'STRONG'` — enough wallets with contribution ≥ 50 agree that the qualified-sharp signal itself justifies a lock.
+
+If either path fires, `lockStage = 'LOCKED'` and `promotedBy` is recorded on the side document as `'regime'` or `'contribution'`. Otherwise the pick remains `SHADOW`.
 
 ### V8 Key Changes (2026-04-16)
 
@@ -73,6 +82,35 @@ The raw score is mapped to a **0.5–5.0 star rating** using fixed percentile th
 7. **Forward-only rollout** — All existing Firebase picks retain V7 ratings. V8 applies only to new picks.
 
 See `STAR_RATING_SYSTEM.md` for the full mathematical specification.
+
+### V8.1 Contribution-Tier Promotion (2026-04-20)
+
+Quant analysis of the V8-era picks (`scripts/qualifiedSharpDeepDive.js` → `V8_GOLDILOCKS_REPORT.md`, and `scripts/contributionEdgeMap.js` → `V8_CONTRIBUTION_EDGE.md`) surfaced a single composite metric with the strongest small-sample edge:
+
+```
+contribution_i = walletBase_i × convictionMult_i
+```
+
+(i.e. wallet quality × bet-size conviction — exactly what goes into WPS per wallet, just exposed as a per-wallet scalar.)
+
+Rather than hand-tuning a new threshold, each pick is classified into a **contribTier** based on how many `for`-side and `against`-side wallets clear `contribution ≥ 50`:
+
+| contribTier | Rule (with `qFor = #{wallets for, contrib≥50}`, `qAg = #{against, contrib≥50}`, `margin = qFor − qAg`) | Action |
+|-------------|--------------------------------------------------------------------------------------------------------|--------|
+| **STRONG** | `(qFor ≥ 3 AND qAg = 0)` **OR** `(qFor ≥ 2 AND margin ≥ +1)` | Relax min-invested to $2.5K; **promote to LOCKED** (if not already locked by regime) |
+| **STANDARD** | `qFor ≥ 1 AND margin ≥ +1 AND maxContrib_for ≥ 50` | Relax min-invested to $2.5K; stays SHADOW (unless regime promotes it) |
+| **LEAN** | Anything else that survives the SHADOW gate | Baseline $5K floor; SHADOW |
+| **MUTE** | `margin < 0` (qualified counter-sharps outnumber qualified backers) | Recorded for future use; **no automatic suppression yet** (too small a sample) |
+
+Implementation lives in three helpers at the top of `SharpFlow.jsx`:
+
+- `classifyContributionTier(v8Scoring, sideKey)` — returns the tier label.
+- `decideLockStage(regime, v8Scoring, sideKey)` — single source of truth; returns `{ stage: 'LOCKED' | 'SHADOW', contribTier, promotedBy: 'regime' | 'contribution' | null }`.
+- `minInvestedFloor(contribTier)` — returns `2500` for STRONG/STANDARD, else `5000`.
+
+Every pick written to Firebase now carries `contribTier` and `promotedBy` at the side-document level so we can monitor whether contribution-promoted picks hold their edge on a larger live sample before tightening the rules further. MUTE is deliberately data-only for now — we record it, we do not act on it.
+
+Daily report automation: the `.github/workflows/daily-contribution-edge.yml` workflow re-runs both deep-dive scripts every morning at 08:30 ET and commits `V8_CONTRIBUTION_EDGE.md` + `V8_GOLDILOCKS_REPORT.md` to the repo so the thresholds can be retuned as the sample grows.
 
 ### Unit Sizing
 
@@ -190,6 +228,7 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 | **build-whale-profiles.yml** | 8 AM, 12 PM, 4 PM, 8 PM ET | `buildWhaleProfiles.js` | `whale_profiles.json` | No |
 | **seed-whale-leaderboard.yml** | Every 3 hrs (:30) | `buildWhaleProfiles.js --seed` | `whale_profiles.json` | No |
 | **scan-sharp-positions.yml** | Every 2 hrs (:15) | `scanSharpPositions.js` | `sharp_positions.json` | No |
+| **daily-contribution-edge.yml** | 08:30 ET daily | `contributionEdgeMap.js`, `qualifiedSharpDeepDive.js` | `V8_CONTRIBUTION_EDGE.md`, `V8_GOLDILOCKS_REPORT.md` (committed to repo) | No |
 
 **Critical Note**: The `fetch-polymarket.yml` workflow is the **only workflow that deploys the UI**. Any code changes to `src/` MUST be pushed to `main` before this workflow runs, or the deployment will overwrite local deploys with stale code.
 
@@ -251,10 +290,16 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 | **bets** | NHL model bets | betTracker.js (client) | updateBetResults (function) |
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
 
-**CRITICAL: Lock thresholds are enforced BEFORE any Firebase write:**
-- ML (`sharpFlowPicks`): stars >= 2.5 AND consensusInvested >= $10,000
-- Spread (`sharpFlowSpreads`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= $10,000
-- Total (`sharpFlowTotals`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= $10,000
+**CRITICAL: SHADOW-gate thresholds are enforced BEFORE any Firebase write:**
+- ML (`sharpFlowPicks`): stars >= 2.5 AND consensusInvested >= `minInvestedFloor(contribTier)` ($5,000 baseline, $2,500 if STRONG/STANDARD)
+- Spread (`sharpFlowSpreads`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= `minInvestedFloor(contribTier)`
+- Total (`sharpFlowTotals`): stars >= 2.5 AND conWalletCount >= 2 AND conTotalInvested >= `minInvestedFloor(contribTier)`
+
+`lockStage` is then set by `decideLockStage(regime, v8Scoring, side)`:
+- `LOCKED` if `regime ∈ {CLEAR_MOVE, NEAR_START}` OR `contribTier === 'STRONG'`
+- `SHADOW` otherwise
+
+Each side document stores `lockStage`, `contribTier`, and `promotedBy` ∈ `{regime, contribution, null}` for audit/analysis.
 
 #### `sharpFlowPicks` Document Schema (v3 — lock + peak + pregame snapshots)
 
@@ -282,6 +327,9 @@ This enables **lock -> peak -> pregame** transformation analysis: did sharps pil
   sides: {
     home: {                     // one entry per side that reached 2.5+ stars
       team: "Bruins",
+      lockStage: "LOCKED",        // V8.1: LOCKED | SHADOW (source of truth for promotion state)
+      contribTier: "STRONG",      // V8.1: STRONG | STANDARD | LEAN | MUTE | null
+      promotedBy: "contribution", // V8.1: 'regime' | 'contribution' | null (null = SHADOW)
       lock: {                   // original lock snapshot (never changes)
         odds: -190,
         book: "BetMGM",
