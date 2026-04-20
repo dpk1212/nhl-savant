@@ -93,6 +93,39 @@ function impliedProb(odds) {
   return odds < 0 ? Math.abs(odds) / (Math.abs(odds) + 100) : 100 / (odds + 100);
 }
 
+/** Firestore Timestamp, Date, ISO string, or { seconds } → ms */
+function docTimestampToMs(val) {
+  if (val == null) return null;
+  if (val instanceof Date) return val.getTime();
+  if (typeof val.toDate === 'function') return val.toDate().getTime();
+  if (typeof val === 'object' && typeof val.seconds === 'number') return val.seconds * 1000;
+  if (typeof val === 'string') {
+    const t = Date.parse(val);
+    return Number.isNaN(t) ? null : t;
+  }
+  return null;
+}
+
+function log10safe(x) {
+  if (x == null || !isFinite(x) || x <= 0) return null;
+  return Math.log10(x);
+}
+
+/** Attach outcomes used for quant analysis (call once after export). */
+function attachDerivedMetrics(rows) {
+  for (const r of rows) {
+    const inv = r.invested || 0;
+    r.stakedRoi = inv > 0 ? r.settledPnl / inv : null;
+    r.beatEntryImplied = (r.avgPrice != null && isFinite(r.avgPrice)) ? r.won - r.avgPrice : null;
+    r.pinnacleClosingImp = impliedProb(r.closingPinnacleOdds);
+    const g = docTimestampToMs(r.gradedAt);
+    const f = docTimestampToMs(r.firstSeen);
+    r.hoursToGrade = g != null && f != null && g >= f ? (g - f) / 3600000 : null;
+    r.logSportVol = log10safe(r.sportVol);
+    r.isConsensus = r.v8_consensusSide != null && r.side === r.v8_consensusSide ? 1 : 0;
+  }
+}
+
 function spearman(x, y) {
   if (x.length !== y.length || x.length < 3) return null;
   const n = x.length;
@@ -139,8 +172,9 @@ async function exportGradedPositions(db) {
       invested: data.invested || 0,
       size: data.size || 0,
       avgPrice: data.avgPrice || 0,
-      curPrice: data.curPrice || 0,
-      positionPnl: data.positionPnl || 0,
+      curPrice: data.curPrice ?? null,
+      positionPnl: data.positionPnl ?? null,
+      currentValue: data.currentValue ?? null,
       avgSportBet: data.avgSportBet || 0,
       betMultiplier: data.betMultiplier || 0,
       sportROI: data.sportROI || 0,
@@ -157,9 +191,11 @@ async function exportGradedPositions(db) {
       result: data.result,
       settledPnl: data.settledPnl || 0,
       settledPrice: data.settledPrice ?? (won ? 1 : 0),
+      createdAt: data.createdAt ?? null,
+      gradedAt: data.gradedAt ?? null,
       awayScore: data.score?.away ?? null,
       homeScore: data.score?.home ?? null,
-      closingPinnacleOdds: data.closingPinnacleOdds || null,
+      closingPinnacleOdds: data.closingPinnacleOdds ?? null,
       clv: data.clv ?? null,
       spreadLine: data.spreadLine ?? data.entryLine ?? null,
       totalLine: data.totalLine ?? data.entryLine ?? null,
@@ -1103,9 +1139,19 @@ function sec21_consensusVsContra(rows) {
   return out.join('\n');
 }
 
+function fmtSpearman(rho) {
+  if (rho == null || !isFinite(rho)) return '—';
+  return (rho > 0 ? '+' : '') + rho.toFixed(3);
+}
+
 function sec22_predictiveRankings(rows) {
-  const out = ['\n---\n\n## 22. Predictive Power Rankings\n'];
-  out.push('Spearman rank correlation of every measurable variable against WIN (1/0). Higher = more predictive.\n');
+  const out = ['\n---\n\n## 22. Predictive Power Rankings (Quant-Grade)\n'];
+  out.push(
+    '**How to read this**: Win rate alone is confounded by `avgPrice` (favorites win often but pay fair odds). ' +
+    'We rank every stored numeric field by Spearman ρ against three targets: **W** = settled win (1/0), ' +
+    '**ROI** = `settledPnl / invested` (staked return), **Ex** = `won − avgPrice` (excess wins vs your Polymarket entry implied prob — crude per-bet edge vs price). ' +
+    'Signals that lift **Ex** or **ROI** while being weak vs raw **W** are more meaningful for sizing V8.\n'
+  );
 
   const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
   const vars = [
@@ -1113,49 +1159,86 @@ function sec22_predictiveRankings(rows) {
     { key: 'v8_stars', label: 'V8 Stars' },
     { key: 'v8_netEdge', label: 'Net Edge' },
     { key: 'v8_forSide', label: 'For Side' },
-    { key: 'v8_againstSide', label: 'Against Side', invert: true },
+    { key: 'v8_againstSide', label: 'Against Side' },
     { key: 'v8_breadthBonus', label: 'Breadth Bonus' },
-    { key: 'v8_concPenalty', label: 'Conc Penalty', invert: true },
-    { key: 'v8_topShare', label: 'Top Share', invert: true },
+    { key: 'v8_concPenalty', label: 'Conc Penalty' },
+    { key: 'v8_topShare', label: 'Top Share' },
     { key: 'v8_walletCountFor', label: 'Wallet Count For' },
-    { key: 'v8_walletCountAgainst', label: 'Wallet Count Against', invert: true },
+    { key: 'v8_walletCountAgainst', label: 'Wallet Count Against' },
     { key: 'v8_walletContribution', label: 'Wallet Contribution' },
     { key: 'v8_walletRoiNorm', label: 'Wallet ROI Norm' },
     { key: 'v8_walletPnlNorm', label: 'Wallet P&L Norm' },
+    { key: 'v8_walletRankNorm', label: 'Wallet Rank Norm' },
     { key: 'v8_walletBase', label: 'Wallet Base Score' },
-    { key: 'v8_convictionMult', label: 'Conviction Multiplier' },
+    { key: 'v8_convictionMult', label: 'Conviction Mult' },
     { key: 'v8_sizeRatio', label: 'Size Ratio' },
     { key: 'betMultiplier', label: 'Bet Multiplier' },
     { key: 'sportROI', label: 'Wallet Sport ROI' },
-    { key: 'invested', label: 'Position Size' },
-    { key: 'avgPrice', label: 'Entry Price' },
+    { key: 'sportPnlTotal', label: 'Wallet Sport P&L Total' },
+    { key: 'sportVol', label: 'Sport Vol (raw)' },
+    { key: 'logSportVol', label: 'log10(Sport Vol)' },
+    { key: 'sportsLbPercentileTop', label: 'LB Percentile Top' },
+    { key: 'leaderboardRank', label: 'Leaderboard Rank' },
+    { key: 'avgSportBet', label: 'Avg Sport Bet' },
+    { key: 'invested', label: 'Invested (stake)' },
+    { key: 'size', label: 'Contracts (size)' },
+    { key: 'avgPrice', label: 'Entry Price (implied p)' },
+    { key: 'curPrice', label: 'Mark (curPrice) @ ingest' },
+    { key: 'positionPnl', label: 'Position P&L @ ingest' },
+    { key: 'currentValue', label: 'Current Value' },
+    { key: 'hoursToGrade', label: 'Hours firstSeen → graded' },
+    { key: 'pinnacleClosingImp', label: 'Pinnacle close implied (if odds)' },
   ];
 
+  const fmtR = fmtSpearman;
   const results = [];
   for (const v of vars) {
-    const valid = (v.key.startsWith('v8_') ? v8Rows : rows).filter(r => r[v.key] != null && isFinite(r[v.key]));
-    if (valid.length < 10) continue;
-    const rho = spearman(valid.map(r => r[v.key]), valid.map(r => r.won));
-    if (rho == null) continue;
-    const signal = v.invert
-      ? (rho < -0.05 ? 'PREDICTIVE' : rho > 0.05 ? 'INVERSE' : 'NEUTRAL')
-      : (rho > 0.05 ? 'PREDICTIVE' : rho < -0.05 ? 'INVERSE' : 'NEUTRAL');
-    results.push({ label: v.label, rho, absRho: Math.abs(rho), n: valid.length, signal });
+    const pool = v.key.startsWith('v8_') ? v8Rows : rows;
+    const valid = pool.filter(r => r[v.key] != null && isFinite(r[v.key]));
+    if (valid.length < 12) continue;
+    const xs = valid.map(r => r[v.key]);
+    const won = valid.map(r => r.won);
+
+    const rhoW = spearman(xs, won);
+    const sameLenRoi = valid.filter(r => r.stakedRoi != null && isFinite(r.stakedRoi));
+    const rhoRoi = sameLenRoi.length >= 12 ? spearman(sameLenRoi.map(r => r[v.key]), sameLenRoi.map(r => r.stakedRoi)) : null;
+    const sameLenEx = valid.filter(r => r.beatEntryImplied != null && isFinite(r.beatEntryImplied));
+    const rhoEx = sameLenEx.length >= 12 ? spearman(sameLenEx.map(r => r[v.key]), sameLenEx.map(r => r.beatEntryImplied)) : null;
+
+    const score = Math.max(
+      rhoW != null && isFinite(rhoW) ? Math.abs(rhoW) : 0,
+      rhoRoi != null && isFinite(rhoRoi) ? Math.abs(rhoRoi) : 0,
+      rhoEx != null && isFinite(rhoEx) ? Math.abs(rhoEx) : 0,
+    );
+    results.push({ label: v.label, rhoW, rhoRoi, rhoEx, n: valid.length, score });
   }
 
-  results.sort((a, b) => b.absRho - a.absRho);
+  const mtmLabels = new Set(['Mark (curPrice) @ ingest', 'Position P&L @ ingest', 'Current Value']);
+  const exAnteRows = results.filter(r => !mtmLabels.has(r.label));
+  out.push('### All numeric fields (includes MTM snapshots)\n');
   out.push(mdTable(
-    ['Rank', 'Variable', 'ρ (Spearman)', 'N', 'Signal'],
-    results.map((r, i) => [i + 1, r.label, (r.rho > 0 ? '+' : '') + r.rho.toFixed(3), r.n, r.signal])
+    ['Rank', 'Field', 'ρ vs W', 'ρ vs ROI', 'ρ vs (W−p)', 'N'],
+    results.map((r, i) => [i + 1, r.label, fmtR(r.rhoW), fmtR(r.rhoRoi), fmtR(r.rhoEx), r.n]),
   ));
 
-  const top3 = results.filter(r => r.signal === 'PREDICTIVE').slice(0, 3);
-  if (top3.length > 0) {
-    out.push(`\n**Strongest predictors**: ${top3.map(r => `${r.label} (ρ=${r.rho > 0 ? '+' : ''}${r.rho.toFixed(3)})`).join(', ')}`);
+  out.push(
+    '\n**Leakage / MTM warning**: High |ρ| on **curPrice**, **positionPnl**, **currentValue** usually means those fields were captured **late** (near settlement) and line up with how the bet finished. **Do not** treat them as ex-ante reasons to trust a *pending* pick. For live confidence, lean on wallet/V8 structure (WPS, net edge, opposition, conviction) and §37 strata.\n',
+  );
+
+  out.push('### Ex-ante stack only (wallet + V8 + sizing; no MTM)\n');
+  const anteSorted = [...exAnteRows].sort((a, b) => b.score - a.score);
+  out.push(mdTable(
+    ['Rank', 'Field', 'ρ vs W', 'ρ vs ROI', 'ρ vs (W−p)', 'N'],
+    anteSorted.map((r, i) => [i + 1, r.label, fmtR(r.rhoW), fmtR(r.rhoRoi), fmtR(r.rhoEx), r.n]),
+  ));
+
+  const byRoi = [...exAnteRows].filter(r => r.rhoRoi != null && isFinite(r.rhoRoi)).sort((a, b) => Math.abs(b.rhoRoi) - Math.abs(a.rhoRoi));
+  const byEx = [...exAnteRows].filter(r => r.rhoEx != null && isFinite(r.rhoEx)).sort((a, b) => Math.abs(b.rhoEx) - Math.abs(a.rhoEx));
+  if (byRoi.length >= 3) {
+    out.push('\n**Strongest vs staked ROI (top 3 |ρ|)**: ' + byRoi.slice(0, 3).map(r => `${r.label} (${fmtR(r.rhoRoi)})`).join(', '));
   }
-  const inverse = results.filter(r => r.signal === 'INVERSE');
-  if (inverse.length > 0) {
-    out.push(`**Inverse signals (higher = worse)**: ${inverse.map(r => `${r.label} (ρ=${r.rho > 0 ? '+' : ''}${r.rho.toFixed(3)})`).join(', ')}`);
+  if (byEx.length >= 3) {
+    out.push('\n**Strongest vs excess over entry implied (top 3 |ρ|)**: ' + byEx.slice(0, 3).map(r => `${r.label} (${fmtR(r.rhoEx)})`).join(', '));
   }
 
   return out.join('\n');
@@ -1489,7 +1572,9 @@ function sec28_topShareAnalysis(rows) {
 
 function sec29_optimalThresholds(rows) {
   const out = ['\n---\n\n## 29. Optimal Threshold Discovery\n'];
-  out.push('For each variable, scan thresholds to find the cutoff that maximizes WR lift over baseline.\n');
+  out.push(
+    'Single-variable scan for **WR lift** vs global baseline. **`avgPrice` is excluded**: high entry mechanically raises win rate without proving edge (see §22 ROI / W−p and §37 strata).\n',
+  );
   const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
   const baseWR = rows.filter(r => r.won).length / rows.length;
   if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
@@ -1526,7 +1611,6 @@ function sec29_optimalThresholds(rows) {
     { key: 'v8_walletBase', label: 'Wallet Base', dir: '≥' },
     { key: 'v8_walletRoiNorm', label: 'ROI Norm', dir: '≥' },
     { key: 'v8_convictionMult', label: 'Conviction Mult', dir: '≥' },
-    { key: 'avgPrice', label: 'Entry Price', dir: '≥' },
     { key: 'invested', label: 'Position Size', dir: '≥' },
     { key: 'betMultiplier', label: 'Bet Multiplier', dir: '≥' },
     { key: 'sportROI', label: 'Wallet Sport ROI', dir: '≥' },
@@ -1556,7 +1640,9 @@ function sec29_optimalThresholds(rows) {
 
 function sec30_featureImportance(rows) {
   const out = ['\n---\n\n## 30. Feature Importance (Information Gain)\n'];
-  out.push('Which variables reduce outcome uncertainty the most when you split on their median?\n');
+  out.push(
+    'Which variables reduce **win/loss entropy** most at a median split? (Still a binary target — pair with §22 for ROI-driven signal. **`avgPrice` omitted** as a trivial WR driver.)\n',
+  );
   const v8Rows = rows.filter(r => r.v8_walletPlayScore != null);
   if (v8Rows.length < 20) { out.push('_Insufficient data._'); return out.join('\n'); }
 
@@ -1573,7 +1659,7 @@ function sec30_featureImportance(rows) {
     'v8_breadthBonus', 'v8_concPenalty', 'v8_topShare', 'v8_walletCountFor',
     'v8_walletCountAgainst', 'v8_walletContribution', 'v8_walletRoiNorm',
     'v8_walletPnlNorm', 'v8_walletBase', 'v8_convictionMult', 'v8_sizeRatio',
-    'avgPrice', 'invested', 'betMultiplier', 'sportROI',
+    'invested', 'betMultiplier', 'sportROI',
   ];
   const labels = {
     v8_walletPlayScore: 'WPS', v8_stars: 'Stars', v8_netEdge: 'Net Edge',
@@ -1582,7 +1668,7 @@ function sec30_featureImportance(rows) {
     v8_walletCountAgainst: 'Wallets Agst', v8_walletContribution: 'Contribution',
     v8_walletRoiNorm: 'ROI Norm', v8_walletPnlNorm: 'PnL Norm', v8_walletBase: 'Wallet Base',
     v8_convictionMult: 'Conv Mult', v8_sizeRatio: 'Size Ratio',
-    avgPrice: 'Entry Price', invested: 'Position Size', betMultiplier: 'Bet Mult', sportROI: 'Sport ROI',
+    invested: 'Position Size', betMultiplier: 'Bet Mult', sportROI: 'Sport ROI',
   };
 
   const gains = features.map(f => {
@@ -1879,14 +1965,29 @@ function sec35_actionableInsights(rows) {
   const baseWR = rows.filter(r => r.won).length / rows.length;
   const findings = [];
 
-  // 1. Entry price
-  const favs = v8Rows.filter(r => r.avgPrice >= 0.50);
-  const dogs = v8Rows.filter(r => r.avgPrice < 0.50);
-  if (favs.length >= 5 && dogs.length >= 5) {
-    const favWR = favs.filter(r => r.won).length / favs.length;
-    const dogWR = dogs.filter(r => r.won).length / dogs.length;
-    if (favWR > dogWR + 0.10) {
-      findings.push({ priority: 'HIGH', area: 'Entry Price', finding: `Favorites (≥50¢) hit at ${(favWR*100).toFixed(0)}% vs underdogs at ${(dogWR*100).toFixed(0)}%. Consider penalizing underdog plays or requiring higher WPS for <50¢ entries.` });
+  // 1. WPS vs economic outcomes (staked ROI / excess vs implied) — not raw WR vs entry price
+  const wpsValid = v8Rows.filter(r => r.stakedRoi != null && isFinite(r.stakedRoi) && r.v8_walletPlayScore != null);
+  if (wpsValid.length >= 30) {
+    const sorted = [...wpsValid].sort((a, b) => a.v8_walletPlayScore - b.v8_walletPlayScore);
+    const t = Math.floor(sorted.length / 3);
+    const low = sorted.slice(0, t);
+    const mid = sorted.slice(t, 2 * t);
+    const hi = sorted.slice(2 * t);
+    const meanRoi = (arr) => avg(arr.map(r => r.stakedRoi));
+    const meanEx = (arr) => {
+      const xs = arr.map(r => r.beatEntryImplied).filter(x => x != null && isFinite(x));
+      return xs.length ? avg(xs) : null;
+    };
+    const rLow = meanRoi(low);
+    const rHi = meanRoi(hi);
+    const exL = meanEx(low);
+    const exH = meanEx(hi);
+    if (rHi > rLow + 0.02 || (exH != null && exL != null && exH > exL + 0.03)) {
+      findings.push({
+        priority: 'INFO',
+        area: 'WPS vs payout',
+        finding: `WPS tertiles vs economics: low-WPS mean ROI ${(rLow * 100).toFixed(2)}%, high-WPS ${(rHi * 100).toFixed(2)}%; mean (W−p) low ${exL != null ? (exL * 100).toFixed(2) + '%' : '—'} vs high ${exH != null ? (exH * 100).toFixed(2) + '%' : '—'} (N=${wpsValid.length}).`,
+      });
     }
   }
 
@@ -2019,6 +2120,178 @@ function sec36_kpis(rows) {
   return out.join('\n');
 }
 
+function starBucketLabel(r) {
+  const s = r.v8_stars;
+  if (s == null || !isFinite(s)) return '—';
+  if (s < 2.5) return '★<2.5';
+  if (s < 3.5) return '★2.5–3.5';
+  return '★≥3.5';
+}
+
+function consensusSideLabel(r) {
+  if (r.v8_consensusSide == null || r.side == null) return 'Unknown';
+  return r.side === r.v8_consensusSide ? 'Consensus' : 'Contrarian';
+}
+
+/** ρ(X,Y) on rows where both X and Y finite; |ρ| for sorting */
+function pairwiseSpearman(rows, keyX, keyY) {
+  const sub = rows.filter(r => r[keyX] != null && r[keyY] != null && isFinite(r[keyX]) && isFinite(r[keyY]));
+  if (sub.length < 15) return null;
+  return spearman(sub.map(r => r[keyX]), sub.map(r => r[keyY]));
+}
+
+function sec37_withinImpliedStrata(rows) {
+  const out = ['\n---\n\n## 37. Within Implied-Probability Strata (Confound Control)\n'];
+  out.push(
+    'Splits the sample into **quintiles of `avgPrice`** (Polymarket implied prob). ' +
+    'Inside each stratum, raw win rate is roughly comparable; we report **mean staked ROI**, **mean (W−p)**, and whether **WPS** still correlates with **ROI**.\n'
+  );
+  const valid = rows.filter(r =>
+    r.avgPrice > 0.02 && r.avgPrice < 0.98 && r.stakedRoi != null && isFinite(r.stakedRoi) && r.v8_walletPlayScore != null,
+  );
+  if (valid.length < 50) {
+    out.push('_Need ≥50 positions with stake ROI and price for stable quintiles._');
+    return out.join('\n');
+  }
+  const sorted = [...valid].sort((a, b) => a.avgPrice - b.avgPrice);
+  const qRows = [];
+  for (let q = 0; q < 5; q++) {
+    const lo = Math.floor((q * sorted.length) / 5);
+    const hi = Math.floor(((q + 1) * sorted.length) / 5);
+    const sub = sorted.slice(lo, hi);
+    if (sub.length < 8) continue;
+    const meanP = avg(sub.map(r => r.avgPrice));
+    const meanRoi = avg(sub.map(r => r.stakedRoi));
+    const exs = sub.map(r => r.beatEntryImplied).filter(x => x != null && isFinite(x));
+    const meanEx = exs.length ? avg(exs) : null;
+    const rhoWps = spearman(sub.map(r => r.v8_walletPlayScore), sub.map(r => r.stakedRoi));
+    qRows.push([
+      `Q${q + 1} (cheapest→richest)`,
+      sub.length,
+      (meanP * 100).toFixed(1) + '¢',
+      (meanRoi * 100).toFixed(2) + '%',
+      meanEx != null ? (meanEx * 100).toFixed(2) + '%' : '—',
+      rhoWps != null && isFinite(rhoWps) ? (rhoWps > 0 ? '+' : '') + rhoWps.toFixed(3) : '—',
+    ]);
+  }
+  out.push(mdTable(['Price quintile', 'N', 'Mean entry', 'Mean ROI', 'Mean (W−p)', 'ρ WPS vs ROI'], qRows));
+  out.push('\n_If ρ(WPS vs ROI) stays positive inside dog-heavy quintiles, WPS is doing real work beyond “bet favorites”._');
+  return out.join('\n');
+}
+
+function categorical2Way(rows, labelA, fnA, labelB, fnB, minN = 6) {
+  const as = [...new Set(rows.map(fnA))].sort();
+  const bs = [...new Set(rows.map(fnB))].sort();
+  const headers = [labelA, ...bs.map(b => `${b} (N / ROI / mean W−p)`)];
+  const lines = as.map(a => {
+    const cells = bs.map(b => {
+      const sub = rows.filter(r => fnA(r) === a && fnB(r) === b);
+      if (sub.length < minN) return '—';
+      const aAgg = agg(sub);
+      const exs = sub.map(r => r.beatEntryImplied).filter(x => x != null && isFinite(x));
+      const exBar = exs.length ? (avg(exs) * 100).toFixed(2) + '%' : '—';
+      return `${sub.length}/${aAgg.roi}/${exBar}`;
+    });
+    return [String(a), ...cells];
+  });
+  return mdTable(headers, lines);
+}
+
+function sec38_multiwayInteractions(rows) {
+  const out = ['\n---\n\n## 38. Multi-Way Interaction Mining (1-, 2-, 3-factor)\n'];
+  out.push(
+    '**1-factor**: see §22 (ρ vs W, ROI, W−p). **2-factor**: categorical crosses (each cell = N / pool ROI / mean excess W−p). ' +
+    '**3-factor**: exhaustive AND of three binary “setup” flags (min N=8); sorted by **mean staked ROI** then pool ROI.\n'
+  );
+
+  const v8 = rows.filter(r => r.v8_walletPlayScore != null && r.stakedRoi != null && isFinite(r.stakedRoi));
+  if (v8.length < 30) {
+    out.push('_Insufficient graded V8 rows._');
+    return out.join('\n');
+  }
+
+  out.push('### 38a. Predictor multicollinearity (|ρ| between inputs)\n');
+  const predKeys = [
+    'v8_walletPlayScore', 'v8_stars', 'v8_netEdge', 'v8_forSide', 'v8_againstSide',
+    'v8_walletCountFor', 'v8_walletCountAgainst', 'v8_topShare', 'v8_walletBase',
+    'betMultiplier', 'sportROI', 'sportsLbPercentileTop', 'leaderboardRank', 'avgSportBet',
+  ];
+  const pairs = [];
+  for (let i = 0; i < predKeys.length; i++) {
+    for (let j = i + 1; j < predKeys.length; j++) {
+      const rho = pairwiseSpearman(v8, predKeys[i], predKeys[j]);
+      if (rho == null || !isFinite(rho)) continue;
+      pairs.push({ a: predKeys[i], b: predKeys[j], rho, abs: Math.abs(rho) });
+    }
+  }
+  pairs.sort((x, y) => y.abs - x.abs);
+  out.push(mdTable(
+    ['Feature A', 'Feature B', '|ρ|'],
+    pairs.slice(0, 18).map(p => [p.a, p.b, p.abs.toFixed(3)]),
+  ));
+  out.push('_High |ρ| between predictors means they move together — do not double-count in prose “confidence” rules._\n');
+
+  out.push('### 38b. Two-way crosses (economic cell stats)\n');
+  out.push(categorical2Way(v8, 'Label', r => r.label || '—', 'Tier', r => r.tier || '—'));
+  out.push('\n');
+  out.push(categorical2Way(v8, 'Tier', r => r.tier || '—', 'Market', r => r.marketType || '—'));
+  out.push('\n');
+  out.push(categorical2Way(v8, 'Sport', r => r.sport || '—', 'Market', r => r.marketType || '—'));
+  out.push('\n');
+  out.push(categorical2Way(v8, 'Side vs consensus', r => consensusSideLabel(r), 'Star bucket', r => starBucketLabel(r)));
+
+  out.push('\n### 38c. Three-factor AND rules (binary flags, min N=8)\n');
+  const flags = [
+    { name: 'WPS≥2', f: r => r.v8_walletPlayScore >= 2 },
+    { name: 'Stars≥3', f: r => r.v8_stars >= 3 },
+    { name: 'NetEdge>1.5', f: r => r.v8_netEdge > 1.5 },
+    { name: 'NoOpp', f: r => (r.v8_walletCountAgainst ?? 0) === 0 },
+    { name: 'Consensus', f: r => r.v8_consensusSide != null && r.side === r.v8_consensusSide },
+    { name: 'TopShare<0.5', f: r => r.v8_topShare != null && r.v8_topShare < 0.5 },
+    { name: 'LB%≥60', f: r => r.sportsLbPercentileTop != null && r.sportsLbPercentileTop >= 60 },
+    { name: 'BetMult≥3', f: r => r.betMultiplier >= 3 },
+    { name: 'Against<50', f: r => r.v8_againstSide != null && r.v8_againstSide < 50 },
+    { name: 'Wallets≥4', f: r => r.v8_walletCountFor >= 4 },
+  ];
+  const triples = [];
+  for (let i = 0; i < flags.length; i++) {
+    for (let j = i + 1; j < flags.length; j++) {
+      for (let k = j + 1; k < flags.length; k++) {
+        const sub = v8.filter(r => flags[i].f(r) && flags[j].f(r) && flags[k].f(r));
+        if (sub.length < 8) continue;
+        const meanRoi = avg(sub.map(r => r.stakedRoi));
+        const exs = sub.map(r => r.beatEntryImplied).filter(x => x != null && isFinite(x));
+        const meanEx = exs.length ? avg(exs) : null;
+        const a = agg(sub);
+        triples.push({
+          rule: `${flags[i].name} ∧ ${flags[j].name} ∧ ${flags[k].name}`,
+          n: sub.length,
+          meanRoi,
+          meanEx,
+          poolRoi: parseFloat(a.roi) || 0,
+          wr: a.wr,
+        });
+      }
+    }
+  }
+  triples.sort((a, b) => b.meanRoi - a.meanRoi || b.poolRoi - a.poolRoi);
+  const top = triples.slice(0, 25);
+  out.push(mdTable(
+    ['Rule (3×AND)', 'N', 'Mean ROI (stake)', 'Mean (W−p)', 'Pool ROI', 'WR'],
+    top.map(t => [
+      t.rule,
+      t.n,
+      (t.meanRoi * 100).toFixed(2) + '%',
+      t.meanEx != null ? (t.meanEx * 100).toFixed(2) + '%' : '—',
+      (t.poolRoi).toFixed(1) + '%',
+      t.wr,
+    ]),
+  ));
+  out.push('\n_Use triples with healthy N only; small-N leaders are often noise._');
+
+  return out.join('\n');
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function run() {
@@ -2031,6 +2304,8 @@ async function run() {
     console.log('No graded positions found. Exiting.');
     process.exit(0);
   }
+
+  attachDerivedMetrics(rows);
 
   const report = [
     sec0_header(rows),
@@ -2070,6 +2345,8 @@ async function run() {
     sec34_edgeMatrix(rows),
     sec35_actionableInsights(rows),
     sec36_kpis(rows),
+    sec37_withinImpliedStrata(rows),
+    sec38_multiwayInteractions(rows),
   ].join('\n');
 
   const outPath = join(__dirname, '../DAILY_SHARP_ACTION_REPORT.md');
