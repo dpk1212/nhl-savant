@@ -316,8 +316,8 @@ Distribution of V8 scoring variables across all graded positions.
 | Variable | Mean | Median | Std | Min | Max |
 |---|---|---|---|---|---|
 | WPS | 1.489 | 1.050 | 3.091 | -4.358 | 9.027 |
-| For Side | 199.966 | 159.400 | 144.605 | 0.000 | 652.600 |
-| Against Side | 106.519 | 82.900 | 107.313 | 0.000 | 374.900 |
+| For Side | 199.961 | 159.400 | 144.609 | 0.000 | 652.600 |
+| Against Side | 106.516 | 82.900 | 107.315 | 0.000 | 374.900 |
 | Net Edge | 1.094 | 0.750 | 1.417 | -1.744 | 5.064 |
 | Breadth Bonus | 2.805 | 2.773 | 0.970 | 1.386 | 4.970 |
 | Conc Penalty | 2.411 | 2.269 | 1.020 | 0.777 | 4.000 |
@@ -330,8 +330,8 @@ Distribution of V8 scoring variables across all graded positions.
 | Variable | Mean | Median | Std | Min | Max |
 |---|---|---|---|---|---|
 | Contribution | 56.44 | 56.60 | 28.02 | 0.00 | 156.10 |
-| ROI Norm %ile | 46.96 | 43.50 | 25.09 | 0.00 | 99.80 |
-| P&L Norm %ile | 46.16 | 42.20 | 34.99 | 0.00 | 99.80 |
+| ROI Norm %ile | 46.95 | 43.50 | 25.10 | 0.00 | 99.80 |
+| P&L Norm %ile | 46.17 | 42.20 | 34.98 | 0.00 | 99.80 |
 | Wallet Base | 46.84 | 51.00 | 21.80 | 0.00 | 97.50 |
 | Conviction Mult | 1.19 | 1.15 | 0.21 | 0.70 | 1.60 |
 | Size Ratio | 3.27 | 1.66 | 5.32 | 0.01 | 49.31 |
