@@ -1,6 +1,6 @@
 # Sharp Vault × V8 — can we identify winners?
 
-Generated: 4/21/2026, 8:47:21 AM ET · V8 cutover: 2026-04-18
+Generated: 4/21/2026, 10:16:07 AM ET · V8 cutover: 2026-04-18
 
 ## Baseline (all graded V8-era sharp vault positions)
 
