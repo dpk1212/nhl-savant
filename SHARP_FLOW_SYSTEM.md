@@ -165,6 +165,27 @@ Max positive stack = **+0.75u** (CLEAR_MOVE + high-quality wallets). Max negativ
 
 **Deprecated — starDelta Top Pick Bonus:** The old `+0.25 / +0.5u` bump triggered by `starDelta ≥ 1.0` during pregame promotion has been **removed**. In production it rarely fired (large mid-cycle star jumps are uncommon), so regime was effectively absent from sizing. V8.2/V8.3 replace it with signals that actually show up every day.
 
+**V8.4 — TOP PICK UI badge (replaces legacy starDelta rule):** The gold ⚡ TOP PICK ribbon on `LockedPickCard` (Locked Picks list) is no longer driven by `starDelta ≥ 1.0`. It now requires the **stacked-edge** combination:
+
+```
+isTopPick ⇔ regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55
+```
+
+Rationale — each piece is independently profitable in V8 data, but the intersection is where the strongest, most repeatable edge lives:
+
+| Requirement | Evidence |
+|---|---|
+| `regime === 'CLEAR_MOVE'` | N=11, 72.7% WR, +29.5% flatROI (every sub-partition profitable) |
+| `meanBase_F ≥ 55` | N=14, 71.4% WR, +33.9% flatROI (works in every regime) |
+
+The old rule selected picks whose stars grew, but ignored whether the growth was **market-confirmed** (regime) or backed by **high-caliber wallets** (meanBase_F). Those are the two signals that actually correlate with winning. A pick can grow in stars through wallet churn on mid-tier sharps and still lose — the old badge celebrated that, the new one does not.
+
+The sort comparator on the Locked Picks list uses the same predicate (`isClearMoveTopPick`), so cards wearing the TOP PICK ribbon always float to the top of the list (after health ordering).
+
+Pre-V8 picks (no `regime` or `v8Scoring` on the lock/peak snapshot) fall through to `false` and never display the badge — expected behavior since we can't evaluate the new criteria on them.
+
+**Implementation:** `src/pages/SharpFlow.jsx` → `isClearMoveTopPick({ regime, meanBaseF })` helper, consumed by both `LockedPickCard` (badge) and the locked-list sort comparator. `meanBase_F` is computed per-pick from `v8Scoring.walletDetails` filtered to `side === consensusSide` at the time the snapshot was written.
+
 ### Pick Health Evaluation (Mute / Cancel System)
 
 Once a pick is locked, the **V8-native health system** continuously re-evaluates

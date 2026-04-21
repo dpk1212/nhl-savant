@@ -890,14 +890,30 @@ function clearMoveSizeBonus(regime) {
 // Applies everywhere — this signal is decoupled from regime and
 // stacks with clearMoveSizeBonus (they measure different things:
 // market confirmation vs wallet-crew caliber).
-function qualityBonus(v8Scoring, sideKey) {
+function computeMeanBaseF(v8Scoring, sideKey) {
   const forW = (v8Scoring?.walletDetails || [])
     .filter(w => w.side === (v8Scoring?.consensusSide || sideKey));
-  if (!forW.length) return 0;
-  const meanBase = forW.reduce((s, w) => s + (w.walletBase ?? 0), 0) / forW.length;
+  if (!forW.length) return null;
+  return forW.reduce((s, w) => s + (w.walletBase ?? 0), 0) / forW.length;
+}
+
+function qualityBonus(v8Scoring, sideKey) {
+  const meanBase = computeMeanBaseF(v8Scoring, sideKey);
+  if (meanBase == null) return 0;
   if (meanBase >= 55) return 0.25;
   if (meanBase < 50)  return -0.25;
   return 0;   // 50–55 neutral band
+}
+
+// TOP PICK predicate (V8.4 UI) — replaces the legacy `starDelta ≥ 1.0` rule.
+// A locked pick is elevated to TOP PICK only when BOTH conditions hold:
+//   • regime === 'CLEAR_MOVE'   (Pinnacle confirmed the move — 72.7% WR, +29.5% ROI)
+//   • meanBase_F ≥ 55           (for-side wallet crew is high-caliber — +33.9% flatROI)
+// This is the stacked-edge combination; either alone was profitable but the
+// intersection is where the strongest signal lives.  Pre-V8 picks (no regime
+// or v8Scoring) fall through to false and never display the badge.
+function isClearMoveTopPick({ regime, meanBaseF } = {}) {
+  return regime === 'CLEAR_MOVE' && meanBaseF != null && meanBaseF >= 55;
 }
 
 // V8.3 — NEAR_START elite-wallet modifier (regime-specific).
@@ -3371,11 +3387,15 @@ const HEALTH_REASON_LABELS = {
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
-  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health } = pick;
+  const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, regime, meanBaseF } = pick;
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
-  const isTopPick = starDelta >= 1.0;
+  // V8.4: TOP PICK is now driven by CLEAR_MOVE regime + meanBase_F ≥ 55
+  // (the historical stacked-edge combination), replacing the old
+  // `starDelta ≥ 1.0` rule which selected growth but ignored whether the
+  // growth was market-confirmed or backed by high-caliber wallets.
+  const isTopPick = isClearMoveTopPick({ regime, meanBaseF });
   const evDelta = (evEdge != null && lockEV != null) ? +(evEdge - lockEV).toFixed(2) : 0;
   const isEVConfirmed = isTopPick && evDelta > 0;
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
@@ -8555,6 +8575,8 @@ export default function SharpFlow() {
                           health: sd.superseded
                             ? { status: 'CANCELLED', reasons: ['side_flipped'] }
                             : (sd.health || { status: 'ACTIVE', reasons: [] }),
+                          regime: peak.regime || lock.regime || null,
+                          meanBaseF: computeMeanBaseF(peak.v8Scoring || lock.v8Scoring, sideKey),
                         });
                       }
                     }
@@ -8573,10 +8595,9 @@ export default function SharpFlow() {
                       const aH = healthOrder[a.health?.status || 'ACTIVE'] || 0;
                       const bH = healthOrder[b.health?.status || 'ACTIVE'] || 0;
                       if (aH !== bH) return aH - bH;
-                      const aDelta = (a.lockStars != null ? a.stars - a.lockStars : 0);
-                      const bDelta = (b.lockStars != null ? b.stars - b.lockStars : 0);
-                      const aTop = aDelta >= 1.0 ? 1 : 0;
-                      const bTop = bDelta >= 1.0 ? 1 : 0;
+                      // V8.4: TOP PICK priority matches the badge — CLEAR_MOVE + meanBase_F ≥ 55.
+                      const aTop = isClearMoveTopPick(a) ? 1 : 0;
+                      const bTop = isClearMoveTopPick(b) ? 1 : 0;
                       if (aTop !== bTop) return bTop - aTop;
                       if (lockedSort === 'stars') return b.stars - a.stars || b.units - a.units;
                       const tA = a.gameTime ? new Date(a.gameTime).getTime() : 0;
