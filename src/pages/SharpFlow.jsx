@@ -4068,7 +4068,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     lockOdds: lockOddsRef.current,
     pinnCurrentOdds,
   });
-  const isExtremeOdds = pinnProb != null && pinnProb >= 0.85;
+  // Align with the allPosGames counter (8336): skip only truly extreme odds
+  // (pinnProb >= 0.95). Previously a stricter 0.85 cap here hid cards that
+  // the counter still included, so the header count disagreed with the
+  // rendered list.
+  const isExtremeOdds = pinnProb != null && pinnProb >= 0.95;
   if (isExtremeOdds) return null;
   const meetsThreshold = sr.stars >= 2.5 && consensusInvested >= 10000;
   const hasRegimeMove = sr.regime === 'CLEAR_MOVE' || sr.regime === 'NEAR_START';
