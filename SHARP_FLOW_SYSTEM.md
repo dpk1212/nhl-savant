@@ -167,32 +167,226 @@ Max positive stack = **+0.75u** (CLEAR_MOVE + high-quality wallets). Max negativ
 
 ### Pick Health Evaluation (Mute / Cancel System)
 
-Once a pick is locked, the **V8-native health system** continuously evaluates whether the pick should remain active. Health evaluation uses the **WalletPlayScore (WPS)** — the same continuous score that drives star ratings — rather than comparing discrete star buckets.
+Once a pick is locked, the **V8-native health system** continuously re-evaluates
+whether it should remain active. Evaluation runs on every React render of the
+pick's `SharpPositionCard` (~every position-refresh cycle) and uses the continuous
+**WalletPlayScore (WPS)** — the same score that drives star ratings — instead of
+comparing discrete star buckets (which is how V7 did it, and which rarely
+triggered in practice).
 
-**Design Principles:**
+The output is a `health` object with one of three statuses: **ACTIVE** (normal
+locked pick), **MUTED** (visible but dimmed, advisory only), or **CANCELLED**
+(dimmed + reason shown, effectively retired). The status is mirrored into
+Firebase so downstream consumers (Sharp Vault, Scan, reports) see the same view.
 
-1. **No mute while in lock range** — if `currentWPS >= 0.0` (the 2.5-star / lock threshold), the pick stays ACTIVE regardless of how far it dropped from its peak WPS.
-2. **Mute only when below lock range** — if WPS drops below 0.0 but no side flip has occurred, the pick is MUTED (flagged, kept visible, user decides).
-3. **Side flip requires beating the ratcheting threshold** — a flip is only confirmed if the new side's WPS exceeds the `flipBeatThreshold`. Each accepted flip ratchets the threshold higher, preventing flip-flop noise.
-4. **Stars remain the UI display** — health logic uses WPS internally, users still see star ratings.
+---
 
-**Decision flow:**
+**Design principles**
 
-| Condition | Status | Reason |
-|-----------|--------|--------|
-| Side flipped + `newSideWPS > flipBeatThreshold` | **CANCELLED** | `side_flipped` — other side is now stronger |
-| Side flipped + does NOT beat threshold | **ACTIVE** | `flip_rejected` — original side holds |
-| `currentWPS >= 0.0` (still in lock range) | **ACTIVE** | No mute regardless of drop from peak |
-| `currentWPS < 0.0` + ≤ 20 min to game | **ACTIVE** | `near_start` — don't override near game time |
-| `currentWPS < 0.0` + > 20 min to game | **MUTED** | `below_lock_range` — score degraded |
+1. **No mute while in lock range.** If `currentWPS >= 0.0` (the 2.5-star / lock
+   threshold = `LOCK_RANGE_WPS`), the pick stays ACTIVE regardless of how far it
+   dropped from its peak WPS. We deliberately do not downgrade on peak-retrace
+   alone — the pick was locked on its own merit, and we'd rather leave it alone
+   than chase noise.
+2. **Mute only when below lock range.** If WPS drops below 0.0 and no side flip
+   has occurred, the pick is MUTED. It stays visible so the user can see the
+   degradation; it's advisory, not automatic exit.
+3. **Side flip requires beating a ratcheting threshold.** A flip is only
+   accepted if the new side's WPS exceeds `flipBeatThreshold`. Each accepted
+   flip ratchets the threshold higher, preventing back-and-forth flip-flop when
+   both sides hover around the same WPS.
+4. **Stars remain the UI display.** Health logic uses WPS internally; users see
+   stars / labels.
+5. **Do not act inside the 20-minute game window.** Near the close, market
+   noise and late-hammer action are normal; overriding a lock at that point
+   usually makes things worse.
 
-**Ratcheting flip mechanism:**
+---
 
-- **Initial lock**: `flipBeatThreshold` = the WPS at lock time
-- Each accepted flip ratchets the threshold up to the new side's WPS
-- Example: Side A locks at WPS 2.5 (threshold = 2.5) → Side B flips at 3.0 (> 2.5, accepted, threshold = 3.0) → Side A tries 2.8 (< 3.0, rejected) → Side A returns at 3.5 (> 3.0, accepted, threshold = 3.5)
+**Inputs consumed (per evaluation)**
 
-**Firebase:** `flipBeatThreshold` is stored at the document level. Health status (`ACTIVE`, `MUTED`, `CANCELLED`) with reason and `wpsDelta` is written to each side's `health` sub-document via `syncPickHealth()`.
+`evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flipBeatThreshold, timeToGame, currentStars })`
+
+| Input | Source | Meaning |
+|---|---|---|
+| `currentWPS` | `rateStarsV8({ positions, consensusSide })` at render time | Live score for the **currently-picked side** |
+| `lockWPS` | `lockWPSRef.current` (set on first lock) | WPS that was present when the pick first locked |
+| `sideFlipped` | `lockedSideRef.current != null && consensusSide !== lockedSideRef.current` | True **only** if our computed `consensusSide` now disagrees with the stored locked side |
+| `newSideWPS` | `rateStarsV8({ positions, consensusSide: oppSide })` | Score for the side that's now leading the consensus calc |
+| `flipBeatThreshold` | `flipBeatThresholdRef.current` (ratcheted each accept) | The bar the opposing side must clear for a flip |
+| `timeToGame` | `(commenceTime − Date.now()) / 60000` | Minutes to first pitch / puck drop |
+| `currentStars` | `sr.stars` | Star count at current WPS — forwarded so Firebase keeps a readable snapshot |
+
+`consensusSide` itself is computed from the game's aggregated sharp positions
+(wallet-weighted, side that the majority of wallet-weighted invested-$ is on) —
+so a "flip" means the majority wallet-weighted money has actually switched
+sides, not simply that dollar totals tilted.
+
+---
+
+**Decision table (in order, V8.4+)**
+
+`currentWPS` below is always the **locked side's** current WPS, not the
+current-consensus-side WPS — the call site resolves this before invoking
+`evaluatePickHealth`. `oppSideWPS` is the opposite-of-locked side's WPS.
+
+| # | Condition | Status | Reason code |
+|---|---|---|---|
+| A | `currentWPS == null` | `ACTIVE` | (no score yet) |
+| B | `timeToGame > 20` AND `oppSideWPS > flipBeatThreshold` AND `oppSideWPS − currentWPS ≥ 0.5` | **`CANCELLED`** | `side_flipped` (if wallet-count consensus also flipped) OR `opp_side_dominates` |
+| C | `timeToGame > 20` AND `oppSideWPS > 0.0` AND `oppSideWPS − currentWPS ≥ 1.0` (but B not met) | **`MUTED`** | `opp_side_stronger` (advisory — ratchet not beaten yet) |
+| D | `sideFlipped` AND `timeToGame > 20` AND `currentWPS < 0.0` (B & C not met) | **`MUTED`** | `flip_rejected`, `below_lock_range` |
+| E | `sideFlipped` AND `timeToGame > 20` AND `currentWPS ≥ 0.0` (B & C not met) | `ACTIVE` | `flip_rejected` |
+| F | `currentWPS ≥ 0.0` (no dominance, no flip concern) | `ACTIVE` | — |
+| G | `currentWPS < 0.0` | **`MUTED`** | `below_lock_range` |
+
+Constants: `LOCK_RANGE_WPS = 0.0`, `OPP_CANCEL_GAP = 0.5`, `OPP_MUTE_GAP = 1.0`.
+
+Note: checks B and C run whether or not the wallet-count `consensusSide` has
+flipped. This is the V8.4 fix — we no longer gate opposing-wave detection
+behind a naive wallet-count majority (which under-reacts to late
+high-conviction waves from fewer but larger-base sharps).
+
+The 20-minute `tooCloseForFlip` guard skips all flip/dominance checks —
+inside that window, only the terminal `currentWPS < 0.0 → MUTED` still fires.
+
+---
+
+**Ratcheting flip mechanism**
+
+The flip threshold starts at the WPS the pick locked at and never retreats,
+preventing flip-flop near the threshold.
+
+| Step | Event | `flipBeatThreshold` | `lockedSideRef` | Result |
+|---|---|---|---|---|
+| 1 | Side A locks at WPS = 2.5 | 2.5 | A | ACTIVE on A |
+| 2 | Side B's WPS climbs to 2.7 | 2.5 | A | flip attempted → 2.7 > 2.5 → **CANCELLED (flip to B)**; threshold ratchets to 2.7; new lock created on B |
+| 3 | Side A's WPS returns to 2.8 | 2.7 → 2.8 | B (then A) | flip attempted → 2.8 > 2.7 → CANCELLED on B, new lock on A; threshold → 2.8 |
+| 4 | Side B nudges back to 2.9 | 2.8 → 2.9 | A → B | flip accepted again; threshold → 2.9 |
+| 5 | Side A tries 2.85 | 2.9 | B | 2.85 < 2.9 → rejected; A stays `ACTIVE` under `flip_rejected` |
+
+The ratchet is per-document — each game/market pair has its own threshold —
+and persists to Firebase so reloads don't lose history.
+
+---
+
+**What does and does NOT trigger a cancel/mute**
+
+**Does trigger (V8.4+):**
+
+- A late opposing-side wave that lifts the opposite side's WPS above the
+  ratcheting `flipBeatThreshold` AND at least 0.5 WPS above the locked side
+  → **CANCELLED** (reason `opp_side_dominates`, or `side_flipped` when wallet
+  count also tipped). Example: a pick locks on Side A at WPS = 2.5
+  (threshold = 2.5); Side B accumulates heavy-conviction sharps and reaches
+  WPS = 3.3 while Side A drifts to 2.6 → opp beats threshold (3.3 > 2.5) AND
+  is 0.7 above locked (≥ 0.5 gap) → CANCELLED.
+- An opposing-side wave that is materially stronger (≥ 1.0 WPS gap) and
+  above the 0.0 lock threshold, but **hasn't** beaten the ratchet yet →
+  **MUTED** (reason `opp_side_stronger`). Advisory, not a cancel.
+- The locked side's own WPS dropping below 0.0 while outside the 20-min
+  window → **MUTED** (`below_lock_range`).
+
+**Does NOT trigger:**
+
+- **Pinnacle moving away from the pick** (RLM, counter-move). Health reads
+  WPS, not line movement directly. Line movement only matters where it was
+  already priced into WPS via regime / CLV.
+- **Public money or ticket % flipping.** Health is a sharp-wallet signal.
+- **A drop from peak WPS** while still in lock range. We explicitly do not
+  react to peak retraces.
+- **Opposing wave that is loud in $invested but doesn't move opp-side WPS**
+  (e.g. a single wallet with low historical base pumping big $). WPS weights
+  size by a wallet's *own* historical average, so raw volume without quality
+  won't clear the ratchet.
+
+If a card you expect to be CANCELLED is still ACTIVE, check the console for
+the opposing-side WPS — the gap may be under 0.5 or the opp side may not have
+cleared the ratchet yet.
+
+---
+
+**State & persistence**
+
+React refs (per `SharpPositionCard` instance):
+
+| Ref | Set by | Purpose |
+|---|---|---|
+| `lockedSideRef` | `syncPickToFirebase` action = `locked` / `side_added` | The side the pick was last locked on (survives consensus wobble) |
+| `lockWPSRef` | First lock + each accepted flip | Baseline WPS for `wpsDelta` reporting |
+| `flipBeatThresholdRef` | First lock + each accepted flip | The ratcheting flip bar |
+| `lockStarsRef`, `lockOddsRef`, `lockRawScoreRef` | First lock | UI display snapshots |
+
+Firebase (per side doc inside `sides[<side>]`):
+
+```js
+{
+  health: {
+    status: 'ACTIVE' | 'MUTED' | 'CANCELLED',
+    reasons: ['flip_rejected', 'below_lock_range'], // etc.
+    currentStars, wpsDelta, newSideWPS, flipBeatThreshold,
+    evaluatedAt: <ms>,
+  },
+  superseded: false,      // true once a later lock on a different side replaces this one
+  lockStage: 'LOCKED',    // 'SHADOW' | 'LOCKED' | 'UNPROMOTED'
+  ...
+}
+```
+
+`flipBeatThreshold` is also stored at the document root so late reads don't lose
+the ratchet history.
+
+The writer is `syncPickHealth()`: it locates the correct side (falls back to
+the originally-locked, non-superseded side if the passed `side` has no lock
+record), merges the new `health` object, and stamps `evaluatedAt` / `lastWriteAt`.
+Writes are gated by:
+
+- `status === 'COMPLETED'` → no-op (bet already graded)
+- `Date.now() >= commenceTime − 5min` → no-op (too late to help)
+- `lastHealthRef.current === mlHealth.status` → no-op (no state change to persist)
+
+---
+
+**UI behaviour**
+
+- `isMuted = healthStatus === 'MUTED' && !isGraded` — dimmed card, "MUTED"
+  chip with reason codes appended ("Flip rejected — threshold not met",
+  "Below lock range", etc.)
+- `isCancelled = healthStatus === 'CANCELLED' && !isGraded` — stronger dim,
+  "CANCELLED" chip, reasons list rendered under the header
+- The Locked feed sorts ACTIVE → MUTED → CANCELLED via `healthOrder`, and the
+  "Show cancelled" toggle controls whether cancelled cards collapse out of view
+- Graded picks ignore health entirely (the outcome is now authoritative)
+
+Health only affects visual state and downstream report filtering — it does not
+retract the original Firebase `lock` snapshot, so historical analysis keeps
+the pick exactly as it was called.
+
+---
+
+**Known gaps & roadmap**
+
+| Scenario | Current behaviour | Under consideration |
+|---|---|---|
+| Opposing wave that swamps $invested but not wallet count | **Fixed V8.4** — opp-side WPS check runs regardless of wallet-count flip. Large-base / high-conviction sharps can drive opp WPS above ratchet even when they're outnumbered. | Tune `OPP_CANCEL_GAP` / `OPP_MUTE_GAP` on a few weeks of data — current values (0.5 / 1.0) are conservative. |
+| Pinnacle moves hard against a locked pick (≥ 8¢) after lock | `ACTIVE` — line move not an input | "Adverse move" MUTE check gated on `pinnCurrentProb − lockPinnProb` |
+| Sharp wallet that backed the locked side later *closes* their position | `ACTIVE` — we don't track exits | Exit-aware WPS once position-close data is in `sharp_action_positions` |
+| `currentWPS < 0` but inside the 20-min window | `ACTIVE` (guard) | Leave as-is — late WPS noise is too high to act on |
+| Spread / Total opposing-side check | Not yet wired — spreads & totals pass `sideFlipped: false` / `oppSideWPS: null` | Extend to compute `oppSr` for these markets and pipe through |
+
+---
+
+**Where it lives in code**
+
+- `evaluatePickHealth()` — pure function, `SharpFlow.jsx` ~line 740
+- `syncPickHealth()` — Firebase writer, `SharpFlow.jsx` ~line 1083
+- ML call site: `SharpFlow.jsx` ~line 4142 (search `ML Pick Health Evaluation`)
+- Spread/Total call sites: `SharpFlow.jsx` ~line 4282 / ~4416 (both pass
+  `sideFlipped: false` — spreads & totals don't flip, they MUTE/UNMUTE on
+  WPS crossing `LOCK_RANGE_WPS` only)
+- Constants: `LOCK_RANGE_WPS = 0.0`, `tooCloseForFlip = timeToGame ≤ 20`
+- UI rendering: `isMuted` / `isCancelled` flags in `SharpPositionCard`, list
+  ordering in the Locked feed (`healthOrder`)
 
 ### Performance Tracking
 

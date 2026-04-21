@@ -733,23 +733,68 @@ const V8_STAR_THRESHOLDS = {
 // ─── Pick Health Evaluation (Mute / Cancel overlay) ──────────────────────────
 // V8-native: uses WalletPlayScore instead of star deltas.
 // Lock range = WPS >= 0.0 (maps to >= 2.5 stars).
-// Side flip only accepted if the new side's WPS exceeds the ratcheting threshold.
+//
+// V8.4 fix: we evaluate the opposing side's WPS *on every tick*, not only
+// when the wallet-count-based `consensusSide` has already tipped. The old
+// behavior missed cases where a late heavy-conviction wave landed on the
+// opposite side (e.g. 2 whales @ $35k dwarfing 3 small bettors @ $8k) —
+// wallet count still said consensus = locked side, so sideFlipped=false and
+// no flip evaluation ever ran. Now the ratchet-threshold check fires whenever
+// the opposite side's WPS has genuinely eclipsed the locked side's threshold.
 
 const LOCK_RANGE_WPS = 0.0; // V8_STAR_THRESHOLDS.p50
+const OPP_CANCEL_GAP = 0.5; // opp WPS must be at least this much above locked side to trigger CANCEL
+const OPP_MUTE_GAP = 1.0;   // opp WPS must be this much stronger (but below ratchet) to MUTE
 
-function evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flipBeatThreshold, timeToGame, currentStars }) {
+function evaluatePickHealth({
+  currentWPS,        // WPS of the LOCKED side (not the current consensusSide)
+  oppSideWPS,        // WPS of the side OPPOSITE the locked side
+  lockWPS,
+  sideFlipped,       // true iff wallet-count consensusSide != lockedSide
+  flipBeatThreshold,
+  timeToGame,
+  currentStars,
+}) {
   if (currentWPS == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, wpsDelta: 0 };
 
   const wpsDelta = lockWPS != null ? currentWPS - lockWPS : 0;
   const tooCloseForFlip = timeToGame != null && timeToGame <= 20;
+  const threshold = flipBeatThreshold ?? lockWPS ?? currentWPS;
 
-  if (sideFlipped && !tooCloseForFlip) {
-    const threshold = flipBeatThreshold ?? lockWPS ?? currentWPS;
-    if (newSideWPS != null && newSideWPS > threshold) {
-      return { status: 'CANCELLED', reasons: ['side_flipped'], currentStars, wpsDelta, newSideWPS, flipBeatThreshold: threshold };
+  // ── Opposing-side dominance check (runs regardless of wallet-count flip) ──
+  // If the opposite side's WPS has eclipsed the ratcheting flip threshold AND
+  // is materially stronger than the locked side right now, treat it as a flip
+  // even when the naive wallet-count consensus hasn't tipped.
+  if (!tooCloseForFlip && oppSideWPS != null) {
+    const oppDelta = oppSideWPS - currentWPS;
+
+    // Hard cancel: opp beat the ratchet AND is clearly stronger now
+    if (oppSideWPS > threshold && oppDelta >= OPP_CANCEL_GAP) {
+      return {
+        status: 'CANCELLED',
+        reasons: [sideFlipped ? 'side_flipped' : 'opp_side_dominates'],
+        currentStars, wpsDelta,
+        newSideWPS: oppSideWPS,
+        flipBeatThreshold: threshold,
+      };
     }
-    // Flip rejected — new side not strong enough to cancel, but still check
-    // if the original side has deteriorated below lock range
+
+    // Soft mute: opp is above lock range and materially stronger, but hasn't
+    // cleared the ratchet yet. Advisory — user/system keep the pick visible.
+    if (oppSideWPS > LOCK_RANGE_WPS && oppDelta >= OPP_MUTE_GAP) {
+      return {
+        status: 'MUTED',
+        reasons: ['opp_side_stronger'],
+        currentStars, wpsDelta,
+        newSideWPS: oppSideWPS,
+        flipBeatThreshold: threshold,
+      };
+    }
+  }
+
+  // ── Classic sideFlipped fallback (keeps legacy reason codes when wallet
+  // consensus tipped but opp-dominance checks didn't fire) ──
+  if (sideFlipped && !tooCloseForFlip) {
     if (currentWPS < LOCK_RANGE_WPS) {
       return { status: 'MUTED', reasons: ['flip_rejected', 'below_lock_range'], currentStars, wpsDelta };
     }
@@ -3321,6 +3366,8 @@ const HEALTH_REASON_LABELS = {
   side_flipped: 'Sharps flipped to other side',
   flip_rejected: 'Flip rejected — threshold not met',
   near_start: 'Near game start — holding active',
+  opp_side_dominates: 'Opposing side now stronger than lock threshold',
+  opp_side_stronger: 'Opposing side gaining conviction',
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
@@ -4142,14 +4189,20 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   // ─── ML Pick Health Evaluation ──────────────────────────────────────────────
   const wasEverLocked = isLocked || lockStarsRef.current != null || originalLockedSide != null;
   const sideFlipped = lockedSideRef.current != null && consensusSide !== lockedSideRef.current;
+  // Resolve WPS from the LOCKED side's perspective — regardless of which side
+  // wallet-count consensus currently favors. When sideFlipped, `sr` is the
+  // opposing-to-lock side's score and `oppSr` is the locked side's score.
+  const lockedSideWPS = sideFlipped ? oppSr.walletPlayScore : sr.walletPlayScore;
+  const oppToLockWPS  = sideFlipped ? sr.walletPlayScore    : oppSr.walletPlayScore;
+  const lockedSideStars = sideFlipped ? oppSr.stars : sr.stars;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
-    currentWPS: sr.walletPlayScore,
+    currentWPS: lockedSideWPS,
+    oppSideWPS: oppToLockWPS,
     lockWPS: lockWPSRef.current,
     sideFlipped,
-    newSideWPS: sideFlipped ? oppSr.walletPlayScore : null,
     flipBeatThreshold: flipBeatThresholdRef.current,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
-    currentStars: sr.stars,
+    currentStars: lockedSideStars,
   }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, wpsDelta: 0 };
 
   const lastHealthRef = useRef(null);
@@ -4164,7 +4217,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     if (lastHealthRef.current === mlHealth.status) return;
     lastHealthRef.current = mlHealth.status;
     syncPickHealth({ docId, collection: 'sharpFlowPicks', side: healthSide, health: mlHealth });
-  }, [wasEverLocked, mlHealth.status, sr.walletPlayScore]);
+  }, [wasEverLocked, mlHealth.status, sr.walletPlayScore, oppSr.walletPlayScore]);
 
   // ─── Spread Position Lock Detection ───────────────────────────────────────
   const spreadGameData = spreadPositions?.[gd.sport]?.[gd.key];
