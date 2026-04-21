@@ -1,6 +1,6 @@
 # V8-Era Daily PnL + Cluster Report
 
-Generated: 4/21/2026, 8:33:12 AM ET · V8 cutover: 2026-04-18
+Generated: 4/21/2026, 8:47:21 AM ET · V8 cutover: 2026-04-18
 
 Full graded V8 sample: **N=42  WR=50.0%  flatROI=-3.4%  wtdROI=+2.6%** · total flat PnL **-1.41u**
 
