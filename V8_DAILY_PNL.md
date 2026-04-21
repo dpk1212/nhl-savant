@@ -1,6 +1,6 @@
 # V8-Era Daily PnL + Cluster Report
 
-Generated: 4/21/2026, 8:20:54 AM ET · V8 cutover: 2026-04-18
+Generated: 4/21/2026, 8:33:12 AM ET · V8 cutover: 2026-04-18
 
 Full graded V8 sample: **N=42  WR=50.0%  flatROI=-3.4%  wtdROI=+2.6%** · total flat PnL **-1.41u**
 
@@ -284,6 +284,115 @@ Where are we bleeding (size down / reconsider)?
 - contribTier=STRONG · sport=NBA · promotedBy=regime → N=3  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 - contribTier=STRONG · meanBase_F=meanBase<50 · promotedBy=regime → N=3  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 - sport=NBA · market=ML · promotedBy=regime → N=3  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
+
+---
+
+## 6. Daily PnL by factor bucket (stability check)
+
+Each row shows how one bucket performed **per day** + total. Look for signals that are *consistent* across days (stable edge) vs ones that flip signs day-to-day (small-sample noise).
+
+Cell format: **N · WR% · flatROI% · flatPnL**
+
+### Regime
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| CLEAR_MOVE | N=4 · 75% · +32% · +1.3u | N=3 · 67% · -0% · -0.0u | N=4 · 75% · +50% · +2.0u | **N=11 · 73% · +30% · +3.2u** |
+| NEAR_START | N=6 · 33% · -45% · -2.7u | N=4 · 75% · +100% · +4.0u | N=12 · 42% · -20% · -2.4u | **N=22 · 45% · -5% · -1.1u** |
+| NO_MOVE | N=3 · 0% · -100% · -3.0u | — | — | **N=3 · 0% · -100% · -3.0u** |
+| SMALL_MOVE | N=1 · 100% · +105% · +1.0u | N=4 · 25% · -58% · -2.3u | N=1 · 100% · +68% · +0.7u | **N=6 · 50% · -10% · -0.6u** |
+
+### maxRoiN_F (elite for-side ROI wallet)
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| maxRoi 50–70 | N=5 · 40% · -26% · -1.3u | N=6 · 50% · -10% · -0.6u | N=7 · 43% · -19% · -1.3u | **N=18 · 44% · -18% · -3.2u** |
+| maxRoi<50 | N=7 · 43% · -30% · -2.1u | N=1 · 0% · -100% · -1.0u | — | **N=8 · 38% · -39% · -3.1u** |
+| maxRoi≥70 | N=2 · 50% · +2% · +0.0u | N=4 · 75% · +81% · +3.2u | N=10 · 60% · +16% · +1.6u | **N=16 · 63% · +31% · +4.9u** |
+
+### contribTier
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| LEAN | N=8 · 38% · -39% · -3.1u | N=4 · 25% · -58% · -2.3u | N=4 · 50% · -2% · -0.1u | **N=16 · 38% · -34% · -5.5u** |
+| STANDARD | N=2 · 50% · -17% · -0.3u | N=2 · 50% · -10% · -0.2u | N=6 · 100% · +94% · +5.6u | **N=10 · 80% · +51% · +5.1u** |
+| STRONG | N=4 · 50% · +2% · +0.1u | N=5 · 80% · +83% · +4.2u | N=7 · 14% · -75% · -5.3u | **N=16 · 44% · -6% · -1.0u** |
+
+### Contribution margin (qFor − qAg)
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| +1 | N=3 · 67% · +24% · +0.7u | N=3 · 67% · +98% · +3.0u | N=9 · 67% · +29% · +2.6u | **N=15 · 67% · +42% · +6.3u** |
+| 0 | N=8 · 38% · -39% · -3.1u | N=4 · 25% · -58% · -2.3u | N=4 · 50% · -2% · -0.1u | **N=16 · 38% · -34% · -5.5u** |
+| ≥+2 | N=3 · 33% · -32% · -1.0u | N=4 · 75% · +26% · +1.0u | N=4 · 25% · -56% · -2.3u | **N=11 · 45% · -20% · -2.2u** |
+
+### meanBase_F (for-side wallet caliber)
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| meanBase 50–55 | N=1 · 100% · +67% · +0.7u | N=5 · 60% · +8% · +0.4u | N=2 · 50% · -5% · -0.1u | **N=8 · 63% · +12% · +1.0u** |
+| meanBase<50 | N=11 · 27% · -56% · -6.1u | N=3 · 33% · +38% · +1.2u | N=6 · 33% · -36% · -2.2u | **N=20 · 30% · -36% · -7.1u** |
+| meanBase≥55 | N=2 · 100% · +105% · +2.1u | N=3 · 67% · +3% · +0.1u | N=9 · 67% · +28% · +2.5u | **N=14 · 71% · +34% · +4.7u** |
+
+### Δcontribution band
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| Δ>100 | N=5 · 40% · -26% · -1.3u | N=7 · 71% · +64% · +4.5u | N=7 · 29% · -44% · -3.1u | **N=19 · 47% · +0% · +0.1u** |
+| Δ∈(0,50] | N=1 · 0% · -100% · -1.0u | N=4 · 25% · -70% · -2.8u | N=1 · 0% · -100% · -1.0u | **N=6 · 17% · -80% · -4.8u** |
+| Δ∈(50,100] | N=1 · 100% · +105% · +1.0u | — | N=8 · 88% · +68% · +5.4u | **N=9 · 89% · +72% · +6.5u** |
+| Δ≤0 | N=7 · 43% · -30% · -2.1u | — | N=1 · 0% · -100% · -1.0u | **N=8 · 38% · -39% · -3.1u** |
+
+### Stars
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| ★=3.5 | N=3 · 33% · -32% · -1.0u | N=1 · 100% · +93% · +0.9u | N=1 · 0% · -100% · -1.0u | **N=5 · 40% · -20% · -1.0u** |
+| ★≤3 | N=5 · 20% · -59% · -3.0u | N=7 · 43% · -34% · -2.3u | N=14 · 64% · +24% · +3.3u | **N=26 · 50% · -8% · -2.0u** |
+| ★≥4 | N=6 · 67% · +9% · +0.6u | N=3 · 67% · +102% · +3.1u | N=2 · 0% · -100% · -2.0u | **N=11 · 55% · +15% · +1.6u** |
+
+### Sport
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| MLB | N=6 · 50% · -11% · -0.6u | N=6 · 67% · +22% · +1.3u | N=4 · 75% · +59% · +2.4u | **N=16 · 63% · +19% · +3.0u** |
+| NBA | N=7 · 29% · -54% · -3.8u | N=3 · 67% · +78% · +2.3u | N=9 · 33% · -36% · -3.2u | **N=19 · 37% · -25% · -4.7u** |
+| NHL | N=1 · 100% · +105% · +1.0u | N=2 · 0% · -100% · -2.0u | N=4 · 75% · +30% · +1.2u | **N=7 · 57% · +3% · +0.2u** |
+
+### Market
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| ML | N=7 · 57% · -5% · -0.4u | N=10 · 60% · +26% · +2.6u | N=8 · 38% · -29% · -2.3u | **N=25 · 52% · -0% · -0.0u** |
+| SPREAD | N=2 · 0% · -100% · -2.0u | N=1 · 0% · -100% · -1.0u | N=3 · 33% · -36% · -1.1u | **N=6 · 17% · -68% · -4.1u** |
+| TOTAL | N=5 · 40% · -20% · -1.0u | — | N=6 · 83% · +62% · +3.7u | **N=11 · 64% · +25% · +2.7u** |
+
+### Lock stage
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| LOCKED | N=12 · 50% · -11% · -1.3u | N=8 · 63% · +37% · +3.0u | N=16 · 50% · -2% · -0.4u | **N=36 · 53% · +3% · +1.2u** |
+| SHADOW | N=2 · 0% · -100% · -2.0u | N=3 · 33% · -44% · -1.3u | N=1 · 100% · +68% · +0.7u | **N=6 · 33% · -44% · -2.6u** |
+
+### Promoted by
+| Bucket | 04-18 | 04-19 | 04-20 | TOTAL |
+|---|---|---|---|---|
+| contribution | — | — | N=1 · 100% · +75% · +0.7u | **N=1 · 100% · +75% · +0.7u** |
+| regime | — | — | N=14 · 50% · -1% · -0.1u | **N=14 · 50% · -1% · -0.1u** |
+| — | N=14 · 43% · -24% · -3.3u | N=11 · 55% · +15% · +1.6u | N=2 · 50% · -16% · -0.3u | **N=27 · 48% · -8% · -2.0u** |
+
+### 6a. Stability scoreboard
+
+Which buckets posted **positive flat ROI on every day they appeared** (min 2 days of appearances)? These are the most trustworthy slices.
+
+| Factor | Bucket | Days appeared | Days positive | TOTAL |
+|---|---|---|---|---|
+| Δcontribution band | Δ∈(50,100] | 2 | 2 | N=9 · +71.8% · +6.46u |
+| Contribution margin (qFor − qAg) | +1 | 3 | 3 | N=15 · +42.0% · +6.29u |
+| meanBase_F (for-side wallet caliber) | meanBase≥55 | 3 | 3 | N=14 · +33.9% · +4.74u |
+| maxRoiN_F (elite for-side ROI wallet) | maxRoi≥70 | 3 | 3 | N=16 · +30.7% · +4.91u |
+
+Which buckets posted **negative flat ROI on every day they appeared** (min 2 days)? These are the most trustworthy bleeders.
+
+| Factor | Bucket | Days appeared | Days negative | TOTAL |
+|---|---|---|---|---|
+| Δcontribution band | Δ∈(0,50] | 3 | 3 | N=6 · -80.2% · -4.81u |
+| Market | SPREAD | 3 | 3 | N=6 · -68.2% · -4.09u |
+| maxRoiN_F (elite for-side ROI wallet) | maxRoi<50 | 2 | 2 | N=8 · -38.9% · -3.12u |
+| Δcontribution band | Δ≤0 | 2 | 2 | N=8 · -38.9% · -3.12u |
+| contribTier | LEAN | 3 | 3 | N=16 · -34.5% · -5.52u |
+| Contribution margin (qFor − qAg) | 0 | 3 | 3 | N=16 · -34.5% · -5.52u |
+| maxRoiN_F (elite for-side ROI wallet) | maxRoi 50–70 | 3 | 3 | N=18 · -17.8% · -3.20u |
 
 ---
 *Auto-generated by `scripts/v8DailyPnL.js` (daily). Cross-referenced with `STAR_RATING_SYSTEM.md` (V8.1/V8.2/V8.3 rules) and `V8_SIGNAL_MONITOR.md` (live-rule + deferred-candidate watch list).*
