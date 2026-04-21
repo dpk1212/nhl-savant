@@ -143,7 +143,11 @@ Dog caps (Spread/Total): +200 -> max 0.5u, +151 -> max 0.75u, +100 -> max 1.0u. 
 
 A consensus penalty (up to -1.0u for CONTESTED) is applied after the base.
 
-**Top Pick Bonus (CLV-Gated):** When star delta >= 1.0 during pregame updates, a unit bump (+0.25u or +0.5u) is applied — but ONLY if the regime is not NO_MOVE (Pinnacle has actually moved). This prevents fake upgrades from inflating unit size.
+**CLEAR_MOVE Regime Bonus (V8.2, 2026-04-21):** Any pick written while `regime === 'CLEAR_MOVE'` gets a flat **+0.5u** added to its base before the odds caps. Example: a 3★ ML in CLEAR_MOVE sizes at 1.5u instead of 1.0u; a 4★ Spread in CLEAR_MOVE sizes at 1.75u instead of 1.25u. Long-shot odds caps (+200 / +151 / +100) still win, so variance is preserved on dog plays.
+
+Evidence: the V8-era CLEAR_MOVE subset was **72.7% WR / +29.5% flat ROI (N=11)**, and every sub-partition (by star, contribTier, Δcontribution) was profitable. More aggressive Tier-A rules (e.g. `meanBase_F ≥ 55` or `contribTier = 'STANDARD'` inside CLEAR_MOVE) are deferred until their sub-sample sizes grow.
+
+**Deprecated — starDelta Top Pick Bonus:** The old `+0.25 / +0.5u` bump triggered by `starDelta ≥ 1.0` during pregame promotion has been **removed**. In production it rarely fired (large mid-cycle star jumps are uncommon), so regime was effectively absent from sizing. The V8.2 `CLEAR_MOVE` bonus replaces it with a signal that actually shows up every day.
 
 ### Pick Health Evaluation (Mute / Cancel System)
 

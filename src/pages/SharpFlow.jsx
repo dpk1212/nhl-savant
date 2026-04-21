@@ -301,10 +301,11 @@ function computeSharpFeatures(positions, consensusSide) {
   };
 }
 
-function calculateUnits(stars, consensusPenalty = 0, odds = null) {
+function calculateUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0) {
   let units = stars >= 5 ? 3.0 : stars >= 4.5 ? 2.5 : stars >= 4 ? 2.0
             : stars >= 3.5 ? 1.5 : 1.0;
   units += consensusPenalty;
+  units += regimeBonus;   // V8.2: CLEAR_MOVE bonus applied before odds caps
   units = Math.min(Math.max(units, 0.5), 3);
   if (odds != null && odds >= 200) units = Math.min(units, 0.5);
   else if (odds != null && odds >= 151) units = Math.min(units, 1.0);
@@ -762,10 +763,11 @@ function evaluatePickHealth({ currentWPS, lockWPS, sideFlipped, newSideWPS, flip
   return { status: 'MUTED', reasons: ['below_lock_range'], currentStars, wpsDelta };
 }
 
-function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null) {
+function calculateSpreadTotalUnits(stars, consensusPenalty = 0, odds = null, regimeBonus = 0) {
   let units = stars >= 5 ? 2.0 : stars >= 4.5 ? 1.5 : stars >= 4 ? 1.25
             : stars >= 3.5 ? 1.0 : stars >= 3 ? 0.75 : 0.5;
   units += consensusPenalty;
+  units += regimeBonus;   // V8.2: CLEAR_MOVE bonus applied before odds caps
   units = Math.min(Math.max(units, 0.5), 2);
   if (odds != null && odds >= 200) units = Math.min(units, 0.5);
   else if (odds != null && odds >= 151) units = Math.min(units, 0.75);
@@ -822,6 +824,18 @@ function decideLockStage(regime, v8Scoring, sideKey) {
 function minInvestedFloor(contribTier) {
   if (contribTier === 'STRONG' || contribTier === 'STANDARD') return 2500;
   return 5000;
+}
+
+// V8.2 — CLEAR_MOVE sizing bonus.
+// Historical finding (N=11 V8-era picks): CLEAR_MOVE regime carries a
+// 72.7% WR / +29.5% flat ROI edge and every sub-partition of CLEAR_MOVE
+// (by star, contribTier, Δcontribution) was profitable.  We bump every
+// CLEAR_MOVE pick by a flat +0.5u.  More aggressive Tier-A rules
+// (meanBase_F, contribTier=STANDARD) stay OUT of sizing until their
+// sub-sample sizes grow.  Replaces the old starDelta topPickBonus which
+// rarely fired in production.
+function clearMoveSizeBonus(regime) {
+  return regime === 'CLEAR_MOVE' ? 0.5 : 0;
 }
 
 function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring) {
@@ -902,11 +916,10 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
 
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      const lockStars = sides[side].lock?.stars || stars;
-      const starDelta = stars - lockStars;
-      const topPickBonus = (starDelta >= 1.0 && regime !== 'NO_MOVE')
-        ? (starDelta >= 1.5 ? 0.5 : 0.25) : 0;
-      const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 3);
+      // V8.2: units now carry the CLEAR_MOVE regime bonus from calculateUnits().
+      // The old starDelta topPickBonus was removed — it rarely fired and regime
+      // is already reflected in unit sizing.
+      const bumpedUnits = Math.min(Math.max(units, 0.5), 3);
       if (isReflip || bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
@@ -1113,11 +1126,8 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      const lockStars = sides[side].lock?.stars || stars;
-      const starDelta = stars - lockStars;
-      const topPickBonus = (starDelta >= 1.0 && regime !== 'NO_MOVE')
-        ? (starDelta >= 1.5 ? 0.5 : 0.25) : 0;
-      const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 2);
+      // V8.2: units already include CLEAR_MOVE bonus; old starDelta topPickBonus removed.
+      const bumpedUnits = Math.min(Math.max(units, 0.5), 2);
       if (bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
@@ -1218,11 +1228,8 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       const needsCsPatch = consensusStrength?.moneyPct != null && sides[side].lock?.consensusStrength?.moneyPct == null;
       const currentPeak = sides[side].peak?.units || 0;
       const currentPeakStars = sides[side].peak?.stars || 0;
-      const lockStars = sides[side].lock?.stars || stars;
-      const starDelta = stars - lockStars;
-      const topPickBonus = (starDelta >= 1.0 && regime !== 'NO_MOVE')
-        ? (starDelta >= 1.5 ? 0.5 : 0.25) : 0;
-      const bumpedUnits = Math.min(Math.max(units + topPickBonus, 0.5), 2);
+      // V8.2: units already include CLEAR_MOVE bonus; old starDelta topPickBonus removed.
+      const bumpedUnits = Math.min(Math.max(units, 0.5), 2);
       if (bumpedUnits > currentPeak || stars > currentPeakStars) {
         const tier = unitTier(bumpedUnits).label;
         const peakData = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units: bumpedUnits, unitTier: tier, consensusStrength, stars: stars || 0, updatedAt: Date.now() };
@@ -3975,7 +3982,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const isShadow = meetsThreshold && !hasRegimeMove;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
-  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds) : 0;
+  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, clearMoveSizeBonus(sr.regime)) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -4175,7 +4182,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
   const isSpreadLocked = spreadMeetsThreshold && spreadHasRegime;
   const isSpreadShadow = spreadMeetsThreshold && !spreadHasRegime;
-  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds) : 0;
+  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, clearMoveSizeBonus(spreadSr.regime)) : 0;
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -4307,7 +4314,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
   const isTotalLocked = totalMeetsThreshold && totalHasRegime;
   const isTotalShadow = totalMeetsThreshold && !totalHasRegime;
-  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds) : 0;
+  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, clearMoveSizeBonus(totalSr.regime)) : 0;
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;

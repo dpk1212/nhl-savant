@@ -15,6 +15,7 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| **V8.2 CLEAR_MOVE Sizing Bonus** | 2026-04-21 | Flat +0.5u added to any pick written while `regime === 'CLEAR_MOVE'` (replaces the old starDelta `topPickBonus` that rarely fired). Applied inside `calculateUnits` / `calculateSpreadTotalUnits` before odds caps, so long-shot variance rules still win. Evidence: CLEAR_MOVE subset was 72.7% WR / +29.5% flat ROI (N=11) and every sub-partition was profitable. Tier-A rules (meanBase_F≥55, contribTier='STANDARD') stay OUT of sizing until their sub-samples grow. |
 | **V8.1 Contribution-Tier Promotion** | 2026-04-20 | Additive LOCKED path via `contribTier='STRONG'`; `minInvestedFloor` relaxed to $2.5K for STRONG/STANDARD; per-pick `contribTier` + `promotedBy` written to Firebase; daily `contributionEdgeMap` + `qualifiedSharpDeepDive` workflow |
 | **V8 Wallet-Contribution** | 2026-04-16 | Complete overhaul: wallet-first architecture (WalletBase × ConvictionMultiplier), percentile normalization, internal re-ranking, NetEdge/100 side scoring, breadth=2×ln, single-wallet cap, regime decoupled from stars |
 | V7.1 + Regime Dampening | 2026-04-15 | Regime-aware update dampening, NO_MOVE star cap, lock baseline tracking |
@@ -236,11 +237,63 @@ The relaxed $2.5K floor for STRONG/STANDARD tiers intentionally promotes more lo
 
 ---
 
+## V8.2 — CLEAR_MOVE Sizing Bonus (2026-04-21)
+
+Stars remain wallet-only. **Sizing** now reflects the one regime with proven edge in V8-era data.
+
+### The rule
+
+```js
+clearMoveSizeBonus(regime):
+  return  regime === 'CLEAR_MOVE'  ?  +0.5  :  0
+```
+
+Applied inside both `calculateUnits` (ML) and `calculateSpreadTotalUnits` (Spread/Total), **before** the existing odds-based variance caps:
+
+```
+1. Base units from star ladder
+2. + consensusPenalty
+3. + regimeBonus            ← V8.2
+4. Clamp to [0.5, MAX]      (MAX = 3 for ML, 2 for Spread/Total)
+5. Apply odds caps          (+200 → 0.5u, etc.)
+```
+
+### Why +0.5u and not more
+
+The data supports two more aggressive bonuses (`meanBase_F ≥ 55` and `contribTier = 'STANDARD'`, both ≈ 80–100% WR inside CLEAR_MOVE) but with N=3 and N=5 respectively. Those stay out of sizing until N grows. **Sub-sample sizes drive the ceiling on how aggressive the bonus can be.**
+
+### What gets removed
+
+The old `topPickBonus` (based on `starDelta ≥ 1.0 AND regime !== 'NO_MOVE'`) is gone from all three sync functions. In practice it fired almost never (star jumps of +1.0 during SHADOW→LOCKED promotion are rare), so regime info was effectively absent from sizing.
+
+### Evidence (V8-era CLEAR_MOVE subset, N=11)
+
+| Metric | CLEAR_MOVE | Not CLEAR_MOVE |
+|---|---:|---:|
+| WR | 72.7% | 41.9% |
+| Flat ROI | +29.5% | −15.0% |
+| Weighted ROI | +51.3% | −20.0% |
+
+Every sub-partition of CLEAR_MOVE (by star, contribTier, Δcontribution) was profitable — no rotten cells to mis-size into.
+
+### Examples
+
+| Pick | Old units | New units |
+|---|---:|---:|
+| 3★ ML, regime = NO_MOVE | 1.0 | 1.0 |
+| 3★ ML, regime = CLEAR_MOVE | 1.0 | **1.5** |
+| 4★ ML, regime = CLEAR_MOVE | 2.0 | **2.5** |
+| 5★ ML, regime = CLEAR_MOVE | 3.0 | 3.0 (ceiling) |
+| 3★ SPREAD, regime = CLEAR_MOVE | 0.75 | **1.25** |
+| 2.5★ ML, +250 odds, CLEAR_MOVE | 0.5 | 0.5 (odds cap wins) |
+
+---
+
 ## Rollout
 
 V8 applies to **new picks only**. All existing Firebase `sharp_action_positions` retain their V7 star ratings, lock stages, and promoted regimes. No backfill.
 
-V8.1 (contribution-tier promotion) also rolls forward only: pre-V8.1 picks keep their existing `lockStage` and do not have `contribTier` or `promotedBy` fields. Analysis scripts tolerate this with `?.` access.
+V8.1 (contribution-tier promotion) and V8.2 (CLEAR_MOVE sizing bonus) also roll forward only: pre-V8.1 picks keep their existing `lockStage` / `units` and do not have `contribTier` or `promotedBy` fields. Analysis scripts tolerate this with `?.` access.
 
 ---
 
