@@ -15,7 +15,8 @@ Stars are not a separate visual layer — they ARE the system. What you see on t
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
-| **V8.2 CLEAR_MOVE Sizing Bonus** | 2026-04-21 | Flat +0.5u added to any pick written while `regime === 'CLEAR_MOVE'` (replaces the old starDelta `topPickBonus` that rarely fired). Applied inside `calculateUnits` / `calculateSpreadTotalUnits` before odds caps, so long-shot variance rules still win. Evidence: CLEAR_MOVE subset was 72.7% WR / +29.5% flat ROI (N=11) and every sub-partition was profitable. Tier-A rules (meanBase_F≥55, contribTier='STANDARD') stay OUT of sizing until their sub-samples grow. |
+| **V8.3 Wallet-Crew Quality + NEAR_START Elite-Wallet Sizing** | 2026-04-21 | Two additional sizing modifiers stacked onto V8.2 via a single `computeRegimeBonus()` that sums three independent signals (regime, for-side wallet caliber, NEAR_START elite wallet). `meanBase_F ≥ 55 → +0.25u` / `< 50 → −0.25u` applies **everywhere** (regime-agnostic). `NEAR_START` regime additionally bumps `maxRoiN_F ≥ 70 → +0.25u` / `50–70 → −0.25u`. Full stack: max swing ±0.75u (before clamp / odds caps). Evidence: `meanBase_F` was the strongest, cleanest separator in the full V8 sample (N=42) — 71.4% WR / +33.9% ROI at ≥55 vs 30% / −35.6% at <50, monotonic, present in every regime. |
+| **V8.2 CLEAR_MOVE Sizing Bonus** | 2026-04-21 | Flat +0.5u added to any pick written while `regime === 'CLEAR_MOVE'` (replaces the old starDelta `topPickBonus` that rarely fired). Applied inside `calculateUnits` / `calculateSpreadTotalUnits` before odds caps, so long-shot variance rules still win. Evidence: CLEAR_MOVE subset was 72.7% WR / +29.5% flat ROI (N=11) and every sub-partition was profitable. |
 | **V8.1 Contribution-Tier Promotion** | 2026-04-20 | Additive LOCKED path via `contribTier='STRONG'`; `minInvestedFloor` relaxed to $2.5K for STRONG/STANDARD; per-pick `contribTier` + `promotedBy` written to Firebase; daily `contributionEdgeMap` + `qualifiedSharpDeepDive` workflow |
 | **V8 Wallet-Contribution** | 2026-04-16 | Complete overhaul: wallet-first architecture (WalletBase × ConvictionMultiplier), percentile normalization, internal re-ranking, NetEdge/100 side scoring, breadth=2×ln, single-wallet cap, regime decoupled from stars |
 | V7.1 + Regime Dampening | 2026-04-15 | Regime-aware update dampening, NO_MOVE star cap, lock baseline tracking |
@@ -289,11 +290,98 @@ Every sub-partition of CLEAR_MOVE (by star, contribTier, Δcontribution) was pro
 
 ---
 
+## V8.3 — Wallet-Crew Quality + NEAR_START Elite-Wallet Sizing (2026-04-21)
+
+V8.2 let **regime** influence sizing. V8.3 lets **wallet-crew caliber** influence sizing on top of regime. The two signals are independent — market confirmation vs. who's riding the side — so they stack.
+
+### The three signals (composed additively)
+
+```js
+computeRegimeBonus(regime, v8Scoring, sideKey) =
+    clearMoveSizeBonus(regime)                         // market signal (V8.2)
+  + qualityBonus(v8Scoring, sideKey)                   // wallet-crew signal
+  + nearStartMaxRoiBonus(regime, v8Scoring, sideKey)   // late-money elite signal
+```
+
+Result is added to base star units **before** the `[0.5, MAX]` clamp and the long-shot odds caps, so dog-variance rules still win.
+
+### Signal 2 — `qualityBonus` (regime-agnostic, always applies)
+
+`meanBase_F` = average `walletBase` across for-side wallets.
+
+| Bucket | Bonus | Rationale (full V8 sample, N=42) |
+|---|---:|---|
+| meanBase_F ≥ 55 | **+0.25u** | N=14, WR 71.4%, flat ROI +33.9% |
+| meanBase_F 50–55 | 0 | N=8, WR 62.5%, flat ROI +12.1% (neutral) |
+| meanBase_F < 50 | **−0.25u** | N=20, WR 30.0%, flat ROI −35.6% |
+
+Holds in **every regime** that had a sample:
+
+| Regime | meanBase_F ≥ 55 |
+|---|---|
+| CLEAR_MOVE | N=3 · 100% · +73.1% |
+| NEAR_START | N=8 · 62.5% · +22.6% |
+| SMALL_MOVE | N=3 · 66.7% · +24.5% |
+
+### Signal 3 — `nearStartMaxRoiBonus` (regime-specific to NEAR_START)
+
+`maxRoiN_F` = highest `roiNorm` across for-side wallets.
+
+| Condition | Bonus | Rationale (NEAR_START only, N=22) |
+|---|---:|---|
+| NEAR_START AND maxRoiN_F ≥ 70 | **+0.25u** | N=11, WR 63.6%, flat ROI +42.6% |
+| NEAR_START AND 50 ≤ maxRoiN_F < 70 | **−0.25u** | N=10, WR 20.0%, flat ROI **−60.2%** |
+| NEAR_START AND maxRoiN_F < 50 | 0 | N=1, ignore |
+| not NEAR_START | 0 | signal weak outside NEAR_START |
+
+### Stacking bounds
+
+| Scenario | Net bonus |
+|---|---:|
+| CLEAR_MOVE + meanBase_F ≥ 55 | **+0.75u** (best case) |
+| CLEAR_MOVE + meanBase_F 50–55 | +0.50u |
+| CLEAR_MOVE + meanBase_F < 50 | +0.25u |
+| NEAR_START + meanBase_F ≥ 55 + maxRoiN_F ≥ 70 | +0.50u |
+| NEAR_START + meanBase_F < 50 + maxRoiN_F 50–70 | **−0.50u** (worst case) |
+| NO_MOVE + meanBase_F < 50 | −0.25u |
+| any neutral / no-signal | 0 |
+
+Stacked bonus can't exceed the CLEAR_MOVE base move (±0.75u above/below), which keeps one regime from dominating.
+
+### Examples (stacked)
+
+| Pick | Base | Bonuses | Final |
+|---|---:|---|---:|
+| 3★ ML, CLEAR_MOVE, meanBase_F=62 | 1.0 | +0.5 + 0.25 | **1.75u** |
+| 4★ ML, CLEAR_MOVE, meanBase_F=62 | 2.0 | +0.75 | **2.75u** |
+| 5★ ML, CLEAR_MOVE, meanBase_F=62 | 3.0 | clamp wins | 3.0u |
+| 3★ ML, CLEAR_MOVE, meanBase_F=44 | 1.0 | +0.5 − 0.25 | **1.25u** |
+| 3★ ML, NEAR_START, meanBase_F=58, maxRoiN_F=82 | 1.0 | +0.25 + 0.25 | **1.5u** |
+| 4★ ML, NEAR_START, meanBase_F=42, maxRoiN_F=62 | 2.0 | −0.25 − 0.25 | **1.5u** |
+| 2.5★ SPREAD, NEAR_START, meanBase_F=46, maxRoiN_F=68 | 0.5 | floor wins | 0.5u |
+| 3★ ML, NO_MOVE, meanBase_F=44 | 1.0 | −0.25 | **0.75u** |
+| 4.5★ ML +315 odds, NEAR_START, high wallets | 0.5 | odds cap wins | 0.5u |
+
+### What we explicitly did NOT encode yet
+
+| Candidate | Status | Re-evaluate when |
+|---|---|---|
+| `maxRoiN_F ≥ 70 AND meanBase_F ≥ 55` elite-of-elite combo (+0.25u on top) | deferred | N=7 → N≥15 |
+| NBA NEAR_START fade | deferred | N=12 → N≥20 |
+| contribTier = STANDARD bonus inside CLEAR_MOVE / NEAR_START | deferred | N=4 → N≥10 per regime |
+| `stars ≥ 4` as a standalone bonus | rejected | real effect is via regime × wallet-quality, not stars |
+| `Δcontribution ∈ (50, 100]` bonus | deferred | N=5 → N≥15 |
+| MUTE auto-suppress | deferred | N=0 still |
+
+Each of these lines is tracked weekly by `scripts/signalAcrossFullSample.js` so we can tell when a sub-sample crosses the actionable threshold.
+
+---
+
 ## Rollout
 
 V8 applies to **new picks only**. All existing Firebase `sharp_action_positions` retain their V7 star ratings, lock stages, and promoted regimes. No backfill.
 
-V8.1 (contribution-tier promotion) and V8.2 (CLEAR_MOVE sizing bonus) also roll forward only: pre-V8.1 picks keep their existing `lockStage` / `units` and do not have `contribTier` or `promotedBy` fields. Analysis scripts tolerate this with `?.` access.
+V8.1 (contribution-tier promotion), V8.2 (CLEAR_MOVE sizing bonus), and V8.3 (wallet-crew quality + NEAR_START elite-wallet sizing) all roll forward only: pre-V8.1 picks keep their existing `lockStage` / `units` and do not have `contribTier` or `promotedBy` fields. Analysis scripts tolerate this with `?.` access. V8.3 requires no new Firebase fields — both signals derive from `v8Scoring.walletDetails` which is already on every V8-era pick.
 
 ---
 

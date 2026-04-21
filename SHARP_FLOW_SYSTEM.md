@@ -143,11 +143,27 @@ Dog caps (Spread/Total): +200 -> max 0.5u, +151 -> max 0.75u, +100 -> max 1.0u. 
 
 A consensus penalty (up to -1.0u for CONTESTED) is applied after the base.
 
-**CLEAR_MOVE Regime Bonus (V8.2, 2026-04-21):** Any pick written while `regime === 'CLEAR_MOVE'` gets a flat **+0.5u** added to its base before the odds caps. Example: a 3★ ML in CLEAR_MOVE sizes at 1.5u instead of 1.0u; a 4★ Spread in CLEAR_MOVE sizes at 1.75u instead of 1.25u. Long-shot odds caps (+200 / +151 / +100) still win, so variance is preserved on dog plays.
+**V8.2 + V8.3 Sizing Modifiers (2026-04-21):** Three independent signals are summed in `computeRegimeBonus(regime, v8Scoring, sideKey)` and added to the base star units *before* the odds caps:
 
-Evidence: the V8-era CLEAR_MOVE subset was **72.7% WR / +29.5% flat ROI (N=11)**, and every sub-partition (by star, contribTier, Δcontribution) was profitable. More aggressive Tier-A rules (e.g. `meanBase_F ≥ 55` or `contribTier = 'STANDARD'` inside CLEAR_MOVE) are deferred until their sub-sample sizes grow.
+| Signal | Rule | Applies to |
+|---|---|---|
+| `clearMoveSizeBonus` (V8.2) | `regime === 'CLEAR_MOVE'` → **+0.5u** | all picks |
+| `qualityBonus` (V8.3) | `meanBase_F ≥ 55` → **+0.25u** · `< 50` → **−0.25u** · 50–55 neutral | all picks (regime-agnostic) |
+| `nearStartMaxRoiBonus` (V8.3) | `regime === 'NEAR_START'` AND `maxRoiN_F ≥ 70` → **+0.25u** · `50–70` → **−0.25u** | NEAR_START only |
 
-**Deprecated — starDelta Top Pick Bonus:** The old `+0.25 / +0.5u` bump triggered by `starDelta ≥ 1.0` during pregame promotion has been **removed**. In production it rarely fired (large mid-cycle star jumps are uncommon), so regime was effectively absent from sizing. The V8.2 `CLEAR_MOVE` bonus replaces it with a signal that actually shows up every day.
+Max positive stack = **+0.75u** (CLEAR_MOVE + high-quality wallets). Max negative stack = **−0.50u** (weak wallets + NEAR_START toxic band). Long-shot odds caps (+200 / +151 / +100) and the hard `[0.5u, 3u]` (ML) / `[0.5u, 2u]` (Spread/Total) clamp still win after the stack.
+
+**Evidence summary (N=42 V8 graded):**
+
+| Signal | Best bucket | Worst bucket | Regime-specific? |
+|---|---|---|---|
+| CLEAR_MOVE | N=11, 72.7% WR, +29.5% ROI (whole regime) | — (every sub-partition profitable) | yes, market |
+| meanBase_F | N=14, 71.4% WR, +33.9% ROI (≥55) | N=20, 30.0% WR, −35.6% ROI (<50) | **no — monotonic in every regime** |
+| maxRoiN_F (NEAR_START only) | N=11, 63.6% WR, +42.6% ROI (≥70) | N=10, 20.0% WR, **−60.2% ROI** (50–70) | yes, signal weak outside NEAR_START |
+
+`meanBase_F` is the strongest standalone separator in the V8 dataset, which is why it applies regardless of regime. `maxRoiN_F` is elite-wallet ROI percentile — it only lights up inside NEAR_START, so we gate it.
+
+**Deprecated — starDelta Top Pick Bonus:** The old `+0.25 / +0.5u` bump triggered by `starDelta ≥ 1.0` during pregame promotion has been **removed**. In production it rarely fired (large mid-cycle star jumps are uncommon), so regime was effectively absent from sizing. V8.2/V8.3 replace it with signals that actually show up every day.
 
 ### Pick Health Evaluation (Mute / Cancel System)
 

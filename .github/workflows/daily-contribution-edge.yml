@@ -1,4 +1,4 @@
-name: V8 Contribution-Edge Reports
+name: V8 Contribution-Edge + Sizing-Signal Monitor
 
 on:
   workflow_dispatch:
@@ -49,13 +49,25 @@ jobs:
           echo "════════════════════════════════════════════════════════════════"
           node scripts/qualifiedSharpDeepDive.js
 
+      - name: Generate V8.3 sizing-signal monitor
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  V8.3 SIZING-SIGNAL MONITOR"
+          echo "  (live rules + deferred candidates, re-eval thresholds)"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/signalAcrossFullSample.js
+
       - name: Commit reports
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md
+          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md V8_SIGNAL_MONITOR.md
           git diff --quiet && git diff --staged --quiet || (
-            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks + Signal Monitor [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
             git stash --include-untracked &&
             git pull --rebase origin main &&
             git stash pop || true &&

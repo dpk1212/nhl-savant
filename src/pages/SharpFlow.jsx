@@ -830,12 +830,59 @@ function minInvestedFloor(contribTier) {
 // Historical finding (N=11 V8-era picks): CLEAR_MOVE regime carries a
 // 72.7% WR / +29.5% flat ROI edge and every sub-partition of CLEAR_MOVE
 // (by star, contribTier, Δcontribution) was profitable.  We bump every
-// CLEAR_MOVE pick by a flat +0.5u.  More aggressive Tier-A rules
-// (meanBase_F, contribTier=STANDARD) stay OUT of sizing until their
-// sub-sample sizes grow.  Replaces the old starDelta topPickBonus which
-// rarely fired in production.
+// CLEAR_MOVE pick by a flat +0.5u.  Replaces the old starDelta
+// topPickBonus which rarely fired in production.
 function clearMoveSizeBonus(regime) {
   return regime === 'CLEAR_MOVE' ? 0.5 : 0;
+}
+
+// V8.3 — wallet-crew quality modifier (regime-agnostic).
+// meanBase_F = average walletBase across for-side wallets. Full-sample
+// (N=42) split showed the strongest, cleanest separation in the V8 data:
+//   ≥55  : N=14  WR 71.4%  flatROI +33.9%  (every regime profitable)
+//   50-55: N= 8  WR 62.5%  flatROI +12.1%  (neutral band)
+//   <50  : N=20  WR 30.0%  flatROI -35.6%  (bleeder in every regime)
+// Applies everywhere — this signal is decoupled from regime and
+// stacks with clearMoveSizeBonus (they measure different things:
+// market confirmation vs wallet-crew caliber).
+function qualityBonus(v8Scoring, sideKey) {
+  const forW = (v8Scoring?.walletDetails || [])
+    .filter(w => w.side === (v8Scoring?.consensusSide || sideKey));
+  if (!forW.length) return 0;
+  const meanBase = forW.reduce((s, w) => s + (w.walletBase ?? 0), 0) / forW.length;
+  if (meanBase >= 55) return 0.25;
+  if (meanBase < 50)  return -0.25;
+  return 0;   // 50–55 neutral band
+}
+
+// V8.3 — NEAR_START elite-wallet modifier (regime-specific).
+// maxRoiN_F = highest roiNorm across for-side wallets.  Inside NEAR_START
+// (N=22) the split is extreme:
+//   ≥70  : N=11  WR 63.6%  flatROI +42.6%
+//   50-70: N=10  WR 20.0%  flatROI -60.2%   ← toxic band
+// Outside NEAR_START the signal is weak, so we gate this rule by regime.
+function nearStartMaxRoiBonus(regime, v8Scoring, sideKey) {
+  if (regime !== 'NEAR_START') return 0;
+  const forW = (v8Scoring?.walletDetails || [])
+    .filter(w => w.side === (v8Scoring?.consensusSide || sideKey));
+  if (!forW.length) return 0;
+  const maxRoi = forW.reduce((m, w) => Math.max(m, w.roiNorm ?? 0), 0);
+  if (maxRoi >= 70) return 0.25;
+  if (maxRoi >= 50) return -0.25;
+  return 0;   // <50 has only N=1 — stay neutral
+}
+
+// V8.3 — composed sizing delta applied before the [0.5, MAX] clamp and
+// odds-based caps.  Three independent signals:
+//  - market confirmation (regime)
+//  - for-side wallet crew caliber (meanBase_F)
+//  - NEAR_START elite-wallet presence (maxRoiN_F, NEAR_START only)
+// Max positive stack = +0.75 (CLEAR_MOVE + meanBase_F ≥ 55)
+// Max negative stack = -0.50 (meanBase_F < 50 + NEAR_START toxic)
+function computeRegimeBonus(regime, v8Scoring, sideKey) {
+  return clearMoveSizeBonus(regime)
+       + qualityBonus(v8Scoring, sideKey)
+       + nearStartMaxRoiBonus(regime, v8Scoring, sideKey);
 }
 
 function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring) {
@@ -3982,7 +4029,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const isShadow = meetsThreshold && !hasRegimeMove;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
-  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, clearMoveSizeBonus(sr.regime)) : 0;
+  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide)) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -4182,7 +4229,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
   const isSpreadLocked = spreadMeetsThreshold && spreadHasRegime;
   const isSpreadShadow = spreadMeetsThreshold && !spreadHasRegime;
-  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, clearMoveSizeBonus(spreadSr.regime)) : 0;
+  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide)) : 0;
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -4314,7 +4361,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
   const isTotalLocked = totalMeetsThreshold && totalHasRegime;
   const isTotalShadow = totalMeetsThreshold && !totalHasRegime;
-  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, clearMoveSizeBonus(totalSr.regime)) : 0;
+  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide)) : 0;
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
