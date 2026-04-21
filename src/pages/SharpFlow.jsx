@@ -905,13 +905,23 @@ function qualityBonus(v8Scoring, sideKey) {
   return 0;   // 50–55 neutral band
 }
 
-// TOP PICK predicate (V8.4 UI) — replaces the legacy `starDelta ≥ 1.0` rule.
-// A locked pick is elevated to TOP PICK only when BOTH conditions hold:
-//   • regime === 'CLEAR_MOVE'   (Pinnacle confirmed the move — 72.7% WR, +29.5% ROI)
-//   • meanBase_F ≥ 55           (for-side wallet crew is high-caliber — +33.9% flatROI)
-// This is the stacked-edge combination; either alone was profitable but the
-// intersection is where the strongest signal lives.  Pre-V8 picks (no regime
-// or v8Scoring) fall through to false and never display the badge.
+// TOP PICK predicates (V8.4 UI) — replaces the legacy `starDelta ≥ 1.0` rule.
+//
+// Two-tier system:
+//
+//   • Tier 1 — regular TOP PICK (outlined gold ribbon):
+//     regime === 'CLEAR_MOVE'
+//     Pinnacle confirmed the move.  N=11, 72.7% WR, +29.5% flatROI.
+//
+//   • Tier 2 — SUPER TOP PICK (filled gold ribbon with glow):
+//     regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55
+//     CLEAR_MOVE + high-caliber for-side wallet crew (avg walletBase ≥ 55).
+//     The stacked edge — intersection of the two strongest V8 signals.
+//
+// Pre-V8 picks (no regime / v8Scoring) fall through to false on both tiers.
+function isClearMoveRegime({ regime } = {}) {
+  return regime === 'CLEAR_MOVE';
+}
 function isClearMoveTopPick({ regime, meanBaseF } = {}) {
   return regime === 'CLEAR_MOVE' && meanBaseF != null && meanBaseF >= 55;
 }
@@ -3391,13 +3401,11 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
-  // V8.4: TOP PICK is now driven by CLEAR_MOVE regime + meanBase_F ≥ 55
-  // (the historical stacked-edge combination), replacing the old
-  // `starDelta ≥ 1.0` rule which selected growth but ignored whether the
-  // growth was market-confirmed or backed by high-caliber wallets.
-  const isTopPick = isClearMoveTopPick({ regime, meanBaseF });
-  const evDelta = (evEdge != null && lockEV != null) ? +(evEdge - lockEV).toFixed(2) : 0;
-  const isEVConfirmed = isTopPick && evDelta > 0;
+  // V8.4 two-tier TOP PICK system (replaces legacy starDelta ≥ 1.0 rule):
+  //   • isTopPick       — regular gold-outlined ribbon (CLEAR_MOVE regime)
+  //   • isSuperTopPick  — filled gold ribbon w/ glow (CLEAR_MOVE + meanBase_F ≥ 55)
+  const isTopPick = isClearMoveRegime({ regime });
+  const isSuperTopPick = isClearMoveTopPick({ regime, meanBaseF });
   const starLabels = { 5: 'ELITE PLAY', 4.5: 'ELITE PLAY', 4: 'STRONG PLAY', 3.5: 'STRONG PLAY', 3: 'SOLID PLAY', 2.5: 'SOLID PLAY' };
   const starLabel = starLabels[stars] || 'SOLID PLAY';
   const starColor = stars >= 4 ? B.green : B.gold;
@@ -3459,13 +3467,13 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
         ? '1px solid rgba(245,158,11,0.35)'
         : superseded
         ? `1px solid rgba(239,68,68,0.3)`
-        : isEVConfirmed
+        : isSuperTopPick
         ? '1px solid rgba(212,175,55,0.6)'
         : isTopPick
         ? '1px solid rgba(212,175,55,0.45)'
         : `1px solid ${isGraded ? (isWin ? 'rgba(16,185,129,0.2)' : isLoss ? 'rgba(239,68,68,0.2)' : B.border) : 'rgba(16,185,129,0.18)'}`,
       boxShadow: isCancelled || isMuted || superseded ? 'none'
-        : isEVConfirmed
+        : isSuperTopPick
         ? '0 0 24px rgba(212,175,55,0.18), 0 0 48px rgba(212,175,55,0.06)'
         : isTopPick
         ? '0 0 20px rgba(212,175,55,0.12), 0 0 40px rgba(212,175,55,0.04)'
@@ -3515,17 +3523,17 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
               <span style={{
                 ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
                 padding: '0.15rem 0.5rem', borderRadius: '5px',
-                color: isEVConfirmed ? '#fff' : '#D4AF37',
-                background: isEVConfirmed
+                color: isSuperTopPick ? '#fff' : '#D4AF37',
+                background: isSuperTopPick
                   ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 50%, #D4AF37 100%)'
                   : 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
-                border: isEVConfirmed
+                border: isSuperTopPick
                   ? '1px solid rgba(245,208,96,0.6)'
                   : '1px solid rgba(212,175,55,0.35)',
-                boxShadow: isEVConfirmed ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
+                boxShadow: isSuperTopPick ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
                 display: 'flex', alignItems: 'center', gap: '0.2rem',
               }}>
-                {isEVConfirmed ? <Zap size={9} strokeWidth={3} fill="#fff" /> : <TrendingUp size={9} strokeWidth={3} />}
+                {isSuperTopPick ? <Zap size={9} strokeWidth={3} fill="#fff" /> : <TrendingUp size={9} strokeWidth={3} />}
                 <span>TOP PICK</span>
               </span>
             )}
@@ -8595,9 +8603,13 @@ export default function SharpFlow() {
                       const aH = healthOrder[a.health?.status || 'ACTIVE'] || 0;
                       const bH = healthOrder[b.health?.status || 'ACTIVE'] || 0;
                       if (aH !== bH) return aH - bH;
-                      // V8.4: TOP PICK priority matches the badge — CLEAR_MOVE + meanBase_F ≥ 55.
-                      const aTop = isClearMoveTopPick(a) ? 1 : 0;
-                      const bTop = isClearMoveTopPick(b) ? 1 : 0;
+                      // V8.4: TOP PICK priority mirrors the two-tier badge.
+                      //   2 = SUPER TOP PICK (CLEAR_MOVE + meanBase_F ≥ 55)
+                      //   1 = regular TOP PICK (CLEAR_MOVE)
+                      //   0 = neither
+                      const tierRank = (p) => isClearMoveTopPick(p) ? 2 : isClearMoveRegime(p) ? 1 : 0;
+                      const aTop = tierRank(a);
+                      const bTop = tierRank(b);
                       if (aTop !== bTop) return bTop - aTop;
                       if (lockedSort === 'stars') return b.stars - a.stars || b.units - a.units;
                       const tA = a.gameTime ? new Date(a.gameTime).getTime() : 0;

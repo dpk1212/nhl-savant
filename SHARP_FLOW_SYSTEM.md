@@ -165,26 +165,26 @@ Max positive stack = **+0.75u** (CLEAR_MOVE + high-quality wallets). Max negativ
 
 **Deprecated — starDelta Top Pick Bonus:** The old `+0.25 / +0.5u` bump triggered by `starDelta ≥ 1.0` during pregame promotion has been **removed**. In production it rarely fired (large mid-cycle star jumps are uncommon), so regime was effectively absent from sizing. V8.2/V8.3 replace it with signals that actually show up every day.
 
-**V8.4 — TOP PICK UI badge (replaces legacy starDelta rule):** The gold ⚡ TOP PICK ribbon on `LockedPickCard` (Locked Picks list) is no longer driven by `starDelta ≥ 1.0`. It now requires the **stacked-edge** combination:
+**V8.4 — TOP PICK UI badge (replaces legacy starDelta rule):** The TOP PICK ribbon on `LockedPickCard` (Locked Picks list) is no longer driven by `starDelta ≥ 1.0`. It now uses a **two-tier** system mirroring V8's two strongest signals:
 
-```
-isTopPick ⇔ regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55
-```
+| Tier | Predicate | Visual | Evidence |
+|---|---|---|---|
+| **Regular TOP PICK** | `regime === 'CLEAR_MOVE'` | Gold-outlined ribbon, `TrendingUp` icon, subtle gold glow | N=11, 72.7% WR, +29.5% flatROI (every sub-partition profitable) |
+| **Super TOP PICK** | `regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55` | Solid filled-gold ribbon, `Zap` icon, strong gold glow | Stacked edge — CLEAR_MOVE intersected with high-caliber for-side wallet crew (meanBase_F ≥ 55 alone: N=14, 71.4% WR, +33.9% flatROI) |
 
-Rationale — each piece is independently profitable in V8 data, but the intersection is where the strongest, most repeatable edge lives:
+Rationale — the tiers correspond to V8's two independently profitable signals. CLEAR_MOVE alone is already a real edge (the regular badge), so we show it. When high-caliber wallets stack on top, it becomes the strongest repeatable combination in the dataset — that's the super (filled-gold) badge.
 
-| Requirement | Evidence |
-|---|---|
-| `regime === 'CLEAR_MOVE'` | N=11, 72.7% WR, +29.5% flatROI (every sub-partition profitable) |
-| `meanBase_F ≥ 55` | N=14, 71.4% WR, +33.9% flatROI (works in every regime) |
+The old rule selected picks whose stars grew, but ignored whether the growth was **market-confirmed** (regime) or backed by **high-caliber wallets** (meanBase_F). A pick could grow in stars through wallet churn on mid-tier sharps and still lose — the old badge celebrated that, the new tiers do not.
 
-The old rule selected picks whose stars grew, but ignored whether the growth was **market-confirmed** (regime) or backed by **high-caliber wallets** (meanBase_F). Those are the two signals that actually correlate with winning. A pick can grow in stars through wallet churn on mid-tier sharps and still lose — the old badge celebrated that, the new one does not.
+**Sort order on the Locked Picks list** (after health ordering): Super TOP PICK > Regular TOP PICK > everything else. Badge tier always matches list position.
 
-The sort comparator on the Locked Picks list uses the same predicate (`isClearMoveTopPick`), so cards wearing the TOP PICK ribbon always float to the top of the list (after health ordering).
+**Pre-V8 picks** (no `regime` or `v8Scoring` on the lock/peak snapshot) fall through to `false` on both tiers and never display either badge — expected behavior since we can't evaluate the new criteria on them.
 
-Pre-V8 picks (no `regime` or `v8Scoring` on the lock/peak snapshot) fall through to `false` and never display the badge — expected behavior since we can't evaluate the new criteria on them.
-
-**Implementation:** `src/pages/SharpFlow.jsx` → `isClearMoveTopPick({ regime, meanBaseF })` helper, consumed by both `LockedPickCard` (badge) and the locked-list sort comparator. `meanBase_F` is computed per-pick from `v8Scoring.walletDetails` filtered to `side === consensusSide` at the time the snapshot was written.
+**Implementation:** `src/pages/SharpFlow.jsx` →
+- `isClearMoveRegime({ regime })` → tier 1 predicate
+- `isClearMoveTopPick({ regime, meanBaseF })` → tier 2 predicate
+- `computeMeanBaseF(v8Scoring, sideKey)` → averages `walletBase` across for-side wallets (`side === consensusSide`) in the snapshot's `v8Scoring.walletDetails`
+- `LockedPickCard` consumes both predicates; sort comparator ranks `tier2 > tier1 > 0`
 
 ### Pick Health Evaluation (Mute / Cancel System)
 
