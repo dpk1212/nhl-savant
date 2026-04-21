@@ -85,13 +85,25 @@ jobs:
           echo "════════════════════════════════════════════════════════════════"
           node scripts/sharpVaultV8Analysis.js
 
+      - name: Generate non-LOCKED edge audit
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  NON-LOCKED EDGE AUDIT"
+          echo "  (does maxRoiN_F / meanBase_F deserve its own promotion path?)"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/nonLockedEdgeAudit.js
+
       - name: Commit reports
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md V8_SIGNAL_MONITOR.md V8_DAILY_PNL.md SHARP_VAULT_V8_REPORT.md
+          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md V8_SIGNAL_MONITOR.md V8_DAILY_PNL.md SHARP_VAULT_V8_REPORT.md NONLOCKED_EDGE_AUDIT.md
           git diff --quiet && git diff --staged --quiet || (
-            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks + Signal Monitor + Daily PnL + Sharp Vault [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks + Signal Monitor + Daily PnL + Sharp Vault + Non-LOCKED Audit [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
             git stash --include-untracked &&
             git pull --rebase origin main &&
             git stash pop || true &&
