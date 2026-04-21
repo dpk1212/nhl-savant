@@ -16,9 +16,9 @@ GET THE APP
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldHockey.svg)NHL](https://www.oddstrader.com/nhl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NFL](https://www.oddstrader.com/nfl/)
 - [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldFootball.svg)NCAAF](https://www.oddstrader.com/ncaa-college-football/)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1776704092618)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1776704092618)
-- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1776704092618)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldSoccer.svg)soccer](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1776769478879)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldTennis.svg)tennis](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1776769478879)
+- [![sport](https://otcdn.virginia.us-east-1.oddstrader.com/oldMore.svg)other](https://www.oddstrader.com/nhl/?eid&g=game&m=money&_=1776769478879)
 
 NHL
 
@@ -50,7 +50,7 @@ TodayYesterday
 
 ![logo-NHL](https://otcdn.virginia.us-east-1.oddstrader.com/leagues/NHL.svg)
 
-NHLMon 04/20
+NHLTue 04/21
 
 [Opener](https://www.oddstrader.com/betting/)
 
@@ -69,29 +69,29 @@ NHLMon 04/20
 |     |     |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 04/207:00 PMGame 2: PHI Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>44-39<br>63%<br>+131Heritage | +125 | +128 | +130 | +122 | +131 | +130 | +130 |
-| ![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>41-42<br>37%<br>-140Bet105 | -142 | -145 | -150 | -142 | -145 | -150 | -150 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/217:00 PMGame 2: MTL Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>48-34-1<br>14%<br>+166Bookmaker | +158 | +160 | +158 | +155 | +164 | +166 | +166 |
+| ![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>50-32-1<br>86%<br>-177Bet105 | -180 | -183 | -183 | -180 | -182 | -195 | -195 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 04/207:30 PMGame 2: CAR Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>44-39<br>18%<br>+136Heritage | +120 | +129 | +130 | +127 | +136 | +121 | +121 |
-| ![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>54-29<br>82%<br>-141Bookmaker | -136 | -147 | -150 | -147 | -150 | -141 | -141 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/217:30 PMGame 3: BUF Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>43-38-2<br>62%<br>+155Everygame | +147 | +150 | +149 | +137 | +151 | +148 | +148 |
+| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>51-31-1<br>38%<br>-158Bet105 | -167 | -171 | -169 | -163 | -167 | -170 | -170 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 04/209:30 PMGame 2: MIN Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>47-36<br>25%<br>+127Heritage | +110 | +118 | +115 | +112 | +127 | +115 | +115 |
-| ![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>50-33<br>75%<br>-131Bet105 | -125 | -134 | -135 | -133 | -141 | -135 | -135 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/219:30 PMGame 2: VGK Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>43-40<br>11%<br>+135BetOnline | +136 | +135 | +133 | +127 | +135 | +131 | +131 |
+| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>40-43<br>89%<br>-146Bet105 | -155 | -153 | -153 | -147 | -149 | -151 | -151 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>MON 04/2010:00 PM<br>![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>43-39<br>10%<br>+161Bet105 | +145 | +150 | +151 | +160 | +153 | +155 | +155 |
-| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>41-41<br>90%<br>-169Heritage | -165 | -171 | -175 | -185 | -169 | -180 | -180 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/2110:00 PMGame 2: COL Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>34-48-1<br>3%<br>+240BetAnything | +224 | +236 | +240 | +220 | +239 | +230 | +230 |
+| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>56-27<br>97%<br>-265Bet105 | -260 | -275 | -300 | -270 | -271 | -280 | -280 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/217:00 PMGame 2: MTL Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/6432ba21-81ac-41aa-b925-7c3894f313ff-original.png?d=100x100)<br>Montreal<br>48-34-1<br>0%<br>+165Everygame | +158 | +162 | +160 | +163 | +163 | +160 | +160 |
-| ![](https://logos.oddstrader.com/logos-original/c8d52a39-5aa1-4997-8c81-7618dfbd5e22-original.PNG?d=100x100)<br>Tampa Bay<br>50-32-1<br>100%<br>-181Heritage | -180 | -185 | -185 | -190 | -181 | -185 | -185 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 04/227:00 PMGame 3: PHI Leads 2-0<br>![](https://logos.oddstrader.com/logos-original/06d6dbf2-55cf-4e61-b546-d45f94f9b911-original.PNG?d=100x100)<br>Pittsburgh<br>41-43<br>-<br>+100Heritage | -105 | -102 | -105 | - | +100 | -104 | -104 |
+| ![](https://logos.oddstrader.com/logos-original/bc9d04d7-beb9-424c-afb4-18c0ca618b1b-original.png?d=100x100)<br>Philadelphia<br>45-39<br>-<br>-110Heritage | -109 | -112 | -115 | - | -110 | -116 | -116 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/217:30 PMGame 3: BUF Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/b43cb96f-6406-45ff-9f63-bbc3399c442a-original.png?d=100x100)<br>Boston<br>43-38-2<br>50%<br>+146Heritage | +147 | +145 | +145 | +137 | +146 | +144 | +144 |
-| ![](https://logos.oddstrader.com/logos-original/123032e4-9790-4cf7-a998-d0823baa9c08-original.PNG?d=100x100)<br>Buffalo<br>51-31-1<br>50%<br>-158Bet105 | -167 | -165 | -165 | -163 | -162 | -165 | -165 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 04/229:30 PMGame 3: Tied 1-1<br>![](https://logos.oddstrader.com/logos-original/7002789a-9611-4dc1-8830-0dccd209c9ee-original.png?d=100x100)<br>Dallas<br>51-33<br>-<br>+113Bet105 | +112 | +110 | +105 | - | +112 | +110 | +110 |
+| ![](https://logos.oddstrader.com/logos-original/a5a350db-3367-47d7-b9de-7d1d358eab99-original.PNG?d=100x100)<br>Minnesota<br>47-37<br>-<br>-124Heritage | -127 | -125 | -125 | - | -124 | -130 | -130 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/219:30 PMGame 2: VGK Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/19ec02c9-dff7-443a-8718-e331870b55ef-original.png?d=100x100)<br>Utah<br>43-40<br>-<br>+134Heritage | +136 | +132 | +130 | +130 | +134 | +130 | +130 |
-| ![](https://logos.oddstrader.com/logos-original/e3199119-49e3-4bf8-9f6f-bcf997eb1105-original.PNG?d=100x100)<br>Vegas<br>40-43<br>-<br>-148Heritage | -155 | -150 | -150 | -150 | -148 | -150 | -150 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>WED 04/2210:00 PMGame 2: EDM Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/f36fb8a1-4957-4a00-8c46-1020504965c6-original.png?d=100x100)<br>Anaheim<br>43-40<br>-<br>+165Everygame | +162 | +157 | +154 | - | +162 | +160 | +160 |
+| ![](https://logos.oddstrader.com/logos-original/048d93e0-fc31-4098-9870-b2bc9ab4ed16-original.png?d=100x100)<br>Edmonton<br>42-41<br>-<br>-179BetOnline | -185 | -179 | -179 | - | -180 | -185 | -185 |
 
-| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>TUE 04/2110:00 PMGame 2: COL Leads 1-0<br>![](https://logos.oddstrader.com/logos-original/fffe6c81-1c3c-4c56-8f29-11b3bf0ca336-original.png?d=100x100)<br>Los Angeles<br>34-48-1<br>14%<br>+231Heritage | +224 | +228 | +225 | +225 | +231 | +230 | +230 |
-| ![](https://logos.oddstrader.com/logos-original/8181bcbe-a16c-485a-9be0-bd09a24cff6b-original.PNG?d=100x100)<br>Colorado<br>56-27<br>86%<br>-261Heritage | -260 | -265 | -275 | -275 | -261 | -280 | -280 |
+| ![bell](https://assets.oddstrader.com/notifications/InactiveBell.svg)<br>Personalize your notifications and get updates on the teams, players or events you care about most.GOT IT<br>backgroundLayer 1<br>THU 04/237:30 PMGame 4: CAR Leads 2-0<br>![](https://logos.oddstrader.com/logos-original/2f371caa-925a-4a48-a5ed-7cc4c841cb4a-original.png?d=100x100)<br>Carolina<br>55-29<br>-<br>+106Bet105 | -104 | +104 | +100 | - | +103 | -101 | -101 |
+| ![](https://logos.oddstrader.com/logos-original/2c3e122c-e355-4a23-a013-3003db82fbdd-original.png?d=100x100)<br>Ottawa<br>44-40<br>-<br>-113Heritage | -110 | -118 | -120 | - | -113 | -119 | -119 |
 
 ## Best NHL Betting Odds and Spreads for Tonight’s Games
 
