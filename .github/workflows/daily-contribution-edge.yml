@@ -73,13 +73,25 @@ jobs:
           echo "════════════════════════════════════════════════════════════════"
           node scripts/v8DailyPnL.js
 
+      - name: Generate Sharp Vault × V8 report
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          echo "════════════════════════════════════════════════════════════════"
+          echo "  SHARP VAULT × V8 — per-wallet-bet winner identification"
+          echo "  (Uses V8 signals to classify individual sharp_action_positions)"
+          echo "════════════════════════════════════════════════════════════════"
+          node scripts/sharpVaultV8Analysis.js
+
       - name: Commit reports
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md V8_SIGNAL_MONITOR.md V8_DAILY_PNL.md
+          git add V8_CONTRIBUTION_EDGE.md V8_GOLDILOCKS_REPORT.md V8_SIGNAL_MONITOR.md V8_DAILY_PNL.md SHARP_VAULT_V8_REPORT.md
           git diff --quiet && git diff --staged --quiet || (
-            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks + Signal Monitor + Daily PnL [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
+            git commit -m "Auto-update: V8 Contribution-Edge + Goldilocks + Signal Monitor + Daily PnL + Sharp Vault [$(TZ='America/New_York' date +'%Y-%m-%d')]" &&
             git stash --include-untracked &&
             git pull --rebase origin main &&
             git stash pop || true &&
