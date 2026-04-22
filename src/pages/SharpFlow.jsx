@@ -98,6 +98,22 @@ function tierInfo(amt) {
 
 const TIER_WEIGHT = { ELITE: 3, SHARP: 2, PROVEN: 1.5, ACTIVE: 1 };
 
+/** Phase 2 UI: resolve whitelist tier for a wallet in a given sport.
+ *  Returns 'CONFIRMED' | 'FLAT' | 'WR50' | null — only CONFIRMED/FLAT count
+ *  toward the {SPORT} WINNER chip (WR50 is LODO-noise per our whitelist spec).
+ */
+function resolveWalletWhitelistTier(fullWallet, sport) {
+  if (!fullWallet || !sport) return null;
+  const short = String(fullWallet).slice(-6);
+  return getWalletProfile(short)?.bySport?.[sport]?.whitelistTier || null;
+}
+
+/** Phase 2 UI: returns true if the wallet is a {SPORT} WINNER (CONFIRMED or FLAT). */
+function isSportWinner(fullWallet, sport) {
+  const tier = resolveWalletWhitelistTier(fullWallet, sport);
+  return tier === 'CONFIRMED' || tier === 'FLAT';
+}
+
 /** UI: grouped sports leaderboard rank (no raw # or percentile shown). */
 function groupedSportsRankLabel(rank) {
   if (rank == null || rank <= 0) return null;
@@ -746,6 +762,113 @@ const LOCK_RANGE_WPS = 0.0; // V8_STAR_THRESHOLDS.p50
 const OPP_CANCEL_GAP = 0.5; // opp WPS must be at least this much above locked side to trigger CANCEL
 const OPP_MUTE_GAP = 1.0;   // opp WPS must be this much stronger (but below ratchet) to MUTE
 
+// ─── Phase 2 — Wallet-Consensus V8 Integration ───────────────────────────────
+// See PHASE_2_WALLET_CONSENSUS_PLAN.md for derivation.
+//
+// For each sport with a populated whitelist (from sharpWalletProfiles.bySport),
+// we count how many profitable-in-sport wallets are FOR our pick vs AGAINST.
+// Δ = forW − agW drives bonus / penalty / promotion / MUTE / CANCEL.
+//
+// Per-sport action gating (v1):
+//   NBA, MLB, NHL — full ladder (bonus + mute + cancel + promote)
+//   CBB           — inert until whitelist populates
+//
+// CANCEL is kept enabled for MLB/NHL as well per user decision to "go all
+// sports". LODO support per sport exists for MUTE; CANCEL fires only at
+// Δ ≤ −2 which is already a high-evidence bar. Config below is the single
+// kill-switch — flip any flag to `false` and redeploy to disable.
+const WHITELIST_INTERVENTION = {
+  NBA: { bonus: true, mute: true, cancel: true,  promote: true },
+  MLB: { bonus: true, mute: true, cancel: true,  promote: true },
+  NHL: { bonus: true, mute: true, cancel: true,  promote: true },
+  CBB: { bonus: true, mute: true, cancel: false, promote: false }, // whitelist too thin
+  NFL: { bonus: true, mute: true, cancel: false, promote: false }, // whitelist too thin
+};
+const WHITELIST_CONSENSUS_VERSION = 2; // v2 = all-sports + promotion path
+
+// Module-level cache of sharpWalletProfiles, keyed by walletShort (last 6
+// chars of address). Populated by a React effect in useMarketData; read
+// synchronously by helpers below. Null until first load completes.
+let WALLET_PROFILES_CACHE = null;
+function setWalletProfilesCache(profiles) {
+  WALLET_PROFILES_CACHE = profiles;
+}
+function getWalletProfile(walletShort) {
+  if (!WALLET_PROFILES_CACHE || !walletShort) return null;
+  return WALLET_PROFILES_CACHE.get(walletShort) || null;
+}
+
+// A wallet "counts" toward forW / agW only if it's profitable in the current
+// sport — whitelistTier ∈ {CONFIRMED, FLAT}. WR50 is LODO-noise, excluded.
+function isWhitelistedForSport(walletShort, sport) {
+  const p = getWalletProfile(walletShort);
+  const tier = p?.bySport?.[sport]?.whitelistTier;
+  return tier === 'CONFIRMED' || tier === 'FLAT';
+}
+
+function classifyDelta(forW, agW) {
+  const delta = forW - agW;
+  if (forW + agW === 0) return { delta: 0, verdict: 'NEUTRAL' };
+  if (delta >= 2)  return { delta, verdict: 'STRONG_FOR' };
+  if (delta === 1) return { delta, verdict: 'LEAN_FOR' };
+  if (delta === 0) return { delta, verdict: 'NEUTRAL' };
+  if (delta === -1) return { delta, verdict: 'FADE_WEAK' };
+  return { delta, verdict: 'FADE_STRONG' };
+}
+
+// Main wallet-consensus helper. Returns a stable shape that feeds
+// decideLockStage / computeRegimeBonus / evaluatePickHealth / attribution.
+// Safe to call with missing data — returns a NEUTRAL / no-action result.
+function computeWalletConsensus(walletDetails, sport, sideKey) {
+  const result = {
+    forW: 0, agW: 0, delta: 0, verdict: 'NEUTRAL',
+    unitBonus: 0, lockAction: null, promotionEligible: false,
+    sportConfig: WHITELIST_INTERVENTION[sport] || { bonus: false, mute: false, cancel: false, promote: false },
+    enabled: !!WHITELIST_INTERVENTION[sport],
+    sport: sport || null,
+  };
+  if (!Array.isArray(walletDetails) || !sport || !sideKey) return result;
+  if (!WALLET_PROFILES_CACHE) return result;
+
+  let forW = 0, agW = 0;
+  for (const d of walletDetails) {
+    if (!d?.wallet) continue;
+    if (!isWhitelistedForSport(d.wallet, sport)) continue;
+    if (d.side === sideKey) forW++;
+    else if (d.side) agW++;
+  }
+  const { delta, verdict } = classifyDelta(forW, agW);
+  result.forW = forW; result.agW = agW; result.delta = delta; result.verdict = verdict;
+
+  const cfg = result.sportConfig;
+
+  // Option A: negative actions override positive. If FADE_* → suppress
+  // bonus and promotion, set lockAction per cfg.
+  if (verdict === 'FADE_STRONG') {
+    if (cfg.cancel) result.lockAction = 'CANCEL';
+    else if (cfg.mute) result.lockAction = 'MUTE'; // MUTE fallback where CANCEL disabled
+    return result;
+  }
+  if (verdict === 'FADE_WEAK') {
+    if (cfg.mute) result.lockAction = 'MUTE';
+    return result;
+  }
+
+  // Positive side: bonus + promotion eligibility
+  if (verdict === 'STRONG_FOR') {
+    if (cfg.bonus) result.unitBonus = 0.25;
+    // Promotion guardrail: agW must be 0 (pure consensus, no profitable dissent)
+    result.promotionEligible = cfg.promote && agW === 0;
+    return result;
+  }
+  if (verdict === 'LEAN_FOR') {
+    if (cfg.bonus) result.unitBonus = 0.10;
+    return result;
+  }
+
+  return result;
+}
+
 function evaluatePickHealth({
   currentWPS,        // WPS of the LOCKED side (not the current consensusSide)
   oppSideWPS,        // WPS of the side OPPOSITE the locked side
@@ -754,8 +877,34 @@ function evaluatePickHealth({
   flipBeatThreshold,
   timeToGame,
   currentStars,
+  // Phase 2: wallet-consensus trigger (stand-alone — fires regardless of WPS)
+  walletConsensus,   // computeWalletConsensus(...) result, or null
 }) {
   if (currentWPS == null) return { status: 'ACTIVE', reasons: [], currentStars: currentStars || 0, wpsDelta: 0 };
+
+  // ── Whitelist fade trigger (Phase 2) — runs BEFORE WPS checks so a
+  // strong wallet fade fires even if WPS is holding up. Stand-alone per spec.
+  // Gated by timeToGame to mirror the existing "too close for flip" behavior.
+  const tooCloseForWhitelist = timeToGame != null && timeToGame <= 5;
+  if (walletConsensus?.lockAction && !tooCloseForWhitelist) {
+    const reason = walletConsensus.verdict === 'FADE_STRONG' ? 'whitelist_fade_strong' : 'whitelist_fade_weak';
+    if (walletConsensus.lockAction === 'CANCEL') {
+      return {
+        status: 'CANCELLED',
+        reasons: [reason],
+        currentStars, wpsDelta: lockWPS != null ? currentWPS - lockWPS : 0,
+        walletDelta: walletConsensus.delta,
+      };
+    }
+    if (walletConsensus.lockAction === 'MUTE') {
+      return {
+        status: 'MUTED',
+        reasons: [reason],
+        currentStars, wpsDelta: lockWPS != null ? currentWPS - lockWPS : 0,
+        walletDelta: walletConsensus.delta,
+      };
+    }
+  }
 
   const wpsDelta = lockWPS != null ? currentWPS - lockWPS : 0;
   const tooCloseForFlip = timeToGame != null && timeToGame <= 20;
@@ -854,12 +1003,26 @@ function classifyContributionTier(v8Scoring, sideKey) {
 }
 
 // Single source of truth for lockStage + who promoted it.
-// Regime-based LOCK remains; contribution-STRONG adds a second path.
-function decideLockStage(regime, v8Scoring, sideKey) {
+// Three promotion paths, in precedence order:
+//   1. regime      — CLEAR_MOVE or NEAR_START
+//   2. contribution — STRONG contribTier (V8.1)
+//   3. whitelist   — Phase 2: STRONG_FOR wallet consensus with guardrails
+// Guardrail for whitelist promotion (v2):
+//   - verdict === 'STRONG_FOR' AND agW === 0 (pure consensus)
+//   - baseStars >= 2 (V8 merit floor — no promoting 1-star picks)
+//   - sportConfig.promote === true
+//   - Pick wouldn't otherwise lock (enforced by precedence ordering)
+function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0) {
   const hasRegime = regime === 'CLEAR_MOVE' || regime === 'NEAR_START';
   const contribTier = classifyContributionTier(v8Scoring, sideKey);
   if (hasRegime) return { stage: 'LOCKED', contribTier, promotedBy: 'regime' };
   if (contribTier === 'STRONG') return { stage: 'LOCKED', contribTier, promotedBy: 'contribution' };
+  if (sport && baseStars >= 2) {
+    const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
+    if (wc.promotionEligible) {
+      return { stage: 'LOCKED', contribTier, promotedBy: 'whitelist' };
+    }
+  }
   return { stage: 'SHADOW', contribTier, promotedBy: null };
 }
 
@@ -966,19 +1129,42 @@ function nearStartMaxRoiBonus(regime, v8Scoring, sideKey) {
 }
 
 // V8.3 — composed sizing delta applied before the [0.5, MAX] clamp and
-// odds-based caps.  Three independent signals:
+// odds-based caps.  Signals:
 //  - market confirmation (regime)
 //  - for-side wallet crew caliber (meanBase_F)
 //  - NEAR_START elite-wallet presence (maxRoiN_F, NEAR_START only)
-// Max positive stack = +0.75 (CLEAR_MOVE + meanBase_F ≥ 55)
+//  - Phase 2: whitelist wallet consensus (STRONG_FOR +0.25, LEAN_FOR +0.10)
+// Max positive stack = +1.00 (CLEAR_MOVE + meanBase_F≥55 + STRONG_FOR)
 // Max negative stack = -0.50 (meanBase_F < 50 + NEAR_START toxic)
-function computeRegimeBonus(regime, v8Scoring, sideKey) {
+// Negative wallet consensus (FADE_*) returns unitBonus = 0 (suppressed per
+// Option A); the lockAction is handled by evaluatePickHealth.
+function computeRegimeBonus(regime, v8Scoring, sideKey, sport = null) {
+  const wc = sport ? computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey) : null;
   return clearMoveSizeBonus(regime)
        + qualityBonus(v8Scoring, sideKey)
-       + nearStartMaxRoiBonus(regime, v8Scoring, sideKey);
+       + nearStartMaxRoiBonus(regime, v8Scoring, sideKey)
+       + (wc?.unitBonus || 0);
 }
 
-function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring) {
+// Phase 2: stamp wallet-consensus attribution fields on a sideData object.
+// Mutates `target` in place. Always safe to call — missing data → no-op stamps.
+function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, promotedBy) {
+  const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
+  target.v8_walletConsensusVersion = WHITELIST_CONSENSUS_VERSION;
+  target.v8_walletConsensusSport = sport || null;
+  target.v8_walletConsensusEnabled = !!WHITELIST_INTERVENTION[sport];
+  target.v8_walletConsensusForW = wc.forW;
+  target.v8_walletConsensusAgW = wc.agW;
+  target.v8_walletConsensusDelta = wc.delta;
+  target.v8_walletConsensusVerdict = wc.verdict;
+  target.v8_walletConsensusStarBonus = wc.unitBonus; // historical field name; carries unit bonus
+  target.v8_walletConsensusMuteTriggered = wc.lockAction === 'MUTE';
+  target.v8_walletConsensusCancelTriggered = wc.lockAction === 'CANCEL';
+  target.v8_walletConsensusPromotionTriggered = promotedBy === 'whitelist';
+  target.v8_walletConsensusBaseStars = baseStars || 0;
+}
+
+function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport = null) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
@@ -987,7 +1173,7 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
   if (v8Scoring) snapshot.v8Scoring = v8Scoring;
-  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side);
+  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
   const base = {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -1001,11 +1187,12 @@ function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet
   };
   if (lockStage === 'LOCKED') {
     base.promotedBy = promotedBy;
-    if (promotedBy === 'contribution') {
+    if (promotedBy === 'contribution' || promotedBy === 'whitelist') {
       base.promotedAt = now;
       base.promotedRegime = regime || null;
     }
   }
+  stampWalletConsensus(base, v8Scoring, side, sport, stars || 0, promotedBy);
   return base;
 }
 
@@ -1027,7 +1214,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring);
+      const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         lockType: 'PREGAME',
@@ -1070,7 +1257,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeData = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: isReflip ? 'side_reflipped' : 'peak_updated' };
         if (evIsNewMax) { mergeData.sides[side].maxEV = currentEV; mergeData.sides[side].maxEVAt = Date.now(); }
-        const decision = decideLockStage(regime, v8Scoring, side);
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         mergeData.sides[side].contribTier = decision.contribTier || null;
         const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
@@ -1081,6 +1268,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
           if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
           mergeData.sides[side].lock.regime = regime;
         }
+        stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
         if (isReflip) {
           mergeData.sides[side].superseded = false;
           mergeData.sides[side].supersededAt = null;
@@ -1094,6 +1282,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
             if (!mergeData.sides[side].lock) mergeData.sides[side].lock = {};
             mergeData.sides[side].lock.regime = regime;
           }
+          stampWalletConsensus(mergeData.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
           for (const [otherSide] of Object.entries(sides)) {
             if (otherSide === side) continue;
             if (!mergeData.sides[otherSide]) mergeData.sides[otherSide] = {};
@@ -1106,10 +1295,12 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       }
 
       {
-        const decision = decideLockStage(regime, v8Scoring, side);
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
+          const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
+          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
           await setDoc(ref, {
-            sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } } },
+            sides: { [side]: promotedPatch },
             lastWriteAt: Date.now(), lastAction: 'promoted',
           }, { merge: true });
           return { docId, action: 'promoted' };
@@ -1136,7 +1327,7 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring);
+    const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport);
     const newWPS = v8Scoring?.walletPlayScore ?? null;
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     if (newWPS != null) mergePayload.flipBeatThreshold = newWPS;
@@ -1198,7 +1389,7 @@ async function syncPickHealth({ docId, collection: colName, side, health }) {
 
 // ─── Spread/Total Firebase Sync ───────────────────────────────────────────────
 
-function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring) {
+function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport = null) {
   const now = Date.now();
   const tier = unitTier(units).label;
   const snapshot = { odds, book, pinnacleOdds, line, evEdge: evEdge || 0, criteriaMet, criteria, sharpCount, totalInvested, units, unitTier: tier, consensusStrength, stars: stars || 0 };
@@ -1206,7 +1397,7 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   if (regime) snapshot.regime = regime;
   if (qualityProxy != null) snapshot.qualityProxy = qualityProxy;
   if (v8Scoring) snapshot.v8Scoring = v8Scoring;
-  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side);
+  const { stage: lockStage, contribTier, promotedBy } = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
   const base = {
     team,
     lock: { ...snapshot, lockedAt: now },
@@ -1220,11 +1411,12 @@ function buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, ev
   };
   if (lockStage === 'LOCKED') {
     base.promotedBy = promotedBy;
-    if (promotedBy === 'contribution') {
+    if (promotedBy === 'contribution' || promotedBy === 'whitelist') {
       base.promotedAt = now;
       base.promotedRegime = regime || null;
     }
   }
+  stampWalletConsensus(base, v8Scoring, side, sport, stars || 0, promotedBy);
   return base;
 }
 
@@ -1245,7 +1437,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'spread', lockType: 'PREGAME',
@@ -1277,7 +1469,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
-        const decision = decideLockStage(regime, v8Scoring, side);
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         mergeObj.sides[side].contribTier = decision.contribTier || null;
         const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
@@ -1288,14 +1480,17 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
           if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
           mergeObj.sides[side].lock.regime = regime;
         }
+        stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
       {
-        const decision = decideLockStage(regime, v8Scoring, side);
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
+          const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
+          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
           await setDoc(ref, {
-            sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } } },
+            sides: { [side]: promotedPatch },
             lastWriteAt: Date.now(), lastAction: 'promoted',
           }, { merge: true });
           return { docId, action: 'promoted' };
@@ -1317,7 +1512,7 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -1347,7 +1542,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
     const existing = await getDoc(ref);
 
     if (!existing.exists()) {
-      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
+      const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
       await setDoc(ref, {
         date, sport, gameKey, away, home, commenceTime: commenceTime || null,
         marketType: 'total', lockType: 'PREGAME',
@@ -1379,7 +1574,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         if (v8Scoring) peakData.v8Scoring = v8Scoring;
         const mergeObj = { sides: { [side]: { peak: peakData } }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'peak_updated' };
         if (needsCsPatch) mergeObj.sides[side].lock = { ...sides[side].lock, consensusStrength };
-        const decision = decideLockStage(regime, v8Scoring, side);
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         mergeObj.sides[side].contribTier = decision.contribTier || null;
         const shouldPromote = sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED';
         if (shouldPromote) {
@@ -1390,14 +1585,17 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
           if (!mergeObj.sides[side].lock) mergeObj.sides[side].lock = {};
           mergeObj.sides[side].lock.regime = regime;
         }
+        stampWalletConsensus(mergeObj.sides[side], v8Scoring, side, sport, stars || 0, decision.promotedBy);
         await setDoc(ref, mergeObj, { merge: true });
         return { docId, action: shouldPromote ? 'promoted' : 'peak_updated' };
       }
       {
-        const decision = decideLockStage(regime, v8Scoring, side);
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
         if (sides[side].lockStage === 'SHADOW' && decision.stage === 'LOCKED') {
+          const promotedPatch = { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } };
+          stampWalletConsensus(promotedPatch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
           await setDoc(ref, {
-            sides: { [side]: { lockStage: 'LOCKED', promotedAt: Date.now(), promotedRegime: regime, promotedBy: decision.promotedBy, contribTier: decision.contribTier || null, lock: { regime } } },
+            sides: { [side]: promotedPatch },
             lastWriteAt: Date.now(), lastAction: 'promoted',
           }, { merge: true });
           return { docId, action: 'promoted' };
@@ -1419,7 +1617,7 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
-    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring);
+    const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
     const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
@@ -1672,6 +1870,7 @@ function useMarketData() {
   const [totalPositions, setTotalPositions] = useState(null);
   const [sportsSharps, setSportsSharps] = useState(null);
   const [intelExcludedWallets, setIntelExcludedWallets] = useState(null);
+  const [walletProfiles, setWalletProfiles] = useState(null); // Map<walletShort, profile>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -1700,7 +1899,28 @@ function useMarketData() {
     });
   }, []);
 
-  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, loading };
+  // Phase 2: fetch sharpWalletProfiles once per session and populate the
+  // module-level cache so computeWalletConsensus / getWalletProfile can
+  // resolve whitelist tiers synchronously. Keyed by walletShort (doc id).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, 'sharpWalletProfiles'));
+        if (cancelled) return;
+        const m = new Map();
+        snap.forEach(d => { m.set(d.id, d.data()); });
+        setWalletProfiles(m);
+        setWalletProfilesCache(m);
+        console.log(`[walletProfiles] Loaded ${m.size} profiles into Phase-2 cache`);
+      } catch (err) {
+        console.warn('[walletProfiles] fetch failed:', err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading };
 }
 
 function buildGameData(polyData, kalshiData) {
@@ -3416,6 +3636,8 @@ const HEALTH_REASON_LABELS = {
   near_start: 'Near game start — holding active',
   opp_side_dominates: 'Opposing side now stronger than lock threshold',
   opp_side_stronger: 'Opposing side gaining conviction',
+  whitelist_fade_weak:   'Sport winners leaning against this pick',
+  whitelist_fade_strong: 'Sport winners strongly against this pick',
 };
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
@@ -4005,6 +4227,19 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const pinnConfirms = pinnMoved === consensusSide;
 
   const uniqueWallets = new Set(gd.positions.map(p => p.wallet)).size;
+  // Phase 2: count {SPORT} WINNER wallets on each side of the ML market.
+  const sportWinnerForCount = (() => {
+    if (!gd.sport || !consensusSide) return 0;
+    const s = new Set();
+    gd.positions.forEach(p => { if (p.side === consensusSide && isSportWinner(p.wallet, gd.sport)) s.add(p.wallet); });
+    return s.size;
+  })();
+  const sportWinnerAgCount = (() => {
+    if (!gd.sport || !consensusSide) return 0;
+    const s = new Set();
+    gd.positions.forEach(p => { if (p.side && p.side !== consensusSide && isSportWinner(p.wallet, gd.sport)) s.add(p.wallet); });
+    return s.size;
+  })();
 
   // Per-side aggregation
   const awayPositions = gd.positions.filter(p => p.side === 'away');
@@ -4132,7 +4367,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const isShadow = meetsThreshold && !hasRegimeMove;
   const lockType = isLocked ? (isGameLive ? 'LIVE' : 'PREGAME') : null;
 
-  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide)) : 0;
+  const units = isLocked ? calculateUnits(sr.stars, cGrade.penalty, betOdds, computeRegimeBonus(sr.regime, sr.v8Scoring, consensusSide, gd.sport)) : 0;
   const ut = unitTier(units);
   const potentialWin = isLocked ? profitFromOdds(betOdds, units) : 0;
 
@@ -4251,6 +4486,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const lockedSideWPS = sideFlipped ? oppSr.walletPlayScore : sr.walletPlayScore;
   const oppToLockWPS  = sideFlipped ? sr.walletPlayScore    : oppSr.walletPlayScore;
   const lockedSideStars = sideFlipped ? oppSr.stars : sr.stars;
+  const mlLockedSideKey = lockedSideRef.current || consensusSide;
+  const mlLockedV8 = sideFlipped ? oppSr?.v8Scoring : sr?.v8Scoring;
+  const mlWalletConsensus = wasEverLocked
+    ? computeWalletConsensus(mlLockedV8?.walletDetails, gd.sport, mlLockedSideKey)
+    : null;
   const mlHealth = wasEverLocked ? evaluatePickHealth({
     currentWPS: lockedSideWPS,
     oppSideWPS: oppToLockWPS,
@@ -4259,6 +4499,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     flipBeatThreshold: flipBeatThresholdRef.current,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     currentStars: lockedSideStars,
+    walletConsensus: mlWalletConsensus,
   }) : { status: 'ACTIVE', reasons: [], currentStars: sr.stars, wpsDelta: 0 };
 
   const lastHealthRef = useRef(null);
@@ -4338,7 +4579,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const spreadHasRegime = spreadSr && (spreadSr.regime === 'CLEAR_MOVE' || spreadSr.regime === 'NEAR_START');
   const isSpreadLocked = spreadMeetsThreshold && spreadHasRegime;
   const isSpreadShadow = spreadMeetsThreshold && !spreadHasRegime;
-  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide)) : 0;
+  const spreadUnits = (isSpreadLocked || isSpreadShadow) ? calculateSpreadTotalUnits(spreadSr.stars, 0, spreadBetOdds, computeRegimeBonus(spreadSr.regime, spreadSr.v8Scoring, spreadConsensusSide, gd.sport)) : 0;
 
   useEffect(() => {
     if ((!isSpreadLocked && !isSpreadShadow) || isGameLive || !commenceTime || !onPickSynced || !spreadConsensusSide) return;
@@ -4388,6 +4629,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // ─── Spread Pick Health Evaluation ────────────────────────────────────────
   const spreadWasEverLocked = isSpreadLocked || lastSyncedSpreadStars.current != null || lockSpreadStarsRef.current != null;
+  const spreadWalletConsensus = spreadWasEverLocked && spreadSr
+    ? computeWalletConsensus(spreadSr.v8Scoring?.walletDetails, gd.sport, spreadConsensusSide)
+    : null;
   const spreadHealth = spreadWasEverLocked && spreadSr ? evaluatePickHealth({
     currentWPS: spreadSr.walletPlayScore,
     lockWPS: lockSpreadWPSRef.current,
@@ -4396,6 +4640,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     flipBeatThreshold: null,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     currentStars: spreadSr.stars,
+    walletConsensus: spreadWalletConsensus,
   }) : { status: 'ACTIVE', reasons: [], currentStars: spreadSr?.stars || 0, wpsDelta: 0 };
 
   const lastSpreadHealthRef = useRef(null);
@@ -4470,7 +4715,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
   const totalHasRegime = totalSr && (totalSr.regime === 'CLEAR_MOVE' || totalSr.regime === 'NEAR_START');
   const isTotalLocked = totalMeetsThreshold && totalHasRegime;
   const isTotalShadow = totalMeetsThreshold && !totalHasRegime;
-  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide)) : 0;
+  const totalUnits = (isTotalLocked || isTotalShadow) ? calculateSpreadTotalUnits(totalSr.stars, 0, totalBetOdds, computeRegimeBonus(totalSr.regime, totalSr.v8Scoring, totalConsensusSide, gd.sport)) : 0;
 
   useEffect(() => {
     if ((!isTotalLocked && !isTotalShadow) || isGameLive || !commenceTime || !onPickSynced || !totalConsensusSide) return;
@@ -4522,6 +4767,9 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
 
   // ─── Total Pick Health Evaluation ─────────────────────────────────────────
   const totalWasEverLocked = isTotalLocked || lastSyncedTotalStars.current != null || lockTotalStarsRef.current != null;
+  const totalWalletConsensus = totalWasEverLocked && totalSr
+    ? computeWalletConsensus(totalSr.v8Scoring?.walletDetails, gd.sport, totalConsensusSide)
+    : null;
   const totalHealth = totalWasEverLocked && totalSr ? evaluatePickHealth({
     currentWPS: totalSr.walletPlayScore,
     lockWPS: lockTotalWPSRef.current,
@@ -4530,6 +4778,7 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
     flipBeatThreshold: null,
     timeToGame: commenceTime ? (commenceTime - Date.now()) / 60000 : null,
     currentStars: totalSr.stars,
+    walletConsensus: totalWalletConsensus,
   }) : { status: 'ACTIVE', reasons: [], currentStars: totalSr?.stars || 0, wpsDelta: 0 };
 
   const lastTotalHealthRef = useRef(null);
@@ -5144,6 +5393,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             const uniqueSpreadWallets = new Set(sPos.map(p => p.wallet)).size;
             const sSummary = spreadGameData.summary;
             const consSide = sSummary.consensus;
+            // Phase 2: {SPORT} WINNER counts for this spread market
+            const sprWinFor = new Set();
+            const sprWinAg = new Set();
+            sPos.forEach(p => {
+              if (!isSportWinner(p.wallet, gd.sport)) return;
+              if (p.side === consSide) sprWinFor.add(p.wallet);
+              else if (p.side) sprWinAg.add(p.wallet);
+            });
+            const sprWinForCt = sprWinFor.size, sprWinAgCt = sprWinAg.size;
             const consShort = (consSide === 'away' ? gd.away : gd.home).split(' ').pop();
             const oppShort2 = (consSide === 'away' ? gd.home : gd.away).split(' ').pop();
             const totalPnl = sPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
@@ -5167,7 +5425,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   {showSpreadWallets ? <ChevronUp size={12} color="#8B5CF6" /> : <ChevronDown size={12} color="#8B5CF6" />}
-                  <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>{uniqueSpreadWallets} SPREAD SHARP{uniqueSpreadWallets !== 1 ? 'S' : ''}</span>
+                  <span style={{ ...T.micro, color: '#8B5CF6', fontWeight: 700 }}>
+                    {uniqueSpreadWallets} SPREAD SHARP{uniqueSpreadWallets !== 1 ? 'S' : ''}
+                    {sprWinForCt > 0 && <span style={{ color: B.gold, fontWeight: 900 }}> · {sprWinForCt} {gd.sport} WINNER{sprWinForCt !== 1 ? 'S' : ''}</span>}
+                    {sprWinAgCt > sprWinForCt && <span style={{ color: B.red, fontWeight: 900 }}> · {sprWinAgCt} {gd.sport} FADING</span>}
+                  </span>
                 </div>
                 <span style={{ ...T.micro, color: B.textSec }}>
                   Combined P&L: <span style={{ fontWeight: 700, color: totalPnl >= 0 ? B.green : B.red }}>{totalPnl >= 0 ? '+' : ''}{fmtVol(totalPnl)}</span>
@@ -5200,6 +5462,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                                 ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
                                 color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
                               }}>{rankGroup}</span>
+                            )}
+                            {isSportWinner(p.wallet, gd.sport) && (
+                              <span style={{
+                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 900, fontSize: '0.45rem',
+                                color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, letterSpacing: '0.06em',
+                                textShadow: '0 0 6px rgba(212,175,55,0.35)',
+                              }}>{gd.sport} WINNER</span>
                             )}
                             <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
                             <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L</span>
@@ -5482,6 +5751,15 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             const uniqueTotalWallets = new Set(tPos.map(p => p.wallet)).size;
             const tSummary = totalGameData.summary;
             const consSide = tSummary.consensus;
+            // Phase 2: {SPORT} WINNER counts for this totals market
+            const totWinFor = new Set();
+            const totWinAg = new Set();
+            tPos.forEach(p => {
+              if (!isSportWinner(p.wallet, gd.sport)) return;
+              if (p.side === consSide) totWinFor.add(p.wallet);
+              else if (p.side) totWinAg.add(p.wallet);
+            });
+            const totWinForCt = totWinFor.size, totWinAgCt = totWinAg.size;
             const totalPnl = tPos.reduce((s, p) => s + (p.totalPnl || 0), 0);
             const now = Date.now();
             const sideOpts = [
@@ -5503,7 +5781,11 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   {showTotalWallets ? <ChevronUp size={12} color="#F59E0B" /> : <ChevronDown size={12} color="#F59E0B" />}
-                  <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>{uniqueTotalWallets} TOTAL SHARP{uniqueTotalWallets !== 1 ? 'S' : ''}</span>
+                  <span style={{ ...T.micro, color: '#F59E0B', fontWeight: 700 }}>
+                    {uniqueTotalWallets} TOTAL SHARP{uniqueTotalWallets !== 1 ? 'S' : ''}
+                    {totWinForCt > 0 && <span style={{ color: B.gold, fontWeight: 900 }}> · {totWinForCt} {gd.sport} WINNER{totWinForCt !== 1 ? 'S' : ''}</span>}
+                    {totWinAgCt > totWinForCt && <span style={{ color: B.red, fontWeight: 900 }}> · {totWinAgCt} {gd.sport} FADING</span>}
+                  </span>
                 </div>
                 <span style={{ ...T.micro, color: B.textSec }}>
                   Combined P&L: <span style={{ fontWeight: 700, color: totalPnl >= 0 ? B.green : B.red }}>{totalPnl >= 0 ? '+' : ''}{fmtVol(totalPnl)}</span>
@@ -5535,6 +5817,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                                 ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
                                 color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
                               }}>{rankGroup}</span>
+                            )}
+                            {isSportWinner(p.wallet, gd.sport) && (
+                              <span style={{
+                                ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 900, fontSize: '0.45rem',
+                                color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, letterSpacing: '0.06em',
+                                textShadow: '0 0 6px rgba(212,175,55,0.35)',
+                              }}>{gd.sport} WINNER</span>
                             )}
                             <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>...{p.wallet.slice(-4)}</span>
                             <span style={{ ...T.micro, fontWeight: 700, fontFeatureSettings: "'tnum'", color: lifeColor, padding: '0.1rem 0.3rem', borderRadius: '3px', background: (p.totalPnl || 0) >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)' }}>{(p.totalPnl || 0) >= 0 ? '+' : ''}{fmtVol(p.totalPnl || 0)} sports P&L</span>
@@ -5890,6 +6179,12 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
             {showWallets ? <ChevronUp size={12} color={B.gold} /> : <ChevronDown size={12} color={B.gold} />}
             <span style={{ ...T.micro, color: B.gold, fontWeight: 700 }}>
               {uniqueWallets} VERIFIED SHARP{uniqueWallets !== 1 ? 'S' : ''}
+              {sportWinnerForCount > 0 && (
+                <span style={{ color: B.gold, fontWeight: 900 }}> · {sportWinnerForCount} {gd.sport} WINNER{sportWinnerForCount !== 1 ? 'S' : ''}</span>
+              )}
+              {sportWinnerAgCount > sportWinnerForCount && (
+                <span style={{ color: B.red, fontWeight: 900 }}> · {sportWinnerAgCount} {gd.sport} FADING</span>
+              )}
             </span>
           </div>
           <span style={{ ...T.micro, color: B.textSec }}>
@@ -5990,6 +6285,13 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
                             ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 800, fontSize: '0.45rem',
                             color: '#22D3EE', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.22)', letterSpacing: '0.04em',
                           }}>{rankGroup}</span>
+                        )}
+                        {isSportWinner(p.wallet, gd.sport) && (
+                          <span style={{
+                            ...T.micro, padding: '0.1rem 0.32rem', borderRadius: '3px', fontWeight: 900, fontSize: '0.45rem',
+                            color: B.gold, background: B.goldDim, border: `1px solid ${B.goldBorder}`, letterSpacing: '0.06em',
+                            textShadow: '0 0 6px rgba(212,175,55,0.35)',
+                          }}>{gd.sport} WINNER</span>
                         )}
                         <span style={{ ...T.micro, color: B.textMuted, fontFeatureSettings: "'tnum'" }}>
                           ...{p.wallet.slice(-4)}
@@ -6249,7 +6551,7 @@ const SharpFlowProfitChart = memo(function SharpFlowProfitChart({ picks }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SharpFlow() {
-  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, loading } = useMarketData();
+  const { polyData, kalshiData, whaleProfiles, pinnacleHistory, sharpPositions, spreadPositions, totalPositions, sportsSharps, intelExcludedWallets, walletProfiles, loading } = useMarketData();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, loading: subLoading } = useSubscription(user);
   const [sportFilter, setSportFilter] = useState('All');

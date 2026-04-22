@@ -45,6 +45,44 @@ const COLS = [
   ['sharpFlowTotals', 'TOTAL'],
 ];
 
+// ── Phase 2: wallet-consensus profile cache ───────────────────────────────
+// Loaded once from `sharpWalletProfiles` (exportWalletProfiles.js output).
+// Keyed by walletShort → { bySport: { [sport]: { whitelistTier } } }.
+const WALLET_PROFILES = new Map();
+async function loadWalletProfiles() {
+  const snap = await db.collection('sharpWalletProfiles').get();
+  for (const doc of snap.docs) WALLET_PROFILES.set(doc.id, doc.data());
+}
+function isWhitelistedForSport(walletShort, sport) {
+  if (!walletShort || !sport) return false;
+  const p = WALLET_PROFILES.get(walletShort);
+  const tier = p?.bySport?.[sport]?.whitelistTier;
+  return tier === 'CONFIRMED' || tier === 'FLAT';
+}
+function walletConsensusForRow({ walletDetails, consensusSide, sport }) {
+  if (!Array.isArray(walletDetails) || !walletDetails.length || !sport) {
+    return { forW: 0, agW: 0, delta: 0, verdict: 'NEUTRAL' };
+  }
+  const forSet = new Set();
+  const agSet = new Set();
+  for (const w of walletDetails) {
+    if (!w?.wallet || !w?.side) continue;
+    if (!isWhitelistedForSport(w.wallet, sport)) continue;
+    if (w.side === consensusSide) forSet.add(w.wallet);
+    else agSet.add(w.wallet);
+  }
+  const forW = forSet.size;
+  const agW = agSet.size;
+  const delta = forW - agW;
+  const verdict =
+    delta >= 2 ? 'STRONG_FOR' :
+    delta === 1 ? 'LEAN_FOR' :
+    delta === 0 ? 'NEUTRAL' :
+    delta === -1 ? 'FADE_WEAK' :
+    'FADE_STRONG';
+  return { forW, agW, delta, verdict };
+}
+
 const americanToDecimal = (odds) => (odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds));
 const profit = (odds, units, won) => (won ? +(units * (americanToDecimal(odds) - 1)).toFixed(3) : -units);
 const flatProfit = (odds, won) => (won ? americanToDecimal(odds) - 1 : -1);
@@ -69,6 +107,13 @@ const bucket = {
   market: r => r.market,
   lockStage: r => r.lockStage,
   promotedBy: r => r.promotedBy || '—',
+  // Phase 2: wallet-consensus slices
+  walletVerdict: r => r.walletVerdict || 'NEUTRAL',
+  walletDelta: r => r.walletDelta >= 2 ? 'Δ≥+2' :
+                    r.walletDelta === 1 ? 'Δ=+1' :
+                    r.walletDelta === 0 ? 'Δ=0' :
+                    r.walletDelta === -1 ? 'Δ=-1' :
+                    'Δ≤-2',
 };
 
 async function load() {
@@ -103,6 +148,8 @@ async function load() {
         const maxRoiN_F = forW.reduce((m, w) => Math.max(m, w.roiNorm ?? 0), 0);
         const meanBase_F = forW.length ? forW.reduce((s, w) => s + (w.walletBase ?? 0), 0) / forW.length : 0;
 
+        const wc = walletConsensusForRow({ walletDetails: wd, consensusSide, sport: d.sport });
+
         rows.push({
           date: d.date,
           sport: d.sport,
@@ -119,6 +166,10 @@ async function load() {
           contribTier: side.contribTier ?? classifyContribTier(qFor50, qAg50, margin, maxContribFor),
           qFor50, qAg50, margin, maxContribFor, dContrib,
           maxRoiN_F, meanBase_F,
+          walletForW: wc.forW,
+          walletAgW: wc.agW,
+          walletDelta: wc.delta,
+          walletVerdict: wc.verdict,
         });
       }
     }
@@ -212,6 +263,7 @@ function threeWayRanking(rows, factorMap, minN = 3, limit = 12) {
 }
 
 (async () => {
+  await loadWalletProfiles();
   const all = await load();
   const nowET = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
   const out = [];
@@ -257,6 +309,8 @@ function threeWayRanking(rows, factorMap, minN = 3, limit = 12) {
     ['Market', bucket.market],
     ['Lock stage', bucket.lockStage],
     ['Promoted by', bucket.promotedBy],
+    ['Wallet verdict (Phase 2 consensus)', bucket.walletVerdict],
+    ['Wallet Δ band (forW − agW, whitelisted only)', bucket.walletDelta],
   ];
   for (const [name, fn] of factors) {
     out.push(factorTable(name, all, fn));
@@ -281,6 +335,9 @@ function threeWayRanking(rows, factorMap, minN = 3, limit = 12) {
     ['meanBase_F × maxRoiN_F',       bucket.meanBase_F,  bucket.maxRoiN_F],
     ['Promoted by × regime',         bucket.promotedBy,  bucket.regime],
     ['Lock stage × regime',          bucket.lockStage,   bucket.regime],
+    ['Wallet verdict × regime',      bucket.walletVerdict, bucket.regime],
+    ['Wallet verdict × sport',       bucket.walletVerdict, bucket.sport],
+    ['Wallet verdict × stars',       bucket.walletVerdict, bucket.stars],
   ];
   for (const [title, rfn, cfn] of pairs) {
     out.push(matrix(title, all, rfn, cfn));
@@ -292,7 +349,7 @@ function threeWayRanking(rows, factorMap, minN = 3, limit = 12) {
   out.push('');
   out.push(`Every possible intersection of three factors from the set below. Top 12 by flat ROI are our **hit clusters**; bottom 12 are our **miss clusters**. Use this to find the actionable combinations before they show up in single-factor tables.`);
   out.push('');
-  out.push('Factor pool: `regime`, `contribTier`, `maxRoiN_F`, `meanBase_F`, `margin`, `dContrib`, `stars`, `sport`, `market`, `promotedBy`, `lockStage`.');
+  out.push('Factor pool: `regime`, `contribTier`, `maxRoiN_F`, `meanBase_F`, `margin`, `dContrib`, `stars`, `sport`, `market`, `promotedBy`, `lockStage`, `walletVerdict`.');
   out.push('');
   const factorPool = {
     regime: bucket.regime,
@@ -306,6 +363,7 @@ function threeWayRanking(rows, factorMap, minN = 3, limit = 12) {
     market: bucket.market,
     promotedBy: bucket.promotedBy,
     lockStage: bucket.lockStage,
+    walletVerdict: bucket.walletVerdict,
   };
   const { top, bottom } = threeWayRanking(all, factorPool, 3, 15);
 

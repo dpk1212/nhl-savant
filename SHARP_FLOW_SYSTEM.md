@@ -112,6 +112,68 @@ Every pick written to Firebase now carries `contribTier` and `promotedBy` at the
 
 Daily report automation: the `.github/workflows/daily-contribution-edge.yml` workflow re-runs both deep-dive scripts every morning at 08:30 ET and commits `V8_CONTRIBUTION_EDGE.md` + `V8_GOLDILOCKS_REPORT.md` to the repo so the thresholds can be retuned as the sample grows.
 
+### V8.2 Wallet-Consensus Layer (2026-04-20)
+
+The `sharpWalletProfiles` collection (built nightly by `scripts/exportWalletProfiles.js` from every graded V8 pick and sharp-action position) assigns each wallet a per-sport **whitelist tier** — `CONFIRMED` (flat & dollar profitable), `FLAT` (flat profitable only), `WR50` (≥50% win rate, unprofitable), or null. Backtesting across the V8 era (`WALLET_WHITELIST_BACKTEST.md`) showed that picks where **whitelisted profitable wallets** (CONFIRMED + FLAT) stack on one side dramatically outperform, and picks where they stack on the *opposite* side dramatically underperform. That insight is wired directly into the locking/sizing logic as a new layer that sits **on top of** V8 + V8.1.
+
+**The Δ ladder** — for every pick we compute:
+
+```
+forW = # of unique whitelisted wallets on the pick side
+agW  = # of unique whitelisted wallets on the opposing side
+Δ    = forW − agW
+```
+
+| Δ | Verdict | Action |
+|---|---------|--------|
+| Δ ≥ +2 | `STRONG_FOR`  | **+0.25 units** and **PROMOTION eligible** (becomes LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 2` and `agW = 0`) |
+| Δ = +1 | `LEAN_FOR`    | **+0.10 units** |
+| Δ = 0  | `NEUTRAL`     | no action |
+| Δ = −1 | `FADE_WEAK`   | **MUTE** the locked pick (`healthReason = whitelist_fade_weak`) |
+| Δ ≤ −2 | `FADE_STRONG` | **CANCEL** the locked pick (`healthReason = whitelist_fade_strong`); falls back to MUTE where CANCEL is disabled |
+
+Negative Δ actions always take precedence over positive ones inside `computeWalletConsensus` so a pick is never simultaneously bonused and muted.
+
+**Per-sport gating.** The `WHITELIST_INTERVENTION` config in `SharpFlow.jsx` controls which of the four actions (`bonus`, `mute`, `cancel`, `promote`) are enabled per sport:
+
+| Sport | bonus | mute | cancel | promote |
+|-------|-------|------|--------|---------|
+| NBA   | ✓ | ✓ | ✓ | ✓ |
+| MLB   | ✓ | ✓ | ✓ | ✓ |
+| NHL   | ✓ | ✓ | ✓ | ✓ |
+| CBB   | ✓ | ✓ | — | — |
+| NFL   | ✓ | ✓ | — | — |
+
+Where `cancel` is disabled, `FADE_STRONG` downgrades to MUTE so nothing is silently dropped. Where `promote` is disabled, `STRONG_FOR` still gives the +0.25u bonus but cannot on its own move a pick from SHADOW → LOCKED.
+
+**Promotion guardrails** (all must be true for `promotedBy = 'whitelist'`):
+
+1. `verdict === 'STRONG_FOR'` (Δ ≥ +2)
+2. `agW === 0` (zero whitelisted wallets on the opposing side)
+3. `basePickStars >= 2` (rating isn't meaningfully below lock range)
+4. `sportConfig.promote === true`
+5. Pick is not already LOCKED by regime or contribution path (avoids double-counting)
+
+**Attribution fields stamped on every `sharpFlowPicks`/`sharpFlowSpreads`/`sharpFlowTotals` side doc:**
+
+- `v8_walletConsensusVersion` — schema version (currently 2)
+- `v8_walletConsensusSport`, `v8_walletConsensusEnabled`
+- `v8_walletConsensusForW`, `v8_walletConsensusAgW`, `v8_walletConsensusDelta`
+- `v8_walletConsensusVerdict` — one of the five ladder verdicts above
+- `v8_walletConsensusStarBonus` — the unit bonus applied (0.25 / 0.10 / 0 / suppressed)
+- `v8_walletConsensusMuteTriggered`, `v8_walletConsensusCancelTriggered`, `v8_walletConsensusPromotionTriggered`
+- `v8_walletConsensusBaseStars` — the base V8 stars before any whitelist adjustment
+
+These stamp on create, on peak update, and on any SHADOW → LOCKED transition so every health change has a full audit trail.
+
+**UI surfaces.**
+
+- Each wallet row in the Sharp Intel game card now carries a gold **`{SPORT} WINNER`** chip when that wallet's whitelist tier for the current sport is `CONFIRMED` or `FLAT`.
+- The "Verified Sharps" header for ML, Spread, and Total counts now append `· N {SPORT} WINNERS` (gold) and `· N {SPORT} FADING` (red) so the Δ ladder is visible at a glance.
+- Locked picks muted/cancelled by Δ render with health reasons `whitelist_fade_weak` / `whitelist_fade_strong` in the existing tooltip system.
+
+**Monitoring.** `scripts/v8DailyPnL.js` now slices all graded V8 picks by `walletVerdict` and `walletDelta` in both the single-factor section and the 2-way cross sections (`Wallet verdict × regime`, `Wallet verdict × sport`, `Wallet verdict × stars`), and the new verdict is included in the 3-way cluster pool. The nightly `sharpWalletProfiles` rebuild (`exportWalletProfiles.js`) churns whitelist membership in and out as each new graded day lands, so the layer self-corrects as wallets rise and fade.
+
 ### Unit Sizing
 
 Units are derived directly from the star rating using a compressed scale:
@@ -267,12 +329,16 @@ current-consensus-side WPS — the call site resolves this before invoking
 | # | Condition | Status | Reason code |
 |---|---|---|---|
 | A | `currentWPS == null` | `ACTIVE` | (no score yet) |
+| **Wa** | **Δ ≤ −2 AND `sportConfig.cancel === true` AND `timeToGame > 20`** (V8.2 wallet consensus) | **`CANCELLED`** | `whitelist_fade_strong` |
+| **Wb** | **Δ ≤ −2 AND `sportConfig.cancel === false`** OR **Δ = −1**, with `sportConfig.mute === true` AND `timeToGame > 20` | **`MUTED`** | `whitelist_fade_strong` / `whitelist_fade_weak` |
 | B | `timeToGame > 20` AND `oppSideWPS > flipBeatThreshold` AND `oppSideWPS − currentWPS ≥ 0.5` | **`CANCELLED`** | `side_flipped` (if wallet-count consensus also flipped) OR `opp_side_dominates` |
 | C | `timeToGame > 20` AND `oppSideWPS > 0.0` AND `oppSideWPS − currentWPS ≥ 1.0` (but B not met) | **`MUTED`** | `opp_side_stronger` (advisory — ratchet not beaten yet) |
 | D | `sideFlipped` AND `timeToGame > 20` AND `currentWPS < 0.0` (B & C not met) | **`MUTED`** | `flip_rejected`, `below_lock_range` |
 | E | `sideFlipped` AND `timeToGame > 20` AND `currentWPS ≥ 0.0` (B & C not met) | `ACTIVE` | `flip_rejected` |
 | F | `currentWPS ≥ 0.0` (no dominance, no flip concern) | `ACTIVE` | — |
 | G | `currentWPS < 0.0` | **`MUTED`** | `below_lock_range` |
+
+Rows **Wa** / **Wb** are the V8.2 wallet-consensus overrides and run **before** the WPS checks — profitable-wallet Δ trumps the WPS ladder when the whitelisted sharps are actively on the other side. See the V8.2 section above for the full Δ → verdict mapping and per-sport gating.
 
 Constants: `LOCK_RANGE_WPS = 0.0`, `OPP_CANCEL_GAP = 0.5`, `OPP_MUTE_GAP = 1.0`.
 
