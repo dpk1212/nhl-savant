@@ -8,6 +8,8 @@ on:
 jobs:
   grade-actions:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +35,27 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: node scripts/syncWalletBets.js --write
+
+      - name: Rebuild sharp wallet profiles
+        env:
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: node scripts/exportWalletProfiles.js --write-firebase
+
+      - name: Commit updated wallet profile artifacts
+        run: |
+          git config --local user.name  "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/wallet-profiles.json WALLET_ROSTER.md WALLET_PROFILES_SUMMARY.md
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Auto-update: Sharp wallet profiles [$(TZ='America/New_York' date +'%Y-%m-%d %H:%M')] [skip ci]" &&
+            git stash --include-untracked &&
+            git pull --rebase -X theirs &&
+            (git stash pop || true) &&
+            for i in 1 2 3; do
+              git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 2
+            done
+          )

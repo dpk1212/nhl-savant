@@ -206,6 +206,29 @@ function verdict(picks, positions) {
   return 'INCONCLUSIVE';
 }
 
+// ── Whitelist tier classification (see WALLET_WHITELIST_BACKTEST.md) ──
+// For each sport a wallet has activity in, assign one of:
+//   CONFIRMED — flat PnL > 0 in Source A AND dollar PnL > 0 in Source B
+//   FLAT      — flat PnL > 0 in Source A
+//   WR50      — WR ≥ 50% in Source A
+//   null      — none of the above OR below MIN_BETS in that sport
+// Minimum-sample requirement of 2 bets in that sport matches the backtest
+// methodology.  Precedence: CONFIRMED > FLAT > WR50.
+const WHITELIST_MIN_BETS = 2;
+const WHITELIST_VERSION = 1;
+
+function classifyWhitelistTier(picksInSport, positionsInSport) {
+  const p = picksInSport || { n: 0 };
+  const q = positionsInSport || { n: 0 };
+  const flatOk   = p.n >= WHITELIST_MIN_BETS && (p.flatRoi ?? 0) > 0;
+  const dollarOk = q.n >= WHITELIST_MIN_BETS && q.dollarRoi != null && q.dollarRoi > 0;
+  const wr50Ok   = p.n >= WHITELIST_MIN_BETS && (p.wr ?? 0) >= 50;
+  if (flatOk && dollarOk) return 'CONFIRMED';
+  if (flatOk) return 'FLAT';
+  if (wr50Ok) return 'WR50';
+  return null;
+}
+
 // ── Build per-wallet profile ───────────────────────────────────────
 function buildProfile(walletShort, pickBets, posBets) {
   const latestPick = pickBets.length ? pickBets.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] : null;
@@ -219,9 +242,18 @@ function buildProfile(walletShort, pickBets, posBets) {
   for (const sport of new Set([...pickBets.map(b => b.sport), ...posBets.map(b => b.sport)].filter(Boolean))) {
     const pp = pickBets.filter(b => b.sport === sport);
     const ps = posBets.filter(b => b.sport === sport);
+    const picksInSport = picksAgg(pp);
+    const positionsInSport = positionsAgg(ps);
+    const tier = classifyWhitelistTier(picksInSport, positionsInSport);
     bySport[sport] = {
-      picks: picksAgg(pp),
-      positions: positionsAgg(ps),
+      picks: picksInSport,
+      positions: positionsInSport,
+      isFlatProfitable:   picksInSport.n >= WHITELIST_MIN_BETS && picksInSport.flatRoi > 0,
+      isDollarProfitable: positionsInSport.n >= WHITELIST_MIN_BETS
+                          && positionsInSport.dollarRoi != null
+                          && positionsInSport.dollarRoi > 0,
+      isWR50:             picksInSport.n >= WHITELIST_MIN_BETS && picksInSport.wr >= 50,
+      whitelistTier:      tier,
     };
   }
   const byMarket = {};
@@ -258,6 +290,35 @@ function buildProfile(walletShort, pickBets, posBets) {
   const firstDate = allDates[0] || null;
   const lastDate = allDates[allDates.length - 1] || null;
 
+  // Top-level whitelist convenience arrays — O(1) reads for UI/scoring.
+  // `flatSports` includes everything FLAT-or-better (FLAT and CONFIRMED).
+  // `confirmedSports` is the strict subset that's also dollar-profitable.
+  // `topSport` is the sport with the best flat ROI (ties broken by N).
+  const flatSports = [];
+  const confirmedSports = [];
+  const wr50Sports = [];
+  let topSport = null;
+  let topFlatRoi = -Infinity;
+  let topN = 0;
+  for (const [sport, rec] of Object.entries(bySport)) {
+    if (rec.whitelistTier === 'CONFIRMED') {
+      confirmedSports.push(sport);
+      flatSports.push(sport);
+    } else if (rec.whitelistTier === 'FLAT') {
+      flatSports.push(sport);
+    } else if (rec.whitelistTier === 'WR50') {
+      wr50Sports.push(sport);
+    }
+    if (rec.picks.n >= WHITELIST_MIN_BETS) {
+      const roi = rec.picks.flatRoi;
+      if (roi > topFlatRoi || (roi === topFlatRoi && rec.picks.n > topN)) {
+        topFlatRoi = roi;
+        topN = rec.picks.n;
+        topSport = sport;
+      }
+    }
+  }
+
   return {
     walletShort,
     walletAddress: latestPos?.walletAddress || null,
@@ -288,6 +349,12 @@ function buildProfile(walletShort, pickBets, posBets) {
     bySport,
     byMarket,
     verdict: verdict(picks, positions),
+    // Phase 1 whitelist — consumed by Phase 2 UI badge + walletConsensus.
+    flatSports,
+    confirmedSports,
+    wr50Sports,
+    topSport,
+    whitelistVersion: WHITELIST_VERSION,
     firstBetDate: firstDate,
     lastBetDate: lastDate,
   };
@@ -319,9 +386,21 @@ function buildProfile(walletShort, pickBets, posBets) {
   const dataDir = join(__dirname, '..', 'data');
   if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
   const jsonPath = join(dataDir, 'wallet-profiles.json');
+  // Capture the prior snapshot FIRST so we can diff whitelist tiers after
+  // we overwrite the file.  Resilient to missing / malformed prior state.
+  let priorProfiles = {};
+  if (existsSync(jsonPath)) {
+    try {
+      const prior = JSON.parse(readFileSync(jsonPath, 'utf8'));
+      priorProfiles = prior?.profiles || {};
+    } catch (e) {
+      console.warn(`  (warning: could not parse prior ${jsonPath}: ${e.message})`);
+    }
+  }
   writeFileSync(jsonPath, JSON.stringify({
     generatedAt: new Date().toISOString(),
     v8Cutover: V8_CUTOVER,
+    whitelistVersion: WHITELIST_VERSION,
     totals: {
       wallets: Object.keys(profiles).length,
       walletBets: walletBets.length,
@@ -450,6 +529,132 @@ function buildProfile(walletShort, pickBets, posBets) {
   const mdPath = join(__dirname, '..', 'WALLET_ROSTER.md');
   writeFileSync(mdPath, out.join('\n'));
   console.log(`Wrote ${mdPath}`);
+
+  // ── Write WALLET_PROFILES_SUMMARY.md ─────────────────────────────
+  // Monitoring artifact for Phase 1: per-sport whitelist counts, top-10
+  // FLAT wallets per sport, and churn vs. the prior run so we can see if
+  // the whitelist is stable or flapping.
+  const sum = [];
+  sum.push('# Wallet Profiles Summary');
+  sum.push('');
+  sum.push(`Generated: ${nowET} ET · V8 cutover: ${V8_CUTOVER} · whitelistVersion: ${WHITELIST_VERSION}`);
+  sum.push('');
+  sum.push('Monitoring artifact for the nightly `sharpWalletProfiles` rebuild. Shows how many wallets qualify for each whitelist tier per sport, who the top performers are, and what changed since the last run.');
+  sum.push('');
+  sum.push(`**Population**: ${list.length} wallets · ${walletBets.length} graded picks · ${positions.length} graded positions.`);
+  sum.push('');
+
+  // Population by verdict
+  sum.push('## Population by verdict');
+  sum.push('');
+  sum.push('| Verdict | Wallets |');
+  sum.push('|---|---|');
+  for (const [v, c] of Object.entries(verdictCounts).sort((a, b) => b[1] - a[1])) {
+    sum.push(`| ${v} | ${c} |`);
+  }
+  sum.push('');
+
+  // Whitelist tier counts per sport
+  const allSports = [...new Set(list.flatMap(p => Object.keys(p.bySport)))].sort();
+  sum.push('## Whitelist tiers per sport');
+  sum.push('');
+  sum.push(`Minimum ${WHITELIST_MIN_BETS} bets per sport. Precedence: CONFIRMED > FLAT > WR50. "FLAT-or-better" is the population Phase 2 uses for the green badge and Δ consensus math.`);
+  sum.push('');
+  sum.push('| Sport | CONFIRMED | FLAT-or-better | WR50-only | Active (≥2 bets) | Any activity |');
+  sum.push('|---|---|---|---|---|---|');
+  for (const sport of allSports) {
+    let confirmed = 0, flatOrBetter = 0, wr50Only = 0, active = 0, anyActivity = 0;
+    for (const p of list) {
+      const rec = p.bySport[sport];
+      if (!rec) continue;
+      anyActivity++;
+      if (rec.picks.n >= WHITELIST_MIN_BETS || rec.positions.n >= WHITELIST_MIN_BETS) active++;
+      if (rec.whitelistTier === 'CONFIRMED') { confirmed++; flatOrBetter++; }
+      else if (rec.whitelistTier === 'FLAT') flatOrBetter++;
+      else if (rec.whitelistTier === 'WR50') wr50Only++;
+    }
+    sum.push(`| ${sport} | ${confirmed} | ${flatOrBetter} | ${wr50Only} | ${active} | ${anyActivity} |`);
+  }
+  sum.push('');
+
+  // Top 10 FLAT-or-better wallets per sport
+  sum.push('## Top FLAT-or-better wallets per sport');
+  sum.push('');
+  for (const sport of allSports) {
+    const rows = list
+      .filter(p => p.bySport[sport] && ['CONFIRMED', 'FLAT'].includes(p.bySport[sport].whitelistTier))
+      .map(p => ({
+        walletShort: p.walletShort,
+        tier: p.bySport[sport].whitelistTier,
+        picks: p.bySport[sport].picks,
+        positions: p.bySport[sport].positions,
+      }))
+      .sort((a, b) => (b.picks.flatRoi ?? -Infinity) - (a.picks.flatRoi ?? -Infinity))
+      .slice(0, 10);
+    sum.push(`### ${sport}`);
+    sum.push('');
+    if (!rows.length) { sum.push('_No FLAT-or-better wallets yet._'); sum.push(''); continue; }
+    sum.push('| # | Wallet | Tier | N | WR% | Flat ROI | Flat PnL (u) | $ ROI | $ PnL |');
+    sum.push('|---|---|---|---|---|---|---|---|---|');
+    rows.forEach((r, i) => {
+      const flatPnlStr = (r.picks.flatPnl >= 0 ? '+' : '') + (r.picks.flatPnl?.toFixed(2) ?? '—');
+      const roiStr = (r.picks.flatRoi >= 0 ? '+' : '') + (r.picks.flatRoi ?? '—') + '%';
+      const dRoiStr = r.positions.dollarRoi == null ? '—' : ((r.positions.dollarRoi >= 0 ? '+' : '') + r.positions.dollarRoi + '%');
+      const dPnlStr = r.positions.settledPnl == null ? '—' : ((r.positions.settledPnl >= 0 ? '+' : '') + r.positions.settledPnl);
+      sum.push(`| ${i + 1} | ${r.walletShort} | ${r.tier} | ${r.picks.n} | ${r.picks.wr}% | ${roiStr} | ${flatPnlStr} | ${dRoiStr} | ${dPnlStr} |`);
+    });
+    sum.push('');
+  }
+
+  // Churn since last run
+  sum.push('## Churn since last run');
+  sum.push('');
+  const churnRows = [];
+  for (const walletShort of new Set([...Object.keys(profiles), ...Object.keys(priorProfiles)])) {
+    const cur = profiles[walletShort];
+    const old = priorProfiles[walletShort];
+    const curSports = cur?.bySport || {};
+    const oldSports = old?.bySport || {};
+    const sports = new Set([...Object.keys(curSports), ...Object.keys(oldSports)]);
+    for (const sport of sports) {
+      const curTier = curSports[sport]?.whitelistTier || null;
+      const oldTier = oldSports[sport]?.whitelistTier || null;
+      if (curTier !== oldTier) {
+        churnRows.push({
+          walletShort,
+          sport,
+          from: oldTier ?? '—',
+          to:   curTier ?? '—',
+          isNew: !old,
+          isLost: !cur,
+        });
+      }
+    }
+  }
+  if (!Object.keys(priorProfiles).length) {
+    sum.push('_First run — no prior state to diff against._');
+  } else if (!churnRows.length) {
+    sum.push('_No whitelist-tier changes vs. the prior run._');
+  } else {
+    sum.push(`**${churnRows.length}** wallet-sport tier changes since the prior run.`);
+    sum.push('');
+    sum.push('| Wallet | Sport | From | To | Notes |');
+    sum.push('|---|---|---|---|---|');
+    churnRows
+      .sort((a, b) => a.walletShort.localeCompare(b.walletShort) || a.sport.localeCompare(b.sport))
+      .forEach(r => {
+        const note = r.isNew ? 'new wallet' : r.isLost ? 'wallet dropped' : '';
+        sum.push(`| ${r.walletShort} | ${r.sport} | ${r.from} | ${r.to} | ${note} |`);
+      });
+  }
+  sum.push('');
+  sum.push('---');
+  sum.push('*Generated by `scripts/exportWalletProfiles.js`.*');
+  sum.push('');
+
+  const summaryPath = join(__dirname, '..', 'WALLET_PROFILES_SUMMARY.md');
+  writeFileSync(summaryPath, sum.join('\n'));
+  console.log(`Wrote ${summaryPath}`);
 
   // ── Optional Firebase sync ───────────────────────────────────────
   if (WRITE_FB) {

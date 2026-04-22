@@ -477,6 +477,7 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 | **seed-whale-leaderboard.yml** | Every 3 hrs (:30) | `buildWhaleProfiles.js --seed` | `whale_profiles.json` | No |
 | **scan-sharp-positions.yml** | Every 2 hrs (:15) | `scanSharpPositions.js` | `sharp_positions.json` | No |
 | **daily-contribution-edge.yml** | 08:30 ET daily | `contributionEdgeMap.js`, `qualifiedSharpDeepDive.js` | `V8_CONTRIBUTION_EDGE.md`, `V8_GOLDILOCKS_REPORT.md` (committed to repo) | No |
+| **grade-sharp-actions.yml** | Every 4 hrs (03/05/07/09 UTC) | `gradeSharpActions.js` → `syncWalletBets.js` → `exportWalletProfiles.js --write-firebase` | Firestore `sharp_action_positions` (graded), `walletBets`, `sharpWalletProfiles`; repo `data/wallet-profiles.json`, `WALLET_ROSTER.md`, `WALLET_PROFILES_SUMMARY.md` | No |
 
 **Critical Note**: The `fetch-polymarket.yml` workflow is the **only workflow that deploys the UI**. Any code changes to `src/` MUST be pushed to `main` before this workflow runs, or the deployment will overwrite local deploys with stale code.
 
@@ -537,6 +538,9 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 | **mlb_bets** | MLB model picks (separate from Sharp Flow) | fetchMLBPicks.js | MLB.jsx (client), updateBetResults (function) |
 | **bets** | NHL model bets | betTracker.js (client) | updateBetResults (function) |
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
+| **sharp_action_positions** | Individual sharp-wallet bets seen via `scanSharpPositions` (graded in place) | writeSharpActions.js, gradeSharpActions.js | Sharp Vault UI, walletBets pipeline, wallet analytics |
+| **walletBets** | Long-term history of every observed wallet bet (one doc per `{date, gameKey, market, side, walletShort}`), merged from Source A (`v8Scoring.walletDetails` on sharpFlow picks) + Source B (`sharp_action_positions`) | syncWalletBets.js | exportWalletProfiles.js, future wallet analytics |
+| **sharpWalletProfiles** | Per-wallet rollup profile (overall + bySport + byMarket + whitelistTier) keyed by `walletShort` | exportWalletProfiles.js `--write-firebase` | Phase 2 UI badge + walletConsensus scoring |
 
 **CRITICAL: SHADOW-gate thresholds are enforced BEFORE any Firebase write:**
 - ML (`sharpFlowPicks`): stars >= 2.5 AND consensusInvested >= `minInvestedFloor(contribTier)` ($5,000 baseline, $2,500 if STRONG/STANDARD)
@@ -692,6 +696,147 @@ This enables **lock -> peak -> pregame** transformation analysis: did sharps pil
 ```
 
 **Legacy format** (pre-v2 docs): Flat structure with `consensusSide`, `units`, `odds` at top level. The grading function and P&L loader handle both formats — if `doc.sides` exists, use v2 logic; otherwise fall back to flat format.
+
+### Wallet Intelligence Pipeline
+
+The wallet-intelligence layer answers a single question: **for each unique sharp wallet we've ever seen, how has it performed per sport, and does it qualify for our profitability whitelist?** Phase 2 of the system (per-wallet badges on the Verified Sharps list, and a walletConsensus Δ score that feeds sizing / mute / cancel decisions) reads exclusively from the `sharpWalletProfiles` collection produced here.
+
+The pipeline is refreshed every 4 hours by `grade-sharp-actions.yml` (cron `0 3,5,7,9 * * *` UTC):
+
+1. **`gradeSharpActions.js`** — grades any `sharp_action_positions` docs whose games have settled.
+2. **`syncWalletBets.js --write`** — upserts every observed wallet bet into `walletBets`.
+3. **`exportWalletProfiles.js --write-firebase`** — rebuilds `sharpWalletProfiles` from scratch + writes `data/wallet-profiles.json`, `WALLET_ROSTER.md`, `WALLET_PROFILES_SUMMARY.md` and commits them back to `main`.
+
+Full rebuild (not incremental merge) is intentional — at the current ~90-wallet scale the whole collection fits in a single batch, and any rule change to `classifyWhitelistTier` takes effect on the very next run.
+
+#### `walletBets` collection
+
+One document per distinct `{date, gameKey, market, side, walletShort}` tuple. Doc id follows the same pattern, e.g. `2026-04-20_2026-04-20_nba_por_sas_ml_home_bc3532`. Sources are merged via `merge: true` so a Source A (pick `walletDetails`) insert can be augmented by a later Source B (`sharp_action_positions`) insert — the `sources: []` array records which feeds contributed.
+
+```javascript
+{
+  walletShort: "bc3532",
+  walletAddress: "0x…",              // from Source B only; may be null if never seen in positions
+  date: "2026-04-20",
+  sport: "NBA",
+  market: "ML",                       // ML | SPREAD | TOTAL
+  side: "home",                       // home | away | over | under
+  gameKey: "2026-04-20_nba_por_sas",
+  homeTeam: "Spurs", awayTeam: "Trail Blazers",
+  outcome: "WIN",                     // WIN | LOSS | PENDING (derived from graded picks/positions)
+  invested: 45000,                    // real $ from Source B when available
+  pinnacleOdds: -150,                 // American odds at pick-peak time
+  flatPnl: 0.67,                      // 1u flat PnL using pinnacleOdds + outcome
+  settledPnl: 67500,                  // real $ settled PnL from Source B
+  avgPrice: 0.62,                     // Polymarket entry price (Source B)
+  pickSnapshot: {                     // Source A quality context at pick-generation time
+    walletBase: 77.8, roiNorm: 67.8, rankNorm: 82, pnlNorm: 55,
+    rank: 34, lifetimeRoi: 6.3, lifetimePnl: 412000,
+    contribution: 58, sizeRatio: 1.9, convictionMult: 1.2,
+    isConsensusSide: true, capturedAt: "2026-04-20",
+  },
+  position: {                         // Source B metadata
+    size: 45000, tier: "ELITE", leaderboardRank: 34,
+    sportROI: 6.3, sportPnlTotal: 412000, sportVol: 14000000,
+    sportsLbPercentileTop: 3, betMultiplier: 1.9,
+    label: "elite_conviction", firstSeen: 1711305000000,
+  },
+  sources: ["positions", "walletDetails"],
+  sourceDocs: {
+    positionsDocId: "2026-04-20_NBA_por_sas_...",
+    walletDetailsDocId_sharpFlowPicks: "2026-04-20_NBA_por_sas",
+  },
+  updatedAt: <serverTimestamp>,
+}
+```
+
+#### `sharpWalletProfiles` collection
+
+One document per wallet, keyed by `walletShort`. Phase 2 reads this collection live on SharpFlow mount, caches the result, and uses `bySport[<sport>].whitelistTier` + the top-level `flatSports`/`confirmedSports` arrays for badge rendering and Δ consensus math.
+
+```javascript
+{
+  walletShort: "bc3532",
+  walletAddress: "0x…",
+  tier: "ELITE",                      // Polymarket leaderboard tier (latest snapshot)
+  latestLbRank: 34,
+
+  latest: {                           // latest Source-A quality snapshot
+    date: "2026-04-21", walletBase: 77.8, roiNorm: 67.8, rankNorm: 82,
+    pnlNorm: 55, rank: 34, lifetimeRoi: 6.3, lifetimePnl: 412000,
+  },
+  positionsContext: {                 // latest Source-B leaderboard context
+    sportROI: 6.3, sportPnlTotal: 412000, sportVol: 14000000,
+    sportsLbPercentileTop: 3,
+  },
+
+  picks:     { n: 13, wins: 8, wr: 61.5, flatPnl: 1.28, flatRoi: 9.8 },
+  positions: { n: 15, wins: 8, wr: 53.3, invested: 944079, settledPnl: 48627, dollarRoi: 5.2 },
+  sizeSignal: {                       // own-median bet-size bucketing from Source B
+    medianInvested: 42000,
+    routine:  { n: 7, wr: 42.8, invested: 180000, settledPnl: -12000, dollarRoi: -6.7 },
+    above:    { n: 5, wr: 60.0, invested: 340000, settledPnl: 18000,  dollarRoi: 5.3 },
+    wayAbove: { n: 3, wr: 66.7, invested: 424079, settledPnl: 42627,  dollarRoi: 10.1 },
+  },
+
+  bySport: {
+    NBA: {
+      picks:     { n: 8, wins: 5, wr: 62.5, flatPnl: 1.80, flatRoi: 22.5 },
+      positions: { n: 9, wins: 6, wr: 66.7, invested: 540000, settledPnl: 40000, dollarRoi: 7.4 },
+      isFlatProfitable:   true,
+      isDollarProfitable: true,
+      isWR50:             true,
+      whitelistTier:      "CONFIRMED",  // CONFIRMED | FLAT | WR50 | null
+    },
+    NHL: { ... },
+    MLB: { ... },
+  },
+  byMarket: { ML: {...}, SPREAD: {...}, TOTAL: {...} },
+
+  // Phase 1 convenience arrays (O(1) reads for Phase 2):
+  flatSports:      ["NBA", "NHL"],    // FLAT or CONFIRMED
+  confirmedSports: ["NBA"],           // CONFIRMED only
+  wr50Sports:      ["MLB"],           // WR50-only (not FLAT-profitable)
+  topSport:        "NBA",             // best flat ROI among sports with ≥ 2 bets
+  whitelistVersion: 1,                // bumped when classifyWhitelistTier rules change
+
+  verdict: "CONFIRMED_WINNER",        // legacy ≥3-bet global label (superseded by whitelist)
+  firstBetDate: "2026-04-17",
+  lastBetDate:  "2026-04-21",
+  updatedAt: <serverTimestamp>,
+}
+```
+
+#### Whitelist tier classification
+
+`classifyWhitelistTier(picksInSport, positionsInSport)` in `exportWalletProfiles.js` assigns one of four tiers per `(wallet, sport)` pair:
+
+| Tier | Requires | Interpretation |
+|---|---|---|
+| **CONFIRMED** | `picks.n ≥ 2 AND picks.flatRoi > 0` **AND** `positions.n ≥ 2 AND positions.dollarRoi > 0` | Profitable in BOTH sources — highest-confidence badge. |
+| **FLAT** | `picks.n ≥ 2 AND picks.flatRoi > 0` (Source B inconclusive / negative) | Flat-profitable on our graded pick-cards only. Default Phase 2 badge color. |
+| **WR50** | `picks.n ≥ 2 AND picks.wr ≥ 50` (but flat ROI ≤ 0, i.e. winning often at bad prices) | Noisy signal, tracked but not badged. |
+| **null** | Everything else or `< 2 bets` in the sport | No badge, excluded from Δ consensus math. |
+
+Precedence: CONFIRMED > FLAT > WR50 > null. The ≥ 2-bet minimum matches the methodology used in [WALLET_WHITELIST_BACKTEST.md](./WALLET_WHITELIST_BACKTEST.md); as the sample grows past ~30 bets per wallet we expect to raise it to ≥ 3.
+
+`WHITELIST_VERSION` is an integer stored on every profile and on the root `data/wallet-profiles.json`. Bump it whenever the classification rule changes so the UI can invalidate any cached reads that reference a stale rule set.
+
+#### Monitoring artifacts
+
+- `data/wallet-profiles.json` — full JSON mirror of what was upserted. Checked in so Git history itself becomes a low-frequency audit log.
+- `WALLET_ROSTER.md` — human-readable roster of every wallet (sorted by verdict).
+- `WALLET_PROFILES_SUMMARY.md` — **daily sanity-check artifact**. Shows population counts by verdict, per-sport whitelist-tier counts, top-10 FLAT-or-better wallets per sport, and a churn diff (wallet-sport tiers that changed vs. the prior run). Watch for excessive churn — if > 30% of wallet-sport tiers flip between runs the min-bet threshold is too loose.
+
+#### Read contract for Phase 2 consumers
+
+Phase 2 (UI badges + walletConsensus Δ) **must** read from `sharpWalletProfiles` and **must not** re-derive whitelist tiers from raw picks/positions at request time. Client code should:
+
+1. Subscribe to `sharpWalletProfiles` once on mount and keep a `Map<walletShort, profile>` in memory.
+2. For a badge lookup on wallet `w` for sport `s`: check `profile.bySport[s].whitelistTier` (may be `null`).
+3. For walletConsensus Δ on a pick in sport `s`: for each wallet in the pick's `walletDetails`, count it as FOR-side if `w.side === pickedSide` AND its profile has `bySport[s].whitelistTier ∈ {CONFIRMED, FLAT}`; count AGAINST if on the other side with the same tier filter. WR50 does not participate.
+
+This hard boundary keeps Phase 2 fast (no per-request aggregation) and means any whitelist-rule change propagates through a single code path — `classifyWhitelistTier`.
 
 ### Grading (Firebase Function: `updateBetResults`)
 
