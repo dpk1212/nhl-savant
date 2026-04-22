@@ -1148,7 +1148,14 @@ function computeRegimeBonus(regime, v8Scoring, sideKey, sport = null) {
 
 // Phase 2: stamp wallet-consensus attribution fields on a sideData object.
 // Mutates `target` in place. Always safe to call — missing data → no-op stamps.
+//
+// IMPORTANT: the profile cache (`WALLET_PROFILES_CACHE`) is loaded async at
+// app boot. If syncs fire before it populates, every wallet fails
+// `isWhitelistedForSport`, which silently stamps forW=0/agW=0/NEUTRAL onto
+// live locked picks. To avoid poisoning the doc, skip stamping entirely
+// until the cache is ready; a later sync will stamp with real values.
 function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, promotedBy) {
+  if (!WALLET_PROFILES_CACHE) return;
   const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
   target.v8_walletConsensusVersion = WHITELIST_CONSENSUS_VERSION;
   target.v8_walletConsensusSport = sport || null;

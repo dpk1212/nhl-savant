@@ -46,6 +46,14 @@ service cloud.firestore {
       allow delete: if false;
     }
     
+    // Sharp wallet profiles - public read for Phase 2 wallet-consensus (UI
+    // badges + decideLockStage). Written only by the nightly
+    // exportWalletProfiles.js job via the Admin SDK, which bypasses rules.
+    match /sharpWalletProfiles/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Sharp Flow total (O/U) picks - same rules as sharpFlowPicks
     match /sharpFlowTotals/{document=**} {
       allow read: if true;
