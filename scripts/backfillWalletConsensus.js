@@ -172,9 +172,6 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
           const wd = peak?.v8Scoring?.walletDetails || [];
           if (!wd.length) { noDetails++; continue; }
 
-          const stale = (side.v8_walletConsensusVersion ?? 0) < WHITELIST_CONSENSUS_VERSION;
-          if (!stale) { skippedAlreadyFresh++; continue; }
-
           const consensusSide = peak?.v8Scoring?.consensusSide || sideKey;
           // IMPORTANT: we stamp the CURRENT pick side (sideKey), so "for" =
           // wallets on the pick side, "ag" = wallets on the opposite side.
@@ -183,21 +180,36 @@ function buildStampFields(wc, sport, baseStars, promotedBy) {
           const baseStars = peak?.stars || 0;
           const fields = buildStampFields(wc, sport, baseStars, promotedBy);
 
+          // v5.2: stale-health reconciliation — even if the stamp version is
+          // already fresh, we need to clear any stored health whose only
+          // reason is a whitelist_fade_* that the current Δ no longer
+          // justifies. Otherwise the Locked Picks list keeps rendering a
+          // MUTED pill for a pick that is now LEAN_FOR / STRONG_FOR.
+          const stored = side.health || null;
+          const reasons = Array.isArray(stored?.reasons) ? stored.reasons : [];
+          const onlyWhitelistReasons = reasons.length > 0 && reasons.every(r => r === 'whitelist_fade_weak' || r === 'whitelist_fade_strong');
+          const currentNeedsMute = wc.lockAction === 'MUTE' || wc.lockAction === 'CANCEL';
+          const healthStaleForWhitelist = stored && stored.status && stored.status !== 'ACTIVE' && !currentNeedsMute && onlyWhitelistReasons;
+
+          const stale = (side.v8_walletConsensusVersion ?? 0) < WHITELIST_CONSENSUS_VERSION;
+          if (!stale && !healthStaleForWhitelist) { skippedAlreadyFresh++; continue; }
+
           if (wc.verdict === 'STRONG_FOR') strongFor.push({ col, id: doc.id, sideKey, sport, wc });
           else if (wc.verdict === 'LEAN_FOR') leanFor.push({ col, id: doc.id, sideKey, sport, wc });
           else if (wc.verdict === 'FADE_WEAK') fadeWeak.push({ col, id: doc.id, sideKey, sport, wc });
           else if (wc.verdict === 'FADE_STRONG') fadeStrong.push({ col, id: doc.id, sideKey, sport, wc });
 
+          const payload = { sides: { [sideKey]: { ...fields } }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill_admin' };
+          if (healthStaleForWhitelist) {
+            payload.sides[sideKey].health = { status: 'ACTIVE', reasons: [] };
+          }
           if (!DRY) {
-            await db.collection(col).doc(doc.id).set(
-              { sides: { [sideKey]: fields }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill_admin' },
-              { merge: true },
-            );
+            await db.collection(col).doc(doc.id).set(payload, { merge: true });
           }
           stampedNow++;
 
           console.log(`[${mkt}] ${doc.id}  side=${sideKey}  sport=${sport}  stars=${baseStars}  stage=${side.lockStage}  promotedBy=${promotedBy || '—'}`);
-          console.log(`       forW=${wc.forW} agW=${wc.agW} Δ=${wc.delta} ${wc.verdict}  unitBonus=${wc.unitBonus}  lockAction=${wc.lockAction || '—'}  promotionEligible=${wc.promotionEligible}`);
+          console.log(`       forW=${wc.forW} agW=${wc.agW} Δ=${wc.delta} ${wc.verdict}  unitBonus=${wc.unitBonus}  lockAction=${wc.lockAction || '—'}  promotionEligible=${wc.promotionEligible}${healthStaleForWhitelist ? '  health→ACTIVE' : ''}`);
         }
       }
     }

@@ -8999,9 +8999,26 @@ export default function SharpFlow() {
                           marketType: doc.marketType || 'ml',
                           line: peak.line || lock.line || null,
                           superseded: !!sd.superseded,
-                          health: sd.superseded
-                            ? { status: 'CANCELLED', reasons: ['side_flipped'] }
-                            : (sd.health || { status: 'ACTIVE', reasons: [] }),
+                          health: (() => {
+                            if (sd.superseded) return { status: 'CANCELLED', reasons: ['side_flipped'] };
+                            const stored = sd.health || { status: 'ACTIVE', reasons: [] };
+                            // v5.2 self-heal: if the current wallet-consensus stamp
+                            // no longer implies MUTE/CANCEL but stored health is
+                            // still carrying a stale whitelist_* reason from an
+                            // older stamp (pre-backfill), reconcile to ACTIVE.
+                            // Non-whitelist reasons (opp_side_stronger, side_flipped,
+                            // wps_dropped, etc.) are preserved untouched.
+                            const verdict = sd.v8_walletConsensusVerdict;
+                            const muteNow = !!sd.v8_walletConsensusMuteTriggered;
+                            const cancelNow = !!sd.v8_walletConsensusCancelTriggered;
+                            const reasons = Array.isArray(stored.reasons) ? stored.reasons : [];
+                            const onlyWhitelistReasons = reasons.length > 0 && reasons.every(r => r === 'whitelist_fade_weak' || r === 'whitelist_fade_strong');
+                            const positiveVerdict = verdict === 'LEAN_FOR' || verdict === 'STRONG_FOR' || verdict === 'NEUTRAL';
+                            if (stored.status && stored.status !== 'ACTIVE' && !muteNow && !cancelNow && positiveVerdict && onlyWhitelistReasons) {
+                              return { status: 'ACTIVE', reasons: [] };
+                            }
+                            return stored;
+                          })(),
                           // V8.3 Phase 2 — wallet consensus attribution (stamped by syncPickToFirebase).
                           // These flow into the PROVEN CONSENSUS UI badge on Δ ≥ +2 picks.
                           walletConsensusDelta: sd.v8_walletConsensusDelta ?? null,
