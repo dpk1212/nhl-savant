@@ -1,6 +1,6 @@
 # V8-Era Daily PnL + Cluster Report
 
-Generated: 4/22/2026, 5:27:40 AM ET · V8 cutover: 2026-04-18
+Generated: 4/22/2026, 10:15:41 AM ET · V8 cutover: 2026-04-18
 
 Full graded V8 sample: **N=60  WR=45.0%  flatROI=-5.2%  wtdROI=-9.3%** · total flat PnL **-3.10u**
 
@@ -100,6 +100,24 @@ All PnL/ROI figures are computed off `peak` snapshots (the units actually shown 
 | contribution | 5 | 20.0% | -65.1% | -70.9% | -3.25 |
 | regime | 27 | 44.4% | +3.1% | -19.6% | +0.83 |
 | — | 28 | 50.0% | -2.4% | +11.9% | -0.68 |
+
+### Wallet verdict (Phase 2 consensus)
+| Bucket | N | WR | flat ROI | wtd ROI | Flat PnL (u) |
+|---|---|---|---|---|---|
+| FADE_STRONG | 2 | 0.0% | -100.0% | -100.0% | -2.00 |
+| FADE_WEAK | 7 | 28.6% | -53.6% | -72.9% | -3.75 |
+| LEAN_FOR | 10 | 70.0% | +31.4% | -1.4% | +3.14 |
+| NEUTRAL | 25 | 28.0% | -50.7% | -48.5% | -12.67 |
+| STRONG_FOR | 16 | 68.8% | +76.2% | +73.8% | +12.19 |
+
+### Wallet Δ band (forW − agW, whitelisted only)
+| Bucket | N | WR | flat ROI | wtd ROI | Flat PnL (u) |
+|---|---|---|---|---|---|
+| Δ=+1 | 10 | 70.0% | +31.4% | -1.4% | +3.14 |
+| Δ=-1 | 7 | 28.6% | -53.6% | -72.9% | -3.75 |
+| Δ=0 | 25 | 28.0% | -50.7% | -48.5% | -12.67 |
+| Δ≤-2 | 2 | 0.0% | -100.0% | -100.0% | -2.00 |
+| Δ≥+2 | 16 | 68.8% | +76.2% | +73.8% | +12.19 |
 
 
 ---
@@ -224,6 +242,39 @@ Cells show `N · WR · flat ROI`. "—" means no picks in that cell.
 | **LOCKED** | N=13 · 62% · +10% | N=34 · 44% · +3% | N=3 · 0% · -100% | N=3 · 33% · -32% |
 | **SHADOW** | — | — | N=3 · 33% · -22% | N=4 · 50% · -16% |
 
+### Wallet verdict × regime
+*cell = N · WR · flat ROI*
+
+| | **CLEAR_MOVE** | **NEAR_START** | **NO_MOVE** | **SMALL_MOVE** |
+|---|---|---|---|---|
+| **FADE_STRONG** | — | N=1 · 0% · -100% | — | N=1 · 0% · -100% |
+| **FADE_WEAK** | N=1 · 100% · +19% | N=5 · 20% · -59% | N=1 · 0% · -100% | — |
+| **LEAN_FOR** | N=2 · 50% · -13% | N=5 · 60% · +6% | N=1 · 100% · +135% | N=2 · 100% · +86% |
+| **NEUTRAL** | N=7 · 43% · -20% | N=10 · 30% · -49% | N=4 · 0% · -100% | N=4 · 25% · -58% |
+| **STRONG_FOR** | N=3 · 100% · +91% | N=13 · 62% · +73% | — | — |
+
+### Wallet verdict × sport
+*cell = N · WR · flat ROI*
+
+| | **MLB** | **NBA** | **NHL** |
+|---|---|---|---|
+| **FADE_STRONG** | — | N=2 · 0% · -100% | — |
+| **FADE_WEAK** | N=2 · 50% · +3% | N=5 · 20% · -76% | — |
+| **LEAN_FOR** | N=4 · 50% · -7% | N=1 · 0% · -100% | N=5 · 100% · +89% |
+| **NEUTRAL** | N=4 · 25% · -59% | N=17 · 29% · -47% | N=4 · 25% · -58% |
+| **STRONG_FOR** | N=11 · 64% · +27% | N=4 · 75% · +194% | N=1 · 100% · +140% |
+
+### Wallet verdict × stars
+*cell = N · WR · flat ROI*
+
+| | **★=3.5** | **★≤3** | **★≥4** |
+|---|---|---|---|
+| **FADE_STRONG** | — | N=1 · 0% · -100% | N=1 · 0% · -100% |
+| **FADE_WEAK** | — | N=6 · 33% · -46% | N=1 · 0% · -100% |
+| **LEAN_FOR** | N=1 · 100% · +105% | N=8 · 75% · +39% | N=1 · 0% · -100% |
+| **NEUTRAL** | N=4 · 0% · -100% | N=12 · 33% · -38% | N=9 · 33% · -46% |
+| **STRONG_FOR** | N=3 · 67% · +156% | N=9 · 56% · +21% | N=4 · 100% · +140% |
+
 
 ---
 
@@ -231,45 +282,45 @@ Cells show `N · WR · flat ROI`. "—" means no picks in that cell.
 
 Every possible intersection of three factors from the set below. Top 12 by flat ROI are our **hit clusters**; bottom 12 are our **miss clusters**. Use this to find the actionable combinations before they show up in single-factor tables.
 
-Factor pool: `regime`, `contribTier`, `maxRoiN_F`, `meanBase_F`, `margin`, `dContrib`, `stars`, `sport`, `market`, `promotedBy`, `lockStage`.
+Factor pool: `regime`, `contribTier`, `maxRoiN_F`, `meanBase_F`, `margin`, `dContrib`, `stars`, `sport`, `market`, `promotedBy`, `lockStage`, `walletVerdict`.
 
 ### 4a. Top 15 clusters (hit zones, sorted by flat ROI)
 | Rank | Cluster | N | WR | flat ROI | wtd ROI | Flat PnL (u) |
 |---|---|---|---|---|---|---|
-| 1 | regime=NEAR_START · stars=★=3.5 · market=ML | 3 | 66.7% | +155.9% | +127.1% | +4.68 |
-| 2 | maxRoiN_F=maxRoi 50–70 · stars=★=3.5 · market=ML | 3 | 66.7% | +155.9% | +127.1% | +4.68 |
-| 3 | regime=NEAR_START · dContrib=Δ∈(50,100] · sport=NBA | 3 | 66.7% | +154.0% | +90.5% | +4.62 |
-| 4 | maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] · promotedBy=regime | 5 | 80.0% | +138.8% | +111.7% | +6.94 |
-| 5 | regime=NEAR_START · maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] | 5 | 80.0% | +134.6% | +106.6% | +6.73 |
-| 6 | maxRoiN_F=maxRoi≥70 · market=ML · promotedBy=— | 4 | 100.0% | +132.4% | +139.7% | +5.30 |
-| 7 | maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] · lockStage=LOCKED | 7 | 85.7% | +124.8% | +104.3% | +8.74 |
-| 8 | contribTier=STRONG · market=ML · promotedBy=— | 5 | 100.0% | +124.4% | +125.3% | +6.22 |
-| 9 | maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] · market=ML | 7 | 85.7% | +119.6% | +101.0% | +8.37 |
-| 10 | regime=NEAR_START · dContrib=Δ∈(50,100] · promotedBy=regime | 8 | 87.5% | +117.5% | +101.4% | +9.40 |
-| 11 | regime=NEAR_START · contribTier=LEAN · dContrib=Δ∈(50,100] | 3 | 100.0% | +111.0% | +115.1% | +3.33 |
-| 12 | regime=NEAR_START · margin=0 · dContrib=Δ∈(50,100] | 3 | 100.0% | +111.0% | +115.1% | +3.33 |
-| 13 | contribTier=LEAN · margin=0 · dContrib=Δ∈(50,100] | 3 | 100.0% | +111.0% | +115.1% | +3.33 |
-| 14 | contribTier=LEAN · dContrib=Δ∈(50,100] · stars=★≤3 | 3 | 100.0% | +111.0% | +115.1% | +3.33 |
-| 15 | contribTier=LEAN · dContrib=Δ∈(50,100] · promotedBy=regime | 3 | 100.0% | +111.0% | +115.1% | +3.33 |
+| 1 | dContrib=Δ∈(50,100] · market=ML · walletVerdict=STRONG_FOR | 3 | 100.0% | +247.0% | +208.2% | +7.41 |
+| 2 | dContrib=Δ∈(50,100] · promotedBy=regime · walletVerdict=STRONG_FOR | 3 | 100.0% | +247.0% | +208.2% | +7.41 |
+| 3 | regime=NEAR_START · dContrib=Δ∈(50,100] · walletVerdict=STRONG_FOR | 3 | 100.0% | +240.0% | +225.7% | +7.20 |
+| 4 | meanBase_F=meanBase<50 · sport=NBA · walletVerdict=STRONG_FOR | 3 | 66.7% | +230.0% | +251.3% | +6.90 |
+| 5 | meanBase_F=meanBase<50 · market=ML · walletVerdict=STRONG_FOR | 3 | 66.7% | +230.0% | +251.3% | +6.90 |
+| 6 | sport=NBA · market=ML · walletVerdict=STRONG_FOR | 3 | 66.7% | +230.0% | +251.3% | +6.90 |
+| 7 | maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] · walletVerdict=STRONG_FOR | 4 | 100.0% | +211.5% | +189.5% | +8.46 |
+| 8 | dContrib=Δ∈(50,100] · lockStage=LOCKED · walletVerdict=STRONG_FOR | 4 | 100.0% | +211.5% | +189.5% | +8.46 |
+| 9 | regime=NEAR_START · sport=NBA · walletVerdict=STRONG_FOR | 4 | 75.0% | +194.4% | +169.5% | +7.78 |
+| 10 | sport=NBA · lockStage=LOCKED · walletVerdict=STRONG_FOR | 4 | 75.0% | +194.4% | +169.5% | +7.78 |
+| 11 | regime=NEAR_START · stars=★≥4 · walletVerdict=STRONG_FOR | 3 | 100.0% | +164.5% | +134.4% | +4.94 |
+| 12 | contribTier=STRONG · stars=★≥4 · walletVerdict=STRONG_FOR | 3 | 100.0% | +164.5% | +134.4% | +4.94 |
+| 13 | maxRoiN_F=maxRoi≥70 · stars=★≥4 · walletVerdict=STRONG_FOR | 3 | 100.0% | +164.5% | +134.4% | +4.94 |
+| 14 | stars=★≥4 · market=ML · walletVerdict=STRONG_FOR | 3 | 100.0% | +157.5% | +116.1% | +4.73 |
+| 15 | stars=★≥4 · promotedBy=— · walletVerdict=STRONG_FOR | 3 | 100.0% | +157.5% | +116.1% | +4.73 |
 
 ### 4b. Bottom 15 clusters (miss zones, worst flat ROI first)
 | Rank | Cluster | N | WR | flat ROI | wtd ROI | Flat PnL (u) |
 |---|---|---|---|---|---|---|
-| 1 | meanBase_F=meanBase≥55 · sport=NBA · promotedBy=contribution | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 2 | maxRoiN_F=maxRoi≥70 · meanBase_F=meanBase≥55 · promotedBy=contribution | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 3 | sport=NBA · promotedBy=contribution · lockStage=LOCKED | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 4 | margin=≥+2 · sport=NBA · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 5 | maxRoiN_F=maxRoi≥70 · promotedBy=contribution · lockStage=LOCKED | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 6 | maxRoiN_F=maxRoi≥70 · sport=NBA · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 7 | maxRoiN_F=maxRoi≥70 · margin=≥+2 · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 8 | contribTier=STRONG · sport=NBA · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 9 | contribTier=STRONG · maxRoiN_F=maxRoi≥70 · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
-| 10 | meanBase_F=meanBase≥55 · dContrib=Δ∈(50,100] · sport=NBA | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 11 | meanBase_F=meanBase 50–55 · sport=MLB · promotedBy=regime | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 12 | margin=+1 · dContrib=Δ∈(50,100] · sport=NBA | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 13 | contribTier=STRONG · market=TOTAL · promotedBy=regime | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 14 | contribTier=STRONG · dContrib=Δ∈(50,100] · sport=NBA | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
-| 15 | contribTier=STRONG · maxRoiN_F=maxRoi≥70 · dContrib=Δ∈(50,100] | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
+| 1 | contribTier=STRONG · meanBase_F=meanBase≥55 · walletVerdict=NEUTRAL | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
+| 2 | meanBase_F=meanBase≥55 · sport=NBA · promotedBy=contribution | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
+| 3 | maxRoiN_F=maxRoi≥70 · meanBase_F=meanBase≥55 · promotedBy=contribution | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
+| 4 | sport=NBA · promotedBy=contribution · lockStage=LOCKED | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 5 | margin=≥+2 · sport=NBA · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 6 | maxRoiN_F=maxRoi≥70 · promotedBy=contribution · lockStage=LOCKED | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 7 | maxRoiN_F=maxRoi≥70 · sport=NBA · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 8 | maxRoiN_F=maxRoi≥70 · margin=≥+2 · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 9 | contribTier=STRONG · sport=NBA · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 10 | contribTier=STRONG · maxRoiN_F=maxRoi≥70 · promotedBy=contribution | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 11 | meanBase_F=meanBase≥55 · lockStage=LOCKED · walletVerdict=NEUTRAL | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 12 | meanBase_F=meanBase≥55 · sport=NBA · walletVerdict=NEUTRAL | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 13 | meanBase_F=meanBase≥55 · dContrib=Δ∈(50,100] · sport=NBA | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
+| 14 | maxRoiN_F=maxRoi≥70 · meanBase_F=meanBase≥55 · walletVerdict=NEUTRAL | 4 | 0.0% | -100.0% | -100.0% | -4.00 |
+| 15 | meanBase_F=meanBase 50–55 · sport=MLB · promotedBy=regime | 3 | 0.0% | -100.0% | -100.0% | -3.00 |
 
 ---
 
@@ -277,19 +328,19 @@ Factor pool: `regime`, `contribTier`, `maxRoiN_F`, `meanBase_F`, `margin`, `dCon
 
 Where do we want more exposure (size up / reinforce promotion)?
 
-- regime=NEAR_START · stars=★=3.5 · market=ML → N=3  WR=66.7%  flatROI=+155.9%  wtdROI=+127.1%
-- maxRoiN_F=maxRoi 50–70 · stars=★=3.5 · market=ML → N=3  WR=66.7%  flatROI=+155.9%  wtdROI=+127.1%
-- regime=NEAR_START · dContrib=Δ∈(50,100] · sport=NBA → N=3  WR=66.7%  flatROI=+154.0%  wtdROI=+90.5%
-- maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] · promotedBy=regime → N=5  WR=80.0%  flatROI=+138.8%  wtdROI=+111.7%
-- regime=NEAR_START · maxRoiN_F=maxRoi 50–70 · dContrib=Δ∈(50,100] → N=5  WR=80.0%  flatROI=+134.6%  wtdROI=+106.6%
+- dContrib=Δ∈(50,100] · market=ML · walletVerdict=STRONG_FOR → N=3  WR=100.0%  flatROI=+247.0%  wtdROI=+208.2%
+- dContrib=Δ∈(50,100] · promotedBy=regime · walletVerdict=STRONG_FOR → N=3  WR=100.0%  flatROI=+247.0%  wtdROI=+208.2%
+- regime=NEAR_START · dContrib=Δ∈(50,100] · walletVerdict=STRONG_FOR → N=3  WR=100.0%  flatROI=+240.0%  wtdROI=+225.7%
+- meanBase_F=meanBase<50 · sport=NBA · walletVerdict=STRONG_FOR → N=3  WR=66.7%  flatROI=+230.0%  wtdROI=+251.3%
+- meanBase_F=meanBase<50 · market=ML · walletVerdict=STRONG_FOR → N=3  WR=66.7%  flatROI=+230.0%  wtdROI=+251.3%
 
 Where are we bleeding (size down / reconsider)?
 
+- contribTier=STRONG · meanBase_F=meanBase≥55 · walletVerdict=NEUTRAL → N=3  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 - meanBase_F=meanBase≥55 · sport=NBA · promotedBy=contribution → N=3  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 - maxRoiN_F=maxRoi≥70 · meanBase_F=meanBase≥55 · promotedBy=contribution → N=3  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 - sport=NBA · promotedBy=contribution · lockStage=LOCKED → N=4  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 - margin=≥+2 · sport=NBA · promotedBy=contribution → N=4  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
-- maxRoiN_F=maxRoi≥70 · promotedBy=contribution · lockStage=LOCKED → N=4  WR=0.0%  flatROI=-100.0%  wtdROI=-100.0%
 
 ---
 
@@ -378,6 +429,24 @@ Cell format: **N · WR% · flatROI% · flatPnL**
 | contribution | — | — | N=1 · 100% · +75% · +0.7u | N=4 · 0% · -100% · -4.0u | **N=5 · 20% · -65% · -3.3u** |
 | regime | — | — | N=14 · 50% · -1% · -0.1u | N=13 · 38% · +7% · +1.0u | **N=27 · 44% · +3% · +0.8u** |
 | — | N=14 · 43% · -24% · -3.3u | N=11 · 55% · +15% · +1.6u | N=2 · 50% · -16% · -0.3u | N=1 · 100% · +135% · +1.4u | **N=28 · 50% · -2% · -0.7u** |
+
+### Wallet verdict (Phase 2 consensus)
+| Bucket | 04-18 | 04-19 | 04-20 | 04-21 | TOTAL |
+|---|---|---|---|---|---|
+| FADE_STRONG | — | — | — | N=2 · 0% · -100% · -2.0u | **N=2 · 0% · -100% · -2.0u** |
+| FADE_WEAK | — | N=1 · 100% · +19% · +0.2u | N=4 · 25% · -49% · -1.9u | N=2 · 0% · -100% · -2.0u | **N=7 · 29% · -54% · -3.8u** |
+| LEAN_FOR | N=1 · 100% · +105% · +1.0u | N=2 · 50% · -17% · -0.3u | N=4 · 75% · +38% · +1.5u | N=3 · 67% · +29% · +0.9u | **N=10 · 70% · +31% · +3.1u** |
+| NEUTRAL | N=10 · 30% · -51% · -5.1u | N=4 · 0% · -100% · -4.0u | N=6 · 67% · +24% · +1.4u | N=5 · 0% · -100% · -5.0u | **N=25 · 28% · -51% · -12.7u** |
+| STRONG_FOR | N=3 · 67% · +24% · +0.7u | N=4 · 100% · +145% · +5.8u | N=3 · 33% · -25% · -0.7u | N=6 · 67% · +107% · +6.4u | **N=16 · 69% · +76% · +12.2u** |
+
+### Wallet Δ band (forW − agW, whitelisted only)
+| Bucket | 04-18 | 04-19 | 04-20 | 04-21 | TOTAL |
+|---|---|---|---|---|---|
+| Δ=+1 | N=1 · 100% · +105% · +1.0u | N=2 · 50% · -17% · -0.3u | N=4 · 75% · +38% · +1.5u | N=3 · 67% · +29% · +0.9u | **N=10 · 70% · +31% · +3.1u** |
+| Δ=-1 | — | N=1 · 100% · +19% · +0.2u | N=4 · 25% · -49% · -1.9u | N=2 · 0% · -100% · -2.0u | **N=7 · 29% · -54% · -3.8u** |
+| Δ=0 | N=10 · 30% · -51% · -5.1u | N=4 · 0% · -100% · -4.0u | N=6 · 67% · +24% · +1.4u | N=5 · 0% · -100% · -5.0u | **N=25 · 28% · -51% · -12.7u** |
+| Δ≤-2 | — | — | — | N=2 · 0% · -100% · -2.0u | **N=2 · 0% · -100% · -2.0u** |
+| Δ≥+2 | N=3 · 67% · +24% · +0.7u | N=4 · 100% · +145% · +5.8u | N=3 · 33% · -25% · -0.7u | N=6 · 67% · +107% · +6.4u | **N=16 · 69% · +76% · +12.2u** |
 
 ### 6a. Stability scoreboard
 

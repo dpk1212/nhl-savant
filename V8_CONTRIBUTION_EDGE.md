@@ -1,6 +1,6 @@
 # V8 Contribution-Edge Map
 
-_Generated 2026-04-22T09:27:37.443Z_
+_Generated 2026-04-22T14:15:39.054Z_
 
 N = 52 picks (LOCKED=47, SHADOW=5)
 Baseline: WR 46.2% · flat ROI -0.1% · units-wtd ROI -12.6%

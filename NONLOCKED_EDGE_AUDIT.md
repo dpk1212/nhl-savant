@@ -1,6 +1,6 @@
 # Non-LOCKED edge audit — do maxRoiN_F / meanBase_F deserve their own promotion path?
 
-Generated: 4/22/2026, 5:27:42 AM ET · V8 cutover: 2026-04-18
+Generated: 4/22/2026, 10:15:43 AM ET · V8 cutover: 2026-04-18
 
 ## Baseline — all graded V8-era game sides
 
@@ -72,9 +72,7 @@ The current promotion system uses two paths: **regime** (CLEAR_MOVE / NEAR_START
 
 Currently-SHADOW or unpromoted sides on the board for 2026-04-22 that would promote if we shipped the new path:
 
-| Pick | lockStage | regime | tier | maxRoiN_F | meanBase_F | margin | Δctrb |
-|---|---|---|---|---|---|---|---|
-| NBA ML — Pistons | SHADOW | SMALL_MOVE | STANDARD | 88★ | 48 | +1 | 183 |
+_None._
 
 
 ---
