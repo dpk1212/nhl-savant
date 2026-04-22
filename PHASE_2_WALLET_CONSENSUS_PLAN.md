@@ -1,6 +1,6 @@
 # Phase 2 — Wallet-Consensus V8 Integration
 
-**Status:** Planned (not yet implemented). Drafted after Phase 1 (sharpWalletProfiles) and Shadow Vault shipped.
+**Status:** LIVE. v1 shipped (per-sport action gating). **v4 shipped 2026-04-22** — universal sport config, STRONG_FOR bonus doubled to +0.50u, promotion star gate lowered to 1.5, PROVEN CONSENSUS UI badge. See §11 "v4 amendment" below for the consolidated delta.
 
 **Thesis:** For each sport, a wallet's historical per-sport profitability ("whitelist tier" in `sharpWalletProfiles.bySport[sport].whitelistTier`) is a real, independent signal of pick quality. We integrate it into V8 as a **laddered bonus / penalty / promotion on Δ = forW − agW**, where `forW` / `agW` count whitelisted wallets on our side vs. the opposing side.
 
@@ -279,4 +279,47 @@ After 4 weeks of live data, re-run `walletWhitelistBacktest.js` against live att
 
 ---
 
-*Drafted: 2026-04-22 (ET). Revised: 2026-04-20 to extend from NBA-only to all sports and add wallet-consensus promotion path. Anchored in WALLET_WHITELIST_BACKTEST.md §B (LODO, leave-one-date-out). All magnitudes are placeholders subject to 4-week live re-validation.*
+*Drafted: 2026-04-22 (ET). Revised: 2026-04-20 to extend from NBA-only to all sports and add wallet-consensus promotion path. Anchored in WALLET_WHITELIST_BACKTEST.md §B (LODO, leave-one-date-out).*
+
+---
+
+## 11. v4 amendment (2026-04-22) — universal, all-in on Δ ≥ +2
+
+**Trigger:** `scripts/walletConsensusBacktest.js` re-ran on the full v8 ledger and reported:
+
+| Δ bucket | N | WR% | Flat ROI | Verdict |
+| --- | --- | --- | --- | --- |
+| Δ ≥ +2 | 16 | **68.8%** | **+76.2%** | best bucket in the system |
+| Δ = +1 | 10 | 70.0% | +31.0% | good but small sample |
+| Δ = 0  | 19 | 21.0% | −61.0% | catastrophic |
+| Δ = −1 | 7  | 28.6% | −54.0% | MUTE justified |
+| Δ ≤ −2 | 1  | 0%    | −100%   | CANCEL justified |
+
+`Δ ≥ +2` also rescued contribTier / star buckets that otherwise failed catastrophically when Δ ≤ 0. A MUTED pick with Δ=+3 (Trail Blazers ML) still won +2.38u — wallet consensus overrode the WPS-based mute correctly. Conclusion: this is the dominant signal in v8; other buckets should be considered in the context of Δ, not above it.
+
+### Changes shipped (v3 → v4)
+
+1. **Universal `WHITELIST_INTERVENTION`.** Every sport gets `{ bonus, mute, cancel, promote }` all `true`. Removed CBB/NFL "whitelist too thin" carve-outs. The whitelist is *already* per-sport (a wallet only becomes CONFIRMED/FLAT in sports it's been profitable in) — so there is no extra risk from enabling actions universally. If a sport has no whitelisted wallets, `forW + agW === 0` and verdict stays `NEUTRAL` automatically.
+
+2. **STRONG_FOR bonus 0.25u → 0.50u.** Doubled to match the magnitude of the observed edge (+76% flat ROI, N=16). LEAN_FOR stays at +0.10u.
+
+3. **Promotion star gate 2.0 → 1.5.** The SHADOW→LOCKED whitelist-promotion precondition now clears at `basePickStars >= 1.5` instead of `>= 2`. Rationale: the whitelist itself is the primary signal, not the star floor. We want to *find and promote* every clean Δ ≥ +2 play, not gate it behind an additional V8 merit bar. `agW === 0` purity guard preserved.
+
+4. **PROVEN CONSENSUS UI badge.** New premium violet-gradient pill (`ShieldCheck` + `PROVEN CONSENSUS +Δ`) on every pick card where `v8_walletConsensusDelta >= 2`. Renders alongside (or instead of, visually) the gold TOP PICK ribbon. Tooltip shows `forW/agW`.
+
+5. **Attribution version bump v3 → v4.** `WHITELIST_CONSENSUS_VERSION = 4` in both `src/pages/SharpFlow.jsx` and `scripts/backfillWalletConsensus.js`. `needsConsensusRestamp()` treats any `v < 4` stamp as stale, so live writes + the admin backfill both re-stamp old docs with the new 0.50u unit bonus.
+
+### Operational effect
+
+- Every STRONG_FOR pick is now **+0.50u** instead of +0.25u and wears the **PROVEN CONSENSUS** badge.
+- Every FADE_WEAK pick in CBB/NFL now **MUTES** (was: inert).
+- Every FADE_STRONG pick in MLB/NHL/CBB/NFL now **CANCELS** (was: MUTE only).
+- SHADOW → LOCKED whitelist-promotion now fires for 1.5-star base picks that were previously blocked.
+
+### Monitoring
+
+Weekly watch items on the Δ ≥ +2 cohort from `WALLET_CONSENSUS_BACKTEST.md`:
+
+- Rolling 4-week WR / flat ROI on `v8_walletConsensusVerdict == 'STRONG_FOR'` — expect ≥ 55% WR, ≥ +20% flat ROI. If it drops below V8 baseline, revisit the 0.50u bump.
+- FADE_STRONG CANCEL firings outside NBA — first month is data-gathering; confirm no systematic false-cancels (pick won despite CANCEL) before permanence.
+- Whitelist-promotion (`v8_walletConsensusPromotionTriggered == true`) pick WR — small sample, but expect net positive. If negative after N ≥ 15, re-raise star gate or add `baseStars + 0.5 * STRONG_FOR` total floor.

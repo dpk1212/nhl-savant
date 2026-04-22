@@ -126,51 +126,54 @@ agW  = # of unique whitelisted wallets on the opposing side
 
 | Δ | Verdict | Action |
 |---|---------|--------|
-| Δ ≥ +2 | `STRONG_FOR`  | **+0.25 units** and **PROMOTION eligible** (becomes LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 2` and `agW = 0`) |
+| Δ ≥ +2 | `STRONG_FOR`  | **+0.50 units** and **PROMOTION eligible** (becomes LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 1.5` and `agW = 0`) — also renders the **PROVEN CONSENSUS** UI badge |
 | Δ = +1 | `LEAN_FOR`    | **+0.10 units** |
 | Δ = 0  | `NEUTRAL`     | no action |
 | Δ = −1 | `FADE_WEAK`   | **MUTE** the locked pick (`healthReason = whitelist_fade_weak`) |
-| Δ ≤ −2 | `FADE_STRONG` | **CANCEL** the locked pick (`healthReason = whitelist_fade_strong`); falls back to MUTE where CANCEL is disabled |
+| Δ ≤ −2 | `FADE_STRONG` | **CANCEL** the locked pick (`healthReason = whitelist_fade_strong`) |
 
 Negative Δ actions always take precedence over positive ones inside `computeWalletConsensus` so a pick is never simultaneously bonused and muted.
 
-**Per-sport gating.** The `WHITELIST_INTERVENTION` config in `SharpFlow.jsx` controls which of the four actions (`bonus`, `mute`, `cancel`, `promote`) are enabled per sport:
+**Per-sport gating (v4, universal).** The `WHITELIST_INTERVENTION` config in `SharpFlow.jsx` now enables all four actions (`bonus`, `mute`, `cancel`, `promote`) for every sport. The whitelist is *already* per-sport — a wallet only reaches `CONFIRMED`/`FLAT` in sports where its ledger proves it — so layering an extra per-sport action gate was redundant. Sports with no whitelisted wallets simply produce `forW + agW === 0` → `NEUTRAL` and no action fires.
 
 | Sport | bonus | mute | cancel | promote |
 |-------|-------|------|--------|---------|
 | NBA   | ✓ | ✓ | ✓ | ✓ |
 | MLB   | ✓ | ✓ | ✓ | ✓ |
 | NHL   | ✓ | ✓ | ✓ | ✓ |
-| CBB   | ✓ | ✓ | — | — |
-| NFL   | ✓ | ✓ | — | — |
+| CBB   | ✓ | ✓ | ✓ | ✓ |
+| NFL   | ✓ | ✓ | ✓ | ✓ |
 
-Where `cancel` is disabled, `FADE_STRONG` downgrades to MUTE so nothing is silently dropped. Where `promote` is disabled, `STRONG_FOR` still gives the +0.25u bonus but cannot on its own move a pick from SHADOW → LOCKED.
+Config is still the single kill-switch — flip any flag to `false` and redeploy to retire that lever for a sport.
 
 **Promotion guardrails** (all must be true for `promotedBy = 'whitelist'`):
 
 1. `verdict === 'STRONG_FOR'` (Δ ≥ +2)
-2. `agW === 0` (zero whitelisted wallets on the opposing side)
-3. `basePickStars >= 2` (rating isn't meaningfully below lock range)
+2. `agW === 0` (no profitable-wallet dissent — pure positive consensus)
+3. `basePickStars >= 1.5` (minimal V8 merit floor; lowered from 2.0 in v4 so more Δ ≥ +2 plays surface)
 4. `sportConfig.promote === true`
 5. Pick is not already LOCKED by regime or contribution path (avoids double-counting)
 
 **Attribution fields stamped on every `sharpFlowPicks`/`sharpFlowSpreads`/`sharpFlowTotals` side doc:**
 
-- `v8_walletConsensusVersion` — schema version (currently 2)
+- `v8_walletConsensusVersion` — schema version (currently **4**)
 - `v8_walletConsensusSport`, `v8_walletConsensusEnabled`
 - `v8_walletConsensusForW`, `v8_walletConsensusAgW`, `v8_walletConsensusDelta`
 - `v8_walletConsensusVerdict` — one of the five ladder verdicts above
-- `v8_walletConsensusStarBonus` — the unit bonus applied (0.25 / 0.10 / 0 / suppressed)
+- `v8_walletConsensusStarBonus` — the unit bonus applied (0.50 / 0.10 / 0 / suppressed)
 - `v8_walletConsensusMuteTriggered`, `v8_walletConsensusCancelTriggered`, `v8_walletConsensusPromotionTriggered`
 - `v8_walletConsensusBaseStars` — the base V8 stars before any whitelist adjustment
 
-These stamp on create, on peak update, and on any SHADOW → LOCKED transition so every health change has a full audit trail.
+These stamp on create, on peak update, and on any SHADOW → LOCKED transition so every health change has a full audit trail. `scripts/backfillWalletConsensus.js` mirrors the same logic for re-stamping historical picks on version bumps.
 
 **UI surfaces.**
 
-- Each wallet row in the Sharp Intel game card now carries a gold **`{SPORT} WINNER`** chip when that wallet's whitelist tier for the current sport is `CONFIRMED` or `FLAT`.
-- The "Verified Sharps" header for ML, Spread, and Total counts now append `· N {SPORT} WINNERS` (gold) and `· N {SPORT} FADING` (red) so the Δ ladder is visible at a glance.
+- **PROVEN CONSENSUS badge** — premium violet-gradient pill (`ShieldCheck` + `PROVEN CONSENSUS +Δ`) rendered on every pick card where `v8_walletConsensusDelta >= 2`. Sits next to the gold TOP PICK ribbon in the card header. Tooltip shows `forW/agW` counts.
+- Each wallet row in the Sharp Intel game card carries a gold **`{SPORT} WINNER`** chip when that wallet's whitelist tier for the current sport is `CONFIRMED` or `FLAT`.
+- The "Verified Sharps" header for ML, Spread, and Total counts append `· N {SPORT} WINNERS` (gold) and `· N {SPORT} FADING` (red) so the Δ ladder is visible at a glance.
 - Locked picks muted/cancelled by Δ render with health reasons `whitelist_fade_weak` / `whitelist_fade_strong` in the existing tooltip system.
+
+**Anchor data (v4, 2026-04-22 backtest — `scripts/walletConsensusBacktest.js`):** 16 STRONG_FOR picks → **68.8% WR, +76.2% flat ROI**; 27 Δ ≤ 0 picks → 22% WR, −61% flat ROI. `Δ ≥ +2` is the dominant predictor in v8 and supersedes contribTier / star-count buckets when those conflict with wallet consensus.
 
 **Monitoring.** `scripts/v8DailyPnL.js` now slices all graded V8 picks by `walletVerdict` and `walletDelta` in both the single-factor section and the 2-way cross sections (`Wallet verdict × regime`, `Wallet verdict × sport`, `Wallet verdict × stars`), and the new verdict is included in the 3-way cluster pool. The nightly `sharpWalletProfiles` rebuild (`exportWalletProfiles.js`) churns whitelist membership in and out as each new graded day lands, so the layer self-corrects as wallets rise and fade.
 

@@ -43,13 +43,15 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-const WHITELIST_CONSENSUS_VERSION = 3;
+// Keep in lockstep with src/pages/SharpFlow.jsx.
+// v4 = universal sport config + STRONG_FOR bonus 0.25→0.50 (2026-04-22 backtest)
+const WHITELIST_CONSENSUS_VERSION = 4;
 const WHITELIST_INTERVENTION = {
-  NBA: { bonus: true, mute: true, cancel: true,  promote: true },
-  MLB: { bonus: true, mute: true, cancel: true,  promote: true },
-  NHL: { bonus: true, mute: true, cancel: true,  promote: true },
-  CBB: { bonus: true, mute: true, cancel: false, promote: false },
-  NFL: { bonus: true, mute: true, cancel: false, promote: false },
+  NBA: { bonus: true, mute: true, cancel: true, promote: true },
+  MLB: { bonus: true, mute: true, cancel: true, promote: true },
+  NHL: { bonus: true, mute: true, cancel: true, promote: true },
+  CBB: { bonus: true, mute: true, cancel: true, promote: true },
+  NFL: { bonus: true, mute: true, cancel: true, promote: true },
 };
 
 const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
@@ -117,7 +119,7 @@ function computeWalletConsensus(walletDetails, sport, sideKey, profiles) {
     return result;
   }
   if (verdict === 'STRONG_FOR') {
-    if (cfg.bonus) result.unitBonus = 0.25;
+    if (cfg.bonus) result.unitBonus = 0.50;
     if (cfg.promote && agW === 0) result.promotionEligible = true;
     return result;
   }
