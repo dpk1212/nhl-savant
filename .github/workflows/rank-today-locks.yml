@@ -5,7 +5,7 @@ on:
 
 jobs:
   rank:
-    name: Rank today's locked picks by V8.1 confidence
+    name: Rank today's locked picks by V8.1 + V8.2 wallet consensus
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
           echo "════════════════════════════════════════════════════════════════"
-          echo "  TODAY'S LOCKED PICKS — V8.1 CONFIDENCE RANKING"
+          echo "  TODAY'S LOCKED PICKS — V8.1 CONFIDENCE + V8.2 WALLET CONSENSUS"
           echo "  Time: $(TZ='America/New_York' date '+%Y-%m-%d %I:%M %p ET')"
           echo "════════════════════════════════════════════════════════════════"
           node scripts/rankTodayLocks.js | tee today-locks-ranked.txt
@@ -43,7 +43,7 @@ jobs:
       - name: Write to job summary
         run: |
           {
-            echo "## Today's Locked Picks — V8.1 Ranking"
+            echo "## Today's Locked Picks — V8.1 + V8.2 Ranking"
             echo ""
             echo '```'
             cat today-locks-ranked.txt

@@ -38,6 +38,30 @@ const COLS = [
   ['sharpFlowTotals', 'TOTAL'],
 ];
 
+// Phase 2 — load sharpWalletProfiles once so we can recompute the
+// wallet-consensus (Δ = forW − agW) for each pick.
+async function loadWalletProfiles() {
+  const snap = await db.collection('sharpWalletProfiles').get();
+  const map = new Map();
+  snap.forEach(d => map.set(d.id, d.data()));
+  return map;
+}
+
+function isWhitelistedForSport(walletShort, sport, profiles) {
+  const t = profiles.get(walletShort)?.bySport?.[sport]?.whitelistTier;
+  return t === 'CONFIRMED' || t === 'FLAT';
+}
+
+function classifyDelta(forW, agW) {
+  const delta = forW - agW;
+  const verdict =
+    delta >= 2 ? 'STRONG_FOR' :
+    delta === 1 ? 'LEAN_FOR' :
+    delta === 0 ? 'NEUTRAL' :
+    delta === -1 ? 'FADE_WEAK' : 'FADE_STRONG';
+  return { delta, verdict };
+}
+
 // Score ~ compact ranking key that merges every edge signal we have.
 // Higher = more confident.
 //
@@ -61,7 +85,19 @@ function confidenceScore(s) {
   else if ((s.maxRoiN_F ?? 0) >= 50) eliteBonus += 120;
   if ((s.meanBase_F ?? 0) >= 55) eliteBonus += 120;      // "avg for-side quality is high"
   if ((s.qForROI50 ?? 0) >= 2) eliteBonus += 100;        // ≥2 wallets in top-50% ROI on side
-  return tierPts + regimePts + marginPts + qForPts + concPenalty + starPts + eliteBonus;
+
+  // Phase 2 — wallet-consensus bonus (Δ = whitelistedForW − whitelistedAgW).
+  // Backtest: following a ≥2 whitelisted-sharp pile-on with zero opposition
+  // was the single strongest discrete signal across NBA/MLB/NHL picks
+  // (see PHASE_2_WALLET_CONSENSUS_PLAN.md §1). Rank it accordingly.
+  let consensusBonus = 0;
+  if (s.wlDelta != null) {
+    if (s.wlDelta >= 2) consensusBonus += 350;           // STRONG_FOR (promotion-eligible)
+    else if (s.wlDelta === 1) consensusBonus += 120;     // LEAN_FOR
+    else if (s.wlDelta === -1) consensusBonus -= 180;    // FADE_WEAK
+    else if (s.wlDelta <= -2) consensusBonus -= 400;     // FADE_STRONG
+  }
+  return tierPts + regimePts + marginPts + qForPts + concPenalty + starPts + eliteBonus + consensusBonus;
 }
 
 // ── Live-edge markers ────────────────────────────────────────────────
@@ -95,6 +131,8 @@ function markers(s) {
   m.regime = s.regime === 'CLEAR_MOVE' ? '★' : s.regime === 'NO_MOVE' ? '!' : '';
   // contribTier
   m.tier = s.contribTier === 'STRONG' ? '★' : s.contribTier === 'LEAN' ? '!' : '';
+  // Phase 2 wallet-consensus (Δ = whitelisted For − whitelisted Against)
+  m.wDelta = (s.wlDelta ?? 0) >= 2 ? '★' : (s.wlDelta ?? 0) <= -1 ? '!' : '';
   // edge count for the leftmost column
   m.edges = Object.values(m).filter(v => v === '★').length;
   m.warns = Object.values(m).filter(v => v === '!').length;
@@ -103,6 +141,7 @@ function markers(s) {
 
 async function loadToday() {
   const rows = [];
+  const profiles = await loadWalletProfiles();
   for (const [col, mkt] of COLS) {
     const snap = await db.collection(col).where('date', '==', today).get();
     for (const doc of snap.docs) {
@@ -156,6 +195,19 @@ async function loadToday() {
           : 0;
         last.qForROI50 = forW.filter(w => (w.roiNorm ?? 0) >= 50).length;
         last.qForROI70 = forW.filter(w => (w.roiNorm ?? 0) >= 70).length;
+
+        // Phase 2 — wallet consensus (whitelisted wallets only, per sport)
+        const wlFor = forW.filter(w => isWhitelistedForSport(w.wallet, d.sport, profiles));
+        const wlAg  = agW.filter(w => isWhitelistedForSport(w.wallet, d.sport, profiles));
+        last.wlForW = wlFor.length;
+        last.wlAgW  = wlAg.length;
+        const cls = classifyDelta(last.wlForW, last.wlAgW);
+        last.wlDelta = cls.delta;
+        last.wlVerdict = cls.verdict;
+        // Preserve the stamped values too (source of truth for what's in Firebase)
+        last.wlStampedDelta = side.v8_walletConsensusDelta ?? null;
+        last.wlStampedVerdict = side.v8_walletConsensusVerdict ?? null;
+
         // Derive tier client-side if backend didn't
         if (!last.contribTier && wd.length) {
           if (last.contribMargin < 0) last.contribTier = 'MUTE';
@@ -192,9 +244,9 @@ function padWithMark(value, mark, width) {
 
   // Header
   console.log(
-    'RK | Edges | Tier       | Pick                                         | ★   | u    | Odds   | mgn   | Δctrb  | maxRoi | meanB  | Regime        | Top% | PromotedBy'
+    'RK | Edges | Tier       | Pick                                         | ★   | u    | Odds   | mgn   | Δctrb  | maxRoi | meanB  | wΔ (For/Ag) | Verdict     | Regime        | Top% | PromotedBy'
   );
-  console.log('-'.repeat(185));
+  console.log('-'.repeat(210));
 
   rows.forEach((r, i) => {
     const mk = r._mk;
@@ -206,15 +258,57 @@ function padWithMark(value, mark, width) {
     const dctrb = padWithMark(dctrbRaw, mk.dctrb, 6);
     const maxRoi = padWithMark((r.maxRoiN_F ?? 0).toFixed(0), mk.maxRoi, 6);
     const meanB  = padWithMark((r.meanBase_F ?? 0).toFixed(0), mk.meanBase, 6);
+    const wDeltaRaw = `${r.wlDelta >= 0 ? '+' : ''}${r.wlDelta ?? 0} (${r.wlForW ?? 0}/${r.wlAgW ?? 0})`;
+    const wDelta = padWithMark(wDeltaRaw, mk.wDelta, 11);
+    const verdict = (r.wlVerdict ?? '—').padEnd(11);
     const regime = `${r.regime || '—'}${mk.regime}`.padEnd(13);
     const top = r.topShare != null ? (r.topShare * 100).toFixed(0) + '%' : '—';
     const prom = r.promotedBy ?? '—';
 
     console.log(
       `${String(i + 1).padStart(2)} | ${edgesCol} | ${tier} | ${pick} | ${String(r.stars).padEnd(3)} | ${String(r.units).padEnd(4)} | ${(r.odds >= 0 ? '+' : '') + r.odds}`.padEnd(104) +
-        `| ${mgn.padEnd(5)} | ${dctrb} | ${maxRoi} | ${meanB} | ${regime} | ${top.padEnd(4)} | ${prom}`
+        `| ${mgn.padEnd(5)} | ${dctrb} | ${maxRoi} | ${meanB} | ${wDelta} | ${verdict} | ${regime} | ${top.padEnd(4)} | ${prom}`
     );
   });
+
+  // ── Phase 2 — Whitelist winner consensus roll-up ──────────────────────
+  const strongFor = rows.filter(r => (r.wlDelta ?? 0) >= 2);
+  const leanFor   = rows.filter(r => (r.wlDelta ?? 0) === 1);
+  const fadeWeak  = rows.filter(r => (r.wlDelta ?? 0) === -1);
+  const fadeStr   = rows.filter(r => (r.wlDelta ?? 0) <= -2);
+
+  console.log(`\n── Wallet-Consensus Winner Margin (Δ = whitelisted For − Against) ──`);
+  console.log(`  STRONG_FOR  (Δ ≥ +2, promotion-eligible): ${strongFor.length}`);
+  console.log(`  LEAN_FOR    (Δ = +1, unit bonus only):    ${leanFor.length}`);
+  console.log(`  FADE_WEAK   (Δ = −1, MUTE if enabled):    ${fadeWeak.length}`);
+  console.log(`  FADE_STRONG (Δ ≤ −2, CANCEL if enabled):  ${fadeStr.length}`);
+
+  if (strongFor.length) {
+    console.log(`\n  Δ ≥ +2 picks (our premium wallet-consensus signal):`);
+    strongFor.forEach(r => {
+      const extras = [];
+      if (r._mk.maxRoi)   extras.push(`maxRoi ${(r.maxRoiN_F ?? 0).toFixed(0)}★`);
+      if (r._mk.meanBase) extras.push(`meanB ${(r.meanBase_F ?? 0).toFixed(0)}★`);
+      if (r._mk.regime)   extras.push(`${r.regime}★`);
+      if (r._mk.tier)     extras.push(`${r.contribTier}★`);
+      if (r._mk.margin)   extras.push(`mgn ${r.contribMargin >= 0 ? '+' : ''}${r.contribMargin}★`);
+      console.log(
+        `    ${r.sport} ${r.market} ${r.team}  ` +
+        `Δ=+${r.wlDelta} (for ${r.wlForW} / ag ${r.wlAgW})  ` +
+        `${r.stars}★  u=${r.units}  ${r.contribTier ?? '—'}  ` +
+        `${extras.length ? '· ' + extras.join(' · ') : ''}`
+      );
+    });
+  }
+  if (fadeWeak.length || fadeStr.length) {
+    console.log(`\n  Δ ≤ −1 picks (profitable sharps are fading our side):`);
+    [...fadeStr, ...fadeWeak].forEach(r => {
+      console.log(
+        `    ${r.sport} ${r.market} ${r.team}  ` +
+        `Δ=${r.wlDelta} (for ${r.wlForW} / ag ${r.wlAgW})  ${r.wlVerdict}`
+      );
+    });
+  }
 
   // Standouts roll-up
   const standouts = rows.filter(r => r._mk.edges >= 3);
@@ -254,12 +348,14 @@ function padWithMark(value, mark, width) {
   console.log('  ★ maxRoi     = maxRoiN_F ≥ 70        (§6a: +30.7% flat ROI, 3/3 positive days)');
   console.log('  ★ meanB      = meanBase_F ≥ 55       (§6a: +33.9% flat ROI, 3/3 positive days; live V8.3 bonus)');
   console.log('  ★ Regime     = CLEAR_MOVE            (live V8.2 +0.5u bonus; +30% flat ROI)');
+  console.log('  ★ wΔ         = whitelisted-sharp consensus Δ ≥ +2  (V8.2 STRONG_FOR, promotion-eligible, +0.25u)');
   console.log('');
   console.log('  ! mgn        = contribMargin = 0     (bleeder — confirmed losing sample)');
   console.log('  ! Δctrb      = Σfor − Σag ∈ (0, 50]  (§6a: 3/3 losing days, -80% flat)');
   console.log('  ! maxRoi / meanB = ≥ threshold above is ★; < 50 on meanBase_F earns !');
   console.log('  ! Regime     = NO_MOVE');
   console.log('  ! Tier       = LEAN');
+  console.log('  ! wΔ         = whitelisted consensus Δ ≤ −1  (profitable sharps fading our side → MUTE/CANCEL)');
   console.log('');
   console.log('  Rows are sorted by (Edges ★ count DESC, Warns ! count ASC, raw V8 score DESC).');
   console.log('  "Top%" column is concentration — lower = broader wallet agreement.');
