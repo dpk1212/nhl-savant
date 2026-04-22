@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Activity, Zap, BarChart3, Eye, ArrowUpRight, ArrowDownRight, Minus, DollarSign, Workflow, Lock, CheckCircle, Circle, Clock, AlertTriangle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Bar, ReferenceDot, Cell } from 'recharts';
 import { resolveOutcomeSide } from '../utils/teamNameMapper';
 import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, deleteField } from 'firebase/firestore';
@@ -1099,46 +1099,34 @@ function qualityBonus(v8Scoring, sideKey) {
   return 0;   // 50–55 neutral band
 }
 
-// TOP PICK predicates (V8.4 UI) — replaces the legacy `starDelta ≥ 1.0` rule.
-//
-// Two-tier system:
+// TOP PICK predicates (V8.5 UI) — rebuilt around wallet-consensus Δ after
+// the 2026-04-22 predictor shoot-out. Δ dominated every other signal
+// (Δ spread +136.6% vs fmean +12.0% vs fROI −24.2% across the full v8
+// sample), so TOP PICK now surfaces the Δ ladder directly instead of
+// the regime+fmean composite it used to. Two tiers:
 //
 //   • Tier 1 — regular TOP PICK (outlined gold ribbon):
-//     regime === 'CLEAR_MOVE'
-//     Pinnacle confirmed the move.  N=11, 72.7% WR, +29.5% flatROI.
+//     Δ = +1 AND agW = 0  →  one profitable sport wallet backing with
+//     no profitable dissent. 2026-04-22 backtest: N=10, 70% WR, +31% ROI.
 //
 //   • Tier 2 — SUPER TOP PICK (filled gold ribbon with glow):
-//     regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55
-//     CLEAR_MOVE + high-caliber for-side wallet crew (avg walletBase ≥ 55).
-//     The stacked edge — intersection of the two strongest V8 signals.
+//     Δ ≥ +2  →  two or more profitable sport wallets backing the pick.
+//     2026-04-22 backtest: N=16, 68.8% WR, +76.2% ROI.
 //
-// Resolution policy (mirrors V8 analysis scripts EXACTLY):
-//   regime    = peak.regime    ?? lock.regime    ?? side.promotedRegime
-//   v8Scoring = peak.v8Scoring ?? lock.v8Scoring
-// This matches scripts/regimePerformance.js, clearMoveSubset.js,
-// v8DailyPnL.js, etc., where the historical CLEAR_MOVE = 72.7% WR
-// finding was measured.  Single source of truth — no snapshot OR'ing.
+// Δ / agW are read from the v8_walletConsensus* fields the stamping
+// pipeline writes on every side doc. Pre-V8 picks and picks with no
+// whitelisted-wallet data fall through to false on both tiers.
 //
-// Pre-V8 picks (no regime / v8Scoring) fall through to false on both tiers.
-function isClearMoveRegime({ regime } = {}) {
-  return regime === 'CLEAR_MOVE';
-}
-function isClearMoveTopPick({ regime, meanBaseF } = {}) {
-  return regime === 'CLEAR_MOVE' && meanBaseF != null && meanBaseF >= 55;
-}
-
-// Resolves the regime + meanBase_F values used to evaluate the TOP PICK
-// tiers, using the same precedence the V8 analysis scripts use:
-//   regime ← peak.regime ?? lock.regime ?? promotedRegime
-//   v8     ← peak.v8Scoring ?? lock.v8Scoring  (for meanBase_F)
-// Returns precomputed { isTopPick, isSuperTopPick, regime, meanBaseF }
-// so the card and sort comparator both consume the same flags.
-function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null) {
+// Single source of truth: the same stamped values drive UI, ranking
+// reports, and attribution. No snapshot OR'ing; no regime/fmean fork.
+function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null, walletDelta = null, walletAgW = null) {
   const regime = peak?.regime ?? lock?.regime ?? promotedRegime ?? null;
   const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
   const meanBaseF = computeMeanBaseF(v8, sideKey);
-  const isTopPick = isClearMoveRegime({ regime });
-  const isSuperTopPick = isClearMoveTopPick({ regime, meanBaseF });
+  const delta = typeof walletDelta === 'number' ? walletDelta : null;
+  const agW = typeof walletAgW === 'number' ? walletAgW : null;
+  const isSuperTopPick = delta != null && delta >= 2;
+  const isTopPick = isSuperTopPick || (delta === 1 && (agW === 0 || agW == null));
   return { isTopPick, isSuperTopPick, regime, meanBaseF };
 }
 
@@ -3740,15 +3728,6 @@ const HEALTH_REASON_LABELS = {
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW } = pick;
-  // V8.3 Phase 2 — tiered wallet-consensus badges.
-  //   PROVEN CONSENSUS — Δ ≥ +2 (filled violet gradient, primary).
-  //   SHARP CONSENSUS  — Δ = +1 AND agW === 0 (outlined violet, secondary).
-  // 2026-04-22 backtest: Δ≥+2 N=16 @ 69%/+76% ROI, Δ=+1 N=10 @ 70%/+31% ROI.
-  // Both badges require zero profitable-wallet dissent (matching promotion guard).
-  const isProvenConsensus = typeof walletConsensusDelta === 'number' && walletConsensusDelta >= 2;
-  const isSharpConsensus = !isProvenConsensus
-    && walletConsensusDelta === 1
-    && (walletConsensusAgW === 0 || walletConsensusAgW == null);
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -3872,55 +3851,27 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            {isProvenConsensus && !superseded && !isMuted && !isCancelled && (
+            {isTopPick && !superseded && !isMuted && !isCancelled && (
               <span
-                title={`${walletConsensusForW ?? '?'} profitable ${sport} wallets backing, ${walletConsensusAgW ?? 0} against (Δ=+${walletConsensusDelta})`}
+                title={
+                  isSuperTopPick
+                    ? `${walletConsensusForW ?? '?'} profitable ${sport} wallets backing, ${walletConsensusAgW ?? 0} against (Δ=+${walletConsensusDelta ?? 2})`
+                    : `${walletConsensusForW ?? 1} profitable ${sport} wallet backing, 0 against (Δ=+1)`
+                }
                 style={{
                   ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
                   padding: '0.15rem 0.5rem', borderRadius: '5px',
-                  color: '#fff',
-                  background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 50%, #7C3AED 100%)',
-                  border: '1px solid rgba(167,139,250,0.65)',
-                  boxShadow: '0 0 10px rgba(124,58,237,0.35)',
-                  display: 'flex', alignItems: 'center', gap: '0.22rem',
+                  color: isSuperTopPick ? '#fff' : '#D4AF37',
+                  background: isSuperTopPick
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 50%, #D4AF37 100%)'
+                    : 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
+                  border: isSuperTopPick
+                    ? '1px solid rgba(245,208,96,0.6)'
+                    : '1px solid rgba(212,175,55,0.35)',
+                  boxShadow: isSuperTopPick ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
+                  display: 'flex', alignItems: 'center', gap: '0.2rem',
                 }}
               >
-                <ShieldCheck size={9} strokeWidth={3} />
-                <span>PROVEN CONSENSUS</span>
-                <span style={{ opacity: 0.85, fontWeight: 700 }}>+{walletConsensusDelta}</span>
-              </span>
-            )}
-            {isSharpConsensus && !superseded && !isMuted && !isCancelled && (
-              <span
-                title={`${walletConsensusForW ?? 1} profitable ${sport} wallet backing, 0 against (Δ=+1 · 70% WR in backtest)`}
-                style={{
-                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
-                  padding: '0.15rem 0.5rem', borderRadius: '5px',
-                  color: '#C4B5FD',
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(91,33,182,0.08) 100%)',
-                  border: '1px solid rgba(167,139,250,0.4)',
-                  display: 'flex', alignItems: 'center', gap: '0.22rem',
-                }}
-              >
-                <ShieldCheck size={9} strokeWidth={3} />
-                <span>SHARP CONSENSUS</span>
-                <span style={{ opacity: 0.85, fontWeight: 700 }}>+1</span>
-              </span>
-            )}
-            {isTopPick && !superseded && !isMuted && !isCancelled && (
-              <span style={{
-                ...T.micro, fontWeight: 900, letterSpacing: '0.06em',
-                padding: '0.15rem 0.5rem', borderRadius: '5px',
-                color: isSuperTopPick ? '#fff' : '#D4AF37',
-                background: isSuperTopPick
-                  ? 'linear-gradient(135deg, #D4AF37 0%, #B8962E 50%, #D4AF37 100%)'
-                  : 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(245,208,96,0.08) 100%)',
-                border: isSuperTopPick
-                  ? '1px solid rgba(245,208,96,0.6)'
-                  : '1px solid rgba(212,175,55,0.35)',
-                boxShadow: isSuperTopPick ? '0 0 8px rgba(212,175,55,0.3)' : 'none',
-                display: 'flex', alignItems: 'center', gap: '0.2rem',
-              }}>
                 {isSuperTopPick ? <Zap size={9} strokeWidth={3} fill="#fff" /> : <TrendingUp size={9} strokeWidth={3} />}
                 <span>TOP PICK</span>
               </span>
@@ -9057,13 +9008,20 @@ export default function SharpFlow() {
                           walletConsensusVerdict: sd.v8_walletConsensusVerdict ?? null,
                           walletConsensusForW: sd.v8_walletConsensusForW ?? null,
                           walletConsensusAgW: sd.v8_walletConsensusAgW ?? null,
-                          // V8.4: precompute TOP PICK tier using the same regime
-                          // resolution as the V8 analysis scripts:
-                          //   peak.regime ?? lock.regime ?? sd.promotedRegime
-                          // This is the resolver under which the historical
-                          // CLEAR_MOVE = 72.7% WR / +29.5% flatROI finding was
-                          // measured (see scripts/regimePerformance.js et al.).
-                          ...evaluateTopPickTier(peak, lock, sideKey, sd.promotedRegime),
+                          // V8.5: TOP PICK tier now driven by wallet-consensus Δ
+                          // stamped on the side doc (v8_walletConsensus*).
+                          //   Δ ≥ +2         → SUPER TOP PICK (gold filled)
+                          //   Δ = +1, agW=0  → TOP PICK       (gold outlined)
+                          // See evaluateTopPickTier() for the rationale and
+                          // the 2026-04-22 predictor-shootout anchor data.
+                          ...evaluateTopPickTier(
+                            peak,
+                            lock,
+                            sideKey,
+                            sd.promotedRegime,
+                            sd.v8_walletConsensusDelta,
+                            sd.v8_walletConsensusAgW,
+                          ),
                         });
                       }
                     }

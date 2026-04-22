@@ -126,8 +126,8 @@ agW  = # of unique whitelisted wallets on the opposing side
 
 | Δ | Verdict | Action |
 |---|---------|--------|
-| Δ ≥ +2 | `STRONG_FOR`  | **+0.50 units** and **PROMOTION eligible** (LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 1.0` and `agW = 0`) — renders the **PROVEN CONSENSUS** UI badge |
-| Δ = +1 | `LEAN_FOR`    | **+0.10 units** and **PROMOTION eligible** (same guard: `basePickStars ≥ 1.0` and `agW = 0`) — renders the **SHARP CONSENSUS** UI badge |
+| Δ ≥ +2 | `STRONG_FOR`  | **+0.50 units** and **PROMOTION eligible** (LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 1.0` and `agW = 0`) — renders the **gold filled TOP PICK** badge (`isSuperTopPick`) |
+| Δ = +1 | `LEAN_FOR`    | **+0.10 units** and **PROMOTION eligible** (same guard: `basePickStars ≥ 1.0` and `agW = 0`) — renders the **gold outlined TOP PICK** badge |
 | Δ = 0  | `NEUTRAL`     | no action (absence of profitable-wallet signal) |
 | Δ = −1 | `FADE_WEAK`   | **MUTE** the locked pick (`healthReason = whitelist_fade_weak`) |
 | Δ ≤ −2 | `FADE_STRONG` | **CANCEL** the locked pick (`healthReason = whitelist_fade_strong`) |
@@ -168,8 +168,10 @@ These stamp on create, on peak update, and on any SHADOW → LOCKED transition s
 
 **UI surfaces.**
 
-- **PROVEN CONSENSUS badge** — premium violet-gradient pill (`ShieldCheck` + `PROVEN CONSENSUS +Δ`) rendered on every pick card where `v8_walletConsensusDelta >= 2`. Primary visual marker for top-of-ladder picks.
-- **SHARP CONSENSUS badge** (v5) — secondary violet-outlined pill (`ShieldCheck` + `SHARP CONSENSUS +1`) rendered on picks where `v8_walletConsensusDelta === 1 && v8_walletConsensusAgW === 0`. Subordinate to PROVEN CONSENSUS in visual weight; same semantic family.
+- **TOP PICK badge (two tiers, v5.1)** — single gold ribbon family now driven by wallet-consensus Δ (replaces the earlier regime/fmean composite and the short-lived PROVEN/SHARP CONSENSUS violet pills).
+  - **Super TOP PICK** (filled gold gradient + glow + `Zap` icon) — `v8_walletConsensusDelta ≥ 2`. Tooltip: `forW/agW`.
+  - **Regular TOP PICK** (outlined gold + `TrendingUp` icon) — `v8_walletConsensusDelta === 1 && v8_walletConsensusAgW === 0`. Tooltip: `forW/agW`.
+  - Both computed by `evaluateTopPickTier()` and surfaced in the locked-list card header, with the sort comparator using the same flags.
 - Each wallet row in the Sharp Intel game card carries a gold **`{SPORT} WINNER`** chip when that wallet's whitelist tier for the current sport is `CONFIRMED` or `FLAT`.
 - The "Verified Sharps" header for ML, Spread, and Total counts append `· N {SPORT} WINNERS` (gold) and `· N {SPORT} FADING` (red) so the Δ ladder is visible at a glance.
 - Locked picks muted/cancelled by Δ render with health reasons `whitelist_fade_weak` / `whitelist_fade_strong` in the existing tooltip system.
