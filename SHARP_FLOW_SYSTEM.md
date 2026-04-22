@@ -126,9 +126,9 @@ agW  = # of unique whitelisted wallets on the opposing side
 
 | Δ | Verdict | Action |
 |---|---------|--------|
-| Δ ≥ +2 | `STRONG_FOR`  | **+0.50 units** and **PROMOTION eligible** (becomes LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 1.5` and `agW = 0`) — also renders the **PROVEN CONSENSUS** UI badge |
-| Δ = +1 | `LEAN_FOR`    | **+0.10 units** |
-| Δ = 0  | `NEUTRAL`     | no action |
+| Δ ≥ +2 | `STRONG_FOR`  | **+0.50 units** and **PROMOTION eligible** (LOCKED with `promotedBy = 'whitelist'` when `basePickStars ≥ 1.0` and `agW = 0`) — renders the **PROVEN CONSENSUS** UI badge |
+| Δ = +1 | `LEAN_FOR`    | **+0.10 units** and **PROMOTION eligible** (same guard: `basePickStars ≥ 1.0` and `agW = 0`) — renders the **SHARP CONSENSUS** UI badge |
+| Δ = 0  | `NEUTRAL`     | no action (absence of profitable-wallet signal) |
 | Δ = −1 | `FADE_WEAK`   | **MUTE** the locked pick (`healthReason = whitelist_fade_weak`) |
 | Δ ≤ −2 | `FADE_STRONG` | **CANCEL** the locked pick (`healthReason = whitelist_fade_strong`) |
 
@@ -148,15 +148,15 @@ Config is still the single kill-switch — flip any flag to `false` and redeploy
 
 **Promotion guardrails** (all must be true for `promotedBy = 'whitelist'`):
 
-1. `verdict === 'STRONG_FOR'` (Δ ≥ +2)
+1. `verdict ∈ { 'STRONG_FOR' (Δ ≥ +2), 'LEAN_FOR' (Δ = +1) }` — v5 opened the path to LEAN_FOR after the 2026-04-22 predictor shootout showed Δ=+1 at 70% WR / +31% flat ROI (N=10)
 2. `agW === 0` (no profitable-wallet dissent — pure positive consensus)
-3. `basePickStars >= 1.5` (minimal V8 merit floor; lowered from 2.0 in v4 so more Δ ≥ +2 plays surface)
+3. `basePickStars >= 1.0` (minimal V8 merit floor; lowered from 1.5 in v5 — the whitelist IS the primary merit signal, we only gate outright noise)
 4. `sportConfig.promote === true`
 5. Pick is not already LOCKED by regime or contribution path (avoids double-counting)
 
 **Attribution fields stamped on every `sharpFlowPicks`/`sharpFlowSpreads`/`sharpFlowTotals` side doc:**
 
-- `v8_walletConsensusVersion` — schema version (currently **4**)
+- `v8_walletConsensusVersion` — schema version (currently **5**)
 - `v8_walletConsensusSport`, `v8_walletConsensusEnabled`
 - `v8_walletConsensusForW`, `v8_walletConsensusAgW`, `v8_walletConsensusDelta`
 - `v8_walletConsensusVerdict` — one of the five ladder verdicts above
@@ -168,12 +168,22 @@ These stamp on create, on peak update, and on any SHADOW → LOCKED transition s
 
 **UI surfaces.**
 
-- **PROVEN CONSENSUS badge** — premium violet-gradient pill (`ShieldCheck` + `PROVEN CONSENSUS +Δ`) rendered on every pick card where `v8_walletConsensusDelta >= 2`. Sits next to the gold TOP PICK ribbon in the card header. Tooltip shows `forW/agW` counts.
+- **PROVEN CONSENSUS badge** — premium violet-gradient pill (`ShieldCheck` + `PROVEN CONSENSUS +Δ`) rendered on every pick card where `v8_walletConsensusDelta >= 2`. Primary visual marker for top-of-ladder picks.
+- **SHARP CONSENSUS badge** (v5) — secondary violet-outlined pill (`ShieldCheck` + `SHARP CONSENSUS +1`) rendered on picks where `v8_walletConsensusDelta === 1 && v8_walletConsensusAgW === 0`. Subordinate to PROVEN CONSENSUS in visual weight; same semantic family.
 - Each wallet row in the Sharp Intel game card carries a gold **`{SPORT} WINNER`** chip when that wallet's whitelist tier for the current sport is `CONFIRMED` or `FLAT`.
 - The "Verified Sharps" header for ML, Spread, and Total counts append `· N {SPORT} WINNERS` (gold) and `· N {SPORT} FADING` (red) so the Δ ladder is visible at a glance.
 - Locked picks muted/cancelled by Δ render with health reasons `whitelist_fade_weak` / `whitelist_fade_strong` in the existing tooltip system.
 
-**Anchor data (v4, 2026-04-22 backtest — `scripts/walletConsensusBacktest.js`):** 16 STRONG_FOR picks → **68.8% WR, +76.2% flat ROI**; 27 Δ ≤ 0 picks → 22% WR, −61% flat ROI. `Δ ≥ +2` is the dominant predictor in v8 and supersedes contribTier / star-count buckets when those conflict with wallet consensus.
+**Anchor data (v5 predictor shootout, 2026-04-22 — `scripts/predictorShootout.js`):**
+
+| Predictor | Pos vs Neg spread | Notes |
+|---|---:|---|
+| **Δ ≥ +2 vs Δ ≤ 0** | **+136.6%** | 16 picks @ 69%/+76% vs 27 picks @ 22%/−60% |
+| **Δ ≥ +1 vs Δ ≤ 0** | **+119.3%** | 26 picks @ 70%/+59% vs 27 picks @ 22%/−60% |
+| meanBase_F ≥ 55 vs < 50 | +12.0% | secondary signal; holds in CLEAR_MOVE/SMALL_MOVE only |
+| maxRoiN_F ≥ 70 vs < 50 | −24.2% | no current separation in graded sample |
+
+Δ is the dominant v8 predictor across every regime with sample (CLEAR_MOVE **+127.5%** spread, NEAR_START **+133.9%** spread where fmean goes negative). Δ ≥ +1 buckets all earn their promotion; Δ ≤ −1 buckets all justify the MUTE/CANCEL kill.
 
 **Monitoring.** `scripts/v8DailyPnL.js` now slices all graded V8 picks by `walletVerdict` and `walletDelta` in both the single-factor section and the 2-way cross sections (`Wallet verdict × regime`, `Wallet verdict × sport`, `Wallet verdict × stars`), and the new verdict is included in the 3-way cluster pool. The nightly `sharpWalletProfiles` rebuild (`exportWalletProfiles.js`) churns whitelist membership in and out as each new graded day lands, so the layer self-corrects as wallets rise and fade.
 

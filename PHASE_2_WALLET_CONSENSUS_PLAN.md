@@ -1,6 +1,6 @@
 # Phase 2 — Wallet-Consensus V8 Integration
 
-**Status:** LIVE. v1 shipped (per-sport action gating). **v4 shipped 2026-04-22** — universal sport config, STRONG_FOR bonus doubled to +0.50u, promotion star gate lowered to 1.5, PROVEN CONSENSUS UI badge. See §11 "v4 amendment" below for the consolidated delta.
+**Status:** LIVE. v1 shipped (per-sport action gating). v4 shipped 2026-04-22 (universal + 0.50u STRONG_FOR + PROVEN CONSENSUS badge). **v5 shipped same day** — LEAN_FOR (Δ=+1) now promotion-eligible with `agW=0`, star gate lowered 1.5→1.0, new SHARP CONSENSUS UI badge. See §11 and §12 below for the consolidated deltas.
 
 **Thesis:** For each sport, a wallet's historical per-sport profitability ("whitelist tier" in `sharpWalletProfiles.bySport[sport].whitelistTier`) is a real, independent signal of pick quality. We integrate it into V8 as a **laddered bonus / penalty / promotion on Δ = forW − agW**, where `forW` / `agW` count whitelisted wallets on our side vs. the opposing side.
 
@@ -323,3 +323,46 @@ Weekly watch items on the Δ ≥ +2 cohort from `WALLET_CONSENSUS_BACKTEST.md`:
 - Rolling 4-week WR / flat ROI on `v8_walletConsensusVerdict == 'STRONG_FOR'` — expect ≥ 55% WR, ≥ +20% flat ROI. If it drops below V8 baseline, revisit the 0.50u bump.
 - FADE_STRONG CANCEL firings outside NBA — first month is data-gathering; confirm no systematic false-cancels (pick won despite CANCEL) before permanence.
 - Whitelist-promotion (`v8_walletConsensusPromotionTriggered == true`) pick WR — small sample, but expect net positive. If negative after N ≥ 15, re-raise star gate or add `baseStars + 0.5 * STRONG_FOR` total floor.
+
+---
+
+## 12. v5 amendment (2026-04-22) — hunt Δ ≥ +1 plays, kill the losers
+
+**Trigger:** `scripts/predictorShootout.js` head-to-head comparison of the three live money predictors across every graded v8 pick (N=53, LOCKED + SHADOW):
+
+| Predictor | Pos N / ROI | Neg N / ROI | **Spread** |
+|---|---|---|---|
+| **Δ ≥ +2 vs Δ ≤ 0** | 16 / +76.2% | 27 / −60.4% | **+136.6%** |
+| **Δ ≥ +1 vs Δ ≤ 0** | 26 / +58.9% | 27 / −60.4% | **+119.3%** |
+| fmean ≥ 55 vs < 50 | 23 / +6.7% | 17 / −5.3% | +12.0% |
+| fROI ≥ 70 vs < 50 | 27 / −6.7% | 2 / +17.5% | −24.2% |
+
+The Δ = +1 bucket alone: **10 picks, 70% WR, +31% flat ROI**. Near-identical WR to Δ ≥ +2 (69%), just with a tighter ROI per pick. Per-regime spread: Δ +127% (CLEAR_MOVE), Δ **+133.9%** (NEAR_START, N=33 — the biggest regime, where fmean has −2.9% spread). Δ is the dominant signal in every regime that has sample, including the fat NEAR_START middle where our other levers are weak.
+
+### Changes shipped (v4 → v5)
+
+1. **LEAN_FOR (Δ=+1) now promotion-eligible.** `computeWalletConsensus` sets `promotionEligible = true` for `LEAN_FOR` when `agW === 0` (same purity guard as STRONG_FOR). Unit bonus stays at **+0.10u** to reflect the narrower per-pick ROI edge, but these picks now actually LOCK and get played instead of sitting in SHADOW.
+
+2. **Star gate 1.5 → 1.0.** `decideLockStage` whitelist-promotion path now clears at `basePickStars >= 1.0`. The whitelist IS the primary merit signal; we only keep a floor to filter truly-noise picks, not to double-gate the signal that's carrying the system.
+
+3. **SHARP CONSENSUS UI badge.** New secondary violet-outlined badge (`ShieldCheck` + `SHARP CONSENSUS +1`) for picks with `walletConsensusDelta === 1 && walletConsensusAgW === 0`. Subordinate to the filled PROVEN CONSENSUS badge (Δ ≥ +2) in visual weight. Both tiers require zero profitable-wallet dissent — both are cards where the sharp whitelist unanimously agrees.
+
+4. **MUTE / CANCEL losers — universal and confirmed.** No code change required (already shipped in v4), but explicitly reconfirmed as part of v5. The ladder now kills:
+   - Δ = −1 → **MUTE** (7 historical picks, 29% WR, −54% ROI — correct call)
+   - Δ ≤ −2 → **CANCEL** (1 historical pick, 0% WR, −100% ROI — correct call)
+   Both fire stand-alone (before WPS checks) in `evaluatePickHealth`, time-gated at `timeToGame > 5`.
+
+5. **Attribution version v4 → v5.** `WHITELIST_CONSENSUS_VERSION = 5` in both `src/pages/SharpFlow.jsx` and `scripts/backfillWalletConsensus.js`. Backfill re-ran across 2026-04-18 → 2026-04-22: 53 sides re-stamped.
+
+### Operational effect
+
+- Every Δ=+1 pick with `agW=0` now promotes from SHADOW to LOCKED (if not already locked by regime/contribution).
+- Every Δ=+1 locked pick carries the new SHARP CONSENSUS badge.
+- Pre-existing PROVEN CONSENSUS (Δ≥+2) + universal MUTE (Δ=−1) + CANCEL (Δ≤−2) behavior preserved.
+- Any V8 pick with ≥ 1.0 base star AND a whitelisted sharp consensus is now tradeable.
+
+### Monitoring (in addition to v4 watchlist)
+
+- Rolling 4-week WR / flat ROI on `v8_walletConsensusVerdict == 'LEAN_FOR'` — expect ≥ 55% WR, ≥ +15% flat ROI. If LEAN_FOR drops below V8 baseline while STRONG_FOR stays elevated, tighten LEAN_FOR promotion to require `forW >= 2` (eliminates the `forW=1, agW=0` edge case).
+- Volume of whitelist promotions per week — expect 3-8× increase over v4 (LEAN_FOR is more common than STRONG_FOR). If volume explodes > 15/week, raise the star gate back to 1.5.
+- Δ = 0 bucket behavior — not actioned yet (treated as absence of signal). Open question: should Δ=0 with `forW+agW >= 2` (profitable-wallet split) also MUTE? Current backtest shows Δ=0 at 21% WR, −61% ROI but subset isn't broken out by split-vs-absent. Revisit with more data.

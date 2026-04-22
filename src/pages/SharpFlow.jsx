@@ -775,17 +775,21 @@ const OPP_MUTE_GAP = 1.0;   // opp WPS must be this much stronger (but below rat
 //
 // V8.3 (2026-04-22 backtest): wallet-consensus Δ is the cleanest monotonic
 // signal in the system — 16 graded STRONG_FOR picks → 69% WR / +76% flat ROI,
-// 27 Δ ≤ 0 picks → 22% WR / -61% flat. The whitelist itself is already
-// per-sport (a wallet is only CONFIRMED/FLAT in sports it's been profitable
-// in), so we do NOT need additional per-sport action gating — every sport
-// that has ANY whitelisted wallet data gets the full ladder.
+// 10 LEAN_FOR picks → 70% WR / +31% flat ROI, 27 Δ ≤ 0 picks → 22% WR /
+// −61% flat. Per-regime head-to-head vs meanBase_F / maxRoiN_F
+// (scripts/predictorShootout.js 2026-04-22): Δ spread +136.6%,
+// meanBase_F +12.0%, maxRoiN_F −24.2%. Δ dominates every regime where it
+// has sample including NEAR_START (the fat middle where fmean fails). The
+// whitelist itself is already per-sport, so we do NOT need additional
+// per-sport action gating — every sport with whitelisted wallet data gets
+// the full ladder.
 //
-// LADDER (universal):
+// LADDER (v5, universal):
 //   Δ ≥ +2  STRONG_FOR   → +0.50u unit bonus + PROMOTION (agW = 0 required)
-//   Δ = +1  LEAN_FOR     → +0.10u unit bonus (small sample caveat)
-//   Δ =  0  NEUTRAL      → no action
-//   Δ = −1  FADE_WEAK    → MUTE
-//   Δ ≤ −2  FADE_STRONG  → CANCEL
+//   Δ = +1  LEAN_FOR     → +0.10u unit bonus + PROMOTION (agW = 0 required)
+//   Δ =  0  NEUTRAL      → no action (absence of profitable-wallet signal)
+//   Δ = −1  FADE_WEAK    → MUTE   (profitable-wallet dissent)
+//   Δ ≤ −2  FADE_STRONG  → CANCEL (strong profitable-wallet dissent)
 //
 // Config below is the single kill-switch — flip any flag to `false` and
 // redeploy to disable the lever for that sport.
@@ -796,8 +800,8 @@ const WHITELIST_INTERVENTION = {
   CBB: { bonus: true, mute: true, cancel: true, promote: true },
   NFL: { bonus: true, mute: true, cancel: true, promote: true },
 };
-// v4 = universal sport config + STRONG_FOR bonus 0.25→0.50 (2026-04-22 backtest)
-const WHITELIST_CONSENSUS_VERSION = 4;
+// v5 = LEAN_FOR (Δ=+1) now promotion-eligible with agW=0 + star gate 1.5→1.0
+const WHITELIST_CONSENSUS_VERSION = 5;
 
 // Module-level cache of sharpWalletProfiles, keyed by walletShort (last 6
 // chars of address). Populated by a React effect in useMarketData; read
@@ -867,16 +871,25 @@ function computeWalletConsensus(walletDetails, sport, sideKey) {
     return result;
   }
 
-  // Positive side: bonus + promotion eligibility. STRONG_FOR bumped 0.25→0.50
-  // per 2026-04-22 backtest (N=16, +76% flat ROI) — this is the signature bucket.
+  // Positive side: bonus + promotion eligibility.
+  //
+  // STRONG_FOR (Δ≥+2) bonus bumped 0.25→0.50 in v4. LEAN_FOR (Δ=+1) is
+  // promotion-eligible as of v5 — 2026-04-22 backtest showed Δ=+1 hit 70%
+  // WR / +31% flat ROI (N=10), essentially matching Δ≥+2 WR. The +0.10u
+  // bonus stays smaller to reflect the narrower ROI edge, but we want to
+  // actually PLAY these picks rather than let them sit in SHADOW.
+  //
+  // Promotion purity guardrail: `agW === 0` required for both tiers. Mixed
+  // cases (e.g. Δ=+1 from forW=2, agW=1) keep the unit bonus but do not
+  // promote — they still have documented profitable-wallet dissent.
   if (verdict === 'STRONG_FOR') {
     if (cfg.bonus) result.unitBonus = 0.50;
-    // Promotion guardrail: agW must be 0 (pure consensus, no profitable dissent)
     result.promotionEligible = cfg.promote && agW === 0;
     return result;
   }
   if (verdict === 'LEAN_FOR') {
     if (cfg.bonus) result.unitBonus = 0.10;
+    result.promotionEligible = cfg.promote && agW === 0;
     return result;
   }
 
@@ -1020,19 +1033,22 @@ function classifyContributionTier(v8Scoring, sideKey) {
 // Three promotion paths, in precedence order:
 //   1. regime      — CLEAR_MOVE or NEAR_START
 //   2. contribution — STRONG contribTier (V8.1)
-//   3. whitelist   — Phase 2: STRONG_FOR wallet consensus with guardrails
-// Whitelist-promotion guardrails (v4, universal):
-//   - verdict === 'STRONG_FOR' AND agW === 0 (pure consensus — no profitable dissent)
-//   - baseStars >= 1.5 (minimal V8 merit floor — lowered from 2.0 on 2026-04-22
-//     so we surface more Δ ≥ +2 plays; the whitelist itself is the primary signal)
-//   - sportConfig.promote === true (now universal across all sports)
+//   3. whitelist   — Phase 2: STRONG_FOR or LEAN_FOR wallet consensus with guardrails
+// Whitelist-promotion guardrails (v5, universal):
+//   - verdict ∈ { STRONG_FOR (Δ≥+2), LEAN_FOR (Δ=+1) }
+//   - agW === 0 (pure consensus — no profitable dissent, enforced inside
+//     computeWalletConsensus via promotionEligible)
+//   - baseStars >= 1.0 (minimal V8 merit floor — lowered from 1.5 on
+//     2026-04-22; the whitelist IS the primary merit signal, we only keep
+//     a floor to filter outright noise picks)
+//   - sportConfig.promote === true (universal across all sports)
 //   - Pick wouldn't otherwise lock (enforced by precedence ordering above)
 function decideLockStage(regime, v8Scoring, sideKey, sport = null, baseStars = 0) {
   const hasRegime = regime === 'CLEAR_MOVE' || regime === 'NEAR_START';
   const contribTier = classifyContributionTier(v8Scoring, sideKey);
   if (hasRegime) return { stage: 'LOCKED', contribTier, promotedBy: 'regime' };
   if (contribTier === 'STRONG') return { stage: 'LOCKED', contribTier, promotedBy: 'contribution' };
-  if (sport && baseStars >= 1.5) {
+  if (sport && baseStars >= 1.0) {
     const wc = computeWalletConsensus(v8Scoring?.walletDetails, sport, sideKey);
     if (wc.promotionEligible) {
       return { stage: 'LOCKED', contribTier, promotedBy: 'whitelist' };
@@ -3724,10 +3740,15 @@ const HEALTH_REASON_LABELS = {
 
 const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
   const { team, away, home, sport, stars, lockStars, units, odds, book, peakAt, lockedAt, gameTime, status, outcome, profit, lockPinnOdds, closingOdds, clv, sharpCount, totalInvested, evEdge, lockEV, criteriaMet, criteria, consensusStrength, pinnacleOdds, marketType, line, superseded, health, isTopPick: isTopPickPre, isSuperTopPick: isSuperTopPickPre, walletConsensusDelta, walletConsensusForW, walletConsensusAgW } = pick;
-  // V8.3 Phase 2 — PROVEN CONSENSUS badge: ≥2 profitable sport-specific wallets
-  // backing this side with no profitable dissent. 2026-04-22 backtest: 69% WR,
-  // +76% flat ROI (N=16). Highest-signal lever in the system.
+  // V8.3 Phase 2 — tiered wallet-consensus badges.
+  //   PROVEN CONSENSUS — Δ ≥ +2 (filled violet gradient, primary).
+  //   SHARP CONSENSUS  — Δ = +1 AND agW === 0 (outlined violet, secondary).
+  // 2026-04-22 backtest: Δ≥+2 N=16 @ 69%/+76% ROI, Δ=+1 N=10 @ 70%/+31% ROI.
+  // Both badges require zero profitable-wallet dissent (matching promotion guard).
   const isProvenConsensus = typeof walletConsensusDelta === 'number' && walletConsensusDelta >= 2;
+  const isSharpConsensus = !isProvenConsensus
+    && walletConsensusDelta === 1
+    && (walletConsensusAgW === 0 || walletConsensusAgW == null);
   const [expanded, setExpanded] = useState(false);
   const ss = sportStyle(sport);
   const starDelta = (lockStars != null && stars != null) ? stars - lockStars : 0;
@@ -3867,6 +3888,23 @@ const LockedPickCard = memo(function LockedPickCard({ pick, isMobile }) {
                 <ShieldCheck size={9} strokeWidth={3} />
                 <span>PROVEN CONSENSUS</span>
                 <span style={{ opacity: 0.85, fontWeight: 700 }}>+{walletConsensusDelta}</span>
+              </span>
+            )}
+            {isSharpConsensus && !superseded && !isMuted && !isCancelled && (
+              <span
+                title={`${walletConsensusForW ?? 1} profitable ${sport} wallet backing, 0 against (Δ=+1 · 70% WR in backtest)`}
+                style={{
+                  ...T.micro, fontWeight: 800, letterSpacing: '0.05em',
+                  padding: '0.15rem 0.5rem', borderRadius: '5px',
+                  color: '#C4B5FD',
+                  background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(91,33,182,0.08) 100%)',
+                  border: '1px solid rgba(167,139,250,0.4)',
+                  display: 'flex', alignItems: 'center', gap: '0.22rem',
+                }}
+              >
+                <ShieldCheck size={9} strokeWidth={3} />
+                <span>SHARP CONSENSUS</span>
+                <span style={{ opacity: 0.85, fontWeight: 700 }}>+1</span>
               </span>
             )}
             {isTopPick && !superseded && !isMuted && !isCancelled && (

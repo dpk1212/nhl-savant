@@ -44,8 +44,8 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // Keep in lockstep with src/pages/SharpFlow.jsx.
-// v4 = universal sport config + STRONG_FOR bonus 0.25→0.50 (2026-04-22 backtest)
-const WHITELIST_CONSENSUS_VERSION = 4;
+// v5 = LEAN_FOR (Δ=+1) promotion-eligible with agW=0 + star gate 1.5→1.0
+const WHITELIST_CONSENSUS_VERSION = 5;
 const WHITELIST_INTERVENTION = {
   NBA: { bonus: true, mute: true, cancel: true, promote: true },
   MLB: { bonus: true, mute: true, cancel: true, promote: true },
@@ -125,6 +125,7 @@ function computeWalletConsensus(walletDetails, sport, sideKey, profiles) {
   }
   if (verdict === 'LEAN_FOR') {
     if (cfg.bonus) result.unitBonus = 0.10;
+    if (cfg.promote && agW === 0) result.promotionEligible = true;
     return result;
   }
   return result;
