@@ -784,7 +784,7 @@ const WHITELIST_INTERVENTION = {
   CBB: { bonus: true, mute: true, cancel: false, promote: false }, // whitelist too thin
   NFL: { bonus: true, mute: true, cancel: false, promote: false }, // whitelist too thin
 };
-const WHITELIST_CONSENSUS_VERSION = 2; // v2 = all-sports + promotion path
+const WHITELIST_CONSENSUS_VERSION = 3; // v3 = reflag stamps from race-condition window (v2 may hold forW=0/agW=0)
 
 // Module-level cache of sharpWalletProfiles, keyed by walletShort (last 6
 // chars of address). Populated by a React effect in useMarketData; read
@@ -1171,6 +1171,15 @@ function stampWalletConsensus(target, v8Scoring, sideKey, sport, baseStars, prom
   target.v8_walletConsensusBaseStars = baseStars || 0;
 }
 
+// Phase 2: true if the existing side is missing a stamp or has a stale one.
+// Used by sync paths that would otherwise be `no_change` or `maxev_updated`
+// to backfill attribution once the profile cache is loaded.
+function needsConsensusRestamp(existingSide) {
+  if (!WALLET_PROFILES_CACHE) return false;
+  const v = existingSide?.v8_walletConsensusVersion;
+  return v == null || v < WHITELIST_CONSENSUS_VERSION;
+}
+
 function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport = null) {
   const now = Date.now();
   const tier = unitTier(units).label;
@@ -1315,11 +1324,32 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
       }
 
       if (evIsNewMax) {
+        const patch = { maxEV: currentEV, maxEVAt: Date.now() };
+        if (needsConsensusRestamp(sides[side])) {
+          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        }
         await setDoc(ref, {
-          sides: { [side]: { maxEV: currentEV, maxEVAt: Date.now() } },
+          sides: { [side]: patch },
           lastWriteAt: Date.now(),
         }, { merge: true });
         return { docId, action: 'maxev_updated' };
+      }
+
+      // Phase 2 backfill: if the stamp is missing/stale and the profile
+      // cache is now loaded, write an attribution-only patch so already-
+      // locked stable picks pick up their wallet-consensus fields.
+      if (needsConsensusRestamp(sides[side])) {
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+        const patch = {};
+        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        if (Object.keys(patch).length) {
+          await setDoc(ref, {
+            sides: { [side]: patch },
+            lastWriteAt: Date.now(), lastAction: 'consensus_backfill',
+          }, { merge: true });
+          return { docId, action: 'consensus_backfill' };
+        }
       }
 
       return { docId, action: 'no_change' };
@@ -1504,8 +1534,23 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
         }
       }
       if (needsCsPatch) {
-        await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
+        const patch = { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } };
+        if (needsConsensusRestamp(sides[side])) {
+          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        }
+        await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now() }, { merge: true });
         return { docId, action: 'cs_patched' };
+      }
+      // Phase 2 backfill (spreads).
+      if (needsConsensusRestamp(sides[side])) {
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+        const patch = {};
+        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        if (Object.keys(patch).length) {
+          await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill' }, { merge: true });
+          return { docId, action: 'consensus_backfill' };
+        }
       }
       return { docId, action: 'no_change' };
     }
@@ -1609,8 +1654,23 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         }
       }
       if (needsCsPatch) {
-        await setDoc(ref, { sides: { [side]: { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } } }, lastWriteAt: Date.now() }, { merge: true });
+        const patch = { lock: { consensusStrength }, peak: { ...sides[side].peak, consensusStrength } };
+        if (needsConsensusRestamp(sides[side])) {
+          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        }
+        await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now() }, { merge: true });
         return { docId, action: 'cs_patched' };
+      }
+      // Phase 2 backfill (totals).
+      if (needsConsensusRestamp(sides[side])) {
+        const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+        const patch = {};
+        stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+        if (Object.keys(patch).length) {
+          await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill' }, { merge: true });
+          return { docId, action: 'consensus_backfill' };
+        }
       }
       return { docId, action: 'no_change' };
     }
