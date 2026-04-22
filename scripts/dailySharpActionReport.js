@@ -151,6 +151,9 @@ async function exportGradedPositions(db) {
   snap.forEach(d => {
     const data = d.data();
     if (!data.result || data.result === 'PUSH') return;
+    // Vault-only report — exclude SHADOW rows. Missing field (pre-shadow
+    // docs) is treated as VAULT so historical report continuity is preserved.
+    if (data.vaultQualified === false) return;
 
     const won = data.result === 'WIN' ? 1 : 0;
     rows.push({

@@ -538,7 +538,7 @@ Every locked play is recorded with its odds, book, unit size, star rating, regim
 | **mlb_bets** | MLB model picks (separate from Sharp Flow) | fetchMLBPicks.js | MLB.jsx (client), updateBetResults (function) |
 | **bets** | NHL model bets | betTracker.js (client) | updateBetResults (function) |
 | **live_scores** | NHL game scores | liveScores function | updateBetResults (function) |
-| **sharp_action_positions** | Individual sharp-wallet bets seen via `scanSharpPositions` (graded in place) | writeSharpActions.js, gradeSharpActions.js | Sharp Vault UI, walletBets pipeline, wallet analytics |
+| **sharp_action_positions** | Individual sharp-wallet bets seen via `scanSharpPositions` (graded in place). Tagged `qualificationTier ∈ {VAULT, SHADOW}` — see [Shadow Vault](#shadow-vault-vault--shadow-position-tracking) below. | writeSharpActions.js, gradeSharpActions.js | Sharp Vault UI (VAULT-only), walletBets pipeline (both), wallet analytics (both) |
 | **walletBets** | Long-term history of every observed wallet bet (one doc per `{date, gameKey, market, side, walletShort}`), merged from Source A (`v8Scoring.walletDetails` on sharpFlow picks) + Source B (`sharp_action_positions`) | syncWalletBets.js | exportWalletProfiles.js, future wallet analytics |
 | **sharpWalletProfiles** | Per-wallet rollup profile (overall + bySport + byMarket + whitelistTier) keyed by `walletShort` | exportWalletProfiles.js `--write-firebase` | Phase 2 UI badge + walletConsensus scoring |
 
@@ -697,6 +697,53 @@ This enables **lock -> peak -> pregame** transformation analysis: did sharps pil
 
 **Legacy format** (pre-v2 docs): Flat structure with `consensusSide`, `units`, `odds` at top level. The grading function and P&L loader handle both formats — if `doc.sides` exists, use v2 logic; otherwise fall back to flat format.
 
+### Shadow Vault — VAULT + SHADOW Position Tracking
+
+**Problem it solves:** the Sharp Vault UI and its reports should only show bets where a sharp wallet *sized up* (invested ≥ 0.75× their recent sport-average bet). That "conviction gate" is correct for the UI — but it throws away every smaller bet before it ever reaches Firebase. For wallet-level analytics this is a problem: NHL and other thin-volume sports end up with too few positions per wallet to classify them, and we can't see when a sharp *chases* vs. *sizes up*. Shadow Vault keeps the strict vault gate for the UI while storing the rest of each qualified wallet's real-money activity for analytics.
+
+**Write-side gate** (see `scripts/writeSharpActions.js`):
+
+```
+invested / avgSportBet >= 0.75   → qualificationTier = 'VAULT'   (vaultQualified = true)
+invested / avgSportBet >= 0.10   → qualificationTier = 'SHADOW'  (vaultQualified = false)
+invested / avgSportBet <  0.10   → skipped (too small to be signal, garbage-in guard)
+```
+
+Upstream sharp-wallet qualification (leaderboard tier, min sport volume, etc. from `scanSharpPositions`) is unchanged — Shadow Vault does **not** lower the bar for *who* counts as a sharp. It only lowers the bar for *which of that sharp's bets* we persist.
+
+The shadow floor of **0.10×** is deliberately conservative: it filters out one-click dust bets and wallets with junk avgSportBet while preserving essentially every intentional position. Roughly 3–4× more docs are expected in `sharp_action_positions` once shadow writes are live; about half will be shadow.
+
+Per-doc schema additions:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `qualificationTier` | `'VAULT' \| 'SHADOW'` | Set on insert and also refreshed on every update (a position's tier can change if `invested` grows). |
+| `vaultQualified` | `boolean` | Convenience: `qualificationTier === 'VAULT'`. Vault-only readers filter on `data.vaultQualified === false` (excludes shadow; treats *missing* field as VAULT so pre-shadow docs pass through unchanged). |
+| `label` | string | Shadow rows are written as `SHADOW_TRACKING` (vault rows continue to use `EV_OPPORTUNITY` / `HIGH_CONVICTION` / `SHARP_POSITION`). |
+
+**Read-side contract:**
+
+| Consumer | VAULT only | Includes SHADOW | Rationale |
+| --- | :---: | :---: | --- |
+| Sharp Vault UI (`public/sharp_positions.json` → `SharpFlow.jsx`) | ✓ | — | UI reads the scanner's raw JSON, not Firestore. Vault semantics unchanged. |
+| `sharpVaultV8Analysis.js` → `SHARP_VAULT_V8_REPORT.md` | ✓ | — | Designed around vault conviction rows; shadow would dilute the WPS-vs-outcome signal. |
+| `dailySharpActionReport.js` → `DAILY_SHARP_ACTION_REPORT.md` | ✓ | — | Same: tracks the vault as a betting product. |
+| `goldilocksConsensusBuckets.js` | ✓ | — | Vault-conviction sizing edge explicitly. |
+| `syncWalletBets.js` → `walletBets` | — | ✓ | Long-term wallet history — every real bet counts. Tier copied into `position.qualificationTier`. |
+| `exportWalletProfiles.js` → `sharpWalletProfiles` | — | ✓ | Tier-aware (see below). |
+| `gradeSharpActions.js` | — | ✓ | Grade everything; tier is metadata. |
+| `walletWhitelistBacktest.js`, `walletBySportReport.js`, `walletPerformanceReport.js`, `walletDistributionReport.js` | — | ✓ | Wallet-level analytics benefit directly from the denser feed. |
+
+**`sharpWalletProfiles` — tier-aware fields.** `exportWalletProfiles.js` splits the positions data across three rollups so the "did this wallet WIN when they SIZED UP?" semantic is preserved while dollar-ROI / WR get the benefit of the richer dataset:
+
+| Field | Population | Purpose |
+| --- | --- | --- |
+| `positions` (overall) + `bySport[sport].positions` + `byMarket[market].positions` | **VAULT + SHADOW** (all graded) | Dollar ROI, WR, N. Drives whitelist tier classification (`CONFIRMED` / `FLAT` / `WR50`). Shadow rows densify the sample — especially for NHL. |
+| `sizeSignal` (own-median buckets: routine / above / wayAbove) | **VAULT-only** | Conviction sizing edge. Shadow rows are structurally small so including them would skew the own-median bucketing downward and break the semantic. |
+| `shadowSignal` (flat rollup + medianInvested) | **SHADOW-only** | Visibility into a wallet's "chasing" activity. A wallet with positive `sizeSignal.wayAbove` + negative `shadowSignal.dollarRoi` is exactly the pattern we expect from a true sharp. |
+
+**Backward compatibility.** Every pre-shadow historical doc in `sharp_action_positions` is treated as `VAULT` (they all passed the 0.75× gate under the old code). The next `writeSharpActions.js` run backfills `qualificationTier: 'VAULT'` / `vaultQualified: true` onto existing PENDING docs via its update path, and the grader's v8Patch backfills them onto GRADED docs. No separate backfill job is needed. Readers that filter with `if (data.vaultQualified === false) continue;` (NOT `=== true`) handle the transition window cleanly.
+
 ### Wallet Intelligence Pipeline
 
 The wallet-intelligence layer answers a single question: **for each unique sharp wallet we've ever seen, how has it performed per sport, and does it qualify for our profitability whitelist?** Phase 2 of the system (per-wallet badges on the Verified Sharps list, and a walletConsensus Δ score that feeds sizing / mute / cancel decisions) reads exclusively from the `sharpWalletProfiles` collection produced here.
@@ -739,7 +786,9 @@ One document per distinct `{date, gameKey, market, side, walletShort}` tuple. Do
     size: 45000, tier: "ELITE", leaderboardRank: 34,
     sportROI: 6.3, sportPnlTotal: 412000, sportVol: 14000000,
     sportsLbPercentileTop: 3, betMultiplier: 1.9,
-    label: "elite_conviction", firstSeen: 1711305000000,
+    label: "SHARP_POSITION", firstSeen: 1711305000000,
+    qualificationTier: "VAULT",       // 'VAULT' | 'SHADOW' — see Shadow Vault section
+    vaultQualified: true,
   },
   sources: ["positions", "walletDetails"],
   sourceDocs: {
@@ -771,12 +820,18 @@ One document per wallet, keyed by `walletShort`. Phase 2 reads this collection l
   },
 
   picks:     { n: 13, wins: 8, wr: 61.5, flatPnl: 1.28, flatRoi: 9.8 },
-  positions: { n: 15, wins: 8, wr: 53.3, invested: 944079, settledPnl: 48627, dollarRoi: 5.2 },
-  sizeSignal: {                       // own-median bet-size bucketing from Source B
+  positions: { n: 22, wins: 12, wr: 54.5, invested: 960279, settledPnl: 45427, dollarRoi: 4.7 },
+                                      // ↑ VAULT + SHADOW — see Shadow Vault section
+  sizeSignal: {                       // VAULT-only — own-median bucketing
     medianInvested: 42000,
     routine:  { n: 7, wr: 42.8, invested: 180000, settledPnl: -12000, dollarRoi: -6.7 },
     above:    { n: 5, wr: 60.0, invested: 340000, settledPnl: 18000,  dollarRoi: 5.3 },
     wayAbove: { n: 3, wr: 66.7, invested: 424079, settledPnl: 42627,  dollarRoi: 10.1 },
+  },
+  shadowSignal: {                     // SHADOW-only (may be null if N < 1)
+    n: 7, wins: 4, wr: 57.1,
+    invested: 16200, settledPnl: -3200, dollarRoi: -19.7,
+    medianInvested: 2100,
   },
 
   bySport: {

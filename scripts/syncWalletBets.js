@@ -127,6 +127,10 @@ async function pullFromPositions() {
           betMultiplier: d.betMultiplier ?? null,
           label: d.label ?? null,
           firstSeen: d.firstSeen ?? null,
+          // Vault/Shadow classification — treat missing (pre-shadow docs)
+          // as VAULT so historical walletBets stay consistent.
+          qualificationTier: d.qualificationTier || (d.vaultQualified === false ? 'SHADOW' : 'VAULT'),
+          vaultQualified: d.vaultQualified !== false,
         },
         sources: admin.firestore.FieldValue.arrayUnion('positions'),
         sourceDocs: {

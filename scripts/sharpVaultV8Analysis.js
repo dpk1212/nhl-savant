@@ -60,6 +60,9 @@ async function load() {
   for (const doc of snap.docs) {
     const d = doc.data();
     if (!d.date || d.date < V8_CUTOVER) continue;          // V8-era only
+    // Vault-only report — exclude SHADOW rows. Missing field (pre-shadow docs)
+    // is treated as VAULT so historical report continuity is preserved.
+    if (d.vaultQualified === false) continue;
     const result = d.result;
     if (result !== 'WIN' && result !== 'LOSS') continue;   // drop PUSH
     const won = result === 'WIN' ? 1 : 0;

@@ -20,7 +20,19 @@ import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '../public');
 const COLLECTION = 'sharp_action_positions';
-const MIN_BET_MULTIPLIER = 0.75;
+
+// Vault / Shadow gates (see "Shadow Vault" in SHARP_FLOW_SYSTEM.md).
+//
+//   invested >= avgSportBet * VAULT_MIN_MULTIPLIER   → qualificationTier = 'VAULT'
+//   invested >= avgSportBet * SHADOW_MIN_MULTIPLIER  → qualificationTier = 'SHADOW'
+//   below that floor                                 → skipped entirely (garbage-in guard)
+//
+// VAULT preserves the historical "conviction-sized" gate that powers the
+// Sharp Vault UI and all existing vault reports. SHADOW captures every other
+// real-money position from a qualified sharp wallet so wallet analytics get
+// a much denser feed — particularly NHL, which has very few vault rows.
+const VAULT_MIN_MULTIPLIER = 0.75;
+const SHADOW_MIN_MULTIPLIER = 0.10;
 
 function initFirebase() {
   if (!admin.apps.length) {
@@ -345,7 +357,10 @@ async function main() {
 
           const avgBet = pos.avgSportBet || 0;
           if (avgBet <= 0) continue;
-          if (pos.invested < avgBet * MIN_BET_MULTIPLIER) continue;
+          const rawMult = pos.invested / avgBet;
+          if (rawMult < SHADOW_MIN_MULTIPLIER) continue;
+          const qualificationTier = rawMult >= VAULT_MIN_MULTIPLIER ? 'VAULT' : 'SHADOW';
+          const vaultQualified = qualificationTier === 'VAULT';
 
           const teamName = pos.side === 'home' || pos.side === 'over'
             ? (pos.side === 'over' ? 'Over' : gd.home)
@@ -414,7 +429,9 @@ async function main() {
 
           const hasEV = evEdge != null && evEdge > 0;
           const isHighConviction = mult >= 3;
-          const label = hasEV ? 'EV_OPPORTUNITY' : isHighConviction ? 'HIGH_CONVICTION' : 'SHARP_POSITION';
+          const label = !vaultQualified
+            ? 'SHADOW_TRACKING'
+            : hasEV ? 'EV_OPPORTUNITY' : isHighConviction ? 'HIGH_CONVICTION' : 'SHARP_POSITION';
 
           // Wallet profile data
           const walletProfile = sportsSharps[pos.wallet] || sportsSharps[wLower] || {};
@@ -447,6 +464,9 @@ async function main() {
             positionPnl: pos.pnl || 0,
             avgSportBet: avgBet,
             betMultiplier: mult,
+            // Vault / Shadow classification — see SHARP_FLOW_SYSTEM.md
+            qualificationTier,  // 'VAULT' | 'SHADOW'
+            vaultQualified,     // convenience boolean for simple filters
             sportROI: displayRoi,
             totalPnl: pos.totalPnl || walletProfile.totalPnl || 0,
             sportPnlTotal: pos.sportPnlTotal || walletProfile.sportPnlTotal || 0,
@@ -504,7 +524,9 @@ async function main() {
     }
   }
 
-  console.log(`Found ${positions.length} qualifying positions for Today's Action`);
+  const vaultCt = positions.filter(p => p.vaultQualified).length;
+  const shadowCt = positions.length - vaultCt;
+  console.log(`Found ${positions.length} qualifying positions for Today's Action (VAULT=${vaultCt}, SHADOW=${shadowCt})`);
 
   // Write to Firebase in batches
   let written = 0, skipped = 0, updated = 0;
@@ -525,6 +547,10 @@ async function main() {
         if (data.status === 'GRADED') {
           // Still update V8 scoring on graded positions (analysis data)
           const v8Patch = {
+            // Vault/Shadow tier — backfill onto graded docs (preserves
+            // historical behavior since pre-shadow docs were all VAULT).
+            qualificationTier: pos.qualificationTier,
+            vaultQualified: pos.vaultQualified,
             v8_walletPlayScore: pos.v8_walletPlayScore,
             v8_stars: pos.v8_stars,
             v8_starLabel: pos.v8_starLabel,
@@ -567,6 +593,11 @@ async function main() {
           bestBook: pos.bestBook,
           evEdge: pos.evEdge,
           label: pos.label,
+          // Vault/Shadow tier — a position can legitimately shift between
+          // tiers as invested grows/shrinks relative to avgSportBet.
+          qualificationTier: pos.qualificationTier,
+          vaultQualified: pos.vaultQualified,
+          betMultiplier: pos.betMultiplier,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           // V8 scoring — always update to latest snapshot
           v8_walletPlayScore: pos.v8_walletPlayScore,

@@ -135,6 +135,8 @@ async function loadPositions() {
     const settledPnl = Number(d.settledPnl ?? d.positionPnl ?? 0);
     if (invested <= 0) return;
     const walletShort = d.walletShort || String(d.wallet).slice(0, 6);
+    // Vault/Shadow tier — treat missing field (pre-shadow docs) as VAULT.
+    const vaultQualified = d.vaultQualified !== false;
     rows.push({
       date: d.date,
       sport: d.sport,
@@ -151,6 +153,8 @@ async function loadPositions() {
       sportVol: d.sportVol,
       leaderboardRank: d.leaderboardRank,
       sportsLbPercentileTop: d.sportsLbPercentileTop,
+      vaultQualified,
+      qualificationTier: d.qualificationTier || (vaultQualified ? 'VAULT' : 'SHADOW'),
     });
   });
   return rows;
@@ -266,12 +270,19 @@ function buildProfile(walletShort, pickBets, posBets) {
     };
   }
 
-  // Size signal from positions (own-median buckets)
+  // Size signal from positions (own-median buckets) — VAULT-ONLY.
+  // Shadow positions are structurally small (0.10×–0.75× avg) so they would
+  // skew the own-median bucketing downward and break the "when this wallet
+  // sizes UP, do they win?" semantic. Shadow rows are tracked separately
+  // below in `shadowSignal` for visibility.
+  const vaultPosBets = posBets.filter(b => b.vaultQualified);
+  const shadowPosBets = posBets.filter(b => !b.vaultQualified);
+
   let sizeSignal = null;
-  if (posBets.length >= 3) {
-    const med = median(posBets.map(b => b.invested));
+  if (vaultPosBets.length >= 3) {
+    const med = median(vaultPosBets.map(b => b.invested));
     const buckets = { routine: [], above: [], wayAbove: [] };
-    for (const b of posBets) {
+    for (const b of vaultPosBets) {
       const ratio = med > 0 ? b.invested / med : 1;
       if (ratio >= 2) buckets.wayAbove.push(b);
       else if (ratio >= 1.25) buckets.above.push(b);
@@ -284,6 +295,15 @@ function buildProfile(walletShort, pickBets, posBets) {
       wayAbove: positionsAgg(buckets.wayAbove),
     };
   }
+
+  // Shadow signal — aggregate of small-sized (SHADOW) positions only. A
+  // wallet with negative shadow PnL but positive vault PnL is exactly the
+  // pattern we expect from a sharp ("they win when they're sure, chase when
+  // they're not"), so keeping these separate lets us see that.
+  const shadowSignal = shadowPosBets.length >= 1 ? {
+    ...positionsAgg(shadowPosBets),
+    medianInvested: shadowPosBets.length ? Math.round(median(shadowPosBets.map(b => b.invested))) : null,
+  } : null;
 
   // Date spans
   const allDates = [...pickBets, ...posBets].map(b => b.date).filter(Boolean).sort();
@@ -344,8 +364,9 @@ function buildProfile(walletShort, pickBets, posBets) {
     } : null,
     // Core stats
     picks,
-    positions,
-    sizeSignal,
+    positions,           // ALL graded positions (VAULT + SHADOW) — feeds dollarRoi / WR
+    sizeSignal,          // VAULT-only conviction bucketing
+    shadowSignal,        // SHADOW-only tracking aggregate (may be null)
     bySport,
     byMarket,
     verdict: verdict(picks, positions),
@@ -366,7 +387,9 @@ function buildProfile(walletShort, pickBets, posBets) {
   console.log(`  → ${walletBets.length} graded wallet-bets`);
   console.log('Loading sharp_action_positions…');
   const positions = await loadPositions();
-  console.log(`  → ${positions.length} graded positions`);
+  const vaultCt = positions.filter(p => p.vaultQualified).length;
+  const shadowCt = positions.length - vaultCt;
+  console.log(`  → ${positions.length} graded positions (VAULT=${vaultCt}, SHADOW=${shadowCt})`);
 
   // Union of all wallet short hashes
   const allWallets = new Set([
@@ -517,7 +540,8 @@ function buildProfile(walletShort, pickBets, posBets) {
   out.push('  "tier": "ELITE", "latestLbRank": 34,');
   out.push('  "picks":     { "n": 13, "wins": 8, "wr": 61.5, "flatRoi": 9.8, "flatPnl": 1.28 },');
   out.push('  "positions": { "n": 15, "wins": 8, "wr": 53.3, "invested": 944079, "settledPnl": 48627, "dollarRoi": 5.2 },');
-  out.push('  "sizeSignal": { "medianInvested": 42000, "routine": {…}, "above": {…}, "wayAbove": {…} },');
+  out.push('  "sizeSignal":  { "medianInvested": 42000, "routine": {…}, "above": {…}, "wayAbove": {…} },  // VAULT-only');
+  out.push('  "shadowSignal":{ "n": 7, "dollarRoi": -3.1, "medianInvested": 4200 },  // SHADOW-only (may be null)');
   out.push('  "latest": { "walletBase": 77.8, "roiNorm": 67.8, "lifetimeRoi": 6.3, "rank": 34 },');
   out.push('  "bySport": { "MLB": {…}, "NBA": {…}, "NHL": {…} },');
   out.push('  "byMarket": { "ML": {…}, "SPREAD": {…}, "TOTAL": {…} },');

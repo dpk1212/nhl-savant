@@ -102,6 +102,9 @@ async function loadGradedConsensus(db) {
   snap.forEach((d) => {
     const data = d.data();
     if (!data.result || data.result === 'PUSH') return;
+    // Vault-only goldilocks analysis — exclude SHADOW. Missing field (pre-
+    // shadow docs) treated as VAULT for backward compatibility.
+    if (data.vaultQualified === false) return;
     const won = data.result === 'WIN' ? 1 : 0;
     const inv = data.invested || 0;
     const side = data.side;
@@ -148,6 +151,9 @@ async function loadAllGraded(db) {
   snap.forEach((d) => {
     const data = d.data();
     if (!data.result || data.result === 'PUSH') return;
+    // Vault-only goldilocks analysis — exclude SHADOW. Missing field (pre-
+    // shadow docs) treated as VAULT for backward compatibility.
+    if (data.vaultQualified === false) return;
     const won = data.result === 'WIN' ? 1 : 0;
     const inv = data.invested || 0;
     const avgPrice = data.avgPrice ?? 0;
