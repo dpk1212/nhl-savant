@@ -1371,6 +1371,35 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         }
       }
 
+      // v5.3: live-vs-stored Δ drift restamp. The peak/units/EV branches
+      // above only fire when stars rise; the version-bump path only fires
+      // when WHITELIST_CONSENSUS_VERSION changes. Neither catches the
+      // case that matters most for live picks: a new whitelisted sharp
+      // arrives (or an existing one flips sides) AFTER peak. Without
+      // this branch, Δ would stay frozen at the peak-time wallet set
+      // until we ship a version bump. Restamping here lets the existing
+      // page-load and 15-min fetch sync flows propagate fade/promote
+      // signals as they happen.
+      if (WALLET_PROFILES_CACHE) {
+        const liveWc = computeWalletConsensus(v8Scoring?.walletDetails, sport, side);
+        const stored = sides[side];
+        const drifted =
+          stored.v8_walletConsensusDelta !== liveWc.delta ||
+          stored.v8_walletConsensusVerdict !== liveWc.verdict ||
+          !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
+          !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
+        if (drifted) {
+          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+          const patch = {};
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          await setDoc(ref, {
+            sides: { [side]: patch },
+            lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp',
+          }, { merge: true });
+          return { docId, action: 'consensus_drift_restamp' };
+        }
+      }
+
       return { docId, action: 'no_change' };
     }
 
@@ -1571,6 +1600,23 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
           return { docId, action: 'consensus_backfill' };
         }
       }
+      // v5.3: live-vs-stored Δ drift restamp (spreads). See ML sync for rationale.
+      if (WALLET_PROFILES_CACHE) {
+        const liveWc = computeWalletConsensus(v8Scoring?.walletDetails, sport, side);
+        const stored = sides[side];
+        const drifted =
+          stored.v8_walletConsensusDelta !== liveWc.delta ||
+          stored.v8_walletConsensusVerdict !== liveWc.verdict ||
+          !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
+          !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
+        if (drifted) {
+          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+          const patch = {};
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp' }, { merge: true });
+          return { docId, action: 'consensus_drift_restamp' };
+        }
+      }
       return { docId, action: 'no_change' };
     }
 
@@ -1689,6 +1735,23 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
         if (Object.keys(patch).length) {
           await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_backfill' }, { merge: true });
           return { docId, action: 'consensus_backfill' };
+        }
+      }
+      // v5.3: live-vs-stored Δ drift restamp (totals). See ML sync for rationale.
+      if (WALLET_PROFILES_CACHE) {
+        const liveWc = computeWalletConsensus(v8Scoring?.walletDetails, sport, side);
+        const stored = sides[side];
+        const drifted =
+          stored.v8_walletConsensusDelta !== liveWc.delta ||
+          stored.v8_walletConsensusVerdict !== liveWc.verdict ||
+          !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
+          !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
+        if (drifted) {
+          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+          const patch = {};
+          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
+          await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp' }, { merge: true });
+          return { docId, action: 'consensus_drift_restamp' };
         }
       }
       return { docId, action: 'no_change' };
