@@ -910,20 +910,20 @@ function qualityBonus(v8Scoring, sideKey) {
 // Two-tier system:
 //
 //   • Tier 1 — regular TOP PICK (outlined gold ribbon):
-//     regime === 'CLEAR_MOVE'   (in EITHER the lock or peak snapshot)
+//     regime === 'CLEAR_MOVE'
 //     Pinnacle confirmed the move.  N=11, 72.7% WR, +29.5% flatROI.
 //
 //   • Tier 2 — SUPER TOP PICK (filled gold ribbon with glow):
-//     regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55, evaluated on the
-//     SAME snapshot (lock-time stack OR peak-time stack qualifies)
+//     regime === 'CLEAR_MOVE' AND meanBase_F ≥ 55
 //     CLEAR_MOVE + high-caliber for-side wallet crew (avg walletBase ≥ 55).
 //     The stacked edge — intersection of the two strongest V8 signals.
 //
-// Why "either snapshot": a pick that locked under CLEAR_MOVE deserves
-// the badge even if the most recent peak snapshot happens to read
-// NO_MOVE / NEAR_START because the market has since settled. Conversely,
-// a pick that didn't lock under CLEAR_MOVE but is currently revalidating
-// (peak shows CLEAR_MOVE) also earns it. We OR the two snapshots.
+// Resolution policy (mirrors V8 analysis scripts EXACTLY):
+//   regime    = peak.regime    ?? lock.regime    ?? side.promotedRegime
+//   v8Scoring = peak.v8Scoring ?? lock.v8Scoring
+// This matches scripts/regimePerformance.js, clearMoveSubset.js,
+// v8DailyPnL.js, etc., where the historical CLEAR_MOVE = 72.7% WR
+// finding was measured.  Single source of truth — no snapshot OR'ing.
 //
 // Pre-V8 picks (no regime / v8Scoring) fall through to false on both tiers.
 function isClearMoveRegime({ regime } = {}) {
@@ -933,44 +933,18 @@ function isClearMoveTopPick({ regime, meanBaseF } = {}) {
   return regime === 'CLEAR_MOVE' && meanBaseF != null && meanBaseF >= 55;
 }
 
-// Evaluates both lock and peak snapshots against the TOP PICK predicates
-// and returns the most-favorable result + the display values used by the
-// card (meanBaseF for the explainer row, regime for sort/debug).
-function evaluateTopPickTier(peak, lock, sideKey) {
-  const peakRegime = peak?.regime || null;
-  const lockRegime = lock?.regime || null;
-  const peakMB = computeMeanBaseF(peak?.v8Scoring, sideKey);
-  const lockMB = computeMeanBaseF(lock?.v8Scoring, sideKey);
-
-  const isTopPick =
-    isClearMoveRegime({ regime: peakRegime }) ||
-    isClearMoveRegime({ regime: lockRegime });
-
-  // Super requires CLEAR_MOVE + meanBase_F ≥ 55 on the SAME snapshot
-  // (cross-pollinating peak regime with lock wallets is misleading —
-  // they're different points in time).
-  const isSuperTopPick =
-    isClearMoveTopPick({ regime: peakRegime, meanBaseF: peakMB }) ||
-    isClearMoveTopPick({ regime: lockRegime, meanBaseF: lockMB });
-
-  // For display, prefer the snapshot that earned super; otherwise prefer
-  // the snapshot that earned regular; otherwise fall back to peak.
-  let regime = peakRegime || lockRegime;
-  let meanBaseF = peakMB ?? lockMB;
-  if (isSuperTopPick) {
-    if (isClearMoveTopPick({ regime: peakRegime, meanBaseF: peakMB })) {
-      regime = peakRegime; meanBaseF = peakMB;
-    } else {
-      regime = lockRegime; meanBaseF = lockMB;
-    }
-  } else if (isTopPick) {
-    if (isClearMoveRegime({ regime: peakRegime })) {
-      regime = peakRegime; meanBaseF = peakMB ?? lockMB;
-    } else {
-      regime = lockRegime; meanBaseF = lockMB ?? peakMB;
-    }
-  }
-
+// Resolves the regime + meanBase_F values used to evaluate the TOP PICK
+// tiers, using the same precedence the V8 analysis scripts use:
+//   regime ← peak.regime ?? lock.regime ?? promotedRegime
+//   v8     ← peak.v8Scoring ?? lock.v8Scoring  (for meanBase_F)
+// Returns precomputed { isTopPick, isSuperTopPick, regime, meanBaseF }
+// so the card and sort comparator both consume the same flags.
+function evaluateTopPickTier(peak, lock, sideKey, promotedRegime = null) {
+  const regime = peak?.regime ?? lock?.regime ?? promotedRegime ?? null;
+  const v8 = peak?.v8Scoring ?? lock?.v8Scoring ?? null;
+  const meanBaseF = computeMeanBaseF(v8, sideKey);
+  const isTopPick = isClearMoveRegime({ regime });
+  const isSuperTopPick = isClearMoveTopPick({ regime, meanBaseF });
   return { isTopPick, isSuperTopPick, regime, meanBaseF };
 }
 
@@ -8633,11 +8607,13 @@ export default function SharpFlow() {
                           health: sd.superseded
                             ? { status: 'CANCELLED', reasons: ['side_flipped'] }
                             : (sd.health || { status: 'ACTIVE', reasons: [] }),
-                          // V8.4: precompute TOP PICK tier across lock+peak snapshots.
-                          // OR-ing the two captures both "locked under CLEAR_MOVE
-                          // thesis" (lock.regime) and "currently revalidating"
-                          // (peak.regime).  Same-snapshot stack is required for super.
-                          ...evaluateTopPickTier(peak, lock, sideKey),
+                          // V8.4: precompute TOP PICK tier using the same regime
+                          // resolution as the V8 analysis scripts:
+                          //   peak.regime ?? lock.regime ?? sd.promotedRegime
+                          // This is the resolver under which the historical
+                          // CLEAR_MOVE = 72.7% WR / +29.5% flatROI finding was
+                          // measured (see scripts/regimePerformance.js et al.).
+                          ...evaluateTopPickTier(peak, lock, sideKey, sd.promotedRegime),
                         });
                       }
                     }

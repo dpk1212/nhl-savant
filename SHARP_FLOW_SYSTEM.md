@@ -176,6 +176,17 @@ Rationale — the tiers correspond to V8's two independently profitable signals.
 
 The old rule selected picks whose stars grew, but ignored whether the growth was **market-confirmed** (regime) or backed by **high-caliber wallets** (meanBase_F). A pick could grow in stars through wallet churn on mid-tier sharps and still lose — the old badge celebrated that, the new tiers do not.
 
+**Resolution policy (analysis-faithful):** The badge resolves the same fields the V8 analysis scripts use, in the same order, so the displayed tier is always a literal advertisement of the proven edge:
+
+```
+regime    = peak.regime    ?? lock.regime    ?? sd.promotedRegime
+v8Scoring = peak.v8Scoring ?? lock.v8Scoring        // for meanBase_F
+```
+
+This precedence mirrors `scripts/regimePerformance.js`, `clearMoveSubset.js`, `v8DailyPnL.js`, `nonLockedEdgeAudit.js`, `signalAcrossFullSample.js`, etc. — every script that produced the historical CLEAR_MOVE = 72.7% WR / +29.5% ROI finding read regime in this exact order. **No snapshot OR-ing**, no cross-pollination — the badge tier always reflects the resolved field used in the study.
+
+**Practical consequence:** A pick that locked under CLEAR_MOVE but whose most recent peak snapshot reads `NEAR_START` / `NO_MOVE` (because the move has since settled) will *not* wear the badge. That's intentional — the study counted those as `NEAR_START` / `NO_MOVE` picks, not CLEAR_MOVE picks. Inverse: if the lock-time regime was `SMALL_MOVE` but Pinnacle has since moved enough that peak now reads `CLEAR_MOVE`, the pick *will* wear the badge.
+
 **Sort order on the Locked Picks list** (after health ordering): Super TOP PICK > Regular TOP PICK > everything else. Badge tier always matches list position.
 
 **Pre-V8 picks** (no `regime` or `v8Scoring` on the lock/peak snapshot) fall through to `false` on both tiers and never display either badge — expected behavior since we can't evaluate the new criteria on them.
@@ -184,7 +195,9 @@ The old rule selected picks whose stars grew, but ignored whether the growth was
 - `isClearMoveRegime({ regime })` → tier 1 predicate
 - `isClearMoveTopPick({ regime, meanBaseF })` → tier 2 predicate
 - `computeMeanBaseF(v8Scoring, sideKey)` → averages `walletBase` across for-side wallets (`side === consensusSide`) in the snapshot's `v8Scoring.walletDetails`
-- `LockedPickCard` consumes both predicates; sort comparator ranks `tier2 > tier1 > 0`
+- `evaluateTopPickTier(peak, lock, sideKey, promotedRegime)` → resolves regime + meanBase_F using the analysis-faithful precedence and returns `{ isTopPick, isSuperTopPick, regime, meanBaseF }`
+- `LockedPickCard` consumes the precomputed flags; sort comparator ranks `tier2 > tier1 > 0`
+- `scripts/probeTodayLockRegime.js` → diagnostic to inspect today's resolved regime / tier per pick
 
 ### Pick Health Evaluation (Mute / Cancel System)
 

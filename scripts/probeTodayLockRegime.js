@@ -37,19 +37,18 @@ async function dump(coll, label) {
       const lock = sd.lock || {};
       const stars = peak.stars ?? lock.stars ?? 0;
       if (stars < 2.5) continue;
-      const peakRegime = peak.regime || null;
-      const lockRegime = lock.regime || null;
-      const peakMB = meanBaseF(peak.v8Scoring, side);
-      const lockMB = meanBaseF(lock.v8Scoring, side);
-      const isTopPick = peakRegime === 'CLEAR_MOVE' || lockRegime === 'CLEAR_MOVE';
-      const isSuper =
-        (peakRegime === 'CLEAR_MOVE' && peakMB != null && peakMB >= 55) ||
-        (lockRegime === 'CLEAR_MOVE' && lockMB != null && lockMB >= 55);
-      const mb = peakMB ?? lockMB;
+      // Analysis-faithful resolution (matches scripts/regimePerformance.js):
+      //   regime = peak.regime ?? lock.regime ?? sd.promotedRegime
+      //   v8     = peak.v8Scoring ?? lock.v8Scoring
+      const regime = peak.regime ?? lock.regime ?? sd.promotedRegime ?? null;
+      const v8 = peak.v8Scoring ?? lock.v8Scoring ?? null;
+      const mb = meanBaseF(v8, side);
+      const isTopPick = regime === 'CLEAR_MOVE';
+      const isSuper = isTopPick && mb != null && mb >= 55;
       console.log(
         `  [${sport}] ${away} vs ${home} | ${side} ${stars}★ | ` +
-        `regime(peak/lock)=${peakRegime}/${lockRegime} | ` +
-        `meanBase(peak/lock)=${peakMB != null ? peakMB.toFixed(1) : 'n/a'}/${lockMB != null ? lockMB.toFixed(1) : 'n/a'} | ` +
+        `regime=${regime} (peak=${peak.regime || '—'}, lock=${lock.regime || '—'}, promoted=${sd.promotedRegime || '—'}) | ` +
+        `meanBase_F=${mb != null ? mb.toFixed(1) : 'n/a'} | ` +
         `→ ${isSuper ? '⚡ SUPER' : isTopPick ? '★ TOP' : '—'}`
       );
     }
