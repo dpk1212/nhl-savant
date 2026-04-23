@@ -1,14 +1,14 @@
 # Sharp Action Positions — Diagnostic Report
-**Generated**: 2026-04-22 ET
-**Total Graded**: 486 positions | **Date Range**: 2026-04-17 → 2026-04-22
-**Sports**: MLB, NBA, NHL | **Unique Wallets**: 77
+**Generated**: 2026-04-23 ET
+**Total Graded**: 565 positions | **Date Range**: 2026-04-17 → 2026-04-23
+**Sports**: MLB, NBA, NHL | **Unique Wallets**: 83
 
 ## Executive Summary
 
-- **Overall**: PROFITABLE — 49.4% WR, 0.5% ROI, +$98.9K P&L
-- **Total Invested**: +$18.9M
+- **Overall**: PROFITABLE — 51.2% WR, 3.7% ROI, +$849.2K P&L
+- **Total Invested**: +$22.8M
 - **Best performing label**: SHARP_POSITION
-- **Positions per day**: 81.0 avg
+- **Positions per day**: 80.7 avg
 
 ---
 
@@ -16,12 +16,12 @@
 
 | Window | Positions | WR | P&L | ROI | Invested | Avg Inv | Avg Mult | Avg CLV |
 |---|---|---|---|---|---|---|---|---|
-| 1-Day | 57 | 47.4% | +$326.6K | 16.5% | +$2.0M | +$34.7K | 2.81x | — |
-| 3-Day | 328 | 50.9% | +$397.3K | 2.7% | +$14.5M | +$44.3K | 3.25x | — |
-| 7-Day | 486 | 49.4% | +$98.9K | 0.5% | +$18.9M | +$39.0K | 3.05x | — |
-| 14-Day | 486 | 49.4% | +$98.9K | 0.5% | +$18.9M | +$39.0K | 3.05x | — |
-| 30-Day | 486 | 49.4% | +$98.9K | 0.5% | +$18.9M | +$39.0K | 3.05x | — |
-| All Time | 486 | 49.4% | +$98.9K | 0.5% | +$18.9M | +$39.0K | 3.05x | — |
+| 1-Day | 32 | 56.3% | +$518.1K | 29.3% | +$1.8M | +$55.2K | 3.53x | — |
+| 3-Day | 284 | 51.8% | +$1.1M | 8.7% | +$13.1M | +$46.3K | 3.35x | — |
+| 7-Day | 565 | 51.2% | +$849.2K | 3.7% | +$22.8M | +$40.3K | 3.08x | — |
+| 14-Day | 565 | 51.2% | +$849.2K | 3.7% | +$22.8M | +$40.3K | 3.08x | — |
+| 30-Day | 565 | 51.2% | +$849.2K | 3.7% | +$22.8M | +$40.3K | 3.08x | — |
+| All Time | 565 | 51.2% | +$849.2K | 3.7% | +$22.8M | +$40.3K | 3.08x | — |
 
 ---
 
@@ -31,15 +31,15 @@ How each position label (auto-assigned by the write script) performs.
 
 | Label | N | % | WR | P&L | ROI | Avg Inv | Avg Mult | Avg ROI (Wallet) |
 |---|---|---|---|---|---|---|---|---|
-| HIGH_CONVICTION | 134 | 27.6% | 51.5% | -$509.2K | -5.0% | +$76.3K | 7.48x | 5.6% |
-| SHARP_POSITION | 352 | 72.4% | 48.6% | +$608.2K | 7.0% | +$24.7K | 1.36x | 6.4% |
+| HIGH_CONVICTION | 159 | 28.1% | 52.8% | +$14.6K | 0.1% | +$76.0K | 7.42x | 5.5% |
+| SHARP_POSITION | 406 | 71.9% | 50.5% | +$834.6K | 7.8% | +$26.3K | 1.38x | 6.0% |
 
 ### Label × Sport
 
 | Label | MLB (N/WR/ROI) | NBA (N/WR/ROI) | NHL (N/WR/ROI) |
 |---|---|---|---|
-| HIGH_CONVICTION | 29 / 75.9% / 29.5% | 101 / 44.6% / -10.5% | 4 / 50.0% / 19.8% |
-| SHARP_POSITION | 116 / 50.9% / 6.7% | 190 / 45.3% / 11.0% | 46 / 56.5% / -6.7% |
+| HIGH_CONVICTION | 36 / 63.9% / 9.6% | 117 / 48.7% / -3.9% | 6 / 66.7% / 106.5% |
+| SHARP_POSITION | 126 / 50.0% / 5.9% | 218 / 47.7% / 12.1% | 62 / 61.3% / -2.5% |
 
 ---
 
@@ -49,9 +49,9 @@ Are higher-tier wallets actually performing better?
 
 | Tier | N | % | WR | P&L | ROI | Avg Inv | Avg Wallet ROI | Avg Wallet P&L |
 |---|---|---|---|---|---|---|---|---|
-| ELITE | 440 | 90.5% | 49.5% | +$60.4K | 0.3% | +$42.7K | 6.8% | +$768.6K |
-| PROVEN | 40 | 8.2% | 45.0% | -$16.8K | -14.5% | +$2.9K | 0.2% | +$315 |
-| SHARP | 6 | 1.2% | 66.7% | +$55.3K | 111.6% | +$8.3K | 1.9% | +$40.4K |
+| ELITE | 516 | 91.3% | 51.4% | +$771.2K | 3.4% | +$43.7K | 6.3% | +$760.3K |
+| PROVEN | 40 | 7.1% | 45.0% | -$16.8K | -14.5% | +$2.9K | 0.2% | +$315 |
+| SHARP | 9 | 1.6% | 66.7% | +$94.8K | 108.9% | +$9.7K | 3.6% | +$39.2K |
 
 **Spearman: Tier vs WR**: 0.500
 
@@ -61,23 +61,23 @@ Are higher-tier wallets actually performing better?
 
 | Market | N | % | WR | P&L | ROI | Avg Inv | Avg Price |
 |---|---|---|---|---|---|---|---|
-| ML | 260 | 53.5% | 50.0% | +$399.0K | 3.3% | +$46.1K | 0.515 |
-| SPREAD | 127 | 26.1% | 51.2% | +$135.2K | 3.5% | +$30.6K | 0.508 |
-| TOTAL | 99 | 20.4% | 45.5% | -$435.2K | -14.3% | +$30.9K | 0.512 |
+| ML | 310 | 54.9% | 52.3% | +$486.8K | 3.4% | +$46.7K | 0.526 |
+| SPREAD | 145 | 25.7% | 51.7% | +$616.3K | 13.1% | +$32.5K | 0.507 |
+| TOTAL | 110 | 19.5% | 47.3% | -$253.9K | -7.1% | +$32.5K | 0.510 |
 
 ### ML — Favorites vs Underdogs
 
 | Side | N | WR | P&L | ROI | Avg Price |
 |---|---|---|---|---|---|
-| Favorites (≥50¢) | 142 | 57.7% | -$1.2M | -14.4% | 0.654 |
-| Underdogs (<50¢) | 118 | 40.7% | +$1.6M | 48.4% | 0.347 |
+| Favorites (≥50¢) | 172 | 59.3% | -$1.6M | -15.1% | 0.667 |
+| Underdogs (<50¢) | 138 | 43.5% | +$2.0M | 49.5% | 0.351 |
 
 ### Totals — Over vs Under
 
 | Side | N | WR | P&L | ROI |
 |---|---|---|---|---|
-| Over | 58 | 37.9% | -$718.3K | -37.1% |
-| Under | 41 | 56.1% | +$283.0K | 25.4% |
+| Over | 65 | 43.1% | -$601.8K | -27.5% |
+| Under | 45 | 53.3% | +$347.9K | 25.1% |
 
 ---
 
@@ -85,17 +85,17 @@ Are higher-tier wallets actually performing better?
 
 | Sport | N | % | WR | P&L | ROI | Avg Inv | Avg Mult |
 |---|---|---|---|---|---|---|---|
-| MLB | 145 | 29.8% | 55.9% | +$533.8K | 16.4% | +$22.5K | 1.90x |
-| NBA | 291 | 59.9% | 45.0% | -$339.7K | -2.4% | +$48.5K | 3.86x |
-| NHL | 50 | 10.3% | 56.0% | -$95.2K | -6.1% | +$31.2K | 1.64x |
+| MLB | 162 | 28.7% | 53.1% | +$293.5K | 7.4% | +$24.4K | 2.06x |
+| NBA | 335 | 59.3% | 48.1% | +$358.0K | 2.2% | +$49.0K | 3.87x |
+| NHL | 68 | 12.0% | 61.8% | +$197.7K | 8.3% | +$35.2K | 1.59x |
 
 ### Sport × Market Type
 
 | Sport | ML (N/WR/ROI) | SPREAD (N/WR/ROI) | TOTAL (N/WR/ROI) |
 |---|---|---|---|
-| MLB | 88 / 60.2% / 14.3% | 6 / 66.7% / 66.4% | 51 / 47.1% / 19.0% |
-| NBA | 129 / 43.4% / 4.2% | 118 / 49.2% / 0.9% | 44 / 38.6% / -46.6% |
-| NHL | 43 / 48.8% / -16.8% | 3 / 100.0% / 103.8% | 4 / 100.0% / 73.6% |
+| MLB | 100 / 56.0% / -2.3% | 8 / 62.5% / -45.6% | 54 / 46.3% / 22.2% |
+| NBA | 150 / 48.0% / 4.9% | 134 / 50.0% / 11.7% | 51 / 43.1% / -35.5% |
+| NHL | 60 / 56.7% / 2.3% | 3 / 100.0% / 103.8% | 5 / 100.0% / 78.7% |
 
 ---
 
@@ -105,14 +105,14 @@ betMultiplier = invested / avgSportBet — measures how much larger this bet is 
 
 | Conviction Bucket | N | WR | P&L | ROI | Avg Inv |
 |---|---|---|---|---|---|
-| < 1x (below avg) | 113 | 48.7% | +$59.9K | 4.9% | +$10.9K |
-| 1x-2x (normal) | 179 | 50.8% | +$1.1M | 21.7% | +$27.6K |
-| 2x-3x (elevated) | 68 | 42.6% | -$505.2K | -19.0% | +$39.2K |
-| 3x-5x (high) | 66 | 51.5% | +$521.7K | 18.2% | +$43.4K |
-| 5x-10x (very high) | 33 | 45.5% | -$379.4K | -18.8% | +$61.2K |
-| 10x+ (extreme) | 27 | 59.3% | -$669.8K | -12.8% | +$193.1K |
+| < 1x (below avg) | 128 | 52.3% | +$248.2K | 17.0% | +$11.4K |
+| 1x-2x (normal) | 205 | 51.2% | +$1.1M | 17.3% | +$29.8K |
+| 2x-3x (elevated) | 81 | 45.7% | -$451.8K | -14.0% | +$39.8K |
+| 3x-5x (high) | 79 | 53.2% | +$659.3K | 19.0% | +$44.0K |
+| 5x-10x (very high) | 41 | 46.3% | -$187.5K | -7.2% | +$63.7K |
+| 10x+ (extreme) | 31 | 61.3% | -$475.5K | -8.1% | +$189.1K |
 
-**Spearman: betMultiplier vs WR**: 0.011
+**Spearman: betMultiplier vs WR**: 0.010
 
 **Verdict**: Conviction is NEUTRAL — multiplier does not predict outcomes
 
@@ -126,20 +126,20 @@ Does a wallet's historical sportROI / sportPnlTotal predict position-level resul
 
 | Wallet ROI Bucket | N | WR | P&L | ROI | Avg Mult |
 |---|---|---|---|---|---|
-| 0-2% ROI | 73 | 47.9% | +$184.0K | 5.5% | 2.66x |
-| 2-5% ROI | 186 | 50.5% | +$773.7K | 8.8% | 3.86x |
-| 5-10% ROI | 136 | 47.1% | -$707.1K | -14.9% | 3.09x |
-| 10%+ ROI | 56 | 57.1% | -$133.8K | -6.4% | 2.64x |
+| 0-2% ROI | 107 | 56.1% | +$926.4K | 18.4% | 2.78x |
+| 2-5% ROI | 208 | 51.9% | +$1.1M | 10.9% | 3.86x |
+| 5-10% ROI | 156 | 46.2% | -$995.2K | -17.2% | 3.09x |
+| 10%+ ROI | 59 | 57.6% | -$130.6K | -6.2% | 2.64x |
 
 ### By Wallet Sport P&L
 
 | P&L Tier | N | WR | P&L | ROI | Avg Wallet P&L |
 |---|---|---|---|---|---|
-| Bottom Third | 150 | 52.7% | -$191.5K | -6.9% | +$119.2K |
-| Middle Third | 150 | 48.0% | +$2.0M | 27.6% | +$271.4K |
-| Top Third | 151 | 49.0% | -$1.6M | -18.2% | +$1.9M |
+| Bottom Third | 176 | 55.1% | -$86.4K | -2.5% | +$121.8K |
+| Middle Third | 176 | 49.4% | +$2.3M | 27.5% | +$290.7K |
+| Top Third | 178 | 50.6% | -$1.4M | -12.7% | +$1.8M |
 
-**Spearman: Wallet sportROI vs Position WR**: 0.068
+**Spearman: Wallet sportROI vs Position WR**: -0.045
 
 ---
 
@@ -149,14 +149,14 @@ avgPrice is the Polymarket entry price (0-1). It should correlate with win rate.
 
 | Price Bucket | N | Avg Price | Expected WR | Actual WR | WR Delta | P&L | ROI |
 |---|---|---|---|---|---|---|---|
-| 0-20¢ (long shot) | 14 | 14.2¢ | 14.2% | 42.9% | +28.6% | +$1.1M | 258.1% |
-| 20-35¢ (underdog) | 31 | 27.0¢ | 27.0% | 48.4% | +21.4% | +$660.8K | 91.4% |
-| 35-50¢ (coin flip) | 145 | 44.4¢ | 44.4% | 40.7% | -3.7% | -$493.5K | -12.0% |
-| 50-65¢ (slight fav) | 240 | 54.2¢ | 54.2% | 55.0% | +0.8% | -$516.0K | -6.6% |
-| 65-80¢ (favorite) | 31 | 73.3¢ | 73.3% | 45.2% | -28.1% | -$486.7K | -22.0% |
-| 80-100¢ (heavy fav) | 25 | 86.3¢ | 86.3% | 56.0% | -30.3% | -$196.9K | -5.5% |
+| 0-20¢ (long shot) | 16 | 13.5¢ | 13.5% | 37.5% | +24.0% | +$1.1M | 242.3% |
+| 20-35¢ (underdog) | 33 | 26.4¢ | 26.4% | 45.5% | +19.0% | +$560.8K | 68.2% |
+| 35-50¢ (coin flip) | 172 | 44.4¢ | 44.4% | 44.8% | +0.3% | +$614.0K | 11.2% |
+| 50-65¢ (slight fav) | 269 | 54.2¢ | 54.2% | 54.6% | +0.5% | -$837.9K | -9.4% |
+| 65-80¢ (favorite) | 42 | 73.6¢ | 73.6% | 52.4% | -21.2% | -$440.9K | -14.3% |
+| 80-100¢ (heavy fav) | 33 | 87.6¢ | 87.6% | 66.7% | -20.9% | -$157.9K | -3.9% |
 
-**Brier Score**: 0.2595 (lower = better calibration, random = 0.25)
+**Brier Score**: 0.2534 (lower = better calibration, random = 0.25)
 
 ---
 
@@ -164,18 +164,18 @@ avgPrice is the Polymarket entry price (0-1). It should correlate with win rate.
 
 | Size Bucket | N | % | WR | P&L | ROI | Avg Mult |
 |---|---|---|---|---|---|---|
-| < $100 | 21 | 4.3% | 52.4% | -$105 | -16.1% | 0.00x |
-| $100-$500 | 5 | 1.0% | 60.0% | +$294 | 31.7% | 0.00x |
-| $500-$1K | 7 | 1.4% | 28.6% | -$3.2K | -53.1% | 0.47x |
-| $1K-$5K | 98 | 20.2% | 45.9% | +$7.3K | 2.6% | 1.22x |
-| $5K-$20K | 157 | 32.3% | 51.0% | +$184.9K | 11.1% | 2.70x |
-| $20K-$50K | 100 | 20.6% | 49.0% | +$346.9K | 10.4% | 2.95x |
-| $50K+ | 98 | 20.2% | 51.0% | -$437.2K | -3.2% | 6.53x |
+| < $100 | 21 | 3.7% | 52.4% | -$105 | -16.1% | 0.00x |
+| $100-$500 | 5 | 0.9% | 60.0% | +$294 | 31.7% | 0.00x |
+| $500-$1K | 7 | 1.2% | 28.6% | -$3.2K | -53.1% | 0.47x |
+| $1K-$5K | 111 | 19.6% | 49.5% | +$31.3K | 9.5% | 1.27x |
+| $5K-$20K | 182 | 32.2% | 52.2% | +$158.5K | 8.2% | 2.66x |
+| $20K-$50K | 114 | 20.2% | 49.1% | +$274.9K | 7.2% | 3.02x |
+| $50K+ | 125 | 22.1% | 53.6% | +$387.5K | 2.3% | 6.14x |
 
-**Spearman: Size vs WR**: 0.175
+**Spearman: Size vs WR**: 0.169
 
-**Top 10% by size**: 49 positions, 57.1% WR, 0.0% ROI, +$3.7K P&L
-**Bottom 50% by size**: 243 positions, 48.6% WR, 14.6% ROI, +$180.4K P&L
+**Top 10% by size**: 57 positions, 64.9% WR, 3.6% ROI, +$422.4K P&L
+**Bottom 50% by size**: 283 positions, 50.9% WR, 11.1% ROI, +$172.8K P&L
 
 ---
 
@@ -191,13 +191,13 @@ Settled P&L from the actual Polymarket positions (entry price × size).
 
 | Metric | Value |
 |---|---|
-| Total Settled P&L | +$98.9K |
-| Total Invested | +$18.9M |
-| Overall ROI | 0.5% |
-| Avg P&L per Position | +$204 |
-| Median P&L per Position | -$11 |
-| Win P&L (avg) | +$36.1K |
-| Loss P&L (avg) | -$34.8K |
+| Total Settled P&L | +$849.2K |
+| Total Invested | +$22.8M |
+| Overall ROI | 3.7% |
+| Avg P&L per Position | +$1.5K |
+| Median P&L per Position | +$14 |
+| Win P&L (avg) | +$36.7K |
+| Loss P&L (avg) | -$35.3K |
 | Biggest Win | +$698.8K |
 | Biggest Loss | -$498.0K |
 
@@ -211,27 +211,27 @@ Which wallets are driving results? Too much concentration = fragile.
 
 | Wallet | Tier | Positions | WR | P&L | ROI | Avg Inv |
 |---|---|---|---|---|---|---|
-| dcafd2 | ELITE | 43 | 60.5% | +$106.0K | 31.5% | +$7.8K |
-| 73f5b0 | ELITE | 31 | 38.7% | -$493.5K | -47.6% | +$33.4K |
-| 6b853d | ELITE | 29 | 44.8% | -$34.4K | -16.6% | +$7.1K |
+| dcafd2 | ELITE | 49 | 59.2% | +$60.6K | 14.5% | +$8.5K |
+| 73f5b0 | ELITE | 37 | 45.9% | -$357.7K | -29.9% | +$32.3K |
+| 6b853d | ELITE | 30 | 46.7% | -$30.4K | -13.7% | +$7.4K |
 | a0d6d2 | PROVEN | 23 | 56.5% | +$48.7K | 112.2% | +$1.9K |
+| 52aeeb | ELITE | 22 | 40.9% | +$285.5K | 46.3% | +$28.0K |
+| fcc12b | ELITE | 21 | 42.9% | -$232.7K | -17.7% | +$62.5K |
 | b05143 | ELITE | 17 | 64.7% | +$195.9K | 28.4% | +$40.6K |
-| 52aeeb | ELITE | 16 | 37.5% | +$287.2K | 63.1% | +$28.5K |
+| 12192c | ELITE | 16 | 56.3% | +$245.9K | 25.0% | +$61.4K |
 | 981187 | ELITE | 15 | 60.0% | -$65.6K | -1.9% | +$229.6K |
-| fcc12b | ELITE | 15 | 53.3% | +$48.6K | 5.2% | +$62.9K |
-| 12192c | ELITE | 14 | 50.0% | +$1.2K | 0.2% | +$55.9K |
-| 7a9723 | ELITE | 12 | 41.7% | -$144.5K | -20.4% | +$59.1K |
+| af1697 | ELITE | 15 | 60.0% | -$61.7K | -3.8% | +$107.6K |
 
-**Top 5 wallets control**: 29.4% of all positions
-**Single-position wallets**: 14 of 77 (18.2%)
+**Top 5 wallets control**: 28.5% of all positions
+**Single-position wallets**: 16 of 83 (19.3%)
 
 ### Best Wallets (≥3 positions)
 
 | Wallet | N | WR | P&L | ROI |
 |---|---|---|---|---|
-| cdb33b | 4 | 100.0% | +$38.6K | 210.0% |
 | bc3532 | 5 | 40.0% | +$235.5K | 170.3% |
-| 2d2ca8 | 8 | 62.5% | +$1.3M | 153.7% |
+| 2d2ca8 | 9 | 55.6% | +$1.2M | 129.1% |
+| a0d6d2 | 23 | 56.5% | +$48.7K | 112.2% |
 
 ### Worst Wallets (≥3 positions)
 
@@ -249,15 +249,15 @@ How do games with multiple sharp positions perform vs single-position games?
 
 | Category | Games | Positions | WR | P&L | ROI |
 |---|---|---|---|---|---|
-| Multi-wallet games | 69 | 454 | 50.4% | -$103.3K | -0.6% |
-| Single-wallet games | 32 | 32 | 34.4% | +$202.2K | 18.6% |
+| Multi-wallet games | 82 | 530 | 51.9% | +$702.7K | 3.3% |
+| Single-wallet games | 35 | 35 | 40.0% | +$146.5K | 12.5% |
 
 ### Multi-Wallet Consensus vs Conflict
 
 | Type | Games | Positions | WR | P&L | ROI |
 |---|---|---|---|---|---|
-| Same-side consensus | 7 | 17 | 64.7% | -$18.8K | -6.7% |
-| Mixed sides (conflict) | 62 | 437 | 49.9% | -$84.5K | -0.5% |
+| Same-side consensus | 8 | 19 | 68.4% | -$10.5K | -3.6% |
+| Mixed sides (conflict) | 74 | 511 | 51.3% | +$713.2K | 3.3% |
 
 ---
 
@@ -271,42 +271,39 @@ _Insufficient CLV data (closing odds not captured for most positions)._
 
 | Time Window | N | WR | P&L | ROI | Avg Inv |
 |---|---|---|---|---|---|
-| Evening (18-24 UTC) | 250 | 47.6% | +$882.5K | 9.1% | +$38.7K |
-| Late Night (0-6 UTC) | 52 | 51.9% | +$282.5K | 9.6% | +$56.6K |
-| Afternoon (12-18 UTC) | 144 | 51.4% | -$621.8K | -18.1% | +$23.9K |
-| Morning (6-12 UTC) | 40 | 50.0% | -$444.2K | -15.4% | +$72.0K |
+| Evening (18-24 UTC) | 290 | 49.7% | +$1.7M | 14.3% | +$41.0K |
+| Late Night (0-6 UTC) | 65 | 49.2% | +$280.0K | 7.7% | +$55.9K |
+| Afternoon (12-18 UTC) | 159 | 52.2% | -$753.7K | -17.9% | +$26.5K |
+| Morning (6-12 UTC) | 51 | 58.8% | -$371.2K | -12.3% | +$59.3K |
 
 ---
 
 ## 16. Failure Diagnostics
 
-- **NBA**: -$339.7K P&L (45.0% WR, -2.4% ROI)
-- **NHL**: -$95.2K P&L (56.0% WR, -6.1% ROI)
-- **HIGH_CONVICTION losing**: -$509.2K P&L across 134 positions
-- **133 positions lost >$10K each**: Combined -$8.1M (8152.2% of total losses)
+- **157 positions lost >$10K each**: Combined -$9.2M (1086.9% of total losses)
 
 ---
 
 ## 17. V8 Star Calibration
 
-486 of 486 graded positions have V8 scoring.
+565 of 565 graded positions have V8 scoring.
 
 | Stars | Label | N | % | WR | P&L | ROI | Avg WPS | Avg Inv |
 |---|---|---|---|---|---|---|---|---|
-| 1★ | MONITORING | 50 | 10.3% | 44.0% | +$229.8K | 21.7% | -2.52 | +$21.2K |
-| 2★ | LEAN | 76 | 15.6% | 60.5% | -$160.4K | -5.1% | -1.46 | +$41.5K |
-| 2.5★ | SOLID PLAY | 110 | 22.6% | 40.9% | -$307.3K | -9.3% | 0.74 | +$29.9K |
-| 3★ | SOLID PLAY | 77 | 15.8% | 51.9% | +$267.2K | 10.5% | 2.24 | +$33.0K |
-| 3.5★ | STRONG PLAY | 51 | 10.5% | 62.7% | +$252.4K | 7.1% | 3.69 | +$70.0K |
-| 4★ | STRONG PLAY | 78 | 16.0% | 37.2% | -$557.7K | -15.7% | 5.25 | +$45.5K |
-| 4.5★ | ELITE PLAY | 27 | 5.6% | 70.4% | +$624.2K | 69.2% | 6.60 | +$33.4K |
-| 5★ | ELITE PLAY | 17 | 3.5% | 41.2% | -$249.4K | -28.8% | 8.79 | +$50.9K |
+| 1★ | MONITORING | 61 | 10.8% | 45.9% | +$203.7K | 13.8% | -2.50 | +$24.2K |
+| 2★ | LEAN | 82 | 14.5% | 59.8% | -$189.5K | -5.4% | -1.37 | +$42.9K |
+| 2.5★ | SOLID PLAY | 125 | 22.1% | 41.6% | -$410.0K | -11.0% | 0.75 | +$29.8K |
+| 3★ | SOLID PLAY | 96 | 17.0% | 56.3% | +$590.1K | 18.3% | 2.19 | +$33.6K |
+| 3.5★ | STRONG PLAY | 62 | 11.0% | 66.1% | +$415.6K | 9.9% | 3.66 | +$67.7K |
+| 4★ | STRONG PLAY | 92 | 16.3% | 39.1% | -$147.8K | -3.1% | 5.23 | +$52.1K |
+| 4.5★ | ELITE PLAY | 27 | 4.8% | 70.4% | +$624.2K | 69.2% | 6.60 | +$33.4K |
+| 5★ | ELITE PLAY | 20 | 3.5% | 50.0% | -$237.2K | -26.1% | 8.64 | +$45.5K |
 
-**Spearman: V8 Stars vs WR**: 0.219
+**Spearman: V8 Stars vs WR**: 0.218
 → Higher stars predict better outcomes
 
-**≥3★ positions**: 250 picks, 50.8% WR, 2.9% ROI, +$336.8K P&L
-**<3★ positions**: 236 picks, 47.9% WR, -3.2% ROI, -$237.9K P&L
+**≥3★ positions**: 297 picks, 53.9% WR, 8.9% ROI, +$1.2M P&L
+**<3★ positions**: 268 picks, 48.1% WR, -4.5% ROI, -$395.8K P&L
 
 ---
 
@@ -316,26 +313,26 @@ Distribution of V8 scoring variables across all graded positions.
 
 | Variable | Mean | Median | Std | Min | Max |
 |---|---|---|---|---|---|
-| WPS | 1.938 | 1.751 | 3.069 | -4.358 | 9.027 |
-| For Side | 221.405 | 200.400 | 146.794 | 0.000 | 652.600 |
-| Against Side | 111.827 | 86.700 | 107.199 | 0.000 | 374.900 |
-| Net Edge | 1.264 | 0.963 | 1.389 | -1.744 | 5.064 |
-| Breadth Bonus | 2.930 | 2.773 | 0.964 | 1.386 | 4.970 |
-| Conc Penalty | 2.256 | 1.995 | 1.015 | 0.777 | 4.000 |
-| Top Share | 0.509 | 0.409 | 0.277 | 0.155 | 1.000 |
-| Wallet Count For | 3.850 | 3.000 | 2.334 | 1.000 | 11.000 |
-| Wallet Count Against | 2.072 | 2.000 | 1.851 | 0.000 | 7.000 |
+| WPS | 1.944 | 1.787 | 3.011 | -4.358 | 9.027 |
+| For Side | 220.421 | 197.400 | 143.918 | 0.000 | 652.600 |
+| Against Side | 108.811 | 88.000 | 101.822 | 0.000 | 374.900 |
+| Net Edge | 1.279 | 0.994 | 1.352 | -1.744 | 5.064 |
+| Breadth Bonus | 2.919 | 2.773 | 0.953 | 1.386 | 4.970 |
+| Conc Penalty | 2.254 | 2.033 | 0.990 | 0.777 | 4.000 |
+| Top Share | 0.508 | 0.423 | 0.271 | 0.155 | 1.000 |
+| Wallet Count For | 3.811 | 3.000 | 2.281 | 1.000 | 11.000 |
+| Wallet Count Against | 2.016 | 2.000 | 1.765 | 0.000 | 7.000 |
 
 ### Per-Wallet Contribution Variables
 
 | Variable | Mean | Median | Std | Min | Max |
 |---|---|---|---|---|---|
-| Contribution | 58.53 | 57.90 | 26.80 | 0.00 | 156.10 |
-| ROI Norm %ile | 49.10 | 45.60 | 24.44 | 0.00 | 99.80 |
-| P&L Norm %ile | 46.66 | 42.40 | 34.87 | 0.00 | 99.80 |
-| Wallet Base | 48.56 | 51.50 | 20.94 | 0.00 | 97.50 |
-| Conviction Mult | 1.20 | 1.16 | 0.21 | 0.70 | 1.60 |
-| Size Ratio | 3.27 | 1.70 | 4.97 | 0.00 | 49.31 |
+| Contribution | 58.91 | 57.80 | 26.28 | 0.00 | 156.10 |
+| ROI Norm %ile | 48.26 | 44.80 | 24.08 | 0.00 | 99.80 |
+| P&L Norm %ile | 48.43 | 45.20 | 34.46 | 0.00 | 99.80 |
+| Wallet Base | 48.72 | 50.80 | 20.33 | 0.00 | 97.50 |
+| Conviction Mult | 1.20 | 1.17 | 0.21 | 0.70 | 1.60 |
+| Size Ratio | 3.30 | 1.74 | 4.87 | 0.00 | 49.31 |
 
 ---
 
@@ -345,14 +342,14 @@ How does WPS (Wallet Play Score) predict outcomes across ranges?
 
 | WPS Range | N | % | WR | P&L | ROI | Avg WPS |
 |---|---|---|---|---|---|---|
-| < -2 (very weak) | 63 | 13.0% | 47.6% | +$269.5K | 13.1% | -2.63 |
-| -2 to 0 (weak) | 63 | 13.0% | 60.3% | -$200.1K | -9.3% | -1.12 |
-| 0 to 2 (moderate) | 139 | 28.6% | 45.3% | -$279.5K | -6.9% | 0.96 |
-| 2 to 4 (solid) | 88 | 18.1% | 55.7% | +$451.9K | 11.5% | 2.99 |
-| 4 to 6 (strong) | 89 | 18.3% | 38.2% | -$517.8K | -10.4% | 5.11 |
-| 6+ (elite) | 44 | 9.1% | 59.1% | +$374.8K | 21.2% | 7.45 |
+| < -2 (very weak) | 72 | 12.7% | 48.6% | +$245.8K | 10.0% | -2.62 |
+| -2 to 0 (weak) | 71 | 12.6% | 59.2% | -$231.7K | -9.1% | -1.07 |
+| 0 to 2 (moderate) | 163 | 28.8% | 46.6% | -$235.2K | -4.9% | 0.98 |
+| 2 to 4 (solid) | 109 | 19.3% | 60.6% | +$791.1K | 16.2% | 2.99 |
+| 4 to 6 (strong) | 103 | 18.2% | 39.8% | -$107.9K | -1.7% | 5.11 |
+| 6+ (elite) | 47 | 8.3% | 61.7% | +$387.0K | 21.4% | 7.47 |
 
-**Spearman: WPS vs WR**: 0.147
+**Spearman: WPS vs WR**: 0.137
 
 ---
 
@@ -363,13 +360,13 @@ Does a wallet's V8 contribution score predict its individual position outcome?
 | Contribution | N | WR | P&L | ROI | Avg Base | Avg Conv Mult |
 |---|---|---|---|---|---|---|
 | < 20 (low) | 43 | 41.9% | -$107.8K | -47.2% | 4.2 | 1.030 |
-| 20-40 (moderate) | 55 | 47.3% | +$67.2K | 6.7% | 29.7 | 1.098 |
-| 40-60 (solid) | 155 | 54.2% | +$838.9K | 21.6% | 46.0 | 1.152 |
-| 60-80 (strong) | 124 | 48.4% | +$681.9K | 11.4% | 58.7 | 1.232 |
-| 80+ (elite) | 96 | 49.0% | -$1.4M | -18.0% | 70.4 | 1.359 |
+| 20-40 (moderate) | 69 | 56.5% | +$800.9K | 41.3% | 29.4 | 1.108 |
+| 40-60 (solid) | 183 | 55.2% | +$863.3K | 18.7% | 45.8 | 1.151 |
+| 60-80 (strong) | 143 | 49.7% | +$705.7K | 10.6% | 58.2 | 1.243 |
+| 80+ (elite) | 112 | 49.1% | -$1.4M | -15.2% | 70.5 | 1.359 |
 
-**Spearman: Wallet Contribution vs WR**: 0.129
-**Spearman: ROI Norm vs WR**: 0.170
+**Spearman: Wallet Contribution vs WR**: 0.076
+**Spearman: ROI Norm vs WR**: 0.067
 
 ---
 
@@ -379,8 +376,8 @@ Positions on the V8 consensus side vs contrarian side.
 
 | Side | N | % | WR | P&L | ROI | Avg WPS | Avg Inv |
 |---|---|---|---|---|---|---|---|
-| Consensus | 346 | 71.2% | 45.4% | -$1.6M | -10.6% | 2.14 | +$45.0K |
-| Contrarian | 140 | 28.8% | 59.3% | +$1.7M | 51.8% | 1.43 | +$24.0K |
+| Consensus | 404 | 71.5% | 48.8% | -$1.1M | -5.9% | 2.13 | +$45.4K |
+| Contrarian | 161 | 28.5% | 57.1% | +$1.9M | 43.9% | 1.47 | +$27.4K |
 
 ---
 
@@ -392,39 +389,39 @@ Positions on the V8 consensus side vs contrarian side.
 
 | Rank | Field | ρ vs W | ρ vs ROI | ρ vs (W−p) | N |
 |---|---|---|---|---|---|
-| 1 | WPS (game-level) | +0.147 | +0.006 | -0.008 | 486 |
-| 2 | V8 Stars | +0.219 | +0.029 | +0.001 | 486 |
-| 3 | Net Edge | +0.103 | -0.028 | -0.033 | 486 |
-| 4 | For Side | +0.172 | +0.041 | +0.005 | 486 |
-| 5 | Against Side | +0.159 | +0.080 | +0.038 | 486 |
-| 6 | Breadth Bonus | +0.177 | +0.023 | -0.006 | 486 |
-| 7 | Conc Penalty | -0.156 | -0.026 | -0.004 | 486 |
-| 8 | Top Share | -0.148 | -0.024 | -0.001 | 486 |
-| 9 | Wallet Count For | +0.177 | +0.023 | -0.006 | 486 |
-| 10 | Wallet Count Against | +0.205 | +0.104 | +0.045 | 486 |
-| 11 | Wallet Contribution | +0.129 | -0.012 | -0.083 | 473 |
-| 12 | Wallet ROI Norm | +0.170 | +0.003 | -0.048 | 473 |
-| 13 | Wallet P&L Norm | +0.073 | +0.018 | +0.004 | 473 |
-| 14 | Wallet Rank Norm | -0.003 | -0.047 | -0.031 | 374 |
-| 15 | Wallet Base Score | +0.126 | -0.013 | -0.062 | 473 |
-| 16 | Conviction Mult | +0.090 | +0.012 | -0.048 | 473 |
-| 17 | Size Ratio | +0.089 | +0.011 | -0.046 | 473 |
-| 18 | Bet Multiplier | +0.116 | +0.017 | -0.037 | 486 |
-| 19 | Wallet Sport ROI | +0.162 | -0.009 | -0.048 | 486 |
-| 20 | Wallet Sport P&L Total | +0.091 | +0.032 | +0.017 | 486 |
-| 21 | Sport Vol (raw) | +0.089 | +0.038 | +0.049 | 486 |
-| 22 | log10(Sport Vol) | -0.021 | +0.008 | +0.026 | 451 |
-| 23 | LB Percentile Top | +0.036 | +0.005 | -0.007 | 324 |
-| 24 | Leaderboard Rank | -0.009 | +0.017 | +0.028 | 380 |
-| 25 | Avg Sport Bet | +0.188 | +0.032 | -0.002 | 486 |
-| 26 | Invested (stake) | +0.175 | +0.019 | -0.042 | 486 |
-| 27 | Contracts (size) | +0.164 | +0.047 | +0.033 | 486 |
-| 28 | Entry Price (implied p) | +0.133 | -0.104 | -0.368 | 486 |
-| 29 | Mark (curPrice) @ ingest | +0.331 | +0.199 | +0.032 | 486 |
-| 30 | Position P&L @ ingest | +0.360 | +0.383 | +0.388 | 486 |
-| 31 | Current Value | +0.263 | +0.120 | +0.058 | 486 |
-| 32 | Hours firstSeen → graded | -0.238 | -0.020 | -0.032 | 486 |
-| 33 | Pinnacle close implied (if odds) | +0.229 | +0.137 | +0.091 | 346 |
+| 1 | WPS (game-level) | +0.137 | +0.002 | -0.006 | 565 |
+| 2 | V8 Stars | +0.218 | +0.030 | +0.007 | 565 |
+| 3 | Net Edge | +0.113 | -0.026 | -0.029 | 565 |
+| 4 | For Side | +0.147 | +0.026 | +0.001 | 565 |
+| 5 | Against Side | +0.119 | +0.061 | +0.032 | 565 |
+| 6 | Breadth Bonus | +0.170 | +0.021 | +0.004 | 565 |
+| 7 | Conc Penalty | -0.122 | -0.013 | +0.004 | 565 |
+| 8 | Top Share | -0.118 | -0.013 | +0.002 | 565 |
+| 9 | Wallet Count For | +0.170 | +0.021 | +0.004 | 565 |
+| 10 | Wallet Count Against | +0.170 | +0.079 | +0.030 | 565 |
+| 11 | Wallet Contribution | +0.076 | -0.050 | -0.116 | 550 |
+| 12 | Wallet ROI Norm | +0.067 | -0.037 | -0.079 | 550 |
+| 13 | Wallet P&L Norm | +0.093 | +0.019 | -0.005 | 550 |
+| 14 | Wallet Rank Norm | +0.014 | -0.038 | -0.039 | 446 |
+| 15 | Wallet Base Score | +0.072 | -0.039 | -0.087 | 550 |
+| 16 | Conviction Mult | +0.070 | -0.028 | -0.076 | 550 |
+| 17 | Size Ratio | +0.070 | -0.028 | -0.074 | 550 |
+| 18 | Bet Multiplier | +0.105 | -0.014 | -0.061 | 565 |
+| 19 | Wallet Sport ROI | +0.057 | -0.047 | -0.080 | 565 |
+| 20 | Wallet Sport P&L Total | +0.105 | +0.029 | +0.004 | 565 |
+| 21 | Sport Vol (raw) | +0.145 | +0.059 | +0.058 | 565 |
+| 22 | log10(Sport Vol) | +0.058 | +0.034 | +0.038 | 530 |
+| 23 | LB Percentile Top | +0.047 | +0.004 | -0.017 | 397 |
+| 24 | Leaderboard Rank | -0.029 | +0.010 | +0.030 | 453 |
+| 25 | Avg Sport Bet | +0.194 | +0.051 | +0.005 | 565 |
+| 26 | Invested (stake) | +0.169 | +0.019 | -0.047 | 565 |
+| 27 | Contracts (size) | +0.143 | +0.043 | +0.022 | 565 |
+| 28 | Entry Price (implied p) | +0.145 | -0.120 | -0.366 | 565 |
+| 29 | Mark (curPrice) @ ingest | +0.351 | +0.193 | +0.039 | 565 |
+| 30 | Position P&L @ ingest | +0.329 | +0.376 | +0.392 | 565 |
+| 31 | Current Value | +0.256 | +0.118 | +0.051 | 565 |
+| 32 | Hours firstSeen → graded | -0.209 | -0.007 | -0.012 | 565 |
+| 33 | Pinnacle close implied (if odds) | +0.315 | +0.170 | +0.146 | 407 |
 
 **Leakage / MTM warning**: High |ρ| on **curPrice**, **positionPnl**, **currentValue** usually means those fields were captured **late** (near settlement) and line up with how the bet finished. **Do not** treat them as ex-ante reasons to trust a *pending* pick. For live confidence, lean on wallet/V8 structure (WPS, net edge, opposition, conviction) and §37 strata.
 
@@ -432,40 +429,40 @@ Positions on the V8 consensus side vs contrarian side.
 
 | Rank | Field | ρ vs W | ρ vs ROI | ρ vs (W−p) | N |
 |---|---|---|---|---|---|
-| 1 | Entry Price (implied p) | +0.133 | -0.104 | -0.368 | 486 |
-| 2 | Hours firstSeen → graded | -0.238 | -0.020 | -0.032 | 486 |
-| 3 | Pinnacle close implied (if odds) | +0.229 | +0.137 | +0.091 | 346 |
-| 4 | V8 Stars | +0.219 | +0.029 | +0.001 | 486 |
-| 5 | Wallet Count Against | +0.205 | +0.104 | +0.045 | 486 |
-| 6 | Avg Sport Bet | +0.188 | +0.032 | -0.002 | 486 |
-| 7 | Breadth Bonus | +0.177 | +0.023 | -0.006 | 486 |
-| 8 | Wallet Count For | +0.177 | +0.023 | -0.006 | 486 |
-| 9 | Invested (stake) | +0.175 | +0.019 | -0.042 | 486 |
-| 10 | For Side | +0.172 | +0.041 | +0.005 | 486 |
-| 11 | Wallet ROI Norm | +0.170 | +0.003 | -0.048 | 473 |
-| 12 | Contracts (size) | +0.164 | +0.047 | +0.033 | 486 |
-| 13 | Wallet Sport ROI | +0.162 | -0.009 | -0.048 | 486 |
-| 14 | Against Side | +0.159 | +0.080 | +0.038 | 486 |
-| 15 | Conc Penalty | -0.156 | -0.026 | -0.004 | 486 |
-| 16 | Top Share | -0.148 | -0.024 | -0.001 | 486 |
-| 17 | WPS (game-level) | +0.147 | +0.006 | -0.008 | 486 |
-| 18 | Wallet Contribution | +0.129 | -0.012 | -0.083 | 473 |
-| 19 | Wallet Base Score | +0.126 | -0.013 | -0.062 | 473 |
-| 20 | Bet Multiplier | +0.116 | +0.017 | -0.037 | 486 |
-| 21 | Net Edge | +0.103 | -0.028 | -0.033 | 486 |
-| 22 | Wallet Sport P&L Total | +0.091 | +0.032 | +0.017 | 486 |
-| 23 | Conviction Mult | +0.090 | +0.012 | -0.048 | 473 |
-| 24 | Sport Vol (raw) | +0.089 | +0.038 | +0.049 | 486 |
-| 25 | Size Ratio | +0.089 | +0.011 | -0.046 | 473 |
-| 26 | Wallet P&L Norm | +0.073 | +0.018 | +0.004 | 473 |
-| 27 | Wallet Rank Norm | -0.003 | -0.047 | -0.031 | 374 |
-| 28 | LB Percentile Top | +0.036 | +0.005 | -0.007 | 324 |
-| 29 | Leaderboard Rank | -0.009 | +0.017 | +0.028 | 380 |
-| 30 | log10(Sport Vol) | -0.021 | +0.008 | +0.026 | 451 |
+| 1 | Entry Price (implied p) | +0.145 | -0.120 | -0.366 | 565 |
+| 2 | Pinnacle close implied (if odds) | +0.315 | +0.170 | +0.146 | 407 |
+| 3 | V8 Stars | +0.218 | +0.030 | +0.007 | 565 |
+| 4 | Hours firstSeen → graded | -0.209 | -0.007 | -0.012 | 565 |
+| 5 | Avg Sport Bet | +0.194 | +0.051 | +0.005 | 565 |
+| 6 | Breadth Bonus | +0.170 | +0.021 | +0.004 | 565 |
+| 7 | Wallet Count For | +0.170 | +0.021 | +0.004 | 565 |
+| 8 | Wallet Count Against | +0.170 | +0.079 | +0.030 | 565 |
+| 9 | Invested (stake) | +0.169 | +0.019 | -0.047 | 565 |
+| 10 | For Side | +0.147 | +0.026 | +0.001 | 565 |
+| 11 | Sport Vol (raw) | +0.145 | +0.059 | +0.058 | 565 |
+| 12 | Contracts (size) | +0.143 | +0.043 | +0.022 | 565 |
+| 13 | WPS (game-level) | +0.137 | +0.002 | -0.006 | 565 |
+| 14 | Conc Penalty | -0.122 | -0.013 | +0.004 | 565 |
+| 15 | Against Side | +0.119 | +0.061 | +0.032 | 565 |
+| 16 | Top Share | -0.118 | -0.013 | +0.002 | 565 |
+| 17 | Wallet Contribution | +0.076 | -0.050 | -0.116 | 550 |
+| 18 | Net Edge | +0.113 | -0.026 | -0.029 | 565 |
+| 19 | Wallet Sport P&L Total | +0.105 | +0.029 | +0.004 | 565 |
+| 20 | Bet Multiplier | +0.105 | -0.014 | -0.061 | 565 |
+| 21 | Wallet P&L Norm | +0.093 | +0.019 | -0.005 | 550 |
+| 22 | Wallet Base Score | +0.072 | -0.039 | -0.087 | 550 |
+| 23 | Wallet Sport ROI | +0.057 | -0.047 | -0.080 | 565 |
+| 24 | Wallet ROI Norm | +0.067 | -0.037 | -0.079 | 550 |
+| 25 | Conviction Mult | +0.070 | -0.028 | -0.076 | 550 |
+| 26 | Size Ratio | +0.070 | -0.028 | -0.074 | 550 |
+| 27 | log10(Sport Vol) | +0.058 | +0.034 | +0.038 | 530 |
+| 28 | LB Percentile Top | +0.047 | +0.004 | -0.017 | 397 |
+| 29 | Wallet Rank Norm | +0.014 | -0.038 | -0.039 | 446 |
+| 30 | Leaderboard Rank | -0.029 | +0.010 | +0.030 | 453 |
 
-**Strongest vs staked ROI (top 3 |ρ|)**: Pinnacle close implied (if odds) (+0.137), Wallet Count Against (+0.104), Entry Price (implied p) (-0.104)
+**Strongest vs staked ROI (top 3 |ρ|)**: Pinnacle close implied (if odds) (+0.170), Entry Price (implied p) (-0.120), Wallet Count Against (+0.079)
 
-**Strongest vs excess over entry implied (top 3 |ρ|)**: Entry Price (implied p) (-0.368), Pinnacle close implied (if odds) (+0.091), Wallet Contribution (-0.083)
+**Strongest vs excess over entry implied (top 3 |ρ|)**: Entry Price (implied p) (-0.366), Pinnacle close implied (if odds) (+0.146), Wallet Contribution (-0.116)
 
 ---
 
@@ -477,33 +474,33 @@ How do combinations of V8 variables perform? Cross-cutting the key dimensions.
 
 | Star Range | ML (N/WR/ROI) | SPREAD (N/WR/ROI) | TOTAL (N/WR/ROI) |
 |---|---|---|---|
-| 1-2★ | 70 / 48.6% / -10.7% | 16 / 68.8% / 27.3% | 37 / 59.5% / 31.5% |
-| 2.5-3★ | 93 / 49.5% / 11.6% | 47 / 48.9% / -21.9% | 42 / 33.3% / -16.6% |
-| 3.5-5★ | 89 / 51.7% / 5.3% | 61 / 49.2% / 16.2% | 18 / 50.0% / -67.8% |
+| 1-2★ | 78 / 47.4% / -16.5% | 18 / 66.7% / 11.3% | 44 / 61.4% / 34.1% |
+| 2.5-3★ | 114 / 51.8% / 10.6% | 55 / 52.7% / -6.8% | 46 / 34.8% / -15.8% |
+| 3.5-5★ | 108 / 57.4% / 8.2% | 69 / 47.8% / 24.3% | 18 / 50.0% / -67.8% |
 
 ### Stars × Sport
 
 | Star Range | MLB (N/WR/ROI) | NBA (N/WR/ROI) | NHL (N/WR/ROI) |
 |---|---|---|---|
-| 1-2★ | 67 / 55.2% / 15.6% | 37 / 51.4% / 1.4% | 19 / 57.9% / -47.1% |
-| 2.5-3★ | 50 / 44.0% / -3.6% | 109 / 45.0% / -4.1% | 23 / 52.2% / 15.9% |
-| 3.5-5★ | 25 / 84.0% / 55.4% | 135 / 43.7% / -2.5% | 8 / 62.5% / 22.7% |
+| 1-2★ | 77 / 51.9% / 9.3% | 42 / 54.8% / 4.9% | 21 / 61.9% / -45.5% |
+| 2.5-3★ | 57 / 42.1% / -17.9% | 124 / 48.4% / 0.4% | 34 / 58.8% / 25.3% |
+| 3.5-5★ | 25 / 84.0% / 55.4% | 157 / 47.1% / 2.6% | 13 / 69.2% / 38.9% |
 
 ### Stars × Label
 
 | Star Range | HIGH_CONVICTION (N/WR/ROI) | SHARP_POSITION (N/WR/ROI) |
 |---|---|---|
-| 1-2★ | 22 / 63.6% / -2.1% | 101 / 52.5% / 5.8% |
-| 2.5-3★ | 53 / 52.8% / 14.6% | 129 / 42.6% / -15.1% |
-| 3.5-5★ | 56 / 46.4% / -16.6% | 112 / 52.7% / 27.3% |
+| 1-2★ | 28 / 57.1% / -2.7% | 112 / 53.6% / 3.2% |
+| 2.5-3★ | 61 / 52.5% / 11.6% | 154 / 46.8% / -5.2% |
+| 3.5-5★ | 67 / 52.2% / -4.5% | 128 / 53.9% / 23.4% |
 
 ### Stars × Tier
 
 | Star Range | ELITE (N/WR/ROI) | PROVEN (N/WR/ROI) | SHARP (N/WR/ROI) |
 |---|---|---|---|
-| 1-2★ | 93 / 54.8% / 1.4% | 27 / 51.9% / 21.0% | 3 / 66.7% / 42.3% |
-| 2.5-3★ | 175 / 45.7% / -2.2% | 4 / 25.0% / -92.0% | 3 / 66.7% / 118.7% |
-| 3.5-5★ | 162 / 51.2% / 1.3% | 6 / 33.3% / -53.4% | — |
+| 1-2★ | 109 / 55.0% / 0.1% | 27 / 51.9% / 21.0% | 4 / 50.0% / -16.0% |
+| 2.5-3★ | 207 / 48.3% / 0.9% | 4 / 25.0% / -92.0% | 4 / 75.0% / 128.5% |
+| 3.5-5★ | 188 / 53.7% / 6.6% | 6 / 33.3% / -53.4% | 1 / 100.0% / 27.7% |
 
 ---
 
@@ -515,41 +512,41 @@ Which components of WPS actually drive predictive value? WPS = netEdge + breadth
 
 | Net Edge | N | WR | P&L | ROI |
 |---|---|---|---|---|
-| < 0 (opposing dominant) | 39 | 51.3% | +$132.6K | 6.9% |
-| 0 to 0.5 (slight edge) | 113 | 50.4% | -$174.1K | -7.1% |
-| 0.5 to 1.5 (moderate) | 168 | 47.0% | +$12.0K | 0.2% |
-| 1.5 to 3 (strong) | 107 | 48.6% | +$110.2K | 2.2% |
-| 3+ (dominant) | 59 | 54.2% | +$18.2K | 0.7% |
+| < 0 (opposing dominant) | 46 | 52.2% | +$288.2K | 12.0% |
+| 0 to 0.5 (slight edge) | 124 | 50.8% | -$283.0K | -9.9% |
+| 0.5 to 1.5 (moderate) | 199 | 48.7% | +$109.8K | 1.4% |
+| 1.5 to 3 (strong) | 134 | 52.2% | +$703.8K | 10.1% |
+| 3+ (dominant) | 62 | 56.5% | +$30.4K | 1.1% |
 
 ### Breadth Bonus (2 × ln(1 + walletCountFor))
 
 | Breadth | N | WR | P&L | ROI | Avg Wallets |
 |---|---|---|---|---|---|
-| < 1.5 (1 wallet) | 73 | 49.3% | +$548.8K | 22.7% | 1.0 |
-| 1.5-2.5 (2-3 wallets) | 98 | 49.0% | -$251.1K | -9.8% | 2.0 |
-| 2.5-3.5 (4-6 wallets) | 163 | 51.5% | -$1.1M | -18.5% | 3.5 |
-| 3.5+ (7+ wallets) | 152 | 47.4% | +$860.6K | 10.5% | 6.8 |
+| < 1.5 (1 wallet) | 85 | 49.4% | +$474.1K | 16.4% | 1.0 |
+| 1.5-2.5 (2-3 wallets) | 114 | 49.1% | -$385.1K | -12.1% | 2.0 |
+| 2.5-3.5 (4-6 wallets) | 187 | 54.0% | -$681.2K | -10.4% | 3.5 |
+| 3.5+ (7+ wallets) | 179 | 50.3% | +$1.4M | 14.2% | 6.6 |
 
 ### Concentration Penalty (concCoeff × topShare)
 
 | Conc Penalty | N | WR | P&L | ROI | Avg TopShare |
 |---|---|---|---|---|---|
-| < 1.5 (diversified) | 141 | 48.2% | +$813.0K | 12.0% | 0.24 |
-| 1.5-2.5 (moderate) | 174 | 50.6% | -$683.3K | -9.9% | 0.41 |
-| 2.5-3.5 (concentrated) | 80 | 46.3% | -$542.6K | -19.2% | 0.64 |
-| 3.5+ (single-wallet dominated) | 91 | 51.6% | +$511.9K | 20.6% | 1.00 |
+| < 1.5 (diversified) | 158 | 49.4% | +$1.2M | 15.3% | 0.24 |
+| 1.5-2.5 (moderate) | 218 | 53.7% | -$235.9K | -2.7% | 0.42 |
+| 2.5-3.5 (concentrated) | 86 | 47.7% | -$587.1K | -19.7% | 0.64 |
+| 3.5+ (single-wallet dominated) | 103 | 51.5% | +$437.1K | 14.8% | 1.00 |
 
 ### Component-level Predictive Power
 
 | Component | ρ vs WR |
 |---|---|
-| Net Edge | +0.103 |
-| Breadth Bonus | +0.177 |
-| Conc Penalty | -0.156 |
-| For Side | +0.172 |
-| Against Side | +0.159 |
-| Top Share | -0.148 |
-| Wallet Count For | +0.177 |
+| Net Edge | +0.113 |
+| Breadth Bonus | +0.170 |
+| Conc Penalty | -0.122 |
+| For Side | +0.147 |
+| Against Side | +0.119 |
+| Top Share | -0.118 |
+| Wallet Count For | +0.170 |
 
 ---
 
@@ -557,16 +554,16 @@ Which components of WPS actually drive predictive value? WPS = netEdge + breadth
 
 Does skill (walletBase) or conviction (convictionMult/sizeRatio) matter more?
 
-Median walletBase: 51.5 | Median convictionMult: 1.159
+Median walletBase: 50.8 | Median convictionMult: 1.167
 
 | Quadrant | N | % | WR | P&L | ROI | Avg Base | Avg Conv |
 |---|---|---|---|---|---|---|---|
-| High Skill + High Conv | 129 | 27.3% | 46.5% | -$1.1M | -14.7% | 63.4 | 1.351 |
-| High Skill + Low Conv | 109 | 23.0% | 51.4% | +$49.1K | 1.4% | 65.6 | 1.025 |
-| Low Skill + High Conv | 108 | 22.8% | 52.8% | +$821.7K | 13.0% | 36.6 | 1.406 |
-| Low Skill + Low Conv | 127 | 26.8% | 48.8% | +$334.9K | 23.7% | 29.0 | 1.013 |
+| High Skill + High Conv | 152 | 27.6% | 46.1% | -$1.8M | -19.3% | 63.0 | 1.361 |
+| High Skill + Low Conv | 123 | 22.4% | 53.7% | +$915.0K | 22.6% | 65.7 | 1.033 |
+| Low Skill + High Conv | 123 | 22.4% | 55.3% | +$1.2M | 16.5% | 35.8 | 1.406 |
+| Low Skill + Low Conv | 152 | 27.6% | 52.6% | +$507.6K | 22.5% | 31.2 | 1.015 |
 
-**High Skill WR**: 48.7% | **High Conviction WR**: 49.4%
+**High Skill WR**: 49.5% | **High Conviction WR**: 50.2%
 **Verdict**: Skill and conviction contribute equally
 
 ---
@@ -577,24 +574,24 @@ Testing specific condition combinations that might identify edge.
 
 | Condition | N | % | WR | P&L | ROI | vs Overall |
 |---|---|---|---|---|---|---|
-| Underdog (price < 40¢) + ≥3★ | 26 | 5.3% | 46.2% | +$1.2M | 205.8% | -3.2% WR |
-| 1-2★ + LOW invested (< $5K) | 56 | 11.5% | 53.6% | +$16.0K | 18.2% | +4.2% WR |
-| ≥3★ + ELITE tier | 244 | 50.2% | 51.2% | +$362.8K | 3.2% | +1.8% WR |
-| WPS > 2 + ELITE tier | 215 | 44.2% | 49.8% | +$335.0K | 3.2% | +0.4% WR |
-| ≥3★ + 3+ wallets for | 250 | 51.4% | 50.8% | +$336.8K | 2.9% | +1.4% WR |
-| ≥3★ + walletBase ≥ 50 | 149 | 30.7% | 49.7% | +$59.4K | 0.9% | +0.3% WR |
-| Low conc (penalty < 2) + positive edge | 234 | 48.1% | 48.7% | +$88.2K | 0.8% | -0.7% WR |
-| ≥3★ + consensus side | 186 | 38.3% | 48.9% | -$703.1K | -7.3% | -0.5% WR |
-| ≥3★ + HIGH_CONVICTION | 77 | 15.8% | 48.1% | -$467.8K | -7.4% | -1.3% WR |
-| WPS > 2 + betMult ≥ 3 | 69 | 14.2% | 49.3% | -$487.3K | -7.9% | -0.1% WR |
-| Favorite (price ≥ 60¢) + ≥3★ | 44 | 9.1% | 50.0% | -$399.6K | -8.9% | +0.6% WR |
-| Consensus + topShare < 0.5 | 203 | 41.8% | 46.3% | -$1.5M | -14.3% | -3.1% WR |
-| ≥3★ + no opposition (against=0) | 44 | 9.1% | 47.7% | -$707.0K | -37.8% | -1.7% WR |
-| Consensus + 4+ wallets + no opp | 28 | 5.8% | 35.7% | -$1.0M | -84.3% | -13.7% WR |
-| Contrarian + walletBase ≥ 60 | 30 | 6.2% | 56.7% | -$14 | -0.0% | +7.3% WR |
+| Underdog (price < 40¢) + ≥3★ | 31 | 5.5% | 41.9% | +$1.3M | 158.4% | -9.3% WR |
+| 1-2★ + LOW invested (< $5K) | 58 | 10.3% | 55.2% | +$23.9K | 25.7% | +4.0% WR |
+| ≥3★ + ELITE tier | 290 | 51.3% | 54.1% | +$1.3M | 9.1% | +2.9% WR |
+| ≥3★ + 3+ wallets for | 297 | 52.6% | 53.9% | +$1.2M | 8.9% | +2.7% WR |
+| WPS > 2 + ELITE tier | 252 | 44.6% | 52.8% | +$1.1M | 8.5% | +1.6% WR |
+| ≥3★ + walletBase ≥ 50 | 173 | 30.6% | 52.6% | +$464.1K | 5.7% | +1.4% WR |
+| Low conc (penalty < 2) + positive edge | 263 | 46.5% | 51.0% | +$693.0K | 5.5% | -0.2% WR |
+| ≥3★ + HIGH_CONVICTION | 91 | 16.1% | 52.7% | +$246.6K | 3.2% | +1.5% WR |
+| WPS > 2 + betMult ≥ 3 | 83 | 14.7% | 54.2% | +$227.1K | 3.0% | +3.0% WR |
+| ≥3★ + consensus side | 222 | 39.3% | 54.1% | -$84.9K | -0.7% | +2.9% WR |
+| Favorite (price ≥ 60¢) + ≥3★ | 59 | 10.4% | 59.3% | -$284.5K | -5.0% | +8.1% WR |
+| Consensus + topShare < 0.5 | 241 | 42.7% | 51.9% | -$787.3K | -6.3% | +0.7% WR |
+| Contrarian + walletBase ≥ 60 | 34 | 6.0% | 50.0% | -$251.8K | -17.5% | -1.2% WR |
+| ≥3★ + no opposition (against=0) | 47 | 8.3% | 51.1% | -$694.4K | -36.7% | -0.1% WR |
+| Consensus + 4+ wallets + no opp | 29 | 5.1% | 37.9% | -$1.0M | -82.9% | -13.3% WR |
 
-**Profitable conditions**: 7 of 15
-**Best condition**: Underdog (price < 40¢) + ≥3★ — 46.2% WR, 205.8% ROI
+**Profitable conditions**: 9 of 15
+**Best condition**: Underdog (price < 40¢) + ≥3★ — 41.9% WR, 158.4% ROI
 
 ---
 
@@ -604,19 +601,19 @@ How does the strength/presence of opposing sharps affect outcomes?
 
 | Opposition | N | WR | P&L | ROI | Avg WPS |
 |---|---|---|---|---|---|
-| No opposition (0) | 116 | 46.6% | -$650.9K | -20.0% | 1.10 |
-| Light opposition (1) | 74 | 62.2% | +$577.2K | 23.5% | 1.53 |
-| Moderate opposition (2-3) | 106 | 40.6% | -$458.8K | -9.1% | 3.56 |
-| Heavy opposition (4+) | 50 | 28.0% | -$1.1M | -23.0% | 2.47 |
+| No opposition (0) | 126 | 47.6% | -$794.0K | -22.9% | 1.01 |
+| Light opposition (1) | 94 | 67.0% | +$1.1M | 34.5% | 1.75 |
+| Moderate opposition (2-3) | 132 | 43.9% | -$434.0K | -6.5% | 3.39 |
+| Heavy opposition (4+) | 52 | 30.8% | -$971.3K | -19.5% | 2.38 |
 
 ### Against Side Strength
 
 | Against Strength | N | WR | P&L | ROI |
 |---|---|---|---|---|
-| No against (0) | 119 | 47.1% | -$651.2K | -19.9% |
-| Weak against (0-50) | 37 | 45.9% | -$60.9K | -5.6% |
-| Moderate against (50-150) | 99 | 55.6% | +$571.8K | 15.9% |
-| Strong against (150+) | 91 | 31.9% | -$1.5M | -19.7% |
+| No against (0) | 129 | 48.1% | -$794.4K | -22.9% |
+| Weak against (0-50) | 45 | 51.1% | -$135.1K | -10.6% |
+| Moderate against (50-150) | 128 | 60.2% | +$1.3M | 23.7% |
+| Strong against (150+) | 102 | 34.3% | -$1.4M | -17.4% |
 
 ---
 
@@ -626,12 +623,12 @@ topShare = maxContribution / forSide — lower = more diversified consensus.
 
 | Top Share | N | WR | P&L | ROI | Avg Wallets |
 |---|---|---|---|---|---|
-| < 30% (highly diversified) | 104 | 48.1% | -$41.1K | -0.8% | 6.9 |
-| 30-50% (moderate) | 99 | 44.4% | -$1.5M | -28.8% | 3.7 |
-| 50-75% (concentrated) | 67 | 35.8% | -$759.3K | -27.6% | 2.4 |
-| 75-100% (single dominant) | 76 | 51.3% | +$620.5K | 27.1% | 1.3 |
+| < 30% (highly diversified) | 116 | 49.1% | +$56.1K | 0.9% | 6.9 |
+| 30-50% (moderate) | 125 | 54.4% | -$843.4K | -13.6% | 3.7 |
+| 50-75% (concentrated) | 78 | 37.2% | -$887.5K | -27.6% | 2.3 |
+| 75-100% (single dominant) | 85 | 50.6% | +$588.7K | 22.0% | 1.2 |
 
-**Spearman: Top Share vs WR**: -0.141
+**Spearman: Top Share vs WR**: -0.118
 → Lower top share (more diversified) = better outcomes
 
 ---
@@ -640,31 +637,31 @@ topShare = maxContribution / forSide — lower = more diversified consensus.
 
 Single-variable scan for **WR lift** vs global baseline. **`avgPrice` is excluded**: high entry mechanically raises win rate without proving edge (see §22 ROI / W−p and §37 strata).
 
-**Baseline WR**: 49.4%
+**Baseline WR**: 51.2%
 
 | Variable | Direction | Optimal Threshold | WR at Threshold | N | WR Lift |
 |---|---|---|---|---|---|
-| Bet Multiplier | ≥ | 10.04 | 59.3% | 27 | +9.9% |
-| V8 Stars | ≥ | 4.50 | 59.1% | 44 | +9.7% |
-| ROI Norm | ≥ | 79.20 | 57.4% | 54 | +8.0% |
-| Position Size | ≥ | 92980.00 | 57.1% | 49 | +7.8% |
-| Wallet Sport ROI | ≥ | 10.00 | 57.1% | 56 | +7.8% |
-| Net Edge | ≥ | 2.45 | 56.8% | 95 | +7.5% |
-| Conviction Mult | ≥ | 1.42 | 55.8% | 95 | +6.4% |
-| Wallet Base | ≥ | 64.30 | 52.2% | 92 | +2.8% |
-| Against Side | ≤ | 67.00 | 52.1% | 215 | +2.7% |
-| For Side | ≥ | 159.20 | 51.3% | 279 | +1.9% |
-| Wallet Contribution | ≥ | 46.20 | 51.1% | 348 | +1.8% |
-| WPS | ≥ | 4.73 | 51.0% | 102 | +1.6% |
-| Conc Penalty | ≤ | 1.58 | 51.0% | 155 | +1.6% |
-| Top Share | ≤ | 0.32 | 51.0% | 155 | +1.6% |
-| Wallet Count Agst | ≤ | 2.00 | 50.3% | 322 | +0.9% |
-| Wallet Count For | ≥ | 3.00 | 49.5% | 315 | +0.1% |
+| Position Size | ≥ | 100108.00 | 66.1% | 56 | +14.9% |
+| V8 Stars | ≥ | 4.50 | 61.7% | 47 | +10.6% |
+| Bet Multiplier | ≥ | 10.04 | 61.3% | 31 | +10.1% |
+| ROI Norm | ≥ | 78.00 | 58.6% | 58 | +7.5% |
+| Wallet Sport ROI | ≥ | 10.00 | 57.6% | 59 | +6.5% |
+| Net Edge | ≥ | 2.45 | 57.1% | 112 | +6.0% |
+| Conviction Mult | ≥ | 1.47 | 57.0% | 86 | +5.8% |
+| WPS | ≥ | 1.53 | 54.1% | 294 | +2.9% |
+| Against Side | ≤ | 107.40 | 53.6% | 343 | +2.5% |
+| Top Share | ≤ | 0.47 | 53.6% | 330 | +2.5% |
+| For Side | ≥ | 159.20 | 53.5% | 329 | +2.3% |
+| Wallet Count Agst | ≤ | 1.00 | 52.9% | 255 | +1.8% |
+| Conc Penalty | ≤ | 2.36 | 52.9% | 359 | +1.8% |
+| Wallet Base | ≥ | 28.20 | 52.2% | 475 | +1.1% |
+| Wallet Count For | ≥ | 3.00 | 52.2% | 366 | +1.0% |
+| Wallet Contribution | ≥ | 46.20 | 52.1% | 405 | +0.9% |
 
 **Top 3 single-variable filters for WR lift**:
-- **Bet Multiplier ≥ 10.04**: 59.3% WR (+9.9% lift, N=27)
-- **V8 Stars ≥ 4.50**: 59.1% WR (+9.7% lift, N=44)
-- **ROI Norm ≥ 79.20**: 57.4% WR (+8.0% lift, N=54)
+- **Position Size ≥ 100108.00**: 66.1% WR (+14.9% lift, N=56)
+- **V8 Stars ≥ 4.50**: 61.7% WR (+10.6% lift, N=47)
+- **Bet Multiplier ≥ 10.04**: 61.3% WR (+10.1% lift, N=31)
 
 ---
 
@@ -672,29 +669,29 @@ Single-variable scan for **WR lift** vs global baseline. **`avgPrice` is exclude
 
 Which variables reduce **win/loss entropy** most at a median split? (Still a binary target — pair with §22 for ROI-driven signal. **`avgPrice` omitted** as a trivial WR driver.)
 
-**Base entropy**: 0.9999
+**Base entropy**: 0.9996
 
 | Rank | Feature | Info Gain | Median Split | Below WR | Above WR | WR Spread |
 |---|---|---|---|---|---|---|
-| 1 | PnL Norm | 0.0034 | 42.40 | 53.2% (N=235) | 46.2% (N=238) | -7.0% |
-| 2 | Stars | 0.0006 | 3.00 | 47.9% (N=236) | 50.8% (N=250) | +2.9% |
-| 3 | Bet Mult | 0.0004 | 1.60 | 48.1% (N=243) | 50.6% (N=243) | +2.5% |
-| 4 | Against Side | 0.0004 | 86.70 | 50.6% (N=241) | 48.2% (N=245) | -2.5% |
-| 5 | Contribution | 0.0003 | 57.90 | 50.8% (N=236) | 48.5% (N=237) | -2.3% |
-| 6 | Net Edge | 0.0003 | 0.96 | 50.4% (N=242) | 48.4% (N=244) | -2.1% |
-| 7 | WPS | 0.0002 | 1.75 | 48.5% (N=241) | 50.2% (N=245) | +1.7% |
-| 8 | Position Size | 0.0002 | 12757.00 | 48.6% (N=243) | 50.2% (N=243) | +1.6% |
-| 9 | Wallet Base | 0.0002 | 51.50 | 50.6% (N=235) | 48.7% (N=238) | -1.9% |
-| 10 | Wallets Agst | 0.0002 | 2.00 | 50.2% (N=219) | 48.7% (N=267) | -1.5% |
-| 11 | For Side | 0.0001 | 200.40 | 48.8% (N=240) | 50.0% (N=246) | +1.3% |
-| 12 | Breadth | 0.0000 | 2.77 | 49.1% (N=171) | 49.5% (N=315) | +0.4% |
-| 13 | Wallets For | 0.0000 | 3.00 | 49.1% (N=171) | 49.5% (N=315) | +0.4% |
-| 14 | Conc Penalty | 0.0000 | 2.00 | 49.4% (N=243) | 49.4% (N=243) | 0.0% |
-| 15 | Top Share | 0.0000 | 0.41 | 49.4% (N=243) | 49.4% (N=243) | 0.0% |
-| 16 | Sport ROI | 0.0000 | 3.15 | 49.4% (N=243) | 49.4% (N=243) | 0.0% |
-| 17 | ROI Norm | -0.0001 | 45.60 | 49.4% (N=235) | 50.0% (N=238) | +0.6% |
-| 18 | Conv Mult | -0.0001 | 1.16 | 50.0% (N=236) | 49.4% (N=237) | -0.6% |
-| 19 | Size Ratio | -0.0001 | 1.70 | 50.0% (N=236) | 49.4% (N=237) | -0.6% |
+| 1 | PnL Norm | 0.0025 | 45.20 | 54.4% (N=274) | 48.9% (N=276) | -5.5% |
+| 2 | Stars | 0.0024 | 3.00 | 48.1% (N=268) | 53.9% (N=297) | +5.7% |
+| 3 | Contribution | 0.0018 | 57.80 | 53.8% (N=275) | 49.5% (N=275) | -4.4% |
+| 4 | Wallet Base | 0.0018 | 50.80 | 53.8% (N=275) | 49.5% (N=275) | -4.4% |
+| 5 | Size Ratio | 0.0010 | 1.74 | 53.1% (N=273) | 50.2% (N=277) | -2.9% |
+| 6 | Conv Mult | 0.0010 | 1.17 | 53.1% (N=275) | 50.2% (N=275) | -2.9% |
+| 7 | WPS | 0.0010 | 1.79 | 49.3% (N=282) | 53.0% (N=283) | +3.7% |
+| 8 | Wallets Agst | 0.0008 | 2.00 | 52.9% (N=255) | 49.7% (N=310) | -3.3% |
+| 9 | Breadth | 0.0006 | 2.77 | 49.2% (N=199) | 52.2% (N=366) | +2.9% |
+| 10 | Wallets For | 0.0006 | 3.00 | 49.2% (N=199) | 52.2% (N=366) | +2.9% |
+| 11 | ROI Norm | 0.0004 | 44.80 | 52.0% (N=273) | 51.3% (N=277) | -0.8% |
+| 12 | Sport ROI | 0.0003 | 2.90 | 52.2% (N=278) | 50.2% (N=287) | -2.0% |
+| 13 | For Side | 0.0002 | 197.40 | 50.4% (N=282) | 51.9% (N=283) | +1.6% |
+| 14 | Bet Mult | 0.0002 | 1.63 | 50.4% (N=282) | 51.9% (N=283) | +1.6% |
+| 15 | Against Side | 0.0000 | 88.00 | 51.4% (N=282) | 50.9% (N=283) | -0.5% |
+| 16 | Net Edge | 0.0000 | 0.99 | 51.1% (N=282) | 51.2% (N=283) | +0.2% |
+| 17 | Conc Penalty | 0.0000 | 2.03 | 51.1% (N=282) | 51.2% (N=283) | +0.2% |
+| 18 | Position Size | 0.0000 | 14465.00 | 51.1% (N=282) | 51.2% (N=283) | +0.2% |
+| 19 | Top Share | 0.0000 | 0.42 | 51.1% (N=280) | 51.2% (N=285) | +0.2% |
 
 ---
 
@@ -704,41 +701,41 @@ Systematic scan of 2-variable AND conditions. Minimum 5 positions per rule.
 
 | Rule (A + B) | N | WR | WR Lift | ROI | P&L |
 |---|---|---|---|---|---|
-| No opposition + Entry price ≥ 60¢ | 11 | 90.9% | +41.5% | 23.2% | +$186.6K |
-| Entry price ≥ 60¢ + AgainstSide < 50 | 19 | 73.7% | +24.3% | 12.8% | +$130.0K |
-| WPS ≥ 3 + Entry price ≥ 50¢ | 111 | 64.9% | +15.5% | 10.6% | +$719.9K |
-| Net Edge > 2 + Entry price ≥ 50¢ | 88 | 63.6% | +14.3% | 8.0% | +$300.3K |
-| 5+ wallets for + Entry price ≥ 50¢ | 90 | 62.2% | +12.8% | 10.3% | +$657.7K |
-| WPS ≥ 5 + Entry price ≥ 50¢ | 62 | 61.3% | +11.9% | 8.2% | +$235.5K |
-| Stars ≥ 3 + Entry price ≥ 50¢ | 158 | 59.5% | +10.1% | 1.2% | +$107.6K |
-| Net Edge > 1 + Entry price ≥ 50¢ | 151 | 58.9% | +9.6% | 4.0% | +$289.3K |
-| Stars ≥ 4 + Entry price ≥ 50¢ | 75 | 58.7% | +9.3% | 7.1% | +$249.1K |
-| Net Edge > 2 + WalletBase ≥ 50 | 81 | 58.0% | +8.6% | 21.5% | +$723.0K |
-| TopShare < 0.5 + Entry price ≥ 50¢ | 172 | 57.6% | +8.2% | -6.0% | -$575.2K |
-| Net Edge > 2 + Sport ROI ≥ 5% | 63 | 57.1% | +7.8% | 10.8% | +$266.5K |
-| WPS ≥ 5 + WalletBase ≥ 50 | 60 | 56.7% | +7.3% | 44.4% | +$1.1M |
-| Net Edge > 1 + Entry price ≥ 60¢ | 32 | 56.3% | +6.9% | -13.6% | -$401.4K |
-| WPS ≥ 3 + Sport ROI ≥ 5% | 77 | 55.8% | +6.5% | 3.9% | +$112.0K |
-| Conc penalty < 2.5 + Entry price ≥ 50¢ | 189 | 55.6% | +6.2% | -7.7% | -$769.3K |
-| Entry price ≥ 50¢ + ELITE tier | 265 | 55.5% | +6.1% | -8.8% | -$1.2M |
-| Entry price ≥ 50¢ + ForSide > 100 | 220 | 55.5% | +6.1% | -11.0% | -$1.3M |
-| 3+ wallets for + Entry price ≥ 50¢ | 190 | 55.3% | +5.9% | -11.1% | -$1.2M |
-| Consensus side + Entry price ≥ 60¢ | 58 | 55.2% | +5.8% | -16.4% | -$1.0M |
+| No opposition + Entry price ≥ 60¢ | 13 | 84.6% | +33.5% | 16.4% | +$142.3K |
+| Entry price ≥ 60¢ + AgainstSide < 50 | 28 | 71.4% | +20.3% | -0.7% | -$8.5K |
+| WPS ≥ 3 + Entry price ≥ 60¢ | 39 | 66.7% | +15.5% | 1.6% | +$73.7K |
+| Net Edge > 1 + Entry price ≥ 60¢ | 47 | 66.0% | +14.8% | -6.6% | -$272.3K |
+| WPS ≥ 3 + Entry price ≥ 50¢ | 129 | 65.9% | +14.7% | 9.8% | +$783.1K |
+| Net Edge > 2 + Entry price ≥ 50¢ | 100 | 64.0% | +12.8% | 9.0% | +$407.5K |
+| 5+ wallets for + Entry price ≥ 50¢ | 107 | 63.6% | +12.4% | 9.4% | +$716.6K |
+| Entry price ≥ 60¢ + Bet mult ≥ 2 | 51 | 62.7% | +11.6% | -11.2% | -$758.5K |
+| WPS ≥ 5 + Entry price ≥ 50¢ | 74 | 62.2% | +11.0% | 9.4% | +$342.7K |
+| Stars ≥ 3 + Entry price ≥ 50¢ | 187 | 61.5% | +10.3% | 1.5% | +$149.7K |
+| Net Edge > 1 + Entry price ≥ 50¢ | 177 | 60.5% | +9.3% | 2.6% | +$231.4K |
+| Stars ≥ 3 + Entry price ≥ 60¢ | 58 | 60.3% | +9.2% | -5.0% | -$282.6K |
+| Consensus side + Entry price ≥ 60¢ | 80 | 60.0% | +8.8% | -14.8% | -$1.1M |
+| Stars ≥ 4 + Entry price ≥ 50¢ | 87 | 59.8% | +8.6% | 8.3% | +$356.4K |
+| TopShare < 0.5 + Entry price ≥ 50¢ | 203 | 59.6% | +8.5% | -5.1% | -$568.4K |
+| Net Edge > 2 + WalletBase ≥ 50 | 90 | 58.9% | +7.7% | 20.2% | +$838.9K |
+| WPS ≥ 5 + WalletBase ≥ 50 | 69 | 58.0% | +6.8% | 37.1% | +$1.2M |
+| Net Edge > 2 + Sport ROI ≥ 5% | 69 | 58.0% | +6.8% | 9.5% | +$286.1K |
+| TopShare < 0.5 + Entry price ≥ 60¢ | 64 | 57.8% | +6.7% | -9.8% | -$598.6K |
+| 3+ wallets for + Entry price ≥ 50¢ | 221 | 57.5% | +6.3% | -9.6% | -$1.2M |
 
 ### Worst 2-Variable Conditions (avoid these)
 
 | Rule (A + B) | N | WR | WR vs Base | ROI |
 |---|---|---|---|---|
-| Stars ≥ 4 + Entry price ≥ 60¢ | 12 | 8.3% | -41.0% | -76.8% |
-| WPS ≥ 5 + Entry price ≥ 60¢ | 11 | 9.1% | -40.3% | -76.0% |
-| Stars ≥ 4 + No opposition | 20 | 10.0% | -39.4% | -97.3% |
-| Stars ≥ 4 + AgainstSide < 50 | 21 | 14.3% | -35.1% | -96.5% |
-| WPS ≥ 5 + No opposition | 12 | 16.7% | -32.7% | -94.1% |
-| No opposition + 5+ wallets for | 12 | 16.7% | -32.7% | -94.1% |
-| 5+ wallets for + AgainstSide < 50 | 15 | 20.0% | -29.4% | -92.7% |
-| WPS ≥ 5 + AgainstSide < 50 | 13 | 23.1% | -26.3% | -92.3% |
-| Net Edge > 2 + No opposition | 27 | 33.3% | -16.0% | -64.5% |
-| WPS ≥ 3 + No opposition | 28 | 35.7% | -13.7% | -84.3% |
+| Stars ≥ 4 + No opposition | 20 | 10.0% | -41.2% | -97.3% |
+| WPS ≥ 5 + No opposition | 12 | 16.7% | -34.5% | -94.1% |
+| No opposition + 5+ wallets for | 12 | 16.7% | -34.5% | -94.1% |
+| Stars ≥ 4 + AgainstSide < 50 | 24 | 25.0% | -26.2% | -91.8% |
+| Net Edge > 2 + No opposition | 27 | 33.3% | -17.8% | -64.5% |
+| 5+ wallets for + AgainstSide < 50 | 18 | 33.3% | -17.8% | -83.8% |
+| No opposition + WalletBase ≥ 50 | 59 | 37.3% | -13.9% | -53.5% |
+| WPS ≥ 5 + AgainstSide < 50 | 16 | 37.5% | -13.7% | -82.9% |
+| WPS ≥ 3 + No opposition | 29 | 37.9% | -13.2% | -82.9% |
+| No opposition + Sport ROI ≥ 5% | 49 | 40.8% | -10.3% | -32.3% |
 
 ---
 
@@ -757,13 +754,13 @@ Current discount = 0.85. What if we used different values?
 
 | Discount | Above-Median WR | ρ vs WR | N |
 |---|---|---|---|
-| 0.50 | 49.8% | 0.158 | 243 |
-| 0.65 | 50.4% | 0.154 | 244 |
-| 0.75 | 50.2% | 0.151 | 245 |
-| 0.85 ★current | 50.2% | 0.147 | 245 |
-| 1.00 | 50.0% | 0.144 | 250 |
-| 1.25 | 49.4% | 0.136 | 243 |
-| 1.50 | 48.6% | 0.119 | 245 |
+| 0.50 | 52.5% | 0.141 | 284 |
+| 0.65 | 53.0% | 0.140 | 283 |
+| 0.75 | 53.0% | 0.138 | 283 |
+| 0.85 ★current | 53.0% | 0.137 | 283 |
+| 1.00 | 52.3% | 0.137 | 283 |
+| 1.25 | 52.6% | 0.132 | 289 |
+| 1.50 | 52.1% | 0.123 | 284 |
 
 ### Concentration Penalty Coefficient Sensitivity
 
@@ -771,13 +768,13 @@ Current: 4× (≤2 wallets) or 5× (3+ wallets). Test alternatives.
 
 | Coeff | ρ vs WR |
 |---|---|
-| 2x | 0.142 |
-| 3x | 0.144 |
-| 4x ★current | 0.145 |
-| 5x ★current | 0.143 |
-| 6x | 0.146 |
-| 7x | 0.149 |
-| 8x | 0.152 |
+| 2x | 0.134 |
+| 3x | 0.135 |
+| 4x ★current | 0.135 |
+| 5x ★current | 0.133 |
+| 6x | 0.135 |
+| 7x | 0.137 |
+| 8x | 0.138 |
 
 ### Breadth Bonus Multiplier Sensitivity
 
@@ -785,12 +782,12 @@ Current: 2 × ln(1 + walletCountFor). Test alternatives.
 
 | Multiplier | ρ vs WR |
 |---|---|
-| 1x | 0.155 |
-| 1.5x | 0.150 |
-| 2x ★current | 0.147 |
-| 2.5x | 0.144 |
-| 3x | 0.144 |
-| 4x | 0.141 |
+| 1x | 0.145 |
+| 1.5x | 0.140 |
+| 2x ★current | 0.137 |
+| 2.5x | 0.133 |
+| 3x | 0.133 |
+| 4x | 0.130 |
 
 ### Wallet Base Weight Sensitivity (ROI vs PnL)
 
@@ -798,13 +795,13 @@ Current unranked: 0.65×roiNorm + 0.35×pnlNorm. What if we shifted weight?
 
 | Weight Split | ρ vs WR |
 |---|---|
-| 50% ROI / 50% PnL | 0.098 |
-| 60% ROI / 40% PnL | 0.102 |
-| 65% ROI / 35% PnL ★current | 0.109 |
-| 70% ROI / 30% PnL | 0.124 |
-| 80% ROI / 20% PnL | 0.133 |
-| 90% ROI / 10% PnL | 0.152 |
-| 100% ROI / 0% PnL | 0.170 |
+| 50% ROI / 50% PnL | 0.067 |
+| 60% ROI / 40% PnL | 0.056 |
+| 65% ROI / 35% PnL ★current | 0.054 |
+| 70% ROI / 30% PnL | 0.057 |
+| 80% ROI / 20% PnL | 0.055 |
+| 90% ROI / 10% PnL | 0.061 |
+| 100% ROI / 0% PnL | 0.067 |
 
 ---
 
@@ -814,27 +811,27 @@ If we only bet positions matching a filter, what would our track record look lik
 
 | Strategy | N | %Pool | WR | P&L | ROI | Avg Inv | WR Lift | Sharpe |
 |---|---|---|---|---|---|---|---|---|
-| ALL positions (no filter) | 486 | 100.0% | 49.4% | +$98.9K | 0.5% | +$39.0K | 0.0% | 0.003 |
-| ≥3★ only | 250 | 51.4% | 50.8% | +$336.8K | 2.9% | +$45.7K | +1.4% | 0.016 |
-| ≥4★ only | 122 | 25.1% | 45.1% | -$182.8K | -3.4% | +$43.6K | -4.3% | -0.015 |
-| WPS > 0 only | 360 | 74.1% | 47.8% | +$29.5K | 0.2% | +$40.9K | -1.6% | 0.001 |
-| WPS > 2 only | 221 | 45.5% | 49.3% | +$309.0K | 2.9% | +$48.3K | -0.1% | 0.016 |
-| No opposition only | 118 | 24.3% | 45.8% | -$654.1K | -20.1% | +$27.6K | -3.6% | -0.116 |
-| Consensus + no opposition | 116 | 23.9% | 46.6% | -$650.9K | -20.0% | +$28.1K | -2.8% | -0.116 |
-| Entry ≥ 50¢ (favorites) | 296 | 60.9% | 54.1% | -$1.2M | -8.8% | +$46.2K | +4.7% | -0.063 |
-| Entry ≥ 60¢ (strong favs) | 74 | 15.2% | 51.4% | -$1.1M | -17.0% | +$91.0K | +2.0% | -0.173 |
-| WalletBase ≥ 50 | 261 | 53.7% | 48.3% | -$891.9K | -7.8% | +$43.8K | -1.1% | -0.039 |
-| ELITE + ≥3★ | 244 | 50.2% | 51.2% | +$362.8K | 3.2% | +$46.6K | +1.8% | 0.018 |
-| Net Edge > 1 + No opp | 60 | 12.3% | 43.3% | -$929.8K | -37.6% | +$41.2K | -6.0% | -0.250 |
-| Contrarian positions only | 140 | 28.8% | 59.3% | +$1.7M | 51.8% | +$24.0K | +9.9% | 0.166 |
-| HIGH_CONVICTION only | 134 | 27.6% | 51.5% | -$509.2K | -5.0% | +$76.3K | +2.1% | -0.036 |
-| MLB only | 145 | 29.8% | 55.9% | +$533.8K | 16.4% | +$22.5K | +6.5% | 0.103 |
-| NHL only | 50 | 10.3% | 56.0% | -$95.2K | -6.1% | +$31.2K | +6.6% | -0.035 |
-| Bet mult ≥ 3 | 126 | 25.9% | 51.6% | -$527.5K | -5.2% | +$80.2K | +2.2% | -0.039 |
-| 1-wallet games only | 73 | 15.0% | 49.3% | +$548.8K | 22.7% | +$33.2K | -0.1% | 0.115 |
+| ALL positions (no filter) | 565 | 100.0% | 51.2% | +$849.2K | 3.7% | +$40.3K | 0.0% | 0.020 |
+| ≥3★ only | 297 | 52.6% | 53.9% | +$1.2M | 8.9% | +$47.2K | +2.7% | 0.052 |
+| ≥4★ only | 139 | 24.6% | 46.8% | +$239.3K | 3.6% | +$47.5K | -4.4% | 0.017 |
+| WPS > 0 only | 422 | 74.7% | 50.2% | +$835.0K | 4.7% | +$42.1K | -0.9% | 0.026 |
+| WPS > 2 only | 259 | 45.8% | 52.5% | +$1.1M | 8.3% | +$49.9K | +1.4% | 0.050 |
+| No opposition only | 128 | 22.7% | 46.9% | -$797.2K | -23.0% | +$27.1K | -4.3% | -0.133 |
+| Consensus + no opposition | 126 | 22.3% | 47.6% | -$794.0K | -22.9% | +$27.5K | -3.5% | -0.133 |
+| Entry ≥ 50¢ (favorites) | 344 | 60.9% | 55.5% | -$1.4M | -9.0% | +$46.4K | +4.4% | -0.068 |
+| Entry ≥ 60¢ (strong favs) | 96 | 17.0% | 56.3% | -$1.3M | -15.4% | +$85.5K | +5.1% | -0.161 |
+| WalletBase ≥ 50 | 301 | 53.3% | 49.5% | -$818.2K | -5.9% | +$45.7K | -1.6% | -0.032 |
+| ELITE + ≥3★ | 290 | 51.3% | 54.1% | +$1.3M | 9.1% | +$48.2K | +3.0% | 0.054 |
+| Net Edge > 1 + No opp | 65 | 11.5% | 44.6% | -$936.1K | -37.2% | +$38.7K | -6.5% | -0.241 |
+| Contrarian positions only | 161 | 28.5% | 57.1% | +$1.9M | 43.9% | +$27.4K | +6.0% | 0.155 |
+| HIGH_CONVICTION only | 159 | 28.1% | 52.8% | +$14.6K | 0.1% | +$76.0K | +1.7% | 0.001 |
+| MLB only | 162 | 28.7% | 53.1% | +$293.5K | 7.4% | +$24.4K | +1.9% | 0.046 |
+| NHL only | 68 | 12.0% | 61.8% | +$197.7K | 8.3% | +$35.2K | +10.6% | 0.048 |
+| Bet mult ≥ 3 | 151 | 26.7% | 53.0% | -$3.7K | -0.0% | +$79.2K | +1.8% | -0.000 |
+| 1-wallet games only | 85 | 15.0% | 49.4% | +$474.1K | 16.4% | +$34.0K | -1.7% | 0.085 |
 
-**Best risk-adjusted strategy**: Contrarian positions only — Sharpe 0.166, 59.3% WR, 51.8% ROI
-**Highest WR strategy**: Contrarian positions only — 59.3% WR, 51.8% ROI (N=140)
+**Best risk-adjusted strategy**: Contrarian positions only — Sharpe 0.155, 57.1% WR, 43.9% ROI
+**Highest WR strategy**: NHL only — 61.8% WR, 8.3% ROI (N=68)
 
 ---
 
@@ -846,27 +843,27 @@ Where in the parameter space does actual edge exist? Green = profitable, Red = l
 
 |  | < 40¢ | 40-55¢ | 55¢+ |
 |---|---|---|---|
-| WPS < 0 | 20/40.0%/117.6% | 62/53.2%/6.0% | 44/61.4%/-21.1% |
-| WPS 0-3 | 27/51.9%/130.3% | 106/41.5%/9.3% | 54/50.0%/-42.0% |
-| WPS 3+ | 15/46.7%/166.1% | 107/41.1%/-27.0% | 51/70.6%/10.8% |
+| WPS < 0 | 21/47.6%/122.9% | 74/51.4%/5.4% | 48/60.4%/-25.1% |
+| WPS 0-3 | 30/50.0%/128.6% | 126/47.6%/21.4% | 65/47.7%/-48.3% |
+| WPS 3+ | 18/38.9%/113.6% | 119/42.9%/-11.9% | 64/75.0%/11.4% |
 _Format: N / WR / ROI_
 
 ### Wallets For × Wallets Against
 
 |  | 0 against | 1-2 against | 3+ against |
 |---|---|---|---|
-| 1 wallet | 32/53.1%/47.1% | 33/48.5%/-9.4% | 8/37.5%/87.8% |
-| 2-3 wallets | 58/46.6%/3.7% | 67/52.2%/-6.8% | 49/49.0%/-23.0% |
-| 4+ wallets | 28/35.7%/-84.3% | 104/54.8%/23.5% | 107/47.7%/8.3% |
+| 1 wallet | 37/51.4%/20.6% | 40/50.0%/-3.1% | 8/37.5%/87.8% |
+| 2-3 wallets | 62/48.4%/3.7% | 92/53.3%/-2.9% | 52/50.0%/-18.8% |
+| 4+ wallets | 29/37.9%/-82.9% | 124/58.9%/25.4% | 121/47.9%/11.6% |
 _Format: N / WR / ROI_
 
 ### Wallet Base × Conviction Mult
 
 |  | Conv < 1.0 | Conv 1.0-1.2 | Conv 1.2+ |
 |---|---|---|---|
-| Base < 30 | 6/0.0%/-100.0% | 43/46.5%/-32.8% | 19/52.6%/6.1% |
-| Base 30-60 | 47/57.4%/44.2% | 100/49.0%/57.6% | 139/48.9%/-2.6% |
-| Base 60+ | 23/52.2%/-32.6% | 50/58.0%/6.4% | 46/43.5%/-32.9% |
+| Base < 30 | 6/0.0%/-100.0% | 47/48.9%/31.4% | 23/60.9%/40.9% |
+| Base 30-60 | 60/65.0%/58.3% | 113/49.6%/41.7% | 166/50.0%/-2.9% |
+| Base 60+ | 23/52.2%/-32.6% | 57/56.1%/2.7% | 55/45.5%/-22.7% |
 _Format: N / WR / ROI_
 
 ---
@@ -874,10 +871,13 @@ _Format: N / WR / ROI_
 ## 35. Actionable Insights for V8 Tuning
 
 ### INFO: Wallet Count
-1-wallet WR: 49% (N=73) vs 3+ wallet WR: 50% (N=315). Multi-wallet consensus is outperforming — breadth bonus is working.
+1-wallet WR: 49% (N=85) vs 3+ wallet WR: 52% (N=366). Multi-wallet consensus is outperforming — breadth bonus is working.
+
+### INFO: Sport Edge
+NHL: 62% WR, 8.3% ROI (N=68). Outperforming overall.
 
 ### CRITICAL: Against Side Filter
-When againstSide ≥ 100: 34% WR (122 positions). These are money pits — consider adding a hard gate.
+When againstSide ≥ 100: 38% WR (141 positions). These are money pits — consider adding a hard gate.
 
 
 ---
@@ -886,28 +886,28 @@ When againstSide ≥ 100: 34% WR (122 positions). These are money pits — consi
 
 | KPI | Value |
 |---|---|
-| Total Positions Graded | 486 |
-| Overall WR | 49.4% |
-| Overall ROI | 0.5% |
-| Total P&L | +$98.9K |
-| Total Invested | +$18.9M |
-| Unique Wallets | 77 |
-| Unique Games | 101 |
-| HIGH_CONVICTION WR | 51.5% |
-| HIGH_CONVICTION ROI | -5.0% |
-| ELITE tier WR | 49.5% |
-| ELITE tier ROI | 0.3% |
-| Big wins (>$10K) | 133 |
-| Big losses (>$10K) | 133 |
+| Total Positions Graded | 565 |
+| Overall WR | 51.2% |
+| Overall ROI | 3.7% |
+| Total P&L | +$849.2K |
+| Total Invested | +$22.8M |
+| Unique Wallets | 83 |
+| Unique Games | 117 |
+| HIGH_CONVICTION WR | 52.8% |
+| HIGH_CONVICTION ROI | 0.1% |
+| ELITE tier WR | 51.4% |
+| ELITE tier ROI | 3.4% |
+| Big wins (>$10K) | 156 |
+| Big losses (>$10K) | 157 |
 | Positive CLV rate | — |
-| Avg bet multiplier | 3.05x |
-| V8 coverage | 486/486 (100.0%) |
+| Avg bet multiplier | 3.08x |
+| V8 coverage | 565/565 (100.0%) |
 | Avg V8 Stars | 2.9★ |
 | Avg WPS | 1.94 |
-| ≥3★ WR | 50.8% |
-| ≥3★ ROI | 2.9% |
-| <3★ WR | 47.9% |
-| <3★ ROI | -3.2% |
+| ≥3★ WR | 53.9% |
+| ≥3★ ROI | 8.9% |
+| <3★ WR | 48.1% |
+| <3★ ROI | -4.5% |
 
 ---
 
@@ -917,11 +917,11 @@ Splits the sample into **quintiles of `avgPrice`** (Polymarket implied prob). In
 
 | Price quintile | N | Mean entry | Mean ROI | Mean (W−p) | ρ WPS vs ROI |
 |---|---|---|---|---|---|
-| Q1 (cheapest→richest) | 97 | 32.2¢ | 53.83% | 8.01% | -0.080 |
-| Q2 (cheapest→richest) | 97 | 46.9¢ | -5.06% | -2.53% | -0.204 |
-| Q3 (cheapest→richest) | 97 | 51.2¢ | -15.65% | -7.92% | +0.213 |
-| Q4 (cheapest→richest) | 97 | 54.9¢ | 16.08% | 9.04% | +0.080 |
-| Q5 (cheapest→richest) | 98 | 70.8¢ | -19.36% | -15.72% | -0.102 |
+| Q1 (cheapest→richest) | 113 | 32.4¢ | 45.63% | 7.41% | -0.125 |
+| Q2 (cheapest→richest) | 113 | 47.1¢ | 5.80% | 2.49% | -0.123 |
+| Q3 (cheapest→richest) | 113 | 51.2¢ | -13.70% | -6.99% | +0.109 |
+| Q4 (cheapest→richest) | 113 | 55.2¢ | 16.99% | 9.43% | +0.140 |
+| Q5 (cheapest→richest) | 113 | 73.2¢ | -20.87% | -15.72% | -0.073 |
 
 _If ρ(WPS vs ROI) stays positive inside dog-heavy quintiles, WPS is doing real work beyond “bet favorites”._
 
@@ -937,79 +937,79 @@ _If ρ(WPS vs ROI) stays positive inside dog-heavy quintiles, WPS is doing real 
 |---|---|---|
 | sportsLbPercentileTop | leaderboardRank | 0.991 |
 | v8_walletPlayScore | v8_stars | 0.970 |
-| v8_walletCountFor | v8_topShare | 0.961 |
-| v8_walletPlayScore | v8_topShare | 0.954 |
-| v8_againstSide | v8_walletCountAgainst | 0.954 |
-| v8_stars | v8_topShare | 0.937 |
-| v8_walletPlayScore | v8_walletCountFor | 0.932 |
-| v8_stars | v8_walletCountFor | 0.932 |
-| v8_forSide | v8_walletCountFor | 0.930 |
-| v8_forSide | v8_topShare | 0.924 |
-| v8_walletPlayScore | v8_forSide | 0.921 |
-| v8_stars | v8_forSide | 0.915 |
-| v8_walletPlayScore | v8_netEdge | 0.895 |
-| v8_stars | v8_netEdge | 0.861 |
-| v8_netEdge | v8_topShare | 0.752 |
-| v8_netEdge | v8_forSide | 0.751 |
-| v8_netEdge | v8_walletCountFor | 0.720 |
-| v8_walletBase | sportsLbPercentileTop | 0.714 |
+| v8_walletCountFor | v8_topShare | 0.957 |
+| v8_walletPlayScore | v8_topShare | 0.952 |
+| v8_againstSide | v8_walletCountAgainst | 0.947 |
+| v8_walletPlayScore | v8_walletCountFor | 0.937 |
+| v8_stars | v8_walletCountFor | 0.934 |
+| v8_stars | v8_topShare | 0.930 |
+| v8_forSide | v8_walletCountFor | 0.929 |
+| v8_walletPlayScore | v8_forSide | 0.923 |
+| v8_forSide | v8_topShare | 0.920 |
+| v8_stars | v8_forSide | 0.913 |
+| v8_walletPlayScore | v8_netEdge | 0.901 |
+| v8_stars | v8_netEdge | 0.874 |
+| v8_netEdge | v8_forSide | 0.766 |
+| v8_netEdge | v8_topShare | 0.754 |
+| v8_netEdge | v8_walletCountFor | 0.741 |
+| v8_walletBase | sportsLbPercentileTop | 0.709 |
 _High |ρ| between predictors means they move together — do not double-count in prose “confidence” rules._
 
 ### 38b. Two-way crosses (economic cell stats)
 
 | Label | ELITE (N / ROI / mean W−p) | PROVEN (N / ROI / mean W−p) | SHARP (N / ROI / mean W−p) |
 |---|---|---|---|
-| HIGH_CONVICTION | 132/-5.7%/-4.59% | — | — |
-| SHARP_POSITION | 308/7.4%/-0.32% | 39/-41.5%/-8.77% | — |
+| HIGH_CONVICTION | 157/-0.4%/-4.44% | — | — |
+| SHARP_POSITION | 359/7.8%/1.32% | 39/-41.5%/-8.77% | 8/80.2%/12.59% |
 
 
 | Tier | ML (N / ROI / mean W−p) | SPREAD (N / ROI / mean W−p) | TOTAL (N / ROI / mean W−p) |
 |---|---|---|---|
-| ELITE | 244/3.0%/-1.31% | 116/3.6%/0.20% | 80/-14.4%/-5.09% |
+| ELITE | 291/2.8%/-0.31% | 134/13.2%/0.87% | 91/-7.1%/-2.75% |
 | PROVEN | 13/-20.0%/-9.74% | 11/-14.5%/2.43% | 16/2.9%/-13.70% |
-| SHARP | — | — | — |
+| SHARP | 6/123.9%/16.78% | — | — |
 
 
 | Sport | ML (N / ROI / mean W−p) | SPREAD (N / ROI / mean W−p) | TOTAL (N / ROI / mean W−p) |
 |---|---|---|---|
-| MLB | 88/14.3%/7.82% | 6/66.4%/16.28% | 51/19.0%/-3.95% |
-| NBA | 129/4.2%/-8.44% | 118/0.9%/-1.49% | 44/-46.6%/-12.20% |
-| NHL | 43/-16.8%/0.39% | — | — |
+| MLB | 100/-2.3%/3.47% | 8/-45.6%/12.25% | 54/22.2%/-4.64% |
+| NBA | 150/4.9%/-6.18% | 134/11.7%/-0.61% | 51/-35.5%/-7.76% |
+| NHL | 60/2.3%/7.75% | — | — |
 
 
 | Side vs consensus | ★2.5–3.5 (N / ROI / mean W−p) | ★<2.5 (N / ROI / mean W−p) | ★≥3.5 (N / ROI / mean W−p) |
 |---|---|---|---|
-| Consensus | 129/-21.6%/-16.10% | 82/4.8%/-0.22% | 135/-10.9%/-4.87% |
-| Contrarian | 58/73.1%/19.07% | 44/-12.7%/9.24% | 38/68.4%/8.96% |
+| Consensus | 154/-15.0%/-11.14% | 94/4.8%/-0.81% | 156/-5.3%/-3.10% |
+| Contrarian | 67/62.6%/15.61% | 49/-19.2%/9.53% | 45/59.6%/8.48% |
 
 ### 38c. Three-factor AND rules (binary flags, min N=8)
 
 | Rule (3×AND) | N | Mean ROI (stake) | Mean (W−p) | Pool ROI | WR |
 |---|---|---|---|---|---|
-| TopShare<0.5 ∧ LB%≥60 ∧ Wallets≥4 | 181 | 21.15% | 1.19% | 2.9% | 51.4% |
-| LB%≥60 ∧ BetMult≥3 ∧ Wallets≥4 | 62 | 17.04% | -1.79% | -2.6% | 51.6% |
-| Stars≥3 ∧ TopShare<0.5 ∧ LB%≥60 | 188 | 15.20% | 0.80% | 3.2% | 52.1% |
-| WPS≥2 ∧ Stars≥3 ∧ LB%≥60 | 164 | 11.50% | -0.37% | 3.1% | 50.6% |
-| WPS≥2 ∧ TopShare<0.5 ∧ LB%≥60 | 164 | 11.50% | -0.37% | 3.1% | 50.6% |
-| Stars≥3 ∧ LB%≥60 ∧ Wallets≥4 | 172 | 11.34% | -0.11% | 0.6% | 50.6% |
-| WPS≥2 ∧ LB%≥60 ∧ Wallets≥4 | 160 | 9.67% | -1.33% | 2.2% | 49.4% |
-| WPS≥2 ∧ NetEdge>1.5 ∧ LB%≥60 | 118 | 9.15% | -0.08% | 2.1% | 51.7% |
-| Stars≥3 ∧ NetEdge>1.5 ∧ LB%≥60 | 118 | 9.15% | -0.08% | 2.1% | 51.7% |
-| NetEdge>1.5 ∧ TopShare<0.5 ∧ LB%≥60 | 118 | 9.15% | -0.08% | 2.1% | 51.7% |
-| TopShare<0.5 ∧ BetMult≥3 ∧ Wallets≥4 | 71 | 8.70% | -5.53% | -4.6% | 49.3% |
-| NetEdge>1.5 ∧ LB%≥60 ∧ Wallets≥4 | 115 | 7.75% | -0.88% | 1.3% | 50.4% |
-| WPS≥2 ∧ Consensus ∧ LB%≥60 | 124 | 7.37% | -1.08% | -5.5% | 51.6% |
-| TopShare<0.5 ∧ LB%≥60 ∧ BetMult≥3 | 76 | 7.14% | -5.42% | -6.9% | 48.7% |
-| Stars≥3 ∧ TopShare<0.5 ∧ Wallets≥4 | 223 | 6.92% | -2.27% | -0.3% | 49.3% |
-| WPS≥2 ∧ Stars≥3 ∧ TopShare<0.5 | 221 | 6.39% | -2.67% | 2.9% | 49.3% |
-| WPS≥2 ∧ Stars≥3 ∧ NetEdge>1.5 | 165 | 6.37% | -1.47% | 2.3% | 50.9% |
-| WPS≥2 ∧ NetEdge>1.5 ∧ TopShare<0.5 | 165 | 6.37% | -1.47% | 2.3% | 50.9% |
-| Stars≥3 ∧ NetEdge>1.5 ∧ TopShare<0.5 | 165 | 6.37% | -1.47% | 2.3% | 50.9% |
-| Stars≥3 ∧ LB%≥60 ∧ BetMult≥3 | 63 | 5.63% | -4.70% | -6.9% | 50.8% |
-| WPS≥2 ∧ Stars≥3 ∧ Wallets≥4 | 209 | 5.39% | -3.35% | 1.3% | 48.3% |
-| WPS≥2 ∧ TopShare<0.5 ∧ Wallets≥4 | 209 | 5.39% | -3.35% | 1.3% | 48.3% |
-| Stars≥3 ∧ Consensus ∧ LB%≥60 | 137 | 5.08% | -2.43% | -7.2% | 51.1% |
-| WPS≥2 ∧ LB%≥60 ∧ BetMult≥3 | 58 | 4.19% | -5.41% | -8.0% | 50.0% |
-| WPS≥2 ∧ NetEdge>1.5 ∧ Wallets≥4 | 159 | 4.14% | -2.76% | 0.3% | 49.1% |
+| TopShare<0.5 ∧ LB%≥60 ∧ Wallets≥4 | 213 | 19.68% | 2.42% | 8.1% | 53.5% |
+| LB%≥60 ∧ BetMult≥3 ∧ Wallets≥4 | 73 | 18.08% | 0.57% | 7.9% | 56.2% |
+| Stars≥3 ∧ TopShare<0.5 ∧ LB%≥60 | 232 | 16.64% | 3.16% | 9.4% | 55.2% |
+| WPS≥2 ∧ Stars≥3 ∧ LB%≥60 | 199 | 12.69% | 1.79% | 8.8% | 53.8% |
+| WPS≥2 ∧ TopShare<0.5 ∧ LB%≥60 | 199 | 12.69% | 1.79% | 8.8% | 53.8% |
+| WPS≥2 ∧ Consensus ∧ LB%≥60 | 150 | 12.40% | 2.31% | 1.6% | 56.7% |
+| Stars≥3 ∧ Consensus ∧ LB%≥60 | 170 | 11.37% | 1.59% | -0.2% | 56.5% |
+| Stars≥3 ∧ LB%≥60 ∧ Wallets≥4 | 204 | 11.34% | 1.38% | 6.4% | 52.9% |
+| TopShare<0.5 ∧ BetMult≥3 ∧ Wallets≥4 | 83 | 10.94% | -2.63% | 6.0% | 54.2% |
+| WPS≥2 ∧ LB%≥60 ∧ Wallets≥4 | 191 | 10.53% | 0.58% | 8.0% | 52.4% |
+| Stars≥3 ∧ LB%≥60 ∧ Against<50 | 44 | 9.01% | 5.09% | -31.6% | 59.1% |
+| TopShare<0.5 ∧ LB%≥60 ∧ Against<50 | 44 | 9.01% | 5.09% | -31.6% | 59.1% |
+| WPS≥2 ∧ NetEdge>1.5 ∧ LB%≥60 | 145 | 8.65% | 1.37% | 8.4% | 54.5% |
+| Stars≥3 ∧ NetEdge>1.5 ∧ LB%≥60 | 145 | 8.65% | 1.37% | 8.4% | 54.5% |
+| NetEdge>1.5 ∧ TopShare<0.5 ∧ LB%≥60 | 145 | 8.65% | 1.37% | 8.4% | 54.5% |
+| WPS≥2 ∧ Stars≥3 ∧ TopShare<0.5 | 259 | 8.25% | -0.42% | 8.3% | 52.5% |
+| Stars≥3 ∧ LB%≥60 ∧ BetMult≥3 | 76 | 7.99% | -1.91% | 4.4% | 55.3% |
+| TopShare<0.5 ∧ LB%≥60 ∧ BetMult≥3 | 90 | 7.73% | -3.47% | 2.4% | 52.2% |
+| Stars≥3 ∧ TopShare<0.5 ∧ Wallets≥4 | 258 | 7.71% | -0.54% | 5.4% | 51.9% |
+| WPS≥2 ∧ LB%≥60 ∧ BetMult≥3 | 71 | 6.98% | -2.29% | 3.7% | 54.9% |
+| WPS≥2 ∧ Stars≥3 ∧ Wallets≥4 | 243 | 6.89% | -1.29% | 7.0% | 51.4% |
+| WPS≥2 ∧ TopShare<0.5 ∧ Wallets≥4 | 243 | 6.89% | -1.29% | 7.0% | 51.4% |
+| NetEdge>1.5 ∧ LB%≥60 ∧ Wallets≥4 | 141 | 6.85% | 0.40% | 7.8% | 53.2% |
+| WPS≥2 ∧ Stars≥3 ∧ NetEdge>1.5 | 195 | 6.71% | 0.15% | 8.1% | 53.8% |
+| WPS≥2 ∧ NetEdge>1.5 ∧ TopShare<0.5 | 195 | 6.71% | 0.15% | 8.1% | 53.8% |
 
 _Use triples with healthy N only; small-N leaders are often noise._
