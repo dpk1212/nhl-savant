@@ -1199,6 +1199,57 @@ function needsConsensusRestamp(existingSide) {
   return v == null || v < WHITELIST_CONSENSUS_VERSION;
 }
 
+// v5.4: drift-restamp ALL non-superseded sides, not just the current
+// consensus side. v5.3 only re-stamped the side passed into the sync;
+// when consensus *flipped* to a brand-new side (e.g. Oilers becomes
+// the live consensus while the doc still has only a Ducks side), the
+// stale Ducks Δ would never be touched — so the fade signal from a
+// late-arriving NHL WINNER never propagated to mute the old pick.
+//
+// This helper iterates every non-superseded side, computes its live
+// Δ from the same walletDetails (which carries both sides' wallets),
+// and restamps any that have drifted from their stored values. The
+// regime/v8Scoring args reflect the CURRENT consensus side; for OTHER
+// sides we fall back to that side's stored peak.regime/v8Scoring so
+// decideLockStage produces a reasonable promotedBy label.
+async function restampDriftedSides({ ref, sides, currentSideKey, sport, regime, v8Scoring, currentStars }) {
+  if (!WALLET_PROFILES_CACHE) return null;
+  if (!v8Scoring?.walletDetails) return null;
+
+  const updates = {};
+  let touched = 0;
+
+  for (const [sideKey, stored] of Object.entries(sides || {})) {
+    if (!stored) continue;
+    if (stored.status === 'COMPLETED') continue;
+    if (stored.superseded) continue;
+    const liveWc = computeWalletConsensus(v8Scoring.walletDetails, sport, sideKey);
+    const drifted =
+      stored.v8_walletConsensusDelta !== liveWc.delta ||
+      stored.v8_walletConsensusVerdict !== liveWc.verdict ||
+      !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
+      !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
+    if (!drifted) continue;
+
+    const isCurrent = sideKey === currentSideKey;
+    const sideStars = isCurrent ? (currentStars || 0) : (stored.peak?.stars || stored.lock?.stars || 0);
+    const sideRegime = isCurrent ? regime : (stored.peak?.regime || stored.lock?.regime || null);
+    const sideV8 = isCurrent ? v8Scoring : (stored.peak?.v8Scoring || v8Scoring);
+    const decision = decideLockStage(sideRegime, sideV8, sideKey, sport, sideStars);
+    const patch = {};
+    // Always stamp from the LIVE walletDetails (v8Scoring), not the side's
+    // stored peak.v8Scoring.walletDetails — that snapshot is what we're
+    // trying to reconcile away from.
+    stampWalletConsensus(patch, v8Scoring, sideKey, sport, sideStars, decision.promotedBy);
+    updates[sideKey] = patch;
+    touched++;
+  }
+
+  if (touched === 0) return null;
+  await setDoc(ref, { sides: updates, lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp' }, { merge: true });
+  return { touched };
+}
+
 function buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport = null) {
   const now = Date.now();
   const tier = unitTier(units).label;
@@ -1371,56 +1422,52 @@ async function syncPickToFirebase({ date, sport, gameKey, away, home, commenceTi
         }
       }
 
-      // v5.3: live-vs-stored Δ drift restamp. The peak/units/EV branches
-      // above only fire when stars rise; the version-bump path only fires
-      // when WHITELIST_CONSENSUS_VERSION changes. Neither catches the
-      // case that matters most for live picks: a new whitelisted sharp
-      // arrives (or an existing one flips sides) AFTER peak. Without
-      // this branch, Δ would stay frozen at the peak-time wallet set
-      // until we ship a version bump. Restamping here lets the existing
-      // page-load and 15-min fetch sync flows propagate fade/promote
-      // signals as they happen.
-      if (WALLET_PROFILES_CACHE) {
-        const liveWc = computeWalletConsensus(v8Scoring?.walletDetails, sport, side);
-        const stored = sides[side];
-        const drifted =
-          stored.v8_walletConsensusDelta !== liveWc.delta ||
-          stored.v8_walletConsensusVerdict !== liveWc.verdict ||
-          !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
-          !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
-        if (drifted) {
-          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
-          const patch = {};
-          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
-          await setDoc(ref, {
-            sides: { [side]: patch },
-            lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp',
-          }, { merge: true });
-          return { docId, action: 'consensus_drift_restamp' };
-        }
-      }
+      // v5.4: drift-restamp ALL non-superseded sides (incl. current).
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+      if (restamp) return { docId, action: 'consensus_drift_restamp' };
 
       return { docId, action: 'no_change' };
     }
 
+    // ─── new-side branch: sides[side] does not yet exist ───
     const existingSides = Object.entries(sides);
     const existingBestStars = existingSides.reduce((max, [, sd]) => {
       const s = sd.peak?.stars || sd.lock?.stars || 0;
       return s > max ? s : max;
     }, 0);
-    if (stars <= existingBestStars) {
+
+    // v5.4: even if we ultimately decide NOT to create this new side
+    // (because its V8 stars don't beat the existing best), we still need
+    // to refresh the existing side's Δ stamp from live walletDetails.
+    // Otherwise an Oilers-side render with af1697 onboard would never
+    // touch the orphaned Ducks side and Ducks Δ would stay frozen.
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+
+    // v5.4: allow a NEW side with whitelist promotion eligibility
+    // (Δ ≥ +1, agW = 0, baseStars ≥ 1.0) to supersede an existing locked
+    // side that lacks whitelist support — even when its V8 stars are
+    // below the existing peak. This is the path the user has been asking
+    // for: "find these plays and play them." When sharps with proven
+    // sport-specific edges arrive on the OTHER side after peak, the new
+    // side is the play, even if its raw V8 score is lower.
+    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+    const newSideHasWhitelistPromo =
+      newSideDecision.stage === 'LOCKED' && newSideDecision.promotedBy === 'whitelist';
+
+    if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSideData(side, team, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, opposition, walletProfile, regime, qualityProxy, v8Scoring, sport);
     const newWPS = v8Scoring?.walletPlayScore ?? null;
-    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
+    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
     if (newWPS != null) mergePayload.flipBeatThreshold = newWPS;
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
     }
     await setDoc(ref, mergePayload, { merge: true });
-    return { docId, action: 'side_added' };
+    return { docId, action };
   } catch (err) {
     console.warn('Failed to sync pick:', err.message);
     return { docId: `${date}_${sport}_${gameKey}`, action: 'error' };
@@ -1600,42 +1647,39 @@ async function syncSpreadPickToFirebase({ date, sport, gameKey, away, home, comm
           return { docId, action: 'consensus_backfill' };
         }
       }
-      // v5.3: live-vs-stored Δ drift restamp (spreads). See ML sync for rationale.
-      if (WALLET_PROFILES_CACHE) {
-        const liveWc = computeWalletConsensus(v8Scoring?.walletDetails, sport, side);
-        const stored = sides[side];
-        const drifted =
-          stored.v8_walletConsensusDelta !== liveWc.delta ||
-          stored.v8_walletConsensusVerdict !== liveWc.verdict ||
-          !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
-          !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
-        if (drifted) {
-          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
-          const patch = {};
-          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
-          await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp' }, { merge: true });
-          return { docId, action: 'consensus_drift_restamp' };
-        }
-      }
+      // v5.4: drift-restamp ALL non-superseded sides (spreads).
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+      if (restamp) return { docId, action: 'consensus_drift_restamp' };
       return { docId, action: 'no_change' };
     }
 
+    // ─── new-side branch (spreads) ───
     const existingSides = Object.entries(sides);
     const existingBestStars = existingSides.reduce((max, [, sd]) => {
       const s = sd.peak?.stars || sd.lock?.stars || 0;
       return s > max ? s : max;
     }, 0);
-    if (stars <= existingBestStars) {
+
+    // v5.4: refresh existing side stamps even if we don't create the new side.
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+
+    // v5.4: whitelist-promotion override on side creation gate.
+    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+    const newSideHasWhitelistPromo =
+      newSideDecision.stage === 'LOCKED' && newSideDecision.promotedBy === 'whitelist';
+
+    if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
-    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
+    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
     }
     await setDoc(ref, mergePayload, { merge: true });
-    return { docId, action: 'side_added' };
+    return { docId, action };
   } catch (err) {
     console.warn('Failed to sync spread pick:', err.message);
     return { docId: `${date}_${sport}_${gameKey}_spread`, action: 'error' };
@@ -1737,42 +1781,39 @@ async function syncTotalPickToFirebase({ date, sport, gameKey, away, home, comme
           return { docId, action: 'consensus_backfill' };
         }
       }
-      // v5.3: live-vs-stored Δ drift restamp (totals). See ML sync for rationale.
-      if (WALLET_PROFILES_CACHE) {
-        const liveWc = computeWalletConsensus(v8Scoring?.walletDetails, sport, side);
-        const stored = sides[side];
-        const drifted =
-          stored.v8_walletConsensusDelta !== liveWc.delta ||
-          stored.v8_walletConsensusVerdict !== liveWc.verdict ||
-          !!stored.v8_walletConsensusMuteTriggered !== (liveWc.lockAction === 'MUTE') ||
-          !!stored.v8_walletConsensusCancelTriggered !== (liveWc.lockAction === 'CANCEL');
-        if (drifted) {
-          const decision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
-          const patch = {};
-          stampWalletConsensus(patch, v8Scoring, side, sport, stars || 0, decision.promotedBy);
-          await setDoc(ref, { sides: { [side]: patch }, lastWriteAt: Date.now(), lastAction: 'consensus_drift_restamp' }, { merge: true });
-          return { docId, action: 'consensus_drift_restamp' };
-        }
-      }
+      // v5.4: drift-restamp ALL non-superseded sides (totals).
+      const restamp = await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+      if (restamp) return { docId, action: 'consensus_drift_restamp' };
       return { docId, action: 'no_change' };
     }
 
+    // ─── new-side branch (totals) ───
     const existingSides = Object.entries(sides);
     const existingBestStars = existingSides.reduce((max, [, sd]) => {
       const s = sd.peak?.stars || sd.lock?.stars || 0;
       return s > max ? s : max;
     }, 0);
-    if (stars <= existingBestStars) {
+
+    // v5.4: refresh existing side stamps even if we don't create the new side.
+    await restampDriftedSides({ ref, sides, currentSideKey: side, sport, regime, v8Scoring, currentStars: stars || 0 });
+
+    // v5.4: whitelist-promotion override on side creation gate.
+    const newSideDecision = decideLockStage(regime, v8Scoring, side, sport, stars || 0);
+    const newSideHasWhitelistPromo =
+      newSideDecision.stage === 'LOCKED' && newSideDecision.promotedBy === 'whitelist';
+
+    if (stars <= existingBestStars && !newSideHasWhitelistPromo) {
       const originalSide = existingSides.find(([, sd]) => sd.lock && !sd.superseded)?.[0];
       return { docId, action: 'no_change', originalSide };
     }
     const sideData = buildSpreadTotalSideData(side, team, line, odds, book, pinnacleOdds, evEdge, criteriaMet, criteria, sharpCount, totalInvested, units, consensusStrength, stars, walletProfile, regime, qualityProxy, v8Scoring, sport);
-    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: 'side_added' };
+    const action = newSideHasWhitelistPromo && stars <= existingBestStars ? 'side_added_whitelist' : 'side_added';
+    const mergePayload = { sides: { [side]: sideData }, source: 'ui_card_sync', lastWriteAt: Date.now(), lastAction: action };
     for (const [existingSide] of existingSides) {
       mergePayload.sides[existingSide] = { ...mergePayload.sides[existingSide], superseded: true, supersededAt: Date.now() };
     }
     await setDoc(ref, mergePayload, { merge: true });
-    return { docId, action: 'side_added' };
+    return { docId, action };
   } catch (err) {
     console.warn('Failed to sync total pick:', err.message);
     return { docId: `${date}_${sport}_${gameKey}_total`, action: 'error' };
@@ -6338,7 +6379,10 @@ const SharpPositionCard = memo(function SharpPositionCard({ gd, pinnacleHistory,
               {sportWinnerForCount > 0 && (
                 <span style={{ color: B.gold, fontWeight: 900 }}> · {sportWinnerForCount} {gd.sport} WINNER{sportWinnerForCount !== 1 ? 'S' : ''}</span>
               )}
-              {sportWinnerAgCount > sportWinnerForCount && (
+              {/* v5.4: always show FADING when any winner is on the opposite side. Previous gate (`> forCount`)
+                  hid the fade signal in the common 1-for / 1-against case (Stars/Wild), making the header look
+                  like it was undercounting NHL WINNERS visible in the list below. */}
+              {sportWinnerAgCount > 0 && (
                 <span style={{ color: B.red, fontWeight: 900 }}> · {sportWinnerAgCount} {gd.sport} FADING</span>
               )}
             </span>
